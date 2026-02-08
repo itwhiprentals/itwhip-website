@@ -28,7 +28,7 @@ export async function GET(
           }
         }
       }
-    })
+    }) as any
 
     if (!partner) {
       return NextResponse.json(
@@ -45,7 +45,7 @@ export async function GET(
     }
 
     // Calculate fleet stats
-    const vehicles = partner.cars.map(car => ({
+    const vehicles = partner.cars.map((car: any) => ({
       id: car.id,
       make: car.make,
       model: car.model,
@@ -57,12 +57,12 @@ export async function GET(
     }))
 
     const fleetSize = vehicles.length
-    const activeVehicles = vehicles.filter(v => v.status === 'available').length
+    const activeVehicles = vehicles.filter((v: any) => v.status === 'available').length
 
     // Get bookings for this partner's vehicles
-    const vehicleIds = partner.cars.map(c => c.id)
+    const vehicleIds = partner.cars.map((c: any) => c.id)
 
-    const bookings = vehicleIds.length > 0 ? await prisma.rentalBooking.findMany({
+    const bookings: any[] = vehicleIds.length > 0 ? await prisma.rentalBooking.findMany({
       where: {
         carId: { in: vehicleIds }
       },

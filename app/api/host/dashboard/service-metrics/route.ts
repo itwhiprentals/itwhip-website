@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         hostId: hostId
       },
       include: {
-        serviceRecords: {
+        VehicleServiceRecord: {
           orderBy: {
             serviceDate: 'desc'
           }
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
             }
           },
           include: {
-            claims: {
+            Claim: {
               where: {
                 status: {
                   in: ['PENDING', 'UNDER_REVIEW', 'APPROVED', 'GUEST_RESPONSE_PENDING', 'GUEST_RESPONDED']
@@ -69,44 +69,44 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // ✅ SOFT COMPLIANCE MODE - Analyze each vehicle
+    // SOFT COMPLIANCE MODE - Analyze each vehicle
     const vehicleStatuses = cars.map(car => {
       const analysis = analyzeServiceTriggers(
-        car.serviceRecords,
+        car.VehicleServiceRecord,
         car.totalTrips || 0,
         car.currentMileage || 0
       )
 
       const alerts = generateServiceAlerts(analysis)
-      
-      // ✅ Check if vehicle has active claims
-      const hasActiveClaim = car.bookings.some(booking => 
-        booking.claims && booking.claims.length > 0
+
+      // Check if vehicle has active claims
+      const hasActiveClaim = car.bookings.some((booking: any) =>
+        booking.Claim && booking.Claim.length > 0
       )
-      
-      // ✅ SOFT COMPLIANCE: Separate claim status from maintenance status
+
+      // SOFT COMPLIANCE: Separate claim status from maintenance status
       let claimStatus: 'none' | 'active' = 'none'
       let maintenanceStatus: 'critical' | 'overdue' | 'due_soon' | 'current' | 'needs_verification' = 'current'
-      
+
       // CLAIM STATUS (separate from maintenance)
       if (!car.isActive || hasActiveClaim) {
         claimStatus = 'active'
       }
-      
+
       // MAINTENANCE STATUS (independent of claim)
-      if (analysis.inspectionStatus === 'EXPIRED') {
-        maintenanceStatus = 'needs_verification' // ✅ Grace mode
+      if (analysis.inspection.severity === 'critical' && analysis.inspection.isOverdue) {
+        maintenanceStatus = 'needs_verification' // Grace mode
       }
-      else if (analysis.oilChangeStatus === 'CRITICAL' || alerts.some(a => a.severity === 'error')) {
+      else if ((analysis.oilChange.severity === 'severe' || analysis.oilChange.severity === 'critical') || alerts.some(a => a.severity === 'error')) {
         maintenanceStatus = 'critical'
       }
-      else if (analysis.oilChangeStatus === 'OVERDUE' ||
-               analysis.inspectionStatus === 'OVERDUE' ||
+      else if (analysis.oilChange.isOverdue ||
+               (analysis.inspection.isOverdue && analysis.inspection.severity !== 'critical') ||
                alerts.some(a => a.severity === 'warning')) {
         maintenanceStatus = 'overdue'
       }
-      else if (analysis.inspectionStatus === 'DUE_SOON' ||
-               analysis.oilChangeStatus === 'DUE_SOON' ||
+      else if (analysis.inspection.severity === 'minor' ||
+               analysis.oilChange.severity === 'minor' ||
                alerts.some(a => a.severity === 'info')) {
         maintenanceStatus = 'due_soon'
       }
@@ -125,11 +125,11 @@ export async function GET(request: NextRequest) {
       }
 
       // Get last service dates
-      const lastOilChange = car.serviceRecords.find(
-        r => r.serviceType === 'OIL_CHANGE'
+      const lastOilChange = car.VehicleServiceRecord.find(
+        (r: any) => r.serviceType === 'OIL_CHANGE'
       )
-      const lastInspection = car.serviceRecords.find(
-        r => r.serviceType === 'STATE_INSPECTION'
+      const lastInspection = car.VehicleServiceRecord.find(
+        (r: any) => r.serviceType === 'STATE_INSPECTION'
       )
 
       return {
@@ -145,10 +145,10 @@ export async function GET(request: NextRequest) {
         lastOilChange: lastOilChange?.serviceDate || null,
         lastInspection: lastInspection?.serviceDate || null,
         alerts: alerts.map(a => a.message),
-        totalServiceRecords: car.serviceRecords.length,
-        inspectionExpiring: analysis.inspectionStatus === 'DUE_SOON' || analysis.inspectionStatus === 'EXPIRED',
-        oilChangeOverdue: analysis.oilChangeStatus === 'OVERDUE' || analysis.oilChangeStatus === 'CRITICAL',
-        inspectionExpired: analysis.inspectionStatus === 'EXPIRED'
+        totalServiceRecords: car.VehicleServiceRecord.length,
+        inspectionExpiring: analysis.inspection.severity === 'minor' || (analysis.inspection.severity === 'critical' && analysis.inspection.isOverdue),
+        oilChangeOverdue: analysis.oilChange.isOverdue,
+        inspectionExpired: analysis.inspection.severity === 'critical' && analysis.inspection.isOverdue
       }
     })
 

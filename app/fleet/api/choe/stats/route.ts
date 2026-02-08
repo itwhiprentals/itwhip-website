@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
       liveMetrics: {
         activeSessions,
         messagesLastHour,
-        currentCostToday: todayCost?.estimatedCostUsd?.toNumber() || 0,
+        currentCostToday: Number(todayCost?.estimatedCostUsd) || 0,
       },
       dailyStats: dailyStatsRaw,
       toolUsage: toolUsageStats,
@@ -157,7 +157,7 @@ async function getStatsForPeriod(from: Date, to: Date) {
     avgMessagesPerConv: Math.round((conversationStats._avg.messageCount || 0) * 10) / 10,
     avgResponseTimeMs: 0, // TODO: Calculate from messages
     bookingsGenerated: bookingStats._count.id || 0,
-    revenueGenerated: bookingStats._sum.bookingValue?.toNumber() || 0,
+    revenueGenerated: Number(bookingStats._sum.bookingValue) || 0,
   }
 }
 
@@ -189,10 +189,10 @@ async function getDailyStatsForRange(range: string) {
     conversations: stat.totalConversations,
     completed: stat.completedCount,
     abandoned: stat.abandonedCount,
-    cost: stat.estimatedCostUsd.toNumber(),
+    cost: Number(stat.estimatedCostUsd),
     tokens: stat.totalTokens,
     bookings: stat.bookingsFromChoe,
-    revenue: stat.revenueFromChoe.toNumber(),
+    revenue: Number(stat.revenueFromChoe),
   }))
 }
 

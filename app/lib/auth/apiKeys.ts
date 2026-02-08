@@ -1,60 +1,32 @@
-/**
- * API Key Management for ItWhip Platform
- * Handles API key generation, validation, rotation, and usage tracking
- */
-
 import { randomBytes, createHash, createHmac } from 'crypto'
-import { PrismaClient } from '@/app/lib/dal/types'
-import type {
-  User,
-  UserRole,
-  Permission,
-  CertificationTier,
-  APIKey,
-  RateLimitStatus
-} from '@/app/types/auth'
-import { getRolePermissions, getRoleTier } from './rbac'
+import { prisma } from '@/app/lib/database/prisma'
+import { getRolePermissions, UserRole, CertificationTier } from './rbac'
 
-// Initialize Prisma
-// Using shared prisma instance
-
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
-
-/**
- * API Key Configuration
- */
 const API_KEY_CONFIG = {
-  // Prefixes for different tiers
   PREFIXES: {
     [CertificationTier.TU_3_C]: 'itw_starter_',
     [CertificationTier.TU_2_B]: 'itw_business_',
     [CertificationTier.TU_1_A]: 'itw_enterprise_',
     [CertificationTier.NONE]: 'itw_preview_'
   },
-  
-  // Key lengths
-  KEY_LENGTH: 32, // bytes (64 hex chars)
-  SECRET_LENGTH: 24, // bytes (48 hex chars)
-  
-  // Rate limits per tier (requests per hour)
+
+  KEY_LENGTH: 32,
+  SECRET_LENGTH: 24,
+
   RATE_LIMITS: {
     [CertificationTier.NONE]: 100,
     [CertificationTier.TU_3_C]: 1000,
     [CertificationTier.TU_2_B]: 5000,
     [CertificationTier.TU_1_A]: 10000
   },
-  
-  // Expiry times
+
   EXPIRY: {
-    [CertificationTier.NONE]: 7, // 7 days for preview
-    [CertificationTier.TU_3_C]: 90, // 90 days
-    [CertificationTier.TU_2_B]: 180, // 180 days
-    [CertificationTier.TU_1_A]: 365 // 1 year
+    [CertificationTier.NONE]: 7,
+    [CertificationTier.TU_3_C]: 90,
+    [CertificationTier.TU_2_B]: 180,
+    [CertificationTier.TU_1_A]: 365
   },
-  
-  // Maximum keys per tier
+
   MAX_KEYS: {
     [CertificationTier.NONE]: 1,
     [CertificationTier.TU_3_C]: 3,
@@ -63,62 +35,58 @@ const API_KEY_CONFIG = {
   }
 }
 
-/**
- * API Key validation regex
- */
 const API_KEY_REGEX = /^itw_(starter|business|enterprise|preview)_[a-f0-9]{64}$/
 
-// ============================================================================
-// API KEY GENERATION
-// ============================================================================
+function getRoleTier(role: UserRole): CertificationTier {
+  switch (role) {
+    case UserRole.ENTERPRISE:
+      return CertificationTier.TU_1_A
+    case UserRole.BUSINESS:
+      return CertificationTier.TU_2_B
+    case UserRole.STARTER:
+      return CertificationTier.TU_3_C
+    default:
+      return CertificationTier.NONE
+  }
+}
 
-/**
- * Generate a new API key for a user/hotel
- */
 export async function generateApiKey(
-  user: User,
+  user: { id?: string; role: UserRole; hotelId?: string | null },
   name: string,
-  permissions?: Permission[]
+  permissions?: string[]
 ): Promise<{
-  key: APIKey
+  key: any
   plainKey: string
   secret: string
 }> {
-  // Check if user can have API keys
   if (user.role === UserRole.ANONYMOUS) {
     throw new Error('Anonymous users cannot have API keys')
   }
-  
-  // Get tier and check limits
+
   const tier = getRoleTier(user.role)
   await checkKeyLimit(user.id!, tier)
-  
-  // Generate key components
+
   const keyId = randomBytes(API_KEY_CONFIG.KEY_LENGTH).toString('hex')
   const secret = randomBytes(API_KEY_CONFIG.SECRET_LENGTH).toString('hex')
   const prefix = API_KEY_CONFIG.PREFIXES[tier]
   const plainKey = `${prefix}${keyId}`
-  
-  // Hash key for storage
+
   const hashedKey = hashApiKey(plainKey)
-  const hashedSecret = hashApiKey(secret)
-  
-  // Determine permissions (use provided or default to role permissions)
+
   const keyPermissions = permissions || getRolePermissions(user.role)
-  
-  // Calculate expiry
+
   const expiryDays = API_KEY_CONFIG.EXPIRY[tier]
   const expiresAt = new Date()
   expiresAt.setDate(expiresAt.getDate() + expiryDays)
-  
-  // Create API key in database
+
   const apiKey = await prisma.apiKey.create({
     data: {
+      id: crypto.randomUUID(),
       key: hashedKey,
       name,
       userId: user.id!,
-      hotelId: user.hotelId,
-      permissions: keyPermissions,
+      hotelId: user.hotelId ?? null,
+      permissions: JSON.stringify(keyPermissions),
       tier,
       rateLimit: API_KEY_CONFIG.RATE_LIMITS[tier],
       rateWindow: 'hour',
@@ -126,23 +94,19 @@ export async function generateApiKey(
       expiresAt
     }
   })
-  
-  // Log key creation
+
   await logApiKeyEvent('created', apiKey.id, user.id!)
-  
+
   return {
     key: {
       ...apiKey,
-      key: plainKey // Return plain key only on creation
-    } as APIKey,
+      key: plainKey
+    },
     plainKey,
     secret
   }
 }
 
-/**
- * Generate a preview API key for testing
- */
 export async function generatePreviewApiKey(
   gdsCode: string,
   hotelName: string
@@ -152,80 +116,65 @@ export async function generatePreviewApiKey(
 }> {
   const keyId = randomBytes(API_KEY_CONFIG.KEY_LENGTH).toString('hex')
   const plainKey = `${API_KEY_CONFIG.PREFIXES[CertificationTier.NONE]}${keyId}`
-  
-  // Preview keys are temporary, stored in memory/cache
-  // In production, use Redis
+
   await storePreviewKey(plainKey, {
     gdsCode,
     hotelName,
     permissions: [
-      Permission.VIEW_DASHBOARD,
-      Permission.VIEW_METRICS,
-      Permission.CALCULATE_ROI
+      'view_dashboard',
+      'view_metrics',
+      'calculate_roi'
     ],
-    expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
+    expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000)
   })
-  
+
   return {
     key: plainKey,
-    expiresIn: 7 * 24 * 60 * 60 // 7 days in seconds
+    expiresIn: 7 * 24 * 60 * 60
   }
 }
 
-// ============================================================================
-// API KEY VALIDATION
-// ============================================================================
-
-/**
- * Validate an API key
- */
 export async function validateApiKey(
   apiKey: string
 ): Promise<{
   valid: boolean
-  key?: APIKey
-  user?: User
+  key?: any
+  user?: any
   error?: string
 }> {
   try {
-    // Validate format
     if (!API_KEY_REGEX.test(apiKey)) {
       return {
         valid: false,
         error: 'Invalid API key format'
       }
     }
-    
-    // Check if preview key
+
     if (apiKey.startsWith(API_KEY_CONFIG.PREFIXES[CertificationTier.NONE])) {
       return validatePreviewKey(apiKey)
     }
-    
-    // Hash key for lookup
+
     const hashedKey = hashApiKey(apiKey)
-    
-    // Find key in database
+
     const dbKey = await prisma.apiKey.findUnique({
       where: { key: hashedKey },
       include: { user: true }
     })
-    
+
     if (!dbKey) {
       return {
         valid: false,
         error: 'API key not found'
       }
     }
-    
-    // Check if active
+
     if (!dbKey.active) {
       return {
         valid: false,
         error: 'API key is inactive'
       }
     }
-    
-    // Check expiry
+
     if (dbKey.expiresAt && dbKey.expiresAt < new Date()) {
       await deactivateApiKey(dbKey.id)
       return {
@@ -233,13 +182,12 @@ export async function validateApiKey(
         error: 'API key has expired'
       }
     }
-    
-    // Update usage
+
     await updateKeyUsage(dbKey.id)
-    
+
     return {
       valid: true,
-      key: dbKey as APIKey,
+      key: dbKey,
       user: dbKey.user
     }
   } catch (error: any) {
@@ -250,9 +198,6 @@ export async function validateApiKey(
   }
 }
 
-/**
- * Validate a preview API key
- */
 async function validatePreviewKey(
   apiKey: string
 ): Promise<{
@@ -260,16 +205,15 @@ async function validatePreviewKey(
   key?: any
   error?: string
 }> {
-  // In production, check Redis
   const previewData = await getPreviewKey(apiKey)
-  
+
   if (!previewData) {
     return {
       valid: false,
       error: 'Preview key not found or expired'
     }
   }
-  
+
   if (previewData.expiresAt < Date.now()) {
     await removePreviewKey(apiKey)
     return {
@@ -277,7 +221,7 @@ async function validatePreviewKey(
       error: 'Preview key has expired'
     }
   }
-  
+
   return {
     valid: true,
     key: {
@@ -289,9 +233,6 @@ async function validatePreviewKey(
   }
 }
 
-/**
- * Validate API key with HMAC signature
- */
 export function validateApiKeySignature(
   apiKey: string,
   signature: string,
@@ -301,78 +242,69 @@ export function validateApiKeySignature(
   const expectedSignature = createHmac('sha256', secret)
     .update(payload)
     .digest('hex')
-  
+
   return signature === expectedSignature
 }
 
-// ============================================================================
-// API KEY MANAGEMENT
-// ============================================================================
-
-/**
- * List all API keys for a user
- */
 export async function listUserApiKeys(
   userId: string
-): Promise<APIKey[]> {
+): Promise<any[]> {
   const keys = await prisma.apiKey.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' }
   })
-  
-  // Don't return actual keys, only metadata
+
   return keys.map(key => ({
     ...key,
-    key: `${key.key.substring(0, 10)}...` // Show only prefix
-  })) as APIKey[]
+    key: `${key.key.substring(0, 10)}...`
+  }))
 }
 
-/**
- * Rotate an API key
- */
 export async function rotateApiKey(
   keyId: string,
   userId: string
 ): Promise<{
-  oldKey: APIKey
-  newKey: APIKey
+  oldKey: any
+  newKey: any
   plainKey: string
   secret: string
 }> {
-  // Find existing key
   const oldKey = await prisma.apiKey.findFirst({
     where: { id: keyId, userId },
     include: { user: true }
   })
-  
+
   if (!oldKey) {
     throw new Error('API key not found')
   }
-  
-  // Deactivate old key
+
   await deactivateApiKey(keyId)
-  
-  // Generate new key with same permissions
+
+  const parsedPermissions: string[] = (() => {
+    try {
+      const parsed = JSON.parse(oldKey.permissions)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  })()
+
   const result = await generateApiKey(
-    oldKey.user,
+    oldKey.user as any,
     `${oldKey.name} (Rotated)`,
-    oldKey.permissions
+    parsedPermissions
   )
-  
-  // Log rotation
+
   await logApiKeyEvent('rotated', keyId, userId)
-  
+
   return {
-    oldKey: oldKey as APIKey,
+    oldKey,
     newKey: result.key,
     plainKey: result.plainKey,
     secret: result.secret
   }
 }
 
-/**
- * Revoke an API key
- */
 export async function revokeApiKey(
   keyId: string,
   userId: string,
@@ -381,53 +313,48 @@ export async function revokeApiKey(
   const key = await prisma.apiKey.findFirst({
     where: { id: keyId, userId }
   })
-  
+
   if (!key) {
     throw new Error('API key not found')
   }
-  
+
   await deactivateApiKey(keyId)
   await logApiKeyEvent('revoked', keyId, userId, reason)
 }
 
-/**
- * Update API key permissions
- */
 export async function updateApiKeyPermissions(
   keyId: string,
   userId: string,
-  permissions: Permission[]
-): Promise<APIKey> {
+  permissions: string[]
+): Promise<any> {
   const key = await prisma.apiKey.findFirst({
     where: { id: keyId, userId }
   })
-  
+
   if (!key) {
     throw new Error('API key not found')
   }
-  
+
   const updated = await prisma.apiKey.update({
     where: { id: keyId },
-    data: { permissions }
+    data: { permissions: JSON.stringify(permissions) }
   })
-  
+
   await logApiKeyEvent('permissions_updated', keyId, userId)
-  
-  return updated as APIKey
+
+  return updated
 }
 
-// ============================================================================
-// RATE LIMITING
-// ============================================================================
-
-/**
- * Check API key rate limit
- */
 export async function checkRateLimit(
   apiKey: string
-): Promise<RateLimitStatus> {
+): Promise<{
+  limit: number
+  remaining: number
+  reset: Date
+  tier: CertificationTier | 'anonymous'
+}> {
   const validation = await validateApiKey(apiKey)
-  
+
   if (!validation.valid || !validation.key) {
     return {
       limit: 0,
@@ -436,38 +363,38 @@ export async function checkRateLimit(
       tier: CertificationTier.NONE
     }
   }
-  
+
   const key = validation.key
   const now = new Date()
   const hourAgo = new Date(now.getTime() - 60 * 60 * 1000)
-  
-  // In production, use Redis for rate limiting
-  // For now, check database
+
   const rateLimit = await prisma.rateLimit.findUnique({
     where: { identifier: key.id }
   })
-  
+
   if (!rateLimit || rateLimit.windowStart < hourAgo) {
-    // Reset window
     await prisma.rateLimit.upsert({
       where: { identifier: key.id },
       create: {
+        id: crypto.randomUUID(),
         identifier: key.id,
         tier: key.tier || CertificationTier.NONE,
         requests: key.rateLimit,
-        window: 3600, // 1 hour in seconds
+        window: 3600,
         currentRequests: 1,
         windowStart: now,
         exceeded: false,
-        banned: false
+        banned: false,
+        updatedAt: new Date()
       },
       update: {
         currentRequests: 1,
         windowStart: now,
-        exceeded: false
+        exceeded: false,
+        updatedAt: new Date()
       }
     })
-    
+
     return {
       limit: key.rateLimit,
       remaining: key.rateLimit - 1,
@@ -475,16 +402,16 @@ export async function checkRateLimit(
       tier: key.tier || CertificationTier.NONE
     }
   }
-  
-  // Increment counter
+
   const updated = await prisma.rateLimit.update({
     where: { identifier: key.id },
     data: {
       currentRequests: { increment: 1 },
-      exceeded: rateLimit.currentRequests + 1 > key.rateLimit
+      exceeded: rateLimit.currentRequests + 1 > key.rateLimit,
+      updatedAt: new Date()
     }
   })
-  
+
   return {
     limit: key.rateLimit,
     remaining: Math.max(0, key.rateLimit - updated.currentRequests),
@@ -493,10 +420,12 @@ export async function checkRateLimit(
   }
 }
 
-/**
- * Get rate limit headers
- */
-export function getRateLimitHeaders(status: RateLimitStatus): Record<string, string> {
+export function getRateLimitHeaders(status: {
+  limit: number
+  remaining: number
+  reset: Date
+  tier: string
+}): Record<string, string> {
   return {
     'X-RateLimit-Limit': status.limit.toString(),
     'X-RateLimit-Remaining': status.remaining.toString(),
@@ -508,13 +437,6 @@ export function getRateLimitHeaders(status: RateLimitStatus): Record<string, str
   }
 }
 
-// ============================================================================
-// USAGE TRACKING
-// ============================================================================
-
-/**
- * Track API key usage
- */
 async function updateKeyUsage(keyId: string): Promise<void> {
   await prisma.apiKey.update({
     where: { id: keyId },
@@ -525,9 +447,6 @@ async function updateKeyUsage(keyId: string): Promise<void> {
   })
 }
 
-/**
- * Get API key usage statistics
- */
 export async function getApiKeyStats(
   keyId: string,
   userId: string
@@ -541,69 +460,55 @@ export async function getApiKeyStats(
   const key = await prisma.apiKey.findFirst({
     where: { id: keyId, userId }
   })
-  
+
   if (!key) {
     throw new Error('API key not found')
   }
-  
-  // Get usage from audit logs
+
   const now = new Date()
   const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
   const hourAgo = new Date(now.getTime() - 60 * 60 * 1000)
-  
+
   const dailyLogs = await prisma.auditLog.count({
     where: {
       userId,
       timestamp: { gte: dayAgo },
-      details: { contains: keyId }
+      resourceId: keyId
     }
   })
-  
+
   const hourlyLogs = await prisma.auditLog.count({
     where: {
       userId,
       timestamp: { gte: hourAgo },
-      details: { contains: keyId }
+      resourceId: keyId
     }
   })
-  
+
   return {
     totalRequests: key.usageCount,
     dailyRequests: dailyLogs,
     hourlyRequests: hourlyLogs,
     lastUsed: key.lastUsed,
-    endpoints: {} // Would need endpoint tracking
+    endpoints: {}
   }
 }
 
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-/**
- * Hash an API key for storage
- */
 function hashApiKey(key: string): string {
   return createHash('sha256').update(key).digest('hex')
 }
 
-/**
- * Check if user has reached key limit
- */
 async function checkKeyLimit(userId: string, tier: CertificationTier): Promise<void> {
   const count = await prisma.apiKey.count({
     where: { userId, active: true }
   })
-  
+
   const limit = API_KEY_CONFIG.MAX_KEYS[tier]
   if (count >= limit) {
     throw new Error(`API key limit reached (${limit} keys for ${tier} tier)`)
   }
 }
 
-/**
- * Deactivate an API key
- */
 async function deactivateApiKey(keyId: string): Promise<void> {
   await prisma.apiKey.update({
     where: { id: keyId },
@@ -611,9 +516,6 @@ async function deactivateApiKey(keyId: string): Promise<void> {
   })
 }
 
-/**
- * Log API key event
- */
 async function logApiKeyEvent(
   event: string,
   keyId: string,
@@ -622,27 +524,23 @@ async function logApiKeyEvent(
 ): Promise<void> {
   await prisma.auditLog.create({
     data: {
+      id: crypto.randomUUID(),
       category: 'SECURITY',
       eventType: `api_key_${event}`,
-      severity: 'LOW',
+      severity: 'INFO',
       userId,
-      ipAddress: '0.0.0.0', // Should be from request
+      ipAddress: '0.0.0.0',
       userAgent: 'system',
       action: event,
       resource: 'api_key',
       resourceId: keyId,
-      details: details || JSON.stringify({ keyId, event }),
+      details: details ? { message: details } : { keyId, event },
       hash: randomBytes(32).toString('hex'),
-      previousHash: null // Would chain in production
+      previousHash: null
     }
   })
 }
 
-// ============================================================================
-// PREVIEW KEY STORAGE (In-Memory/Cache)
-// ============================================================================
-
-// In production, use Redis
 const previewKeyStore = new Map<string, any>()
 
 async function storePreviewKey(key: string, data: any): Promise<void> {
@@ -657,61 +555,58 @@ async function removePreviewKey(key: string): Promise<void> {
   previewKeyStore.delete(key)
 }
 
-// ============================================================================
-// API KEY AUTHENTICATION MIDDLEWARE
-// ============================================================================
-
-/**
- * Extract API key from request
- */
 export function extractApiKey(
   authHeader?: string,
   apiKeyHeader?: string,
   queryParam?: string
 ): string | null {
-  // Check Authorization header
   if (authHeader) {
     if (authHeader.startsWith('Bearer itw_')) {
       return authHeader.substring(7)
     }
   }
-  
-  // Check X-API-Key header
+
   if (apiKeyHeader && apiKeyHeader.startsWith('itw_')) {
     return apiKeyHeader
   }
-  
-  // Check query parameter (less secure)
+
   if (queryParam && queryParam.startsWith('itw_')) {
     return queryParam
   }
-  
+
   return null
 }
 
-/**
- * Validate request with API key
- */
 export async function validateApiKeyRequest(
   apiKey: string,
-  requiredPermissions?: Permission[]
+  requiredPermissions?: string[]
 ): Promise<{
   valid: boolean
-  user?: User
+  user?: any
   error?: string
 }> {
   const validation = await validateApiKey(apiKey)
-  
+
   if (!validation.valid) {
     return validation
   }
-  
-  // Check permissions if required
+
   if (requiredPermissions && validation.key) {
+    const keyPermissions: string[] = (() => {
+      try {
+        const parsed = JSON.parse(validation.key.permissions)
+        return Array.isArray(parsed) ? parsed : []
+      } catch {
+        return typeof validation.key.permissions === 'string'
+          ? [validation.key.permissions]
+          : []
+      }
+    })()
+
     const hasPermissions = requiredPermissions.every(
-      perm => validation.key!.permissions.includes(perm)
+      perm => keyPermissions.includes(perm)
     )
-    
+
     if (!hasPermissions) {
       return {
         valid: false,
@@ -719,8 +614,7 @@ export async function validateApiKeyRequest(
       }
     }
   }
-  
-  // Check rate limit
+
   const rateLimit = await checkRateLimit(apiKey)
   if (rateLimit.remaining === 0) {
     return {
@@ -728,43 +622,32 @@ export async function validateApiKeyRequest(
       error: 'Rate limit exceeded'
     }
   }
-  
+
   return {
     valid: true,
     user: validation.user
   }
 }
 
-// ============================================================================
-// EXPORTS
-// ============================================================================
-
 export default {
-  // Generation
   generateApiKey,
   generatePreviewApiKey,
-  
-  // Validation
+
   validateApiKey,
   validateApiKeySignature,
   validateApiKeyRequest,
-  
-  // Management
+
   listUserApiKeys,
   rotateApiKey,
   revokeApiKey,
   updateApiKeyPermissions,
-  
-  // Rate limiting
+
   checkRateLimit,
   getRateLimitHeaders,
-  
-  // Usage tracking
+
   getApiKeyStats,
-  
-  // Utilities
+
   extractApiKey,
-  
-  // Configuration
+
   API_KEY_CONFIG
 }

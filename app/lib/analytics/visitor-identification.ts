@@ -177,7 +177,7 @@ async function findByFingerprint(fingerprintHash: string): Promise<{
     })
 
     return {
-      visitorId: recentViews[0].visitorId,
+      visitorId: recentViews[0].visitorId || '',
       lastSeen: recentViews[0].timestamp,
       visits: visitCount
     }
@@ -273,7 +273,7 @@ async function findSimilarVisitor(signals: VisitorSignals): Promise<{
 
       if (!bestMatch || similarity > bestMatch.similarity) {
         bestMatch = {
-          visitorId: candidate.visitorId,
+          visitorId: candidate.visitorId || '',
           similarity,
           lastSeen: candidate.timestamp,
           visits

@@ -85,12 +85,12 @@ export async function POST(req: NextRequest) {
     if (carId) {
       const override = await prisma.vehicleInsuranceOverride.findFirst({
         where: { carId },
-        include: { provider: true }
+        include: { InsuranceProvider: true }
       })
       
       if (override) {
         hasOverride = true
-        overrideProvider = override.provider
+        overrideProvider = override.InsuranceProvider
       }
     }
 
@@ -189,7 +189,7 @@ export async function GET(req: NextRequest) {
     // Check for override
     const override = await prisma.vehicleInsuranceOverride.findFirst({
       where: { carId },
-      include: { provider: true }
+      include: { InsuranceProvider: true }
     })
 
     return NextResponse.json({
@@ -215,8 +215,8 @@ export async function GET(req: NextRequest) {
       warnings,
       hasOverride: !!override,
       overrideProvider: override ? {
-        id: override.provider.id,
-        name: override.provider.name,
+        id: override.InsuranceProvider.id,
+        name: override.InsuranceProvider.name,
         reason: override.reason,
         overriddenBy: override.overriddenBy,
         createdAt: override.createdAt

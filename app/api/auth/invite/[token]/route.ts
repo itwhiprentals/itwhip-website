@@ -122,6 +122,7 @@ export async function GET(
       host = await prisma.rentalHost.create({
         data: {
           id: hostId,
+          updatedAt: new Date(),
           email: prospect.email.toLowerCase(),
           name: prospect.name,
           phone: prospect.phone || '',

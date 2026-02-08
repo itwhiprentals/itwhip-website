@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
         profilePhoto,
         city,
         state,
-        
+
         // Set as managed host with full approval
         hostType: 'MANAGED',
         approvalStatus: 'APPROVED',
@@ -202,21 +202,21 @@ export async function POST(request: NextRequest) {
         isVerified: true,
         verifiedAt: new Date(),
         documentsVerified: true,
-        
+
         // Default permissions (all false for puppet hosts)
         canViewBookings: false,
         canEditCalendar: false,
         canSetPricing: false,
         canMessageGuests: false,
         canWithdrawFunds: false,
-        
+
         // Default commission for puppet hosts
         commissionRate: 0, // No commission for managed hosts
-        
+
         // Approval tracking
         approvedBy: 'fleet-admin',
         approvedAt: new Date()
-      }
+      } as any
     })
 
     // Create audit log
@@ -238,7 +238,7 @@ export async function POST(request: NextRequest) {
         },
         hash: '',
         verified: false
-      }
+      } as any
     })
 
     return NextResponse.json({

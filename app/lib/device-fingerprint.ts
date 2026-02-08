@@ -205,7 +205,7 @@ interface DeviceFingerprint {
       
       // Language
       language: navigator.language,
-      languages: navigator.languages || [],
+      languages: [...(navigator.languages || [])],
       
       // Hardware/Platform
       platform: navigator.platform,
@@ -275,7 +275,7 @@ interface DeviceFingerprint {
   
     return {
       fingerprint: simpleHash(fingerprintString),
-      rawData
+      rawData: rawData as any
     }
   }
   

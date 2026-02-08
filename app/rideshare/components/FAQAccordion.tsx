@@ -24,7 +24,7 @@ export default function FAQAccordion({ faqs, title = 'Frequently Asked Questions
 
   // Use context data when in edit mode for real-time updates
   const effectiveFaqs = contextEditMode && contextData?.faqs
-    ? contextData.faqs.map((faq, index) => ({ ...faq, id: faq.id || `faq-${index}` }))
+    ? contextData.faqs.map((faq: any, index: number) => ({ ...faq, id: faq.id || `faq-${index}` }))
     : faqs
 
   if (effectiveFaqs.length === 0) return null

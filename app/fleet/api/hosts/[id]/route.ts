@@ -83,7 +83,7 @@ export async function GET(
           }
         }
       }
-    })
+    }) as any
 
     if (!host) {
       return NextResponse.json(
@@ -95,7 +95,7 @@ export async function GET(
     // Transform for frontend
     const transformedHost = {
       ...host,
-      cars: host.cars.map(car => ({
+      cars: host.cars.map((car: any) => ({
         ...car,
         heroPhoto: car.photos[0]?.url || null,
         photosCount: car.photos.length,
@@ -348,7 +348,7 @@ export async function DELETE(
             createdAt: true
           }
         },
-        payouts: {
+        RentalPayout: {
           select: {
             id: true,
             amount: true,
@@ -356,7 +356,7 @@ export async function DELETE(
             createdAt: true
           }
         },
-        hostPayouts: {
+        HostPayout: {
           select: {
             id: true,
             amount: true,
@@ -365,7 +365,7 @@ export async function DELETE(
           }
         }
       }
-    })
+    }) as any
 
     if (!fullHostRecord) {
       return NextResponse.json(
@@ -447,6 +447,7 @@ export async function DELETE(
       if (activeBookings > 0 || futureBookings > 0) {
         await prisma.adminNotification.create({
           data: {
+            id: crypto.randomUUID(),
             type: 'HOST_SUSPENDED_WITH_BOOKINGS',
             title: `Host Suspended with Active Bookings`,
             message: `${fullHostRecord.name} was suspended with ${activeBookings} active and ${futureBookings} future bookings`,
@@ -455,6 +456,7 @@ export async function DELETE(
             relatedId: id,
             relatedType: 'HOST',
             actionRequired: true,
+            updatedAt: new Date(),
             metadata: {
               hostName: fullHostRecord.name,
               activeBookings,
@@ -543,7 +545,7 @@ export async function DELETE(
           deletedRecords: {
             cars: fullHostRecord.cars.length,
             reviews: fullHostRecord.reviews.length,
-            payouts: fullHostRecord.payouts.length + fullHostRecord.hostPayouts.length
+            payouts: fullHostRecord.RentalPayout.length + fullHostRecord.HostPayout.length
           }
         },
         {
@@ -565,7 +567,7 @@ export async function DELETE(
           recordsDeleted: {
             cars: fullHostRecord.cars.length,
             reviews: fullHostRecord.reviews.length,
-            payouts: fullHostRecord.payouts.length + fullHostRecord.hostPayouts.length
+            payouts: fullHostRecord.RentalPayout.length + fullHostRecord.HostPayout.length
           }
         }
       })

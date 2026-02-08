@@ -61,14 +61,15 @@ export async function POST(request: NextRequest) {
 
     // Get host's protection plan commission rate
     const protectionPlan = (host as any).protectionPlan || 'BASIC'
-    const commissionRate = HOST_PROTECTION_PLANS[protectionPlan]?.commission || PLATFORM_COMMISSION
+    const planConfig = (HOST_PROTECTION_PLANS as any)[protectionPlan]
+    const commissionRate = planConfig?.platformFee || PLATFORM_COMMISSION.BASIC
 
     // Calculate available balance (completed trips older than 3 days)
     const threeDaysAgo = new Date()
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - PAYOUT_CONFIG.PAYOUT_DELAY_DAYS)
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - PAYOUT_CONFIG.STANDARD_DELAY_DAYS)
 
     // Get unpaid completed bookings
-    const eligibleBookings = await prisma.rentalBooking.findMany({
+    const eligibleBookings = await (prisma.rentalBooking as any).findMany({
       where: {
         hostId: host.id,
         status: 'COMPLETED',
@@ -76,11 +77,7 @@ export async function POST(request: NextRequest) {
         paymentStatus: 'PAID',
         tripEndedAt: {
           lte: threeDaysAgo
-        },
-        OR: [
-          { payoutId: null },
-          { payoutProcessed: false }
-        ]
+        }
       },
       include: {
         tripCharges: {
@@ -99,7 +96,7 @@ export async function POST(request: NextRequest) {
       const bookingTotal = Number(booking.totalAmount || 0)
       
       // Add approved additional charges
-      const additionalCharges = booking.tripCharges.reduce((sum, charge) => {
+      const additionalCharges = booking.tripCharges.reduce((sum: any, charge: any) => {
         return sum + Number(charge.finalAmount || 0)
       }, 0)
       
@@ -122,7 +119,7 @@ export async function POST(request: NextRequest) {
     const finalPayoutAmount = netEarnings - processingFee - instantFee
 
     // Check minimum payout threshold
-    const minPayout = (host as any).customMinimumPayout || PAYOUT_CONFIG.MINIMUM_PAYOUT
+    const minPayout = (host as any).customMinimumPayout || PAYOUT_CONFIG.MINIMUM_PAYOUT_AMOUNT
     if (finalPayoutAmount < minPayout) {
       return NextResponse.json(
         { 
@@ -148,22 +145,23 @@ export async function POST(request: NextRequest) {
     // Create payout record
     const payout = await prisma.rentalPayout.create({
       data: {
+        id: crypto.randomUUID(),
         hostId: host.id,
         amount: amount,
         currency: 'USD',
         status: isInstant ? 'processing' : 'pending',
-        
+
         // Period (for this payout batch)
         startDate: eligibleBookings[eligibleBookings.length - 1]?.createdAt || new Date(),
         endDate: new Date(),
-        
+
         // Breakdown
         bookingCount: bookingIds.length,
         grossEarnings: grossEarnings,
         platformFee: platformFee,
         processingFee: processingFee + instantFee,
         netPayout: amount,
-        
+
         // Payment details
         paymentMethod: payoutMethod,
         paymentDetails: JSON.stringify({
@@ -171,13 +169,14 @@ export async function POST(request: NextRequest) {
           instant: isInstant,
           instantFee: instantFee,
           processingFee: processingFee
-        })
+        }),
+        updatedAt: new Date()
       }
     })
 
     // Mark bookings as included in payout
     if (bookingIds.length > 0) {
-      await prisma.rentalBooking.updateMany({
+      await (prisma.rentalBooking as any).updateMany({
         where: {
           id: { in: bookingIds }
         },
@@ -190,6 +189,7 @@ export async function POST(request: NextRequest) {
 
     // Create host payout records for individual bookings
     const hostPayoutRecords = bookingIds.map(bookingId => ({
+      id: crypto.randomUUID(),
       hostId: host.id,
       bookingId: bookingId,
       amount: amount / bookingIds.length, // Distribute evenly for record keeping
@@ -205,6 +205,7 @@ export async function POST(request: NextRequest) {
     // Log the payout request
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         action: 'PAYOUT_REQUESTED',
         entityType: 'payout',
         entityId: payout.id,
@@ -221,10 +222,12 @@ export async function POST(request: NextRequest) {
     // Send notification to admin for processing
     await prisma.adminNotification.create({
       data: {
+        id: crypto.randomUUID(),
         type: 'PAYOUT_REQUEST',
         title: 'New Payout Request',
         message: `${host.name} requested a payout of $${amount.toFixed(2)}`,
         priority: isInstant ? 'high' : 'normal',
+        updatedAt: new Date(),
         metadata: JSON.stringify({
           hostId: host.id,
           payoutId: payout.id,

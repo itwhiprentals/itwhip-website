@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SignJWT } from 'jose'
 import { nanoid } from 'nanoid'
+import crypto from 'crypto'
 import db from '@/app/lib/db'
 import { prisma } from '@/app/lib/database/prisma'
 import { logSuccessfulLogin } from '@/app/lib/security/loginMonitor'
@@ -207,13 +208,13 @@ export async function GET(request: NextRequest) {
 
         const { accessToken, refreshToken } = await generateTokens({
           id: existingUser.id,
-          email: existingUser.email,
-          name: existingUser.name || name || null,
+          email: existingUser.email ?? email,
+          name: existingUser.name ?? name ?? null,
           role: existingUser.role,
         })
 
         await db.updateLastLogin(existingUser.id)
-        await logSuccessfulLogin({ userId: existingUser.id, email: existingUser.email, source: 'mobile_google', ip: clientIp, userAgent })
+        await logSuccessfulLogin({ userId: existingUser.id, email: existingUser.email ?? email, source: 'guest', ip: clientIp, userAgent })
 
         return deepLinkRedirect({
           success: true,
@@ -237,14 +238,16 @@ export async function GET(request: NextRequest) {
 
       try {
         await prisma.account.create({
-          data: { userId: newUser.id, type: 'oauth', provider: 'google', providerAccountId: googleId, access_token: idToken },
+          data: { id: crypto.randomUUID(), userId: newUser.id, type: 'oauth', provider: 'google', providerAccountId: googleId, access_token: idToken },
         })
       } catch { /* Non-fatal */ }
 
       try {
         await prisma.reviewerProfile.create({
           data: {
+            id: crypto.randomUUID(),
             userId: newUser.id, email: newUser.email, name: name || '',
+            city: '', state: 'AZ', updatedAt: new Date(),
             memberSince: new Date(), loyaltyPoints: 0, memberTier: 'BRONZE',
             emailVerified: true, phoneVerified: false, documentsVerified: false,
             insuranceVerified: false, fullyVerified: false, canInstantBook: false,
@@ -258,6 +261,7 @@ export async function GET(request: NextRequest) {
       try {
         await prisma.adminNotification.create({
           data: {
+            id: crypto.randomUUID(), updatedAt: new Date(),
             type: 'NEW_GUEST_SIGNUP', title: 'New Guest (Google OAuth, Mobile)',
             message: `${name || email} signed up via Google on mobile`,
             priority: 'LOW', status: 'UNREAD', actionRequired: false,
@@ -268,10 +272,10 @@ export async function GET(request: NextRequest) {
       } catch { /* Non-fatal */ }
 
       const { accessToken, refreshToken } = await generateTokens({
-        id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role,
+        id: newUser.id, email: newUser.email ?? email, name: newUser.name ?? null, role: newUser.role,
       })
 
-      await logSuccessfulLogin({ userId: newUser.id, email: newUser.email, source: 'mobile_google', ip: clientIp, userAgent })
+      await logSuccessfulLogin({ userId: newUser.id, email: newUser.email ?? email, source: 'guest', ip: clientIp, userAgent })
       console.log(`✅ Mobile Google signup (guest): ${newUser.email}`)
 
       return deepLinkRedirect({
@@ -296,11 +300,11 @@ export async function GET(request: NextRequest) {
         })
 
         await db.updateLastLogin(existingUser.id)
-        await logSuccessfulLogin({ userId: existingUser.id, email: existingUser.email, source: 'mobile_google_host', ip: clientIp, userAgent })
+        await logSuccessfulLogin({ userId: existingUser.id, email: existingUser.email ?? email, source: 'host', ip: clientIp, userAgent })
 
         if (host) {
           const { accessToken, refreshToken } = await generateHostTokens(
-            { id: existingUser.id, email: existingUser.email, name: existingUser.name || name || null, role: existingUser.role },
+            { id: existingUser.id, email: existingUser.email ?? email, name: existingUser.name ?? name ?? null, role: existingUser.role },
             { id: host.id, approvalStatus: host.approvalStatus, hostType: host.hostType }
           )
           return deepLinkRedirect({
@@ -308,7 +312,7 @@ export async function GET(request: NextRequest) {
             user: { id: existingUser.id, email: existingUser.email, name: existingUser.name || name, role: existingUser.role },
             host: {
               id: host.id, approvalStatus: host.approvalStatus, hostType: host.hostType,
-              companyName: host.companyName,
+              businessName: host.businessName,
               role: host.hostType === 'FLEET_PARTNER' ? 'fleet_partner' : 'individual',
             },
             accessToken, refreshToken, expiresIn: 15 * 60, isNewUser: false,
@@ -318,15 +322,17 @@ export async function GET(request: NextRequest) {
         // Existing user, no host record — create pending host
         const newHost = await prisma.rentalHost.create({
           data: {
+            id: crypto.randomUUID(),
             userId: existingUser.id, email: email.toLowerCase(),
-            firstName: name?.split(' ')[0] || '', lastName: name?.split(' ').slice(1).join(' ') || '',
-            phone: existingUser.phone || '', approvalStatus: 'PENDING', hostType: 'REAL',
+            name: name || '', phone: existingUser.phone || '',
+            city: '', state: 'AZ', updatedAt: new Date(),
+            approvalStatus: 'PENDING', hostType: 'REAL',
             managesOwnCars: true, isHostManager: false, managesOthersCars: false,
           },
         })
 
         const { accessToken: newHostAccessToken, refreshToken: newHostRefreshToken } = await generateHostTokens(
-          { id: existingUser.id, email: existingUser.email, name: existingUser.name || name || null, role: existingUser.role },
+          { id: existingUser.id, email: existingUser.email ?? email, name: existingUser.name ?? name ?? null, role: existingUser.role },
           { id: newHost.id, approvalStatus: 'PENDING', hostType: 'REAL' }
         )
 
@@ -347,15 +353,17 @@ export async function GET(request: NextRequest) {
 
       try {
         await prisma.account.create({
-          data: { userId: newUser.id, type: 'oauth', provider: 'google', providerAccountId: googleId, access_token: idToken },
+          data: { id: crypto.randomUUID(), userId: newUser.id, type: 'oauth', provider: 'google', providerAccountId: googleId, access_token: idToken },
         })
       } catch { /* Non-fatal */ }
 
       const newHost = await prisma.rentalHost.create({
         data: {
+          id: crypto.randomUUID(),
           userId: newUser.id, email: email.toLowerCase(),
-          firstName: name?.split(' ')[0] || '', lastName: name?.split(' ').slice(1).join(' ') || '',
-          phone: '', approvalStatus: 'PENDING', hostType: 'REAL',
+          name: name || '', phone: '',
+          city: '', state: 'AZ', updatedAt: new Date(),
+          approvalStatus: 'PENDING', hostType: 'REAL',
           managesOwnCars: true, isHostManager: false, managesOthersCars: false,
         },
       })
@@ -363,6 +371,7 @@ export async function GET(request: NextRequest) {
       try {
         await prisma.adminNotification.create({
           data: {
+            id: crypto.randomUUID(), updatedAt: new Date(),
             type: 'NEW_HOST_APPLICATION', title: 'New Host (Google OAuth, Mobile)',
             message: `${name || email} signed up as host via Google on mobile`,
             priority: 'MEDIUM', status: 'UNREAD', actionRequired: true,
@@ -373,11 +382,11 @@ export async function GET(request: NextRequest) {
       } catch { /* Non-fatal */ }
 
       const { accessToken, refreshToken } = await generateHostTokens(
-        { id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role },
+        { id: newUser.id, email: newUser.email ?? email, name: newUser.name ?? null, role: newUser.role },
         { id: newHost.id, approvalStatus: 'PENDING', hostType: 'REAL' }
       )
 
-      await logSuccessfulLogin({ userId: newUser.id, email: newUser.email, source: 'mobile_google_host', ip: clientIp, userAgent })
+      await logSuccessfulLogin({ userId: newUser.id, email: newUser.email ?? email, source: 'host', ip: clientIp, userAgent })
       console.log(`✅ Mobile Google signup (host): ${newUser.email}`)
 
       return deepLinkRedirect({

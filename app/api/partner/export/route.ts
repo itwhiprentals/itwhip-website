@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
           v.model,
           v.vin || '',
           v.licensePlate || '',
-          v.status,
+          (v as any).status,
           v.dailyRate || 0,
           v.weeklyRate || 0,
           v.monthlyRate || 0,
@@ -273,7 +273,7 @@ export async function GET(request: NextRequest) {
           r.booking?.renter?.name || '',
           r.booking?.car ? `${r.booking.car.year} ${r.booking.car.make} ${r.booking.car.model}` : '',
           r.rating,
-          r.review || '',
+          (r as any).review || '',
           r.hostResponse || '',
           r.hostRespondedAt ? new Date(r.hostRespondedAt).toLocaleDateString() : ''
         ])

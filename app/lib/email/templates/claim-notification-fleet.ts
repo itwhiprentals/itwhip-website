@@ -2,11 +2,18 @@
 
 import { ClaimNotificationFleetData, EmailTemplate } from '../types'
 
+// Extended data type that includes optional FNOL summary
+type ClaimNotificationFleetDataWithFnol = ClaimNotificationFleetData & {
+  fnolSummary?: {
+    hasComprehensiveReport?: boolean
+  }
+}
+
 /**
  * Email template for fleet admin when new claim is filed
  * Sent immediately when host files a claim
  */
-export function getClaimNotificationFleetTemplate(data: ClaimNotificationFleetData): EmailTemplate {
+export function getClaimNotificationFleetTemplate(data: ClaimNotificationFleetDataWithFnol): EmailTemplate {
   const subject = `New Claim to Review - ${data.priority.toUpperCase()} Priority - ${data.bookingCode}`
   
   const priorityColors = {

@@ -31,12 +31,9 @@ interface HostCar {
   year: number
   photoUrl?: string
   dailyRate: number
-  rating: number
+  rating: number | { count?: number }
   totalTrips: number
   trips?: number
-  rating?: {
-    count?: number
-  }
 }
 
 interface HostReview {

@@ -1,7 +1,7 @@
 // app/lib/commission/calculate-tier.ts
 // Commission Tier Calculator for Fleet Partners
 
-import { prisma } from '@/app/lib/database/prisma'
+import prisma from '@/app/lib/database/prisma'
 
 /**
  * Tier Thresholds (customizable per partner)
@@ -175,6 +175,7 @@ export async function updatePartnerCommissionRate(partnerId: string): Promise<{
     // Log the change to commission history
     await prisma.partner_commission_history.create({
       data: {
+        id: `comm_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         hostId: partnerId,
         oldRate: oldRate,
         newRate: newRate,
@@ -213,7 +214,7 @@ export async function recalculatePartnerFleetSize(partnerId: string): Promise<nu
     const vehicleCount = await prisma.rentalCar.count({
       where: {
         hostId: partnerId,
-        active: true
+        isActive: true
       }
     })
 

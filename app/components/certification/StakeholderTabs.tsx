@@ -265,9 +265,9 @@ export function StakeholderTabs() {
                 <p className="text-lg opacity-90">{activeStakeholder.mainBenefit}</p>
               </div>
               <div className="hidden md:block">
-                {React.cloneElement(activeStakeholder.icon as React.ReactElement, { 
-                  className: 'w-16 h-16 opacity-50' 
-                })}
+                {React.cloneElement(activeStakeholder.icon as React.ReactElement<any>, {
+                  className: 'w-16 h-16 opacity-50'
+                } as any)}
               </div>
             </div>
           </div>

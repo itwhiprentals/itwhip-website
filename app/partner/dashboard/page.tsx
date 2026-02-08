@@ -501,7 +501,7 @@ export default function PartnerDashboardPage() {
                 <IoArrowForwardOutline className="w-4 h-4" />
               </Link>
             </div>
-            <RecentBookings bookings={recentBookings.slice(0, 5)} />
+            <RecentBookings bookings={recentBookings.slice(0, 5) as any} />
           </div>
         )}
       </div>
@@ -1061,7 +1061,7 @@ export default function PartnerDashboardPage() {
             <IoArrowForwardOutline className="w-4 h-4" />
           </Link>
         </div>
-        <RecentBookings bookings={recentBookings} />
+        <RecentBookings bookings={recentBookings as any} />
       </div>
 
       {/* Commission Tier Progress - B2B Feature */}

@@ -463,7 +463,7 @@ function GuestProfileContent() {
                 selfieUrl: profile.selfieUrl,
                 documentsVerified: profile.documentsVerified,
                 documentVerifiedAt: profile.documentVerifiedAt
-              }}
+              } as any}
               onDocumentUpdate={fetchProfile}
             />
           )}

@@ -57,7 +57,7 @@ export async function POST(
     }
 
     // Get the booking with all necessary relations
-    const booking = await prisma.rentalBooking.findUnique({
+    const booking = await (prisma.rentalBooking.findUnique as any)({
       where: { id },
       include: {
         car: {
@@ -83,7 +83,7 @@ export async function POST(
           }
         }
       }
-    })
+    }) as any
 
     if (!booking) {
       return NextResponse.json(
@@ -321,7 +321,7 @@ async function processCharges(
     }
 
     // Add admin message
-    await prisma.rentalMessage.create({
+    await (prisma.rentalMessage.create as any)({
       data: {
         bookingId: booking.id,
         senderId: 'system',
@@ -391,7 +391,7 @@ async function waiveAllCharges(
         where: { id: booking.tripCharges[0].id },
         data: {
           chargeStatus: 'FULLY_WAIVED',
-          waivedAmount: charges.total,
+          adjustedAmount: charges.total,
           waiveReason: reason,
           waivedBy: adminId,
           waivedAt: new Date()
@@ -400,7 +400,7 @@ async function waiveAllCharges(
     }
 
     // Add message
-    await prisma.rentalMessage.create({
+    await (prisma.rentalMessage.create as any)({
       data: {
         bookingId: booking.id,
         senderId: 'system',
@@ -496,7 +496,7 @@ async function partialWaiveCharges(
         where: { id: booking.tripCharges[0].id },
         data: {
           chargeStatus: chargeResult?.status === 'succeeded' ? 'PARTIAL_CHARGED' : 'PARTIALLY_WAIVED',
-          waivedAmount: waiveResult.waivedAmount,
+          adjustedAmount: waiveResult.waivedAmount,
           chargedAmount: waiveResult.remainingAmount,
           waiveReason: reason,
           waivedBy: adminId,
@@ -508,7 +508,7 @@ async function partialWaiveCharges(
     }
 
     // Add message
-    await prisma.rentalMessage.create({
+    await (prisma.rentalMessage.create as any)({
       data: {
         bookingId: booking.id,
         senderId: 'system',
@@ -612,7 +612,7 @@ async function adjustAndProcessCharges(
     }
 
     // Add message
-    await prisma.rentalMessage.create({
+    await (prisma.rentalMessage.create as any)({
       data: {
         bookingId: booking.id,
         senderId: 'system',
@@ -675,7 +675,7 @@ async function markDisputeUnderReview(
     })
 
     // Add message
-    await prisma.rentalMessage.create({
+    await (prisma.rentalMessage.create as any)({
       data: {
         bookingId: booking.id,
         senderId: 'system',
@@ -718,7 +718,7 @@ async function handlePreTripVerification(
     pickupWindowEnd.setHours(pickupWindowEnd.getHours() + 12)
 
     let paymentResult = null
-    let paymentStatus = 'PENDING'
+    let paymentStatus = 'PENDING' as any
 
     // Process initial payment if exists
     if (booking.paymentIntentId && booking.stripePaymentMethodId) {
@@ -827,7 +827,7 @@ export async function GET(
   try {
     const { id } = await params
     
-    const booking = await prisma.rentalBooking.findUnique({
+    const booking = await (prisma.rentalBooking.findUnique as any)({
       where: { id },
       include: {
         car: {
@@ -838,9 +838,9 @@ export async function GET(
         },
         tripCharges: true,
         disputes: true,
-        guestAccessTokens: true
+        GuestAccessToken: true
       }
-    })
+    }) as any
 
     if (!booking) {
       return NextResponse.json(

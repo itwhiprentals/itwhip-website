@@ -273,7 +273,7 @@ export async function GET(request: NextRequest) {
       activeSuspension !== null ||
       activeWarnings.length > 0 ||
       activeRestrictions.length > 0 ||
-      guest.suspensionLevel !== 'NONE' ||
+      (guest.suspensionLevel as string | null) !== 'NONE' ||
       (guest.warningCount && guest.warningCount > 0)
 
     // 🎯 PART 5: Build comprehensive response

@@ -70,7 +70,7 @@ export async function GET(
           }
         }
       }
-    })
+    }) as any
 
     if (!tripIssue) {
       return NextResponse.json({
@@ -152,7 +152,7 @@ export async function PATCH(
           }
         }
       }
-    })
+    }) as any
 
     if (!tripIssue) {
       return NextResponse.json({ error: 'Trip issue not found' }, { status: 404 })
@@ -297,7 +297,7 @@ export async function POST(
             name: true
           }
         },
-        tripIssue: true,
+        TripIssue: true,
         car: {
           select: {
             make: true,
@@ -306,7 +306,7 @@ export async function POST(
           }
         }
       }
-    })
+    }) as any
 
     if (!booking) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
@@ -318,10 +318,10 @@ export async function POST(
 
     // Handle escalation to claim
     if (action === 'escalate') {
-      if (!booking.tripIssue) {
+      if (!booking.TripIssue) {
         return NextResponse.json({ error: 'No trip issue to escalate' }, { status: 404 })
       }
-      if (booking.tripIssue.status === 'ESCALATED_TO_CLAIM') {
+      if (booking.TripIssue.status === 'ESCALATED_TO_CLAIM') {
         return NextResponse.json({ error: 'Already escalated' }, { status: 400 })
       }
       if (!isHost && !isAdmin) {
@@ -352,10 +352,10 @@ export async function POST(
         return NextResponse.json({ error: 'Only host or admin can create trip issue' }, { status: 403 })
       }
 
-      if (booking.tripIssue) {
+      if (booking.TripIssue) {
         return NextResponse.json({
           error: 'Trip issue already exists for this booking',
-          tripIssueId: booking.tripIssue.id
+          tripIssueId: booking.TripIssue.id
         }, { status: 400 })
       }
 
@@ -372,6 +372,8 @@ export async function POST(
 
       const tripIssue = await prisma.tripIssue.create({
         data: {
+          id: crypto.randomUUID(),
+          updatedAt: new Date(),
           bookingId,
 
           // Host report
@@ -394,13 +396,13 @@ export async function POST(
           status: 'PENDING_GUEST_ACK',
           escalationDeadline,
           hostNotifiedAt: new Date()
-        }
+        } as any
       })
 
       console.log(`[TripIssue] Host created issue for booking ${booking.bookingCode}: ${issueType} - ${severity}`)
 
       // Create admin notification
-      await prisma.adminNotification.create({
+      await (prisma.adminNotification.create as any)({
         data: {
           type: 'TRIP_ISSUE_CREATED',
           title: `Host Reported Issue - ${booking.bookingCode}`,

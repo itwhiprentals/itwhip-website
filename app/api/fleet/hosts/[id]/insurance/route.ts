@@ -16,7 +16,7 @@ export async function GET(
         insuranceProvider: {
           include: {
             _count: {
-              select: { policies: true }
+              select: { InsurancePolicy: true }
             }
           }
         },
@@ -26,7 +26,7 @@ export async function GET(
             make: true,
             model: true,
             year: true,
-            dailyRate: true,  // ✅ Fixed: Use dailyRate instead of estimatedValue
+            dailyRate: true,  // Use dailyRate instead of estimatedValue
             isActive: true
           }
         }
@@ -41,9 +41,9 @@ export async function GET(
     }
 
     // Calculate which vehicles are covered and add estimatedValue
-    const vehiclesWithCoverage = host.cars.map(car => {
+    const vehiclesWithCoverage = host.cars.map((car: any) => {
       const hasCoverage = host.insuranceProviderId ? true : false
-      const estimatedValue = car.dailyRate * 365 * 0.15  // Calculate from dailyRate
+      const estimatedValue = (car.dailyRate || 0) * 365 * 0.15  // Calculate from dailyRate
       
       return {
         ...car,
@@ -148,6 +148,7 @@ export async function POST(
     }
 
     // Update host with insurance assignment
+    const existingHistory = (host.insuranceHistory as any) || {}
     const updatedHost = await prisma.rentalHost.update({
       where: { id: hostId },
       data: {
@@ -158,9 +159,9 @@ export async function POST(
         insuranceAssignedBy: assignedBy,
         // Add to insurance history
         insuranceHistory: {
-          ...(host.insuranceHistory as object || {}),
+          ...existingHistory,
           assignments: [
-            ...((host.insuranceHistory as any)?.assignments || []),
+            ...(existingHistory.assignments || []),
             {
               providerId,
               providerName: provider.name,
@@ -251,7 +252,7 @@ export async function DELETE(
         booking: {
           hostId: hostId
         },
-        status: 'ACTIVE'
+        status: 'ACTIVE' as any
       }
     })
 
@@ -269,6 +270,7 @@ export async function DELETE(
     const removedProvider = host.insuranceProvider
 
     // Remove insurance assignment
+    const existingHistory = (host.insuranceHistory as any) || {}
     const updatedHost = await prisma.rentalHost.update({
       where: { id: hostId },
       data: {
@@ -279,9 +281,9 @@ export async function DELETE(
         insuranceAssignedBy: null,
         // Add to insurance history
         insuranceHistory: {
-          ...(host.insuranceHistory as object || {}),
+          ...existingHistory,
           assignments: [
-            ...((host.insuranceHistory as any)?.assignments || []),
+            ...(existingHistory.assignments || []),
             {
               providerId: removedProvider?.id,
               providerName: removedProvider?.name,
@@ -348,15 +350,16 @@ export async function PATCH(
       )
     }
 
+    const existingHistory = (host.insuranceHistory as any) || {}
     const updatedHost = await prisma.rentalHost.update({
       where: { id: hostId },
       data: {
         insurancePolicyNumber: policyNumber || host.insurancePolicyNumber,
         // Add to insurance history
         insuranceHistory: {
-          ...(host.insuranceHistory as object || {}),
+          ...existingHistory,
           updates: [
-            ...((host.insuranceHistory as any)?.updates || []),
+            ...(existingHistory.updates || []),
             {
               field: 'policyNumber',
               oldValue: host.insurancePolicyNumber,

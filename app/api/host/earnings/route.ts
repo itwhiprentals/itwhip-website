@@ -178,18 +178,14 @@ export async function GET(request: NextRequest) {
     
     let currentBalance = 0
     for (const booking of unpaidAvailableBookings) {
-      const total = typeof booking.totalAmount === 'number' 
-        ? booking.totalAmount 
-        : booking.totalAmount.toNumber()
+      const total = Number(booking.totalAmount)
       currentBalance += calculateBookingEarnings(total, currentTier)
     }
-    
+
     // Pending Balance = Recent bookings within 3-day hold
     let pendingBalance = 0
     for (const booking of pendingBookings) {
-      const total = typeof booking.totalAmount === 'number' 
-        ? booking.totalAmount 
-        : booking.totalAmount.toNumber()
+      const total = Number(booking.totalAmount)
       pendingBalance += calculateBookingEarnings(total, currentTier)
     }
     
@@ -204,9 +200,7 @@ export async function GET(request: NextRequest) {
       
       // Check if booking falls within the date range
       if (tripEndDate >= startDate && tripEndDate <= now) {
-        const total = typeof booking.totalAmount === 'number' 
-          ? booking.totalAmount 
-          : booking.totalAmount.toNumber()
+        const total = Number(booking.totalAmount)
         totalEarnings += calculateBookingEarnings(total, currentTier)
         bookingsInRange++
       }
@@ -281,9 +275,7 @@ export async function GET(request: NextRequest) {
       
       let monthTotal = 0
       for (const booking of monthBookings) {
-        const total = typeof booking.totalAmount === 'number' 
-          ? booking.totalAmount 
-          : booking.totalAmount.toNumber()
+        const total = Number(booking.totalAmount)
         monthTotal += calculateBookingEarnings(total, currentTier)
       }
       
@@ -308,9 +300,7 @@ export async function GET(request: NextRequest) {
     
     const recentBookings = allCompletedBookings.slice(0, 5)
     for (const booking of recentBookings) {
-      const total = typeof booking.totalAmount === 'number' 
-        ? booking.totalAmount 
-        : booking.totalAmount.toNumber()
+      const total = Number(booking.totalAmount)
       const earnings = calculateBookingEarnings(total, currentTier)
       
       const isPending = booking.tripEndedAt && new Date(booking.tripEndedAt) > eligibilityDate
@@ -328,9 +318,7 @@ export async function GET(request: NextRequest) {
     
     const recentPayouts = allPayouts.slice(0, 5)
     for (const payout of recentPayouts) {
-      const amount = typeof payout.netPayout === 'number' 
-        ? payout.netPayout 
-        : payout.netPayout.toNumber()
+      const amount = Number(payout.netPayout)
       
       recentTransactions.push({
         id: payout.id,
@@ -359,9 +347,7 @@ export async function GET(request: NextRequest) {
     
     let ytdEarnings = 0
     for (const booking of ytdBookings) {
-      const total = typeof booking.totalAmount === 'number' 
-        ? booking.totalAmount 
-        : booking.totalAmount.toNumber()
+      const total = Number(booking.totalAmount)
       ytdEarnings += calculateBookingEarnings(total, currentTier)
     }
     
@@ -414,9 +400,7 @@ export async function GET(request: NextRequest) {
       
       // Last Payout
       lastPayout: lastPayout ? {
-        amount: typeof lastPayout.netPayout === 'number' 
-          ? lastPayout.netPayout 
-          : lastPayout.netPayout.toNumber(),
+        amount: Number(lastPayout.netPayout),
         date: lastPayout.processedAt?.toISOString() || lastPayout.createdAt.toISOString(),
         method: host.defaultPayoutMethod || 'Bank Transfer',
         stripeTransferId: lastPayout.stripeTransferId

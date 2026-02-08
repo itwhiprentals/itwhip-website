@@ -10,6 +10,7 @@ import { prisma } from '@/app/lib/database/prisma'
 import { Prisma } from '@prisma/client'
 import { sign } from 'jsonwebtoken'
 import { nanoid } from 'nanoid'
+import crypto from 'crypto'
 import { sendOAuthWelcomeEmail } from '@/app/lib/email/oauth-welcome-sender'
 import { sendHostOAuthWelcomeEmail } from '@/app/lib/email/host-oauth-welcome-sender'
 import { getVehicleSpecData } from '@/app/lib/utils/vehicleSpec'
@@ -225,6 +226,7 @@ export async function POST(request: NextRequest) {
           // Create account link
           await prisma.account.create({
             data: {
+              id: crypto.randomUUID(),
               userId: existingUser.id,
               type: 'oauth',
               provider: pendingOAuth.provider,
@@ -253,13 +255,15 @@ export async function POST(request: NextRequest) {
         // 1. Create User
         const user = await tx.user.create({
           data: {
+            id: crypto.randomUUID(),
             email: pendingOAuth.email,
             name: pendingOAuth.name,
             image: pendingOAuth.image,
             phone: digitsOnly || null,
             phoneVerified: false,
             emailVerified: true, // OAuth email is verified
-            role: 'CLAIMED'
+            role: 'CLAIMED',
+            updatedAt: new Date()
           }
         })
         console.log(`[Complete Profile] Created User: ${user.id}`)
@@ -267,6 +271,7 @@ export async function POST(request: NextRequest) {
         // 2. Create Account (OAuth link)
         await tx.account.create({
           data: {
+            id: crypto.randomUUID(),
             userId: user.id,
             type: 'oauth',
             provider: pendingOAuth.provider,
@@ -290,10 +295,11 @@ export async function POST(request: NextRequest) {
 
           const host = await tx.rentalHost.create({
             data: {
+              id: crypto.randomUUID(),
               userId: user.id,
               email: pendingOAuth.email,
               name: pendingOAuth.name || '',
-              phone: digitsOnly || null,
+              phone: digitsOnly || '',
               profilePhoto: pendingOAuth.image,
 
               // Location from car data (empty for manage-only fleet managers)
@@ -321,15 +327,19 @@ export async function POST(request: NextRequest) {
               // Host role fields from signup selection
               isHostManager: hostRole === 'manage' || hostRole === 'both',
               managesOwnCars: hostRole === 'own' || hostRole === 'both',
-              managesOthersCars: hostRole === 'manage' || hostRole === 'both'
+              managesOthersCars: hostRole === 'manage' || hostRole === 'both',
+
+              updatedAt: new Date()
             }
           })
           console.log(`[Complete Profile] Created RentalHost profile (pending approval) - isManageOnly: ${isManageOnly}`)
 
           // 4. Create Car - ONLY for hosts who own cars (not manage-only fleet managers)
           if (!isManageOnly && carData) {
+            const txSpecs = getVehicleSpecData(carData.make, carData.model, carData.year)
             const newCar = await tx.rentalCar.create({
               data: {
+                id: crypto.randomUUID(),
                 hostId: host.id,
 
                 // Vehicle info from form
@@ -349,18 +359,12 @@ export async function POST(request: NextRequest) {
                 isActive: false,
 
                 // VIN-decoded specs (with sensible defaults)
-                // Lookup specs from our vehicle database
-                ...(() => {
-                  const specs = getVehicleSpecData(carData.make, carData.model, carData.year)
-                  return {
-                    carType: mapBodyClassToCarType(carData.bodyClass) || specs?.carType || 'midsize',
-                    seats: specs?.seats || 5,
-                    doors: carData.doors ? parseInt(carData.doors) : (specs?.doors || 4),
-                    transmission: normalizeTransmission(carData.transmission) || 'automatic',
-                    fuelType: carData.fuelType || specs?.fuelType || 'gas',
-                  }
-                })(),
-                driveType: carData.driveType || null,
+                carType: mapBodyClassToCarType(carData.bodyClass) || txSpecs?.carType || 'midsize',
+                seats: txSpecs?.seats || 5,
+                doors: carData.doors ? parseInt(carData.doors) : (txSpecs?.doors || 4),
+                transmission: normalizeTransmission(carData.transmission) || 'automatic',
+                fuelType: carData.fuelType || txSpecs?.fuelType || 'gas',
+                driveType: carData.driveType || undefined,
 
                 // Pricing - must be set before activation
                 dailyRate: 0,
@@ -402,8 +406,10 @@ export async function POST(request: NextRequest) {
                 registrationState: carData.state,
                 registrationExpiryDate: null,
                 titleStatus: 'Clean',
-                garageAddress: null
-              }
+                garageAddress: null,
+
+                updatedAt: new Date()
+              } as any
             })
             console.log(`[Complete Profile] Created RentalCar for host: ${newCar.id}`)
 
@@ -411,13 +417,14 @@ export async function POST(request: NextRequest) {
             if (vehiclePhotoUrls && Array.isArray(vehiclePhotoUrls) && vehiclePhotoUrls.length > 0) {
               await tx.rentalCarPhoto.createMany({
                 data: vehiclePhotoUrls.map((url: string, index: number) => ({
+                  id: crypto.randomUUID(),
                   carId: newCar.id,
                   url: url,
                   isHero: index === 0, // First photo is the hero/main photo
                   order: index,
                   uploadedBy: host.id,
-                  uploadedByType: 'HOST',
-                  photoContext: 'LISTING'
+                  uploadedByType: 'HOST' as const,
+                  photoContext: 'LISTING' as const
                 }))
               })
               console.log(`[Complete Profile] Created ${vehiclePhotoUrls.length} photos for car`)
@@ -440,6 +447,7 @@ export async function POST(request: NextRequest) {
           // ⚠️ CRITICAL: No auto-creation - must explicitly specify roleHint='guest'
           const reviewerProfile = await tx.reviewerProfile.create({
             data: {
+              id: crypto.randomUUID(),
               userId: user.id,
               email: pendingOAuth.email,
               name: pendingOAuth.name || '',
@@ -449,7 +457,8 @@ export async function POST(request: NextRequest) {
               city: '',
               state: 'AZ',
               zipCode: '',
-              emailVerified: true
+              emailVerified: true,
+              updatedAt: new Date()
             }
           })
           console.log(`[Complete Profile] Created ReviewerProfile for GUEST`)
@@ -457,6 +466,7 @@ export async function POST(request: NextRequest) {
           // Create AdminNotification for Fleet/Admin visibility (OAuth signup)
           await tx.adminNotification.create({
             data: {
+              id: crypto.randomUUID(),
               type: 'NEW_GUEST_SIGNUP',
               title: 'New Guest Registered (OAuth)',
               message: `${pendingOAuth.name || pendingOAuth.email} signed up via ${pendingOAuth.provider}`,
@@ -472,7 +482,8 @@ export async function POST(request: NextRequest) {
                 guestPhone: digitsOnly || null,
                 signupSource: pendingOAuth.provider,
                 oauthVerified: true
-              }
+              },
+              updatedAt: new Date()
             }
           })
           console.log(`[Complete Profile] AdminNotification created for OAuth guest: ${reviewerProfile.id}`)
@@ -590,10 +601,11 @@ export async function POST(request: NextRequest) {
 
       const host = await prisma.rentalHost.create({
         data: {
+          id: crypto.randomUUID(),
           userId: userId,
           email: email || '',
           name: updatedUser.name || '',
-          phone: digitsOnly || null,
+          phone: digitsOnly || '',
           profilePhoto: updatedUser.image,
 
           // Location from car data (empty for manage-only fleet managers)
@@ -621,13 +633,16 @@ export async function POST(request: NextRequest) {
           // Host role fields from signup selection
           isHostManager: hostRole === 'manage' || hostRole === 'both',
           managesOwnCars: hostRole === 'own' || hostRole === 'both',
-          managesOthersCars: hostRole === 'manage' || hostRole === 'both'
+          managesOthersCars: hostRole === 'manage' || hostRole === 'both',
+
+          updatedAt: new Date()
         }
       })
       console.log(`[Complete Profile] Created RentalHost for guest upgrade: ${host.id} - isManageOnly: ${isManageOnly}`)
 
       // Create RentalCar - ONLY for hosts who own cars (not manage-only fleet managers)
       if (!isManageOnly && carData) {
+        const specs = getVehicleSpecData(carData.make, carData.model, carData.year)
         const newCar = await prisma.rentalCar.create({
           data: {
             hostId: host.id,
@@ -649,18 +664,12 @@ export async function POST(request: NextRequest) {
             isActive: false,
 
             // VIN-decoded specs (with sensible defaults)
-            // Lookup specs from our vehicle database
-            ...(() => {
-              const specs = getVehicleSpecData(carData.make, carData.model, carData.year)
-              return {
-                carType: mapBodyClassToCarType(carData.bodyClass) || specs?.carType || 'midsize',
-                seats: specs?.seats || 5,
-                doors: carData.doors ? parseInt(carData.doors) : (specs?.doors || 4),
-                transmission: normalizeTransmission(carData.transmission) || 'automatic',
-                fuelType: carData.fuelType || specs?.fuelType || 'gas',
-              }
-            })(),
-            driveType: carData.driveType || null,
+            carType: mapBodyClassToCarType(carData.bodyClass) || specs?.carType || 'midsize',
+            seats: specs?.seats || 5,
+            doors: carData.doors ? parseInt(carData.doors) : (specs?.doors || 4),
+            transmission: normalizeTransmission(carData.transmission) || 'automatic',
+            fuelType: carData.fuelType || specs?.fuelType || 'gas',
+            driveType: carData.driveType || undefined,
 
             // Pricing - must be set before activation
             dailyRate: 0,
@@ -703,7 +712,7 @@ export async function POST(request: NextRequest) {
             registrationExpiryDate: null,
             titleStatus: 'Clean',
             garageAddress: null
-          }
+          } as any
         })
         console.log(`[Complete Profile] Created RentalCar for guest upgrade: ${newCar.id}`)
 
@@ -711,6 +720,7 @@ export async function POST(request: NextRequest) {
         if (vehiclePhotoUrls && Array.isArray(vehiclePhotoUrls) && vehiclePhotoUrls.length > 0) {
           await prisma.rentalCarPhoto.createMany({
             data: vehiclePhotoUrls.map((url: string, index: number) => ({
+              id: crypto.randomUUID(),
               carId: newCar.id,
               url: url,
               isHero: index === 0,
@@ -718,7 +728,7 @@ export async function POST(request: NextRequest) {
               uploadedBy: host.id,
               uploadedByType: 'HOST',
               photoContext: 'LISTING'
-            }))
+            })) as any
           })
           console.log(`[Complete Profile] Created ${vehiclePhotoUrls.length} photos for car`)
         }
@@ -729,6 +739,7 @@ export async function POST(request: NextRequest) {
       // Create AdminNotification for Fleet visibility
       await prisma.adminNotification.create({
         data: {
+          id: crypto.randomUUID(),
           type: 'NEW_HOST_SIGNUP',
           title: 'Guest Upgraded to Host (OAuth)',
           message: `${updatedUser.name || email} upgraded from guest to host`,
@@ -744,8 +755,9 @@ export async function POST(request: NextRequest) {
             hostPhone: digitsOnly || null,
             signupSource: 'oauth-guest-upgrade',
             wasGuestFirst: true
-          }
-        }
+          },
+          updatedAt: new Date()
+        } as any
       })
       console.log(`[Complete Profile] AdminNotification created for guest-to-host upgrade`)
 
@@ -869,6 +881,7 @@ export async function POST(request: NextRequest) {
 
       const newProfile = await prisma.reviewerProfile.create({
         data: {
+          id: crypto.randomUUID(),
           userId: userId,
           email: email || '',
           name: updatedUser.name || '',
@@ -882,14 +895,16 @@ export async function POST(request: NextRequest) {
           fullyVerified: false,
           canInstantBook: false,
           totalTrips: 0,
-          averageRating: 0
-        }
+          averageRating: 0,
+          updatedAt: new Date()
+        } as any
       })
       console.log(`[Complete Profile] Created ReviewerProfile: ${newProfile.id}`)
 
       // Create AdminNotification for Fleet visibility
       await prisma.adminNotification.create({
         data: {
+          id: crypto.randomUUID(),
           type: 'NEW_GUEST_SIGNUP',
           title: 'Existing User Added Guest Profile',
           message: `${updatedUser.name || email} created a guest profile`,
@@ -905,15 +920,15 @@ export async function POST(request: NextRequest) {
             guestPhone: digitsOnly || null,
             signupSource: 'oauth-existing-user',
             wasExistingUser: true
-          }
-        }
+          },
+          updatedAt: new Date()
+        } as any
       })
       console.log(`[Complete Profile] AdminNotification created for guest profile`)
 
       // Send welcome email
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'
       try {
-        const { sendOAuthWelcomeEmail } = await import('@/app/lib/email/templates/oauth-welcome')
         await sendOAuthWelcomeEmail(email || '', {
           userName: updatedUser.name || 'Guest',
           userEmail: email || '',
@@ -934,7 +949,7 @@ export async function POST(request: NextRequest) {
       const updatedHost = await prisma.rentalHost.updateMany({
         where: { userId: userId },
         data: {
-          phone: digitsOnly || null
+          phone: digitsOnly || ''
         }
       })
       console.log(`[Complete Profile] RentalHost.updateMany result:`, {

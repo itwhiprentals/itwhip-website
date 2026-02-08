@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
       await logFailedLogin({
         email: email.toLowerCase(),
         source: 'guest',
-        reason: `USER_${userLockout.status}`,
+        reason: 'ACCOUNT_SUSPENDED',
         ip: clientIp,
         userAgent,
         metadata: { userId: user.id, status: userLockout.status }
@@ -241,9 +241,10 @@ export async function POST(request: NextRequest) {
       await logFailedLogin({
         email: email.toLowerCase(),
         source: 'guest',
-        reason: 'SUSPENDED_IDENTIFIER',
+        reason: 'ACCOUNT_SUSPENDED',
         ip: clientIp,
-        userAgent
+        userAgent,
+        metadata: { suspendedIdentifier: true }
       })
 
       return NextResponse.json(
@@ -253,6 +254,21 @@ export async function POST(request: NextRequest) {
     }
 
     // ✅ STEP 4: Verify password with hybrid approach
+    if (!user.password_hash) {
+      const userAgent = request.headers.get('user-agent') || 'unknown'
+      await logFailedLogin({
+        email: email.toLowerCase(),
+        source: 'guest',
+        reason: 'PASSWORD_NOT_SET',
+        ip: clientIp,
+        userAgent,
+        headers: request.headers
+      })
+      return NextResponse.json(
+        { error: 'Invalid email or password' },
+        { status: 401 }
+      )
+    }
     const { valid: passwordValid, needsRehash } = await verifyPassword(password, user.password_hash)
 
     if (!passwordValid) {
@@ -286,7 +302,7 @@ export async function POST(request: NextRequest) {
         console.log(`[Login] Account locked for ${user.email} (${newFailedAttempts} failed attempts)`)
 
         // Send security alert in background
-        sendSecurityAlertEmail(user.email, user.name, clientIp, newFailedAttempts, lockedUntil)
+        sendSecurityAlertEmail(user.email || email, user.name, clientIp, newFailedAttempts, lockedUntil)
           .catch(err => console.error('[Login] Security email failed:', err))
 
         return NextResponse.json(
@@ -336,13 +352,14 @@ export async function POST(request: NextRequest) {
 
     // ✅ STEP 5.5: GUARD CHECK - Detect HOST trying to access GUEST login
     // If user is a HOST (has RentalHost profile), they should use host login
+    const userEmail = user.email?.toLowerCase() || email.toLowerCase()
     const hostProfile = await prisma.rentalHost.findFirst({
-      where: { OR: [{ userId: user.id }, { email: user.email.toLowerCase() }] },
+      where: { OR: [{ userId: user.id }, { email: userEmail }] },
       select: { id: true, approvalStatus: true }
     })
 
     const guestProfile = await prisma.reviewerProfile.findFirst({
-      where: { OR: [{ userId: user.id }, { email: user.email.toLowerCase() }] },
+      where: { OR: [{ userId: user.id }, { email: userEmail }] },
       select: { id: true }
     })
 
@@ -429,7 +446,7 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || 'unknown'
     await logSuccessfulLogin({
       userId: user.id,
-      email: user.email,
+      email: user.email || email,
       source: 'guest',
       ip: clientIp,
       userAgent,

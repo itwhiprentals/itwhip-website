@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
         counterOfferNote: note || null,
         counterOfferAt: now,
         counterOfferStatus: 'PENDING',
-        status: 'COUNTER_OFFER',
+        status: 'COUNTER_OFFER' as any,
         lastActivityAt: now
       }
     })

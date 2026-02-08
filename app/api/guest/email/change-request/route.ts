@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
 
       const htmlContent = generateEmailChangeVerificationEmail(
         user.name || 'User',
-        user.email,
+        user.email!,
         normalizedEmail,
         verificationUrl
       )
@@ -196,7 +196,7 @@ For security concerns, contact us at info@itwhip.com
       `.trim()
 
       await sendEmail(
-        user.email, // Send to OLD email address
+        user.email!, // Send to OLD email address
         'Email Change Request - ItWhip',
         notifyHtml,
         notifyText

@@ -109,8 +109,7 @@ export async function POST(
         resumeUrl,
         coverLetter,
         source: source || 'website',
-        status: 'NEW',
-        applicationRef
+        status: 'NEW'
       }
     })
 
@@ -124,10 +123,10 @@ export async function POST(
 
     // Send confirmation email to applicant
     try {
-      await sendEmail({
-        to: email,
-        subject: `Application Received - ${job.title} at ItWhip`,
-        html: `
+      await sendEmail(
+        email,
+        `Application Received - ${job.title} at ItWhip`,
+        `
           <!DOCTYPE html>
           <html>
             <head>
@@ -149,31 +148,31 @@ export async function POST(
                 </div>
                 <div class="content">
                   <p>Hi ${firstName},</p>
-                  
+
                   <p>We've successfully received your application for the <strong>${job.title}</strong> position in our ${job.department} department.</p>
-                  
+
                   <p>Your application reference number is:</p>
                   <div class="ref-code">${applicationRef}</div>
-                  
+
                   <h3>What happens next?</h3>
                   <ul>
                     <li>Our hiring team will review your application within <strong>48-72 hours</strong></li>
                     <li>If your profile matches our requirements, we'll reach out to schedule an initial conversation</li>
                     <li>You can use your reference number to check your application status</li>
                   </ul>
-                  
+
                   <p>We receive many applications and carefully review each one. While we can't respond to every applicant personally, we truly appreciate your interest in joining our team.</p>
-                  
+
                   <h3>About the role:</h3>
                   <p><strong>Location:</strong> ${job.location}<br>
                   <strong>Type:</strong> ${job.type}<br>
                   <strong>Department:</strong> ${job.department}</p>
-                  
+
                   <div class="footer">
                     <p><strong>ItWhip Technologies</strong><br>
                     Building the future of luxury transportation<br>
                     Phoenix, Arizona</p>
-                    
+
                     <p style="margin-top: 15px; font-size: 12px; color: #999;">
                       This is an automated confirmation email. Please do not reply directly to this message.
                     </p>
@@ -182,8 +181,9 @@ export async function POST(
               </div>
             </body>
           </html>
-        `
-      })
+        `,
+        ''
+      )
     } catch (emailError) {
       console.error('Failed to send confirmation email:', emailError)
       // Don't fail the application if email fails
@@ -191,16 +191,16 @@ export async function POST(
 
     // Send notification email to HR
     try {
-      await sendEmail({
-        to: process.env.CAREERS_EMAIL || 'info@itwhip.com',
-        subject: `New Application: ${job.title} - ${firstName} ${lastName}`,
-        html: `
+      await sendEmail(
+        process.env.CAREERS_EMAIL || 'info@itwhip.com',
+        `New Application: ${job.title} - ${firstName} ${lastName}`,
+        `
           <!DOCTYPE html>
           <html>
             <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
               <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
                 <h2>New Job Application Received</h2>
-                
+
                 <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
                   <h3 style="margin-top: 0;">Position Details</h3>
                   <p><strong>Position:</strong> ${job.title}<br>
@@ -208,7 +208,7 @@ export async function POST(
                   <strong>Location:</strong> ${job.location}<br>
                   <strong>Application #:</strong> ${applicationRef}</p>
                 </div>
-                
+
                 <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
                   <h3 style="margin-top: 0;">Applicant Information</h3>
                   <p><strong>Name:</strong> ${firstName} ${lastName}<br>
@@ -219,30 +219,31 @@ export async function POST(
                   <strong>Resume:</strong> <a href="${resumeUrl}">View Resume</a><br>
                   <strong>Source:</strong> ${source || 'Website'}</p>
                 </div>
-                
+
                 ${coverLetter ? `
                 <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
                   <h3 style="margin-top: 0;">Cover Letter</h3>
                   <p style="white-space: pre-wrap;">${coverLetter}</p>
                 </div>
                 ` : ''}
-                
+
                 <div style="margin-top: 30px; padding: 20px; background: #3b82f6; color: white; border-radius: 8px; text-align: center;">
                   <p style="margin: 0 0 15px;">View and manage this application in:</p>
-                  <a href="${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'https://itwhip.com'}/admin/careers/applications/${application.id}" 
+                  <a href="${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'https://itwhip.com'}/admin/careers/applications/${application.id}"
                      style="display: inline-block; padding: 10px 20px; background: white; color: #3b82f6; text-decoration: none; border-radius: 5px; font-weight: bold;">
                     Admin Dashboard
                   </a>
                 </div>
-                
+
                 <p style="margin-top: 30px; font-size: 12px; color: #6b7280;">
                   Total applications for this position: ${job.applicationCount + 1}
                 </p>
               </div>
             </body>
           </html>
-        `
-      })
+        `,
+        ''
+      )
     } catch (emailError) {
       console.error('Failed to send HR notification:', emailError)
       // Don't fail the application if email fails

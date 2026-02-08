@@ -182,8 +182,8 @@ export function encrypt(
     let encrypted = cipher.update(value, 'utf8', 'hex')
     encrypted += cipher.final('hex')
     
-    const tag = cipher.getAuthTag()
-    
+    const tag = (cipher as any).getAuthTag()
+
     return {
       encrypted,
       iv: iv.toString('hex'),
@@ -215,8 +215,8 @@ export function decrypt(
     const tag = Buffer.from(encryptedData.tag, 'hex')
     const decipher = crypto.createDecipheriv(ENCRYPTION_CONFIG.algorithm, key, iv)
     
-    decipher.setAuthTag(tag)
-    
+    ;(decipher as any).setAuthTag(tag)
+
     let decrypted = decipher.update(encryptedData.encrypted, 'hex', 'utf8')
     decrypted += decipher.final('utf8')
     
@@ -271,8 +271,8 @@ export function encryptObject<T extends Record<string, any>>(
   model: string
 ): T {
   const fieldsToEncrypt = ENCRYPTED_FIELDS[model as keyof typeof ENCRYPTED_FIELDS] || []
-  const encrypted = { ...obj }
-  
+  const encrypted: Record<string, any> = { ...obj }
+
   for (const field of fieldsToEncrypt) {
     if (encrypted[field] && typeof encrypted[field] === 'string') {
       const encryptedData = encrypt(encrypted[field], model)
@@ -280,8 +280,8 @@ export function encryptObject<T extends Record<string, any>>(
       encrypted[field] = JSON.stringify(encryptedData)
     }
   }
-  
-  return encrypted
+
+  return encrypted as T
 }
 
 /**
@@ -292,8 +292,8 @@ export function decryptObject<T extends Record<string, any>>(
   model: string
 ): T {
   const fieldsToDecrypt = ENCRYPTED_FIELDS[model as keyof typeof ENCRYPTED_FIELDS] || []
-  const decrypted = { ...obj }
-  
+  const decrypted: Record<string, any> = { ...obj }
+
   for (const field of fieldsToDecrypt) {
     if (decrypted[field] && typeof decrypted[field] === 'string') {
       try {
@@ -306,16 +306,16 @@ export function decryptObject<T extends Record<string, any>>(
       }
     }
   }
-  
-  return decrypted
+
+  return decrypted as T
 }
 
 /**
  * Mask sensitive fields in an object (for logging)
  */
 export function maskSensitiveData<T extends Record<string, any>>(obj: T): T {
-  const masked = { ...obj }
-  
+  const masked: Record<string, any> = { ...obj }
+
   for (const field of MASKED_FIELDS) {
     if (masked[field]) {
       if (typeof masked[field] === 'string') {
@@ -331,15 +331,15 @@ export function maskSensitiveData<T extends Record<string, any>>(obj: T): T {
       }
     }
   }
-  
+
   // Recursively mask nested objects
   for (const key in masked) {
     if (typeof masked[key] === 'object' && masked[key] !== null && !Array.isArray(masked[key])) {
       masked[key] = maskSensitiveData(masked[key])
     }
   }
-  
-  return masked
+
+  return masked as T
 }
 
 /**
@@ -409,8 +409,8 @@ export async function encryptFile(
     cipher.final()
   ])
   
-  const tag = cipher.getAuthTag()
-  
+  const tag = (cipher as any).getAuthTag()
+
   return {
     encrypted,
     metadata: {
@@ -442,8 +442,8 @@ export async function decryptFile(
   const algorithm = metadata.algorithm || ENCRYPTION_CONFIG.algorithm
   
   const decipher = crypto.createDecipheriv(algorithm, key, iv)
-  decipher.setAuthTag(tag)
-  
+  ;(decipher as any).setAuthTag(tag)
+
   return Buffer.concat([
     decipher.update(encrypted),
     decipher.final()

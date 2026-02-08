@@ -65,10 +65,10 @@ export function BulkReviewModal({ carId, carName, reviewerProfiles, onClose, onC
       const response = await fetch(`/fleet/api/cars/${carId}/reviews`)
       if (response.ok) {
         const data = await response.json()
-        const usedIds = new Set(
-          data.data?.reviews
+        const usedIds = new Set<string>(
+          (data.data?.reviews
             ?.filter((r: any) => r.reviewerProfile?.id)
-            .map((r: any) => r.reviewerProfile.id)
+            .map((r: any) => r.reviewerProfile.id) || []) as string[]
         )
         setUsedProfileIds(usedIds)
       }

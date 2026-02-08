@@ -52,7 +52,7 @@ export async function GET(
           }
         }
       }
-    })
+    }) as any
 
     // If this is a test agreement token
     if (prospect) {
@@ -120,10 +120,10 @@ export async function GET(
           licensePlate: car.licensePlate,
           color: car.color,
           photo: car.photos?.[0]?.url || null
-        } : request?.vehicleInfo ? {
-          year: parseInt(request.vehicleInfo.split(' ')[0]) || new Date().getFullYear(),
-          make: request.vehicleInfo.split(' ')[1] || 'Unknown',
-          model: request.vehicleInfo.split(' ').slice(2).join(' ') || 'Model',
+        } : (request?.vehicleMake || request?.vehicleModel) ? {
+          year: new Date().getFullYear(),
+          make: request?.vehicleMake || 'Unknown',
+          model: request?.vehicleModel || 'Model',
           vin: null,
           licensePlate: null,
           color: null,
@@ -200,7 +200,7 @@ export async function GET(
           }
         }
       }
-    })
+    }) as any
 
     if (!booking) {
       return NextResponse.json(

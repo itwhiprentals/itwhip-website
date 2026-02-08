@@ -78,6 +78,7 @@ export async function POST(
     // Log commission rate
     await prisma.partner_commission_history.create({
       data: {
+        id: crypto.randomUUID(),
         hostId: application.hostId,
         oldRate: 0.25,
         newRate: rate,
@@ -127,13 +128,12 @@ export async function POST(
         supportEmail: 'info@itwhip.com'
       })
 
-      await sendEmail(
-        application.contactEmail,
-        emailTemplate.subject,
-        emailTemplate.html,
-        emailTemplate.text,
-        { requestId: `partner-approval-${id}` }
-      )
+      await sendEmail({
+        to: application.contactEmail,
+        subject: emailTemplate.subject,
+        html: emailTemplate.html,
+        text: emailTemplate.text,
+      })
 
       console.log(`[Partner Approval] Welcome email with password reset sent to ${application.contactEmail}`)
     } catch (emailError) {

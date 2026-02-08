@@ -74,7 +74,7 @@ export default function PortalLoginPage() {
   }, [])
 
   // UPDATED: Real Amadeus hotel mappings from Phoenix
-  const AMADEUS_HOTELS = {
+  const AMADEUS_HOTELS: Record<string, string> = {
     // Real Phoenix Hotels from Amadeus API
     'HYPHXHRP': 'Hyatt Regency Phoenix',
     'SIPHX703': 'Sheraton Phoenix Downtown',
@@ -165,21 +165,21 @@ export default function PortalLoginPage() {
       
       if (validation.valid) {
         // Store all hotel information
-        localStorage.setItem('propertyCode', validation.hotelId)
-        localStorage.setItem('propertyName', validation.hotelName)
+        localStorage.setItem('propertyCode', validation.hotelId || '')
+        localStorage.setItem('propertyName', validation.hotelName || '')
         localStorage.setItem('propertySource', validation.source || 'manual')
         
         if (validation.address) {
-          localStorage.setItem('propertyAddress', validation.address)
+          localStorage.setItem('propertyAddress', validation.address as string)
         }
-        
+
         if (validation.location) {
           localStorage.setItem('propertyLocation', JSON.stringify(validation.location))
         }
-        
+
         // Check if this is a premium hotel (demo purposes)
-        const isPremium = ['DEMO123', 'PREMIUM', 'VIP'].some(code => 
-          validation.hotelId.includes(code)
+        const isPremium = ['DEMO123', 'PREMIUM', 'VIP'].some(code =>
+          (validation.hotelId || '').includes(code)
         )
         
         if (isPremium) {
@@ -190,13 +190,13 @@ export default function PortalLoginPage() {
         
         // Redirect to verify page with real hotel data
         const params = new URLSearchParams({
-          code: validation.hotelId,
-          hotel: validation.hotelName,
+          code: validation.hotelId || '',
+          hotel: validation.hotelName || '',
           source: validation.source || 'manual'
         })
         
         if (validation.address) {
-          params.append('address', validation.address)
+          params.append('address', validation.address as string)
         }
         
         router.push(`/portal/verify?${params.toString()}`)

@@ -350,7 +350,7 @@ export default function AppealBottomSheet({
     if (moderationInfo?.accountStatus === 'SUSPENDED') {
       return 'Your account is currently suspended'
     }
-    if (moderationInfo?.activeWarningCount > 0) {
+    if ((moderationInfo?.activeWarningCount ?? 0) > 0) {
       return `${displayWarnings.length} active warning${displayWarnings.length > 1 ? 's' : ''}`
     }
     return null
@@ -436,7 +436,7 @@ export default function AppealBottomSheet({
                                   <Shield className="w-5 h-5 text-orange-700 dark:text-orange-400" />
                                 </div>
                                 <h3 className="text-base md:text-lg font-bold text-orange-900 dark:text-orange-100">
-                                  {specificModeration.data.level === 'HARD' ? 'Hard Suspension' : 'Soft Suspension'}
+                                  {(specificModeration.data as any).level === 'HARD' ? 'Hard Suspension' : 'Soft Suspension'}
                                 </h3>
                               </div>
                               <p className="text-sm text-orange-800 dark:text-orange-200 mb-3 leading-relaxed">
@@ -467,7 +467,7 @@ export default function AppealBottomSheet({
                                   <AlertCircle className="w-5 h-5 text-yellow-700 dark:text-yellow-400" />
                                 </div>
                                 <h4 className="font-bold text-gray-900 dark:text-white text-sm md:text-base">
-                                  {formatWarningCategory(specificModeration.data.category || 'Policy Violation')}
+                                  {formatWarningCategory((specificModeration.data as any).category || 'Policy Violation')}
                                 </h4>
                               </div>
                               <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 leading-relaxed">

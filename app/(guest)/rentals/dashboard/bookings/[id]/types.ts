@@ -14,6 +14,7 @@ export interface Booking {
       model: string
       year: number
       type: string
+      carType?: string
       transmission: string
       seats: number
       photos: Array<{ url: string; caption?: string }>
@@ -21,6 +22,9 @@ export interface Booking {
       address?: string
       city?: string
       state?: string
+      dailyRate?: number
+      rating?: number
+      totalTrips?: number
     }
     host: {
       name: string
@@ -28,6 +32,7 @@ export interface Booking {
       phone: string
       rating: number
       responseTime: number
+      profilePhoto?: string | null
     }
     startDate: string
     endDate: string
@@ -37,12 +42,28 @@ export interface Booking {
     pickupType: 'host' | 'delivery' | 'airport' | 'hotel'
     totalAmount: number
     dailyRate: number
+    numberOfDays?: number
+    subtotal?: number
     serviceFee: number
     insuranceFee: number
+    insuranceType?: string
     deliveryFee: number
+    deliveryType?: string
+    deliveryAddress?: string | null
+    returnLocation?: string | null
     taxes: number
     depositAmount: number
     paymentStatus: string
+    tripStatus?: string
+    tripStartedAt?: string | Date | null
+    tripEndedAt?: string | Date | null
+    documentsSubmittedAt?: string | Date | null
+    reviewedAt?: string | Date | null
+    reviewedBy?: string | null
+    agreementAcceptedAt?: string | Date | null
+    bookingIpAddress?: string | null
+    createdAt?: string | Date
+    guestToken?: string
     licenseVerified?: boolean
     insurancePhotoUrl?: string
     exactAddress?: string

@@ -155,6 +155,7 @@ export async function POST(request: NextRequest) {
     // Log the refresh event
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         category: 'AUTHENTICATION',
         eventType: 'ADMIN_TOKEN_REFRESH',
         severity: 'INFO',

@@ -60,8 +60,8 @@ export async function GET(
       where: {
         OR: [
           { entityType: 'HOST', entityId: hostId },
-          { 
-            details: {
+          {
+            metadata: {
               path: ['hostId'],
               equals: hostId
             }
@@ -82,7 +82,7 @@ export async function GET(
         actor: log.userId || 'System',
         category: 'ACTIVITY',
         icon: getActivityIcon(log.action),
-        metadata: log.details
+        metadata: log.metadata
       })
     })
 
@@ -96,17 +96,17 @@ export async function GET(
       timelineEvents.push({
         id: `bgcheck-${check.id}`,
         type: 'BACKGROUND_CHECK',
-        title: `Background Check ${check.overallStatus}`,
-        description: `Background verification ${check.overallStatus?.toLowerCase()}`,
+        title: `Background Check ${check.status}`,
+        description: `Background verification ${(check.status as string).toLowerCase()}`,
         timestamp: check.createdAt,
         actor: 'System',
         category: 'VERIFICATION',
         icon: 'shield',
         metadata: {
-          status: check.overallStatus,
-          identityCheck: check.identityVerification,
-          dmvCheck: check.dmvCheck,
-          criminalCheck: check.criminalBackground
+          status: check.status,
+          checkType: check.checkType,
+          passed: check.passed,
+          details: check.details
         }
       })
 
@@ -115,13 +115,13 @@ export async function GET(
           id: `bgcheck-complete-${check.id}`,
           type: 'BACKGROUND_CHECK_COMPLETED',
           title: 'Background Check Completed',
-          description: `Verification ${check.overallStatus === 'PASSED' ? 'passed successfully' : 'failed'}`,
+          description: `Verification ${check.status === 'PASSED' ? 'passed successfully' : 'failed'}`,
           timestamp: check.completedAt,
           actor: 'System',
           category: 'VERIFICATION',
-          icon: check.overallStatus === 'PASSED' ? 'checkmark-circle' : 'close-circle',
+          icon: check.status === 'PASSED' ? 'checkmark-circle' : 'close-circle',
           metadata: {
-            status: check.overallStatus
+            status: check.status
           }
         })
       }
@@ -138,7 +138,7 @@ export async function GET(
       timelineEvents.push({
         id: `notif-${notification.id}`,
         type: 'NOTIFICATION',
-        title: notification.title,
+        title: notification.subject,
         description: notification.message,
         timestamp: notification.createdAt,
         actor: 'System',
@@ -172,13 +172,13 @@ export async function GET(
           actor: change.userId || 'Admin',
           category: 'STATUS',
           icon: getStatusIcon(status),
-          metadata: change.details
+          metadata: change.metadata
         })
       })
     }
 
     // 6. Vehicle additions
-    const vehicles = await prisma.car.findMany({
+    const vehicles = await (prisma as any).car.findMany({
       where: { hostId },
       select: {
         id: true,
@@ -190,7 +190,7 @@ export async function GET(
       orderBy: { createdAt: 'desc' }
     })
 
-    vehicles.forEach(vehicle => {
+    vehicles.forEach((vehicle: any) => {
       timelineEvents.push({
         id: `vehicle-${vehicle.id}`,
         type: 'VEHICLE_ADDED',

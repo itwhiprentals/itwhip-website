@@ -121,6 +121,7 @@ export async function POST(
       
       await tx.guestModeration.create({
         data: {
+          id: crypto.randomUUID(),
           guestId: profile.id,
           actionType: 'UNSUSPEND',
           suspensionLevel: null,

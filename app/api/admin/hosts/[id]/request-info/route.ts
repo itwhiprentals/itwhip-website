@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { auditService, AuditEventType, AuditEntityType } from '@/app/lib/audit/audit-service'
 import { sendHostDocumentRequest } from '@/app/lib/email'
+import crypto from 'crypto'
 
 // POST - Request additional information or documents from a specific host
 export async function POST(
@@ -12,7 +13,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params
-    
+
     // Verify fleet access
     const key = request.nextUrl.searchParams.get('key')
     if (key !== 'phoenix-fleet-2847' && !request.headers.get('authorization')) {
@@ -67,7 +68,7 @@ export async function POST(
     // Platform Fleet hosts - special handling
     if (host.hostType === 'MANAGED') {
       return NextResponse.json(
-        { 
+        {
           error: 'Cannot request information from Platform Fleet hosts',
           hostType: 'MANAGED',
           message: 'Platform Fleet hosts are managed directly through the fleet system'
@@ -100,25 +101,22 @@ export async function POST(
     }
 
     // Log audit event
-    await auditService.log({
-      eventType: AuditEventType.UPDATE,
-      entityType: AuditEntityType.HOST,
-      entityId: id,
-      userId: 'FLEET_SYSTEM',
-      details: {
+    await auditService.log(
+      AuditEventType.UPDATE,
+      AuditEntityType.HOST,
+      id,
+      {
         action: 'REQUEST_INFO',
         requestType,
         documents: documents || [],
         priority: priority || 'MEDIUM'
-      },
-      ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-      userAgent: request.headers.get('user-agent') || 'fleet-system'
-    })
+      }
+    )
 
     return NextResponse.json({
       success: true,
       hostId: id,
-      hostName: host.user.name,
+      hostName: host.user?.name,
       requestType,
       ...result
     })
@@ -139,7 +137,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    
+
     // Verify fleet access
     const key = request.nextUrl.searchParams.get('key')
     if (key !== 'phoenix-fleet-2847' && !request.headers.get('authorization')) {
@@ -173,7 +171,7 @@ export async function GET(
     const documentRequests = await prisma.hostDocumentStatus.findMany({
       where: {
         hostId: id,
-        status: 'PENDING'
+        status: 'RESUBMISSION_REQUIRED' as const
       },
       orderBy: {
         requestedAt: 'desc'
@@ -184,8 +182,8 @@ export async function GET(
     const pendingNotifications = await prisma.hostNotification.findMany({
       where: {
         hostId: id,
-        actionRequired: true,
-        isRead: false
+        actionRequired: { not: null },
+        status: 'PENDING'
       },
       orderBy: {
         createdAt: 'desc'
@@ -194,14 +192,14 @@ export async function GET(
 
     // Check for overdue items
     const now = new Date()
-    const overdueDocuments = documentRequests.filter(doc => 
-      doc.deadline && new Date(doc.deadline) < now
+    const overdueDocuments = documentRequests.filter(doc =>
+      doc.expiryDate && new Date(doc.expiryDate) < now
     )
 
     return NextResponse.json({
       success: true,
       hostId: id,
-      hostName: host.user.name,
+      hostName: host.user?.name,
       summary: {
         totalPendingDocuments: documentRequests.length,
         overdueDocuments: overdueDocuments.length,
@@ -214,13 +212,13 @@ export async function GET(
         status: doc.status,
         feedback: doc.feedback,
         requestedAt: doc.requestedAt,
-        deadline: doc.deadline,
-        isOverdue: doc.deadline && new Date(doc.deadline) < now
+        expiryDate: doc.expiryDate,
+        isOverdue: doc.expiryDate ? new Date(doc.expiryDate) < now : false
       })),
       pendingNotifications: pendingNotifications.map(notif => ({
         id: notif.id,
         type: notif.type,
-        title: notif.title,
+        subject: notif.subject,
         message: notif.message,
         priority: notif.priority,
         createdAt: notif.createdAt
@@ -243,8 +241,8 @@ export async function GET(
 
 // Helper function: Request documents
 async function requestDocuments(
-  host: any, 
-  documents: any[], 
+  host: any,
+  documents: any[],
   customMessage: string | undefined,
   priority: string | undefined,
   deadline: string | undefined
@@ -254,7 +252,7 @@ async function requestDocuments(
   }
 
   // Calculate deadline (default 3 days if not provided)
-  const requestDeadline = deadline 
+  const requestDeadline = deadline
     ? new Date(deadline)
     : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
 
@@ -264,7 +262,7 @@ async function requestDocuments(
       where: { id: host.id },
       data: {
         approvalStatus: 'NEEDS_ATTENTION',
-        pendingActions: documents.map(doc => `UPLOAD_${doc.type.toUpperCase()}`)
+        pendingActions: documents.map((doc: any) => `UPLOAD_${doc.type.toUpperCase()}`)
       }
     })
 
@@ -273,14 +271,13 @@ async function requestDocuments(
     for (const doc of documents) {
       const docStatus = await tx.hostDocumentStatus.create({
         data: {
+          id: crypto.randomUUID(),
           hostId: host.id,
           documentType: doc.type,
-          status: 'PENDING',
-          requestedBy: 'FLEET_SYSTEM',
+          status: 'RESUBMISSION_REQUIRED',
           requestedAt: new Date(),
           feedback: doc.issue || customMessage || 'Document required',
-          instructions: doc.instructions || 'Please upload a clear, readable copy of your document',
-          deadline: requestDeadline
+          updatedAt: new Date()
         }
       })
       documentStatuses.push(docStatus)
@@ -289,32 +286,38 @@ async function requestDocuments(
     // Create host notification
     await tx.hostNotification.create({
       data: {
+        id: crypto.randomUUID(),
         hostId: host.id,
         type: 'DOCUMENT_REQUEST',
-        title: 'Documents Required',
+        category: 'document',
+        subject: 'Documents Required',
         message: customMessage || `Please upload ${documents.length} document(s) to continue your application.`,
         priority: priority || 'HIGH',
-        actionRequired: true,
+        responseRequired: true,
+        actionRequired: 'upload_documents',
         actionUrl: '/host/profile',
         metadata: {
-          documents: documents.map(d => d.type),
+          documents: documents.map((d: any) => d.type),
           deadline: requestDeadline
-        }
+        } as any,
+        updatedAt: new Date()
       }
     })
 
     // Create admin notification for tracking
     await tx.adminNotification.create({
       data: {
+        id: crypto.randomUUID(),
         type: 'DOCUMENT_REQUEST_SENT',
         title: 'Documents Requested from Host',
-        message: `Document request sent to ${host.user.name || host.user.email}`,
+        message: `Document request sent to ${host.user?.name || host.user?.email}`,
         priority: 'LOW',
         metadata: {
           hostId: host.id,
-          documents: documents.map(d => d.type),
+          documents: documents.map((d: any) => d.type),
           requestedBy: 'FLEET_SYSTEM'
-        }
+        } as any,
+        updatedAt: new Date()
       }
     })
 
@@ -324,12 +327,11 @@ async function requestDocuments(
   // Send email notification
   try {
     await sendHostDocumentRequest(host.user.email, {
-      hostName: host.user.name || 'Host',
-      documents: documents.map(doc => ({
-        type: doc.type,
+      name: host.user.name || 'Host',
+      documentIssues: documents.map((doc: any) => ({
+        documentType: doc.type,
         issue: doc.issue || 'Document required',
-        instructions: doc.instructions || 'Please upload a clear, readable copy',
-        currentStatus: 'pending'
+        instructions: doc.instructions || 'Please upload a clear, readable copy'
       })),
       deadline: requestDeadline.toLocaleDateString(),
       uploadUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/host/profile`,
@@ -341,7 +343,7 @@ async function requestDocuments(
 
   return {
     message: 'Document request sent successfully',
-    documentsRequested: documents.map(d => d.type),
+    documentsRequested: documents.map((d: any) => d.type),
     deadline: requestDeadline,
     documentStatuses: result.documentStatuses
   }
@@ -361,13 +363,16 @@ async function requestClarification(
     // Create host notification
     await tx.hostNotification.create({
       data: {
+        id: crypto.randomUUID(),
         hostId: host.id,
         type: 'CLARIFICATION_REQUEST',
-        title: 'Clarification Needed',
+        category: 'general',
+        subject: 'Clarification Needed',
         message: message,
         priority: priority || 'MEDIUM',
-        actionRequired: true,
-        actionUrl: '/host/dashboard'
+        actionRequired: 'provide_clarification',
+        actionUrl: '/host/dashboard',
+        updatedAt: new Date()
       }
     })
 
@@ -401,13 +406,16 @@ async function requestInfoUpdate(
     // Create host notification
     await tx.hostNotification.create({
       data: {
+        id: crypto.randomUUID(),
         hostId: host.id,
         type: 'INFO_UPDATE_REQUEST',
-        title: 'Please Update Your Information',
+        category: 'general',
+        subject: 'Please Update Your Information',
         message: message,
         priority: priority || 'MEDIUM',
-        actionRequired: true,
-        actionUrl: '/host/profile'
+        actionRequired: 'update_information',
+        actionUrl: '/host/profile',
+        updatedAt: new Date()
       }
     })
 
@@ -441,13 +449,16 @@ async function requestVerification(
     // Create host notification
     await tx.hostNotification.create({
       data: {
+        id: crypto.randomUUID(),
         hostId: host.id,
         type: 'VERIFICATION_REQUEST',
-        title: 'Verification Required',
+        category: 'verification',
+        subject: 'Verification Required',
         message: message,
         priority: priority || 'HIGH',
-        actionRequired: true,
-        actionUrl: '/host/dashboard'
+        actionRequired: 'verify_details',
+        actionUrl: '/host/dashboard',
+        updatedAt: new Date()
       }
     })
 
@@ -475,7 +486,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    
+
     // Verify fleet access
     const key = request.nextUrl.searchParams.get('key')
     if (key !== 'phoenix-fleet-2847' && !request.headers.get('authorization')) {
@@ -498,7 +509,8 @@ export async function DELETE(
     await prisma.hostDocumentStatus.update({
       where: { id: documentStatusId },
       data: {
-        status: 'CANCELLED'
+        status: 'NOT_UPLOADED',
+        updatedAt: new Date()
       }
     })
 

@@ -6,11 +6,19 @@
 import prisma from '@/app/lib/database/prisma'
 import { createHash } from 'crypto'
 import { nanoid } from 'nanoid'
-import { UserRole, CertificationTier } from '@/app/lib/dal/types'
-import type {
-  RateLimitStatus
-} from '@/app/types/auth'
+import { UserRole, CertificationTier } from '@/app/types/auth'
 import type { RateLimitConfig } from '@/app/types/security'
+
+// Local RateLimitStatus matching actual usage in this file
+interface RateLimitStatus {
+  limit: number
+  remaining: number
+  reset: Date
+  tier: CertificationTier | 'anonymous'
+  status: 'ok' | 'warning' | 'exceeded' | 'banned'
+  message?: string
+  headers?: Record<string, string>
+}
 
 // ============================================================================
 // CONFIGURATION
@@ -474,6 +482,7 @@ export async function banIdentifier(
   await prisma.rateLimit.upsert({
     where: { identifier },
     create: {
+      id: nanoid(),
       identifier,
       tier: 'ANONYMOUS',
       requests: 0,
@@ -482,11 +491,13 @@ export async function banIdentifier(
       windowStart: new Date(),
       exceeded: true,
       banned: true,
-      bannedUntil: new Date(unbanTime)
+      bannedUntil: new Date(unbanTime),
+      updatedAt: new Date()
     },
     update: {
       banned: true,
-      bannedUntil: new Date(unbanTime)
+      bannedUntil: new Date(unbanTime),
+      updatedAt: new Date()
     }
   })
   
@@ -653,6 +664,7 @@ async function persistRateLimit(
     await prisma.rateLimit.upsert({
       where: { identifier },
       create: {
+        id: nanoid(),
         identifier,
         tier: config.tier.toString(),
         requests: config.limits.requests,
@@ -660,11 +672,13 @@ async function persistRateLimit(
         currentRequests: entry.count,
         windowStart: new Date(entry.windowStart),
         exceeded: entry.count > config.limits.requests,
-        banned: false
+        banned: false,
+        updatedAt: new Date()
       },
       update: {
         currentRequests: entry.count,
-        exceeded: entry.count > config.limits.requests
+        exceeded: entry.count > config.limits.requests,
+        updatedAt: new Date()
       }
     })
   } catch (error) {
@@ -684,9 +698,10 @@ async function logRateLimitEvent(
   try {
     await prisma.auditLog.create({
       data: {
+        id: nanoid(),
         category: 'SECURITY',
         eventType: `rate_limit_${event}`,
-        severity: event === 'ban' ? 'HIGH' : 'MEDIUM',
+        severity: event === 'ban' ? 'ERROR' : 'WARNING',
         ipAddress: identifier.startsWith('ip:') ? identifier.slice(3) : '0.0.0.0',
         userAgent: 'system',
         action: event,

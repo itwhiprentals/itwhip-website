@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
     const utilizationRate = totalVehicleDays > 0 ? Math.round((bookedDays / totalVehicleDays) * 100) : 0
 
     // Get average rating
-    const avgRating = partner.averageRating || 0
+    const avgRating = (partner as any).averageRating || 0
 
     // Calculate bookings by status
     const statusCounts: Record<string, number> = {}
@@ -232,7 +232,7 @@ export async function GET(request: NextRequest) {
           avgTripDuration,
           utilizationRate,
           avgRating,
-          totalReviews: partner.totalReviews || 0,
+          totalReviews: (partner as any).totalReviews || 0,
           repeatCustomerRate: 0 // TODO: Calculate from actual data
         },
         revenueByMonth: revenueByMonthArray,

@@ -36,7 +36,7 @@ export async function GET() {
     }
 
     // Check if ESG profile exists
-    let esgProfile = await prisma.hostESGProfile.findUnique({
+    let esgProfile: any = await prisma.hostESGProfile.findUnique({
       where: { hostId },
       include: {
         snapshots: {
@@ -52,6 +52,7 @@ export async function GET() {
 
       esgProfile = await prisma.hostESGProfile.create({
         data: {
+          id: crypto.randomUUID(),
           hostId,
           compositeScore: calculation.scores.compositeScore,
           drivingImpactScore: calculation.scores.drivingImpactScore,
@@ -101,7 +102,9 @@ export async function GET() {
           milestoneReached: calculation.scores.milestoneReached,
           nextMilestone: calculation.scores.nextMilestone,
           calculationVersion: calculation.scores.calculationVersion,
-          dataConfidence: calculation.scores.dataConfidence
+          dataConfidence: calculation.scores.dataConfidence,
+          lastCalculatedAt: new Date(),
+          updatedAt: new Date()
         },
         include: {
           snapshots: {
@@ -197,7 +200,7 @@ export async function GET() {
         lastCalculatedAt: esgProfile.lastCalculatedAt
       },
       badges: badges.slice(0, 6), // Show top 6 badges
-      history: esgProfile.snapshots.map(s => ({
+      history: esgProfile.snapshots.map((s: any) => ({
         date: s.snapshotDate,
         score: s.compositeScore
       }))

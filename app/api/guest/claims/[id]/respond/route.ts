@@ -169,6 +169,7 @@ export async function POST(
 
       await prisma.claimDamagePhoto.createMany({
         data: evidencePhotos.map((url: string, index: number) => ({
+          id: crypto.randomUUID(),
           claimId,
           url,
           uploadedBy: 'GUEST',
@@ -191,7 +192,7 @@ export async function POST(
 
     // Log activity
     try {
-      await prisma.claimActivity.create({
+      await (prisma as any).claimActivity.create({
         data: {
           claimId,
           action: 'GUEST_RESPONDED',
@@ -221,13 +222,14 @@ export async function POST(
           : 'Unknown Vehicle',
         bookingCode: claim.booking.bookingCode,
         claimType: claim.type,
-        estimatedCost: claim.estimatedCost?.toNumber() || 0,
+        estimatedCost: Number(claim.estimatedCost) || 0,
         responseText: response.trim().substring(0, 500) + (response.length > 500 ? '...' : ''),
         evidencePhotosCount: evidencePhotos.length,
         respondedAt: new Date().toISOString(),
-        claimUrl: `${process.env.NEXT_PUBLIC_APP_URL}/admin/claims/${claimId}`
+        claimUrl: `${process.env.NEXT_PUBLIC_APP_URL}/admin/claims/${claimId}`,
+        reviewUrl: `${process.env.NEXT_PUBLIC_APP_URL}/admin/claims/${claimId}`
       }
-      const adminTemplate = getClaimGuestResponseReceivedTemplate(adminEmailData)
+      const adminTemplate = getClaimGuestResponseReceivedTemplate(adminEmailData as any)
       await sendEmail({
         to: process.env.FLEET_ADMIN_EMAIL || 'claims@itwhip.com',
         subject: adminTemplate.subject,

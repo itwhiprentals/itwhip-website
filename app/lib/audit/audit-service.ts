@@ -3,6 +3,7 @@
 import { prisma } from '@/app/lib/database/prisma'
 import { headers } from 'next/headers'
 import crypto from 'crypto'
+import { v4 as uuidv4 } from 'uuid'
 
 // Audit event types
 export enum AuditEventType {
@@ -105,42 +106,44 @@ class AuditService {
       // Create the audit log entry
       const auditEntry = await prisma.auditLog.create({
         data: {
+          id: uuidv4(),
+
           // Event categorization
-          category: options.category || 'DATA_ACCESS',
+          category: (options.category || 'DATA_ACCESS') as any,
           eventType: eventType.toString(),
-          severity: options.severity || 'INFO',
-          
+          severity: (options.severity || 'INFO') as any,
+
           // Actor information
           userId: context.userId,
           adminId: context.adminId,
           adminEmail: context.adminEmail,
-          
+
           // Request context
           ipAddress: context.ipAddress || 'unknown',
           userAgent: context.userAgent || 'unknown',
           sessionId: context.sessionId,
           requestId: context.requestId,
-          
+
           // Action details
           action: eventType.toString(),
           resource: entityType.toString(),
           resourceId: entityId,
-          
+
           // Detailed information
           details: details,
           metadata: options.metadata,
-          
+
           // Compliance flags
           gdpr: options.compliance?.gdpr || false,
           ccpa: options.compliance?.ccpa || false,
           pci: options.compliance?.pci || false,
-          
+
           // Data integrity
           hash: entryHash,
           previousHash: previousEntry?.hash,
-          
+
           timestamp: new Date()
-        }
+        } as any
       })
       
       // For critical events, trigger alerts
@@ -341,7 +344,12 @@ class AuditService {
   async verifyIntegrity(startDate?: Date, endDate?: Date) {
     const logs = await this.queryLogs({ startDate, endDate, limit: 10000 })
     
-    const results = {
+    const results: {
+      totalChecked: number
+      valid: number
+      invalid: { id: string; reason: string }[]
+      broken: { id: string; reason: string }[]
+    } = {
       totalChecked: logs.length,
       valid: 0,
       invalid: [],
@@ -450,6 +458,7 @@ class AuditService {
     try {
       await prisma.adminNotification.create({
         data: {
+          id: uuidv4(),
           type: 'CRITICAL_AUDIT_EVENT',
           title: `Critical Event: ${auditEntry.eventType}`,
           message: `Critical ${auditEntry.eventType} event on ${auditEntry.resource} ${auditEntry.resourceId}`,
@@ -461,7 +470,7 @@ class AuditService {
           metadata: {
             auditEntry
           }
-        }
+        } as any
       })
     } catch (error) {
       console.error('Failed to create admin notification:', error)

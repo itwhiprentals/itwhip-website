@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
           phone: phone || null,
           role: 'CLAIMED',
           emailVerified: false
-        }
+        } as any
       })
 
       let importedBookingsCount = 0
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
     // Create JWT tokens
     const { accessToken, refreshToken } = await createTokens(
       result.user.id,
-      result.user.email,
+      result.user.email!,
       result.user.role
     )
 

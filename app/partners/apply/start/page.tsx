@@ -252,7 +252,7 @@ function PartnerSignupForm() {
             {!isOAuthUser && (
               <OAuthButtons
                 theme="host"
-                roleHint="partner"
+                roleHint={"partner" as any}
                 callbackUrl={inviteToken ? `/partners/apply/start?token=${inviteToken}` : '/partner/dashboard'}
                 showDivider={true}
                 mode="signup"

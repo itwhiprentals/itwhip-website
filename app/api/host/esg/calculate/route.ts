@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
     if (updatedProfile) {
       await prisma.eSGSnapshot.create({
         data: {
+          id: crypto.randomUUID(),
           profileId: hostId,
           compositeScore: updatedProfile.compositeScore,
           drivingImpactScore: updatedProfile.drivingImpactScore,

@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
           // Log the logout event
           await prisma.auditLog.create({
             data: {
+              id: crypto.randomUUID(),
               category: 'AUTHENTICATION',
               eventType: 'ADMIN_LOGOUT',
               severity: 'INFO',

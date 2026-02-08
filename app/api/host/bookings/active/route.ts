@@ -29,22 +29,22 @@ export async function GET(request: NextRequest) {
       include: {
         user: {
           include: {
-            host: {
+            rentalHost: {
               select: { id: true }
             }
           }
         }
       }
     })
-    
-    if (!session?.user?.host?.id) {
+
+    if (!session?.user?.rentalHost?.id) {
       return NextResponse.json(
         { error: 'Host account not found' },
         { status: 404 }
       )
     }
-    
-    const hostId = session.user.host.id
+
+    const hostId = session.user.rentalHost.id
     
     // Check for active bookings using the validation utility
     const bookingCheck = await checkActiveBookings(hostId)
@@ -58,12 +58,7 @@ export async function GET(request: NextRequest) {
         },
         select: {
           totalAmount: true,
-          guest: {
-            select: {
-              firstName: true,
-              lastName: true
-            }
-          },
+          guestName: true,
           car: {
             select: {
               make: true,
@@ -89,9 +84,7 @@ export async function GET(request: NextRequest) {
         totalAmountAffected,
         bookings: bookingCheck.blockingBookings.map((booking, index) => ({
           ...booking,
-          guestName: bookingDetails[index]?.guest 
-            ? `${bookingDetails[index].guest.firstName} ${bookingDetails[index].guest.lastName}`
-            : 'Guest',
+          guestName: bookingDetails[index]?.guestName || 'Guest',
           vehicle: bookingDetails[index]?.car
             ? `${bookingDetails[index].car.year} ${bookingDetails[index].car.make} ${bookingDetails[index].car.model}`
             : 'Vehicle',
@@ -161,7 +154,7 @@ export async function POST(request: NextRequest) {
         id: { in: bookingCheck.blockingBookings.map(b => b.id) }
       },
       include: {
-        guest: true,
+        reviewerProfile: true,
         car: {
           include: {
             photos: {
@@ -194,14 +187,14 @@ export async function POST(request: NextRequest) {
         endDate: booking.endDate,
         totalAmount: booking.totalAmount,
         guest: {
-          name: `${booking.guest.firstName} ${booking.guest.lastName}`,
-          email: booking.guest.email,
-          phone: booking.guest.phone
+          name: booking.reviewerProfile?.name || booking.guestName || 'Guest',
+          email: booking.reviewerProfile?.email || booking.guestEmail || '',
+          phone: (booking.reviewerProfile as any)?.phone || booking.guestPhone || ''
         },
         vehicle: {
           id: booking.car.id,
           name: `${booking.car.year} ${booking.car.make} ${booking.car.model}`,
-          photo: booking.car.photos[0]?.url || null,
+          photo: (booking.car as any).photos?.[0]?.url || null,
           dailyRate: booking.car.dailyRate
         },
         host: {

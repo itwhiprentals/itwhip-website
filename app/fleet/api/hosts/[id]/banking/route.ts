@@ -62,7 +62,7 @@ export async function GET(
 
         // Earnings & Commission
         earningsTier: true,
-        insuranceTier: true,
+        insuranceActive: true,
 
         // Stripe Connect (for receiving payouts)
         stripeConnectAccountId: true,
@@ -157,7 +157,7 @@ export async function GET(
           }
         }
       }
-    })
+    }) as any
 
     if (!host) {
       return NextResponse.json(
@@ -173,11 +173,11 @@ export async function GET(
     const pendingClaims = await prisma.claim.findMany({
       where: {
         hostId: id,
-        status: { in: ['APPROVED', 'GUEST_RESPONDED'] },
+        status: { in: ['APPROVED', 'GUEST_RESPONDED'] as any },
         // Only include claims that haven't been fully recovered
         OR: [
           { recoveryStatus: null },
-          { recoveryStatus: { in: ['PENDING', 'PARTIAL'] } }
+          { recoveryStatus: { in: ['PENDING', 'PARTIAL'] as any } }
         ]
       },
       select: {
@@ -208,7 +208,7 @@ export async function GET(
         }
       },
       orderBy: { createdAt: 'desc' }
-    })
+    }) as any[]
 
     // Calculate pending recovery totals
     const pendingRecovery = pendingClaims.reduce((sum, claim) => {
@@ -244,13 +244,13 @@ export async function GET(
           expand: ['default_source']
         })
         
-        if (!customer.deleted) {
+        if (!(customer as any).deleted) {
           stripeCustomerData = {
             id: customer.id,
-            email: customer.email,
-            defaultSource: customer.default_source,
-            invoicePrefix: customer.invoice_prefix,
-            balance: customer.balance
+            email: (customer as any).email,
+            defaultSource: (customer as any).default_source,
+            invoicePrefix: (customer as any).invoice_prefix,
+            balance: (customer as any).balance
           }
         }
       } catch (error) {

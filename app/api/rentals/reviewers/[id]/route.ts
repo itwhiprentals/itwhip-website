@@ -16,7 +16,7 @@ export async function GET(
     const profile = await prisma.reviewerProfile.findUnique({
       where: { id: profileId },
       include: {
-        reviews: {
+        RentalReview: {
           where: {
             isVisible: true,
             car: {
@@ -34,14 +34,14 @@ export async function GET(
             helpfulCount: true,  // Added helpful count
             isVerified: true,    // Added verification status
             isPinned: true,      // Added pinned status
-            
+
             // ADDED: Include host response data
             hostResponse: true,
             hostRespondedAt: true,
             supportResponse: true,
             supportRespondedAt: true,
             supportRespondedBy: true,
-            
+
             // Include host details
             host: {
               select: {
@@ -50,7 +50,7 @@ export async function GET(
                 profilePhoto: true
               }
             },
-            
+
             // Include car details
             car: {
               select: {
@@ -114,7 +114,7 @@ export async function GET(
       reviewCount: stats.totalReviews,    // Use actual count
       isVerified: profile.isVerified,
       stats,
-      recentReviews: profile.reviews.map(review => ({
+      recentReviews: (profile.RentalReview || []).map((review: any) => ({
         id: review.id,
         rating: review.rating,
         title: review.title,

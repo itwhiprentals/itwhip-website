@@ -273,7 +273,7 @@ export async function PUT(
             carDetails: `${updatedCar.year} ${updatedCar.make} ${updatedCar.model}`,
             reason: body.deactivationReason
           }
-        }
+        } as any
       })
     }
 
@@ -544,7 +544,7 @@ export async function DELETE(
               futureBookings: futureBookings.length,
               hasBookingHistory
             }
-          }
+          } as any
         })
       }
 

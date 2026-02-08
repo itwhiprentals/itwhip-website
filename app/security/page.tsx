@@ -85,27 +85,27 @@ export default function SecurityPage() {
 
   // Live Attack Events (3 different types)
   const [attackEvents, setAttackEvents] = useState([
-    { time: '14:23:01', type: 'sql.injection', detail: 'Blocked from 185.220.x.x', value: 'BLOCKED', severity: 'high' },
-    { time: '14:23:04', type: 'xss.attempt', detail: 'Script tag sanitized', value: 'SANITIZED', severity: 'medium' },
-    { time: '14:23:07', type: 'ddos.attack', detail: '10K requests mitigated', value: 'MITIGATED', severity: 'high' },
-    { time: '14:23:10', type: 'auth.bypass', detail: 'JWT manipulation detected', value: 'DENIED', severity: 'critical' },
-    { time: '14:23:13', type: 'scan.detected', detail: 'Port scan from China', value: 'LOGGED', severity: 'low' }
+    { time: '14:23:01', type: 'sql.injection', detail: 'Blocked from 185.220.x.x', value: 'BLOCKED', severity: 'high' as const },
+    { time: '14:23:04', type: 'xss.attempt', detail: 'Script tag sanitized', value: 'SANITIZED', severity: 'medium' as const },
+    { time: '14:23:07', type: 'ddos.attack', detail: '10K requests mitigated', value: 'MITIGATED', severity: 'high' as const },
+    { time: '14:23:10', type: 'auth.bypass', detail: 'JWT manipulation detected', value: 'DENIED', severity: 'critical' as const },
+    { time: '14:23:13', type: 'scan.detected', detail: 'Port scan from China', value: 'LOGGED', severity: 'low' as const }
   ])
 
   const [vulnerabilityEvents, setVulnerabilityEvents] = useState([
-    { time: '14:23:22', type: 'bounty.submitted', detail: 'XSS finding #4827', value: '$500', severity: 'medium' },
-    { time: '14:23:25', type: 'patch.applied', detail: 'Critical update deployed', value: 'FIXED', severity: 'info' },
-    { time: '14:23:28', type: 'pen.test', detail: 'Automated test failed', value: 'SECURE', severity: 'good' },
-    { time: '14:23:31', type: 'dependency.scan', detail: 'All packages secure', value: 'CLEAN', severity: 'good' },
-    { time: '14:23:34', type: 'code.review', detail: 'AI analysis complete', value: 'PASSED', severity: 'info' }
+    { time: '14:23:22', type: 'bounty.submitted', detail: 'XSS finding #4827', value: '$500', severity: 'medium' as const },
+    { time: '14:23:25', type: 'patch.applied', detail: 'Critical update deployed', value: 'FIXED', severity: 'info' as const },
+    { time: '14:23:28', type: 'pen.test', detail: 'Automated test failed', value: 'SECURE', severity: 'info' as const },
+    { time: '14:23:31', type: 'dependency.scan', detail: 'All packages secure', value: 'CLEAN', severity: 'info' as const },
+    { time: '14:23:34', type: 'code.review', detail: 'AI analysis complete', value: 'PASSED', severity: 'info' as const }
   ])
 
   const [complianceEvents, setComplianceEvents] = useState([
-    { time: '14:23:40', type: 'tu1a.validation', detail: 'Cycle #9847 complete', value: '98.7%', severity: 'good' },
-    { time: '14:23:43', type: 'soc2.check', detail: 'All controls validated', value: 'EXCEEDED', severity: 'good' },
-    { time: '14:23:46', type: 'pci.scan', detail: 'Quarterly scan passed', value: 'COMPLIANT', severity: 'good' },
-    { time: '14:23:49', type: 'gdpr.audit', detail: 'Privacy controls verified', value: 'PASSED', severity: 'info' },
-    { time: '14:23:52', type: 'iso.review', detail: '27001 requirements met', value: 'CERTIFIED', severity: 'good' }
+    { time: '14:23:40', type: 'tu1a.validation', detail: 'Cycle #9847 complete', value: '98.7%', severity: 'info' as const },
+    { time: '14:23:43', type: 'soc2.check', detail: 'All controls validated', value: 'EXCEEDED', severity: 'info' as const },
+    { time: '14:23:46', type: 'pci.scan', detail: 'Quarterly scan passed', value: 'COMPLIANT', severity: 'info' as const },
+    { time: '14:23:49', type: 'gdpr.audit', detail: 'Privacy controls verified', value: 'PASSED', severity: 'info' as const },
+    { time: '14:23:52', type: 'iso.review', detail: '27001 requirements met', value: 'CERTIFIED', severity: 'info' as const }
   ])
 
   // Threat Intelligence Data
@@ -147,13 +147,13 @@ export default function SecurityPage() {
       
       if (eventType === 0) {
         const newAttackEvent = generateAttackEvent()
-        setAttackEvents(prev => [newAttackEvent, ...prev.slice(0, 4)])
+        setAttackEvents(prev => [newAttackEvent, ...prev.slice(0, 4)] as any)
       } else if (eventType === 1) {
         const newVulnerabilityEvent = generateVulnerabilityEvent()
-        setVulnerabilityEvents(prev => [newVulnerabilityEvent, ...prev.slice(0, 4)])
+        setVulnerabilityEvents(prev => [newVulnerabilityEvent, ...prev.slice(0, 4)] as any)
       } else {
         const newComplianceEvent = generateComplianceEvent()
-        setComplianceEvents(prev => [newComplianceEvent, ...prev.slice(0, 4)])
+        setComplianceEvents(prev => [newComplianceEvent, ...prev.slice(0, 4)] as any)
       }
     }, 4000)
 

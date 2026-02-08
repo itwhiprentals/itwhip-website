@@ -328,6 +328,10 @@ export async function POST(request: NextRequest) {
     // Create the booking
     const newBooking = await prisma.rentalBooking.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
+        depositHeld: false,
+        securityDeposit: body.depositAmount || 500,
         bookingCode: bookingCode,
         carId: body.carId,
         hostId: host.id,
@@ -369,12 +373,13 @@ export async function POST(request: NextRequest) {
         bookingIpAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
         bookingCountry: 'US',
         bookingCity: car.city
-      }
+      } as any
     })
-    
+
     // Log activity
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         userId: host.userId,
         action: 'booking_created_manual',
         entityType: 'booking',

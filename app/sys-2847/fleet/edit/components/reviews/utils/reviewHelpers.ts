@@ -17,6 +17,11 @@ export interface ReviewerProfile {
     rating: number
     title?: string
     comment: string
+    cleanliness?: number | null
+    accuracy?: number | null
+    communication?: number | null
+    convenience?: number | null
+    value?: number | null
     isVisible: boolean
     isPinned: boolean
     isVerified: boolean

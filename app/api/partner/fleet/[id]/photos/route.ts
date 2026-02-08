@@ -88,6 +88,7 @@ export async function POST(
     // Create photos
     const createdPhotos = await prisma.rentalCarPhoto.createMany({
       data: photos.map((photo: { url: string; isHero?: boolean }, index: number) => ({
+        id: crypto.randomUUID(),
         carId: id,
         url: photo.url,
         isHero: photo.isHero && vehicle.photos.length === 0 && index === 0,

@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     // 4. Check for stale bookings
     const staleBookings = await prisma.rentalBooking.count({
       where: {
-        status: 'PENDING',
+        status: 'PENDING' as any,
         createdAt: {
           lt: new Date(Date.now() - 24 * 60 * 60 * 1000)
         }
@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
     if (staleBookings > 0) {
       issues.push(`${staleBookings} stale bookings detected`)
       await createAlert({
-        type: 'operational',
-        severity: 'MEDIUM',
+        type: 'business' as any,
+        severity: 'medium' as any,
         title: 'Stale Bookings',
         message: `${staleBookings} bookings pending for over 24 hours`,
         details: { count: staleBookings }
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     // 5. Check for extended trips
     const extendedTrips = await prisma.rentalBooking.findMany({
       where: {
-        tripStatus: 'ACTIVE',
+        tripStatus: 'ACTIVE' as any,
         actualStartTime: {
           lt: new Date(Date.now() - 48 * 60 * 60 * 1000)
         }
@@ -96,8 +96,8 @@ export async function POST(request: NextRequest) {
     if (extendedTrips.length > 0) {
       issues.push(`${extendedTrips.length} trips active for over 48 hours`)
       await createAlert({
-        type: 'operational',
-        severity: 'HIGH',
+        type: 'business' as any,
+        severity: 'high' as any,
         title: 'Extended Active Trips',
         message: `${extendedTrips.length} trips have been active for over 48 hours`,
         details: { 
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     // 6. Check for pending charges
     const pendingCharges = await prisma.tripCharge.count({
       where: {
-        chargeStatus: 'PENDING',
+        chargeStatus: 'PENDING' as any,
         createdAt: {
           lt: new Date(Date.now() - 24 * 60 * 60 * 1000)
         }
@@ -124,8 +124,8 @@ export async function POST(request: NextRequest) {
     if (pendingCharges > 5) {
       issues.push(`${pendingCharges} charges pending for over 24 hours`)
       await createAlert({
-        type: 'financial',
-        severity: 'HIGH',
+        type: 'business' as any,
+        severity: 'high' as any,
         title: 'Pending Charges',
         message: `${pendingCharges} trip charges pending for over 24 hours`,
         details: { count: pendingCharges }
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
     // 7. Check for unverified bookings
     const unverifiedBookings = await prisma.rentalBooking.count({
       where: {
-        verificationStatus: 'PENDING',
+        verificationStatus: 'PENDING' as any,
         createdAt: {
           lt: new Date(Date.now() - 12 * 60 * 60 * 1000)
         }
@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
         severity: issues.length > 0 ? 'WARNING' : 'INFO',
         action: 'monitor',
         resource: 'system',
-        details: { 
+        details: {
           checks,
           issues,
           timestamp: new Date().toISOString()
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
         userAgent: 'System Monitor',
         hash: '',
         previousHash: null
-      }
+      } as any
     })
     
     return NextResponse.json({

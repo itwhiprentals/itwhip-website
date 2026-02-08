@@ -32,7 +32,7 @@ export async function GET(
       include: {
         _count: {
           select: {
-            applications: true
+            JobApplication: true
           }
         }
       }
@@ -113,7 +113,7 @@ export async function GET(
         showSalary: job.showSalary,
         isFeatured: job.isFeatured,
         openPositions: job.openPositions,
-        applicationCount: job._count.applications,
+        applicationCount: (job as any)._count.JobApplication,
         views: job.views,
         createdAt: job.createdAt,
         updatedAt: job.updatedAt,

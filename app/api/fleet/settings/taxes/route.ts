@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
 
     if (!settings) {
       settings = await prisma.platformSettings.create({
-        data: { id: 'global' }
+        data: { id: 'global', updatedAt: new Date() }
       })
     }
 
@@ -228,6 +228,7 @@ export async function POST(request: NextRequest) {
       // Create audit log
       await prisma.activityLog.create({
         data: {
+          id: crypto.randomUUID(),
           entityType: 'PLATFORM_SETTINGS',
           entityId: 'global',
           action: 'TAX_RATES_BULK_IMPORTED',
@@ -282,6 +283,7 @@ export async function POST(request: NextRequest) {
     // Create audit log
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         entityType: 'PLATFORM_SETTINGS',
         entityId: 'global',
         action: 'TAX_RATES_BULK_IMPORTED',
@@ -372,7 +374,7 @@ export async function PUT(request: NextRequest) {
 
     if (!settings) {
       settings = await prisma.platformSettings.create({
-        data: { id: 'global' }
+        data: { id: 'global', updatedAt: new Date() }
       })
     }
 
@@ -439,6 +441,7 @@ export async function PUT(request: NextRequest) {
     // Create audit log
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         entityType: 'PLATFORM_SETTINGS',
         entityId: 'global',
         action: 'TAX_RATE_UPDATED',

@@ -84,7 +84,7 @@ async function fetchNotificationsWithThresholds(settings: any): Promise<Notifica
 
   // 2. VEHICLE ALERTS
   if (settings.pendingVehiclesAlert) {
-    const pendingVehicles = await prisma.rentalCar.count({
+    const pendingVehicles = await (prisma.rentalCar.count as any)({
       where: {
         fleetApprovalStatus: 'PENDING',
         host: { hostType: { in: ['FLEET_PARTNER', 'PARTNER'] } }
@@ -105,7 +105,7 @@ async function fetchNotificationsWithThresholds(settings: any): Promise<Notifica
   }
 
   if (settings.changesRequestedAlert) {
-    const changesRequested = await prisma.rentalCar.count({
+    const changesRequested = await (prisma.rentalCar.count as any)({
       where: {
         fleetApprovalStatus: 'CHANGES_REQUESTED',
         host: { hostType: { in: ['FLEET_PARTNER', 'PARTNER'] } }
@@ -130,11 +130,11 @@ async function fetchNotificationsWithThresholds(settings: any): Promise<Notifica
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000)
 
-    const startingToday = await prisma.rentalBooking.count({
+    const startingToday = await (prisma.rentalBooking.count as any)({
       where: {
         startDate: { gte: todayStart, lt: todayEnd },
         status: 'CONFIRMED',
-        rentalCar: { host: { hostType: { in: ['FLEET_PARTNER', 'PARTNER'] } } }
+        car: { host: { hostType: { in: ['FLEET_PARTNER', 'PARTNER'] } } }
       }
     })
 
@@ -152,11 +152,11 @@ async function fetchNotificationsWithThresholds(settings: any): Promise<Notifica
   }
 
   // High cancellation check using dynamic threshold
-  const cancelledRecent = await prisma.rentalBooking.count({
+  const cancelledRecent = await (prisma.rentalBooking.count as any)({
     where: {
       status: 'CANCELLED',
       updatedAt: { gte: sevenDaysAgo },
-      rentalCar: { host: { hostType: { in: ['FLEET_PARTNER', 'PARTNER'] } } }
+      car: { host: { hostType: { in: ['FLEET_PARTNER', 'PARTNER'] } } }
     }
   })
 
@@ -174,7 +174,7 @@ async function fetchNotificationsWithThresholds(settings: any): Promise<Notifica
 
   // 4. DOCUMENT ALERTS
   if (settings.expiredDocumentsAlert) {
-    const expiringDocs = await prisma.partner_documents.findMany({
+    const expiringDocs = await (prisma.partner_documents.findMany as any)({
       where: {
         status: 'APPROVED',
         expiresAt: { gte: now, lte: documentWarningDate },
@@ -187,7 +187,7 @@ async function fetchNotificationsWithThresholds(settings: any): Promise<Notifica
         host: { select: { id: true, partnerCompanyName: true } }
       },
       take: 10
-    })
+    }) as any[]
 
     expiringDocs.forEach(doc => {
       const daysUntil = Math.ceil((doc.expiresAt!.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
@@ -225,7 +225,7 @@ async function fetchNotificationsWithThresholds(settings: any): Promise<Notifica
   }
 
   if (settings.pendingDocumentsAlert) {
-    const pendingDocs = await prisma.partner_documents.count({
+    const pendingDocs = await (prisma.partner_documents.count as any)({
       where: {
         status: 'PENDING_REVIEW',
         host: { hostType: { in: ['FLEET_PARTNER', 'PARTNER'] } }
@@ -311,7 +311,7 @@ async function fetchNotificationsWithThresholds(settings: any): Promise<Notifica
 
   // 6. CLAIM ALERTS
   if (settings.openClaimsAlert) {
-    const openClaims = await prisma.claim.count({
+    const openClaims = await (prisma.claim.count as any)({
       where: { status: { in: ['SUBMITTED', 'IN_REVIEW', 'PENDING_DOCS'] } }
     })
 
@@ -330,12 +330,12 @@ async function fetchNotificationsWithThresholds(settings: any): Promise<Notifica
 
   // 7. REVIEW ALERTS (using dynamic threshold)
   if (settings.lowRatingsAlert) {
-    const lowRatings = await prisma.rentalReview.count({
+    const lowRatings = await (prisma.rentalReview.count as any)({
       where: {
         rating: { lte: settings.lowRatingThreshold },
         createdAt: { gte: sevenDaysAgo },
         booking: {
-          rentalCar: { host: { hostType: { in: ['FLEET_PARTNER', 'PARTNER'] } } }
+          car: { host: { hostType: { in: ['FLEET_PARTNER', 'PARTNER'] } } }
         }
       }
     })
@@ -427,14 +427,14 @@ export async function POST(request: NextRequest) {
 
     // Generate email
     const { html, text, subject } = generateFleetAlertDigestEmail({
-      alerts: notifications,
+      alerts: notifications as any,
       summary,
       digestType: digestType as 'instant' | 'hourly' | 'daily' | 'weekly',
       dashboardUrl: BASE_URL
     })
 
     // Send to all recipients
-    const results = []
+    const results: any[] = []
     for (const recipient of settings.alertEmailRecipients) {
       const result = await sendEmail({
         to: recipient,
@@ -457,7 +457,7 @@ export async function POST(request: NextRequest) {
         lowCount: summary.low,
         categories: [...new Set(notifications.map(n => n.category))],
         status: results.every(r => r.success) ? 'sent' : 'partial',
-        error: results.filter(r => !r.success).map(r => r.error).join('; ') || null
+        error: results.filter((r: any) => !r.success).map((r: any) => r.error).join('; ') || null
       }
     })
 

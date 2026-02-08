@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
       const { sendEmail } = await import('@/app/lib/email/sender')
 
       await sendEmail(
-        user.email,
+        user.email as string,
         'Your ItWhip Partner Password Was Set',
         `
           <!DOCTYPE html>

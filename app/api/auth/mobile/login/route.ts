@@ -69,9 +69,8 @@ async function upgradePasswordHash(userId: string, password: string) {
       timeCost: 3,
       parallelism: 4,
       hashLength: 32,
-      saltLength: 16,
-    })
-    await db.updateUserPasswordHash(userId, newHash)
+    } as any)
+    await db.updateUserPasswordHash(userId, newHash as unknown as string)
   } catch (error) {
     console.error('Background password upgrade failed:', error)
   }
@@ -88,7 +87,7 @@ export async function POST(request: NextRequest) {
       const userAgent = request.headers.get('user-agent') || 'ItWhipApp'
       await logFailedLogin({
         email: 'unknown',
-        source: 'mobile',
+        source: 'guest',
         reason: 'RATE_LIMITED',
         ip: clientIp,
         userAgent,
@@ -111,7 +110,7 @@ export async function POST(request: NextRequest) {
     if (!user) {
       await logFailedLogin({
         email: email.toLowerCase(),
-        source: 'mobile',
+        source: 'guest',
         reason: 'ACCOUNT_NOT_FOUND',
         ip: clientIp,
         userAgent,
@@ -137,7 +136,7 @@ export async function POST(request: NextRequest) {
       const remainingMs = userLockout.lockedUntil.getTime() - Date.now()
       await logFailedLogin({
         email: email.toLowerCase(),
-        source: 'mobile',
+        source: 'guest',
         reason: 'RATE_LIMITED',
         ip: clientIp,
         userAgent,
@@ -154,13 +153,13 @@ export async function POST(request: NextRequest) {
     // Verify password
     const { valid: passwordValid, needsRehash } = await verifyPassword(
       password,
-      user.password_hash
+      user.password_hash!
     )
 
     if (!passwordValid) {
       await logFailedLogin({
         email: email.toLowerCase(),
-        source: 'mobile',
+        source: 'guest',
         reason: 'INVALID_CREDENTIALS',
         ip: clientIp,
         userAgent,
@@ -214,19 +213,19 @@ export async function POST(request: NextRequest) {
 
     // GUARD CHECK: Detect HOST trying to access GUEST login
     const hostProfile = await prisma.rentalHost.findFirst({
-      where: { OR: [{ userId: user.id }, { email: user.email.toLowerCase() }] },
+      where: { OR: [{ userId: user.id }, { email: (user.email || '').toLowerCase() }] },
       select: { id: true, approvalStatus: true }
     })
     const guestProfile = await prisma.reviewerProfile.findFirst({
-      where: { OR: [{ userId: user.id }, { email: user.email.toLowerCase() }] },
+      where: { OR: [{ userId: user.id }, { email: (user.email || '').toLowerCase() }] },
       select: { id: true }
     })
 
     if (hostProfile && !guestProfile) {
-      console.log(`[Mobile Login] GUARD: HOST user ${user.email} tried guest login - blocking`)
+      console.log(`[Mobile Login] GUARD: HOST user ${user.email || ''} tried guest login - blocking`)
       await logFailedLogin({
         email: email.toLowerCase(),
-        source: 'mobile',
+        source: 'guest',
         reason: 'INVALID_ACCOUNT_TYPE',
         ip: clientIp,
         userAgent,
@@ -262,8 +261,8 @@ export async function POST(request: NextRequest) {
 
     const accessToken = await new SignJWT({
       userId: user.id,
-      email: user.email,
-      name: user.name,
+      email: user.email || '',
+      name: user.name || '',
       role: user.role,
       jti: tokenId,
     })
@@ -295,8 +294,8 @@ export async function POST(request: NextRequest) {
 
     await logSuccessfulLogin({
       userId: user.id,
-      email: user.email,
-      source: 'mobile',
+      email: user.email || '',
+      source: 'guest',
       ip: clientIp,
       userAgent,
     })
@@ -308,8 +307,8 @@ export async function POST(request: NextRequest) {
       success: true,
       user: {
         id: user.id,
-        email: user.email,
-        name: user.name,
+        email: user.email || '',
+        name: user.name || '',
         role: user.role,
       },
       accessToken,

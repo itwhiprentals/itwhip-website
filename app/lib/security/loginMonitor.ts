@@ -16,7 +16,7 @@ type LoginFailureReason =
   | 'RATE_LIMITED'
   | 'BLOCKED_IP'
 
-type LoginSource = 'partner' | 'host' | 'fleet' | 'guest' | 'admin'
+type LoginSource = 'partner' | 'host' | 'fleet' | 'guest' | 'admin' | 'mobile_host'
 
 interface LoginAttemptDetails {
   email: string

@@ -277,12 +277,13 @@ export async function POST(request: NextRequest) {
         // Create new record
         const created = await prisma.rentalAvailability.create({
           data: {
+            id: crypto.randomUUID(),
             carId,
             date,
             isAvailable,
             customPrice: customPrice || null,
             note: note || null
-          }
+          } as any
         })
         results.push(created)
       }
@@ -291,6 +292,7 @@ export async function POST(request: NextRequest) {
     // Log the activity
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         userId: host.userId,
         action: isAvailable ? 'CALENDAR_DATES_UNBLOCKED' : 'CALENDAR_DATES_BLOCKED',
         entityType: 'car',

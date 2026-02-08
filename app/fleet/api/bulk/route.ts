@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
       try {
         const car = await prisma.rentalCar.create({
           data: {
+            id: crypto.randomUUID(),
+            updatedAt: new Date(),
             hostId: carData.hostId || hostId,
             source: 'p2p',
             make: carData.make,
@@ -63,7 +65,7 @@ export async function POST(request: NextRequest) {
             instantBook: true,
             totalTrips: 0,
             rating: 0
-          }
+          } as any
         })
         
         results.success.push({

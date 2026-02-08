@@ -5,7 +5,7 @@ import { prisma } from '@/app/lib/database/prisma'
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-11-20.acacia'
+  apiVersion: '2024-11-20.acacia' as any
 })
 
 export async function POST(
@@ -76,7 +76,7 @@ export async function POST(
         currentBalance: true,
         stripeCustomerId: true,
         defaultPaymentMethodOnFile: true,
-        paymentMethods: {
+        PaymentMethod: {
           where: { isDefault: true },
           take: 1
         }
@@ -130,8 +130,8 @@ export async function POST(
           // Use default payment method
           if (host.defaultPaymentMethodOnFile) {
             paymentMethod = host.defaultPaymentMethodOnFile
-          } else if (host.paymentMethods.length > 0) {
-            paymentMethod = host.paymentMethods[0].stripeMethodId
+          } else if (host.PaymentMethod.length > 0) {
+            paymentMethod = host.PaymentMethod[0].stripeMethodId
           } else {
             return NextResponse.json(
               { error: 'No payment method available to charge' },
@@ -185,8 +185,9 @@ export async function POST(
     }
 
     // Create HostCharge record
-    const hostCharge = await prisma.hostCharge.create({
+    const hostCharge = await prisma.host_charges.create({
       data: {
+        id: require('crypto').randomUUID(),
         hostId: id,
         amount,
         chargeType,
@@ -206,12 +207,13 @@ export async function POST(
           originalBalance: host.currentBalance,
           chargedByAdmin: chargedBy
         }
-      }
+      } as any
     })
 
     // Create audit log
     await prisma.auditLog.create({
       data: {
+        id: require('crypto').randomUUID(),
         category: 'CHARGE_MANAGEMENT',
         eventType: 'host_charged',
         severity: 'INFO',
@@ -232,9 +234,9 @@ export async function POST(
           hostName: host.name,
           hostEmail: host.email
         },
-        hash: '', // Would generate hash for integrity
+        hash: '',
         timestamp: new Date()
-      }
+      } as any
     })
 
     return NextResponse.json({

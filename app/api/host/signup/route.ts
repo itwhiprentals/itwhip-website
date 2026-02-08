@@ -283,11 +283,11 @@ export async function POST(request: NextRequest) {
             }
           }
         })
-      },
+      } as any,
       include: {
         user: true
       }
-    })
+    }) as any
 
     // Variable to store created car ID
     let createdCarId: string | null = null
@@ -394,7 +394,7 @@ export async function POST(request: NextRequest) {
             modifications: null,
             annualMileage: 12000,
             primaryUse: 'Rental'
-          }
+          } as any
         })
 
         createdCarId = newCar.id
@@ -403,6 +403,7 @@ export async function POST(request: NextRequest) {
         if (vehiclePhotoUrls && Array.isArray(vehiclePhotoUrls) && vehiclePhotoUrls.length > 0) {
           await prisma.rentalCarPhoto.createMany({
             data: vehiclePhotoUrls.map((url: string, index: number) => ({
+              id: crypto.randomUUID(),
               carId: newCar.id,
               url,
               isHero: index === 0,
@@ -415,7 +416,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Log vehicle creation
-        await prisma.activityLog.create({
+        await (prisma.activityLog.create as any)({
           data: {
             action: 'SIGNUP_CAR_CREATED',
             entityType: 'CAR',
@@ -445,7 +446,7 @@ export async function POST(request: NextRequest) {
         console.error('Failed to create car during signup:', carError)
 
         // Still log the vehicle intent in activity log as fallback
-        await prisma.activityLog.create({
+        await (prisma.activityLog.create as any)({
           data: {
             action: 'SIGNUP_VEHICLE_INFO',
             entityType: 'HOST',
@@ -466,7 +467,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create admin notification for new host application
-    await prisma.adminNotification.create({
+    await (prisma.adminNotification.create as any)({
       data: {
         type: 'HOST_APPLICATION',
         title: 'New Host Application',
@@ -492,7 +493,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Create audit log for tracking
-    await prisma.auditLog.create({
+    await (prisma.auditLog.create as any)({
       data: {
         category: 'HOST_MANAGEMENT',
         eventType: 'host_application_submitted',

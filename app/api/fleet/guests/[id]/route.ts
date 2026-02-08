@@ -426,13 +426,13 @@ export async function PATCH(
         await prisma.rentalBooking.updateMany({
           where: {
             renterId: currentGuest.userId,
-            status: 'PENDING',
+            status: 'PENDING' as any,
             startDate: { gt: new Date() }
           },
           data: {
-            status: 'CANCELLED',
+            status: 'CANCELLED' as any,
             cancellationReason: 'Guest account suspended by admin',
-            cancelledBy: 'ADMIN',
+            cancelledBy: 'ADMIN' as any,
             cancelledAt: new Date()
           }
         })
@@ -532,7 +532,7 @@ export async function DELETE(
     }
 
     const now = new Date()
-    let moderationAction
+    let moderationAction: any
     let cancelledBookings = 0
 
     // ========================================================================
@@ -566,9 +566,9 @@ export async function DELETE(
             data: {
               id: nanoid(),
               guestId: id,
-              actionType: 'WARNING',
+              actionType: 'WARNING' as any,
               suspensionLevel: null,
-              warningCategory: warningCategory || null,
+              warningCategory: (warningCategory || null) as any,
               restrictionsApplied: validRestrictions,
               publicReason: reason,
               internalNotes: internalNotes || null,
@@ -671,8 +671,8 @@ export async function DELETE(
             data: {
               id: nanoid(),
               guestId: id,
-              actionType: 'SUSPEND',
-              suspensionLevel,
+              actionType: 'SUSPEND' as any,
+              suspensionLevel: suspensionLevel as any,
               publicReason: reason,
               internalNotes: internalNotes || null,
               internalNotesOnly: false,
@@ -687,7 +687,7 @@ export async function DELETE(
           await tx.reviewerProfile.update({
             where: { id },
             data: {
-              suspensionLevel,
+              suspensionLevel: suspensionLevel as any,
               suspendedAt: now,
               suspendedReason: reason,
               suspendedBy: 'fleet-admin',
@@ -711,9 +711,9 @@ export async function DELETE(
             const result = await tx.rentalBooking.updateMany({
               where: { id: { in: futureBookings.map(b => b.id) } },
               data: {
-                status: 'CANCELLED',
+                status: 'CANCELLED' as any,
                 cancellationReason: `Account suspended: ${reason}`,
-                cancelledBy: 'ADMIN',
+                cancelledBy: 'ADMIN' as any,
                 cancelledAt: now
               }
             })
@@ -757,8 +757,8 @@ export async function DELETE(
             data: {
               id: nanoid(),
               guestId: id,
-              actionType: 'BAN',
-              suspensionLevel: 'BANNED',
+              actionType: 'BAN' as any,
+              suspensionLevel: 'BANNED' as any,
               publicReason: reason,
               internalNotes: internalNotes || null,
               internalNotesOnly: false,
@@ -772,7 +772,7 @@ export async function DELETE(
           await tx.reviewerProfile.update({
             where: { id },
             data: {
-              suspensionLevel: 'BANNED',
+              suspensionLevel: 'BANNED' as any,
               suspendedAt: now,
               suspendedReason: reason,
               suspendedBy: 'fleet-admin',
@@ -802,9 +802,8 @@ export async function DELETE(
                 status: 'CANCELLED',
                 cancellationReason: `Account banned: ${reason}`,
                 cancelledBy: 'ADMIN',
-                cancelledAt: now,
-                refundAmount: allFutureBookings.reduce((sum, b) => sum + b.totalAmount, 0)
-              }
+                cancelledAt: now
+              } as any
             })
             cancelledBookings = result.count
           }
@@ -839,7 +838,7 @@ export async function DELETE(
             data: {
               id: nanoid(),
               guestId: id,
-              actionType: 'UNSUSPEND',
+              actionType: 'UNSUSPEND' as any,
               suspensionLevel: null,
               publicReason: reason,
               internalNotes: internalNotes || null,

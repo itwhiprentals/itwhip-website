@@ -546,6 +546,8 @@ export class AnomalyDetector {
     try {
       await prisma.threat.create({
         data: {
+          id: crypto.randomUUID(),
+          updatedAt: new Date(),
           type,
           severity: this.calculateSeverity(confidence),
           status: ThreatStatus.DETECTED,
@@ -559,7 +561,7 @@ export class AnomalyDetector {
           automated: true,
           firstSeen: new Date(),
           lastSeen: new Date()
-        }
+        } as any
       })
     } catch (error) {
       console.error('Failed to log threat:', error)

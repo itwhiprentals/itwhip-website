@@ -6,7 +6,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyPhoneToken } from '@/app/lib/firebase/admin'
 import { SignJWT } from 'jose'
-import { cookies } from 'next/headers'
 import { nanoid } from 'nanoid'
 import { phoneLoginRateLimit, getClientIp, createRateLimitResponse } from '@/app/lib/rate-limit'
 import { getEnhancedLocation, detectImpossibleTravel } from '@/app/lib/security/geolocation'
@@ -112,7 +111,7 @@ export async function POST(request: NextRequest) {
           data: {
             id: nanoid(),
             type: 'LOGIN_FAILED',
-            severity: threatScore > 80 ? 'HIGH' : threatScore > 50 ? 'MEDIUM' : 'LOW',
+            severity: (threatScore > 80 ? 'HIGH' : threatScore > 50 ? 'MEDIUM' : 'LOW') as any,
             sourceIp: clientIp,
             targetId: phone,
             message: 'Phone verification failed',
@@ -154,7 +153,7 @@ export async function POST(request: NextRequest) {
           data: {
             id: nanoid(),
             type: 'LOGIN_BLOCKED',
-            severity: 'HIGH',
+            severity: 'HIGH' as any,
             sourceIp: clientIp,
             targetId: verifiedPhone,
             message: 'Login blocked - suspended phone',
@@ -167,6 +166,7 @@ export async function POST(request: NextRequest) {
             }),
             action: 'login_denied',
             blocked: true,
+            userAgent: request.headers.get('user-agent') || '',
             timestamp: new Date()
           }
         })
@@ -199,10 +199,10 @@ export async function POST(request: NextRequest) {
             data: {
               id: nanoid(),
               type: 'LOGIN_BLOCKED',
-              severity: 'HIGH',
+              severity: 'HIGH' as any,
               sourceIp: clientIp,
-              targetId: user.email,
-              message: `Login blocked - user ${user.status.toLowerCase()}`,
+              targetId: user.email || '',
+              message: `Login blocked - user ${(user.status as string).toLowerCase()}`,
               details: JSON.stringify({
                 method: 'phone',
                 phone: verifiedPhone,
@@ -212,6 +212,7 @@ export async function POST(request: NextRequest) {
               }),
               action: 'login_denied',
               blocked: true,
+              userAgent: request.headers.get('user-agent') || '',
               timestamp: new Date()
             }
           })
@@ -226,7 +227,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Check if email is fake (phone_XXX@itwhip.temp)
-      const isFakeEmail = user.email.includes('@itwhip.temp')
+      const isFakeEmail = (user.email || '').includes('@itwhip.temp')
 
       // If fake email OR email not verified, require email
       if (isFakeEmail || !user.emailVerified) {
@@ -274,8 +275,8 @@ export async function POST(request: NextRequest) {
         try {
           await prisma.securityEvent.create({
             data: {
-              id: nanoid(), type: 'LOGIN_FAILED', severity: 'HIGH',
-              sourceIp: clientIp, targetId: user.email,
+              id: nanoid(), type: 'LOGIN_FAILED', severity: 'HIGH' as any,
+              sourceIp: clientIp, targetId: user.email || '',
               message: `Bot login blocked: ${botDetection.botName}`,
               details: JSON.stringify({ method: 'phone', phone: verifiedPhone, reason: 'BOT_DETECTED', botConfidence: botDetection.confidence, source: 'guest_portal' }),
               action: 'login_denied', blocked: true, userAgent, country: location.country, city: location.city, timestamp: new Date()
@@ -294,14 +295,14 @@ export async function POST(request: NextRequest) {
         where: { userId: user.id, fingerprint: deviceFingerprint }
       }).catch(() => null) : null
 
-      if (!existingSession && user.emailVerified && !user.email.includes('@itwhip.temp')) {
+      if (!existingSession && user.emailVerified && !(user.email || '').includes('@itwhip.temp')) {
         try {
           const deviceAlert = getNewDeviceAlertTemplate(user.name, {
             browser: 'Browser', os: 'OS', ip: clientIp,
             location: location.country ? `${location.city || 'Unknown'}, ${location.country}` : 'Unknown',
             time: new Date().toLocaleString()
           })
-          await sendEmail(user.email, deviceAlert.subject, deviceAlert.html)
+          await sendEmail(user.email!, deviceAlert.subject, deviceAlert.html, deviceAlert.html)
           console.log(`[Phone Login] New device alert sent to: ${user.email}`)
         } catch (emailError) {
           console.error('[Phone Login] New device alert failed (non-blocking):', emailError)
@@ -313,7 +314,7 @@ export async function POST(request: NextRequest) {
       if (location.latitude && location.longitude) {
         try {
           const lastLogin = await prisma.securityEvent.findFirst({
-            where: { targetId: user.email, type: 'LOGIN_SUCCESS' },
+            where: { targetId: user.email || '', type: 'LOGIN_SUCCESS' },
             orderBy: { timestamp: 'desc' },
             select: { details: true, timestamp: true }
           })
@@ -340,8 +341,8 @@ export async function POST(request: NextRequest) {
       await prisma.securityEvent.create({
         data: {
           id: nanoid(), type: 'LOGIN_SUCCESS',
-          severity: eventSeverity,
-          sourceIp: clientIp, targetId: user.email,
+          severity: eventSeverity as any,
+          sourceIp: clientIp, targetId: user.email || '',
           message: impossibleTravel ? 'Phone login successful (IMPOSSIBLE TRAVEL)' : 'Phone login successful',
           details: JSON.stringify({
             method: 'phone', phone: verifiedPhone, fingerprint: deviceFingerprint,
@@ -389,10 +390,10 @@ export async function POST(request: NextRequest) {
     // Generate JWT tokens (includes status for runtime enforcement)
     const { accessToken, refreshToken } = await generateJWTTokens(
       user.id,
-      user.email,
+      user.email || '',
       user.name,
-      user.role,
-      user.status || 'ACTIVE'
+      user.role as any,
+      (user.status as any) || 'ACTIVE'
     )
 
     console.log(`[Phone Login] Login successful for user: ${user.id}`)

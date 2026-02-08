@@ -32,9 +32,9 @@ export async function POST(request: NextRequest) {
     const booking = await prisma.rentalBooking.findUnique({
       where: { id: bookingId },
       include: {
-        insurancePolicy: true
+        InsurancePolicy: true
       }
-    });
+    }) as any;
 
     if (!booking) {
       return NextResponse.json(
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!booking.insurancePolicy) {
+    if (!booking.InsurancePolicy) {
       return NextResponse.json(
         { error: 'No insurance policy found for this booking' },
         { status: 400 }
@@ -89,19 +89,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Create claim
-    const claim = await prisma.claim.create({
+    const claim = await (prisma.claim.create as any)({
       data: {
-        policyId: booking.insurancePolicy.id,
+        policyId: booking.InsurancePolicy.id,
         bookingId,
         hostId,
         type,
         reportedBy: reportedBy || 'HOST',
         description,
         incidentDate: new Date(incidentDate),
-        damagePhotos: damagePhotos || [],
+        damagePhotosLegacy: damagePhotos || [],
         estimatedCost: estimatedCost || 0,
         status: 'PENDING',
-        deductible: booking.insurancePolicy.deductible
+        deductible: booking.InsurancePolicy.deductible
       },
       include: {
         host: {
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
             guestName: true
           }
         },
-        policy: {
+        InsurancePolicy: {
           select: {
             tier: true,
             policyNumber: true

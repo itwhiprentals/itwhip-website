@@ -1,7 +1,7 @@
 // app/lib/payouts/create-historical-payout.ts
 
 import { prisma } from '@/app/lib/database/prisma'
-import { PLATFORM_COMMISSION, calculateHostEarnings } from '@/app/fleet/financial-constants'
+import { PLATFORM_COMMISSION } from '@/app/fleet/financial-constants'
 
 /**
  * Creates a historical PAID payout record for a completed booking
@@ -34,9 +34,9 @@ function calculatePayoutAmounts(
   useChaufferRate: boolean = false
 ): PayoutCalculation {
   // Get commission rate
-  const commissionRate = useChaufferRate 
-    ? PLATFORM_COMMISSION.CHAUFFEUR_RATE  // 40%
-    : PLATFORM_COMMISSION.BASE_RATE        // 25%
+  const commissionRate = useChaufferRate
+    ? PLATFORM_COMMISSION.BASIC      // 60% (chauffeur/platform insurance rate)
+    : PLATFORM_COMMISSION.STANDARD   // 25% (standard host rate)
   
   // Calculate amounts
   const platformRevenue = bookingTotal * commissionRate
@@ -83,24 +83,24 @@ export async function createHistoricalPayout(
         bookingId,
         amount: calculation.hostEarnings,
         status: 'PAID', // Historical - already completed
-        
+
         // Eligibility and processing dates (same for historical)
         eligibleAt: reviewCreatedAt, // Trip was completed when review was made
         processedAt: reviewCreatedAt, // Mark as processed at review time
-        
+
         // Period tracking
         startDate: tripStartDate,
         endDate: tripEndDate,
-        
+
         // Financial breakdown
         bookingCount: 1,
         grossEarnings: bookingTotal,
         platformFee: calculation.platformRevenue,
         processingFee: 0, // No additional processing fee for historical
         netPayout: calculation.hostEarnings,
-        
+
         currency: 'USD'
-      }
+      } as any
     })
 
     return {

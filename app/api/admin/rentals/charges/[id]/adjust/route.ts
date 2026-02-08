@@ -62,7 +62,7 @@ export async function POST(
             host: true
           }
         },
-        adjustmentHistory: {
+        ChargeAdjustment: {
           orderBy: { createdAt: 'desc' }
         }
       }
@@ -110,18 +110,21 @@ export async function POST(
       // Create adjustment record for audit trail
       const adjustmentRecord = await tx.chargeAdjustment.create({
         data: {
-          tripChargeId: chargeId,
+          id: crypto.randomUUID(),
+          chargeId,
           bookingId: tripCharge.bookingId,
           adminId,
+          adminEmail,
+          adjustmentType: 'GRANULAR',
+          reason: waiveReason || 'Admin adjustment',
           originalAmount: originalTotal,
           adjustedAmount: adjustedSubtotal,
-          finalAmount: finalTotal,
-          waivePercentage,
-          waiveAmount,
-          waiveReason,
-          adjustmentDetails: JSON.stringify(processedAdjustments),
-          notes: adminNotes,
-          processedImmediately: processImmediately
+          reductionAmount: originalTotal - finalTotal,
+          reductionPercent: originalTotal > 0 ? Math.round(((originalTotal - finalTotal) / originalTotal) * 100) : 0,
+          adjustmentDetails: JSON.stringify({ adjustments: processedAdjustments, waivePercentage, waiveAmount: adjustedSubtotal * (waivePercentage / 100), finalAmount: finalTotal, processImmediately }),
+          adminNotes,
+          processingStatus: processImmediately ? 'processing' : 'pending',
+          updatedAt: new Date()
         }
       })
 
@@ -173,7 +176,7 @@ export async function POST(
         data: {
           chargeStatus: newChargeStatus,
           adjustedAmount: finalTotal,
-          lastAdjustmentId: adjustmentRecord.id,
+          adjustmentNotes: `Last adjustment: ${adjustmentRecord.id}`,
           ...(stripeChargeId && {
             stripeChargeId,
             chargedAt: new Date(),
@@ -206,6 +209,7 @@ export async function POST(
       // Create admin notification for audit
       await tx.adminNotification.create({
         data: {
+          id: crypto.randomUUID(),
           type: 'CHARGE_ADJUSTED',
           title: `Charges Adjusted - ${tripCharge.booking.bookingCode}`,
           message: `Original: $${originalTotal.toFixed(2)} → Adjusted: $${adjustedSubtotal.toFixed(2)} → Final: $${finalTotal.toFixed(2)}. ${
@@ -219,46 +223,49 @@ export async function POST(
           relatedId: chargeId,
           relatedType: 'TripCharge',
           metadata: {
-            adjustmentRecord,
-            paymentResult
-          }
+            adjustmentId: adjustmentRecord.id,
+            paymentStatus: paymentResult?.status || null
+          },
+          updatedAt: new Date()
         }
       })
 
       // Create guest message
       await tx.rentalMessage.create({
         data: {
+          id: crypto.randomUUID(),
           bookingId: tripCharge.bookingId,
           senderId: 'system',
           senderType: 'admin',
           senderName: 'Admin',
           message: generateGuestMessage(originalTotal, finalTotal, newChargeStatus, processedAdjustments),
           category: 'charges',
+          updatedAt: new Date(),
           metadata: {
             adjustmentId: adjustmentRecord.id,
             originalAmount: originalTotal,
             finalAmount: finalTotal
-          },
-          isRead: false
+          }
         }
       })
 
       // Create activity log
       await tx.activityLog.create({
         data: {
+          id: crypto.randomUUID(),
           action: 'CHARGE_ADJUSTED',
           entityType: 'TripCharge',
           entityId: chargeId,
           userId: adminId,
-          metadata: {
+          metadata: JSON.parse(JSON.stringify({
             originalAmount: originalTotal,
             adjustedAmount: adjustedSubtotal,
             finalAmount: finalTotal,
             waivePercentage,
             adjustments: processedAdjustments,
-            paymentResult,
+            paymentStatus: paymentResult?.status || null,
             chargeStatus: newChargeStatus
-          },
+          })),
           ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
         }
       })
@@ -339,17 +346,8 @@ export async function GET(
             }
           }
         },
-        adjustmentHistory: {
-          orderBy: { createdAt: 'desc' },
-          include: {
-            admin: {
-              select: {
-                id: true,
-                name: true,
-                email: true
-              }
-            }
-          }
+        ChargeAdjustment: {
+          orderBy: { createdAt: 'desc' }
         }
       }
     })
@@ -368,7 +366,7 @@ export async function GET(
     const reductionPercentage = originalAmount > 0 ? (totalReduction / originalAmount * 100) : 0
 
     // Format adjustment history
-    const formattedHistory = tripCharge.adjustmentHistory.map(adj => ({
+    const formattedHistory = (tripCharge as any).ChargeAdjustment.map((adj: any) => ({
       id: adj.id,
       date: adj.createdAt,
       adminName: adj.admin?.name || 'System',
@@ -408,8 +406,8 @@ export async function GET(
         currentAmount,
         totalReduction,
         reductionPercentage: reductionPercentage.toFixed(2),
-        totalAdjustments: tripCharge.adjustmentHistory.length,
-        lastAdjustedAt: tripCharge.adjustmentHistory[0]?.createdAt || null
+        totalAdjustments: (tripCharge as any).ChargeAdjustment.length,
+        lastAdjustedAt: (tripCharge as any).ChargeAdjustment[0]?.createdAt || null
       },
       adjustmentHistory: formattedHistory
     })

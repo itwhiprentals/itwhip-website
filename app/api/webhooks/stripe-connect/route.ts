@@ -193,7 +193,7 @@ async function handleAccountDeauthorized(accountId: string) {
       stripeDetailsSubmitted: false,
       stripePayoutsEnabled: false,
       stripeChargesEnabled: false,
-      stripeRequirements: null,
+      stripeRequirements: null as any,
       stripeDisabledReason: null,
       payoutsEnabled: false,
     }

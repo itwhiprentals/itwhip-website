@@ -357,7 +357,7 @@ export function BookingDetailDrawer({
           </div>
 
           {/* Disputes/Claims */}
-          {(booking.hasDispute || booking.hasClaim) && (
+          {(booking.hasDispute || (booking as any).hasClaim) && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
               <h3 className="text-sm font-semibold text-red-700 dark:text-red-300 mb-2">Issues</h3>
               {booking.disputes?.map((dispute: any) => (
@@ -365,7 +365,7 @@ export function BookingDetailDrawer({
                   Dispute: {dispute.type} - {dispute.status}
                 </div>
               ))}
-              {booking.claims?.map((claim: any) => (
+              {(booking as any).claims?.map((claim: any) => (
                 <div key={claim.id} className="text-sm text-red-600 dark:text-red-400">
                   Claim: {claim.type} - {claim.status} ({formatCurrency(Number(claim.estimatedCost) || 0)})
                 </div>

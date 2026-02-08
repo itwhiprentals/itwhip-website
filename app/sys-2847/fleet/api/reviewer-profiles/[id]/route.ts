@@ -15,7 +15,7 @@ export async function GET(
     const profile = await prisma.reviewerProfile.findUnique({
       where: { id: profileId },
       include: {
-        reviews: {
+        RentalReview: {
           include: {
             car: {
               select: {
@@ -92,7 +92,7 @@ export async function PUT(
       data: updateData,
       include: {
         _count: {
-          select: { reviews: true }
+          select: { RentalReview: true }
         }
       }
     })

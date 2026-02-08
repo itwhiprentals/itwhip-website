@@ -108,6 +108,7 @@ export async function GET(request: NextRequest) {
       settings = await prisma.platformSettings.create({
         data: {
           id: 'global',
+          updatedAt: new Date(),
           taxByState: { 'AZ': ARIZONA_STATE_RATE },
           taxByCityOverride: ARIZONA_CITY_RATES
         }
@@ -282,7 +283,7 @@ export async function PATCH(request: NextRequest) {
 
     if (!currentSettings) {
       currentSettings = await prisma.platformSettings.create({
-        data: { id: 'global' }
+        data: { id: 'global', updatedAt: new Date() }
       })
     }
 
@@ -362,6 +363,7 @@ export async function PATCH(request: NextRequest) {
     // Create audit log
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         entityType: 'PLATFORM_SETTINGS',
         entityId: 'global',
         action: 'SETTINGS_UPDATED',

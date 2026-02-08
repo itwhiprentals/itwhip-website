@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
+import crypto from 'crypto'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key'
@@ -83,9 +84,12 @@ export async function GET(request: NextRequest) {
         make: true,
         model: true,
         year: true,
-        status: true,
         isActive: true,
-        primaryPhotoUrl: true
+        photos: {
+          where: { isHero: true, deletedAt: null },
+          select: { url: true },
+          take: 1
+        }
       }
     })
 
@@ -106,15 +110,19 @@ export async function GET(request: NextRequest) {
             make: true,
             model: true,
             year: true,
-            status: true,
-            primaryPhotoUrl: true
+            isActive: true,
+            photos: {
+              where: { isHero: true, deletedAt: null },
+              select: { url: true },
+              take: 1
+            }
           }
         })
       }
     }
 
     // Combine all vehicles (dedupe by ID)
-    const vehicleMap = new Map()
+    const vehicleMap = new Map<string, typeof ownedVehicles[number]>()
     ownedVehicles.forEach(v => vehicleMap.set(v.id, v))
     managedVehicles.forEach(v => vehicleMap.set(v.id, v))
     const vehicles = Array.from(vehicleMap.values())
@@ -131,7 +139,7 @@ export async function GET(request: NextRequest) {
             endDate: { gte: start }
           }
         ],
-        status: { in: ['PENDING', 'CONFIRMED', 'IN_PROGRESS'] }
+        status: { in: ['PENDING', 'CONFIRMED', 'ACTIVE'] }
       },
       include: {
         car: {
@@ -151,19 +159,42 @@ export async function GET(request: NextRequest) {
       orderBy: { startDate: 'asc' }
     })
 
-    // Get blocked dates (maintenance, etc.) - from vehicle's blockedDates JSON field
-    const vehiclesWithBlocks = await prisma.rentalCar.findMany({
-      where: { id: { in: vehicleIds } },
-      select: {
-        id: true,
-        blockedDates: true
-      }
+    // Get blocked dates from RentalAvailability (isAvailable=false)
+    const blockedAvailability = await prisma.rentalAvailability.findMany({
+      where: {
+        carId: { in: vehicleIds },
+        isAvailable: false,
+        date: { gte: start, lte: end }
+      },
+      orderBy: { date: 'asc' }
+    })
+
+    // Group blocked availability by vehicle
+    const blockedByVehicle = new Map<string, typeof blockedAvailability>()
+    blockedAvailability.forEach(ba => {
+      const existing = blockedByVehicle.get(ba.carId) || []
+      existing.push(ba)
+      blockedByVehicle.set(ba.carId, existing)
     })
 
     // Format events for calendar
-    const events = bookings.map(b => ({
+    type CalendarEvent = {
+      id: string
+      type: string
+      title: string
+      vehicleId: string
+      vehicleName: string
+      start: string
+      end: string
+      status: string
+      bookingCode: string
+      totalAmount: number
+      color: string
+    }
+
+    const events: CalendarEvent[] = bookings.map(b => ({
       id: b.id,
-      type: 'booking' as const,
+      type: 'booking',
       title: b.renter?.name || b.guestName || 'Guest',
       vehicleId: b.carId,
       vehicleName: b.car
@@ -177,30 +208,26 @@ export async function GET(request: NextRequest) {
       color: getStatusColor(b.status)
     }))
 
-    // Add blocked dates as events
-    vehiclesWithBlocks.forEach(v => {
-      if (v.blockedDates && Array.isArray(v.blockedDates)) {
-        (v.blockedDates as any[]).forEach((block, idx) => {
-          if (block.start && block.end) {
-            const vehicle = vehicles.find(veh => veh.id === v.id)
-            events.push({
-              id: `blocked_${v.id}_${idx}`,
-              type: 'blocked' as const,
-              title: block.reason || 'Blocked',
-              vehicleId: v.id,
-              vehicleName: vehicle
-                ? `${vehicle.year} ${vehicle.make} ${vehicle.model}`
-                : 'Vehicle',
-              start: new Date(block.start).toISOString(),
-              end: new Date(block.end).toISOString(),
-              status: 'BLOCKED',
-              bookingCode: '',
-              totalAmount: 0,
-              color: '#94a3b8' // gray
-            })
-          }
+    // Add blocked availability dates as events
+    blockedByVehicle.forEach((blocks, carId) => {
+      blocks.forEach((block, idx) => {
+        const vehicle = vehicles.find(veh => veh.id === carId)
+        events.push({
+          id: `blocked_${carId}_${idx}`,
+          type: 'blocked',
+          title: block.note || 'Blocked',
+          vehicleId: carId,
+          vehicleName: vehicle
+            ? `${vehicle.year} ${vehicle.make} ${vehicle.model}`
+            : 'Vehicle',
+          start: block.date.toISOString(),
+          end: block.date.toISOString(),
+          status: 'BLOCKED',
+          bookingCode: '',
+          totalAmount: 0,
+          color: '#94a3b8' // gray
         })
-      }
+      })
     })
 
     // Sort events by start date
@@ -212,12 +239,13 @@ export async function GET(request: NextRequest) {
       const bookedDays = calculateBookedDays(vehicleEvents, start, end)
       const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
       const availableDays = totalDays - bookedDays
+      const photoUrl = v.photos[0]?.url || null
 
       return {
         vehicleId: v.id,
         vehicleName: `${v.year} ${v.make} ${v.model}`,
-        vehiclePhoto: v.primaryPhotoUrl,
-        status: v.status,
+        vehiclePhoto: photoUrl,
+        isActive: v.isActive,
         totalDays,
         bookedDays,
         availableDays,
@@ -231,8 +259,7 @@ export async function GET(request: NextRequest) {
       vehicles: vehicles.map(v => ({
         id: v.id,
         name: `${v.year} ${v.make} ${v.model}`,
-        photo: v.primaryPhotoUrl,
-        status: v.status,
+        photo: v.photos[0]?.url || null,
         isActive: v.isActive,
       })),
       availability,
@@ -254,7 +281,7 @@ function getStatusColor(status: string): string {
       return '#22c55e' // green
     case 'PENDING':
       return '#f59e0b' // amber
-    case 'IN_PROGRESS':
+    case 'ACTIVE':
       return '#3b82f6' // blue
     case 'CANCELLED':
       return '#ef4444' // red
@@ -285,7 +312,7 @@ function calculateBookedDays(events: any[], start: Date, end: Date): number {
   return bookedDates.size
 }
 
-// POST - Block dates
+// POST - Block dates using RentalAvailability
 export async function POST(request: NextRequest) {
   try {
     const partner = await getPartnerFromToken(request)
@@ -310,7 +337,8 @@ export async function POST(request: NextRequest) {
       where: {
         id: vehicleId,
         hostId: partner.id
-      }
+      },
+      select: { id: true }
     })
 
     // 2. Check if managed (for Fleet Managers)
@@ -325,7 +353,8 @@ export async function POST(request: NextRequest) {
 
       if (managedRelation) {
         vehicle = await prisma.rentalCar.findUnique({
-          where: { id: vehicleId }
+          where: { id: vehicleId },
+          select: { id: true }
         })
       }
     }
@@ -334,23 +363,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Vehicle not found or access denied' }, { status: 404 })
     }
 
-    // Get existing blocked dates
-    const existingBlocks = (vehicle.blockedDates as any[]) || []
-
-    // Add new block
-    const newBlock = {
-      start: new Date(startDate).toISOString(),
-      end: new Date(endDate).toISOString(),
-      reason: reason || 'Blocked by partner',
-      createdAt: new Date().toISOString()
+    // Create blocked availability records for each date in the range
+    const blockStart = new Date(startDate)
+    const blockEnd = new Date(endDate)
+    const datesToBlock: Date[] = []
+    const current = new Date(blockStart)
+    while (current <= blockEnd) {
+      datesToBlock.push(new Date(current))
+      current.setDate(current.getDate() + 1)
     }
 
-    await prisma.rentalCar.update({
-      where: { id: vehicleId },
-      data: {
-        blockedDates: [...existingBlocks, newBlock]
-      }
-    })
+    // Upsert each date as unavailable
+    for (const date of datesToBlock) {
+      await prisma.rentalAvailability.upsert({
+        where: {
+          carId_date: {
+            carId: vehicleId,
+            date: date
+          }
+        },
+        update: {
+          isAvailable: false,
+          note: reason || 'Blocked by partner'
+        },
+        create: {
+          id: crypto.randomUUID(),
+          carId: vehicleId,
+          date: date,
+          isAvailable: false,
+          note: reason || 'Blocked by partner'
+        }
+      })
+    }
 
     return NextResponse.json({
       success: true,
@@ -374,11 +418,11 @@ export async function DELETE(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const vehicleId = searchParams.get('vehicleId')
-    const blockIndex = searchParams.get('index')
+    const dateParam = searchParams.get('date')
 
-    if (!vehicleId || blockIndex === null) {
+    if (!vehicleId || !dateParam) {
       return NextResponse.json(
-        { error: 'Missing required params: vehicleId, index' },
+        { error: 'Missing required params: vehicleId, date' },
         { status: 400 }
       )
     }
@@ -389,7 +433,8 @@ export async function DELETE(request: NextRequest) {
       where: {
         id: vehicleId,
         hostId: partner.id
-      }
+      },
+      select: { id: true }
     })
 
     // 2. Check if managed (for Fleet Managers)
@@ -404,7 +449,8 @@ export async function DELETE(request: NextRequest) {
 
       if (managedRelation) {
         vehicle = await prisma.rentalCar.findUnique({
-          where: { id: vehicleId }
+          where: { id: vehicleId },
+          select: { id: true }
         })
       }
     }
@@ -413,20 +459,20 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Vehicle not found or access denied' }, { status: 404 })
     }
 
-    // Remove block at index
-    const existingBlocks = (vehicle.blockedDates as any[]) || []
-    const idx = parseInt(blockIndex)
+    // Remove the blocked availability record for this date
+    const dateToUnblock = new Date(dateParam)
 
-    if (idx >= 0 && idx < existingBlocks.length) {
-      existingBlocks.splice(idx, 1)
-
-      await prisma.rentalCar.update({
-        where: { id: vehicleId },
-        data: {
-          blockedDates: existingBlocks
-        }
-      })
-    }
+    await prisma.rentalAvailability.updateMany({
+      where: {
+        carId: vehicleId,
+        date: dateToUnblock,
+        isAvailable: false
+      },
+      data: {
+        isAvailable: true,
+        note: null
+      }
+    })
 
     return NextResponse.json({
       success: true,

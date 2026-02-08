@@ -425,13 +425,13 @@ export async function POST(request: NextRequest) {
         {
           error: 'Validation error',
           message: 'Invalid request data',
-          errors: error.errors,
+          errors: (error as any).errors,
           code: 'VALIDATION_ERROR'
         },
         { status: 400 }
       )
     }
-    
+
     return NextResponse.json(
       {
         error: 'Internal server error',
@@ -542,7 +542,7 @@ export async function DELETE(request: NextRequest) {
     const validated = revokeSchema.parse(body)
     
     // Revoke certificate
-    await revokeert(validated.certificateId, validated.reason)
+    await revokecert(validated.certificateId, validated.reason)
     
     // Create alert
     await createAlert({
@@ -578,13 +578,13 @@ export async function DELETE(request: NextRequest) {
         {
           error: 'Validation error',
           message: 'Invalid request data',
-          errors: error.errors,
+          errors: (error as any).errors,
           code: 'VALIDATION_ERROR'
         },
         { status: 400 }
       )
     }
-    
+
     return NextResponse.json(
       {
         error: 'Internal server error',

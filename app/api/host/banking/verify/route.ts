@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     // Verify the bank account with Stripe
     try {
-      await stripe.accounts.verifyExternalAccount(
+      await (stripe.accounts as any).verifyExternalAccount(
         host.stripeAccountId,
         bankAccountId,
         {

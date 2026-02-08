@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     const claimsNeedingReminder = await prisma.claim.findMany({
       where: {
-        status: 'PENDING',
+        status: 'PENDING' as any,
         guestResponseText: null,
         guestResponseDeadline: {
           gte: now,
@@ -50,6 +50,8 @@ export async function POST(request: NextRequest) {
         booking: {
           select: {
             bookingCode: true,
+            guestName: true,
+            guestEmail: true,
             car: {
               select: {
                 make: true,
@@ -72,12 +74,13 @@ export async function POST(request: NextRequest) {
         )
 
         // Build reminder email data
+        const bookingData = claim.booking as any
         const emailData = {
-          guestName: claim.guestName || 'Guest',
+          guestName: bookingData?.guestName || 'Guest',
           claimId: claim.id,
-          bookingCode: claim.booking?.bookingCode || 'N/A',
-          carDetails: claim.booking?.car
-            ? `${claim.booking.car.year} ${claim.booking.car.make} ${claim.booking.car.model}`
+          bookingCode: bookingData?.bookingCode || 'N/A',
+          carDetails: bookingData?.car
+            ? `${bookingData.car.year} ${bookingData.car.make} ${bookingData.car.model}`
             : 'Vehicle',
           hoursRemaining,
           responseUrl: `${process.env.NEXT_PUBLIC_APP_URL}/claims/${claim.id}`,
@@ -85,9 +88,11 @@ export async function POST(request: NextRequest) {
         }
 
         // Generate and send reminder email
-        const emailTemplate = getClaimReminderGuestTemplate(emailData)
+        const emailTemplate = getClaimReminderGuestTemplate(emailData as any)
+        const guestEmail = bookingData?.guestEmail
+        if (!guestEmail) continue
         await sendEmail({
-          to: claim.guestEmail,
+          to: guestEmail,
           subject: emailTemplate.subject,
           html: emailTemplate.html,
           text: emailTemplate.text
@@ -112,7 +117,7 @@ export async function POST(request: NextRequest) {
     // Claims where deadline has passed and no response
     const expiredClaims = await prisma.claim.findMany({
       where: {
-        status: 'PENDING',
+        status: 'PENDING' as any,
         guestResponseText: null,
         guestResponseDeadline: {
           lt: now
@@ -123,6 +128,8 @@ export async function POST(request: NextRequest) {
         booking: {
           select: {
             bookingCode: true,
+            guestName: true,
+            guestEmail: true,
             car: {
               select: {
                 make: true,
@@ -146,8 +153,12 @@ export async function POST(request: NextRequest) {
     for (const claim of expiredClaims) {
       try {
         // Apply the account hold
+        const expiredBooking = claim.booking as any
+        const expiredGuestEmail = expiredBooking?.guestEmail
+        if (!expiredGuestEmail) continue
+
         const holdApplied = await applyAccountHold(
-          claim.guestEmail,
+          expiredGuestEmail,
           claim.id,
           'Failed to respond to claim within 48 hours'
         )
@@ -155,36 +166,38 @@ export async function POST(request: NextRequest) {
         if (holdApplied) {
           // Send account hold notification email
           const emailData = {
-            guestName: claim.guestName || 'Guest',
+            guestName: expiredBooking?.guestName || 'Guest',
             claimId: claim.id,
-            bookingCode: claim.booking?.bookingCode || 'N/A',
-            carDetails: claim.booking?.car
-              ? `${claim.booking.car.year} ${claim.booking.car.make} ${claim.booking.car.model}`
+            bookingCode: expiredBooking?.bookingCode || 'N/A',
+            carDetails: expiredBooking?.car
+              ? `${expiredBooking.car.year} ${expiredBooking.car.make} ${expiredBooking.car.model}`
               : 'Vehicle',
-            claimType: claim.claimType,
-            estimatedCost: claim.estimatedCost?.toNumber() || 0,
-            hostName: claim.booking?.host?.name || 'Host',
+            claimType: claim.type,
+            estimatedCost: Number(claim.estimatedCost) || 0,
+            hostName: expiredBooking?.host?.name || 'Host',
             holdReason: 'Failed to respond to claim within 48 hours',
             responseUrl: `${process.env.NEXT_PUBLIC_APP_URL}/claims/${claim.id}`,
             supportEmail: 'claims@itwhip.com'
           }
 
-          const emailTemplate = getClaimAccountHoldAppliedTemplate(emailData)
+          const emailTemplate = getClaimAccountHoldAppliedTemplate(emailData as any)
           await sendEmail({
-            to: claim.guestEmail,
+            to: expiredGuestEmail,
             subject: emailTemplate.subject,
             html: emailTemplate.html,
             text: emailTemplate.text
           })
 
           // Log activity
-          await prisma.claimActivityLog.create({
+          await prisma.activityLog.create({
             data: {
-              claimId: claim.id,
+              id: crypto.randomUUID(),
               action: 'ACCOUNT_HOLD_APPLIED',
-              description: 'Account hold applied due to missed response deadline',
-              performedBy: 'SYSTEM',
+              entityType: 'Claim',
+              entityId: claim.id,
               metadata: {
+                description: 'Account hold applied due to missed response deadline',
+                performedBy: 'SYSTEM',
                 deadlineExpiredAt: claim.guestResponseDeadline,
                 processedAt: now.toISOString()
               }

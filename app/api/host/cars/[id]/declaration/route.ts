@@ -50,9 +50,10 @@ export async function PATCH(
         host: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
-            email: true
+            name: true,
+            email: true,
+            revenueSplit: true,
+            insuranceType: true
           }
         }
       }
@@ -66,6 +67,7 @@ export async function PATCH(
     }
 
     // Check if declaration actually changed
+    const hostData = (car as any).host
     if (car.primaryUse === declaration) {
       return NextResponse.json({
         success: true,
@@ -73,7 +75,7 @@ export async function PATCH(
         data: {
           carId: car.id,
           declaration: car.primaryUse,
-          earningsTier: car.revenueSplit
+          earningsTier: hostData.revenueSplit
         }
       })
     }
@@ -96,28 +98,29 @@ export async function PATCH(
     try {
       await prisma.activityLog.create({
         data: {
+          id: crypto.randomUUID(),
           entityType: 'CAR',
           entityId: carId,
           hostId,
           action: 'DECLARATION_UPDATED',
           category: 'VEHICLE',
           severity: 'INFO',
-          description: `Usage declaration changed from "${oldConfig.label}" to "${newConfig.label}"`,
-          oldValue: {
+          oldValue: JSON.stringify({
             declaration: oldDeclaration,
             label: oldConfig.label,
             maxGap: oldConfig.maxGap
-          },
-          newValue: {
+          }),
+          newValue: JSON.stringify({
             declaration,
             label: newConfig.label,
             maxGap: newConfig.maxGap
-          },
+          }),
           metadata: {
+            description: `Usage declaration changed from "${oldConfig.label}" to "${newConfig.label}"`,
             oldAllowedGap: oldConfig.maxGap,
             newAllowedGap: newConfig.maxGap,
-            earningsTier: car.revenueSplit,
-            insuranceType: car.insuranceType,
+            earningsTier: hostData.revenueSplit,
+            insuranceType: hostData.insuranceType,
             note: 'Earnings tier unchanged - based on insurance level'
           }
         }
@@ -132,7 +135,7 @@ export async function PATCH(
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #4F46E5;">Declaration Updated</h2>
-          <p>Hi ${car.host.firstName},</p>
+          <p>Hi ${hostData.name},</p>
           
           <p>Your vehicle declaration has been updated:</p>
           
@@ -149,7 +152,7 @@ export async function PATCH(
             <p><strong>Claim Impact:</strong> ${newConfig.claimImpact}</p>
           </div>
 
-          <p><strong>Your Earnings Tier:</strong> ${car.revenueSplit}%</p>
+          <p><strong>Your Earnings Tier:</strong> ${hostData.revenueSplit}%</p>
           <p style="color: #6B7280; font-size: 14px;">
             <em>Note: Your earnings tier is based on your insurance level and remains unchanged.</em>
           </p>
@@ -160,11 +163,12 @@ export async function PATCH(
         </div>
       `
 
-      await sendEmail({
-        to: car.host.email,
-        subject: `Declaration Updated: ${car.year} ${car.make} ${car.model}`,
-        html: emailHtml
-      })
+      await sendEmail(
+        hostData.email,
+        `Declaration Updated: ${car.year} ${car.make} ${car.model}`,
+        emailHtml,
+        `Declaration updated for ${car.year} ${car.make} ${car.model}`
+      )
     } catch (emailError) {
       console.error('Failed to send declaration update email:', emailError)
       // Continue even if email fails
@@ -178,8 +182,8 @@ export async function PATCH(
         declaration: updatedCar.primaryUse,
         declarationLabel: newConfig.label,
         allowedGap: newConfig.maxGap,
-        earningsTier: updatedCar.revenueSplit,
-        insuranceType: updatedCar.insuranceType,
+        earningsTier: hostData.revenueSplit,
+        insuranceType: hostData.insuranceType,
         note: 'Earnings tier unchanged - based on insurance level'
       }
     })
@@ -227,9 +231,13 @@ export async function GET(
         model: true,
         year: true,
         primaryUse: true,
-        revenueSplit: true,
-        insuranceType: true,
-        totalTrips: true
+        totalTrips: true,
+        host: {
+          select: {
+            revenueSplit: true,
+            insuranceType: true
+          }
+        }
       }
     })
 
@@ -259,8 +267,8 @@ export async function GET(
           claimImpact: config.claimImpact
         },
         earningsTier: {
-          percentage: car.revenueSplit,
-          insuranceType: car.insuranceType
+          percentage: car.host.revenueSplit,
+          insuranceType: car.host.insuranceType
         },
         totalTrips: car.totalTrips,
         availableDeclarations: Object.keys(DECLARATION_CONFIGS).map(key => {

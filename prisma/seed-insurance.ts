@@ -18,6 +18,8 @@ async function seedInsuranceProvider() {
   // Create Tint provider with coverage tiers and pricing
   const tintProvider = await prisma.insuranceProvider.create({
     data: {
+      id: crypto.randomUUID(),
+      updatedAt: new Date(),
       name: 'Tint',
       type: 'EMBEDDED',
       isActive: true,
@@ -89,7 +91,7 @@ async function seedInsuranceProvider() {
       contractStart: new Date(),
       contractEnd: null,
       contractTerms: 'Platform insurance provider - integration pending'
-    }
+    } as any
   });
 
   console.log('✅ Tint provider created successfully');

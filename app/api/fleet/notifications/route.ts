@@ -110,10 +110,10 @@ export async function GET(request: NextRequest) {
 
     // 2. VEHICLE ALERTS
     if (category === 'all' || category === 'vehicle') {
-      // Vehicles pending approval
+      // Vehicles pending approval (inactive vehicles from fleet partners)
       const pendingVehicles = await prisma.rentalCar.findMany({
         where: {
-          fleetApprovalStatus: 'PENDING',
+          isActive: false,
           host: {
             hostType: { in: ['FLEET_PARTNER', 'PARTNER'] }
           }
@@ -146,10 +146,13 @@ export async function GET(request: NextRequest) {
         })
       })
 
-      // Vehicles with changes requested
+      // Vehicles requiring inspection (safety holds / inspection needed)
       const changesRequested = await prisma.rentalCar.count({
         where: {
-          fleetApprovalStatus: 'CHANGES_REQUESTED',
+          OR: [
+            { requiresInspection: true },
+            { safetyHold: true }
+          ],
           host: {
             hostType: { in: ['FLEET_PARTNER', 'PARTNER'] }
           }
@@ -177,7 +180,7 @@ export async function GET(request: NextRequest) {
       const newBookings = await prisma.rentalBooking.count({
         where: {
           createdAt: { gte: yesterday },
-          rentalCar: {
+          car: {
             host: {
               hostType: { in: ['FLEET_PARTNER', 'PARTNER'] }
             }
@@ -205,7 +208,7 @@ export async function GET(request: NextRequest) {
         where: {
           startDate: { gte: todayStart, lt: todayEnd },
           status: 'CONFIRMED',
-          rentalCar: {
+          car: {
             host: {
               hostType: { in: ['FLEET_PARTNER', 'PARTNER'] }
             }
@@ -231,7 +234,7 @@ export async function GET(request: NextRequest) {
         where: {
           status: 'CANCELLED',
           updatedAt: { gte: sevenDaysAgo },
-          rentalCar: {
+          car: {
             host: {
               hostType: { in: ['FLEET_PARTNER', 'PARTNER'] }
             }
@@ -259,7 +262,7 @@ export async function GET(request: NextRequest) {
       // Documents expiring soon (using dynamic threshold)
       const expiringDocs = await prisma.partner_documents.findMany({
         where: {
-          status: 'APPROVED',
+          status: 'VERIFIED',
           expiresAt: { gte: now, lte: documentWarningDate },
           host: {
             hostType: { in: ['FLEET_PARTNER', 'PARTNER'] }
@@ -267,7 +270,7 @@ export async function GET(request: NextRequest) {
         },
         select: {
           id: true,
-          documentType: true,
+          type: true,
           expiresAt: true,
           host: {
             select: { id: true, partnerCompanyName: true }
@@ -287,7 +290,7 @@ export async function GET(request: NextRequest) {
           category: 'document',
           priority: isUrgent ? 'high' : 'medium',
           title: 'Document Expiring Soon',
-          description: `${doc.documentType} for ${doc.host?.partnerCompanyName} expires in ${daysUntil} day(s)`,
+          description: `${doc.type} for ${doc.host?.partnerCompanyName} expires in ${daysUntil} day(s)`,
           link: `/fleet/partners/${doc.host?.id}/documents`,
           metadata: { partnerId: doc.host?.id, documentId: doc.id, daysUntil },
           timestamp: now.toISOString()
@@ -321,7 +324,7 @@ export async function GET(request: NextRequest) {
       // Documents pending review
       const pendingDocs = await prisma.partner_documents.count({
         where: {
-          status: 'PENDING_REVIEW',
+          status: 'PENDING',
           host: {
             hostType: { in: ['FLEET_PARTNER', 'PARTNER'] }
           }
@@ -413,7 +416,7 @@ export async function GET(request: NextRequest) {
       // Open claims
       const openClaims = await prisma.claim.count({
         where: {
-          status: { in: ['SUBMITTED', 'IN_REVIEW', 'PENDING_DOCS'] }
+          status: { in: ['PENDING', 'UNDER_REVIEW', 'GUEST_RESPONSE_PENDING'] }
         }
       })
 
@@ -439,7 +442,7 @@ export async function GET(request: NextRequest) {
           rating: { lte: alertSettings.lowRatingThreshold },
           createdAt: { gte: sevenDaysAgo },
           booking: {
-            rentalCar: {
+            car: {
               host: {
                 hostType: { in: ['FLEET_PARTNER', 'PARTNER'] }
               }

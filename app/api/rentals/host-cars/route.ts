@@ -67,16 +67,14 @@ export async function GET(request: NextRequest) {
       model: car.model,
       year: car.year,
       carType: car.carType,
-      dailyRate: typeof car.dailyRate === 'string' 
-        ? parseFloat(car.dailyRate) 
-        : car.dailyRate.toNumber ? car.dailyRate.toNumber() 
+      dailyRate: typeof car.dailyRate === 'string'
+        ? parseFloat(car.dailyRate)
         : Number(car.dailyRate),
       city: car.city,
       state: car.state,
       zipCode: car.zipCode,
       rating: typeof car.rating === 'string'
         ? parseFloat(car.rating)
-        : car.rating?.toNumber ? car.rating.toNumber()
         : Number(car.rating || 0),
       totalTrips: car.totalTrips || 0,
       instantBook: car.instantBook || false,
@@ -91,7 +89,6 @@ export async function GET(request: NextRequest) {
         profilePhoto: car.host.profilePhoto,
         rating: typeof car.host.rating === 'string'
           ? parseFloat(car.host.rating)
-          : car.host.rating?.toNumber ? car.host.rating.toNumber()
           : Number(car.host.rating || 0),
         responseTime: car.host.responseTime,
         isVerified: car.host.isVerified || false,
@@ -121,9 +118,8 @@ export async function GET(request: NextRequest) {
       },
       distance: null, // No distance for host's other cars
       // Additional fields that might be useful
-      deliveryFee: typeof car.deliveryFee === 'string' 
-        ? parseFloat(car.deliveryFee) 
-        : car.deliveryFee?.toNumber ? car.deliveryFee.toNumber() 
+      deliveryFee: typeof car.deliveryFee === 'string'
+        ? parseFloat(car.deliveryFee)
         : Number(car.deliveryFee || 0),
       airportPickup: car.airportPickup || false,
       hotelDelivery: car.hotelDelivery || false,

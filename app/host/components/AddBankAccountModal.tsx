@@ -95,7 +95,7 @@ export default function AddBankAccountModal({ isOpen, onClose, onSuccess }: AddB
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center space-x-3">
-            <IoBankOutline className="w-6 h-6 text-blue-600" />
+            <IoBusiness className="w-6 h-6 text-blue-600" />
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               Add Bank Account
             </h2>

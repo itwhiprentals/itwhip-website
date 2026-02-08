@@ -205,6 +205,9 @@ export async function POST(request: NextRequest) {
     // Create invitation
     const invitation = await prisma.managementInvitation.create({
       data: {
+        id: crypto.randomUUID(),
+        token: crypto.randomUUID(),
+        updatedAt: new Date(),
         type,
         senderId: senderHost.id,
         recipientId: recipientHost?.id,
@@ -226,7 +229,7 @@ export async function POST(request: NextRequest) {
           managerPercent: proposedManagerPercent,
           timestamp: new Date().toISOString()
         }]
-      }
+      } as any
     })
 
     // Send invitation email
@@ -269,6 +272,7 @@ export async function POST(request: NextRequest) {
     // Log activity
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         userId: user.id,
         action: 'invitation_sent',
         entityType: 'ManagementInvitation',

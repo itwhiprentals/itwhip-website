@@ -93,10 +93,10 @@ export async function GET(
 
     // Calculate stats
     const totalVehicles = partner.cars.length
-    const avgRating = partner.averageRating ||
+    const avgRating = (partner as any).averageRating ||
       (partner.cars.reduce((sum: number, car: any) => sum + (car.rating || 0), 0) / totalVehicles) || 0
     const totalTrips = partner.cars.reduce((sum: number, car: any) => sum + (car.totalTrips || 0), 0)
-    const totalReviews = partner.totalReviews || 0
+    const totalReviews = (partner as any).totalReviews || 0
 
     // Get price range
     const prices = partner.cars.map((car: any) => car.dailyRate).filter((p: number) => p > 0)
@@ -106,13 +106,13 @@ export async function GET(
     // Format response
     const formattedPartner = {
       id: partner.id,
-      companyName: partner.partnerCompanyName || partner.displayName,
+      companyName: partner.partnerCompanyName || (partner as any).displayName || partner.name,
       slug: partner.partnerSlug,
       logo: partner.partnerLogo,
       bio: partner.partnerBio,
       supportEmail: partner.partnerSupportEmail || partner.email,
       supportPhone: partner.partnerSupportPhone || partner.phone,
-      location: partner.location,
+      location: (partner as any).location || `${partner.city}, ${partner.state}`,
 
       // Stats
       stats: {
@@ -173,8 +173,8 @@ export async function GET(
 
       // For SEO
       seo: {
-        title: `${partner.partnerCompanyName || partner.displayName} - Rideshare Rentals | ItWhip`,
-        description: partner.partnerBio || `Rent rideshare-ready vehicles from ${partner.partnerCompanyName || partner.displayName}. ${totalVehicles} vehicles available starting at $${minPrice}/day.`,
+        title: `${partner.partnerCompanyName || partner.name} - Rideshare Rentals | ItWhip`,
+        description: partner.partnerBio || `Rent rideshare-ready vehicles from ${partner.partnerCompanyName || partner.name}. ${totalVehicles} vehicles available starting at $${minPrice}/day.`,
         image: partner.partnerLogo || partner.cars[0]?.photos?.[0] || null
       }
     }

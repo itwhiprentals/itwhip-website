@@ -67,7 +67,7 @@ export function calculateTierAfterAction(
   switch (action) {
     case 'DELETE_P2P':
       simulatedHost.p2pInsuranceStatus = null
-      simulatedHost.hostInsuranceStatus = null // Handle legacy
+      simulatedHost.hostInsuranceStatus = null as any // Handle legacy
       break
     
     case 'DELETE_COMMERCIAL':

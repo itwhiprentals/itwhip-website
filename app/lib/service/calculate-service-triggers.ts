@@ -1,7 +1,7 @@
 // app/lib/service/calculate-service-triggers.ts
 
 import { ServiceType } from '@prisma/client'
-import { isServiceOverdue, getDaysUntilService, getMilesUntilService } from './calculate-next-service-due'
+import { isServiceOverdue } from './calculate-next-service-due'
 
 /**
  * Service status result
@@ -97,10 +97,10 @@ export function checkOilChangeStatus(
   if (overdueCheck.overdueByMiles > 0) {
     if (overdueCheck.overdueByMiles <= 1000) {
       penalty = Math.max(penalty, 10)
-      severity = severity === 'none' ? 'minor' : severity
+      severity = ['none'].includes(severity) ? 'minor' : severity
     } else if (overdueCheck.overdueByMiles <= 3000) {
       penalty = Math.max(penalty, 20)
-      severity = severity === 'none' || severity === 'minor' ? 'moderate' : severity
+      severity = ['none'].includes(severity) || severity === 'minor' ? 'moderate' : severity
     } else {
       penalty = Math.max(penalty, 30)
       severity = 'severe'

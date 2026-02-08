@@ -58,7 +58,7 @@ export async function getPendingReviewBookings(): Promise<BookingForReview[]> {
         select: { make: true, model: true, year: true },
       },
       host: {
-        select: { businessName: true, contactName: true },
+        select: { businessName: true, name: true },
       },
       bookingDocuments: {
         select: { type: true, url: true, aiAnalysis: true },
@@ -78,7 +78,7 @@ export async function getPendingReviewBookings(): Promise<BookingForReview[]> {
       model: b.car.model,
       year: b.car.year,
     },
-    hostName: b.host.businessName || b.host.contactName || 'Unknown Host',
+    hostName: b.host.businessName || b.host.name || 'Unknown Host',
     startDate: b.startDate,
     endDate: b.endDate,
     totalAmount: b.totalAmount,
@@ -202,7 +202,7 @@ export async function rejectBooking(params: {
         fleetNotes: params.notes ? `${params.reason}\n\n${params.notes}` : params.reason,
         status: 'CANCELLED',
         cancellationReason: params.reason,
-        cancelledBy: 'FLEET',
+        cancelledBy: 'SYSTEM',
         cancelledAt: new Date(),
       },
     })
@@ -255,7 +255,7 @@ export async function requestDocuments(params: {
         fleetReviewedBy: params.reviewedBy,
         fleetReviewedAt: new Date(),
         fleetNotes: `Documents requested: ${params.documentsNeeded.join(', ')}${params.message ? `\n\nMessage: ${params.message}` : ''}`,
-        verificationStatus: 'DOCUMENTS_REQUESTED',
+        verificationStatus: 'PENDING',
       },
     })
 
@@ -287,7 +287,7 @@ export async function getBookingForReview(bookingId: string): Promise<BookingFor
         select: { make: true, model: true, year: true },
       },
       host: {
-        select: { businessName: true, contactName: true },
+        select: { businessName: true, name: true },
       },
       bookingDocuments: {
         select: { type: true, url: true, aiAnalysis: true },
@@ -308,7 +308,7 @@ export async function getBookingForReview(bookingId: string): Promise<BookingFor
       model: booking.car.model,
       year: booking.car.year,
     },
-    hostName: booking.host.businessName || booking.host.contactName || 'Unknown Host',
+    hostName: booking.host.businessName || booking.host.name || 'Unknown Host',
     startDate: booking.startDate,
     endDate: booking.endDate,
     totalAmount: booking.totalAmount,

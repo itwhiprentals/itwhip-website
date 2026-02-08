@@ -5,18 +5,34 @@ import { prisma } from '@/app/lib/database/prisma'
 import { verifyAdminToken } from '@/app/lib/admin/auth'
 import { auditService, AuditEventType, AuditEntityType } from '@/app/lib/audit/audit-service'
 import { sendHostApproval, sendHostRejection } from '@/app/lib/email'
+import crypto from 'crypto'
 
 // POST - Perform bulk actions on hosts
 export async function POST(request: NextRequest) {
   try {
     // Verify admin authentication
-    const adminId = await verifyAdminToken(request)
-    if (!adminId) {
+    const cookieHeader = request.headers.get('cookie')
+    const adminToken = cookieHeader
+      ?.split('; ')
+      .find(c => c.startsWith('adminAccessToken='))
+      ?.split('=')[1]
+
+    if (!adminToken) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 401 }
       )
     }
+
+    const adminPayload = await verifyAdminToken(decodeURIComponent(adminToken))
+    if (!adminPayload) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Admin access required' },
+        { status: 401 }
+      )
+    }
+
+    const adminId = adminPayload.userId
 
     const body = await request.json()
     const { action, hostIds, data } = body
@@ -77,7 +93,7 @@ export async function POST(request: NextRequest) {
         if (host.hostType === 'MANAGED' && action !== 'update_commission') {
           results.failed.push({
             hostId,
-            hostName: host.user.name,
+            hostName: host.user?.name ?? host.name,
             error: 'Cannot modify Platform Fleet hosts'
           })
           results.summary.failed++
@@ -117,7 +133,7 @@ export async function POST(request: NextRequest) {
 
         results.success.push({
           hostId,
-          hostName: host.user.name,
+          hostName: host.user?.name ?? host.name,
           ...result
         })
         results.summary.succeeded++
@@ -133,21 +149,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Log bulk operation
-    await auditService.log({
-      eventType: AuditEventType.BULK_OPERATION,
-      entityType: AuditEntityType.HOST,
-      entityId: 'BULK',
-      userId: adminId,
-      details: {
+    await auditService.log(
+      AuditEventType.BULK_OPERATION,
+      AuditEntityType.HOST,
+      'BULK',
+      {
         action,
         totalHosts: hostIds.length,
         succeeded: results.summary.succeeded,
         failed: results.summary.failed,
         hostIds
       },
-      ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-      userAgent: request.headers.get('user-agent') || 'unknown'
-    })
+      {
+        category: 'ADMIN_ACTION',
+        metadata: {
+          ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+          userAgent: request.headers.get('user-agent') || 'unknown'
+        }
+      }
+    )
 
     return NextResponse.json({
       success: true,
@@ -179,7 +199,6 @@ async function approveHost(host: any, adminId: string) {
         canEditCalendar: true,
         canSetPricing: true,
         canWithdrawFunds: false, // Restricted initially for trust building
-        restrictions: [],
         restrictionReasons: []
       }
     })
@@ -195,13 +214,16 @@ async function approveHost(host: any, adminId: string) {
     // Create notification
     await tx.hostNotification.create({
       data: {
+        id: crypto.randomUUID(),
         hostId: host.id,
         type: 'APPROVAL',
-        title: 'Application Approved! 🎉',
+        category: 'APPLICATION',
+        subject: 'Application Approved!',
         message: 'Congratulations! Your host application has been approved. You can now start listing vehicles.',
         priority: 'HIGH',
-        actionRequired: false,
-        actionUrl: '/host/dashboard'
+        actionRequired: 'Visit your dashboard to get started',
+        actionUrl: '/host/dashboard',
+        updatedAt: new Date()
       }
     })
 
@@ -221,25 +243,9 @@ async function approveHost(host: any, adminId: string) {
 
   // Send approval email
   try {
-    await sendHostApproval(host.user.email, {
-      hostName: host.user.name || 'Host',
-      approvalDate: new Date().toLocaleDateString(),
-      dashboardUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/host/dashboard`,
-      nextSteps: [
-        'Complete your profile with a bio and photo',
-        'List your first vehicle',
-        'Set your availability calendar',
-        'Review your pricing strategy'
-      ],
-      permissions: {
-        canListCars: true,
-        canViewBookings: true,
-        canSetPricing: true,
-        canWithdrawFunds: false,
-        canEditCalendar: true
-      },
-      commissionRate: host.commissionRate || 20,
-      supportEmail: 'info@itwhip.com'
+    await sendHostApproval(host.user?.email || host.email, {
+      name: host.user?.name || host.name || 'Host',
+      message: 'You can now list your vehicles and start earning!'
     })
   } catch (emailError) {
     console.error('Failed to send approval email:', emailError)
@@ -266,21 +272,21 @@ async function rejectHost(host: any, reason: string, adminId: string) {
       where: { id: host.id },
       data: {
         approvalStatus: 'REJECTED',
-        rejectedAt: new Date(),
-        rejectedBy: adminId,
-        rejectionReason: reason
+        rejectedReason: reason
       }
     })
 
     // Create notification
     await tx.hostNotification.create({
       data: {
+        id: crypto.randomUUID(),
         hostId: host.id,
         type: 'REJECTION',
-        title: 'Application Status Update',
+        category: 'APPLICATION',
+        subject: 'Application Status Update',
         message: `Your host application has been reviewed. ${reason}`,
         priority: 'HIGH',
-        actionRequired: false
+        updatedAt: new Date()
       }
     })
 
@@ -289,25 +295,9 @@ async function rejectHost(host: any, reason: string, adminId: string) {
 
   // Send rejection email
   try {
-    await sendHostRejection(host.user.email, {
-      hostName: host.user.name || 'Host',
-      rejectionDate: new Date().toLocaleDateString(),
-      reasons: [
-        {
-          category: 'Application Review',
-          issue: reason,
-          canReapply: true
-        }
-      ],
-      canReapply: true,
-      reapplyUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/host/signup`,
-      nextSteps: [
-        'Review the rejection reasons above',
-        'Address the issues mentioned',
-        'Gather required documentation',
-        'Submit a new application when ready'
-      ],
-      supportEmail: 'info@itwhip.com'
+    await sendHostRejection(host.user?.email || host.email, {
+      name: host.user?.name || host.name || 'Host',
+      reason
     })
   } catch (emailError) {
     console.error('Failed to send rejection email:', emailError)
@@ -329,9 +319,7 @@ async function suspendHost(host: any, reason: string, adminId: string) {
       data: {
         approvalStatus: 'SUSPENDED',
         suspendedAt: new Date(),
-        suspendedBy: adminId,
         suspendedReason: reason,
-        restrictions: ['NO_NEW_BOOKINGS', 'NO_NEW_LISTINGS'],
         restrictionReasons: [reason]
       }
     })
@@ -345,13 +333,16 @@ async function suspendHost(host: any, reason: string, adminId: string) {
     // Create notification
     await tx.hostNotification.create({
       data: {
+        id: crypto.randomUUID(),
         hostId: host.id,
         type: 'SUSPENSION',
-        title: 'Account Suspended',
+        category: 'ACCOUNT',
+        subject: 'Account Suspended',
         message: `Your host account has been suspended. Reason: ${reason}`,
         priority: 'CRITICAL',
-        actionRequired: true,
-        actionUrl: '/host/dashboard'
+        actionRequired: 'Contact support for more information',
+        actionUrl: '/host/dashboard',
+        updatedAt: new Date()
       }
     })
 
@@ -374,9 +365,7 @@ async function restoreHost(host: any, adminId: string) {
       data: {
         approvalStatus: 'APPROVED',
         suspendedAt: null,
-        suspendedBy: null,
         suspendedReason: null,
-        restrictions: [],
         restrictionReasons: []
       }
     })
@@ -390,13 +379,15 @@ async function restoreHost(host: any, adminId: string) {
     // Create notification
     await tx.hostNotification.create({
       data: {
+        id: crypto.randomUUID(),
         hostId: host.id,
         type: 'RESTORATION',
-        title: 'Account Restored',
+        category: 'ACCOUNT',
+        subject: 'Account Restored',
         message: 'Your host account has been restored and is now active.',
         priority: 'HIGH',
-        actionRequired: false,
-        actionUrl: '/host/dashboard'
+        actionUrl: '/host/dashboard',
+        updatedAt: new Date()
       }
     })
 
@@ -417,7 +408,7 @@ async function requestDocuments(host: any, documents: any[], adminId: string) {
       where: { id: host.id },
       data: {
         approvalStatus: 'NEEDS_ATTENTION',
-        pendingActions: documents.map(doc => `UPLOAD_${doc.type.toUpperCase()}`)
+        pendingActions: documents.map((doc: any) => `UPLOAD_${doc.type.toUpperCase()}`)
       }
     })
 
@@ -425,13 +416,13 @@ async function requestDocuments(host: any, documents: any[], adminId: string) {
     for (const doc of documents) {
       await tx.hostDocumentStatus.create({
         data: {
+          id: crypto.randomUUID(),
           hostId: host.id,
           documentType: doc.type,
-          status: 'PENDING',
-          requestedBy: adminId,
+          status: 'NOT_UPLOADED',
           requestedAt: new Date(),
           feedback: doc.issue || 'Document required',
-          deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) // 3 days
+          updatedAt: new Date()
         }
       })
     }
@@ -439,13 +430,16 @@ async function requestDocuments(host: any, documents: any[], adminId: string) {
     // Create notification
     await tx.hostNotification.create({
       data: {
+        id: crypto.randomUUID(),
         hostId: host.id,
         type: 'DOCUMENT_REQUEST',
-        title: 'Documents Required',
+        category: 'DOCUMENTS',
+        subject: 'Documents Required',
         message: `Please upload ${documents.length} document(s) to continue your application.`,
         priority: 'HIGH',
-        actionRequired: true,
-        actionUrl: '/host/profile'
+        actionRequired: 'Upload required documents',
+        actionUrl: '/host/profile',
+        updatedAt: new Date()
       }
     })
 
@@ -454,7 +448,7 @@ async function requestDocuments(host: any, documents: any[], adminId: string) {
 
   return {
     action: 'documents_requested',
-    documentsRequested: documents.map(d => d.type)
+    documentsRequested: documents.map((d: any) => d.type)
   }
 }
 
@@ -475,12 +469,14 @@ async function updateCommission(host: any, commissionRate: number, adminId: stri
     // Create notification
     await tx.hostNotification.create({
       data: {
+        id: crypto.randomUUID(),
         hostId: host.id,
         type: 'SETTINGS_UPDATE',
-        title: 'Commission Rate Updated',
+        category: 'SETTINGS',
+        subject: 'Commission Rate Updated',
         message: `Your commission rate has been updated to ${commissionRate}%.`,
         priority: 'MEDIUM',
-        actionRequired: false
+        updatedAt: new Date()
       }
     })
 

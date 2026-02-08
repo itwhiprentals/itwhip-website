@@ -57,7 +57,7 @@ export function AddressAutocomplete({
   const [error, setError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const debounceRef = useRef<NodeJS.Timeout>()
+  const debounceRef = useRef<NodeJS.Timeout>(undefined)
 
   // Close dropdown when clicking outside
   useEffect(() => {

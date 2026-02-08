@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
             title = 'New Booking Confirmed'
             description = `${guestName} booked ${vehicleName}`
             break
-          case 'IN_PROGRESS':
+          case 'IN_PROGRESS' as any:
             title = 'Trip Started'
             description = `${guestName} picked up ${vehicleName}`
             break

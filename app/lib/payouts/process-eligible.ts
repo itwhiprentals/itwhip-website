@@ -1,7 +1,7 @@
 // app/lib/payouts/process-eligible.ts
 
 import { prisma } from '@/app/lib/database/prisma'
-import { stripe } from '@/app/lib/stripe'
+import { stripe } from '@/app/lib/stripe/client'
 
 /**
  * Process all eligible payouts
@@ -158,7 +158,7 @@ async function isPayoutEligible(
     where: {
       bookingId: payout.bookingId || undefined,
       status: {
-        in: ['OPEN', 'UNDER_REVIEW', 'INVESTIGATING']
+        in: ['OPEN', 'UNDER_REVIEW', 'INVESTIGATING'] as any
       }
     }
   })
@@ -266,6 +266,7 @@ async function processSinglePayout(payout: any): Promise<boolean> {
         // Create audit log
         await tx.activityLog.create({
           data: {
+            id: crypto.randomUUID(),
             action: 'PAYOUT_PROCESSED',
             entityType: 'RentalPayout',
             entityId: payout.id,
@@ -301,6 +302,7 @@ async function processSinglePayout(payout: any): Promise<boolean> {
         // Log critical error
         await prisma.activityLog.create({
           data: {
+            id: crypto.randomUUID(),
             action: 'PAYOUT_FAILED',
             entityType: 'RentalPayout',
             entityId: payout.id,
@@ -333,7 +335,7 @@ async function processSinglePayout(payout: any): Promise<boolean> {
               amount: payout.amount,
               attempts: maxRetries
             }
-          }
+          } as any
         })
 
         return false

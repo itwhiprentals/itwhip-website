@@ -53,6 +53,7 @@ export async function POST(
     // Log the change
     await prisma.partner_commission_history.create({
       data: {
+        id: crypto.randomUUID(),
         hostId: id,
         oldRate: oldRate,
         newRate: rate,

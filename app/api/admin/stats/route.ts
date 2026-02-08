@@ -244,7 +244,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate average charge amount
     const averageChargeAmount = pendingChargesCount > 0 
-      ? (pendingChargesAmount._sum.pendingChargesAmount || 0) / pendingChargesCount
+      ? (Number(pendingChargesAmount._sum.pendingChargesAmount) || 0) / pendingChargesCount
       : 0
 
     // Calculate total revenue

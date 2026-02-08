@@ -349,7 +349,7 @@ export default function PublicTrackingDemoPage() {
             <div className="flex-1 min-h-0">
               {process.env.NEXT_PUBLIC_MAPBOX_TOKEN ? (
                 <TrackingMap
-                  vehicles={vehicles}
+                  vehicles={vehicles as any}
                   geofences={DEMO_GEOFENCES}
                   homeBase={SCOTTSDALE}
                   onVehicleSelect={setSelectedVehicle}

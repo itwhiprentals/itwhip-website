@@ -117,12 +117,10 @@ export default function BookPage() {
     return (
       <main className="min-h-screen bg-gradient-to-br from-green-50 to-white dark:from-gray-950 dark:to-black">
         <Header
-          userType="rider"
-          onUserTypeChange={() => router.push('/')}
           isMobileMenuOpen={isMobileMenuOpen}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
-        
+
         <section className="pt-24 pb-20 px-4 min-h-[80vh] flex items-center justify-center">
           <div className="max-w-md mx-auto text-center">
             <div className="mb-6">
@@ -158,7 +156,7 @@ export default function BookPage() {
           </div>
         </section>
         
-        <Footer userType="rider" />
+        <Footer />
       </main>
     )
   }
@@ -166,8 +164,6 @@ export default function BookPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-950 dark:to-black">
       <Header
-        userType="rider"
-        onUserTypeChange={() => router.push('/')}
         isMobileMenuOpen={isMobileMenuOpen}
         setIsMobileMenuOpen={setIsMobileMenuOpen}
       />
@@ -495,7 +491,7 @@ export default function BookPage() {
         </div>
       </section>
 
-      <Footer userType="rider" />
+      <Footer />
     </main>
   )
 }

@@ -264,7 +264,7 @@ export default function GovernanceDetailPanel({ hostId, carId, profile }: Govern
             <div className="flex-1">
               <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Last Service Date</p>
               <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                {formatDate(maintenanceData.lastServiceDate)}
+                {formatDate((maintenanceData.lastServiceDate ?? null) as string | null)}
               </p>
             </div>
             <IoCalendarOutline className="w-4 h-4 text-gray-600 dark:text-gray-400" />

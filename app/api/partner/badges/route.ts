@@ -2,7 +2,7 @@
 // Partner Trust Badges API
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/app/lib/database/prisma'
+import prisma from '@/app/lib/database/prisma'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import { v2 as cloudinary } from 'cloudinary'
@@ -40,7 +40,7 @@ async function getAuthenticatedPartner() {
     const verified = await jwtVerify(token, JWT_SECRET)
     const payload = verified.payload
 
-    if (!payload.isPartner) {
+    if (!(payload as any).isPartner) {
       return null
     }
 
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const badges = (partner.partnerBadges as Badge[]) || []
+    const badges = (partner.partnerBadges as unknown as Badge[]) || []
 
     return NextResponse.json({
       success: true,
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const currentBadges = (partner.partnerBadges as Badge[]) || []
+    const currentBadges = (partner.partnerBadges as unknown as Badge[]) || []
 
     // Check badge limit
     if (currentBadges.length >= MAX_BADGES) {
@@ -162,9 +162,9 @@ export async function POST(request: NextRequest) {
       folder: `partner-badges/${partner.id}`,
       resource_type: 'image',
       transformation: [
-        { width: 200, height: 200, crop: 'fit' },
-        { quality: 'auto:good' },
-        { fetch_format: 'auto' }
+        { width: 200, height: 200, crop: 'fit' as any },
+        { quality: 'auto:good' as any },
+        { fetch_format: 'auto' as any }
       ]
     })
 
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
     // Update partner record
     await prisma.rentalHost.update({
       where: { id: partner.id },
-      data: { partnerBadges: updatedBadges }
+      data: { partnerBadges: updatedBadges as any }
     })
 
     return NextResponse.json({
@@ -221,7 +221,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const index = parseInt(indexStr)
-    const currentBadges = (partner.partnerBadges as Badge[]) || []
+    const currentBadges = (partner.partnerBadges as unknown as Badge[]) || []
 
     if (isNaN(index) || index < 0 || index >= currentBadges.length) {
       return NextResponse.json(
@@ -248,7 +248,7 @@ export async function DELETE(request: NextRequest) {
     // Update partner record
     await prisma.rentalHost.update({
       where: { id: partner.id },
-      data: { partnerBadges: updatedBadges }
+      data: { partnerBadges: updatedBadges as any }
     })
 
     return NextResponse.json({

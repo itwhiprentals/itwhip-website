@@ -96,6 +96,8 @@ export async function classifyVehicle(vehicleData: VehicleData): Promise<Classif
   // Create new classification in database
   const newClassification = await prisma.vehicleClassification.create({
     data: {
+      id: crypto.randomUUID(),
+      updatedAt: new Date(),
       make,
       model,
       year,
@@ -110,7 +112,7 @@ export async function classifyVehicle(vehicleData: VehicleData): Promise<Classif
       requiresManualReview,
       baseRateMultiplier,
       riskMultiplier
-    }
+    } as any
   })
   
   return {

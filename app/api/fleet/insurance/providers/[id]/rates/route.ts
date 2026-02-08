@@ -235,6 +235,9 @@ export async function PATCH(
     // Create rate history
     await prisma.insuranceRateHistory.create({
       data: {
+        id: crypto.randomUUID(),
+        change: newRate - oldRate,
+        changeType: newRate > oldRate ? 'INCREASE' : 'DECREASE',
         providerId: id,
         tier,
         vehicleClass,
@@ -243,7 +246,7 @@ export async function PATCH(
         effectiveDate: new Date(),
         changedBy,
         reason: reason || `Updated ${tier} rate for ${vehicleClass}`
-      }
+      } as any
     })
 
     return NextResponse.json({

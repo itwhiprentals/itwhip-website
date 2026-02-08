@@ -906,7 +906,8 @@ export default function HostsManagementPage() {
           }}
           hostId={selectedHostForModal}
           hostName={hosts.find(h => h.id === selectedHostForModal)?.name || ''}
-          onSubmit={() => {
+          hostEmail={hosts.find(h => h.id === selectedHostForModal)?.email || ''}
+          onSubmit={async () => {
             fetchHosts()
             setShowDocumentModal(false)
             setSelectedHostForModal(null)
@@ -916,8 +917,9 @@ export default function HostsManagementPage() {
 
       {showBackgroundCheckModal && selectedHostForModal && (
         <BackgroundCheckViewer
+          backgroundCheck={null}
           hostId={selectedHostForModal}
-          onClose={() => {
+          onRefresh={() => {
             setShowBackgroundCheckModal(false)
             setSelectedHostForModal(null)
           }}

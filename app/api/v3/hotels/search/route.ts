@@ -328,7 +328,7 @@ const HOTELS_DATABASE: Hotel[] = [
 
 // Check authentication
 async function isAuthenticated(request: Request): Promise<boolean> {
-  const headersList = headers()
+  const headersList = await headers()
   const apiKey = headersList.get('x-api-key')
   const authHeader = headersList.get('authorization')
   

@@ -93,7 +93,7 @@ export default function CertificationPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   // Scroll to section handler
-  const scrollToSection = (ref: React.RefObject<HTMLDivElement>, section: string) => {
+  const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>, section: string) => {
     setActiveSection(section)
     if (ref.current) {
       const yOffset = -170

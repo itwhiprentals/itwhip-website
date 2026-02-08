@@ -91,7 +91,7 @@ export async function PATCH(
         hostId: hostId
       },
       include: {
-        serviceRecords: {
+        VehicleServiceRecord: {
           orderBy: {
             serviceDate: 'desc'
           },
@@ -134,9 +134,9 @@ export async function PATCH(
     }
 
     // Check if car has active claim
-    const activeClaim = await prisma.claim.findFirst({
+    const activeClaim = await (prisma.claim.findFirst as any)({
       where: {
-        carId: carId,
+        booking: { carId: carId },
         status: {
           in: ['PENDING_REVIEW', 'UNDER_REVIEW', 'APPROVED']
         }
@@ -157,9 +157,10 @@ export async function PATCH(
     const body = await request.json()
 
     // Get previous service mileage for validation (excluding current record)
-    const previousServiceMileage = car.serviceRecords
-      .filter(s => s.id !== serviceId)
-      .sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime())[0]
+    const carAny: any = car
+    const previousServiceMileage = (carAny.VehicleServiceRecord || [])
+      .filter((s: any) => s.id !== serviceId)
+      .sort((a: any, b: any) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime())[0]
       ?.mileageAtService || 0
 
     // Validate updated data
@@ -180,8 +181,8 @@ export async function PATCH(
     }
 
     // Recalculate next service due if service type, date, or mileage changed
-    let nextServiceDue = body.nextServiceDue
-    let nextServiceMileage = body.nextServiceMileage
+    let nextServiceDue: any = body.nextServiceDue
+    let nextServiceMileage: any = body.nextServiceMileage
 
     if (
       body.serviceType !== existingRecord.serviceType ||
@@ -343,9 +344,9 @@ export async function DELETE(
     }
 
     // Check if car has active claim
-    const activeClaim = await prisma.claim.findFirst({
+    const activeClaim = await (prisma.claim.findFirst as any)({
       where: {
-        carId: carId,
+        booking: { carId: carId },
         status: {
           in: ['PENDING_REVIEW', 'UNDER_REVIEW', 'APPROVED']
         }

@@ -1,16 +1,16 @@
 // app/types/rental.ts
 // TypeScript types for the rental system
 
-import { 
-    RentalCar, 
-    RentalHost, 
-    RentalBooking, 
+import type {
+    RentalCar,
+    RentalHost,
+    RentalBooking,
     RentalCarPhoto,
     RentalAvailability,
     RentalReview,
-    User,
-    RentalBookingStatus
-  } from '@/app/lib/dal/types'
+    User
+  } from '@prisma/client'
+  import { RentalBookingStatus } from '@/app/lib/dal/types'
   
   // ============================================================================
   // ENUMS & CONSTANTS
@@ -103,9 +103,9 @@ import {
     searchId?: string // For analytics
   }
   
-  export interface HostWithStats extends RentalHost {
+  export interface HostWithStats extends Omit<RentalHost, 'totalEarnings'> {
     cars?: RentalCar[]
-    averageResponseTime?: string
+    averageResponseTime?: string | null
     totalEarnings?: number
     upcomingBookings?: number
     completedTrips?: number
@@ -302,11 +302,11 @@ import {
     comment?: string
   }
   
-  export interface ReviewWithDetails extends RentalReview {
+  export interface ReviewWithDetails extends Omit<RentalReview, 'hostResponse'> {
     car: RentalCar
     host: RentalHost
-    renterName?: string
-    hostResponse?: string
+    renterName?: string | null
+    hostResponse?: string | null
     helpfulVotes?: number
   }
   
@@ -325,7 +325,6 @@ import {
     width?: number
     height?: number
     size?: number
-    uploadedBy?: string
   }
   
   // ============================================================================

@@ -656,7 +656,7 @@ export default function TrackingMap({
                 Math.pow((selectedVehicle.coordinates.lng - homeBase.lng) * 54.6, 2)
               )
             )
-          }}
+          } as any}
           onClose={() => onVehicleSelect?.(null)}
           onStartTrip={() => handleStartTripReplay(selectedVehicle.id)}
         />

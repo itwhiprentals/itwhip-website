@@ -348,7 +348,7 @@ export default function CarInformationForm({
   // Compute vehicle classification badges
   // Prefer VIN-decoded values over database lookup
   const vinDecodedCarType = mapBodyClassToCarType(carData.bodyClass)
-  const vehicleClass = getVehicleClass(carData.make, carData.model, vinDecodedCarType || vehicleSpec.carType)
+  const vehicleClass = getVehicleClass(carData.make, carData.model, (vinDecodedCarType || vehicleSpec.carType) as any)
 
   // Use VIN-decoded fuelType if available, otherwise fall back to database
   const effectiveFuelType = carData.fuelType || vehicleSpec.fuelType

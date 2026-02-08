@@ -166,7 +166,6 @@ export async function POST(request: NextRequest) {
                 url: pdfUrl
               },
               // Cache PDF for 5+ minutes - saves 90% on re-analysis
-              // @ts-expect-error - cache_control is a new API feature for documents
               cache_control: { type: 'ephemeral' }
             },
             {
@@ -216,7 +215,6 @@ export async function POST(request: NextRequest) {
     console.log(`[Agreement Validation] Result: isValid=${validation.isValid}, score=${validation.score}`)
 
     // Track cache usage for cost monitoring
-    // @ts-expect-error - cache_read_input_tokens exists when caching is used
     const cachedTokens = message.usage?.cache_read_input_tokens || 0
     const inputTokens = message.usage?.input_tokens || 0
     const outputTokens = message.usage?.output_tokens || 0

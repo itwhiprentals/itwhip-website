@@ -29,12 +29,12 @@ export async function GET(request: NextRequest) {
           orderBy: { tier: 'asc' }
         },
         policies: {
-          where: { 
+          where: {
             bookingId: null // Template policies
           },
           orderBy: { tier: 'asc' }
         }
-      }
+      } as any
     });
 
     if (!provider) {

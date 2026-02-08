@@ -105,8 +105,10 @@ export const logClaimAudit = {
     details: ClaimDetails
   ): Promise<string | null> {
     try {
+      const auditId = crypto.randomUUID()
       const audit = await prisma.auditLog.create({
         data: {
+          id: auditId,
           category: 'COMPLIANCE',
           eventType: 'CLAIM_FILED',
           severity: 'CRITICAL',
@@ -118,13 +120,14 @@ export const logClaimAudit = {
           resourceId: details.claimId,
           amount: details.estimatedCost || 0,
           currency: 'USD',
+          hash: crypto.createHash('sha256').update(auditId + 'CLAIM_FILED').digest('hex'),
           // ✅ ENHANCEMENT 2: Actor role tracking
           metadata: {
             actorRole: context.role || 'HOST',
             claimType: details.claimType,
             bookingId: details.bookingId,
             sessionId: context.sessionId
-          }
+          } as any
         }
       })
 
@@ -144,17 +147,20 @@ export const logClaimAudit = {
     details: VehicleDetails
   ): Promise<string | null> {
     try {
+      const auditId = crypto.randomUUID()
       const audit = await prisma.auditLog.create({
         data: {
+          id: auditId,
           category: 'COMPLIANCE',
           eventType: 'VEHICLE_DEACTIVATED_CLAIM',
-          severity: 'HIGH',
+          severity: 'WARNING',
           userId: context.userId,
           ipAddress: sanitizeIpAddress(context.ipAddress),
           userAgent: context.userAgent || 'unknown',
           action: 'DEACTIVATE_VEHICLE',
           resource: 'RENTAL_CAR',
           resourceId: details.vehicleId,
+          hash: crypto.createHash('sha256').update(auditId + 'VEHICLE_DEACTIVATED_CLAIM').digest('hex'),
           // ✅ ENHANCEMENT 2: Actor role + ✅ ENHANCEMENT 1: Booking context
           metadata: {
             actorRole: context.role || 'HOST',
@@ -162,7 +168,7 @@ export const logClaimAudit = {
             bookingId: details.bookingId, // For forensic joining
             reason: details.reason,
             sessionId: context.sessionId
-          }
+          } as any
         }
       })
 
@@ -182,8 +188,10 @@ export const logClaimAudit = {
     details: VehicleDetails
   ): Promise<string | null> {
     try {
+      const auditId = crypto.randomUUID()
       const audit = await prisma.auditLog.create({
         data: {
+          id: auditId,
           category: 'COMPLIANCE',
           eventType: 'VEHICLE_REACTIVATED_CLAIM',
           severity: 'CRITICAL',
@@ -193,6 +201,7 @@ export const logClaimAudit = {
           action: 'REACTIVATE_VEHICLE',
           resource: 'RENTAL_CAR',
           resourceId: details.vehicleId,
+          hash: crypto.createHash('sha256').update(auditId + 'VEHICLE_REACTIVATED_CLAIM').digest('hex'),
           // ✅ ENHANCEMENT 2: Actor role + ✅ ENHANCEMENT 1: Booking context
           metadata: {
             actorRole: context.role || 'ADMIN', // Usually admin reactivates
@@ -200,7 +209,7 @@ export const logClaimAudit = {
             bookingId: details.bookingId, // For forensic joining
             reason: details.reason,
             sessionId: context.sessionId
-          }
+          } as any
         }
       })
 
@@ -222,11 +231,13 @@ export const logClaimAudit = {
     bookingId: string
   ): Promise<string | null> {
     try {
+      const auditId = crypto.randomUUID()
       const audit = await prisma.auditLog.create({
         data: {
+          id: auditId,
           category: 'COMPLIANCE',
           eventType: 'CLAIM_APPROVED',
-          severity: 'HIGH',
+          severity: 'WARNING',
           userId: context.userId,
           ipAddress: sanitizeIpAddress(context.ipAddress),
           userAgent: context.userAgent || 'unknown',
@@ -235,11 +246,12 @@ export const logClaimAudit = {
           resourceId: claimId,
           amount: approvedAmount,
           currency: 'USD',
+          hash: crypto.createHash('sha256').update(auditId + 'CLAIM_APPROVED').digest('hex'),
           metadata: {
             actorRole: context.role || 'ADMIN',
             bookingId,
             sessionId: context.sessionId
-          }
+          } as any
         }
       })
 
@@ -261,23 +273,26 @@ export const logClaimAudit = {
     bookingId: string
   ): Promise<string | null> {
     try {
+      const auditId = crypto.randomUUID()
       const audit = await prisma.auditLog.create({
         data: {
+          id: auditId,
           category: 'COMPLIANCE',
           eventType: 'CLAIM_DENIED',
-          severity: 'HIGH',
+          severity: 'WARNING',
           userId: context.userId,
           ipAddress: sanitizeIpAddress(context.ipAddress),
           userAgent: context.userAgent || 'unknown',
           action: 'DENY_CLAIM',
           resource: 'CLAIM',
           resourceId: claimId,
+          hash: crypto.createHash('sha256').update(auditId + 'CLAIM_DENIED').digest('hex'),
           metadata: {
             actorRole: context.role || 'ADMIN',
             denialReason: reason,
             bookingId,
             sessionId: context.sessionId
-          }
+          } as any
         }
       })
 
@@ -298,8 +313,10 @@ export const logClaimAudit = {
     bookingId: string
   ): Promise<string | null> {
     try {
+      const auditId = crypto.randomUUID()
       const audit = await prisma.auditLog.create({
         data: {
+          id: auditId,
           category: 'COMPLIANCE',
           eventType: 'CLAIM_GUEST_RESPONSE',
           severity: 'INFO',
@@ -309,11 +326,12 @@ export const logClaimAudit = {
           action: 'SUBMIT_CLAIM_RESPONSE',
           resource: 'CLAIM',
           resourceId: claimId,
+          hash: crypto.createHash('sha256').update(auditId + 'CLAIM_GUEST_RESPONSE').digest('hex'),
           metadata: {
             actorRole: 'GUEST', // ✅ ENHANCEMENT 2: Guest actor
             bookingId,
             sessionId: context.sessionId
-          }
+          } as any
         }
       })
 
@@ -335,8 +353,10 @@ export const logClaimAudit = {
     metadata: Record<string, any>
   ): Promise<string | null> {
     try {
+      const auditId = crypto.randomUUID()
       const audit = await prisma.auditLog.create({
         data: {
+          id: auditId,
           category: 'COMPLIANCE',
           eventType: 'SYSTEM_ACTION',
           severity: 'INFO',
@@ -346,10 +366,11 @@ export const logClaimAudit = {
           action,
           resource: resourceType,
           resourceId,
+          hash: crypto.createHash('sha256').update(auditId + 'SYSTEM_ACTION').digest('hex'),
           metadata: {
             actorRole: 'SYSTEM', // ✅ ENHANCEMENT 2: System actor
             ...metadata
-          }
+          } as any
         }
       })
 
@@ -380,7 +401,7 @@ export async function getClaimAuditHistory(claimId: string) {
         ]
       },
       orderBy: {
-        createdAt: 'asc'
+        timestamp: 'asc'
       },
       select: {
         id: true,
@@ -393,7 +414,7 @@ export async function getClaimAuditHistory(claimId: string) {
         amount: true,
         currency: true,
         metadata: true,
-        createdAt: true
+        timestamp: true
       }
     })
 
@@ -419,7 +440,7 @@ export async function getVehicleDeactivationHistory(vehicleId: string) {
         }
       },
       orderBy: {
-        createdAt: 'desc'
+        timestamp: 'desc'
       },
       select: {
         id: true,
@@ -427,7 +448,7 @@ export async function getVehicleDeactivationHistory(vehicleId: string) {
         action: true,
         userId: true,
         metadata: true,
-        createdAt: true
+        timestamp: true
       }
     })
 
@@ -452,7 +473,7 @@ export async function getBookingAuditHistory(bookingId: string) {
         }
       },
       orderBy: {
-        createdAt: 'asc'
+        timestamp: 'asc'
       },
       select: {
         id: true,
@@ -463,7 +484,7 @@ export async function getBookingAuditHistory(bookingId: string) {
         resourceId: true,
         userId: true,
         metadata: true,
-        createdAt: true
+        timestamp: true
       }
     })
 
@@ -498,7 +519,7 @@ export async function getAuditSummary(timeframe: 'day' | 'week' | 'month' = 'wee
     const audits = await prisma.auditLog.findMany({
       where: {
         category: 'COMPLIANCE',
-        createdAt: {
+        timestamp: {
           gte: startDate
         }
       },
@@ -529,7 +550,7 @@ export async function getAuditSummary(timeframe: 'day' | 'week' | 'month' = 'wee
       totalEvents: audits.length,
       summary,
       criticalEvents: audits.filter(a => a.severity === 'CRITICAL').length,
-      highSeverityEvents: audits.filter(a => a.severity === 'HIGH').length
+      highSeverityEvents: audits.filter(a => a.severity === 'WARNING').length
     }
   } catch (error) {
     console.error('Error retrieving audit summary:', error)
@@ -560,9 +581,9 @@ export async function exportAuditTrailToCSV(
     }
 
     if (filters.startDate || filters.endDate) {
-      where.createdAt = {}
-      if (filters.startDate) where.createdAt.gte = filters.startDate
-      if (filters.endDate) where.createdAt.lte = filters.endDate
+      where.timestamp = {}
+      if (filters.startDate) where.timestamp.gte = filters.startDate
+      if (filters.endDate) where.timestamp.lte = filters.endDate
     }
 
     if (filters.claimId) {
@@ -586,7 +607,7 @@ export async function exportAuditTrailToCSV(
 
     const audits = await prisma.auditLog.findMany({
       where,
-      orderBy: { createdAt: 'asc' }
+      orderBy: { timestamp: 'asc' }
     })
 
     // Generate CSV
@@ -605,7 +626,7 @@ export async function exportAuditTrailToCSV(
     ]
 
     const rows = audits.map(audit => [
-      audit.createdAt.toISOString(),
+      audit.timestamp.toISOString(),
       audit.eventType,
       audit.severity,
       audit.action,

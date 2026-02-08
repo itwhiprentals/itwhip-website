@@ -18,14 +18,51 @@ import {
   IoAirplaneOutline,
   IoRefreshOutline
 } from 'react-icons/io5'
-import { 
-  CAR_TYPES, 
-  FUEL_TYPES, 
-  TRANSMISSION_TYPES,
-  CAR_FEATURES,
-  SEAT_OPTIONS 
+import {
+  CAR_TYPES,
+  CAR_FEATURES
 } from '@/app/(guest)/rentals/lib/constants'
-import { RentalSearchFilters } from '@/types/rental'
+
+// Local filter option arrays - not exported from constants (CAR_TYPES is a Record, not an array)
+const CAR_TYPE_OPTIONS = Object.entries(CAR_TYPES).map(([value, info]) => ({
+  value,
+  label: info.label,
+}))
+
+const FUEL_TYPES = [
+  { value: 'gas', label: 'Gas' },
+  { value: 'electric', label: 'Electric' },
+  { value: 'hybrid', label: 'Hybrid' },
+  { value: 'diesel', label: 'Diesel' },
+]
+
+const TRANSMISSION_TYPES = [
+  { value: 'automatic', label: 'Automatic' },
+  { value: 'manual', label: 'Manual' },
+]
+
+const SEAT_OPTIONS = [
+  { value: 2, label: '2' },
+  { value: 4, label: '4' },
+  { value: 5, label: '5' },
+  { value: 7, label: '7+' },
+]
+
+interface RentalSearchFilters {
+  location?: string
+  pickupDate?: string
+  returnDate?: string
+  carTypes?: string[]
+  features?: string[]
+  minPrice?: number
+  maxPrice?: number
+  seats?: number
+  transmission?: string
+  fuelType?: string
+  instantBook?: boolean
+  deliveryType?: string
+  verifiedHost?: boolean
+}
 
 interface FilterSidebarProps {
   filters: RentalSearchFilters
@@ -99,10 +136,10 @@ export default function FilterSidebar({
   }
 
   const hasActiveFilters = () => {
-    return localFilters.carTypes?.length > 0 ||
-           localFilters.features?.length > 0 ||
-           localFilters.minPrice > 0 ||
-           localFilters.maxPrice < 500 ||
+    return (localFilters.carTypes?.length ?? 0) > 0 ||
+           (localFilters.features?.length ?? 0) > 0 ||
+           (localFilters.minPrice ?? 0) > 0 ||
+           (localFilters.maxPrice ?? 500) < 500 ||
            localFilters.seats ||
            localFilters.transmission ||
            localFilters.fuelType ||
@@ -224,7 +261,7 @@ export default function FilterSidebar({
             Vehicle Type
           </h4>
           <div className="space-y-2">
-            {CAR_TYPES.map(type => (
+            {CAR_TYPE_OPTIONS.map((type) => (
               <label key={type.value} className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"

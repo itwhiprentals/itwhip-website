@@ -46,11 +46,11 @@ export async function GET(
             bookingCode: true,
             guestName: true,
             guestEmail: true,
-            totalPrice: true,
+            totalAmount: true,
             startDate: true,
             endDate: true,
             status: true,
-            stripePaymentIntentId: true,
+            paymentIntentId: true,
             stripeCustomerId: true,
             host: {
               select: {
@@ -93,7 +93,7 @@ export async function GET(
       .filter(r => r.status === 'PROCESSED')
       .reduce((sum, r) => sum + r.amount, 0)
 
-    const totalPaid = Number(refundRequest.booking.totalPrice || 0)
+    const totalPaid = Number(refundRequest.booking.totalAmount || 0)
     const remainingRefundable = totalPaid - processedTotal
 
     return NextResponse.json({
@@ -125,8 +125,8 @@ export async function GET(
             end: refundRequest.booking.endDate
           },
           status: refundRequest.booking.status,
-          hasPaymentIntent: !!refundRequest.booking.stripePaymentIntentId,
-          paymentIntentId: refundRequest.booking.stripePaymentIntentId,
+          hasPaymentIntent: !!refundRequest.booking.paymentIntentId,
+          paymentIntentId: refundRequest.booking.paymentIntentId,
           host: {
             id: refundRequest.booking.host?.id,
             name: refundRequest.booking.host?.partnerCompanyName || refundRequest.booking.host?.name,
@@ -241,6 +241,7 @@ export async function PATCH(
     // Create activity log
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         entityType: 'REFUND_REQUEST',
         entityId: id,
         hostId: refundRequest.booking.hostId,
@@ -310,9 +311,9 @@ export async function POST(
             bookingCode: true,
             guestName: true,
             guestEmail: true,
-            totalPrice: true,
+            totalAmount: true,
             hostId: true,
-            stripePaymentIntentId: true,
+            paymentIntentId: true,
             host: {
               select: {
                 id: true,
@@ -344,7 +345,7 @@ export async function POST(
     }
 
     // Check for payment intent
-    if (!refundRequest.booking.stripePaymentIntentId) {
+    if (!refundRequest.booking.paymentIntentId) {
       return NextResponse.json(
         { error: 'No payment intent found for this booking. Cannot process refund.' },
         { status: 400 }
@@ -360,7 +361,7 @@ export async function POST(
     try {
       // Create refund
       stripeRefund = await PaymentProcessor.refundPayment(
-        refundRequest.booking.stripePaymentIntentId,
+        refundRequest.booking.paymentIntentId,
         refundAmount,
         'requested_by_customer'
       )
@@ -370,7 +371,7 @@ export async function POST(
         try {
           // Find the transfer for this payment
           const paymentIntent = await stripe.paymentIntents.retrieve(
-            refundRequest.booking.stripePaymentIntentId,
+            refundRequest.booking.paymentIntentId,
             { expand: ['latest_charge.transfer'] }
           )
 
@@ -429,7 +430,7 @@ export async function POST(
       }
 
       // Update booking status if fully refunded
-      const totalPaid = Number(refundRequest.booking.totalPrice || 0)
+      const totalPaid = Number(refundRequest.booking.totalAmount || 0)
       const allProcessed = await tx.refundRequest.findMany({
         where: {
           bookingId: refundRequest.bookingId,
@@ -442,15 +443,15 @@ export async function POST(
         await tx.rentalBooking.update({
           where: { id: refundRequest.bookingId },
           data: {
-            paymentStatus: 'FULLY_REFUNDED',
-            status: 'REFUNDED'
+            paymentStatus: 'REFUNDED',
+            status: 'CANCELLED'
           }
         })
       } else if (totalRefunded > 0) {
         await tx.rentalBooking.update({
           where: { id: refundRequest.bookingId },
           data: {
-            paymentStatus: 'PARTIALLY_REFUNDED'
+            paymentStatus: 'PARTIAL_REFUND'
           }
         })
       }
@@ -461,6 +462,7 @@ export async function POST(
     // Create activity log
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         entityType: 'REFUND_REQUEST',
         entityId: id,
         hostId: refundRequest.booking.hostId,

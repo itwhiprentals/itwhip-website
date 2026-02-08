@@ -124,7 +124,7 @@ export async function POST(
         data: {
           heroPhotoUrl: targetPhoto.url,
           updatedAt: new Date()
-        }
+        } as any
       })
 
       return updatedPhoto
@@ -133,6 +133,7 @@ export async function POST(
     // Log the activity
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         action: 'CAR_HERO_PHOTO_CHANGED',
         entityType: 'car',
         entityId: carId,

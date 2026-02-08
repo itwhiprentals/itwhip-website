@@ -108,6 +108,7 @@ export async function POST(
     // Create activity log entry
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         entityType: 'HOST',
         entityId: partnerId,
         hostId: partnerId,

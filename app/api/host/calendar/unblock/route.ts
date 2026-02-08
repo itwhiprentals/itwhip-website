@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
     // Log the activity
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         userId: host.userId,
         action: 'CALENDAR_DATE_UNBLOCKED',
         entityType: 'car',

@@ -148,8 +148,8 @@ const DEPENDENCIES = {
 }
 
 // Get client SDK version from User-Agent or X-SDK-Version header
-function getClientSDKInfo(): { sdk?: string; version?: string } {
-  const headersList = headers()
+async function getClientSDKInfo(): Promise<{ sdk?: string; version?: string }> {
+  const headersList = await headers()
   const sdkVersion = headersList.get('x-sdk-version')
   const userAgent = headersList.get('user-agent')
   
@@ -209,7 +209,7 @@ function checkCompatibility(clientVersion?: string): { compatible: boolean; upgr
 export async function GET(request: Request) {
   try {
     // Get client SDK information
-    const clientInfo = getClientSDKInfo()
+    const clientInfo = await getClientSDKInfo()
     const compatibility = checkCompatibility(clientInfo.version)
     
     // Build comprehensive version response
@@ -222,7 +222,7 @@ export async function GET(request: Request) {
       client: {
         ...clientInfo,
         compatibility,
-        ip: headers().get('x-forwarded-for')?.split(',')[0] || 'unknown'
+        ip: (await headers()).get('x-forwarded-for')?.split(',')[0] || 'unknown'
       },
       links: {
         documentation: 'https://docs.itwhip.com/api/v3',

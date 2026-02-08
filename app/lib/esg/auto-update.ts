@@ -141,9 +141,12 @@ async function upsertESGProfile(hostId: string, calculation: any) {
     const profile = await prisma.hostESGProfile.upsert({
       where: { hostId },
       create: {
+        id: `esg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         hostId,
         ...profileData,
-      },
+        lastCalculatedAt: new Date(),
+        updatedAt: new Date(),
+      } as any,
       update: profileData,
     })
 
@@ -178,6 +181,7 @@ async function createSnapshot(
 
     await prisma.eSGSnapshot.create({
       data: {
+        id: `snap_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         profileId,
         compositeScore: profile.compositeScore,
         drivingImpactScore: profile.drivingImpactScore,

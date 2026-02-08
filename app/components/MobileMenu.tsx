@@ -63,7 +63,19 @@ interface MobileMenuProps {
   hostNavItems?: HostNavItem[]
 }
 
-const navigationSections = [
+const navigationSections: {
+  id: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  badge?: { text: string; color: string }
+  items: {
+    href: string
+    label: string
+    icon: React.ComponentType<{ className?: string }>
+    highlight?: boolean
+    badge?: { text: string; color: string }
+  }[]
+}[] = [
   {
     id: 'browse',
     label: 'Browse Cars',

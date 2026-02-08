@@ -93,19 +93,19 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       current: currentInsurance,
-      history: history.map(h => ({
+      history: history.map((h: any) => ({
         id: h.id,
         action: h.action,
         status: h.status,
-        provider: h.provider,
+        provider: h.insuranceProvider,
         policyNumber: h.policyNumber,
         expiryDate: h.expiryDate?.toISOString() || null,
         hasRideshare: h.hasRideshare,
         coverageType: h.coverageType,
         customCoverage: h.customCoverage,
-        cardFrontUrl: h.cardFrontUrl,
-        cardBackUrl: h.cardBackUrl,
-        notes: h.notes,
+        cardFrontUrl: h.insuranceCardFrontUrl,
+        cardBackUrl: h.insuranceCardBackUrl,
+        notes: h.insuranceNotes,
         verificationStatus: h.verificationStatus,
         verifiedBy: h.verifiedBy,
         verifiedAt: h.verifiedAt?.toISOString() || null,
@@ -234,9 +234,10 @@ export async function POST(req: NextRequest) {
         insuranceCardBackUrl: backUploadResult.secure_url,
         insuranceNotes: notes,
         verificationStatus: 'UNVERIFIED',
-        changedBy: userRecord.name || userRecord.email,
-        changeReason: 'Initial insurance submission'
-      }
+        changedBy: userRecord.name || userRecord.email || 'Unknown',
+        changeReason: 'Initial insurance submission',
+        updatedAt: new Date()
+      } as any
     })
 
     return NextResponse.json({
@@ -360,9 +361,10 @@ export async function PATCH(req: NextRequest) {
         insuranceCardBackUrl: updateData.insuranceCardBackUrl,
         insuranceNotes: notes,
         verificationStatus: 'UNVERIFIED',
-        changedBy: userRecord.name || userRecord.email,
-        changeReason: 'Insurance information updated'
-      }
+        changedBy: userRecord.name || userRecord.email || 'Unknown',
+        changeReason: 'Insurance information updated',
+        updatedAt: new Date()
+      } as any
     })
 
     return NextResponse.json({
@@ -432,9 +434,10 @@ export async function DELETE(req: NextRequest) {
         action: 'REMOVED',
         status: 'NOT_ACTIVE',
         verificationStatus: 'UNVERIFIED',
-        changedBy: userRecord.name || userRecord.email,
-        changeReason: 'Insurance removed by user'
-      }
+        changedBy: userRecord.name || userRecord.email || 'Unknown',
+        changeReason: 'Insurance removed by user',
+        updatedAt: new Date()
+      } as any
     })
 
     return NextResponse.json({

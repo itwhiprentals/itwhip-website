@@ -20,9 +20,10 @@ export async function logESGEvent(eventData: ESGEventData): Promise<string | nul
 
     const event = await prisma.eSGEvent.create({
       data: {
+        id: `esg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         hostId: eventData.hostId,
         eventType: eventData.eventType,
-        eventCategory: eventData.eventCategory,
+        eventCategory: eventData.category,
         description: eventData.description,
         metadata: eventData.metadata || {},
         relatedTripId: eventData.relatedTripId,

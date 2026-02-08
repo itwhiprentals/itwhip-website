@@ -440,7 +440,7 @@ export async function GET(request: NextRequest) {
     // This prevents false "Account Warning" banners for resolved issues
     // ========================================================================
     const hasActiveWarning = !!(
-      (reviewerProfile?.suspensionLevel && reviewerProfile?.suspensionLevel !== 'NONE') ||
+      (reviewerProfile?.suspensionLevel && (reviewerProfile?.suspensionLevel as string) !== 'NONE') ||
       (reviewerProfile?.activeWarningCount && reviewerProfile?.activeWarningCount > 0)
     )
 

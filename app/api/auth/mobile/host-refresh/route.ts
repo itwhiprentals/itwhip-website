@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       where: {
         OR: [
           { userId: user.id },
-          { email: user.email },
+          { email: user.email || undefined },
         ],
       },
       include: {
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
         managesOthersCars: host.managesOthersCars,
         partnerCompanyName: host.partnerCompanyName,
         partnerSlug: host.partnerSlug,
-        fleetSize: host.cars?.length || 0,
+        fleetSize: (host as any).cars?.length || 0,
         role: isFleetPartner ? 'fleet_partner' : host.isHostManager ? 'fleet_manager' : 'individual',
       },
     })

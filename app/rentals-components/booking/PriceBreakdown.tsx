@@ -14,7 +14,7 @@ import {
   IoReceiptOutline,
   IoCheckmarkCircleOutline
 } from 'react-icons/io5'
-import type { PricingCalculation } from '@/types/rental'
+import type { PricingCalculation } from '@/app/types/rental'
 
 interface PriceBreakdownProps {
   pricing: PricingCalculation

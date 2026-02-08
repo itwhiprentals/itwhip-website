@@ -17,7 +17,7 @@ export default function NotificationCard({
   onDismiss,
   isDismissing
 }: NotificationCardProps) {
-  const Icon = notification.icon
+  const Icon = notification.icon as any
   
   // 🔧 FIX: Safe color handling with fallback
   const bgColor = notification.iconColor 
@@ -28,7 +28,7 @@ export default function NotificationCard({
 
   const handleCardClick = () => {
     if (!isDismissing) {
-      onCardClick(notification.actionUrl)
+      onCardClick(notification.actionUrl || '')
     }
   }
 

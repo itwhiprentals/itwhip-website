@@ -104,13 +104,15 @@ export async function POST(request: NextRequest) {
       // Create reviewer profile
       guestProfile = await prisma.reviewerProfile.create({
         data: {
+          id: crypto.randomUUID(),
+          updatedAt: new Date(),
           user: { connect: { id: user.id } },
           name, // Required field
           email: email.toLowerCase(),
           phoneNumber: phone || null,
           city: 'Not specified', // Required field - will be updated on verification
           stripeIdentityStatus: 'not_started'
-        }
+        } as any
       })
     }
 
@@ -170,6 +172,7 @@ export async function POST(request: NextRequest) {
       if (prisma.partnerVerificationRequest) {
         await prisma.partnerVerificationRequest.create({
           data: {
+            id: crypto.randomUUID(),
             partnerId: partner.id,
             guestId: guestProfile.id,
             email,
@@ -191,6 +194,7 @@ export async function POST(request: NextRequest) {
     try {
       await prisma.activityLog.create({
         data: {
+          id: crypto.randomUUID(),
           action: 'VERIFICATION_LINK_SENT',
           entityType: 'PARTNER',
           entityId: partner.id,

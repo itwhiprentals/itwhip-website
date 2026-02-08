@@ -4,6 +4,9 @@ import { RentalCar, InsuranceProvider, VehicleClassification } from '@prisma/cli
 import prisma from '@/app/lib/database/prisma'
 import { classifyVehicle } from './classification-service'
 
+// Type for RentalCar with optional classification relation
+type RentalCarWithClassification = RentalCar & { VehicleClassification?: VehicleClassification | null }
+
 interface EligibilityResult {
   eligible: boolean
   reason?: string
@@ -46,7 +49,7 @@ interface VehicleRules {
  * Check if a vehicle is eligible for insurance with a specific provider
  */
 export async function checkVehicleEligibility(
-  car: RentalCar & { classification?: VehicleClassification | null },
+  car: RentalCar & { VehicleClassification?: VehicleClassification | null; classification?: VehicleClassification | null },
   providerId?: string
 ): Promise<EligibilityResult> {
   const riskFactors: string[] = []
@@ -66,7 +69,7 @@ export async function checkVehicleEligibility(
   }
   
   // Get or create vehicle classification
-  let classification = car.classification
+  let classification = car.classification || car.VehicleClassification
   if (!classification && car.classificationId) {
     classification = await prisma.vehicleClassification.findUnique({
       where: { id: car.classificationId }
@@ -136,24 +139,27 @@ export async function checkVehicleEligibility(
   if (!basicCheck.eligible) {
     return {
       ...basicCheck,
+      requiresManualReview: false,
       riskFactors
     }
   }
-  
+
   // Check category eligibility
   const categoryCheck = checkCategoryEligibility(classification, vehicleRules)
   if (!categoryCheck.eligible) {
     return {
       ...categoryCheck,
+      requiresManualReview: false,
       riskFactors
     }
   }
-  
+
   // Check risk level eligibility
   const riskCheck = checkRiskEligibility(classification, vehicleRules, riskFactors)
   if (!riskCheck.eligible) {
     return {
       ...riskCheck,
+      requiresManualReview: false,
       riskFactors
     }
   }
@@ -462,17 +468,17 @@ export async function getAvailableTiers(
 ): Promise<string[]> {
   const car = await prisma.rentalCar.findUnique({
     where: { id: carId },
-    include: { classification: true }
+    include: { VehicleClassification: true }
   })
-  
+
   if (!car) return []
-  
+
   const eligibility = await checkVehicleEligibility(car, providerId)
-  
+
   if (!eligibility.eligible) return []
-  
+
   // Based on vehicle category, return available tiers
-  const classification = car.classification
+  const classification = car.VehicleClassification
   if (!classification) return ['BASIC']
   
   if (classification.category === 'ECONOMY') {

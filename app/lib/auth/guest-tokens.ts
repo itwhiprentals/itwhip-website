@@ -31,6 +31,7 @@ export class GuestTokenHandler {
     
     await prisma.guestAccessToken.create({
       data: {
+        id: crypto.randomUUID(),
         token,
         bookingId,
         email,

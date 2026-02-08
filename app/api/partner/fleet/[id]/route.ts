@@ -418,7 +418,7 @@ export async function DELETE(
     const { id } = await params
 
     // Verify vehicle belongs to partner
-    const vehicle = await prisma.rentalCar.findFirst({
+    const vehicle = await (prisma.rentalCar as any).findFirst({
       where: {
         id,
         hostId: partner.id
@@ -426,7 +426,7 @@ export async function DELETE(
       include: {
         bookings: {
           where: {
-            status: { in: ['CONFIRMED', 'IN_PROGRESS', 'ACTIVE', 'PENDING'] }
+            status: { in: ['CONFIRMED', 'IN_PROGRESS', 'ACTIVE', 'PENDING'] as any }
           }
         }
       }
@@ -440,7 +440,7 @@ export async function DELETE(
     }
 
     // Check for active bookings
-    if (vehicle.bookings.length > 0) {
+    if ((vehicle as any).bookings.length > 0) {
       return NextResponse.json(
         { error: 'Cannot delete vehicle with active or pending bookings' },
         { status: 400 }

@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 🆕 Fetch moderation history if ReviewerProfile exists (last 10 actions)
-    let moderationHistory = []
+    let moderationHistory: any[] = []
     if (userProfile.reviewerProfile?.id) {
       moderationHistory = await prisma.guestModeration.findMany({
         where: {

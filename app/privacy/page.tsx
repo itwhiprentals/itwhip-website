@@ -30,9 +30,9 @@ import {
 } from 'react-icons/io5'
 
 export default function PrivacyPage() {
-  const [expandedSections, setExpandedSections] = useState({})
-  
-  const toggleSection = (sectionId) => {
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({})
+
+  const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => ({
       ...prev,
       [sectionId]: !prev[sectionId]

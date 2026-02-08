@@ -136,6 +136,8 @@ export async function POST(request: NextRequest) {
     // Create job posting
     const job = await prisma.jobPosting.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         title: data.title,
         department: data.department,
         location: data.location,
@@ -152,7 +154,7 @@ export async function POST(request: NextRequest) {
         isFeatured: data.isFeatured || false,
         openPositions: data.openPositions || 1,
         closingDate: data.closingDate ? new Date(data.closingDate) : null
-      }
+      } as any
     })
 
     return NextResponse.json({

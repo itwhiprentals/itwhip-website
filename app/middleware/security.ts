@@ -5,9 +5,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
-import { detectAnomaly } from '@/app/lib/security/anomaly'
+import AnomalyDetector from '@/app/lib/security/anomaly'
 import { createSecurityEvent } from '@/app/lib/database/audit'
-import type { ThreatSeverity, AttackType } from '@/app/types/security'
+import { type ThreatSeverity, AttackType } from '@/app/types/security'
 
 // Security configuration
 const SECURITY_CONFIG = {
@@ -163,11 +163,20 @@ function verifyCSRFToken(token: string, sessionToken: string): boolean {
  */
 function sanitizeInput(input: string, type: 'sql' | 'xss' | 'path' | 'cmd' = 'xss'): string {
   let sanitized = input
-  
+
+  // Map short type names to dangerousPatterns keys
+  const patternKeyMap: Record<string, keyof typeof SECURITY_CONFIG.dangerousPatterns> = {
+    sql: 'sql',
+    xss: 'xss',
+    path: 'pathTraversal',
+    cmd: 'cmdInjection'
+  }
+
   // Remove dangerous patterns based on type
-  const patterns = SECURITY_CONFIG.dangerousPatterns[type] || SECURITY_CONFIG.dangerousPatterns.xss
-  
-  patterns.forEach(pattern => {
+  const patternKey = patternKeyMap[type] || 'xss'
+  const patterns = SECURITY_CONFIG.dangerousPatterns[patternKey]
+
+  patterns.forEach((pattern: RegExp) => {
     sanitized = sanitized.replace(pattern, '')
   })
   
@@ -212,35 +221,35 @@ async function detectAttackPatterns(
   
   // Check URL
   if (url.length > SECURITY_CONFIG.limits.maxUrlLength) {
-    return { detected: true, type: 'BOT', confidence: 90 }
+    return { detected: true, type: AttackType.BOT, confidence: 90 }
   }
-  
+
   // Check for SQL injection
   for (const pattern of SECURITY_CONFIG.dangerousPatterns.sql) {
     if (pattern.test(url) || pattern.test(body)) {
-      return { detected: true, type: 'SQL_INJECTION', confidence: 95 }
+      return { detected: true, type: AttackType.SQL_INJECTION, confidence: 95 }
     }
   }
-  
+
   // Check for XSS
   for (const pattern of SECURITY_CONFIG.dangerousPatterns.xss) {
     if (pattern.test(body) || pattern.test(url)) {
-      return { detected: true, type: 'XSS', confidence: 95 }
+      return { detected: true, type: AttackType.XSS, confidence: 95 }
     }
   }
-  
+
   // Check for path traversal
   for (const pattern of SECURITY_CONFIG.dangerousPatterns.pathTraversal) {
     if (pattern.test(url)) {
-      return { detected: true, type: 'BOT', confidence: 85 }
+      return { detected: true, type: AttackType.BOT, confidence: 85 }
     }
   }
-  
+
   // Check headers for suspicious patterns
   const suspiciousHeaders = ['X-Forwarded-Host', 'X-Original-URL', 'X-Rewrite-URL']
   for (const header of suspiciousHeaders) {
     if (headers[header.toLowerCase()]) {
-      return { detected: true, type: 'BOT', confidence: 70 }
+      return { detected: true, type: AttackType.BOT, confidence: 70 }
     }
   }
   
@@ -306,27 +315,23 @@ export async function securityMiddleware(
           sourceIp: clientIp,
           userAgent: request.headers.get('user-agent') || 'unknown',
           message: `${attack.type} attack detected`,
-          targetResource: pathname,
           action: 'block',
           blocked: true,
           details: {
             attackType: attack.type,
             confidence: attack.confidence,
             method,
-            url: request.nextUrl.toString()
+            url: request.nextUrl.toString(),
+            targetResource: pathname
           }
         })
         
         // Also check with anomaly detection
-        await detectAnomaly({
-          type: 'attack',
-          identifier: clientIp,
-          details: {
-            attackType: attack.type,
-            url: request.nextUrl.toString(),
-            confidence: attack.confidence
-          }
-        })
+        const detector = AnomalyDetector.getInstance()
+        await detector.detectAttack(
+          request.nextUrl.toString(),
+          attack.type as any
+        )
         
         return NextResponse.json(
           {
@@ -450,11 +455,11 @@ export async function securityMiddleware(
       sourceIp: clientIp,
       userAgent: request.headers.get('user-agent') || 'unknown',
       message: 'Security middleware error',
-      targetResource: pathname,
       action: 'error',
       blocked: false,
       details: {
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        targetResource: pathname
       }
     })
     

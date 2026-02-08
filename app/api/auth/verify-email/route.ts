@@ -162,7 +162,7 @@ The ItWhip Team
       `.trim()
 
       await sendEmail(
-        user.email,
+        user.email as string,
         'Welcome to ItWhip - Your Email is Verified!',
         htmlContent,
         textContent

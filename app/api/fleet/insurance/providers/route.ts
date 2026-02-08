@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
         contactPhone: true,
         _count: {
           select: {
-            policies: true
+            InsurancePolicy: true
           }
         }
       }
@@ -203,7 +203,7 @@ export async function POST(request: NextRequest) {
         contractStart: contractStart ? new Date(contractStart) : null,
         contractEnd: contractEnd ? new Date(contractEnd) : null,
         contractTerms
-      }
+      } as any
     })
 
     return NextResponse.json({

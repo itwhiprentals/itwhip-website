@@ -125,9 +125,9 @@ export async function GET(request: NextRequest) {
     const bookings = await prisma.rentalBooking.findMany({
       where: {
         hostId: host.id,
-        status: 'COMPLETED',
-        tripStatus: 'COMPLETED',
-        paymentStatus: 'PAID',
+        status: 'COMPLETED' as any,
+        tripStatus: 'COMPLETED' as any,
+        paymentStatus: 'PAID' as any,
         ...dateFilter
       },
       include: {
@@ -149,11 +149,11 @@ export async function GET(request: NextRequest) {
       orderBy: {
         tripEndedAt: 'desc'
       }
-    })
+    }) as any[]
 
     // Get host's commission rate
-    const protectionPlan = (host as any).protectionPlan || 'BASIC'
-    const commissionRate = HOST_PROTECTION_PLANS[protectionPlan]?.commission || PLATFORM_COMMISSION
+    const protectionPlan = host.protectionPlan || 'BASIC'
+    const commissionRate = (HOST_PROTECTION_PLANS as any)[protectionPlan]?.commission || PLATFORM_COMMISSION
 
     // Get payouts for the same period - fixed to use correct date filter
     const payouts = await prisma.rentalPayout.findMany({
@@ -178,7 +178,7 @@ export async function GET(request: NextRequest) {
         const bookingAmount = Number(booking.totalAmount || 0)
         const platformFee = bookingAmount * commissionRate
         const processingFee = (bookingAmount * PAYOUT_CONFIG.PROCESSING_FEE_PERCENT) + PAYOUT_CONFIG.PROCESSING_FEE_FIXED
-        const additionalCharges = booking.tripCharges.reduce((sum, charge) => 
+        const additionalCharges = booking.tripCharges.reduce((sum: any, charge: any) =>
           sum + Number(charge.finalAmount || 0), 0
         )
         const netEarnings = bookingAmount - platformFee - processingFee + additionalCharges
@@ -260,8 +260,8 @@ export async function GET(request: NextRequest) {
       const totalPlatformFees = totalGross * commissionRate
       const totalProcessingFees = bookings.length * PAYOUT_CONFIG.PROCESSING_FEE_FIXED + 
                                   (totalGross * PAYOUT_CONFIG.PROCESSING_FEE_PERCENT)
-      const totalAdditional = bookings.reduce((sum, b) => 
-        sum + b.tripCharges.reduce((s, c) => s + Number(c.finalAmount || 0), 0), 0
+      const totalAdditional = bookings.reduce((sum: any, b: any) =>
+        sum + b.tripCharges.reduce((s: any, c: any) => s + Number(c.finalAmount || 0), 0), 0
       )
       const totalNet = totalGross - totalPlatformFees - totalProcessingFees + totalAdditional
       const avgBookingValue = bookings.length > 0 ? totalGross / bookings.length : 0
@@ -315,7 +315,7 @@ export async function GET(request: NextRequest) {
           period: period,
           bookingCount: bookings.length
         }
-      }
+      } as any
     })
 
     // Return CSV file

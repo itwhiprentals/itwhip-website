@@ -191,7 +191,7 @@ export default function TrackingDemoMode({
         {/* Feature badges */}
         {FEATURE_BADGES.map((badge) => {
           const Icon = badge.icon
-          const available = isFeatureAvailable(badge.id)
+          const available = isFeatureAvailable(badge.id) ?? false
           return (
             <button
               key={badge.id}
@@ -218,7 +218,7 @@ export default function TrackingDemoMode({
       {/* Map - Full width, no container */}
       <div className="relative h-[300px] sm:h-[350px] rounded-lg overflow-hidden -mx-4 sm:-mx-6">
         <TrackingMap
-          vehicles={demoVehicles.map(v => ({ ...v, heading: v.heading || null }))}
+          vehicles={demoVehicles.map(v => ({ ...v, heading: v.heading || null, provider: v.provider || '' }))}
           selectedVehicleId={selectedVehicleId}
           onVehicleSelect={setSelectedVehicleId}
           homeBase={PHOENIX_LOCATIONS.PHOENIX_CENTER}

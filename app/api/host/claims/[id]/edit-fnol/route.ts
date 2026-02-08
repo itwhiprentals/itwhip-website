@@ -153,6 +153,7 @@ export async function POST(
     // Create audit trail entry
     await prisma.claimEdit.create({
       data: {
+        id: crypto.randomUUID(),
         claimId,
         fieldChanged,
         oldValue: oldValue || 'Previous value',

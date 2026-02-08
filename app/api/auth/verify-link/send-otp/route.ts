@@ -65,13 +65,13 @@ export async function POST(request: NextRequest) {
       where: { id: userId },
       data: {
         emailVerificationCode: code,
-        emailVerificationCodeExpiry: expiry,
+        emailVerificationExpiry: expiry,
       }
     })
 
     // Send email
     const template = getEmailVerificationTemplate(user.name, code)
-    await sendEmail(user.email, template.subject, template.html, template.text)
+    await sendEmail(user.email!, template.subject, template.html, template.text)
 
     console.log(`[Verify-Link OTP] Code sent to ${user.email}`)
 

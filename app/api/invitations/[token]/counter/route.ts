@@ -169,7 +169,7 @@ export async function POST(
     }
 
     // Get existing history
-    const existingHistory = (invitation.negotiationHistory as NegotiationHistoryEntry[]) || []
+    const existingHistory = (invitation.negotiationHistory as unknown as NegotiationHistoryEntry[]) || []
 
     // Extend expiration
     const newExpiresAt = new Date()
@@ -183,8 +183,8 @@ export async function POST(
         counterOfferManagerPercent: proposedManagerPercent,
         negotiationRounds: invitation.negotiationRounds + 1,
         negotiationNotes: message || invitation.negotiationNotes,
-        negotiationHistory: [...existingHistory, newHistoryEntry],
-        status: 'COUNTER_OFFERED',
+        negotiationHistory: [...existingHistory, newHistoryEntry] as any,
+        status: 'COUNTER_OFFERED' as any,
         expiresAt: newExpiresAt
       }
     })
@@ -194,8 +194,8 @@ export async function POST(
     const notifyName = isSender
       ? (invitation.recipient?.name || invitation.recipientEmail.split('@')[0])
       : invitation.sender.name
-    const counterPartyName = userHost?.name || user.name || user.email.split('@')[0]
-    const counterPartyEmail = userHost?.email || user.email
+    const counterPartyName = userHost?.name || user.name || user.email.split('@')[0] || ''
+    const counterPartyEmail = userHost?.email || user.email || ''
 
     // Get vehicle details for email
     let vehicleDetails: { make: string; model: string; year: number; photo?: string }[] = []
@@ -255,7 +255,7 @@ export async function POST(
     })
 
     // Log activity
-    await prisma.activityLog.create({
+    await (prisma.activityLog.create as any)({
       data: {
         userId: user.id,
         action: 'counter_offer_sent',

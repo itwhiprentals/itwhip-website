@@ -306,6 +306,8 @@ export async function POST(request: NextRequest) {
     // Create vehicle with all fields
     const vehicle = await prisma.rentalCar.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         hostId: partner.id,
         source: 'partner',
 
@@ -391,13 +393,14 @@ export async function POST(request: NextRequest) {
 
         // Vehicle type - RENTAL or RIDESHARE (default to RENTAL if not specified)
         vehicleType: vehicleType === 'RIDESHARE' ? 'RIDESHARE' : 'RENTAL'
-      }
+      } as any
     })
 
     // Create photos if provided
     if (photos && Array.isArray(photos) && photos.length > 0) {
       await prisma.rentalCarPhoto.createMany({
         data: photos.map((photo: { url: string; isHero?: boolean }, index: number) => ({
+          id: crypto.randomUUID(),
           carId: vehicle.id,
           url: photo.url,
           isHero: photo.isHero || index === 0,

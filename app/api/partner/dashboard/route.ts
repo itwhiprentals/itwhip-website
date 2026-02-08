@@ -219,7 +219,7 @@ export async function GET(request: NextRequest) {
     const utilization = fleetSize > 0 ? Math.round((uniqueBookedVehicles / fleetSize) * 100) : 0
 
     // Get average rating
-    const avgRating = partner.averageRating || 0
+    const avgRating = (partner as any).averageRating || 0
 
     // Calculate tier info
     const tierInfo = calculateTierInfo(fleetSize, partner)
@@ -228,7 +228,7 @@ export async function GET(request: NextRequest) {
       success: true,
       partner: {
         id: partner.id,
-        companyName: partner.partnerCompanyName || partner.displayName,
+        companyName: partner.partnerCompanyName || (partner as any).displayName,
         email: partner.email,
         commissionRate: partner.currentCommissionRate || 0.25,
         tier: {

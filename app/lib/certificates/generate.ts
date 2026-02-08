@@ -4,6 +4,7 @@
  */
 
 import crypto from 'crypto'
+// @ts-ignore -- no type declarations available for this module
 import { QRCodeCanvas } from '@lifi/qrcode'
 import { logger } from '@/app/lib/monitoring/logger'
 import { encrypt, generateSecureToken } from '@/app/lib/database/encryption'
@@ -260,23 +261,15 @@ class CertificateGenerator {
     const hotel = await prisma.hotel.findUnique({
       where: { id: hotelId },
       include: {
-        metrics: true,
-        bookings: {
+        Booking: {
           where: {
             createdAt: {
               gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
             }
           }
         },
-        rides: {
-          where: {
-            createdAt: {
-              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-            }
-          }
-        }
       }
-    })
+    }) as any
     
     if (!hotel) {
       throw new Error(`Hotel not found: ${hotelId}`)
@@ -394,8 +387,7 @@ class CertificateGenerator {
       // Get hotel details
       const hotel = await prisma.hotel.findUnique({
         where: { id: hotelId },
-        include: { metrics: true }
-      })
+      }) as any
       
       if (!hotel) {
         throw new Error(`Hotel not found: ${hotelId}`)

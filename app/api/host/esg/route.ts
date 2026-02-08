@@ -49,13 +49,13 @@ export async function GET(request: NextRequest) {
           take: 6
         }
       }
-    })
+    }) as any
 
     // If no profile exists, calculate and create one
     if (!esgProfile) {
       const calculation = await calculateESGScore(hostId)
 
-      esgProfile = await prisma.hostESGProfile.create({
+      esgProfile = await (prisma.hostESGProfile.create as any)({
         data: {
           hostId,
           compositeScore: calculation.scores.compositeScore,
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
           avgClaimProcessingDays: calculation.scores.avgClaimProcessingDays,
           achievedBadges: calculation.scores.achievedBadges,
           milestoneReached: calculation.scores.milestoneReached,
-          nextMilestone: calculation.scores.nextMilestone,
+          nextMilestone: calculation.scores.nextMilestone || '',
           calculationVersion: calculation.scores.calculationVersion,
           dataConfidence: calculation.scores.dataConfidence
         },
@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
       incidentFreeTrips: esgProfile.incidentFreeTrips,
       currentIncidentStreak: esgProfile.currentIncidentStreak,
       badges: badges.slice(0, 6),
-      history: esgProfile.snapshots.map(s => ({
+      history: esgProfile.snapshots.map((s: any) => ({
         date: s.snapshotDate,
         score: s.compositeScore
       })),

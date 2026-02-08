@@ -81,7 +81,7 @@ import {
 
 // Mock data generator for rooms and reservations
 const generateRooms = () => {
-  const rooms = []
+  const rooms: any[] = []
   const roomTypes = ['Standard', 'Deluxe', 'Suite', 'Presidential']
   const floors = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
   
@@ -1018,7 +1018,7 @@ export default function ReservationsManagerPage() {
                         <span className="text-sm text-gray-600 dark:text-gray-400">Taxes & Fees</span>
                         <span className="font-medium text-gray-900 dark:text-white">${Math.floor(selectedReservation.rate * selectedReservation.nights * 0.15)}</span>
                       </div>
-                      {selectedReservation.extras?.map((extra, idx) => (
+                      {selectedReservation.extras?.map((extra: any, idx: number) => (
                         <div key={idx} className="flex justify-between">
                           <span className="text-sm text-gray-600 dark:text-gray-400">{extra}</span>
                           <span className="font-medium text-gray-900 dark:text-white">$50</span>

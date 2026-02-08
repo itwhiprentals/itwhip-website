@@ -92,7 +92,7 @@ export function ChoeDeveloper() {
               key={product.name}
               className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700"
             >
-              <div className={`w-10 h-10 ${colorStyles[product.color]} rounded-lg flex items-center justify-center mb-3`}>
+              <div className={`w-10 h-10 ${(colorStyles as any)[product.color]} rounded-lg flex items-center justify-center mb-3`}>
                 <product.icon className="w-5 h-5" />
               </div>
               <h3 className="font-semibold text-sm text-gray-900 dark:text-white mb-0.5">

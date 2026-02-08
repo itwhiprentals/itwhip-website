@@ -37,6 +37,34 @@ export default function ListYourCarPage() {
   const [selectedVehicle, setSelectedVehicle] = useState('standard')
   const [monthlyDays, setMonthlyDays] = useState(15)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [showInquiryForm, setShowInquiryForm] = useState(false)
+  const [formData, setFormData] = useState<{
+    name: string
+    email: string
+    phone: string
+    vehicleMake: string
+    vehicleModel: string
+    vehicleYear: string
+    location: string
+    vehicleType: string
+    hasInsurance: string
+    insuranceType: string
+    message: string
+    photos: File[]
+  }>({
+    name: '',
+    email: '',
+    phone: '',
+    vehicleMake: '',
+    vehicleModel: '',
+    vehicleYear: '',
+    location: 'Phoenix',
+    vehicleType: '',
+    hasInsurance: '',
+    insuranceType: '',
+    message: '',
+    photos: []
+  })
 
   const handleGetAppClick = () => {
     window.open('https://testflight.apple.com/join/ygzsQbNf', '_blank')
@@ -123,7 +151,7 @@ export default function ListYourCarPage() {
         }
       })
       
-      formData.photos.forEach((photo) => {
+      formData.photos.forEach((photo: File) => {
         formDataToSend.append('photos', photo)
       })
 

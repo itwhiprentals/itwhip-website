@@ -138,6 +138,7 @@ export async function POST(
         // Use DepositTransaction for deposit wallet
         transaction = await tx.depositTransaction.create({
           data: {
+            id: crypto.randomUUID(),
             guestId: id,
             amount: adjustmentAmount,
             type: action === 'add' ? 'ADD' : 'REFUND',
@@ -149,6 +150,7 @@ export async function POST(
         // Use CreditBonusTransaction for credit/bonus
         transaction = await tx.creditBonusTransaction.create({
           data: {
+            id: crypto.randomUUID(),
             guestId: id,
             amount: adjustmentAmount,
             type: type === 'credit' ? 'CREDIT' : 'BONUS',
@@ -163,6 +165,7 @@ export async function POST(
       // Log the activity
       await tx.activityLog.create({
         data: {
+          id: crypto.randomUUID(),
           action: `guest_${type}_${action}`,
           entityType: 'ReviewerProfile',
           entityId: id,

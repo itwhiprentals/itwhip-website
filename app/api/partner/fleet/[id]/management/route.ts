@@ -241,8 +241,8 @@ export async function DELETE(
       await tx.vehicleManagement.update({
         where: { id: management.id },
         data: {
-          status: 'TERMINATED',
-          endDate: new Date()
+          status: 'TERMINATED' as any,
+          updatedAt: new Date()
         }
       })
 
@@ -255,6 +255,7 @@ export async function DELETE(
       // Log the action
       await tx.activityLog.create({
         data: {
+          id: crypto.randomUUID(),
           action: 'MANAGEMENT_TERMINATED',
           entityType: 'VEHICLE_MANAGEMENT',
           entityId: management.id,
@@ -272,7 +273,7 @@ export async function DELETE(
       })
 
       // Create notification for the manager
-      await tx.notification.create({
+      await tx.hostNotification.create({
         data: {
           recipientId: management.manager.id,
           recipientType: 'HOST',
@@ -281,7 +282,7 @@ export async function DELETE(
           message: `${partner.name} has ended your management of their ${vehicle.year} ${vehicle.make} ${vehicle.model}`,
           priority: 'HIGH',
           actionUrl: `/host/fleet`
-        }
+        } as any
       })
     })
 

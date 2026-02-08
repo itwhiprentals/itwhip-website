@@ -76,7 +76,7 @@ export async function GET(
                 profilePhotoUrl: true
               }
             },
-            inspectionPhotos: {
+            InspectionPhoto: {
               orderBy: { uploadedAt: 'asc' }
             }
           }
@@ -91,7 +91,7 @@ export async function GET(
             rating: true
           }
         },
-        policy: {
+        InsurancePolicy: {
           select: {
             id: true,
             tier: true,
@@ -100,11 +100,11 @@ export async function GET(
             collisionCoverage: true
           }
         },
-        damagePhotos: {
+        ClaimDamagePhoto: {
           where: { deletedAt: null },
           orderBy: { order: 'asc' }
         },
-        messages: {
+        ClaimMessage: {
           orderBy: { createdAt: 'asc' }
         }
       }
@@ -240,22 +240,22 @@ export async function GET(
       },
 
       // Insurance policy
-      policy: claim.policy ? {
-        tier: claim.policy.tier,
-        deductible: claim.policy.deductible,
-        liabilityCoverage: claim.policy.liabilityCoverage,
-        collisionCoverage: claim.policy.collisionCoverage
+      policy: claim.InsurancePolicy ? {
+        tier: claim.InsurancePolicy.tier,
+        deductible: claim.InsurancePolicy.deductible,
+        liabilityCoverage: claim.InsurancePolicy.liabilityCoverage,
+        collisionCoverage: claim.InsurancePolicy.collisionCoverage
       } : null,
 
       // Photos
-      hostDamagePhotos: claim.damagePhotos
+      hostDamagePhotos: claim.ClaimDamagePhoto
         .filter(p => p.uploadedBy === 'HOST')
         .map(p => ({
           id: p.id,
           url: p.url,
           caption: p.caption
         })),
-      guestDamagePhotos: claim.damagePhotos
+      guestDamagePhotos: claim.ClaimDamagePhoto
         .filter(p => p.uploadedBy === 'GUEST')
         .map(p => ({
           id: p.id,
@@ -270,7 +270,7 @@ export async function GET(
       },
 
       // Messages
-      messages: claim.messages.map(m => ({
+      messages: claim.ClaimMessage.map(m => ({
         id: m.id,
         message: m.message,
         senderType: m.senderType,

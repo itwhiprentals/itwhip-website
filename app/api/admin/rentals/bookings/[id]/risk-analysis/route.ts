@@ -129,11 +129,11 @@ export async function GET(
             host: true
           }
         },
-        fraudIndicators: true,
-        bookingSession: true,
+        FraudIndicator: true,
+        BookingSession: true,
         disputes: true
       }
-    })
+    }) as any
 
     if (!booking) {
       return NextResponse.json(
@@ -423,9 +423,9 @@ export async function GET(
           flags: sessionFlags,
           details: {
             duration: booking.sessionDuration || 0,
-            interactions: booking.bookingSession?.clickCount || 0,
+            interactions: booking.BookingSession?.clickCount || 0,
             copyPasteUsed: booking.copyPasteUsed || false,
-            validationErrors: booking.bookingSession?.validationErrors || 0
+            validationErrors: booking.BookingSession?.validationErrors || 0
           }
         },
         
@@ -589,7 +589,7 @@ export async function POST(
     }
 
     // Log the action
-    await prisma.activityLog.create({
+    await (prisma.activityLog.create as any)({
       data: {
         action: logAction,
         entityType: 'RentalBooking',

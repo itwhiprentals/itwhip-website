@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
       // Create the message
       createdMessage = await prisma.rentalMessage.create({
         data: {
+          id: crypto.randomUUID(),
           bookingId,
           senderId: 'admin',
           senderType,
@@ -75,8 +76,9 @@ export async function POST(request: NextRequest) {
           attachmentName,
           replyToId,
           isRead: false,
-          readByAdmin: true // Admin's own message
-        }
+          readByAdmin: true, // Admin's own message
+          updatedAt: new Date()
+        } as any
       })
 
       // Send email to guest

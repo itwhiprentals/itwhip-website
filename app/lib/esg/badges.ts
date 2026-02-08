@@ -291,7 +291,7 @@ async function awardBadge(hostId: string, badgeCode: string): Promise<void> {
         hostId,
         badgeCode,
         earnedAt: new Date(),
-      },
+      } as any,
     });
 
     // Log event
@@ -304,7 +304,7 @@ async function awardBadge(hostId: string, badgeCode: string): Promise<void> {
         metadata: {
           badgeCode,
         },
-      },
+      } as any,
     });
   } catch (error) {
     console.error(`Failed to award badge ${badgeCode} to host ${hostId}:`, error);
@@ -413,7 +413,7 @@ export function calculateBadgeProgress(
  */
 export async function seedBadges(): Promise<void> {
   for (const badge of ALL_BADGES) {
-    await prisma.eSGBadge.upsert({
+    await (prisma.eSGBadge as any).upsert({
       where: { badgeCode: badge.badgeCode },
       create: {
         badgeCode: badge.badgeCode,

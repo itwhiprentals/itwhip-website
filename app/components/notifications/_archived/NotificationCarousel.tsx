@@ -2,8 +2,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useNotifications } from './useNotifications'
-import NotificationCard from './NotificationCard'
+import { useNotifications } from '../useNotifications'
+import NotificationCard from '../NotificationCard'
 
 interface NotificationCarouselProps {
   userRole?: 'GUEST' | 'HOST' | 'ADMIN'
@@ -42,7 +42,7 @@ export default function NotificationCarousel({ userRole = 'GUEST' }: Notificatio
             WebkitOverflowScrolling: 'touch'
           }}
         >
-          {notifications.map((notification) => (
+          {notifications.map((notification: any) => (
             <NotificationCard
               key={notification.id}
               notification={notification}

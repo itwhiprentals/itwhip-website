@@ -5,18 +5,21 @@ import { prisma } from '@/app/lib/database/prisma'
 import { verifyAdminToken } from '@/app/lib/admin/auth'
 import { auditService, AuditEventType, AuditEntityType } from '@/app/lib/audit/audit-service'
 import { sendHostBackgroundCheckStatus } from '@/app/lib/email'
+import crypto from 'crypto'
 
 // POST - Initiate background check for a host
 export async function POST(request: NextRequest) {
   try {
     // Verify admin authentication
-    const adminId = await verifyAdminToken(request)
-    if (!adminId) {
+    const token = request.cookies.get('admin_token')?.value || request.headers.get('authorization')?.replace('Bearer ', '') || ''
+    const adminPayload = await verifyAdminToken(token)
+    if (!adminPayload) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 401 }
       )
     }
+    const adminId = adminPayload.userId
 
     const body = await request.json()
     const { hostId, checkTypes } = body
@@ -54,7 +57,7 @@ export async function POST(request: NextRequest) {
     // Platform Fleet hosts bypass background checks
     if (host.hostType === 'MANAGED') {
       return NextResponse.json(
-        { 
+        {
           error: 'Platform Fleet hosts do not require background checks',
           hostType: 'MANAGED'
         },
@@ -64,14 +67,14 @@ export async function POST(request: NextRequest) {
 
     // Check if host already has documents approved
     const documentStatuses = host.documentStatuses as any || {}
-    const allDocsApproved = 
+    const allDocsApproved =
       documentStatuses.governmentId === 'APPROVED' &&
       documentStatuses.driversLicense === 'APPROVED' &&
       documentStatuses.insurance === 'APPROVED'
 
     if (!allDocsApproved) {
       return NextResponse.json(
-        { 
+        {
           error: 'All documents must be approved before initiating background check',
           documentStatuses
         },
@@ -91,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     if (existingCheck) {
       return NextResponse.json(
-        { 
+        {
           error: 'Background check already in progress',
           checkId: existingCheck.id,
           status: existingCheck.status
@@ -102,18 +105,18 @@ export async function POST(request: NextRequest) {
 
     // Define check types to run (default to all if not specified)
     const defaultCheckTypes = ['IDENTITY', 'DMV', 'CRIMINAL', 'INSURANCE']
-    const checksToRun = checkTypes && Array.isArray(checkTypes) && checkTypes.length > 0 
-      ? checkTypes 
+    const checksToRun = checkTypes && Array.isArray(checkTypes) && checkTypes.length > 0
+      ? checkTypes
       : defaultCheckTypes
 
     // Only add CREDIT check for luxury vehicles or specific risk indicators
     const hostCars = await prisma.rentalCar.findMany({
       where: { hostId: hostId },
-      select: { basePrice: true, category: true }
+      select: { dailyRate: true, carType: true }
     })
 
-    const hasLuxuryCar = hostCars.some(car => 
-      car.category === 'luxury' || (car.basePrice && car.basePrice > 150)
+    const hasLuxuryCar = hostCars.some(car =>
+      car.carType === 'luxury' || (car.dailyRate && car.dailyRate > 150)
     )
 
     if (hasLuxuryCar && !checksToRun.includes('CREDIT')) {
@@ -121,26 +124,29 @@ export async function POST(request: NextRequest) {
     }
 
     // Create background check record with transaction
-    const backgroundCheck = await prisma.$transaction(async (tx) => {
+    const backgroundCheck: any = await prisma.$transaction(async (tx) => {
       // Create main background check record
       const check = await tx.backgroundCheck.create({
         data: {
+          id: crypto.randomUUID(),
           hostId: hostId,
+          checkType: checksToRun.join(','),
           status: 'PENDING',
-          initiatedBy: adminId,
-          initiatedAt: new Date(),
-          checkTypes: checksToRun,
-          results: {},
-          estimatedCompletionAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days
-          individual_checks: {
-            identity: { status: 'PENDING', startedAt: null, completedAt: null },
-            dmv: { status: 'PENDING', startedAt: null, completedAt: null },
-            criminal: { status: 'PENDING', startedAt: null, completedAt: null },
-            insurance: { status: 'PENDING', startedAt: null, completedAt: null },
-            credit: checksToRun.includes('CREDIT') 
-              ? { status: 'PENDING', startedAt: null, completedAt: null }
-              : null
-          }
+          details: {
+            initiatedBy: adminId,
+            checkTypes: checksToRun,
+            estimatedCompletionAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+            individual_checks: {
+              identity: { status: 'PENDING', startedAt: null, completedAt: null },
+              dmv: { status: 'PENDING', startedAt: null, completedAt: null },
+              criminal: { status: 'PENDING', startedAt: null, completedAt: null },
+              insurance: { status: 'PENDING', startedAt: null, completedAt: null },
+              credit: checksToRun.includes('CREDIT')
+                ? { status: 'PENDING', startedAt: null, completedAt: null }
+                : null
+            }
+          },
+          updatedAt: new Date()
         }
       })
 
@@ -149,35 +155,39 @@ export async function POST(request: NextRequest) {
         where: { id: hostId },
         data: {
           backgroundCheckStatus: 'IN_PROGRESS',
-          backgroundCheckInitiatedAt: new Date()
+          updatedAt: new Date()
         }
       })
 
       // Create host notification
       await tx.hostNotification.create({
         data: {
+          id: crypto.randomUUID(),
           hostId: hostId,
           type: 'BACKGROUND_CHECK',
-          title: 'Background Check Started',
+          category: 'verification',
+          subject: 'Background Check Started',
           message: 'We have initiated your background verification. This typically takes 1-3 business days.',
           priority: 'MEDIUM',
-          actionRequired: false
+          updatedAt: new Date()
         }
       })
 
       // Create admin notification
       await tx.adminNotification.create({
         data: {
+          id: crypto.randomUUID(),
           type: 'BACKGROUND_CHECK_INITIATED',
           title: 'Background Check Initiated',
-          message: `Background check started for host: ${host.user.name || host.user.email}`,
+          message: `Background check started for host: ${host.user?.name || host.user?.email}`,
           priority: 'LOW',
           metadata: {
             hostId: hostId,
             checkId: check.id,
             checkTypes: checksToRun,
             initiatedBy: adminId
-          }
+          },
+          updatedAt: new Date()
         }
       })
 
@@ -186,23 +196,18 @@ export async function POST(request: NextRequest) {
 
     // Send email notification to host
     try {
-      await sendHostBackgroundCheckStatus(host.user.email, {
-        hostName: host.user.name || 'Host',
-        status: 'started',
-        checksPerformed: checksToRun.map(type => ({
-          type: type.toLowerCase().replace('_', ' '),
-          status: 'pending',
-          estimatedCompletion: '1-3 business days'
-        })),
-        estimatedCompletion: '1-3 business days',
-        nextSteps: [
-          'We will notify you when checks are complete',
-          'No action is required from you at this time',
-          'Typical completion time is 1-3 business days'
-        ],
-        dashboardUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/host/dashboard`,
-        supportEmail: 'info@itwhip.com'
-      })
+      if (host.user?.email) {
+        await sendHostBackgroundCheckStatus(host.user.email, {
+          name: host.user.name || 'Host',
+          status: 'started',
+          checks: checksToRun.map((type: string) => ({
+            checkType: type.toLowerCase().replace('_', ' '),
+            status: 'pending' as const
+          })),
+          estimatedCompletion: '1-3 business days',
+          supportEmail: 'info@itwhip.com'
+        })
+      }
     } catch (emailError) {
       console.error('Failed to send background check email:', emailError)
     }
@@ -212,30 +217,27 @@ export async function POST(request: NextRequest) {
     simulateBackgroundCheckProcessing(backgroundCheck.id, checksToRun)
 
     // Log audit event
-    await auditService.log({
-      eventType: AuditEventType.CREATE,
-      entityType: AuditEntityType.HOST,
-      entityId: hostId,
-      userId: adminId,
-      details: {
+    await auditService.log(
+      AuditEventType.CREATE,
+      AuditEntityType.HOST,
+      hostId,
+      {
         action: 'BACKGROUND_CHECK_INITIATED',
         checkId: backgroundCheck.id,
-        checkTypes: checksToRun,
-        estimatedCompletion: backgroundCheck.estimatedCompletionAt
-      },
-      ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-      userAgent: request.headers.get('user-agent') || 'unknown'
-    })
+        checkTypes: checksToRun
+      }
+    )
 
+    const details = backgroundCheck.details as any
     return NextResponse.json({
       success: true,
       backgroundCheck: {
         id: backgroundCheck.id,
         status: backgroundCheck.status,
         checkTypes: checksToRun,
-        initiatedAt: backgroundCheck.initiatedAt,
-        estimatedCompletionAt: backgroundCheck.estimatedCompletionAt,
-        individual_checks: backgroundCheck.individual_checks
+        initiatedAt: backgroundCheck.requestedAt,
+        estimatedCompletionAt: details?.estimatedCompletionAt,
+        individual_checks: details?.individual_checks
       }
     })
 
@@ -252,8 +254,9 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     // Verify admin authentication
-    const adminId = await verifyAdminToken(request)
-    if (!adminId) {
+    const token = request.cookies.get('admin_token')?.value || request.headers.get('authorization')?.replace('Bearer ', '') || ''
+    const adminPayload = await verifyAdminToken(token)
+    if (!adminPayload) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 401 }
@@ -270,7 +273,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    let backgroundCheck
+    let backgroundCheck: any = null
 
     if (checkId) {
       backgroundCheck = await prisma.backgroundCheck.findUnique({
@@ -291,7 +294,7 @@ export async function GET(request: NextRequest) {
     } else if (hostId) {
       backgroundCheck = await prisma.backgroundCheck.findFirst({
         where: { hostId: hostId },
-        orderBy: { initiatedAt: 'desc' },
+        orderBy: { requestedAt: 'desc' },
         include: {
           host: {
             include: {
@@ -314,23 +317,21 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const details = backgroundCheck.details as any
     return NextResponse.json({
       success: true,
       backgroundCheck: {
         id: backgroundCheck.id,
         hostId: backgroundCheck.hostId,
-        hostName: backgroundCheck.host.user.name,
+        hostName: backgroundCheck.host?.user?.name,
         status: backgroundCheck.status,
-        checkTypes: backgroundCheck.checkTypes,
-        individual_checks: backgroundCheck.individual_checks,
-        results: backgroundCheck.results,
-        initiatedAt: backgroundCheck.initiatedAt,
+        checkType: backgroundCheck.checkType,
+        details: backgroundCheck.details,
         completedAt: backgroundCheck.completedAt,
-        estimatedCompletionAt: backgroundCheck.estimatedCompletionAt,
-        passedAt: backgroundCheck.passedAt,
-        failedAt: backgroundCheck.failedAt,
+        requestedAt: backgroundCheck.requestedAt,
+        passed: backgroundCheck.passed,
         overrideReason: backgroundCheck.overrideReason,
-        overrideBy: backgroundCheck.overrideBy
+        reviewedBy: backgroundCheck.reviewedBy
       }
     })
 
@@ -354,21 +355,24 @@ async function simulateBackgroundCheckProcessing(checkId: string, checkTypes: st
         where: { id: checkId },
         data: {
           status: 'IN_PROGRESS',
-          individual_checks: {
-            identity: { status: 'IN_PROGRESS', startedAt: new Date(), completedAt: null },
-            dmv: { status: 'PENDING', startedAt: null, completedAt: null },
-            criminal: { status: 'PENDING', startedAt: null, completedAt: null },
-            insurance: { status: 'PENDING', startedAt: null, completedAt: null },
-            credit: checkTypes.includes('CREDIT')
-              ? { status: 'PENDING', startedAt: null, completedAt: null }
-              : null
-          }
+          details: {
+            individual_checks: {
+              identity: { status: 'IN_PROGRESS', startedAt: new Date(), completedAt: null },
+              dmv: { status: 'PENDING', startedAt: null, completedAt: null },
+              criminal: { status: 'PENDING', startedAt: null, completedAt: null },
+              insurance: { status: 'PENDING', startedAt: null, completedAt: null },
+              credit: checkTypes.includes('CREDIT')
+                ? { status: 'PENDING', startedAt: null, completedAt: null }
+                : null
+            }
+          },
+          updatedAt: new Date()
         }
       })
 
       // Simulate identity check completion (1 minute)
       setTimeout(async () => {
-        await updateIndividualCheck(checkId, 'identity', 'PASSED', { 
+        await updateIndividualCheck(checkId, 'identity', 'PASSED', {
           verified: true,
           matchScore: 95,
           provider: 'SIMULATED'
@@ -414,7 +418,7 @@ async function simulateBackgroundCheckProcessing(checkId: string, checkTypes: st
         // If credit check required, start it
         if (checkTypes.includes('CREDIT')) {
           await updateIndividualCheck(checkId, 'credit', 'IN_PROGRESS', null)
-          
+
           // Complete credit check (5 minutes)
           setTimeout(async () => {
             await updateIndividualCheck(checkId, 'credit', 'PASSED', {
@@ -422,7 +426,7 @@ async function simulateBackgroundCheckProcessing(checkId: string, checkTypes: st
               credit_rating: 'GOOD',
               provider: 'SIMULATED'
             })
-            
+
             // Mark entire check as complete
             await completeBackgroundCheck(checkId)
           }, 60000)
@@ -440,9 +444,9 @@ async function simulateBackgroundCheckProcessing(checkId: string, checkTypes: st
 
 // Helper function to update individual check status
 async function updateIndividualCheck(
-  checkId: string, 
-  checkType: string, 
-  status: string, 
+  checkId: string,
+  checkType: string,
+  status: string,
   result: any
 ) {
   const check = await prisma.backgroundCheck.findUnique({
@@ -451,7 +455,8 @@ async function updateIndividualCheck(
 
   if (!check) return
 
-  const individual_checks = check.individual_checks as any
+  const details = (check.details as any) || {}
+  const individual_checks = details.individual_checks || {}
   individual_checks[checkType] = {
     ...individual_checks[checkType],
     status,
@@ -462,13 +467,16 @@ async function updateIndividualCheck(
 
   await prisma.backgroundCheck.update({
     where: { id: checkId },
-    data: { individual_checks }
+    data: {
+      details: { ...details, individual_checks },
+      updatedAt: new Date()
+    }
   })
 }
 
 // Helper function to complete background check
 async function completeBackgroundCheck(checkId: string) {
-  const check = await prisma.backgroundCheck.findUnique({
+  const check: any = await prisma.backgroundCheck.findUnique({
     where: { id: checkId },
     include: {
       host: {
@@ -486,7 +494,8 @@ async function completeBackgroundCheck(checkId: string) {
 
   if (!check) return
 
-  const individual_checks = check.individual_checks as any
+  const details = (check.details as any) || {}
+  const individual_checks = details.individual_checks || {}
   const allPassed = Object.values(individual_checks)
     .filter(c => c !== null)
     .every((c: any) => c.status === 'PASSED')
@@ -498,8 +507,8 @@ async function completeBackgroundCheck(checkId: string) {
       data: {
         status: allPassed ? 'PASSED' : 'FAILED',
         completedAt: new Date(),
-        passedAt: allPassed ? new Date() : null,
-        failedAt: allPassed ? null : new Date()
+        passed: allPassed,
+        updatedAt: new Date()
       }
     })
 
@@ -508,66 +517,62 @@ async function completeBackgroundCheck(checkId: string) {
       where: { id: check.hostId },
       data: {
         backgroundCheckStatus: allPassed ? 'PASSED' : 'FAILED',
-        backgroundCheckCompletedAt: new Date()
+        updatedAt: new Date()
       }
     })
 
     // Create notifications
     await tx.hostNotification.create({
       data: {
+        id: crypto.randomUUID(),
         hostId: check.hostId,
         type: 'BACKGROUND_CHECK',
-        title: allPassed ? 'Background Check Passed ✓' : 'Background Check Review Required',
-        message: allPassed 
+        category: 'verification',
+        subject: allPassed ? 'Background Check Passed' : 'Background Check Review Required',
+        message: allPassed
           ? 'Your background verification has been completed successfully.'
           : 'Your background check requires additional review. Our team will contact you.',
         priority: allPassed ? 'MEDIUM' : 'HIGH',
-        actionRequired: !allPassed
+        updatedAt: new Date()
       }
     })
 
     // Notify admin
     await tx.adminNotification.create({
       data: {
+        id: crypto.randomUUID(),
         type: 'BACKGROUND_CHECK_COMPLETED',
         title: `Background Check ${allPassed ? 'Passed' : 'Failed'}`,
-        message: `Background check ${allPassed ? 'passed' : 'failed'} for host: ${check.host.user.name || check.host.user.email}`,
+        message: `Background check ${allPassed ? 'passed' : 'failed'} for host: ${check.host?.user?.name || check.host?.user?.email}`,
         priority: allPassed ? 'LOW' : 'HIGH',
         metadata: {
           hostId: check.hostId,
           checkId: check.id,
           passed: allPassed
-        }
+        },
+        updatedAt: new Date()
       }
     })
   })
 
   // Send email to host
   try {
-    await sendHostBackgroundCheckStatus(check.host.user.email, {
-      hostName: check.host.user.name || 'Host',
-      status: allPassed ? 'completed' : 'requires_review',
-      checksPerformed: Object.entries(individual_checks)
-        .filter(([_, value]) => value !== null)
-        .map(([type, value]: [string, any]) => ({
-          type: type.replace('_', ' '),
-          status: value.status.toLowerCase(),
-          result: value.result
-        })),
-      nextSteps: allPassed 
-        ? [
-            'Your application is now under final review',
-            'You will receive approval notification within 24 hours',
-            'Start preparing your vehicle listings'
-          ]
-        : [
-            'Our team is reviewing your background check results',
-            'We may contact you for additional information',
-            'Check your email for further instructions'
-          ],
-      dashboardUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/host/dashboard`,
-      supportEmail: 'info@itwhip.com'
-    })
+    if (check.host?.user?.email) {
+      await sendHostBackgroundCheckStatus(check.host.user.email, {
+        name: check.host.user.name || 'Host',
+        status: allPassed ? 'completed' : 'failed',
+        checks: Object.entries(individual_checks)
+          .filter(([_, value]) => value !== null)
+          .map(([type, value]: [string, any]) => ({
+            checkType: type.replace('_', ' '),
+            status: value.status.toLowerCase() as 'pending' | 'passed' | 'failed' | 'review'
+          })),
+        nextSteps: allPassed
+          ? 'Your application is now under final review. You will receive approval notification within 24 hours.'
+          : 'Our team is reviewing your background check results. We may contact you for additional information.',
+        supportEmail: 'info@itwhip.com'
+      })
+    }
   } catch (emailError) {
     console.error('Failed to send completion email:', emailError)
   }

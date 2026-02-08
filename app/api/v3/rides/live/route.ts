@@ -132,7 +132,7 @@ function extractHotelId(request: Request): string {
 
 // Check if user is authenticated and tier
 async function checkAuthTier(request: Request): Promise<{ authenticated: boolean; tier: string }> {
-  const headersList = headers()
+  const headersList = await headers()
   const apiKey = headersList.get('x-api-key')
   const authHeader = headersList.get('authorization')
   

@@ -632,7 +632,7 @@ export default function HostEarningsPage() {
           <div className="p-4 sm:p-6 max-w-7xl mx-auto">
             {hostStatus && (
               <PendingBanner
-                approvalStatus={hostStatus.approvalStatus}
+                approvalStatus={hostStatus.approvalStatus as any}
                 page="earnings"
                 pendingActions={hostStatus.pendingActions}
                 restrictionReasons={hostStatus.restrictionReasons}

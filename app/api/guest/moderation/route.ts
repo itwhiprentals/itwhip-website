@@ -215,7 +215,7 @@ export async function GET(request: NextRequest) {
       // ✅ If suspension has approved appeal, it's cleared
       if (!suspensionAppealStatus.isCleared) {
         // Check if it's still active based on database fields
-        hasActiveSuspension = guest.suspensionLevel !== null && guest.suspensionLevel !== 'NONE'
+        hasActiveSuspension = guest.suspensionLevel !== null && (guest.suspensionLevel as string) !== 'NONE'
         
         if (hasActiveSuspension) {
           const daysRemaining = calculateDaysRemaining(guest.suspensionExpiresAt)

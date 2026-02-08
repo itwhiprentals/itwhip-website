@@ -363,7 +363,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: `${companyName} - Rideshare Rentals | ItWhip`,
       description,
       type: 'website',
-      images: partner.partnerHeroImage || partner.partnerLogo ? [partner.partnerHeroImage || partner.partnerLogo!] : []
+      images: (partner.partnerHeroImage || partner.partnerLogo) ? [partner.partnerHeroImage || partner.partnerLogo || ''] : []
     },
     twitter: {
       card: 'summary_large_image',
@@ -633,9 +633,9 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
     image: partner.partnerHeroImage || partner.partnerLogo,
     email: partner.partnerSupportEmail || partner.email,
     telephone: partner.partnerSupportPhone || partner.phone,
-    address: partner.location ? {
+    address: (partner as any).location ? {
       '@type': 'PostalAddress',
-      addressLocality: partner.location
+      addressLocality: (partner as any).location
     } : undefined,
     aggregateRating: avgRating > 0 ? {
       '@type': 'AggregateRating',
@@ -713,7 +713,7 @@ export default async function PartnerLandingPage({ params, searchParams }: PageP
             heroImage={partner.partnerHeroImage}
             heroImageFilter={partner.partnerHeroImageFilter ?? false}
             bio={partner.partnerBio}
-            location={partner.location}
+            location={(partner as any).location}
             supportEmail={partner.partnerSupportEmail || partner.email}
             supportPhone={partner.partnerSupportPhone || partner.phone}
             businessHours={partner.businessHours}

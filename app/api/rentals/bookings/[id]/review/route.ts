@@ -247,7 +247,7 @@ export async function POST(
           reviewCount: 0, // Will be incremented to 1 below
           isVerified: true, // They completed a real trip
           profilePhotoUrl: body.profilePhotoUrl || null
-        }
+        } as any
       })
     } else {
       // Returning guest - update their trip count
@@ -284,7 +284,7 @@ export async function POST(
         isVerified: true, // Real completed trip
         helpfulCount: 0,
         viewCount: 0
-      },
+      } as any,
       include: {
         reviewerProfile: true,
         car: {

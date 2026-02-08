@@ -62,9 +62,9 @@ export async function GET(
             }
           }
         },
-        policy: {
+        InsurancePolicy: {
           include: {
-            provider: {
+            InsuranceProvider: {
               select: {
                 id: true,
                 name: true,
@@ -126,13 +126,13 @@ export async function GET(
     }
 
     // Platform insurance
-    if (claim.policy) {
+    if (claim.InsurancePolicy) {
       insuranceHierarchy.push({
         level: insuranceHierarchy.length === 0 ? 'PRIMARY' : 'TERTIARY',
         type: 'Platform',
-        provider: claim.policy.provider.name,
-        deductible: claim.policy.deductible,
-        coverage: `${claim.policy.tier} - Liability: $${claim.policy.liabilityCoverage.toLocaleString()}, Collision: $${claim.policy.collisionCoverage.toLocaleString()}`,
+        provider: claim.InsurancePolicy.InsuranceProvider.name,
+        deductible: claim.InsurancePolicy.deductible,
+        coverage: `${claim.InsurancePolicy.tier} - Liability: $${claim.InsurancePolicy.liabilityCoverage.toLocaleString()}, Collision: $${claim.InsurancePolicy.collisionCoverage.toLocaleString()}`,
       })
     }
 
@@ -177,15 +177,15 @@ export async function GET(
       },
       
       policy: {
-        tier: claim.policy.tier,
-        deductible: claim.policy.deductible,
-        liabilityCoverage: claim.policy.liabilityCoverage,
-        collisionCoverage: claim.policy.collisionCoverage,
-        policyNumber: claim.policy.policyNumber,
-        externalPolicyId: claim.policy.externalPolicyId,
-        boundViaApi: claim.policy.boundViaApi,
+        tier: claim.InsurancePolicy.tier,
+        deductible: claim.InsurancePolicy.deductible,
+        liabilityCoverage: claim.InsurancePolicy.liabilityCoverage,
+        collisionCoverage: claim.InsurancePolicy.collisionCoverage,
+        policyNumber: claim.InsurancePolicy.policyNumber,
+        externalPolicyId: claim.InsurancePolicy.externalPolicyId,
+        boundViaApi: claim.InsurancePolicy.boundViaApi,
         provider: {
-          name: claim.policy.provider.name,
+          name: claim.InsurancePolicy.InsuranceProvider.name,
         },
       },
       
@@ -228,7 +228,7 @@ export async function GET(
 
     // Generate PDF using jsPDF (synchronous)
     const generator = new ClaimPdfGenerator()
-    const pdfDoc = generator.generate(pdfData)
+    const pdfDoc = generator.generate(pdfData as any)
     
     // Get buffer directly from jsPDF
     const pdfBuffer = generator.getBuffer()
@@ -237,7 +237,7 @@ export async function GET(
     const filename = `claim-${claim.id.slice(0, 8)}-${new Date().toISOString().split('T')[0]}.pdf`
 
     // Return PDF as download
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(pdfBuffer as any, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

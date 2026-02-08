@@ -76,7 +76,7 @@ export async function GET(
             email: true
           }
         },
-        damagePhotos: {
+        ClaimDamagePhoto: {
           orderBy: {
             order: 'asc'
           }
@@ -85,12 +85,12 @@ export async function GET(
       orderBy: {
         incidentDate: 'desc'
       }
-    })
+    }) as any
 
     console.log(`📊 Found ${claims.length} claims`)
 
     // Format claims for response
-    const formattedClaims = claims.map(claim => ({
+    const formattedClaims = claims.map((claim: any) => ({
       id: claim.id,
       type: claim.type,
       status: claim.status,
@@ -169,7 +169,7 @@ export async function GET(
       insurerStatus: claim.insurerStatus,
       
       // Photos
-      damagePhotos: claim.damagePhotos.map(photo => ({
+      damagePhotos: claim.ClaimDamagePhoto.map((photo: any) => ({
         id: photo.id,
         url: photo.url,
         caption: photo.caption,
@@ -203,14 +203,14 @@ export async function GET(
 
     // Calculate statistics
     const totalApproved = claims
-      .filter(c => c.approvedAmount)
-      .reduce((sum, c) => sum + (c.approvedAmount || 0), 0)
+      .filter((c: any) => c.approvedAmount)
+      .reduce((sum: any, c: any) => sum + (c.approvedAmount || 0), 0)
 
-    const activeCount = claims.filter(c => 
+    const activeCount = claims.filter((c: any) =>
       ['PENDING', 'UNDER_REVIEW', 'GUEST_RESPONSE_PENDING', 'GUEST_RESPONDED'].includes(c.status)
     ).length
 
-    const resolvedCount = claims.filter(c => 
+    const resolvedCount = claims.filter((c: any) =>
       ['APPROVED', 'DENIED', 'PAID', 'RESOLVED', 'CLOSED'].includes(c.status)
     ).length
 
@@ -233,7 +233,7 @@ export async function GET(
         resolved: resolvedCount,
         totalApproved: totalApproved,
         avgClaimAmount: claims.length > 0 
-          ? claims.reduce((sum, c) => sum + (c.approvedAmount || c.estimatedCost), 0) / claims.length
+          ? claims.reduce((sum: any, c: any) => sum + (c.approvedAmount || c.estimatedCost), 0) / claims.length
           : 0
       }
     })

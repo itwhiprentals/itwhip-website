@@ -873,9 +873,9 @@ export default function HowItWorksPage() {
                   <p className="text-xs font-semibold text-purple-600">
                     {benefit.highlight}
                   </p>
-                  {benefit.link && (
-                    <Link 
-                      href={benefit.link}
+                  {'link' in benefit && (benefit as any).link && (
+                    <Link
+                      href={(benefit as any).link}
                       className="inline-flex items-center mt-2 text-sm font-medium text-purple-600 hover:text-purple-700"
                     >
                       Learn more

@@ -131,7 +131,7 @@ export async function POST(
     // ========== TRACK ACTIVITY IN GUEST TIMELINE ==========
     try {
       await trackActivity(id, {
-        action: 'DOCUMENTS_VERIFIED',
+        action: 'DOCUMENT_VERIFIED' as any,
         description: `Documents verified by ${adminName}`,
         metadata: {
           verifiedBy: adminName,

@@ -309,13 +309,13 @@ export async function GET(request: NextRequest) {
                   category: 'insurance',
                   subject: `${notification.insurance} Insurance Expired`,
                   message: `Your ${notification.insurance} insurance has expired. Your earnings tier may have changed. Please renew to maintain higher earnings.`,
-                  status: 'SENT',
+                  status: 'SENT' as any,
                   priority: 'urgent',
                   metadata: {
                     insuranceType: notification.insurance,
                     expiredDate: now.toISOString()
                   }
-                }
+                } as any
               })
               
               results.notifications.expired.push(host.id)
@@ -331,14 +331,14 @@ export async function GET(request: NextRequest) {
                   category: 'insurance',
                   subject: `${notification.insurance} Insurance Expiring in ${daysLeft} days`,
                   message: `Your ${notification.insurance} insurance will expire in ${daysLeft} days. Renew now to maintain your earnings tier.`,
-                  status: 'SENT',
+                  status: 'SENT' as any,
                   priority: urgency,
                   metadata: {
                     insuranceType: notification.insurance,
                     daysUntilExpiration: daysLeft,
                     warningKey: `${notification.insurance.toLowerCase()}_${daysLeft}day`
                   }
-                }
+                } as any
               })
             }
           }
@@ -357,7 +357,7 @@ export async function GET(request: NextRequest) {
                   tierChange: results.tierChanges.find(tc => tc.hostId === host.id) || null
                 },
                 ipAddress: 'CRON_JOB'
-              }
+              } as any
             })
           }
         })
@@ -383,7 +383,7 @@ export async function GET(request: NextRequest) {
             },
             runDate: now.toISOString()
           }
-        }
+        } as any
       })
     }
     
@@ -420,7 +420,7 @@ export async function GET(request: NextRequest) {
           error: error?.message || 'Unknown error',
           timestamp: new Date().toISOString()
         }
-      }
+      } as any
     }).catch(console.error)
     
     return NextResponse.json(

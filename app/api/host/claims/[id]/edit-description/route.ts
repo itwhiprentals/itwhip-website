@@ -86,6 +86,7 @@ export async function POST(
     // Create edit record for audit trail
     const edit = await prisma.claimEdit.create({
       data: {
+        id: crypto.randomUUID(),
         claimId: claim.id,
         fieldChanged: 'description',
         oldValue: claim.description,

@@ -274,6 +274,8 @@ export async function POST(request: NextRequest) {
     // Create the message
     const newMessage = await prisma.rentalMessage.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         bookingId: booking.id,
         senderId: host.id,
         senderType: 'host',
@@ -286,7 +288,7 @@ export async function POST(request: NextRequest) {
         attachmentName: attachments?.[0]?.originalName || null,
         category: 'general',
         isRead: false
-      }
+      } as any
     })
 
     // TODO: Send email notification to guest
@@ -300,6 +302,7 @@ export async function POST(request: NextRequest) {
     // Log activity
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         userId: host.userId,
         action: 'HOST_MESSAGE_SENT',
         entityType: 'RentalMessage',

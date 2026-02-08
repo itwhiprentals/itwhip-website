@@ -21,10 +21,10 @@ import {
 } from 'react-icons/io5'
 
 export default function AccessibilityPage() {
-  const [expandedSections, setExpandedSections] = useState({})
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({})
   const [fontSize, setFontSize] = useState('normal')
-  
-  const toggleSection = (sectionId) => {
+
+  const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => ({
       ...prev,
       [sectionId]: !prev[sectionId]

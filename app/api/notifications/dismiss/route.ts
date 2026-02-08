@@ -63,11 +63,12 @@ export async function POST(request: NextRequest) {
         dismissCount: { increment: 1 }
       },
       create: {
+        id: crypto.randomUUID(),
         userId,
         notificationType,
         dismissedAt: new Date(),
         dismissCount: 1
-      }
+      } as any
     })
 
     // Check if the action has been completed

@@ -2,6 +2,7 @@
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import crypto from 'crypto'
 
 export async function GET(
  request: Request,
@@ -23,7 +24,7 @@ export async function GET(
            year: true
          }
        },
-       inspectionPhotos: {
+       InspectionPhoto: {
          orderBy: {
            uploadedAt: 'asc'
          }
@@ -48,7 +49,7 @@ export async function GET(
    }
 
    // Separate photos by type
-   const startPhotos = booking.inspectionPhotos
+   const startPhotos = booking.InspectionPhoto
      .filter(photo => photo.type === 'start')
      .map(photo => ({
        id: photo.id,
@@ -59,7 +60,7 @@ export async function GET(
        metadata: photo.metadata
      }))
 
-   const endPhotos = booking.inspectionPhotos
+   const endPhotos = booking.InspectionPhoto
      .filter(photo => photo.type === 'end')
      .map(photo => ({
        id: photo.id,
@@ -204,6 +205,7 @@ export async function POST(
    if (damageReported) {
      await prisma.rentalDispute.create({
        data: {
+         id: crypto.randomUUID(),
          bookingId,
          type: 'DAMAGE',
          description: damageDescription || 'Damage reported by admin',

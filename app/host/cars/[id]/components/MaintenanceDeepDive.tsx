@@ -369,7 +369,7 @@ export default function MaintenanceDeepDive({ carId }: MaintenanceDeepDiveProps)
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
-              {getServiceTypeLabel(type)} ({count})
+              {getServiceTypeLabel(type)} ({count as any})
             </button>
           ))}
         </div>

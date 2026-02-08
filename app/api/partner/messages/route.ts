@@ -303,8 +303,8 @@ export async function POST(request: NextRequest) {
         carId: { in: allVehicleIds }
       },
       include: {
-        user: true
-      }
+        renter: true
+      } as any
     })
 
     if (!booking) {
@@ -328,7 +328,7 @@ export async function POST(request: NextRequest) {
         isRead: true, // Host's own messages are read
         readByAdmin: true,
         replyToId: replyToId || null
-      }
+      } as any
     })
 
     // Mark any unread guest messages in this booking as read

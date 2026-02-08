@@ -63,17 +63,16 @@ export async function createGuestAccountFromVisitor(
       }
     }
 
-    // Generate secure access token for the account
-    const accessToken = randomBytes(32).toString('hex')
-
     // Create new ReviewerProfile (guest account)
+    const profileId = randomBytes(16).toString('hex')
     const reviewerProfile = await prisma.reviewerProfile.create({
       data: {
+        id: profileId,
         email: visitorData.email,
-        phone: visitorData.phone,
-        firstName: visitorData.firstName,
-        lastName: visitorData.lastName,
-        accessToken,
+        phoneNumber: visitorData.phone,
+        name: `${visitorData.firstName} ${visitorData.lastName}`,
+        city: 'Unknown',
+        updatedAt: new Date(),
         // Mark as needing full verification (Stripe Identity during onboarding)
         emailVerified: false,
         phoneVerified: false,
@@ -83,16 +82,8 @@ export async function createGuestAccountFromVisitor(
         }),
         // Store DL photos for reference
         ...(visitorData.dlFrontUrl && {
-          dlPhotoUrl: visitorData.dlFrontUrl,
+          driversLicenseUrl: visitorData.dlFrontUrl,
         }),
-        // AI verification status
-        ...(visitorData.aiVerificationResult && {
-          verificationStatus: visitorData.aiVerificationResult.validation?.isValid
-            ? 'AI_VERIFIED'
-            : 'PENDING',
-        }),
-        // Source tracking
-        source: 'BOOKING_FLOW',
       },
     })
 
@@ -120,34 +111,40 @@ export async function linkBookingToAccount(params: {
 }): Promise<{ success: boolean; autoLoginToken?: string; error?: string }> {
   try {
     // Update booking with reviewer profile link
+    const bookingUpdateData: Record<string, unknown> = {
+      reviewerProfileId: params.reviewerProfileId,
+      guestEmail: params.visitorData.email,
+      guestPhone: params.visitorData.phone,
+      guestName: `${params.visitorData.firstName} ${params.visitorData.lastName}`,
+      // Store verification source
+      verificationSource: 'BOOKING_FLOW',
+    }
+    // Store AI verification results
+    if (params.visitorData.aiVerificationResult) {
+      bookingUpdateData.aiLicenseVerified = params.visitorData.aiVerificationResult.validation?.isValid || false
+      bookingUpdateData.aiLicenseConfidence = params.visitorData.aiVerificationResult.confidence
+      bookingUpdateData.aiLicenseData = params.visitorData.aiVerificationResult.data || null
+      bookingUpdateData.aiVerifiedAt = new Date()
+    }
     await prisma.rentalBooking.update({
       where: { id: params.bookingId },
-      data: {
-        reviewerProfileId: params.reviewerProfileId,
-        guestEmail: params.visitorData.email,
-        guestPhone: params.visitorData.phone,
-        guestName: `${params.visitorData.firstName} ${params.visitorData.lastName}`,
-        // Store verification source
-        verificationSource: 'BOOKING_FLOW',
-        // Store AI verification results
-        ...(params.visitorData.aiVerificationResult && {
-          aiLicenseVerified: params.visitorData.aiVerificationResult.validation?.isValid || false,
-          aiLicenseConfidence: params.visitorData.aiVerificationResult.confidence,
-          aiLicenseData: params.visitorData.aiVerificationResult.data || null,
-          aiVerifiedAt: new Date(),
-        }),
-      },
+      data: bookingUpdateData as any,
     })
 
     // Create booking documents for DL images
-    const documents = []
+    const documents: Array<{
+      bookingId: string
+      type: string
+      url: string
+      aiAnalysis?: any
+    }> = []
 
     if (params.visitorData.dlFrontUrl) {
       documents.push({
         bookingId: params.bookingId,
         type: 'LICENSE_FRONT',
         url: params.visitorData.dlFrontUrl,
-        aiAnalysis: params.visitorData.aiVerificationResult || null,
+        aiAnalysis: params.visitorData.aiVerificationResult || undefined,
       })
     }
 
@@ -169,7 +166,7 @@ export async function linkBookingToAccount(params: {
 
     if (documents.length > 0) {
       await prisma.bookingDocument.createMany({
-        data: documents,
+        data: documents as any,
       })
     }
 
@@ -237,18 +234,17 @@ export async function convertVisitorToAccount(params: {
  * Returns true if user was verified during booking flow
  */
 export async function shouldSkipOnboarding(reviewerProfileId: string): Promise<boolean> {
-  const profile = await prisma.reviewerProfile.findUnique({
-    where: { id: reviewerProfileId },
-    select: {
-      source: true,
-      verificationStatus: true,
+  // Check if user has a booking that came from the booking flow with AI verification
+  const booking = await prisma.rentalBooking.findFirst({
+    where: {
+      reviewerProfileId,
+      verificationSource: 'BOOKING_FLOW',
+      aiLicenseVerified: true,
     },
+    select: { id: true },
   })
 
-  // Skip onboarding if:
-  // 1. Came from booking flow
-  // 2. Has AI verification
-  return profile?.source === 'BOOKING_FLOW' && profile?.verificationStatus === 'AI_VERIFIED'
+  return !!booking
 }
 
 /**
@@ -264,11 +260,9 @@ export async function getOnboardingRequirements(reviewerProfileId: string): Prom
   const profile = await prisma.reviewerProfile.findUnique({
     where: { id: reviewerProfileId },
     select: {
-      source: true,
-      verificationStatus: true,
-      dlPhotoUrl: true,
+      driversLicenseUrl: true,
       selfieUrl: true,
-      stripeIdentityVerified: true,
+      stripeIdentityVerifiedAt: true,
     },
   })
 
@@ -281,16 +275,24 @@ export async function getOnboardingRequirements(reviewerProfileId: string): Prom
     }
   }
 
-  const isFromBookingFlow = profile.source === 'BOOKING_FLOW'
+  // Check if user came from booking flow by looking at their bookings
+  const bookingFlowBooking = await prisma.rentalBooking.findFirst({
+    where: {
+      reviewerProfileId,
+      verificationSource: 'BOOKING_FLOW',
+    },
+    select: { id: true },
+  })
+  const isFromBookingFlow = !!bookingFlowBooking
 
   return {
     // Skip DL upload if came from booking flow (already uploaded)
-    requiresDLUpload: !isFromBookingFlow && !profile.dlPhotoUrl,
+    requiresDLUpload: !isFromBookingFlow && !profile.driversLicenseUrl,
     // Always require Stripe verification for full identity check
-    requiresStripeVerification: !profile.stripeIdentityVerified,
+    requiresStripeVerification: !profile.stripeIdentityVerifiedAt,
     // Selfie optional if came from booking flow
     requiresSelfie: !isFromBookingFlow && !profile.selfieUrl,
     // Can upload insurance after Stripe verification
-    canUploadInsurance: !!profile.stripeIdentityVerified,
+    canUploadInsurance: !!profile.stripeIdentityVerifiedAt,
   }
 }

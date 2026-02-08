@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
       id: guest.id,
       email: guest.email,
       name: guest.name,
-      phone: guest.phone,
+      phone: (guest as any).phone,
       profilePhotoUrl: guest.profilePhotoUrl,
       city: guest.city,
       state: guest.state,

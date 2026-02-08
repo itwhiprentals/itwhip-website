@@ -42,7 +42,7 @@ export default function CarImage({ car, className = '' }: CarImageProps) {
     const model = (car.model || '').toLowerCase()
     const type = (car.carType || '').toLowerCase()
 
-    const brandImages = {
+    const brandImages: Record<string, string> = {
       tesla: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=800&h=600&fit=crop',
       bmw: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop',
       mercedes: 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&h=600&fit=crop',

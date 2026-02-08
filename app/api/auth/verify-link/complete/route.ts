@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     // Fetch user
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, name: true, password: true, phone: true, phoneVerified: true, role: true, emailVerificationCode: true, emailVerificationCodeExpiry: true }
+      select: { id: true, email: true, name: true, passwordHash: true, phone: true, phoneVerified: true, role: true, emailVerificationCode: true, emailVerificationExpiry: true }
     })
 
     if (!user) {
@@ -81,18 +81,18 @@ export async function POST(request: NextRequest) {
     let verified = false
 
     if (type === 'password') {
-      if (!user.password) {
+      if (!user.passwordHash) {
         return NextResponse.json({ error: 'No password set for this account' }, { status: 400 })
       }
-      verified = await verifyPassword(value, user.password)
+      verified = await verifyPassword(value, user.passwordHash)
       if (!verified) {
         return NextResponse.json({ error: 'Incorrect password' }, { status: 400 })
       }
     } else if (type === 'email-otp') {
-      if (!user.emailVerificationCode || !user.emailVerificationCodeExpiry) {
+      if (!user.emailVerificationCode || !user.emailVerificationExpiry) {
         return NextResponse.json({ error: 'No verification code sent. Please request one first.' }, { status: 400 })
       }
-      if (new Date() > user.emailVerificationCodeExpiry) {
+      if (new Date() > user.emailVerificationExpiry) {
         return NextResponse.json({ error: 'Code expired. Please request a new one.' }, { status: 400 })
       }
       if (user.emailVerificationCode !== value) {
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
       // Clear the code after successful use
       await prisma.user.update({
         where: { id: user.id },
-        data: { emailVerificationCode: null, emailVerificationCodeExpiry: null }
+        data: { emailVerificationCode: null, emailVerificationExpiry: null }
       })
     } else if (type === 'phone-otp') {
       // Phone OTP is verified via Firebase on the client side
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
         data: {
           id: nanoid(),
           type: 'OAUTH_ACCOUNT_LINKED',
-          severity: 'MEDIUM',
+          severity: 'MEDIUM' as any,
           sourceIp: clientIp,
           targetId: user.email,
           message: `${provider} account linked after verification`,
@@ -165,8 +165,8 @@ export async function POST(request: NextRequest) {
     // Send notification email (best-effort)
     try {
       const providerName = provider === 'apple' ? 'Apple' : provider === 'google' ? 'Google' : provider
-      const template = getAccountLinkedTemplate(user.name, providerName)
-      await sendEmail(user.email, template.subject, template.html, template.text)
+      const template = getAccountLinkedTemplate(user.name || null, providerName)
+      await sendEmail(user.email || '', template.subject, template.html, template.text)
     } catch (e) {
       console.error('[Verify-Link] Notification email failed:', e)
     }
@@ -176,8 +176,8 @@ export async function POST(request: NextRequest) {
 
     const accessToken = await new SignJWT({
       userId: user.id,
-      email: user.email,
-      name: user.name,
+      email: user.email || '',
+      name: user.name || '',
       role: user.role,
       userType: 'guest'
     })

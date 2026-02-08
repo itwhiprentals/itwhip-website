@@ -129,10 +129,8 @@ export default function DriverLicenseScanner({ onScan, onClose }: DriverLicenseS
             fps: 10,
             qrbox: { width: 280, height: 160 },
             aspectRatio: 1.75,
-            // PDF417 is format code 3, also support QR_CODE (0) for some newer licenses
-            formatsToSupport: [0, 3, 2, 4] // QR_CODE, PDF_417, CODE_128, CODE_39
-          },
-          (decodedText) => {
+          } as any,
+          (decodedText: string) => {
             console.log('[DL Scanner] Raw scan:', decodedText.substring(0, 100) + '...')
 
             // Try to parse as AAMVA format
@@ -190,9 +188,8 @@ export default function DriverLicenseScanner({ onScan, onClose }: DriverLicenseS
             fps: 10,
             qrbox: { width: 280, height: 160 },
             aspectRatio: 1.75,
-            formatsToSupport: [0, 3, 2, 4]
-          },
-          (decodedText) => {
+          } as any,
+          (decodedText: string) => {
             const parsedData = parseAAMVABarcode(decodedText)
             if (parsedData.licenseNumber || parsedData.lastName) {
               setScannedData(parsedData)

@@ -70,8 +70,7 @@ export async function GET(req: NextRequest) {
       await prisma.reviewerProfile.updateMany({
         where: { userId },
         data: {
-          emailVerified: true,
-          emailVerifiedAt: new Date()
+          emailVerified: true
         }
       })
     } catch (updateError) {

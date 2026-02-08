@@ -234,7 +234,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Create history entry
-    await prisma.insuranceHistory.create({
+    await (prisma.insuranceHistory.create as any)({
       data: {
         reviewerProfileId: profile.id,
         action: 'ADDED',
@@ -374,7 +374,7 @@ export async function PATCH(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || 'unknown'
 
     // Mark old insurance as NOT_ACTIVE in history
-    await prisma.insuranceHistory.create({
+    await (prisma.insuranceHistory.create as any)({
       data: {
         reviewerProfileId: profile.id,
         action: 'UPDATED',
@@ -420,7 +420,7 @@ export async function PATCH(request: NextRequest) {
     })
 
     // Create new history entry for updated insurance
-    await prisma.insuranceHistory.create({
+    await (prisma.insuranceHistory.create as any)({
       data: {
         reviewerProfileId: profile.id,
         action: 'UPDATED',
@@ -508,7 +508,7 @@ export async function DELETE(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || 'unknown'
 
     // Create history entry before removing
-    await prisma.insuranceHistory.create({
+    await (prisma.insuranceHistory.create as any)({
       data: {
         reviewerProfileId: profile.id,
         action: 'REMOVED',

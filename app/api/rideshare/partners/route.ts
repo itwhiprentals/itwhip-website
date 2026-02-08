@@ -2,7 +2,7 @@
 // GET /api/rideshare/partners - List all active fleet partners with vehicles
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/app/lib/database/prisma'
+import prisma from '@/app/lib/database/prisma'
 
 export async function GET(request: NextRequest) {
   try {
@@ -55,13 +55,15 @@ export async function GET(request: NextRequest) {
         partnerDiscounts: {
           where: {
             isActive: true,
-            OR: [
-              { expiresAt: null },
-              { expiresAt: { gte: new Date() } }
-            ],
-            OR: [
-              { startsAt: null },
-              { startsAt: { lte: new Date() } }
+            AND: [
+              { OR: [
+                { expiresAt: null },
+                { expiresAt: { gte: new Date() } }
+              ] },
+              { OR: [
+                { startsAt: null },
+                { startsAt: { lte: new Date() } }
+              ] }
             ]
           },
           select: {
@@ -83,14 +85,14 @@ export async function GET(request: NextRequest) {
       .filter(partner => partner.cars.length > 0) // Only show partners with vehicles
       .map(partner => ({
         id: partner.id,
-        companyName: partner.partnerCompanyName || partner.displayName,
+        companyName: partner.partnerCompanyName || (partner as any).displayName || partner.name,
         slug: partner.partnerSlug,
         logo: partner.partnerLogo,
         bio: partner.partnerBio,
         fleetSize: partner.partnerFleetSize || partner.cars.length,
-        avgRating: partner.averageRating || 0,
-        totalReviews: partner.totalReviews || 0,
-        location: partner.location,
+        avgRating: partner.partnerAvgRating || partner.rating || 0,
+        totalReviews: (partner as any).totalReviews || 0,
+        location: `${partner.city}, ${partner.state}`,
         vehicles: partner.cars.map((car: any) => ({
           id: car.id,
           make: car.make,

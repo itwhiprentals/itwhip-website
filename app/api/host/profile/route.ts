@@ -89,22 +89,23 @@ async function logProfileActivity(params: {
 
   await prisma.activityLog.create({
     data: {
+      id: crypto.randomUUID(),
       entityType: 'HOST',
       entityId: hostId,
       hostId: hostId,
       action: action,
       category: category,
       severity: 'INFO',
-      description: description,
       oldValue: changes?.oldValues ? JSON.stringify(changes.oldValues) : null,
       newValue: changes?.newValues ? JSON.stringify(changes.newValues) : null,
       metadata: JSON.stringify({
         ...metadata,
+        description,
         hostName,
         timestamp: new Date().toISOString()
       }),
       createdAt: new Date()
-    }
+    } as any
   })
 }
 
@@ -166,7 +167,7 @@ export async function GET(request: NextRequest) {
       photoIdUrls: host.photoIdUrls,
       photoIdVerified: host.photoIdVerified,
       photoIdSubmittedAt: host.photoIdSubmittedAt,
-      photoIdRejected: host.photoIdRejected,
+      photoIdRejected: (host as any).photoIdRejected ?? false,
       earningsTier: host.earningsTier,
       usingLegacyInsurance: host.usingLegacyInsurance,
       insuranceProviderId: host.insuranceProviderId,
@@ -455,7 +456,7 @@ export async function PUT(request: NextRequest) {
       photoIdUrls: updatedHost.photoIdUrls,
       photoIdVerified: updatedHost.photoIdVerified,
       photoIdSubmittedAt: updatedHost.photoIdSubmittedAt,
-      photoIdRejected: updatedHost.photoIdRejected,
+      photoIdRejected: (updatedHost as any).photoIdRejected ?? false,
       earningsTier: updatedHost.earningsTier,
       usingLegacyInsurance: updatedHost.usingLegacyInsurance,
       insuranceProviderId: updatedHost.insuranceProviderId,

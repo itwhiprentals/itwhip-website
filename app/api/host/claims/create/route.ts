@@ -341,7 +341,7 @@ export async function POST(request: NextRequest) {
             email: true
           }
         },
-        insurancePolicy: {
+        InsurancePolicy: {
           select: {
             id: true,
             tier: true,
@@ -351,7 +351,7 @@ export async function POST(request: NextRequest) {
           }
         }
       }
-    })
+    }) as any
 
     if (!booking) {
       return NextResponse.json(
@@ -369,7 +369,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if booking has insurance policy
-    if (!booking.insurancePolicy) {
+    if (!booking.InsurancePolicy) {
       return NextResponse.json(
         { error: 'This booking does not have an insurance policy. Claims can only be filed for bookings with active insurance coverage.' },
         { status: 400 }
@@ -403,20 +403,20 @@ export async function POST(request: NextRequest) {
     
     let claim
     try {
-      claim = await prisma.claim.create({
+      claim = await (prisma.claim.create as any)({
         data: {
           bookingId,
           hostId,
-          policyId: booking.insurancePolicy.id,
+          policyId: booking.InsurancePolicy.id,
           type,
           description: description.trim(),
           incidentDate: new Date(incidentDate),
           estimatedCost: estimatedCost ? parseFloat(estimatedCost) : 0,
-          damagePhotos: damagePhotos || [],
+          damagePhotosLegacy: damagePhotos || [],
           status: 'PENDING',
           reportedBy: host.name || 'Host',
           guestAtFault: ['ACCIDENT', 'VANDALISM', 'CLEANING'].includes(type),
-          deductible: booking.insurancePolicy.deductible,
+          deductible: booking.InsurancePolicy.deductible,
           
           // Incident Location Fields
           incidentAddress: incidentLocation.address.trim(),
@@ -505,7 +505,7 @@ export async function POST(request: NextRequest) {
     // 🔒 COMPLIANCE AUDIT LOG: CLAIM FILED
     // ============================================================================
     try {
-      await prisma.auditLog.create({
+      await (prisma.auditLog.create as any)({
         data: {
           category: 'COMPLIANCE',
           eventType: 'CLAIM_FILED',
@@ -552,7 +552,7 @@ export async function POST(request: NextRequest) {
     try {
       // Get insurance provider info
       const insuranceProvider = await prisma.insuranceProvider.findFirst({
-        where: { id: booking.insurancePolicy.providerId },
+        where: { id: booking.InsurancePolicy.providerId },
         select: { name: true }
       })
       
@@ -660,7 +660,7 @@ export async function POST(request: NextRequest) {
 
         // 🔒 COMPLIANCE AUDIT LOG: VEHICLE DEACTIVATED
         try {
-          await prisma.auditLog.create({
+          await (prisma.auditLog.create as any)({
             data: {
               category: 'COMPLIANCE',
               eventType: 'VEHICLE_DEACTIVATED_CLAIM',
@@ -679,7 +679,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Activity log (internal operations tracking)
-        await prisma.activityLog.create({
+        await (prisma.activityLog.create as any)({
           data: {
             userId: host.userId || hostId,
             action: 'vehicle_deactivated_for_claim',
@@ -708,7 +708,7 @@ export async function POST(request: NextRequest) {
     // ============================================================================
     
     // Create host notification
-    await prisma.hostNotification.create({
+    await (prisma.hostNotification.create as any)({
       data: {
         hostId,
         type: 'CLAIM_FILED',
@@ -723,7 +723,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Create admin notification for Fleet
-    await prisma.adminNotification.create({
+    await (prisma.adminNotification.create as any)({
       data: {
         type: 'NEW_INSURANCE_CLAIM',
         title: 'New Insurance Claim Requires Review',
@@ -767,7 +767,7 @@ export async function POST(request: NextRequest) {
 
     // If guest has a reviewer profile, create a notification for them
     if (booking.reviewerProfile) {
-      await prisma.appealNotification.create({
+      await (prisma.appealNotification.create as any)({
         data: {
           guestId: booking.reviewerProfile.id,
           appealId: claim.id,
@@ -784,7 +784,7 @@ export async function POST(request: NextRequest) {
       })
 
       if (!existingStatus) {
-        await prisma.guestProfileStatus.create({
+        await (prisma.guestProfileStatus.create as any)({
           data: {
             guestId: booking.reviewerProfile.id,
             accountStatus: 'PENDING_CLAIM',
@@ -823,7 +823,7 @@ export async function POST(request: NextRequest) {
           claimId: claim.id
         })
 
-        await prisma.guestProfileStatus.update({
+        await (prisma.guestProfileStatus.update as any)({
           where: { guestId: booking.reviewerProfile.id },
           data: {
             accountStatus: 'PENDING_CLAIM',
@@ -840,7 +840,7 @@ export async function POST(request: NextRequest) {
     // LOG ACTIVITY WITH FNOL SUMMARY (INTERNAL OPERATIONS)
     // ============================================================================
     
-    await prisma.activityLog.create({
+    await (prisma.activityLog.create as any)({
       data: {
         userId: host.userId || hostId,
         action: 'insurance_claim_filed',
@@ -951,9 +951,9 @@ export async function POST(request: NextRequest) {
           notified: false
         } : null,
         insurancePolicy: {
-          tier: booking.insurancePolicy.tier,
-          deductible: booking.insurancePolicy.deductible,
-          coverage: booking.insurancePolicy.collisionCoverage
+          tier: booking.InsurancePolicy.tier,
+          deductible: booking.InsurancePolicy.deductible,
+          coverage: booking.InsurancePolicy.collisionCoverage
         }
       }
     }

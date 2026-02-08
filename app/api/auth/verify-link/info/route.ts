@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         email: true,
         phone: true,
         phoneVerified: true,
-        password: true,
+        passwordHash: true,
         name: true,
       }
     })
@@ -57,11 +57,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const hasPassword = !!user.password
+    const hasPassword = !!user.passwordHash
     const hasPhone = !!user.phone && !!user.phoneVerified
 
     return NextResponse.json({
-      maskedEmail: maskEmail(user.email),
+      maskedEmail: maskEmail(user.email || ''),
       maskedPhone: hasPhone ? maskPhone(user.phone!) : null,
       hasPassword,
       hasPhone,

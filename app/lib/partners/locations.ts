@@ -36,7 +36,7 @@ import {
     partner: PartnerLocation,
     checkTime: Date = new Date()
    ): boolean {
-    const dayOfWeek = checkTime.toLocaleLowerCase() as keyof BusinessHours
+    const dayOfWeek = checkTime.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as keyof BusinessHours
     const currentTime = checkTime.toTimeString().slice(0, 5) // "HH:MM"
     
     const dayHours = partner.hours[dayOfWeek] as DayHours

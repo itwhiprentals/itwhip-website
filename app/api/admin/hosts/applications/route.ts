@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
-        { phoneNumber: { contains: search } }
+        { phone: { contains: search } }
       ]
     }
     
@@ -156,8 +156,8 @@ export async function GET(request: NextRequest) {
         id: host.id,
         name: host.name,
         email: host.email,
-        phone: host.phoneNumber,
-        phoneNumber: host.phoneNumber,
+        phone: host.phone,
+        phoneNumber: host.phone,
         profilePhoto: host.profilePhoto,
         city: host.city,
         state: host.state,
@@ -184,7 +184,7 @@ export async function GET(request: NextRequest) {
         updatedAt: host.updatedAt,
         approvedAt: host.approvedAt,
         suspendedAt: host.suspendedAt,
-        documentsSubmittedAt: host.documentsSubmittedAt,
+        documentsSubmittedAt: (host as any).documentsSubmittedAt ?? null,
         documentsResubmittedAt: host.documentsResubmittedAt,
         lastContactedAt: host.lastNotificationSent,
         documentsRequestedAt: host.documentsRequestedAt,
@@ -491,10 +491,12 @@ export async function POST(request: NextRequest) {
       
       // Create host notification if data available
       if (notificationData) {
-        await tx.hostNotification.create({
+        await (tx.hostNotification.create as any)({
           data: {
             hostId: host.id,
             ...notificationData,
+            category: 'APPLICATION',
+            subject: notificationData.title || 'Application Update',
             status: 'SENT',
             metadata: {
               adminId: adminPayload.userId,
@@ -506,13 +508,13 @@ export async function POST(request: NextRequest) {
       }
       
       // Create activity log
-      await tx.activityLog.create({
+      await (tx.activityLog.create as any)({
         data: {
           entityType: 'HOST',
           entityId: host.id,
           action: `HOST_${action.toUpperCase()}`,
           userId: adminPayload.userId,
-          details: {
+          metadata: {
             hostId: host.id,
             hostName: host.name,
             previousStatus: host.approvalStatus,

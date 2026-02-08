@@ -131,7 +131,7 @@ function transformOffers(offers: any[]): any[] {
 
 // Check if request is authenticated
 async function isAuthenticated(request: Request): Promise<boolean> {
-  const headersList = headers()
+  const headersList = await headers()
   const apiKey = headersList.get('x-api-key')
   const authHeader = headersList.get('authorization')
   

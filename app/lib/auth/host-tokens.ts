@@ -150,7 +150,7 @@ export async function logProspectActivity(
     data: {
       prospectId,
       activityType,
-      metadata: metadata || null
+      metadata: (metadata || null) as any
     }
   })
 }

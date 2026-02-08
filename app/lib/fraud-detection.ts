@@ -6,6 +6,19 @@ import { validateEmail } from '../utils/email-validator'
 import { calculateBookingRisk, calculateVelocityRisk, compareWithHistoricalAverage } from '../utils/risk-calculator'
 import { lookupIp, extractIpAddress } from '../utils/ip-lookup'
 
+interface SessionSummary {
+  sessionId?: string
+  duration?: number
+  pageViewCount?: number
+  fieldInteractionCount?: number
+  totalInteractions?: number
+  copyPasteUsed?: boolean
+  maxScrollDepth?: number
+  validationErrors?: number
+  formSubmitAttempts?: number
+  suspiciousActivity?: string[]
+}
+
 interface FraudCheckRequest {
   // Booking details
   bookingData: {
@@ -107,7 +120,7 @@ export async function performFraudCheck(request: FraudCheckRequest): Promise<Fra
   
   // 3. Get session data
   const sessionTracker = getSessionTracker()
-  const sessionData = sessionTracker ? sessionTracker.getSessionSummary() : null
+  const sessionData: SessionSummary | null = sessionTracker ? sessionTracker.getSessionSummary() as SessionSummary : null
   
   // 4. Validate email
   const emailValidation = validateEmail(request.bookingData.guestEmail)
@@ -249,8 +262,8 @@ export async function performFraudCheck(request: FraudCheckRequest): Promise<Fra
     },
     
     sessionRisk: {
-      score: sessionData ? 
-        Math.min(50, sessionData.suspiciousActivity.length * 10) : 50,
+      score: sessionData ?
+        Math.min(50, (sessionData.suspiciousActivity || []).length * 10) : 50,
       flags: sessionData?.suspiciousActivity || ['no_session_data']
     },
     
@@ -326,7 +339,7 @@ export function getFraudDetectionData(): {
 } {
   const deviceData = collectDeviceFingerprint()
   const sessionTracker = getSessionTracker()
-  const sessionData = sessionTracker ? sessionTracker.getSessionSummary() : null
+  const sessionData: SessionSummary | null = sessionTracker ? sessionTracker.getSessionSummary() as SessionSummary : null
   const botSignals = checkBotSignals(deviceData)
   
   return {
@@ -348,9 +361,9 @@ export function quickBotCheck(): boolean {
   if (botSignals.length > 0) return true
   
   if (sessionTracker) {
-    const summary = sessionTracker.getSessionSummary()
-    if (summary.totalInteractions === 0 && summary.duration > 5000) return true
-    if (summary.duration < 10000 && summary.fieldInteractionCount > 5) return true
+    const summary = sessionTracker.getSessionSummary() as SessionSummary
+    if ((summary.totalInteractions || 0) === 0 && (summary.duration || 0) > 5000) return true
+    if ((summary.duration || 0) < 10000 && (summary.fieldInteractionCount || 0) > 5) return true
   }
   
   return false

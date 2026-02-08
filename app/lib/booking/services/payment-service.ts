@@ -208,7 +208,7 @@ export async function cancelAuthorization(params: {
     await prisma.rentalBooking.update({
       where: { id: params.bookingId },
       data: {
-        paymentStatus: 'CANCELLED',
+        paymentStatus: 'CANCELLED' as any,
         cancellationReason: params.reason || 'Authorization cancelled',
       },
     })

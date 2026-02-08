@@ -60,10 +60,10 @@ export async function calculateESGScore(
           car: true,
         },
       },
-      claims: true,
+      Claim: true,
       cars: true,
     },
-  });
+  }) as any;
 
   if (!host) {
     throw new Error(`Host not found: ${hostId}`);
@@ -138,8 +138,8 @@ export async function calculateESGScore(
 
     // Vehicle fleet
     totalVehicles: host.cars.length,
-    activeVehicles: host.cars.filter((c) => c.isActive).length,
-    evVehicleCount: host.cars.filter((c) => c.fuelType === "ELECTRIC").length,
+    activeVehicles: host.cars.filter((c: any) => c.isActive).length,
+    evVehicleCount: host.cars.filter((c: any) => c.fuelType === "ELECTRIC").length,
     avgVehicleAge: calculateAvgVehicleAge(host.cars),
 
     // Insurance & risk
@@ -147,8 +147,8 @@ export async function calculateESGScore(
       host.commercialInsuranceActive || host.earningsTier === "PREMIUM",
     hasP2PInsurance: host.p2pInsuranceActive || false,
     insuranceTier: host.earningsTier || "BASIC",
-    claimApprovalRate: calculateClaimApprovalRate(host.claims),
-    avgClaimProcessingDays: calculateAvgClaimProcessingDays(host.claims),
+    claimApprovalRate: calculateClaimApprovalRate(host.Claim),
+    avgClaimProcessingDays: calculateAvgClaimProcessingDays(host.Claim),
 
     // Gamification
     achievedBadges: [], // Will be populated by badge check
@@ -216,7 +216,7 @@ export async function calculateESGScore(
 function calculateSafetyScore(host: any) {
   const completedBookings = host.bookings;
   const totalTrips = completedBookings.length;
-  const claims = host.claims || [];
+  const claims = host.Claim || [];
 
   // No trips = default score
   if (totalTrips === 0) {
@@ -612,7 +612,7 @@ async function calculateMaintenanceScore(host: any) {
  * Based on claim response rates, documentation, and timeliness
  */
 function calculateComplianceScore(host: any) {
-  const claims = host.claims || [];
+  const claims = host.Claim || [];
 
   // No claims = perfect score
   if (claims.length === 0) {
@@ -647,7 +647,7 @@ function calculateComplianceScore(host: any) {
 
   const avgResponseTimeHours =
     responseTimes.length > 0
-      ? responseTimes.reduce((sum, t) => sum + t, 0) / responseTimes.length
+      ? responseTimes.reduce((sum: number, t: number) => sum + t, 0) / responseTimes.length
       : 2.4; // Default good response time
 
   // Calculate score components

@@ -117,7 +117,7 @@ export async function GET(
               state: true
             }
           },
-          insurancePolicy: {
+          InsurancePolicy: {
             select: {
               id: true,
               tier: true,
@@ -155,7 +155,7 @@ export async function GET(
               }
             }
           },
-          policy: {
+          InsurancePolicy: {
             select: {
               id: true,
               policyNumber: true,
@@ -220,11 +220,11 @@ export async function GET(
     // PHASE 2: GET USER ATTRIBUTION DATA
     // =====================================================
 
-    const adminIds = [...new Set(activityLogs.map(a => a.adminId).filter(Boolean))]
+    const adminIds = [...new Set(activityLogs.map(a => a.adminId).filter(Boolean))] as string[]
     const hostIds = [...new Set([
       ...activityLogs.map(a => a.hostId).filter(Boolean),
       vehicle.hostId
-    ])]
+    ])] as string[]
 
     const [admins, hosts] = await Promise.all([
       adminIds.length > 0
@@ -482,8 +482,7 @@ export async function GET(
     // 5. SERVICE EVENTS
     // =====================================================
     serviceRecords.forEach(service => {
-      const addedBy = service.addedByName || 
-                      (service.addedBy ? (hostMap[service.addedBy]?.name || 'Host') : hostName)
+      const addedBy = service.addedBy ? (hostMap[service.addedBy]?.name || 'Host') : hostName
       
       timeline.push({
         id: `service-${service.id}`,
@@ -517,7 +516,7 @@ export async function GET(
           category: 'SERVICE',
           action: 'SERVICE_VERIFIED',
           description: `Service record verified by fleet admin`,
-          performedBy: service.verifiedByName || 'Fleet Admin',
+          performedBy: service.verifiedBy || 'Fleet Admin',
           performedByType: 'ADMIN',
           severity: 'INFO',
           metadata: {
@@ -567,20 +566,20 @@ export async function GET(
 
       // Trip Started
       if (booking.tripStatus === 'ACTIVE' || booking.status === 'COMPLETED') {
-        const tripStartDate = booking.checkInTime || booking.startDate
-        
+        const tripStartDate = booking.tripStartedAt || booking.startDate
+
         timeline.push({
           id: `booking-started-${booking.id}`,
           type: 'BOOKING',
           category: 'BOOKING',
           action: 'TRIP_STARTED',
           description: `Trip started: ${booking.bookingCode}${
-            booking.checkInOdometer ? 
-            ` - Odometer: ${booking.checkInOdometer.toLocaleString()} mi` : 
+            booking.startMileage ?
+            ` - Odometer: ${booking.startMileage.toLocaleString()} mi` :
             ''
           }${
-            booking.checkInFuelLevel ? 
-            ` - Fuel: ${booking.checkInFuelLevel}` : 
+            booking.fuelLevelStart ?
+            ` - Fuel: ${booking.fuelLevelStart}` :
             ''
           }`,
           performedBy: 'System',
@@ -589,9 +588,9 @@ export async function GET(
           metadata: {
             bookingCode: booking.bookingCode,
             bookingId: booking.id,
-            checkInOdometer: booking.checkInOdometer,
-            checkInFuelLevel: booking.checkInFuelLevel,
-            checkInTime: booking.checkInTime?.toISOString(),
+            startMileage: booking.startMileage,
+            fuelLevelStart: booking.fuelLevelStart,
+            tripStartedAt: booking.tripStartedAt?.toISOString(),
             guestName
           },
           timestamp: tripStartDate,
@@ -601,9 +600,9 @@ export async function GET(
 
       // Trip Completed
       if (booking.status === 'COMPLETED') {
-        const tripEndDate = booking.checkOutTime || booking.endDate
-        const mileageDriven = booking.checkOutOdometer && booking.checkInOdometer 
-          ? booking.checkOutOdometer - booking.checkInOdometer 
+        const tripEndDate = booking.tripEndedAt || booking.endDate
+        const mileageDriven = booking.endMileage && booking.startMileage
+          ? booking.endMileage - booking.startMileage
           : 0
 
         timeline.push({
@@ -612,8 +611,8 @@ export async function GET(
           category: 'BOOKING',
           action: 'TRIP_COMPLETED',
           description: `Trip completed: ${booking.bookingCode}${
-            mileageDriven > 0 ? 
-            ` (+${mileageDriven.toLocaleString()} miles)` : 
+            mileageDriven > 0 ?
+            ` (+${mileageDriven.toLocaleString()} miles)` :
             ''
           }`,
           performedBy: 'System',
@@ -622,12 +621,12 @@ export async function GET(
           metadata: {
             bookingCode: booking.bookingCode,
             bookingId: booking.id,
-            checkInOdometer: booking.checkInOdometer,
-            checkOutOdometer: booking.checkOutOdometer,
-            checkInFuelLevel: booking.checkInFuelLevel,
-            checkOutFuelLevel: booking.checkOutFuelLevel,
+            startMileage: booking.startMileage,
+            endMileage: booking.endMileage,
+            fuelLevelStart: booking.fuelLevelStart,
+            fuelLevelEnd: booking.fuelLevelEnd,
             mileageDriven,
-            checkOutTime: booking.checkOutTime?.toISOString(),
+            tripEndedAt: booking.tripEndedAt?.toISOString(),
             guestName
           },
           timestamp: tripEndDate,
@@ -776,8 +775,8 @@ export async function GET(
       }
 
       // Claim Paid
-      if (claim.paidAt) {
-        const netPayout = claim.approvedAmount 
+      if (claim.paidToHost) {
+        const netPayout = claim.approvedAmount
           ? Number(claim.approvedAmount) - Number(claim.deductible || 0)
           : 0
 
@@ -796,8 +795,8 @@ export async function GET(
             deductible: claim.deductible ? Number(claim.deductible) : null,
             netPayout
           },
-          timestamp: claim.paidAt,
-          createdAt: claim.paidAt.toISOString()
+          timestamp: claim.paidToHost,
+          createdAt: claim.paidToHost.toISOString()
         })
       }
     })

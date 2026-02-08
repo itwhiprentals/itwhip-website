@@ -1,13 +1,13 @@
 // app/sys-2847/fleet/edit/components/HostBadges.tsx
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 
 interface Badge {
   id: string
   label: string
   description: string
-  icon: JSX.Element
+  icon: React.ReactElement
   color: string
   requirements?: string[]
   autoQualify?: (stats: HostStats) => boolean

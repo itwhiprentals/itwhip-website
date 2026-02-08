@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Identify visitor using multi-strategy matching
-    const visitorMatch = await identifyVisitor(visitorSignals)
+    const visitorMatch = await identifyVisitor(visitorSignals as any)
 
     // Extract and sanitize query params from path
     let cleanPath = path

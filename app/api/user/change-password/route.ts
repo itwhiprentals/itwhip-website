@@ -255,7 +255,7 @@ ${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'https://itw
       `.trim()
 
       await sendEmail(
-        user.email,
+        user.email as string,
         'Your ItWhip Password Was Changed',
         htmlContent,
         textContent

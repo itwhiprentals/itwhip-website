@@ -179,11 +179,11 @@ function validateApiKey(apiKey: string): { valid: boolean; data?: ApiKeyData; er
 }
 
 // Extract auth credentials from request
-function extractCredentials(request: Request): { 
+async function extractCredentials(request: Request): Promise<{
   type: 'jwt' | 'apikey' | 'none'
-  credential?: string 
-} {
-  const headersList = headers()
+  credential?: string
+}> {
+  const headersList = await headers()
   
   // Check for Bearer token (JWT)
   const authHeader = headersList.get('authorization')
@@ -230,10 +230,10 @@ function trackAuthAttempt(
 export async function POST(request: Request) {
   try {
     const startTime = Date.now()
-    const clientIp = headers().get('x-forwarded-for')?.split(',')[0] || '127.0.0.1'
+    const clientIp = (await headers()).get('x-forwarded-for')?.split(',')[0] || '127.0.0.1'
     
     // Extract credentials
-    const { type, credential } = extractCredentials(request)
+    const { type, credential } = await extractCredentials(request)
     
     // No credentials provided
     if (type === 'none') {

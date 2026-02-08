@@ -84,11 +84,11 @@ export async function POST(
         },
         request: {
           select: {
-            vehicleInfo: true
+            vehicleType: true
           }
         }
       }
-    })
+    }) as any
 
     if (testProspect) {
       // This is a TEST agreement signing
@@ -134,7 +134,7 @@ export async function POST(
         message: 'Test agreement signed successfully! This is what your guests will experience.',
         signedAt: signedAt.toISOString(),
         hostName: testProspect.convertedHost?.name,
-        vehicleInfo: testProspect.request?.vehicleInfo
+        vehicleInfo: (testProspect as any).request?.vehicleType
       })
     }
 
@@ -180,7 +180,7 @@ export async function POST(
           }
         }
       }
-    })
+    }) as any
 
     if (!booking) {
       return NextResponse.json(

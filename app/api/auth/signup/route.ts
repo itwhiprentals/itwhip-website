@@ -396,7 +396,7 @@ If you didn't create an account, please ignore this email.
     // Create JWT tokens with guest-specific secrets
     const { accessToken, refreshToken, userType } = await createTokens(
       newUser.id,
-      newUser.email,
+      newUser.email as string,
       newUser.role,
       newUser.name || undefined
     )

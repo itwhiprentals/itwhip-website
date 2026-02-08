@@ -51,7 +51,7 @@ export async function POST(
             }
           }
         },
-        policy: {
+        InsurancePolicy: {
           select: {
             policyNumber: true,
             externalPolicyId: true,
@@ -103,12 +103,12 @@ export async function POST(
       estimatedCost: claim.estimatedCost,
       
       // Policy information
-      policyNumber: claim.policy.policyNumber,
-      externalPolicyId: claim.policy.externalPolicyId,
-      policyTier: claim.policy.tier,
-      liabilityCoverage: claim.policy.liabilityCoverage,
-      collisionCoverage: claim.policy.collisionCoverage,
-      deductible: claim.policy.deductible,
+      policyNumber: claim.InsurancePolicy.policyNumber,
+      externalPolicyId: claim.InsurancePolicy.externalPolicyId,
+      policyTier: claim.InsurancePolicy.tier,
+      liabilityCoverage: claim.InsurancePolicy.liabilityCoverage,
+      collisionCoverage: claim.InsurancePolicy.collisionCoverage,
+      deductible: claim.InsurancePolicy.deductible,
       
       // Host information
       hostName: claim.host.name,
@@ -142,7 +142,7 @@ export async function POST(
       bookingEndDate: claim.booking.endDate.toISOString(),
       
       // Evidence
-      damagePhotos: claim.damagePhotos ? claim.damagePhotos as string[] : undefined,
+      damagePhotos: claim.damagePhotosLegacy ? claim.damagePhotosLegacy as string[] : undefined,
     }
 
     // Submit FNOL to insurer
@@ -152,7 +152,7 @@ export async function POST(
       estimatedCost: claim.estimatedCost,
     })
 
-    const fnolResult = await submitFNOL(fnolData)
+    const fnolResult = await submitFNOL(fnolData as any)
 
     if (!fnolResult.success) {
       // Log the failure but don't fail the request

@@ -88,7 +88,7 @@ export async function GET(
     }
 
     // Parse negotiation history from JSON
-    const negotiationHistory: NegotiationHistoryEntry[] = (invitation.negotiationHistory as NegotiationHistoryEntry[]) || []
+    const negotiationHistory: NegotiationHistoryEntry[] = (invitation.negotiationHistory as unknown as NegotiationHistoryEntry[]) || []
 
     // Calculate current terms (including counter-offer if present)
     const currentOwnerPercent = invitation.counterOfferOwnerPercent

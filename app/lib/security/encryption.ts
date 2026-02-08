@@ -18,7 +18,7 @@ import {
     constants
   } from 'crypto'
   import bcrypt from 'bcryptjs'
-  import type { EncryptedData, EncryptionMethod, SecurityKey } from '@/app/types/security'
+  import type { EncryptedData, SecurityKey, EncryptionMethod } from '@/app/types/security'
   
   // ============================================================================
   // CONFIGURATION
@@ -118,7 +118,7 @@ import {
         ENCRYPTION_CONFIG.AES.ALGORITHM,
         derivedKey,
         iv
-      )
+      ) as any
       
       // Encrypt data
       const encrypted = Buffer.concat([
@@ -130,7 +130,7 @@ import {
       const tag = cipher.getAuthTag()
       
       return {
-        method: EncryptionMethod.AES_256_GCM,
+        method: 'aes-256-gcm' as any,
         data: encrypted.toString('base64'),
         iv: iv.toString('base64'),
         salt: salt.toString('base64'),
@@ -152,7 +152,7 @@ import {
   ): string {
     try {
       // Validate encryption method
-      if (encryptedData.method !== EncryptionMethod.AES_256_GCM) {
+      if (encryptedData.method !== ('aes-256-gcm' as any)) {
         throw new Error(`Unsupported encryption method: ${encryptedData.method}`)
       }
       
@@ -170,7 +170,7 @@ import {
         ENCRYPTION_CONFIG.AES.ALGORITHM,
         derivedKey,
         iv
-      )
+      ) as any
       
       // Set auth tag
       decipher.setAuthTag(tag)
@@ -194,15 +194,15 @@ import {
     obj: T,
     fields: string[]
   ): T {
-    const encrypted = { ...obj }
-    
+    const encrypted: any = { ...obj }
+
     for (const field of fields) {
       if (field in encrypted && encrypted[field] !== null && encrypted[field] !== undefined) {
         const encryptedData = encryptData(String(encrypted[field]))
         encrypted[field] = JSON.stringify(encryptedData)
       }
     }
-    
+
     return encrypted
   }
   
@@ -213,8 +213,8 @@ import {
     obj: T,
     fields: string[]
   ): T {
-    const decrypted = { ...obj }
-    
+    const decrypted: any = { ...obj }
+
     for (const field of fields) {
       if (field in decrypted && decrypted[field]) {
         try {
@@ -225,7 +225,7 @@ import {
         }
       }
     }
-    
+
     return decrypted
   }
   

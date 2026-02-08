@@ -4,26 +4,20 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { 
+import {
   IoDocumentTextOutline,
   IoDownloadOutline,
   IoChevronForwardOutline,
   IoCalendarOutline,
-  IoBarChartOutline,
   IoShieldCheckmarkOutline,
-  IoGlobeOutline,
-  IoLockClosedOutline,
-  IoWarningOutline,
   IoCheckmarkCircleOutline,
-  IoTimeOutline,
   IoTrendingUpOutline,
   IoEyeOutline,
   IoMailOutline,
   IoShareSocialOutline,
   IoNewspaperOutline,
   IoAnalyticsOutline,
-  IoBookOutline,
-  IoInformationCircleOutline
+  IoBookOutline
 } from 'react-icons/io5'
 
 export default function TransparencyReportsPage() {
@@ -226,7 +220,7 @@ export default function TransparencyReportsPage() {
       annual: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600',
       special: 'bg-green-100 dark:bg-green-900/30 text-green-600'
     }
-    return colors[category] || colors.quarterly
+    return colors[category as keyof typeof colors] || colors.quarterly
   }
 
   return (
@@ -421,9 +415,9 @@ export default function TransparencyReportsPage() {
 
         {/* Reports Grid */}
         <div className="grid md:grid-cols-2 gap-6 mb-12">
-          {reports[selectedYear]
-            ?.filter(report => selectedCategory === 'all' || report.category === selectedCategory)
-            .map((report) => (
+          {(reports as any)[selectedYear]
+            ?.filter((report: any) => selectedCategory === 'all' || report.category === selectedCategory)
+            .map((report: any) => (
             <div key={report.id} className="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
               <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
@@ -444,7 +438,7 @@ export default function TransparencyReportsPage() {
                 <div className="space-y-2 mb-4">
                   <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Key Highlights:</h4>
                   <ul className="space-y-1">
-                    {report.highlights.map((highlight, index) => (
+                    {report.highlights.map((highlight: any, index: number) => (
                       <li key={index} className="flex items-start text-sm text-gray-600 dark:text-gray-400">
                         <IoCheckmarkCircleOutline className="w-4 h-4 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
                         {highlight}

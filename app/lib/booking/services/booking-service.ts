@@ -3,6 +3,7 @@
 // Handles auto-account creation, payment authorization, and Fleet queue status
 
 import { prisma } from '@/app/lib/database/prisma'
+import { Prisma } from '@prisma/client'
 import { nanoid } from 'nanoid'
 import { authorizePayment } from './payment-service'
 import { convertVisitorToAccount, type VisitorBookingData } from './visitor-account'
@@ -157,7 +158,7 @@ export async function createBooking(request: BookingRequest): Promise<BookingRes
         return {
           success: true,
           bookingId: booking.id,
-          referenceId: booking.referenceId,
+          referenceId: booking.bookingCode,
           error: 'Booking created but account setup failed. Please contact support.',
         }
       }
@@ -179,7 +180,7 @@ export async function createBooking(request: BookingRequest): Promise<BookingRes
         await prisma.rentalBooking.update({
           where: { id: booking.id },
           data: {
-            status: 'PAYMENT_FAILED',
+            status: 'CANCELLED',
             paymentStatus: 'FAILED',
             paymentFailureReason: paymentResult.error,
           }
@@ -187,7 +188,7 @@ export async function createBooking(request: BookingRequest): Promise<BookingRes
         return {
           success: false,
           bookingId: booking.id,
-          referenceId: booking.referenceId,
+          referenceId: booking.bookingCode,
           error: paymentResult.error || 'Payment authorization failed',
         }
       }
@@ -195,7 +196,7 @@ export async function createBooking(request: BookingRequest): Promise<BookingRes
       return {
         success: true,
         bookingId: booking.id,
-        referenceId: booking.referenceId,
+        referenceId: booking.bookingCode,
         reviewerProfileId,
         autoLoginToken,
         autoLoginUrl,
@@ -212,8 +213,6 @@ export async function createBooking(request: BookingRequest): Promise<BookingRes
         email: true,
         phoneNumber: true,
         name: true,
-        firstName: true,
-        lastName: true,
       }
     })
 
@@ -227,7 +226,7 @@ export async function createBooking(request: BookingRequest): Promise<BookingRes
       reviewerProfileId: guestProfile.id,
       guestEmail: guestProfile.email || undefined,
       guestPhone: guestProfile.phoneNumber || undefined,
-      guestName: guestProfile.name || `${guestProfile.firstName || ''} ${guestProfile.lastName || ''}`.trim(),
+      guestName: guestProfile.name || 'Guest',
     })
 
     // Authorize payment
@@ -236,7 +235,7 @@ export async function createBooking(request: BookingRequest): Promise<BookingRes
       await prisma.rentalBooking.update({
         where: { id: booking.id },
         data: {
-          status: 'PAYMENT_FAILED',
+          status: 'CANCELLED',
           paymentStatus: 'FAILED',
           paymentFailureReason: paymentResult.error,
         }
@@ -244,7 +243,7 @@ export async function createBooking(request: BookingRequest): Promise<BookingRes
       return {
         success: false,
         bookingId: booking.id,
-        referenceId: booking.referenceId,
+        referenceId: booking.bookingCode,
         error: paymentResult.error || 'Payment authorization failed',
       }
     }
@@ -252,7 +251,7 @@ export async function createBooking(request: BookingRequest): Promise<BookingRes
     return {
       success: true,
       bookingId: booking.id,
-      referenceId: booking.referenceId,
+      referenceId: booking.bookingCode,
       reviewerProfileId: guestProfile.id,
       paymentIntentId: paymentResult.paymentIntentId,
       clientSecret: paymentResult.clientSecret,
@@ -277,16 +276,17 @@ async function createBookingRecord(params: {
   guestEmail?: string
   guestPhone?: string
   guestName?: string
-}): Promise<{ id: string; referenceId: string }> {
+}): Promise<{ id: string; bookingCode: string }> {
   const { request, car, reviewerProfileId, guestEmail, guestPhone, guestName } = params
 
-  // Generate unique reference ID (e.g., BK-ABC123)
-  const referenceId = `BK-${nanoid(6).toUpperCase()}`
+  // Generate unique booking code (e.g., BK-ABC123)
+  const bookingCode = `BK-${nanoid(6).toUpperCase()}`
 
   const booking = await prisma.rentalBooking.create({
     data: {
+      id: crypto.randomUUID(),
       // Reference
-      referenceId,
+      bookingCode,
 
       // Car and host
       carId: request.carId,
@@ -301,38 +301,41 @@ async function createBookingRecord(params: {
       // Dates and times
       startDate: new Date(request.pickupDate),
       endDate: new Date(request.returnDate),
-      pickupTime: request.pickupTime,
-      returnTime: request.returnTime,
-      pickupLocation: request.pickupLocation || car.city,
+      startTime: request.pickupTime || '10:00',
+      endTime: request.returnTime || '10:00',
+      pickupLocation: request.pickupLocation || car.city || '',
+      pickupType: 'pickup',
       returnLocation: request.returnLocation || car.city,
 
       // Pricing
       dailyRate: request.dailyRate,
-      totalDays: request.totalDays,
-      tripAmount: request.tripAmount,
+      numberOfDays: request.totalDays,
+      subtotal: request.tripAmount,
       serviceFee: request.serviceFee,
-      taxAmount: request.taxAmount,
+      taxes: request.taxAmount,
       securityDeposit: request.securityDeposit,
+      depositHeld: request.securityDeposit,
       totalAmount: request.totalAmount,
 
       // Status - Fleet-first approval
-      status: 'PENDING_REVIEW',
+      status: 'PENDING',
       fleetStatus: 'PENDING',
       paymentStatus: 'PENDING',
 
       // AI verification (from visitor flow)
       aiLicenseVerified: request.aiVerificationResult?.validation?.isValid || false,
       aiLicenseConfidence: request.aiVerificationResult?.confidence,
-      aiLicenseData: request.aiVerificationResult?.data || null,
+      aiLicenseData: request.aiVerificationResult?.data
+        ? (request.aiVerificationResult.data as unknown as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
       verificationSource: reviewerProfileId ? 'EXISTING_GUEST' : 'BOOKING_FLOW',
 
       // Timestamps
-      createdAt: new Date(),
       updatedAt: new Date(),
     },
     select: {
       id: true,
-      referenceId: true,
+      bookingCode: true,
     }
   })
 
@@ -427,7 +430,7 @@ export async function getBooking(bookingId: string) {
           id: true,
           name: true,
           email: true,
-          profilePhotoUrl: true,
+          profilePhoto: true,
         }
       },
       reviewerProfile: {
@@ -439,7 +442,7 @@ export async function getBooking(bookingId: string) {
         }
       },
       documents: true,
-    }
+    } as any
   })
 }
 
@@ -464,7 +467,7 @@ export async function getGuestBookings(reviewerProfileId: string) {
         select: {
           id: true,
           name: true,
-          profilePhotoUrl: true,
+          profilePhoto: true,
         }
       },
     },
@@ -480,6 +483,13 @@ export async function cancelBooking(params: {
   reason: string
   cancelledBy: 'guest' | 'host' | 'fleet'
 }): Promise<{ success: boolean; error?: string }> {
+  // Map lowercase cancelledBy to Prisma CancelledBy enum
+  const cancelledByMap: Record<string, 'GUEST' | 'HOST' | 'ADMIN' | 'SYSTEM'> = {
+    guest: 'GUEST',
+    host: 'HOST',
+    fleet: 'SYSTEM',
+  }
+
   try {
     const booking = await prisma.rentalBooking.findUnique({
       where: { id: params.bookingId },
@@ -516,7 +526,7 @@ export async function cancelBooking(params: {
         status: 'CANCELLED',
         fleetStatus: 'CANCELLED',
         cancellationReason: params.reason,
-        cancelledBy: params.cancelledBy,
+        cancelledBy: cancelledByMap[params.cancelledBy] || 'SYSTEM',
         cancelledAt: new Date(),
       }
     })

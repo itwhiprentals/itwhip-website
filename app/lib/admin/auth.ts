@@ -1,7 +1,7 @@
 // app/lib/admin/auth.ts
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
-import { prisma } from '@/app/lib/database/prisma'
+import prisma from '@/app/lib/database/prisma'
 
 // Admin JWT secret
 const ADMIN_JWT_SECRET = new TextEncoder().encode(
@@ -44,7 +44,7 @@ export async function verifyAdminToken(token: string): Promise<AdminTokenPayload
       return null
     }
 
-    return payload as AdminTokenPayload
+    return payload as unknown as AdminTokenPayload
   } catch (error) {
     console.error('Admin token verification failed:', error)
     return null
@@ -56,7 +56,7 @@ export async function verifyAdminToken(token: string): Promise<AdminTokenPayload
  */
 export async function getCurrentAdmin(): Promise<AdminUser | null> {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const token = cookieStore.get('adminAccessToken')
 
     if (!token) {
@@ -179,9 +179,9 @@ export async function refreshAdminToken(refreshToken: string): Promise<string | 
 /**
  * Clear admin cookies (for logout)
  */
-export function clearAdminCookies() {
-  const cookieStore = cookies()
-  
+export async function clearAdminCookies() {
+  const cookieStore = await cookies()
+
   // Clear admin tokens
   cookieStore.set('adminAccessToken', '', {
     httpOnly: true,
@@ -264,7 +264,7 @@ export async function logAdminAction(
   try {
     await prisma.auditLog.create({
       data: {
-        category: 'ADMIN_ACTION',
+        category: 'AUTHORIZATION',
         eventType: action,
         severity: 'INFO',
         userId: adminId,
@@ -276,7 +276,7 @@ export async function logAdminAction(
         userAgent: 'admin-system',
         hash: '',
         timestamp: new Date()
-      }
+      } as any
     })
   } catch (error) {
     console.error('Failed to log admin action:', error)

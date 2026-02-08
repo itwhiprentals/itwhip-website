@@ -230,7 +230,7 @@ export async function getHostCoverageSummary(hostId: string) {
           insuranceProviderId: host.insuranceProviderId,
           insuranceProvider: host.insuranceProvider
         }
-      })
+      } as any)
       return { car, coverage }
     })
   )

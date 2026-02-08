@@ -93,6 +93,7 @@ export async function POST(request: NextRequest) {
     // Store verification data in ActivityLog
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         action: 'VERIFICATION_REQUESTED',
         entityType: 'HOST',
         entityId: host.id,
@@ -299,6 +300,7 @@ export async function PUT(request: NextRequest) {
       // Log failed attempt
       await prisma.activityLog.create({
         data: {
+          id: crypto.randomUUID(),
           action: 'VERIFICATION_FAILED',
           entityType: 'HOST',
           entityId: actualHostId,
@@ -331,6 +333,7 @@ export async function PUT(request: NextRequest) {
     // Log successful verification
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         action: 'VERIFICATION_COMPLETED',
         entityType: 'HOST',
         entityId: actualHostId,

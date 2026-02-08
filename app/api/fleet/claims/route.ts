@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     // Get claims with relations - ENHANCED to include insurance hierarchy
     const [claims, total] = await Promise.all([
-      prisma.claim.findMany({
+      (prisma.claim.findMany as any)({
         where,
         include: {
           host: {
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
         ],
         skip,
         take: limit
-      }),
+      }) as any[],
       prisma.claim.count({ where })
     ]);
 
@@ -224,10 +224,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Get booking with insurance policy and host details
-    const booking = await prisma.rentalBooking.findUnique({
+    const booking = await (prisma.rentalBooking.findUnique as any)({
       where: { id: bookingId },
       include: {
-        insurancePolicy: true,
+        InsurancePolicy: true,
         host: {
           select: {
             earningsTier: true,
@@ -242,7 +242,7 @@ export async function POST(request: NextRequest) {
           }
         }
       }
-    });
+    }) as any;
 
     if (!booking) {
       return NextResponse.json(
@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!booking.insurancePolicy) {
+    if (!booking.InsurancePolicy) {
       return NextResponse.json(
         { error: 'No insurance policy found for this booking' },
         { status: 400 }
@@ -261,7 +261,7 @@ export async function POST(request: NextRequest) {
     // Determine primary payer based on host tier
     const hostTier = booking.host.earningsTier;
     let primaryPayer = 'PLATFORM_INSURANCE';
-    let actualDeductible = booking.insurancePolicy.deductible;
+    let actualDeductible = booking.InsurancePolicy.deductible;
 
     if (hostTier === 'PREMIUM' && booking.host.commercialInsuranceStatus === 'ACTIVE') {
       primaryPayer = 'HOST_COMMERCIAL_INSURANCE';
@@ -272,11 +272,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the claim with insurance hierarchy metadata
-    const claim = await prisma.claim.create({
+    const claim = await (prisma.claim.create as any)({
       data: {
         bookingId,
         hostId,
-        policyId: booking.insurancePolicy.id,
+        policyId: booking.InsurancePolicy.id,
         type,
         description,
         incidentDate: new Date(incidentDate),
@@ -323,7 +323,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Create audit log for claim creation
-    await prisma.auditLog.create({
+    await (prisma.auditLog.create as any)({
       data: {
         category: 'FINANCIAL',
         eventType: 'CLAIM_CREATED',

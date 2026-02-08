@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
         isModified: false,
         annualMileage: 12000,
         primaryUse: 'Rental'
-      }
+      } as any
     })
 
     // Log the backfill
@@ -199,8 +199,8 @@ export async function POST(request: NextRequest) {
         hostId: host.id,
         category: 'VEHICLE',
         severity: 'INFO',
-        description: `Vehicle backfilled: ${year} ${make} ${model}`,
         metadata: {
+          description: `Vehicle backfilled: ${year} ${make} ${model}`,
           make,
           model,
           year,
@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
           note: 'Backfilled - car was not created during original signup',
           backfilledAt: new Date().toISOString()
         }
-      }
+      } as any
     })
 
     return NextResponse.json({

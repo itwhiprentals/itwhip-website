@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   IoCloseOutline,
   IoLocationOutline,
@@ -128,7 +128,7 @@ export default function HotelDetailsModal({ hotel, onClose }: HotelDetailsModalP
     `Experience luxury and comfort at ${hotel.name}. Our property offers world-class amenities and exceptional service in the heart of ${hotel.location}. Whether you're here for business or leisure, enjoy our carefully designed spaces and premium facilities.`
 
   // Amenity icons mapping
-  const amenityIcons: { [key: string]: JSX.Element } = {
+  const amenityIcons: { [key: string]: React.ReactElement } = {
     'Spa': <IoSparklesOutline className="w-4 h-4" />,
     'Pool': <IoWifiOutline className="w-4 h-4" />,
     'Gym': <IoFitnessOutline className="w-4 h-4" />,

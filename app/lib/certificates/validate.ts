@@ -497,7 +497,7 @@ MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1234567890...
         category: 'COMPLIANCE',
         eventType: 'certificate.validation',
         severity: data.valid ? 'LOW' : 'MEDIUM',
-        action: data.valid ? 'verify_success' : 'verify_failed',
+        action: (data.valid ? 'verify_success' : 'verify_failed') as any,
         resource: `certificate:${data.certificateId}`,
         ipAddress: data.verifierIp || '0.0.0.0',
         userAgent: 'Certificate Validator',

@@ -112,7 +112,7 @@ export async function POST(
 
     // Create the trip charge
     const tripCharge = await prisma.tripCharge.create({
-      data: chargeData
+      data: chargeData as any
     })
 
     console.log(`[Add Charge] Charge ${tripCharge.id} added to booking ${bookingId} by partner ${partner.id}`)

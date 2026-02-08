@@ -83,10 +83,9 @@ export async function POST(request: NextRequest) {
       invitation = await prisma.managementInvitation.findUnique({
         where: { token: inviteToken },
         include: {
-          car: true,
-          invitedByHost: true
+          sender: true
         }
-      })
+      }) as any
 
       if (!invitation) {
         return NextResponse.json(
@@ -156,8 +155,9 @@ export async function POST(request: NextRequest) {
           isVerified: true, // OAuth users are email verified
 
           // Link to existing User record
-          userId: existingUser.id
-        },
+          userId: existingUser.id,
+          updatedAt: new Date()
+        } as any,
         include: {
           user: true
         }
@@ -207,12 +207,14 @@ export async function POST(request: NextRequest) {
               name: name.trim(),
               phone: null,
               passwordHash: passwordHash || '',
-              role: 'CLAIMED',
+              role: 'CLAIMED' as any,
               emailVerified: true, // Verified by invite link or OAuth
-              isActive: true
+              isActive: true,
+              updatedAt: new Date()
             }
-          }
-        },
+          },
+          updatedAt: new Date()
+        } as any,
         include: {
           user: true
         }
@@ -222,6 +224,7 @@ export async function POST(request: NextRequest) {
     // Log the signup
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         action: 'PARTNER_SIGNUP',
         entityType: 'HOST',
         entityId: newPartner.id,
@@ -232,8 +235,8 @@ export async function POST(request: NextRequest) {
           description: `New partner registered: ${name}`,
           email: normalizedEmail,
           hasInvitation: !!invitation,
-          invitedBy: invitation?.invitedByHost?.name || null,
-          invitedByHostId: invitation?.invitedByHostId || null,
+          invitedBy: invitation?.sender?.name || null,
+          invitedByHostId: invitation?.senderId || null,
           signupMethod: isOAuthUser ? 'google_oauth' : 'email_password'
         }
       }
@@ -243,6 +246,8 @@ export async function POST(request: NextRequest) {
     if (!invitation) {
       await prisma.adminNotification.create({
         data: {
+          id: crypto.randomUUID(),
+          updatedAt: new Date(),
           type: 'PARTNER_APPLICATION',
           title: 'New Partner Registration',
           message: `${name} has registered as a car owner/partner`,
@@ -257,7 +262,7 @@ export async function POST(request: NextRequest) {
             partnerEmail: normalizedEmail,
             signupType: 'manual'
           }
-        }
+        } as any
       })
     }
 

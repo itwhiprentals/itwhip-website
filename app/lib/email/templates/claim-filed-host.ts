@@ -207,7 +207,7 @@ export function getClaimFiledHostTemplate(data: ClaimFiledHostData): EmailTempla
               </div>
             </div>
 
-            ${data.fnolSummary?.hasComprehensiveReport ? `
+            ${(data as any).fnolSummary?.hasComprehensiveReport ? `
               <div class="fnol-confirmation">
                 <div class="fnol-title">
                   <span>✅</span>
@@ -279,7 +279,7 @@ Claim Details:
 - Claim Type: ${data.claimType}
 - Estimated Cost: $${data.estimatedCost.toLocaleString()}
 
-${data.fnolSummary?.hasComprehensiveReport ? `
+${(data as any).fnolSummary?.hasComprehensiveReport ? `
 ✅ COMPREHENSIVE INCIDENT REPORT FILED
 Your detailed incident documentation has been securely submitted including vehicle condition, environmental factors, and all relevant details. This comprehensive report is available in your secure claims portal.
 ` : ''}

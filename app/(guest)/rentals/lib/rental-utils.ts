@@ -2,7 +2,7 @@
 // Helper functions for the rental system
 
 import { format, differenceInDays, addDays, parseISO, isAfter, isBefore } from 'date-fns'
-import { RentalCar, RentalBooking, RentalAvailability } from '@/app/lib/dal/types'
+import type { RentalCar, RentalBooking, RentalAvailability } from '@prisma/client'
 
 // ============================================================================
 // DATE & TIME UTILITIES
@@ -71,7 +71,7 @@ export function isCarAvailable(
     }
 
     for (const date of dateRange) {
-      const availability = car.availability.find(a => 
+      const availability = car.availability.find((a: any) =>
         format(new Date(a.date), 'yyyy-MM-dd') === date
       )
       if (availability && !availability.isAvailable) {
@@ -111,7 +111,7 @@ export function getBlockedDates(
 
   // Add unavailable dates from availability calendar
   if (car.availability) {
-    car.availability.forEach(a => {
+    car.availability.forEach((a: any) => {
       if (!a.isAvailable) {
         blockedDates.push(format(new Date(a.date), 'yyyy-MM-dd'))
       }
@@ -120,7 +120,7 @@ export function getBlockedDates(
 
   // Add dates from confirmed bookings
   if (car.bookings) {
-    car.bookings.forEach(booking => {
+    car.bookings.forEach((booking: any) => {
       if (booking.status !== 'CANCELLED') {
         let currentDate = new Date(booking.startDate)
         const endDate = new Date(booking.endDate)

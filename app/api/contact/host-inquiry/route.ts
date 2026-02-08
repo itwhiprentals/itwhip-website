@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
           timestamp: new Date().toISOString(),
           photoUrls: photoUrls // Store photo URLs in metadata
         }
-      }
+      } as any
     })
 
     // Create admin notification
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
           contactInfo: { name, email, phone, location },
           photoUrls: photoUrls
         }
-      }
+      } as any
     })
 
     // Send detailed email to admin

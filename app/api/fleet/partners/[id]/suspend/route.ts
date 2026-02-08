@@ -52,6 +52,7 @@ export async function POST(
     // Log the suspension
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         entityType: 'PARTNER',
         entityId: id,
         action: 'PARTNER_SUSPENDED',
@@ -68,7 +69,7 @@ export async function POST(
     // Send suspension email to partner
     try {
       const emailTemplate = getPartnerSuspendedTemplate({
-        companyName: partner.partnerCompanyName || partner.displayName || 'Partner',
+        companyName: partner.partnerCompanyName || partner.name || 'Partner',
         contactName: partner.name || 'Partner',
         contactEmail: partner.email,
         suspensionReason: reason,
@@ -88,14 +89,14 @@ export async function POST(
       // Send admin notification (industry standard: notify operations team)
       const adminEmail = process.env.FLEET_ADMIN_EMAIL || 'info@itwhip.com'
       const adminNotification = {
-        subject: `[Fleet Alert] Partner Suspended: ${partner.partnerCompanyName || partner.displayName}`,
+        subject: `[Fleet Alert] Partner Suspended: ${partner.partnerCompanyName || partner.name}`,
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: #dc2626; color: white; padding: 20px; text-align: center;">
               <h2 style="margin: 0;">Partner Suspension Alert</h2>
             </div>
             <div style="padding: 24px; background: #fff; border: 1px solid #e5e7eb;">
-              <p><strong>Partner:</strong> ${partner.partnerCompanyName || partner.displayName}</p>
+              <p><strong>Partner:</strong> ${partner.partnerCompanyName || partner.name}</p>
               <p><strong>Contact:</strong> ${partner.name} (${partner.email})</p>
               <p><strong>Suspended By:</strong> ${suspendedBy || 'Fleet Admin'}</p>
               <p><strong>Reason:</strong> ${reason || 'No reason provided'}</p>
@@ -105,7 +106,7 @@ export async function POST(
             </div>
           </div>
         `,
-        text: `Partner Suspension Alert\n\nPartner: ${partner.partnerCompanyName || partner.displayName}\nContact: ${partner.name} (${partner.email})\nSuspended By: ${suspendedBy || 'Fleet Admin'}\nReason: ${reason || 'No reason provided'}\nTime: ${new Date().toISOString()}`
+        text: `Partner Suspension Alert\n\nPartner: ${partner.partnerCompanyName || partner.name}\nContact: ${partner.name} (${partner.email})\nSuspended By: ${suspendedBy || 'Fleet Admin'}\nReason: ${reason || 'No reason provided'}\nTime: ${new Date().toISOString()}`
       }
 
       await sendEmail(

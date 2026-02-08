@@ -34,7 +34,7 @@ export async function GET(request: Request) {
    // Check for stuck trips (active for more than 30 days)
    const stuckTrips = await prisma.rentalBooking.count({
      where: {
-       tripStatus: 'ACTIVE',
+       tripStatus: 'ACTIVE' as any,
        tripStartedAt: {
          lt: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
        }
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
    // Check for overdue returns
    const overdueReturns = await prisma.rentalBooking.count({
      where: {
-       tripStatus: 'ACTIVE',
+       tripStatus: 'ACTIVE' as any,
        endDate: { lt: now }
      }
    })
@@ -52,10 +52,8 @@ export async function GET(request: Request) {
    // Check for missing photos (trips started but no photos)
    const missingPhotos = await prisma.rentalBooking.count({
      where: {
-       tripStatus: 'ACTIVE',
-       inspectionPhotos: {
-         none: {}
-       }
+       tripStatus: 'ACTIVE' as any,
+       inspectionPhotosStart: null
      }
    })
 
@@ -65,7 +63,7 @@ export async function GET(request: Request) {
    // Check Stripe health (mock data - would need actual Stripe integration)
    const failedCharges = await prisma.rentalBooking.count({
      where: {
-       paymentStatus: 'FAILED',
+       paymentStatus: 'FAILED' as any,
        updatedAt: {
          gte: new Date(now.getTime() - 24 * 60 * 60 * 1000)
        }
@@ -74,7 +72,7 @@ export async function GET(request: Request) {
 
    const totalCharges = await prisma.rentalBooking.count({
      where: {
-       paymentStatus: { in: ['PAID', 'FAILED'] },
+       paymentStatus: { in: ['PAID', 'FAILED'] as any },
        updatedAt: {
          gte: new Date(now.getTime() - 24 * 60 * 60 * 1000)
        }
@@ -196,7 +194,7 @@ export async function POST(request: Request) {
    // TODO: Add admin authentication check here
    
    // Run various system checks
-   const diagnostics = {
+   const diagnostics: { timestamp: string; checks: Array<{ name: string; status: string; error?: string }> } = {
      timestamp: new Date().toISOString(),
      checks: []
    }

@@ -57,13 +57,13 @@ const verticals = [
   }
 ]
 
-const statusStyles = {
+const statusStyles: Record<string, string> = {
   live: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300',
   coming: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300',
   future: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
 }
 
-const colorStyles = {
+const colorStyles: Record<string, string> = {
   violet: 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400',
   blue: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
   emerald: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',

@@ -125,6 +125,9 @@ export async function POST(request: NextRequest) {
       // Create new profile
       esgProfile = await prisma.hostESGProfile.create({
         data: {
+          id: crypto.randomUUID(),
+          updatedAt: new Date(),
+          lastCalculatedAt: new Date(),
           hostId: host.id,
 
           // Scores
@@ -195,13 +198,14 @@ export async function POST(request: NextRequest) {
           // Metadata
           calculationVersion: calculation.scores.calculationVersion,
           dataConfidence: calculation.scores.dataConfidence,
-        },
+        } as any,
       });
     }
 
     // Create snapshot
     await prisma.eSGSnapshot.create({
       data: {
+        id: crypto.randomUUID(),
         profileId: esgProfile.id,
         compositeScore: calculation.scores.compositeScore,
         drivingImpactScore: calculation.scores.drivingImpactScore,
@@ -216,6 +220,7 @@ export async function POST(request: NextRequest) {
     // Log event
     await prisma.eSGEvent.create({
       data: {
+        id: crypto.randomUUID(),
         hostId: host.id,
         eventType: "SCORE_CALCULATED",
         eventCategory: "GAMIFICATION",

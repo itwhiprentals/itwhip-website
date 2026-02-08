@@ -512,7 +512,7 @@ export default function SimilarCars({
         
         // Sort by similarity score and take top 8
         const sortedCars = carsWithScores
-          .sort((a, b) => (b.similarityScore || 0) - (a.similarityScore || 0))
+          .sort((a: any, b: any) => (b.similarityScore || 0) - (a.similarityScore || 0))
           .slice(0, 8)
         
         setSimilarCars(sortedCars)
@@ -600,7 +600,7 @@ export default function SimilarCars({
               cars={hostCars} 
               scrollId="host-cars-container"
               dailyRate={dailyRate}
-              currentLocation={location || userLocation}
+              currentLocation={location || userLocation || undefined}
             />
           )}
         </div>
@@ -626,7 +626,7 @@ export default function SimilarCars({
               cars={similarCars} 
               scrollId="similar-cars-container"
               dailyRate={dailyRate}
-              currentLocation={location || userLocation}
+              currentLocation={location || userLocation || undefined}
             />
           )}
         </div>

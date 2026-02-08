@@ -10,7 +10,7 @@ interface TimeDropdownProps {
   isOpen: boolean
   currentTime: string
   onSelect: (time: string) => void
-  buttonRef: React.RefObject<HTMLButtonElement>
+  buttonRef: React.RefObject<HTMLButtonElement | null>
   onClose?: () => void
 }
 

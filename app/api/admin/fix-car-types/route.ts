@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const carsToFix = await prisma.rentalCar.findMany({
       where: {
         OR: [
-          { carType: null },
+          { carType: null as any },
           { carType: '' },
           { carType: 'OTHER' },
           { carType: 'UNKNOWN' }

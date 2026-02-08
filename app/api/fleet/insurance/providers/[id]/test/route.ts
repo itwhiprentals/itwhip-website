@@ -47,7 +47,7 @@ export async function GET(
         apiKey: true,
         _count: {
           select: {
-            policies: true
+            InsurancePolicy: true
           }
         }
       }
@@ -138,7 +138,7 @@ export async function GET(
           providerType: provider.type,
           status: 'connected',
           apiEndpoint: provider.apiEndpoint,
-          activePolicies: provider._count.policies,
+          activePolicies: (provider as any)._count.InsurancePolicy,
           testedAt: new Date().toISOString(),
           connectionType: 'sandbox' // or 'production' based on apiEndpoint
         }

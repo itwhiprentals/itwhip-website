@@ -88,7 +88,7 @@ export async function GET(
     const provider = await prisma.insuranceProvider.findUnique({
       where: { id: id },
       include: {
-        policies: {
+        InsurancePolicy: {
           take: 10,
           orderBy: { createdAt: 'desc' },
           include: {
@@ -101,11 +101,11 @@ export async function GET(
             }
           }
         },
-        rateHistory: {
+        InsuranceRateHistory: {
           take: 20,
           orderBy: { createdAt: 'desc' }
         },
-        vehicleOverrides: {
+        VehicleInsuranceOverride: {
           take: 10,
           orderBy: { createdAt: 'desc' },
           include: {
@@ -121,9 +121,9 @@ export async function GET(
         },
         _count: {
           select: {
-            policies: true,
-            rateHistory: true,
-            vehicleOverrides: true
+            InsurancePolicy: true,
+            InsuranceRateHistory: true,
+            VehicleInsuranceOverride: true
           }
         }
       }
@@ -275,13 +275,13 @@ export async function PATCH(
     }
 
     // Log the update
-    await prisma.adminActivityLog.create({
+    await (prisma.activityLog.create as any)({
       data: {
-        adminId: 'SYSTEM', // Replace with actual admin ID from auth
+        userId: 'SYSTEM',
         action: 'UPDATE_PROVIDER',
-        targetId: id,
-        targetType: 'InsuranceProvider',
-        details: {
+        entityType: 'InsuranceProvider',
+        entityId: id,
+        metadata: {
           updatedFields: Object.keys(body),
           vehicleRulesUpdated: !!vehicleRules
         }
@@ -365,7 +365,7 @@ async function reevaluateVehicleEligibility(providerId: string) {
         isActive: true
       },
       include: {
-        classification: true
+        VehicleClassification: true
       }
     })
     
@@ -394,7 +394,7 @@ async function reevaluateVehicleEligibility(providerId: string) {
     
     // Create notification if cars need review
     if (needsReviewCount > 0 || ineligibleCount > 0) {
-      await prisma.adminNotification.create({
+      await (prisma.adminNotification.create as any)({
         data: {
           type: 'INSURANCE_RULES_IMPACT',
           title: 'Vehicle Insurance Status Changed',

@@ -97,15 +97,15 @@ async function logPhotoActivity(params: {
         action: action,
         category: carId ? 'PHOTO' : 'DOCUMENT',
         severity: 'INFO',
-        description: description,
         metadata: JSON.stringify({
+          description,
           ...metadata,
           hostName,
           photoUrl,
           timestamp: new Date().toISOString()
         }),
         createdAt: new Date()
-      }
+      } as any
     })
   } catch (err) {
     console.error('Failed to log activity:', err)
@@ -306,6 +306,7 @@ export async function POST(request: NextRequest) {
 
         const photo = await prisma.rentalCarPhoto.create({
           data: {
+            id: crypto.randomUUID(),
             carId: carId,
             url: uploadResult.secure_url,
             isHero: currentPhotoCount === 0 && i === 0, // First photo of first batch is hero
@@ -439,7 +440,7 @@ export async function POST(request: NextRequest) {
             documentType: type,
             uploadedAt: new Date().toISOString()
           }
-        }
+        } as any
       })
     }
     

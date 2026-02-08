@@ -62,7 +62,7 @@ function isCarComplete(car: CarData): boolean {
   const hasLicensePlate = car.licensePlate && car.licensePlate.length >= 2
   const hasPricing = car.dailyRate && car.dailyRate > 0
 
-  return hasPhotos && hasVin && hasLicensePlate && hasPricing
+  return Boolean(hasPhotos && hasVin && hasLicensePlate && hasPricing)
 }
 
 // Get step-specific icon

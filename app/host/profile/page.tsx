@@ -478,8 +478,8 @@ function HostProfileContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           {/* Pending Banner */}
           {!isApproved && (
-            <PendingBanner 
-              approvalStatus={profile.approvalStatus}
+            <PendingBanner
+              approvalStatus={profile.approvalStatus as any}
               page="profile"
               pendingActions={profile.pendingActions}
               restrictionReasons={profile.restrictionReasons}
@@ -619,7 +619,7 @@ function HostProfileContent() {
                 isSuspended={isSuspended}
                 onFormChange={(data) => setFormData({ ...formData, ...data })}
                 onSave={handleSaveSettings}
-                onTabChange={setActiveTab}
+                onTabChange={(tab) => setActiveTab(tab as TabType)}
                 userEmail={profile.email}
                 userStatus={profile.userStatus || 'ACTIVE'}
                 deletionScheduledFor={profile.deletionScheduledFor}

@@ -108,7 +108,7 @@ export default function CorporatePage() {
     router.push('/')
   }
 
-  const scrollToSection = (ref: React.RefObject<HTMLDivElement>, section: string) => {
+  const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>, section: string) => {
     setActiveSection(section)
     if (ref.current) {
       const yOffset = -170

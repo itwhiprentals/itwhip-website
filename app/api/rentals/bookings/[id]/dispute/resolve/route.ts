@@ -56,7 +56,7 @@ export async function POST(
    let refundResult = null
    if (refundAmount > 0 && dispute.booking.stripeChargeId) {
      try {
-       refundResult = await PaymentProcessor.refundCharge(
+       refundResult = await PaymentProcessor.refundPayment(
          dispute.booking.stripeChargeId,
          Math.round(refundAmount * 100), // Convert to cents
          `Dispute resolution for booking ${dispute.booking.bookingCode}`
@@ -83,6 +83,7 @@ export async function POST(
    // Create resolution message
    await prisma.rentalMessage.create({
      data: {
+       id: crypto.randomUUID(),
        bookingId,
        senderId: adminId,
        senderType: 'admin',
@@ -99,8 +100,9 @@ export async function POST(
          refundResult
        },
        isRead: false,
-       readByAdmin: true
-     }
+       readByAdmin: true,
+       updatedAt: new Date()
+     } as any
    })
 
    // Update admin notification
@@ -124,6 +126,7 @@ export async function POST(
    // Create activity log
    await prisma.activityLog.create({
      data: {
+       id: crypto.randomUUID(),
        userId: adminId,
        action: 'DISPUTE_RESOLVED',
        entityType: 'RentalDispute',

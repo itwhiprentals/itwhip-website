@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     const vehicles = await prisma.smartcarVehicle.findMany({
       where: {
         isActive: true,
-        accessToken: { not: null }
+        accessToken: { not: null as any }
       },
       select: {
         id: true,

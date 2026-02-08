@@ -132,7 +132,7 @@ export async function calculateHostESG(hostId: string): Promise<HostESGProfile> 
           maintenanceCadence: true,
           createdAt: true,
           currentMileage: true,
-          serviceRecords: {
+          VehicleServiceRecord: {
             orderBy: {
               serviceDate: 'desc'
             }
@@ -153,7 +153,7 @@ export async function calculateHostESG(hostId: string): Promise<HostESGProfile> 
           carId: true,
         },
       },
-      claims: {
+      Claim: {
         select: {
           id: true,
           status: true,
@@ -181,7 +181,7 @@ export async function calculateHostESG(hostId: string): Promise<HostESGProfile> 
   const aggregateScores = calculateTripWeightedScores(host.cars, vehicleScores)
 
   // Calculate safety metrics
-  const safetyMetrics = calculateSafetyMetrics(host.cars, host.bookings, host.claims)
+  const safetyMetrics = calculateSafetyMetrics(host.cars, host.bookings, host.Claim)
 
   // ✅ UPDATED: Calculate environmental metrics with CO2 aggregation
   const environmentalMetrics = calculateEnvironmentalMetrics(
@@ -191,7 +191,7 @@ export async function calculateHostESG(hostId: string): Promise<HostESGProfile> 
   )
 
   // Calculate compliance metrics with REAL service data
-  const complianceMetrics = await calculateComplianceMetricsWithService(host.cars, host.claims)
+  const complianceMetrics = await calculateComplianceMetricsWithService(host.cars, host.Claim)
 
   // Calculate fraud detection metrics
   const fraudMetrics = calculateFraudMetrics(host.cars)
@@ -203,7 +203,7 @@ export async function calculateHostESG(hostId: string): Promise<HostESGProfile> 
   const tripQualityMetrics = calculateTripQualityMetrics(host.bookings)
 
   // Calculate insurance metrics
-  const insuranceMetrics = calculateInsuranceMetrics(host, host.claims)
+  const insuranceMetrics = calculateInsuranceMetrics(host, host.Claim)
 
   // Determine achieved badges (placeholder - will integrate with badges system)
   const achievedBadges = determineAchievedBadges({
@@ -484,7 +484,7 @@ async function calculateComplianceMetricsWithService(cars: any[], claims: any[])
 
     // Analyze service triggers for this vehicle
     const serviceAnalysis = analyzeServiceTriggers(
-      car.serviceRecords || [],
+      car.VehicleServiceRecord || [],
       car.totalTrips,
       car.currentMileage || 0,
       now
@@ -497,8 +497,8 @@ async function calculateComplianceMetricsWithService(cars: any[], claims: any[])
     }
 
     // Track most recent service date across all vehicles
-    if (car.serviceRecords && car.serviceRecords.length > 0) {
-      const latestService = car.serviceRecords[0] // Already ordered DESC
+    if (car.VehicleServiceRecord && car.VehicleServiceRecord.length > 0) {
+      const latestService = car.VehicleServiceRecord[0] // Already ordered DESC
       const serviceDate = new Date(latestService.serviceDate)
       
       if (!mostRecentServiceDate || serviceDate > mostRecentServiceDate) {
@@ -707,6 +707,8 @@ export async function updateHostESGProfile(hostId: string): Promise<void> {
     await prisma.hostESGProfile.update({
       where: { hostId },
       data: {
+        lastCalculatedAt: new Date(),
+        updatedAt: new Date(),
         compositeScore: profile.compositeScore,
         drivingImpactScore: profile.drivingImpactScore,
         emissionsScore: profile.emissionsScore,
@@ -746,7 +748,10 @@ export async function updateHostESGProfile(hostId: string): Promise<void> {
     // Create new profile
     await prisma.hostESGProfile.create({
       data: {
+        id: crypto.randomUUID(),
         hostId,
+        lastCalculatedAt: new Date(),
+        updatedAt: new Date(),
         compositeScore: profile.compositeScore,
         drivingImpactScore: profile.drivingImpactScore,
         emissionsScore: profile.emissionsScore,

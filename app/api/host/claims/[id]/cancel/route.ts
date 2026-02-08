@@ -72,7 +72,7 @@ export async function POST(
     const updatedClaim = await prisma.claim.update({
       where: { id: claimId },
       data: {
-        status: 'CANCELLED',
+        status: 'CANCELLED' as any,
         reviewNotes: `Claim cancelled by host at ${new Date().toISOString()}`
       }
     })
@@ -129,7 +129,7 @@ export async function POST(
           }
         },
         data: {
-          status: 'DISMISSED'
+          status: 'DISMISSED' as any
         }
       })
     } catch (error) {
@@ -139,6 +139,7 @@ export async function POST(
     // Log the cancellation
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         userId: hostId,
         action: 'claim_cancelled',
         entityType: 'claim',

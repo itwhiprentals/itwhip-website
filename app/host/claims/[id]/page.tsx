@@ -1228,7 +1228,7 @@ export default function ClaimDetailPage() {
 
             {/* ESG SUMMARY */}
             {claim.booking.car && (
-              <ClaimESGSummary hostId={claim.reportedBy} />
+              <ClaimESGSummary {...{ hostId: claim.reportedBy } as any} />
             )}
 
             {/* Guest Info */}

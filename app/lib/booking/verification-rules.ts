@@ -137,7 +137,7 @@ export const VERIFICATION_THRESHOLDS = {
       return VerificationReason.LONG_TERM_RENTAL
     }
   
-    if (booking.totalAmount >= VERIFICATION_THRESHOLDS.HIGH_VALUE_BOOKING) {
+    if (booking.totalAmount >= VERIFICATION_THRESHOLDS.HIGH_VALUE_TOTAL) {
       return VerificationReason.HIGH_VALUE_BOOKING
     }
   

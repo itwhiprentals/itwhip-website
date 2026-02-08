@@ -13,7 +13,7 @@ interface LocationDropdownProps {
   cities: Location[]
   onSelect: (location: Location) => void
   isVisible: boolean
-  inputRef: React.RefObject<HTMLInputElement>
+  inputRef: React.RefObject<HTMLInputElement | null>
   onClose?: () => void
 }
 

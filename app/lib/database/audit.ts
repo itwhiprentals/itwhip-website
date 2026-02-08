@@ -14,9 +14,25 @@ import type {
 } from '@/app/types/security'
 import type { User, Permission } from '@/app/types/auth'
 import { sanitizeForLogging } from '../security/encryption'
+import { AuditCategory as PrismaAuditCategory, AuditSeverity as PrismaAuditSeverity } from '@prisma/client'
 
 // Initialize Prisma
 // Using shared prisma instance
+
+function mapSeverityToPrisma(severity: ThreatSeverity | string): PrismaAuditSeverity {
+  const s = typeof severity === 'string' ? severity.toUpperCase() : severity
+  switch (s) {
+    case 'LOW': return 'INFO'
+    case 'MEDIUM': return 'WARNING'
+    case 'HIGH': return 'ERROR'
+    case 'CRITICAL': return 'CRITICAL'
+    default: return 'INFO'
+  }
+}
+
+function mapCategoryToPrisma(category: AuditCategory | string): PrismaAuditCategory {
+  return (typeof category === 'string' ? category.toUpperCase() : category) as PrismaAuditCategory
+}
 
 // ============================================================================
 // CONFIGURATION
@@ -109,9 +125,9 @@ const BATCH_SIZE = 100
 const FLUSH_INTERVAL = 5000 // 5 seconds
 
 interface AuditLogEntry {
-  category: AuditCategory
+  category: AuditCategory | string
   eventType: SecurityEventType | string
-  severity: ThreatSeverity
+  severity: ThreatSeverity | string
   actor: {
     userId?: string
     hotelId?: string
@@ -205,45 +221,46 @@ export async function createAuditLog(
     const compliance = determineCompliance(entry)
     
     // Create audit log
-    const auditLog = await prisma.auditLog.create({
+    const auditLog: any = await prisma.auditLog.create({
       data: {
-        category: entry.category,
+        id: crypto.randomUUID(),
+        category: mapCategoryToPrisma(entry.category),
         eventType: entry.eventType,
-        severity: entry.severity,
-        
+        severity: mapSeverityToPrisma(entry.severity),
+
         // Actor information
         userId: entry.actor.userId,
         hotelId: entry.actor.hotelId,
         ipAddress: entry.actor.ip,
         userAgent: entry.actor.userAgent,
-        
+
         // Action details
         action: entry.action.type,
         resource: entry.action.resource,
         resourceId: entry.action.resourceId,
-        
+
         // Context and changes
-        details: JSON.stringify({
+        details: {
           actor: sanitizedEntry.actor,
           action: sanitizedEntry.action,
           context: sanitizedEntry.context,
           metadata: sanitizedEntry.metadata
-        }),
-        changes: entry.changes ? JSON.stringify({
+        },
+        changes: entry.changes ? {
           before: sanitizeForLogging(entry.changes.before),
           after: sanitizeForLogging(entry.changes.after),
           diff: calculateDiff(entry.changes.before, entry.changes.after)
-        }) : null,
-        
+        } : undefined,
+
         // Compliance
         gdpr: compliance.gdpr,
         ccpa: compliance.ccpa,
         pci: compliance.pci,
-        
+
         // Hash chain
         hash,
         previousHash,
-        
+
         timestamp: new Date()
       }
     })
@@ -278,14 +295,15 @@ export async function auditAuthentication(
   userAgent: string,
   details?: any
 ): Promise<void> {
+  const u = user as any
   await createAuditLog({
     category: 'AUTHENTICATION',
     eventType,
     severity: eventType === 'login_failed' ? 'MEDIUM' : 'LOW',
     actor: {
-      userId: user?.id,
-      email: user?.email,
-      role: user?.role,
+      userId: u?.id,
+      email: u?.email,
+      role: u?.role,
       ip,
       userAgent
     },
@@ -445,8 +463,8 @@ export async function auditConfigurationChange(
  * Log security event
  */
 export async function auditSecurityEvent(
-  eventType: SecurityEventType,
-  severity: ThreatSeverity,
+  eventType: SecurityEventType | string,
+  severity: ThreatSeverity | string,
   source: string,
   target: string,
   details: any,
@@ -536,11 +554,11 @@ export async function queryAuditLogs(filters: {
 }): Promise<{ logs: AuditLog[]; total: number }> {
   const where: any = {}
   
-  if (filters.category) where.category = filters.category
+  if (filters.category) where.category = mapCategoryToPrisma(filters.category)
   if (filters.eventType) where.eventType = filters.eventType
   if (filters.userId) where.userId = filters.userId
   if (filters.hotelId) where.hotelId = filters.hotelId
-  if (filters.severity) where.severity = filters.severity
+  if (filters.severity) where.severity = mapSeverityToPrisma(filters.severity)
   if (filters.resource) where.resource = filters.resource
   
   if (filters.startDate || filters.endDate) {
@@ -560,7 +578,7 @@ export async function queryAuditLogs(filters: {
   ])
   
   return {
-    logs: logs as AuditLog[],
+    logs: logs as any as AuditLog[],
     total
   }
 }
@@ -582,7 +600,7 @@ export async function getResourceAuditTrail(
     take: limit
   })
   
-  return logs as AuditLog[]
+  return logs as any as AuditLog[]
 }
 
 /**
@@ -603,7 +621,7 @@ export async function getUserActivityLog(
     orderBy: { timestamp: 'desc' }
   })
   
-  return logs as AuditLog[]
+  return logs as any as AuditLog[]
 }
 
 // ============================================================================
@@ -667,14 +685,14 @@ export async function generateComplianceReport(
     summary: {
       totalEvents: logs.length,
       securityEvents: securityEvents.length,
-      dataAccess: logs.filter(l => l.category === 'DATA_ACCESS').length,
-      modifications: logs.filter(l => l.category === 'DATA_MODIFICATION').length,
+      dataAccess: logs.filter((l: any) => l.category === 'DATA_ACCESS').length,
+      modifications: logs.filter((l: any) => l.category === 'DATA_MODIFICATION').length,
       threats: threats.length
     },
     checks,
     evidence: {
-      logs: logs as AuditLog[],
-      threats: threats as any[],
+      logs: logs as any as AuditLog[],
+      threats: threats as any as import('@/app/types/security').Threat[],
       mitigations: extractMitigations(securityEvents)
     },
     generatedAt: new Date(),
@@ -1006,14 +1024,14 @@ function determineCompliance(entry: AuditLogEntry): {
 /**
  * Check if event is high risk
  */
-function isHighRiskEvent(eventType: string): boolean {
-  return AUDIT_CONFIG.HIGH_RISK_EVENTS.includes(eventType)
+function isHighRiskEvent(eventType: SecurityEventType | string): boolean {
+  return AUDIT_CONFIG.HIGH_RISK_EVENTS.includes(eventType as string)
 }
 
 /**
  * Handle high risk event
  */
-async function handleHighRiskEvent(log: AuditLog): Promise<void> {
+async function handleHighRiskEvent(log: any): Promise<void> {
   // Send immediate alert
   console.log('HIGH RISK EVENT:', log)
   
@@ -1027,7 +1045,7 @@ async function handleHighRiskEvent(log: AuditLog): Promise<void> {
 /**
  * Index audit log for search
  */
-async function indexAuditLog(log: AuditLog): Promise<void> {
+async function indexAuditLog(log: any): Promise<void> {
   // In production, index in Elasticsearch or similar
   // for fast searching and analytics
 }
@@ -1147,7 +1165,7 @@ export async function cleanupOldAuditLogs(): Promise<{
     // Delete old logs
     const result = await prisma.auditLog.deleteMany({
       where: {
-        category: category as AuditCategory,
+        category: category as PrismaAuditCategory,
         timestamp: { lt: cutoffDate }
       }
     })
@@ -1173,11 +1191,11 @@ export async function cleanupOldAuditLogs(): Promise<{
         data: {
           userId: '[ANONYMIZED]',
           ipAddress: '0.0.0.0',
-          details: JSON.stringify({
-            ...JSON.parse(log.details || '{}'),
+          details: {
+            ...(typeof log.details === 'object' && log.details !== null ? log.details as any : {}),
             anonymized: true,
-            anonymizedAt: now
-          })
+            anonymizedAt: now.toISOString()
+          }
         }
       })
       

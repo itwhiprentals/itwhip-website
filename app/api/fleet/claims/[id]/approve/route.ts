@@ -90,7 +90,7 @@ export async function POST(
         const emailResult = await sendClaimNotificationGuestEmail(
           existingClaim.booking.reviewerProfile.email,
           {
-            guestName: existingClaim.booking.reviewerProfile.firstName || 'Guest',
+            guestName: (existingClaim.booking.reviewerProfile as any).firstName || 'Guest',
             claimId: id,
             bookingCode: existingClaim.booking.bookingCode || '',
             carDetails,
@@ -99,7 +99,7 @@ export async function POST(
             claimType: existingClaim.type,
             responseDeadline: guestResponseDeadline,
             deductibleAmount: Number(existingClaim.deductible) || 0,
-            depositHeld: Number(existingClaim.booking.securityDepositHeld) || 0,
+            depositHeld: Number(existingClaim.booking.securityDeposit) || 0,
           }
         )
 
@@ -122,6 +122,7 @@ export async function POST(
     // Create audit log
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         category: 'FINANCIAL',
         eventType: 'CLAIM_APPROVED',
         severity: 'INFO',

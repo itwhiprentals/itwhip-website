@@ -200,7 +200,7 @@ function PartnerLoginForm() {
             {/* Google OAuth */}
             <OAuthButtons
               theme="host"
-              roleHint="partner"
+              roleHint={"partner" as any}
               callbackUrl={inviteToken ? `/invite/view/${inviteToken}` : '/partner/dashboard'}
               showDivider={true}
               mode="login"

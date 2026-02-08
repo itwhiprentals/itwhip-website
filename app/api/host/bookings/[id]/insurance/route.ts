@@ -25,9 +25,9 @@ export async function GET(
             p2pPolicyNumber: true
           }
         },
-        insurancePolicy: {
+        InsurancePolicy: {
           include: {
-            provider: true
+            InsuranceProvider: true
           }
         },
         reviewerProfile: {
@@ -38,7 +38,7 @@ export async function GET(
           }
         }
       }
-    });
+    }) as any;
 
     if (!booking) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
@@ -48,8 +48,8 @@ export async function GET(
     const hostTier = booking.host.earningsTier || 'BASIC';
     let primaryInsurance = {
       type: 'PLATFORM',
-      provider: booking.insurancePolicy?.provider?.name || 'Tint',
-      policyNumber: booking.insurancePolicy?.policyNumber || null,
+      provider: booking.InsurancePolicy?.InsuranceProvider?.name || 'Tint',
+      policyNumber: booking.InsurancePolicy?.policyNumber || null,
       status: 'ACTIVE'
     };
 
@@ -70,7 +70,7 @@ export async function GET(
     }
 
     const deductibleAmount = primaryInsurance.type === 'PLATFORM' 
-      ? (booking.insurancePolicy?.deductible || 1000)
+      ? (booking.InsurancePolicy?.deductible || 1000)
       : 500; // Host insurance typically has $500 deductible
 
     const response = {
@@ -88,14 +88,14 @@ export async function GET(
         primary: primaryInsurance,
         secondary: {
           type: 'PLATFORM',
-          provider: booking.insurancePolicy?.provider?.name || 'Tint',
-          tier: booking.insurancePolicy?.tier || 'UNKNOWN',
+          provider: booking.InsurancePolicy?.InsuranceProvider?.name || 'Tint',
+          tier: booking.InsurancePolicy?.tier || 'UNKNOWN',
           coverage: {
-            liability: booking.insurancePolicy?.liabilityCoverage || 750000,
-            collision: booking.insurancePolicy?.collisionCoverage || 0,
-            deductible: booking.insurancePolicy?.deductible || 1000
+            liability: booking.InsurancePolicy?.liabilityCoverage || 750000,
+            collision: booking.InsurancePolicy?.collisionCoverage || 0,
+            deductible: booking.InsurancePolicy?.deductible || 1000
           },
-          premium: booking.insurancePolicy?.totalPremium || 0
+          premium: booking.InsurancePolicy?.totalPremium || 0
         },
         tertiary: booking.reviewerProfile?.insuranceVerified ? {
           type: 'GUEST_PERSONAL',

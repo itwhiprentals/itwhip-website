@@ -230,6 +230,7 @@ export async function POST(request: NextRequest) {
     try {
       await prisma.activityLog.create({
         data: {
+          id: crypto.randomUUID(),
           action: 'LOGIN',
           entityType: 'RentalHost',
           entityId: host.id,

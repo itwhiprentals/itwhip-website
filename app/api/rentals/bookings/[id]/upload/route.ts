@@ -155,23 +155,25 @@ export async function POST(
     })
 
     // If this is a verification document and booking needs verification, update status
-    if (isVerificationDoc && booking.verificationStatus === 'pending') {
+    if (isVerificationDoc && booking.verificationStatus === 'PENDING') {
       await prisma.rentalBooking.update({
         where: { id: bookingId },
         data: {
           documentsSubmittedAt: new Date(),
-          verificationStatus: 'submitted'
+          verificationStatus: 'SUBMITTED'
         }
       })
 
       // Create a system message about document upload
       await prisma.rentalMessage.create({
         data: {
+          id: crypto.randomUUID(),
           bookingId,
           senderId: userId || booking.guestEmail || 'guest',
           senderType: 'guest',
           message: `Uploaded verification document: ${file.name}`,
-          isRead: false
+          isRead: false,
+          updatedAt: new Date()
         }
       })
 

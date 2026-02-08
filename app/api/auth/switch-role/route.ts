@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
 
       // If no host profile on current user, check linked account
       let switchingToLinkedUser = false
-      let linkedUser: { id: string; email: string; name: string | null; role: string; legacyDualId: string | null } | null = null
+      let linkedUser: { id: string; email: string | null; name: string | null; role: string; legacyDualId: string | null } | null = null
 
       if (!hostProfile && user.legacyDualId) {
         // Find linked user
@@ -365,7 +365,7 @@ export async function POST(request: NextRequest) {
 
       // If no guest profile on current user, check linked account
       let switchingToLinkedUser = false
-      let linkedUser: { id: string; email: string; name: string | null; role: string; legacyDualId: string | null } | null = null
+      let linkedUser: { id: string; email: string | null; name: string | null; role: string; legacyDualId: string | null } | null = null
 
       if (!guestProfile && user.legacyDualId) {
         // Find linked user
@@ -446,7 +446,7 @@ export async function POST(request: NextRequest) {
       // Generate guest tokens - use linked user if switching to linked account
       const tokens = generateGuestTokens({
         id: targetUser.id,
-        email: targetUser.email,
+        email: targetUser.email || '',
         name: targetUser.name,
         role: targetUser.role || 'CLAIMED',
         legacyDualId: targetUser.legacyDualId  // Include dual-role link ID

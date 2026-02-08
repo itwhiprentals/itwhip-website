@@ -174,7 +174,7 @@ export default async function CarDetailsPage({
   // Fetch car data for schema markup and 404 check
   let schemaData = null
   let car = null
-  let relatedCars = { similarCars: [], hostCars: [] }
+  let relatedCars: { similarCars: any[]; hostCars: any[] } = { similarCars: [], hostCars: [] }
 
   try {
     const response = await fetch(
@@ -196,7 +196,7 @@ export default async function CarDetailsPage({
         car.hostId || car.host?.id,
         car.carType,
         car.city
-      )
+      ) as any
 
       // Generate SEO URL
       const seoUrl = generateCarUrl({

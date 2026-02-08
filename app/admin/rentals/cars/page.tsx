@@ -350,7 +350,7 @@ export default function CarsManagementPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(car)}
-                        {car.activeBookingsCount > 0 && (
+                        {(car.activeBookingsCount ?? 0) > 0 && (
                           <div className="text-xs text-gray-500 mt-1">
                             {car.activeBookingsCount} bookings
                           </div>

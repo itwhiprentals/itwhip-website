@@ -166,7 +166,7 @@ If you didn't make this change, please contact our security team immediately at 
       `.trim()
 
       await sendEmail(
-        user.email,
+        user.email as string,
         'Your ItWhip Password Has Been Set',
         htmlContent,
         textContent

@@ -113,6 +113,7 @@ export async function PUT(
     try {
       await prisma.activityLog.create({
         data: {
+          id: crypto.randomUUID(),
           action: 'UPDATE_APPROVAL_SETTINGS',
           entityType: 'PARTNER',
           entityId: id,

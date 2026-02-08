@@ -3,12 +3,12 @@
 import { useState } from 'react'
 
 export default function SystemTest() {
-  const [results, setResults] = useState({})
+  const [results, setResults] = useState<Record<string, any>>({})
   const [loading, setLoading] = useState(false)
 
   const runTests = async () => {
     setLoading(true)
-    const testResults = {}
+    const testResults: Record<string, any> = {}
 
     try {
       const patterns = await fetch('/api/admin/system/alerts/patterns').then(r => r.json())

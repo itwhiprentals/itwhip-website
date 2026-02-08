@@ -114,7 +114,7 @@ export default function ServiceMetricsSummary({ carId }: ServiceMetricsSummaryPr
         }
       } else {
         overdueItems.push('No inspection record')
-        if (serviceStatus !== 'critical') serviceStatus = 'overdue'
+        if ((serviceStatus as string) !== 'critical') serviceStatus = 'overdue'
       }
 
       setSummary({

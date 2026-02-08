@@ -232,7 +232,7 @@ export async function POST(request: NextRequest) {
           // Set 48-hour hold for guest dispute window
           holdUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
           guestNotifiedAt: new Date()
-        }
+        } as any
       })
     }
 
@@ -261,10 +261,10 @@ export async function POST(request: NextRequest) {
           bookingId,
           bookingCode: booking.bookingCode,
           hostId,
-          totalCharges: totalCharges.toNumber(),
+          totalCharges: Number(totalCharges),
           chargeCount: additionalCharges.length
         }
-      }
+      } as any
     })
 
     // Format response

@@ -87,7 +87,7 @@ export default function EditModeWrapper({
 
   return (
     <EditModeProvider
-      initialData={data}
+      initialData={data as any}
       isEditMode={isEditMode}
     >
       {children}

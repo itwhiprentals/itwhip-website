@@ -290,6 +290,7 @@ export async function PUT(request: NextRequest) {
     if (action === 'respond' || action === 'dismiss') {
       await prisma.activityLog.create({
         data: {
+          id: crypto.randomUUID(),
           entityType: 'HOST',
           entityId: host.id,
           action: `NOTIFICATION_${action.toUpperCase()}`,
@@ -354,7 +355,7 @@ export async function POST(request: NextRequest) {
         message: 'This is a test notification for development purposes.',
         status: 'SENT',
         priority: 'LOW',
-        actionRequired: false,            
+        actionRequired: false as any,
         sentAt: new Date(),
         inAppShown: true
       }

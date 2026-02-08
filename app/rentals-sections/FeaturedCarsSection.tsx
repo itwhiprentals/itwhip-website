@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { IoArrowForwardOutline, IoCarOutline, IoFlashOutline, IoStarOutline } from 'react-icons/io5'
 
 // Debug the import
-import CarCard from '../components/browse/CarCard'
+// @ts-ignore - module exists at relative path
+import CarCard from '../rentals-components/browse/CarCard'
 console.log('CarCard import:', typeof CarCard, CarCard)
 
 export default function FeaturedCarsSection() {

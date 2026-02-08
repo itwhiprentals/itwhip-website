@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
           timestamp: new Date()
         },
         ipAddress: 'vercel-cron'
-      }
+      } as any
     })
 
     // Send admin notification if there were failures
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
             totalAmount: result.totalAmount,
             executionTime: `${executionTime}s`
           }
-        }
+        } as any
       })
     }
 
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
             failures: result.failures.length,
             executionTime: `${executionTime}s`
           }
-        }
+        } as any
       })
     }
 
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
             timestamp: new Date()
           },
           ipAddress: 'vercel-cron'
-        }
+        } as any
       })
 
       // Create urgent admin notification
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
             stack: error.stack,
             executionTime: `${executionTime}s`
           }
-        }
+        } as any
       })
     } catch (logError) {
       console.error('[Cron] Failed to log error:', logError)

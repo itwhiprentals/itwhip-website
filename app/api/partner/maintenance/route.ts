@@ -250,6 +250,8 @@ export async function POST(request: NextRequest) {
     // Create maintenance record
     const record = await prisma.vehicleServiceRecord.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         carId,
         serviceType,
         serviceDate: new Date(serviceDate),
@@ -266,7 +268,7 @@ export async function POST(request: NextRequest) {
         notes: notes || null,
         addedBy: partner.id,
         addedByType: 'PARTNER'
-      }
+      } as any
     })
 
     // Update vehicle's current mileage if provided mileage is higher

@@ -47,15 +47,20 @@ export async function sendVerificationApprovedEmail(
 ): Promise<EmailResponse> {
   try {
     const template = getBookingConfirmedTemplate({
+      to,
       guestName: data.guestName,
       bookingCode: data.bookingCode,
-      carDetails: `${data.carMake} ${data.carModel}`,
+      carMake: data.carMake,
+      carModel: data.carModel,
+      carImage: '',
       startDate: new Date(data.startDate).toISOString(),
-      endDate: '', // Add if needed
+      endDate: '',
       pickupLocation: data.pickupLocation,
-      pickupTime: '', // Add if needed
-      totalAmount: 0, // Add if needed
-      bookingUrl: `https://itwhip.com/rentals/dashboard/bookings/${data.bookingCode}`
+      pickupTime: '',
+      totalAmount: '0',
+      hostName: '',
+      hostPhone: '',
+      dashboardUrl: `https://itwhip.com/rentals/dashboard/bookings/${data.bookingCode}`
     })
     
     return await sendEmail(to, template.subject, template.html, template.text)
@@ -78,11 +83,14 @@ export async function sendVerificationRejectedEmail(
 ): Promise<EmailResponse> {
   try {
     const template = getBookingRejectedTemplate({
+      to,
       guestName: data.guestName,
       bookingCode: data.bookingCode,
+      carMake: '',
+      carModel: '',
       reason: data.reason,
-      contactEmail: 'info@itwhip.com',
-      contactPhone: '(602) 555-0100'
+      canRebook: true,
+      supportEmail: 'info@itwhip.com'
     })
     
     return await sendEmail(to, template.subject, template.html, template.text)
@@ -187,12 +195,18 @@ export async function sendChargesProcessedEmail(
     // If you have a specific template for charges, import and use it
     // For now, using payment receipt template as a base
     const template = getPaymentReceiptTemplate({
+      to,
       guestName: data.guestName,
       bookingCode: data.bookingCode,
-      amount: data.chargeAmount,
+      carMake: '',
+      carModel: '',
+      paymentDate: new Date().toISOString(),
       paymentMethod: 'Card on file',
-      transactionId: data.chargeId || 'N/A',
-      chargeDate: new Date().toISOString()
+      subtotal: data.chargeAmount.toFixed(2),
+      taxes: '0.00',
+      fees: '0.00',
+      totalAmount: data.chargeAmount.toFixed(2),
+      transactionId: data.chargeId || 'N/A'
     })
     
     // Override the subject for charges
@@ -369,12 +383,14 @@ export async function sendBookingCancelledEmail(
 ): Promise<EmailResponse> {
   try {
     const template = getBookingCancelledTemplate({
+      to,
       guestName: data.guestName,
       bookingCode: data.bookingCode,
+      carMake: '',
+      carModel: '',
+      startDate: '',
       cancellationReason: data.reason || 'Booking cancelled',
-      refundAmount: data.refundAmount || 0,
-      refundStatus: data.refundAmount ? 'Processing' : 'N/A',
-      contactEmail: 'info@itwhip.com'
+      refundAmount: data.refundAmount != null ? String(data.refundAmount) : undefined
     })
     
     return await sendEmail(to, template.subject, template.html, template.text)
@@ -472,12 +488,15 @@ export async function sendTripCompletedEmail(
 ): Promise<EmailResponse> {
   try {
     const template = getTripCompleteTemplate({
+      to,
       guestName: data.guestName,
       bookingCode: data.bookingCode,
-      carDetails: `${data.carMake} ${data.carModel}`,
+      carMake: data.carMake,
+      carModel: data.carModel,
       tripDuration: data.tripDuration || 'N/A',
+      totalCost: data.additionalCharges != null ? data.additionalCharges.toFixed(2) : '0.00',
       reviewUrl: `https://itwhip.com/rentals/dashboard/bookings/${data.bookingCode}/review`,
-      additionalCharges: data.additionalCharges || 0
+      hostName: ''
     })
     
     return await sendEmail(to, template.subject, template.html, template.text)
@@ -505,15 +524,18 @@ export async function sendPickupReminderEmail(
 ): Promise<EmailResponse> {
   try {
     const template = getPickupReminderTemplate({
+      to,
       guestName: data.guestName,
       bookingCode: data.bookingCode,
-      carDetails: data.carDetails,
+      carMake: data.carDetails.split(' ')[0] || '',
+      carModel: data.carDetails.split(' ').slice(1).join(' ') || '',
+      carImage: '',
       pickupDate: data.pickupDate,
       pickupTime: data.pickupTime,
       pickupLocation: data.pickupLocation,
       hostName: data.hostName || 'Your host',
       hostPhone: data.hostPhone || 'Provided separately',
-      tripStartUrl: `https://itwhip.com/rentals/dashboard/bookings/${data.bookingCode}/start`
+      dashboardUrl: `https://itwhip.com/rentals/dashboard/bookings/${data.bookingCode}/start`
     })
     
     return await sendEmail(to, template.subject, template.html, template.text)
@@ -536,10 +558,19 @@ export async function sendVerificationPendingEmail(
 ): Promise<EmailResponse> {
   try {
     const template = getVerificationPendingTemplate({
+      to,
       guestName: data.guestName,
       bookingCode: data.bookingCode,
-      documentsUrl: data.documentsUrl,
-      deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
+      carMake: '',
+      carModel: '',
+      carImage: '',
+      startDate: '',
+      endDate: '',
+      pickupLocation: '',
+      totalAmount: '',
+      documentsSubmittedAt: new Date().toISOString(),
+      estimatedReviewTime: '24 hours',
+      trackingUrl: data.documentsUrl
     })
     
     return await sendEmail(to, template.subject, template.html, template.text)

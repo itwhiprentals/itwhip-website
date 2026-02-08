@@ -267,11 +267,14 @@ async function updateHostVehicleCounters(
     // Create initial profile if doesn't exist
     await prisma.hostESGProfile.create({
       data: {
+        id: `esg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         hostId,
         totalVehicles: 1,
         activeVehicles: 1,
         evVehicleCount: getVehicleCategory(fuelType) === 'EV' ? 1 : 0,
-      },
+        lastCalculatedAt: new Date(),
+        updatedAt: new Date(),
+      } as any,
     })
   } else {
     // Update existing profile
@@ -375,6 +378,7 @@ async function logESGEvent(data: {
 
   await prisma.eSGEvent.create({
     data: {
+      id: `esg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
       hostId: data.hostId,
       eventType: data.eventType,
       eventCategory: data.eventCategory,

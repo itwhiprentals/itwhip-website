@@ -103,7 +103,7 @@ export async function POST(
     const firstName = prospect.name.split(' ')[0]
 
     // Build email subject - friendly handover tone (avoid spam triggers: no emojis, no excessive punctuation)
-    const vehicleDesc = prospect.vehicleMake || prospect.vehicleType || 'vehicle'
+    const vehicleDesc = prospect.vehicleMake || (prospect as any).vehicleType || 'vehicle'
     const subject = `${firstName}, your ${vehicleDesc} booking is ready`
 
     // Calculate potential earnings if we have rate and duration
@@ -431,7 +431,7 @@ Verify this email: ${baseUrl}/verify-email?ref=${emailReferenceId}
       referenceId: emailReferenceId,
       metadata: {
         vehicleMake: prospect.vehicleMake,
-        vehicleType: prospect.vehicleType,
+        vehicleType: (prospect as any).vehicleType,
         requestId: prospect.requestId,
         requestCode: prospect.request?.requestCode,
         potentialEarnings: potentialEarnings,

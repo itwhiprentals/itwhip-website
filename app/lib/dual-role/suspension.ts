@@ -285,8 +285,7 @@ export async function unsuspendUser(
         data: {
           approvalStatus: 'APPROVED', // Or keep existing status?
           suspendedAt: null,
-          suspendedReason: null,
-          suspendedBy: null
+          suspendedReason: null
         }
       })
     }

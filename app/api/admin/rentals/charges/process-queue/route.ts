@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
         tripCharges: {
           where: {
             chargeStatus: {
-              in: ['PENDING', 'FAILED', 'REVIEW_REQUESTED']
+              in: ['PENDING', 'FAILED', 'REVIEW_REQUESTED'] as any
             }
           },
           orderBy: {
@@ -90,12 +90,12 @@ export async function GET(request: NextRequest) {
         { pendingChargesAmount: 'desc' } // Then by amount
       ],
       take: limit
-    })
-    
+    }) as any[]
+
     // Calculate statistics
     const stats = {
       totalPending: bookings.length,
-      totalAmount: bookings.reduce((sum, b) => sum + (b.pendingChargesAmount?.toNumber() || 0), 0),
+      totalAmount: bookings.reduce((sum, b) => sum + (Number(b.pendingChargesAmount) || 0), 0),
       oldestPending: bookings[0]?.tripEndedAt || null,
       readyToProcess: bookings.filter(b => {
         const tripEndTime = b.tripEndedAt ? new Date(b.tripEndedAt) : null
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
         bookingCode: booking.bookingCode,
         guestName: booking.guestName,
         guestEmail: booking.guestEmail,
-        pendingAmount: booking.pendingChargesAmount?.toNumber() || 0,
+        pendingAmount: Number(booking.pendingChargesAmount) || 0,
         tripEndedAt: booking.tripEndedAt,
         hoursWaiting,
         isExpired: hoursWaiting >= olderThan,
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
     const adminId = request.headers.get('x-admin-id') || 'system'
     
     // Determine which bookings to process
-    let bookingsToProcess = []
+    let bookingsToProcess: any[] = []
     
     if (mode === 'specific' && bookingIds.length > 0) {
       // Process specific bookings
@@ -184,13 +184,13 @@ export async function POST(request: NextRequest) {
         include: {
           tripCharges: {
             where: {
-              chargeStatus: { in: ['PENDING', 'FAILED', 'REVIEW_REQUESTED'] }
+              chargeStatus: { in: ['PENDING', 'FAILED', 'REVIEW_REQUESTED'] as any }
             },
             orderBy: { createdAt: 'desc' },
             take: 1
           }
         }
-      })
+      }) as any[]
     } else {
       // Calculate cutoff time for expired holds
       const holdCutoffTime = new Date()
@@ -218,14 +218,14 @@ export async function POST(request: NextRequest) {
         include: {
           tripCharges: {
             where: {
-              chargeStatus: { in: ['PENDING', 'FAILED', 'REVIEW_REQUESTED'] }
+              chargeStatus: { in: ['PENDING', 'FAILED', 'REVIEW_REQUESTED'] as any }
             },
             orderBy: { createdAt: 'desc' },
             take: 1
           }
         },
         take: 50 // Process max 50 at a time
-      })
+      }) as any[]
     }
     
     console.log(`[Charge Queue] Processing ${bookingsToProcess.length} bookings in ${mode} mode (dry run: ${dryRun})`)
@@ -250,7 +250,7 @@ export async function POST(request: NextRequest) {
       }
       
       // Skip if no charges
-      const pendingAmount = booking.pendingChargesAmount?.toNumber() || 0
+      const pendingAmount = Number(booking.pendingChargesAmount) || 0
       if (pendingAmount <= 0) {
         results.push({
           bookingId: booking.id,
@@ -293,33 +293,18 @@ export async function POST(request: NextRequest) {
           
           if (chargeResult.status === 'succeeded') {
             // Update booking as paid
-            await prisma.$transaction([
+            const txOps: any[] = [
               prisma.rentalBooking.update({
                 where: { id: booking.id },
                 data: {
-                  status: 'COMPLETED',
-                  verificationStatus: 'COMPLETED',
-                  paymentStatus: 'CHARGES_PAID',
+                  status: 'COMPLETED' as any,
+                  verificationStatus: 'COMPLETED' as any,
+                  paymentStatus: 'CHARGES_PAID' as any,
                   pendingChargesAmount: null,
                   chargesProcessedAt: new Date(),
                   stripeChargeId: chargeResult.chargeId
                 }
               }),
-              
-              // Update trip charge if exists
-              ...(tripCharge ? [
-                prisma.tripCharge.update({
-                  where: { id: tripCharge.id },
-                  data: {
-                    chargeStatus: 'CHARGED',
-                    chargedAt: new Date(),
-                    stripeChargeId: chargeResult.chargeId,
-                    processedByAdminId: adminId,
-                    chargeAttempts: retryCount + 1
-                  }
-                })
-              ] : []),
-              
               // Add success message
               prisma.rentalMessage.create({
                 data: {
@@ -327,13 +312,29 @@ export async function POST(request: NextRequest) {
                   senderId: 'system',
                   senderType: 'admin',
                   senderName: 'System',
-                  message: `✅ Additional charges of $${pendingAmount.toFixed(2)} have been automatically processed after the 24-hour review period.`,
+                  message: `Additional charges of $${pendingAmount.toFixed(2)} have been automatically processed after the 24-hour review period.`,
                   category: 'charges',
                   metadata: { chargeId: chargeResult.chargeId, amount: pendingAmount },
                   isRead: false
-                }
+                } as any
               })
-            ])
+            ]
+            // Update trip charge if exists
+            if (tripCharge) {
+              txOps.push(
+                prisma.tripCharge.update({
+                  where: { id: tripCharge.id },
+                  data: {
+                    chargeStatus: 'CHARGED' as any,
+                    chargedAt: new Date(),
+                    stripeChargeId: chargeResult.chargeId,
+                    processedByAdminId: adminId,
+                    chargeAttempts: retryCount + 1
+                  }
+                })
+              )
+            }
+            await prisma.$transaction(txOps)
             
             // Send confirmation email
             if (booking.guestEmail) {
@@ -364,28 +365,14 @@ export async function POST(request: NextRequest) {
           console.error(`[Charge Queue] Failed to charge ${booking.bookingCode}:`, chargeError)
           
           // Update booking with failure
-          await prisma.$transaction([
+          const failTxOps: any[] = [
             prisma.rentalBooking.update({
               where: { id: booking.id },
               data: {
-                paymentStatus: 'PAYMENT_FAILED',
+                paymentStatus: 'FAILED' as any,
                 paymentFailureReason: chargeError.message
               }
             }),
-            
-            // Update trip charge if exists
-            ...(tripCharge ? [
-              prisma.tripCharge.update({
-                where: { id: tripCharge.id },
-                data: {
-                  chargeStatus: 'FAILED',
-                  failureReason: chargeError.message,
-                  chargeAttempts: retryCount + 1,
-                  lastAttemptAt: new Date()
-                }
-              })
-            ] : []),
-            
             // Add failure message
             prisma.rentalMessage.create({
               data: {
@@ -393,8 +380,8 @@ export async function POST(request: NextRequest) {
                 senderId: 'system',
                 senderType: 'admin',
                 senderName: 'System',
-                message: `⚠️ Failed to process additional charges of $${pendingAmount.toFixed(2)}. ${
-                  retryCount + 1 >= maxRetries 
+                message: `Failed to process additional charges of $${pendingAmount.toFixed(2)}. ${
+                  retryCount + 1 >= maxRetries
                     ? 'Maximum retry attempts reached. Manual intervention required.'
                     : 'Will retry again later.'
                 }`,
@@ -402,11 +389,26 @@ export async function POST(request: NextRequest) {
                 metadata: { error: chargeError.message, retryCount: retryCount + 1 },
                 isRead: false,
                 isUrgent: retryCount + 1 >= maxRetries
-              }
-            }),
-            
-            // Create admin notification if max retries reached
-            ...(retryCount + 1 >= maxRetries ? [
+              } as any
+            })
+          ]
+          // Update trip charge if exists
+          if (tripCharge) {
+            failTxOps.push(
+              prisma.tripCharge.update({
+                where: { id: tripCharge.id },
+                data: {
+                  chargeStatus: 'FAILED' as any,
+                  failureReason: chargeError.message,
+                  chargeAttempts: retryCount + 1,
+                  lastAttemptAt: new Date()
+                }
+              })
+            )
+          }
+          // Create admin notification if max retries reached
+          if (retryCount + 1 >= maxRetries) {
+            failTxOps.push(
               prisma.adminNotification.create({
                 data: {
                   type: 'CHARGE_FAILED',
@@ -423,10 +425,11 @@ export async function POST(request: NextRequest) {
                     error: chargeError.message,
                     retryCount: retryCount + 1
                   }
-                }
+                } as any
               })
-            ] : [])
-          ])
+            )
+          }
+          await prisma.$transaction(failTxOps)
           
           // Send failure email if max retries
           if (booking.guestEmail && retryCount + 1 >= maxRetries) {
@@ -479,7 +482,7 @@ export async function POST(request: NextRequest) {
           timestamp: new Date()
         },
         ipAddress: request.headers.get('x-forwarded-for') || 'system'
-      }
+      } as any
     }).catch(console.error)
     
     console.log(`[Charge Queue] Batch complete:`, summary)
@@ -528,8 +531,8 @@ export async function DELETE(request: NextRequest) {
       where: { id: bookingId },
       data: {
         pendingChargesAmount: null,
-        verificationStatus: 'COMPLETED',
-        paymentStatus: 'CHARGES_WAIVED',
+        verificationStatus: 'COMPLETED' as any,
+        paymentStatus: 'CHARGES_WAIVED' as any,
         chargesNotes: reason
       }
     })
@@ -538,10 +541,10 @@ export async function DELETE(request: NextRequest) {
     await prisma.tripCharge.updateMany({
       where: {
         bookingId,
-        chargeStatus: { in: ['PENDING', 'FAILED'] }
+        chargeStatus: { in: ['PENDING', 'FAILED'] as any }
       },
       data: {
-        chargeStatus: 'FULLY_WAIVED',
+        chargeStatus: 'FULLY_WAIVED' as any,
         waiveReason: reason,
         waivedByAdminId: adminId,
         waivedAt: new Date()
@@ -557,10 +560,10 @@ export async function DELETE(request: NextRequest) {
         metadata: {
           reason,
           clearedBy: adminId,
-          amount: bookingBefore?.pendingChargesAmount?.toNumber() || 0
+          amount: Number(bookingBefore?.pendingChargesAmount) || 0
         },
         ipAddress: request.headers.get('x-forwarded-for') || 'admin'
-      }
+      } as any
     })
     
     return NextResponse.json({
@@ -569,7 +572,7 @@ export async function DELETE(request: NextRequest) {
       booking: {
         id: booking.id,
         bookingCode: booking.bookingCode,
-        clearedAmount: bookingBefore?.pendingChargesAmount?.toNumber() || 0
+        clearedAmount: Number(bookingBefore?.pendingChargesAmount) || 0
       }
     })
     

@@ -377,7 +377,7 @@ export async function createP2PBooking(data: {
       paymentStatus: 'PENDING',
       specialRequests: data.specialRequests,
       insuranceType: data.insuranceType || 'BASIC',
-      extras: data.extras || []
+      extras: data.extras?.join(',') || null
     },
     include: {
       car: {
@@ -410,13 +410,13 @@ export async function updateCarAvailability(
         }
       },
       update: {
-        available,
+        isAvailable: available,
         customPrice: price
       },
       create: {
         carId,
         date,
-        available,
+        isAvailable: available,
         customPrice: price
       }
     })
@@ -485,7 +485,7 @@ export async function getHostEarnings(hostId: string, period?: {
   const bookings = await prisma.rentalBooking.aggregate({
     where,
     _sum: {
-      hostEarnings: true
+      totalAmount: true
     },
     _count: true
   })
@@ -494,18 +494,17 @@ export async function getHostEarnings(hostId: string, period?: {
     where: {
       car: { hostId },
       status: 'COMPLETED',
-      paymentStatus: 'PAID',
-      payoutStatus: 'PENDING'
+      paymentStatus: 'PAID'
     },
     _sum: {
-      hostEarnings: true
+      totalAmount: true
     }
   })
 
   return {
-    totalEarnings: bookings._sum.hostEarnings || 0,
+    totalEarnings: bookings._sum?.totalAmount ?? 0,
     totalBookings: bookings._count,
-    pendingPayout: pendingPayouts._sum.hostEarnings || 0
+    pendingPayout: pendingPayouts._sum?.totalAmount ?? 0
   }
 }
 

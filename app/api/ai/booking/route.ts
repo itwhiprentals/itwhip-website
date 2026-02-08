@@ -353,7 +353,7 @@ async function logMessage(
         responseTimeMs: responseTimeMs || null,
         searchPerformed: toolsUsed.includes('search_vehicles'),
         vehiclesReturned,
-        toolsUsed: toolsUsed.length > 0 ? toolsUsed : null,
+        toolsUsed: toolsUsed.length > 0 ? toolsUsed : undefined,
       }
     })
   } catch (error) {
@@ -602,7 +602,6 @@ export async function POST(request: NextRequest) {
       ...(useToolCalling && { tools: BOOKING_TOOLS }),
       // Add extended thinking for complex queries (Claude 4.5 Sonnet/Opus only)
       ...(thinkingConfig.enabled && {
-        // @ts-expect-error - thinking is a new API feature
         thinking: {
           type: 'enabled',
           budget_tokens: thinkingConfig.budgetTokens,
@@ -614,7 +613,6 @@ export async function POST(request: NextRequest) {
 
     // Add structured outputs for Claude 4.5 models (guarantees valid JSON)
     if (useStructuredOutputs) {
-      // @ts-expect-error - output_config is a new API feature
       requestOptions.output_config = {
         format: {
           type: 'json_schema',
@@ -628,7 +626,6 @@ export async function POST(request: NextRequest) {
     // Track token usage with cache awareness
     let inputTokens = claudeResponse.usage?.input_tokens || 0
     let outputTokens = claudeResponse.usage?.output_tokens || 0
-    // @ts-expect-error - cache_read_input_tokens exists on responses when caching is used
     let cachedTokens = claudeResponse.usage?.cache_read_input_tokens || 0
     totalTokensUsed += inputTokens + outputTokens
     let totalCachedTokens = cachedTokens
@@ -710,7 +707,6 @@ export async function POST(request: NextRequest) {
         // Track additional token usage
         const loopInput = claudeResponse.usage?.input_tokens || 0
         const loopOutput = claudeResponse.usage?.output_tokens || 0
-        // @ts-expect-error - cache_read_input_tokens exists on responses when caching is used
         const loopCached = claudeResponse.usage?.cache_read_input_tokens || 0
         totalTokensUsed += loopInput + loopOutput
         totalCachedTokens += loopCached
@@ -812,7 +808,7 @@ export async function POST(request: NextRequest) {
         isLoggedIn: !!body.userId,
         isVerified: false,
         vehicles: vehicles.length > 0 ? vehicles : undefined,
-        weather,
+        weather: weather as any,
         location: session.location,
       })
 
@@ -839,7 +835,6 @@ export async function POST(request: NextRequest) {
         ],
         // Add extended thinking for complex queries
         ...(thinkingConfig.enabled && {
-          // @ts-expect-error - thinking is a new API feature
           thinking: {
             type: 'enabled',
             budget_tokens: thinkingConfig.budgetTokens,
@@ -864,7 +859,6 @@ export async function POST(request: NextRequest) {
 
       // Add structured outputs for Claude 4.5 models
       if (useStructuredOutputs) {
-        // @ts-expect-error - output_config is a new API feature
         enrichedRequestOptions.output_config = {
           format: {
             type: 'json_schema',
@@ -878,7 +872,6 @@ export async function POST(request: NextRequest) {
       // Track enriched response tokens with cache awareness
       const enrichedInputTokens = enrichedResponse.usage?.input_tokens || 0
       const enrichedOutputTokens = enrichedResponse.usage?.output_tokens || 0
-      // @ts-expect-error - cache_read_input_tokens exists on responses when caching is used
       const enrichedCachedTokens = enrichedResponse.usage?.cache_read_input_tokens || 0
       totalTokensUsed += enrichedInputTokens + enrichedOutputTokens
       totalCachedTokens += enrichedCachedTokens

@@ -91,6 +91,8 @@ export async function POST(request: NextRequest) {
     // Create the car
     const car = await prisma.rentalCar.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         hostId: body.hostId,
         source: 'p2p',
         make: body.make,
@@ -133,7 +135,7 @@ export async function POST(request: NextRequest) {
         instantBook: body.instantBook !== false,
         totalTrips: 0,
         rating: 0
-      }
+      } as any
     })
 
     // Add photos if provided

@@ -38,7 +38,7 @@ export async function getChoeSettings(): Promise<ChoeAISettings> {
   settingsCache = settings
   cacheExpiry = Date.now() + CACHE_TTL_MS
 
-  return settingsCache
+  return settings
 }
 
 /**
@@ -62,12 +62,12 @@ export async function updateChoeSettings(
     update: {
       ...data,
       updatedBy: updatedBy || null,
-    },
+    } as any,
     create: {
       id: 'global',
       ...data,
       updatedBy: updatedBy || null,
-    }
+    } as any
   })
 
   // Clear cache so next fetch gets fresh data

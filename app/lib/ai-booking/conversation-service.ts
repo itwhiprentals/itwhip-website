@@ -75,15 +75,16 @@ export async function loadConversation(
       messages: conversation.messages.map((m) => ({
         role: m.role as 'user' | 'assistant',
         content: m.content,
-        timestamp: m.createdAt.toISOString(),
+        timestamp: m.createdAt.getTime(),
       })),
-      location: conversation.location || undefined,
-      startDate: conversation.startDate || undefined,
-      endDate: conversation.endDate || undefined,
-      startTime: conversation.startTime || undefined,
-      endTime: conversation.endTime || undefined,
-      vehicleId: conversation.vehicleId || undefined,
-      vehicleType: conversation.vehicleType || undefined,
+      location: conversation.location ?? null,
+      locationId: null,
+      startDate: conversation.startDate ?? null,
+      endDate: conversation.endDate ?? null,
+      startTime: conversation.startTime ?? null,
+      endTime: conversation.endTime ?? null,
+      vehicleId: conversation.vehicleId ?? null,
+      vehicleType: conversation.vehicleType ?? null,
     };
 
     // Parse last assistant message for vehicles (if any were shown)

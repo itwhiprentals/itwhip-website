@@ -26,7 +26,8 @@ import type {
   RestrictionType,
   WarningCategory,
   ModerationType,
-  NotificationType
+  NotificationType,
+  TimelineColor
 } from './guestProfileStatusTypes'
 
 // ============================================================================
@@ -54,14 +55,14 @@ export async function getGuestProfileStatus(
     // Parse JSON fields
     return {
       ...status,
-      statusHistory: Array.isArray(status.statusHistory) 
-        ? status.statusHistory as StatusHistoryEntry[]
+      statusHistory: Array.isArray(status.statusHistory)
+        ? status.statusHistory as unknown as StatusHistoryEntry[]
         : [],
       restrictionHistory: Array.isArray(status.restrictionHistory)
-        ? status.restrictionHistory as RestrictionHistoryEntry[]
+        ? status.restrictionHistory as unknown as RestrictionHistoryEntry[]
         : [],
       notificationHistory: Array.isArray(status.notificationHistory)
-        ? status.notificationHistory as NotificationHistoryEntry[]
+        ? status.notificationHistory as unknown as NotificationHistoryEntry[]
         : []
     }
   } catch (error) {
@@ -154,11 +155,11 @@ export async function updateProfileStatus(
         statusHistory: [
           statusEntry,
           ...profileStatus.statusHistory
-        ],
+        ] as any,
         restrictionHistory: [
           ...restrictionEntries,
           ...profileStatus.restrictionHistory
-        ],
+        ] as any,
         lastWarningAt: params.action === 'WARNING' ? now : profileStatus.lastWarningAt,
         lastSuspensionAt: ['SUSPEND', 'BAN'].includes(params.action) ? now : profileStatus.lastSuspensionAt,
         updatedAt: now
@@ -221,7 +222,7 @@ export async function addNotificationToHistory(
         notificationHistory: [
           notificationEntry,
           ...profileStatus.notificationHistory
-        ],
+        ] as any,
         lastNotificationAt: now,
         updatedAt: now
       }
@@ -305,7 +306,7 @@ export async function getActiveRestrictions(
           category: restrictionEntry.category,
           appliedAt: restrictionEntry.timestamp,
           appliedBy: restrictionEntry.appliedBy,
-          expiresAt: restrictionEntry.expiresAt,
+          expiresAt: restrictionEntry.expiresAt ?? null,
           daysRemaining
         })
       }
@@ -336,7 +337,7 @@ export async function calculateAccountHealth(
     const guest = await prisma.reviewerProfile.findUnique({
       where: { id: guestId },
       include: {
-        bookings: {
+        RentalBooking: {
           select: {
             status: true,
             startDate: true,
@@ -345,7 +346,7 @@ export async function calculateAccountHealth(
             damageReported: true
           }
         },
-        reviews: {
+        RentalReview: {
           select: {
             rating: true,
             cleanliness: true
@@ -364,17 +365,19 @@ export async function calculateAccountHealth(
     }
 
     const profileStatus = await getGuestProfileStatus(guestId)
-    const completedBookings = guest.bookings.filter(b => b.status === 'COMPLETED')
+    const bookings = guest.RentalBooking as any[]
+    const reviews = guest.RentalReview as any[]
+    const completedBookings = bookings.filter((b: any) => b.status === 'COMPLETED')
 
     // Calculate factors
     const factors: HealthFactors = {
-      onTimeReturns: calculateOnTimeReturns(guest.bookings),
-      cleanlinessRating: calculateAverageCleanliness(guest.reviews),
+      onTimeReturns: calculateOnTimeReturns(bookings),
+      cleanlinessRating: calculateAverageCleanliness(reviews),
       communicationScore: 85, // TODO: Calculate from message response times
       warningPenalty: profileStatus ? profileStatus.activeWarningCount * -5 : 0,
       completedTrips: completedBookings.length,
-      cancellationRate: calculateCancellationRate(guest.bookings),
-      damageIncidents: guest.bookings.filter(b => b.damageReported).length
+      cancellationRate: calculateCancellationRate(bookings),
+      damageIncidents: bookings.filter((b: any) => b.damageReported).length
     }
 
     // Calculate total score (0-100)
@@ -433,9 +436,9 @@ export async function expireOldWarnings(guestId?: string): Promise<number> {
     for (const profile of profiles) {
       const typedProfile = {
         ...profile,
-        statusHistory: profile.statusHistory as StatusHistoryEntry[],
-        restrictionHistory: profile.restrictionHistory as RestrictionHistoryEntry[],
-        notificationHistory: profile.notificationHistory as NotificationHistoryEntry[]
+        statusHistory: profile.statusHistory as unknown as StatusHistoryEntry[],
+        restrictionHistory: profile.restrictionHistory as unknown as RestrictionHistoryEntry[],
+        notificationHistory: profile.notificationHistory as unknown as NotificationHistoryEntry[]
       }
 
       // Find expired warnings
@@ -457,7 +460,7 @@ export async function expireOldWarnings(guestId?: string): Promise<number> {
       // Remove expired restrictions from active list
       const restrictionsToRemove = expiredRestrictions.map(r => r.restrictionType)
       const newActiveRestrictions = profile.activeRestrictions.filter(
-        r => !restrictionsToRemove.includes(r)
+        (r: string) => !restrictionsToRemove.includes(r as RestrictionType)
       )
 
       // Add expiration entries to history
@@ -481,7 +484,7 @@ export async function expireOldWarnings(guestId?: string): Promise<number> {
           statusHistory: [
             ...expirationEntries,
             ...typedProfile.statusHistory
-          ],
+          ] as any,
           updatedAt: now
         }
       })
@@ -534,12 +537,13 @@ export async function createInitialProfileStatus(guestId: string): Promise<void>
 
     await prisma.guestProfileStatus.create({
       data: {
+        id: crypto.randomUUID(),
         guestId,
         accountStatus: 'ACTIVE',
         activeWarningCount: 0,
         activeSuspensions: 0,
         activeRestrictions: [],
-        statusHistory: [initialHistory],
+        statusHistory: [initialHistory] as any,
         restrictionHistory: [],
         notificationHistory: [],
         createdAt: now,
@@ -592,7 +596,7 @@ export async function formatStatusForDisplay(
         icon: getTimelineIcon(entry.action, entry.category),
         title: getTimelineTitle(entry.action, entry.category),
         description: entry.description,
-        color: getTimelineColor(entry.action),
+        color: getTimelineColor(entry.action) as TimelineColor,
         action: entry.action,
         category: entry.category,
         metadata: entry.metadata
@@ -656,12 +660,12 @@ export async function addStatusHistoryEntry(
 
     const fullEntry: StatusHistoryEntry = {
       timestamp: now.toISOString(),
+      reason: 'N/A',
+      performedBy: 'SYSTEM',
+      expiresAt: null,
+      ...entry,
       action: entry.action,
       description: entry.description,
-      reason: entry.reason || 'N/A',
-      performedBy: entry.performedBy || 'SYSTEM',
-      expiresAt: null,
-      ...entry
     }
 
     await prisma.guestProfileStatus.update({
@@ -670,7 +674,7 @@ export async function addStatusHistoryEntry(
         statusHistory: [
           fullEntry,
           ...profileStatus.statusHistory
-        ],
+        ] as any,
         updatedAt: now
       }
     })

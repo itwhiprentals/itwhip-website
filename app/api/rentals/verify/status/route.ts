@@ -16,16 +16,16 @@ export async function GET(request: NextRequest) {
     }
     
     // Find booking by ID or token
-    let booking
-    
+    let booking: any
+
     if (token) {
       const { validateToken } = await import('@/app/lib/auth/guest-tokens')
-      const result = await validateToken(token)
+      const result = await validateToken(token) as any
       booking = result.booking
     } else {
       // SECURE QUERY - USE SELECT NOT INCLUDE
       booking = await prisma.rentalBooking.findUnique({
-        where: { id: bookingId },
+        where: { id: bookingId! },
         select: {
           id: true,
           bookingCode: true,

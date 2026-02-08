@@ -547,7 +547,6 @@ export default function EditCarPage() {
               mileageDaily={formData.mileageDaily}
               mileageWeekly={formData.mileageWeekly}
               mileageMonthly={formData.mileageMonthly}
-              mileageOverageFee={formData.mileageOverageFee}
               bufferTime={formData.bufferTime}
               cancellationPolicy={formData.cancellationPolicy}
               checkInTime={formData.checkInTime}
@@ -560,7 +559,6 @@ export default function EditCarPage() {
               insuranceIncluded={formData.insuranceIncluded}
               insuranceDaily={formData.insuranceDaily}
               insuranceRequired={formData.insuranceRequired}
-              additionalCoverage={formData.additionalCoverage}
               onChange={updateForm}
             />
 

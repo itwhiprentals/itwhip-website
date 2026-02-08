@@ -77,8 +77,7 @@ export async function POST(request: NextRequest) {
         dailyRate: true,
         weeklyRate: true,
         monthlyRate: true,
-        minTripDuration: true,
-        status: true
+        minTripDuration: true
       }
     })
 
@@ -87,13 +86,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify customer exists
-    const customer = await prisma.user.findUnique({
+    const customer = await (prisma.user.findUnique as any)({
       where: { id: customerId },
       select: {
         id: true,
         email: true,
-        firstName: true,
-        lastName: true
+        name: true
       }
     })
 
@@ -128,7 +126,7 @@ export async function POST(request: NextRequest) {
       where: {
         carId: carId,
         status: {
-          in: ['CONFIRMED', 'ACTIVE', 'PENDING', 'PENDING_APPROVAL']
+          in: ['CONFIRMED', 'ACTIVE', 'PENDING'] as any
         },
         startDate: { lte: bookingEnd },
         endDate: { gte: bookingStart }
@@ -150,13 +148,17 @@ export async function POST(request: NextRequest) {
     const totalWithFees = subtotal + serviceFee + taxes
 
     // Create the booking with all required fields
+    const bookingCode = `BK-${Date.now().toString(36).toUpperCase()}`
     const booking = await prisma.rentalBooking.create({
       data: {
+        id: crypto.randomUUID(),
+        bookingCode,
+        updatedAt: new Date(),
         car: { connect: { id: carId } },
         host: { connect: { id: partner.id } },
         renter: { connect: { id: customerId } },
         guestEmail: customer.email || '',
-        guestName: `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || 'Guest',
+        guestName: customer.name || 'Guest',
         startDate: bookingStart,
         endDate: bookingEnd,
         startTime: '10:00',
@@ -192,7 +194,7 @@ export async function POST(request: NextRequest) {
           }
         }
       }
-    })
+    }) as any
 
     return NextResponse.json({
       success: true,

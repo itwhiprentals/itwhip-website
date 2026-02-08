@@ -78,7 +78,7 @@ export async function POST(
    }
 
    // Calculate charges
-   const charges = calculateTripCharges(
+   const charges: any = calculateTripCharges(
      booking.startMileage || 0,
      endMileage,
      booking.fuelLevelStart || 'Full',
@@ -141,6 +141,7 @@ export async function POST(
    // Log the charge calculation request
    await prisma.activityLog.create({
      data: {
+       id: crypto.randomUUID(),
        action: 'CHARGES_CALCULATED',
        entityType: 'RentalBooking',
        entityId: bookingId,

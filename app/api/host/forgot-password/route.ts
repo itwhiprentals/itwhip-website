@@ -97,6 +97,7 @@ export async function POST(req: NextRequest) {
 
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         userId: host.user.id,
         action: 'host_password_reset_requested',
         entityType: 'RentalHost',

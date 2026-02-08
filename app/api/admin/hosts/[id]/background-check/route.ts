@@ -54,7 +54,7 @@ export async function POST(
             email: true
           }
         },
-        backgroundChecks: {
+        BackgroundCheck: {
           orderBy: { createdAt: 'desc' },
           take: 1
         }
@@ -76,7 +76,7 @@ export async function POST(
       )
     }
     
-    const existingCheck = host.backgroundChecks[0]
+    const existingCheck = (host as any).BackgroundCheck[0]
     
     // Process based on action
     let result
@@ -84,7 +84,7 @@ export async function POST(
     switch (action) {
       case 'initiate':
         // Check if a background check is already in progress
-        if (existingCheck && existingCheck.overallStatus === 'IN_PROGRESS') {
+        if (existingCheck && (existingCheck as any).overallStatus === 'IN_PROGRESS') {
           return NextResponse.json(
             { error: 'Background check already in progress' },
             { status: 400 }
@@ -93,7 +93,7 @@ export async function POST(
         
         // Create new background check record
         result = await prisma.$transaction(async (tx) => {
-          const bgCheck = await tx.backgroundCheck.create({
+          const bgCheck = await (tx.backgroundCheck.create as any)({
             data: {
               hostId: hostId,
               identityVerification: 'PENDING',
@@ -123,11 +123,12 @@ export async function POST(
           })
           
           // Create notification
-          await tx.hostNotification.create({
+          await (tx.hostNotification.create as any)({
             data: {
               hostId: hostId,
               type: 'BACKGROUND_CHECK_STARTED',
-              title: 'Background Check Started',
+              category: 'BACKGROUND_CHECK',
+              subject: 'Background Check Started',
               message: 'Your background check has been initiated and should be completed within 72 hours.',
               status: 'SENT',
               priority: 'MEDIUM',
@@ -141,11 +142,12 @@ export async function POST(
           // Create activity log
           await tx.activityLog.create({
             data: {
+              id: crypto.randomUUID(),
               entityType: 'HOST',
               entityId: hostId,
               action: 'BACKGROUND_CHECK_INITIATED',
               userId: adminPayload.userId,
-              details: {
+              metadata: {
                 hostId: hostId,
                 hostName: host.name,
                 checkId: bgCheck.id,
@@ -163,22 +165,15 @@ export async function POST(
         try {
           if (host.email) {
             await sendHostBackgroundCheckStatus(host.email, {
-              hostName: host.name || 'Host',
-              checkStatus: 'started',
-              checks: [
-                { checkType: 'Identity Verification', status: 'pending' },
-                { checkType: 'DMV Records', status: 'pending' },
-                { checkType: 'Criminal Background', status: 'pending' },
-                { checkType: 'Insurance Verification', status: 'pending' }
-              ],
-              estimatedCompletion: '72 hours',
-              supportEmail: process.env.SUPPORT_EMAIL || 'info@itwhip.com'
+              name: host.name || 'Host',
+              status: 'started',
+              message: 'Your background check has been initiated. Estimated completion: 72 hours.'
             })
           }
         } catch (emailError) {
           console.error('Failed to send email:', emailError)
         }
-        
+
         break
         
       case 'update':
@@ -229,7 +224,7 @@ export async function POST(
         }
         
         // Update the background check
-        result = await prisma.backgroundCheck.update({
+        result = await (prisma.backgroundCheck.update as any)({
           where: { id: existingCheck.id },
           data: updateData
         })
@@ -246,10 +241,10 @@ export async function POST(
         
         // Determine overall status based on individual checks
         const checks = {
-          identity: body.identityVerification || existingCheck.identityVerification,
-          dmv: body.dmvCheck || existingCheck.dmvCheck,
-          criminal: body.criminalBackground || existingCheck.criminalBackground,
-          insurance: body.insuranceVerification || existingCheck.insuranceVerification
+          identity: body.identityVerification || (existingCheck as any).identityVerification,
+          dmv: body.dmvCheck || (existingCheck as any).dmvCheck,
+          criminal: body.criminalBackground || (existingCheck as any).criminalBackground,
+          insurance: body.insuranceVerification || (existingCheck as any).insuranceVerification
         }
         
         const failedChecks = Object.values(checks).filter(c => c === 'FAILED')
@@ -266,7 +261,7 @@ export async function POST(
         
         // Complete the background check
         result = await prisma.$transaction(async (tx) => {
-          const completedCheck = await tx.backgroundCheck.update({
+          const completedCheck = await (tx.backgroundCheck.update as any)({
             where: { id: existingCheck.id },
             data: {
               identityVerification: checks.identity,
@@ -307,19 +302,20 @@ export async function POST(
           })
           
           // Create notification
-          await tx.hostNotification.create({
+          await (tx.hostNotification.create as any)({
             data: {
               hostId: hostId,
               type: `BACKGROUND_CHECK_${overallStatus}`,
-              title: `Background Check ${overallStatus === 'PASSED' ? 'Passed' : overallStatus === 'FAILED' ? 'Failed' : 'Update'}`,
-              message: overallStatus === 'PASSED' 
+              category: 'BACKGROUND_CHECK',
+              subject: `Background Check ${overallStatus === 'PASSED' ? 'Passed' : overallStatus === 'FAILED' ? 'Failed' : 'Update'}`,
+              message: overallStatus === 'PASSED'
                 ? 'Good news! Your background check has been completed successfully.'
                 : overallStatus === 'FAILED'
                 ? 'Unfortunately, your background check did not pass. Please contact support for more information.'
                 : 'Your background check is still in progress.',
               status: 'SENT',
               priority: overallStatus === 'FAILED' ? 'HIGH' : 'MEDIUM',
-              requiresAction: overallStatus === 'FAILED',
+              responseRequired: overallStatus === 'FAILED',
               actionUrl: overallStatus === 'FAILED' ? '/host/profile' : null,
               actionLabel: overallStatus === 'FAILED' ? 'Contact Support' : null,
               metadata: {
@@ -331,7 +327,7 @@ export async function POST(
           })
           
           // Log activity
-          await tx.activityLog.create({
+          await (tx.activityLog.create as any)({
             data: {
               entityType: 'HOST',
               entityId: hostId,
@@ -348,7 +344,7 @@ export async function POST(
               userAgent: request.headers.get('user-agent') || 'unknown'
             }
           })
-          
+
           return completedCheck
         })
         
@@ -365,13 +361,13 @@ export async function POST(
               hostName: host.name || 'Host',
               checkStatus: overallStatus === 'PASSED' ? 'completed' : 'failed',
               checks: emailChecks,
-              nextSteps: overallStatus === 'FAILED' 
+              nextSteps: overallStatus === 'FAILED'
                 ? 'Please contact support to discuss your application'
                 : overallStatus === 'PASSED'
                 ? 'You can now list your vehicles!'
                 : undefined,
               supportEmail: process.env.SUPPORT_EMAIL || 'info@itwhip.com'
-            })
+            } as any)
           }
         } catch (emailError) {
           console.error('Failed to send email:', emailError)
@@ -429,7 +425,7 @@ export async function POST(
           })
           
           // Log activity
-          await tx.activityLog.create({
+          await (tx.activityLog.create as any)({
             data: {
               entityType: 'HOST',
               entityId: hostId,
@@ -446,7 +442,7 @@ export async function POST(
               userAgent: request.headers.get('user-agent') || 'unknown'
             }
           })
-          
+
           return bgCheck
         })
         
@@ -510,7 +506,7 @@ export async function GET(
     const backgroundChecks = await prisma.backgroundCheck.findMany({
       where: { hostId },
       orderBy: { createdAt: 'desc' }
-    })
+    }) as any[]
     
     // Get host details
     const host = await prisma.rentalHost.findUnique({

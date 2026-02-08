@@ -7,7 +7,7 @@ import { prisma } from '@/app/lib/database/prisma'
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil'
+  apiVersion: '2025-08-27.basil' as any
 })
 
 export async function GET(
@@ -27,7 +27,7 @@ export async function GET(
     const { id } = await params
 
     // Fetch partner with all banking-related data
-    const partner = await prisma.rentalHost.findUnique({
+    const partner = await (prisma.rentalHost.findUnique as any)({
       where: { id },
       select: {
         id: true,
@@ -340,7 +340,7 @@ export async function GET(
         } : null,
         paymentMethods: partner.paymentMethods,
         recentCharges: partner.hostCharges,
-        recentPayouts: partner.partnerPayouts.map(p => ({
+        recentPayouts: partner.partnerPayouts.map((p: any) => ({
           id: p.id,
           amount: p.netAmount,
           grossRevenue: p.grossRevenue,
@@ -429,7 +429,7 @@ export async function POST(
       }
 
       // Create charge record first (pending)
-      const chargeRecord = await prisma.hostCharge.create({
+      const chargeRecord = await (prisma.host_charges.create as any)({
         data: {
           hostId: id,
           amount,
@@ -477,7 +477,7 @@ export async function POST(
         })
 
         // Update charge record with success
-        await prisma.hostCharge.update({
+        await prisma.host_charges.update({
           where: { id: chargeRecord.id },
           data: {
             status: 'COMPLETED',
@@ -512,7 +512,7 @@ export async function POST(
 
       } catch (stripeError: any) {
         // Update charge record with failure
-        await prisma.hostCharge.update({
+        await prisma.host_charges.update({
           where: { id: chargeRecord.id },
           data: {
             status: 'FAILED',
@@ -567,7 +567,7 @@ export async function POST(
     }
 
     // Create charge record first (pending)
-    const chargeRecord = await prisma.hostCharge.create({
+    const chargeRecord = await (prisma.host_charges.create as any)({
       data: {
         hostId: id,
         amount,
@@ -598,7 +598,7 @@ export async function POST(
       })
 
       // Update charge record with success
-      await prisma.hostCharge.update({
+      await prisma.host_charges.update({
         where: { id: chargeRecord.id },
         data: {
           status: 'COMPLETED',
@@ -631,7 +631,7 @@ export async function POST(
 
     } catch (stripeError: any) {
       // Update charge record with failure
-      await prisma.hostCharge.update({
+      await prisma.host_charges.update({
         where: { id: chargeRecord.id },
         data: {
           status: 'FAILED',

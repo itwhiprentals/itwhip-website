@@ -12,7 +12,7 @@ export async function GET(request: Request) {
    const now = new Date()
    
    // Get all active trips with full details
-   const activeTrips = await prisma.rentalBooking.findMany({
+   const activeTrips = await (prisma.rentalBooking.findMany as any)({
      where: {
        tripStatus: 'ACTIVE'
      },
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
            email: true
          }
        },
-       inspectionPhotos: {
+       InspectionPhoto: {
          where: {
            type: 'start'
          },
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
      orderBy: {
        tripStartedAt: 'desc'
      }
-   })
+   }) as any[]
 
    // Format trips with calculated fields
    const formattedTrips = activeTrips.map(trip => {
@@ -96,7 +96,7 @@ export async function GET(request: Request) {
        isOverdue,
        hoursOverdue,
        lastUpdate: trip.updatedAt.toISOString(),
-       inspectionPhotosCount: trip.inspectionPhotos.length
+       inspectionPhotosCount: (trip.InspectionPhoto || []).length
      }
    })
 

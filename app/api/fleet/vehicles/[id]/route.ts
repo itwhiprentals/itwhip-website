@@ -24,7 +24,7 @@ export async function GET(
   try {
     const { id } = await params
 
-    const vehicle = await prisma.rentalCar.findUnique({
+    const vehicle: any = await prisma.rentalCar.findUnique({
       where: { id },
       include: {
         host: {
@@ -66,11 +66,11 @@ export async function GET(
           select: {
             id: true,
             rating: true,
-            review: true,
+            comment: true,
             createdAt: true
           }
         },
-        serviceRecords: {
+        VehicleServiceRecord: {
           take: 5,
           orderBy: { serviceDate: 'desc' },
           select: {
@@ -98,7 +98,7 @@ export async function GET(
     })
 
     // Get booking stats by status
-    const bookingStats = await prisma.rentalBooking.groupBy({
+    const bookingStats: any[] = await (prisma.rentalBooking.groupBy as any)({
       by: ['status'],
       where: { carId: id },
       _count: true
@@ -107,7 +107,7 @@ export async function GET(
     // Calculate average rating
     const avgRating = await prisma.rentalReview.aggregate({
       where: {
-        booking: { carId: id }
+        carId: id
       },
       _avg: { rating: true },
       _count: true
@@ -123,12 +123,8 @@ export async function GET(
         model: vehicle.model,
         vin: vehicle.vin,
         licensePlate: vehicle.licensePlate,
-        status: vehicle.status,
+        isActive: vehicle.isActive,
         vehicleType: vehicle.vehicleType || 'RENTAL',
-        fleetApprovalStatus: vehicle.fleetApprovalStatus || 'PENDING',
-        fleetApprovalDate: vehicle.fleetApprovalDate?.toISOString() || null,
-        fleetApprovalNotes: vehicle.fleetApprovalNotes || null,
-        fleetApprovedBy: vehicle.fleetApprovedBy || null,
         // Pricing
         dailyRate: vehicle.dailyRate,
         weeklyRate: vehicle.weeklyRate,
@@ -141,10 +137,10 @@ export async function GET(
         fuelType: vehicle.fuelType,
         currentMileage: vehicle.currentMileage,
         // Photos
-        primaryPhoto: vehicle.photos.find(p => p.isHero)?.url || vehicle.photos[0]?.url || null,
-        photos: vehicle.photos.map(p => p.url),
+        primaryPhoto: vehicle.photos.find((p: any) => p.isHero)?.url || vehicle.photos[0]?.url || null,
+        photos: vehicle.photos.map((p: any) => p.url),
         // Features
-        features: vehicle.features || [],
+        features: vehicle.features || '',
         description: vehicle.description,
         // Location
         city: vehicle.city,
@@ -163,7 +159,7 @@ export async function GET(
           active: vehicle.host.active
         } : null,
         // Recent activity
-        recentBookings: vehicle.bookings.map(b => ({
+        recentBookings: vehicle.bookings.map((b: any) => ({
           id: b.id,
           bookingCode: b.bookingCode,
           status: b.status,
@@ -172,13 +168,13 @@ export async function GET(
           totalAmount: b.totalAmount,
           guestName: b.renter?.name || b.guestName || 'Guest'
         })),
-        recentReviews: vehicle.reviews.map(r => ({
+        recentReviews: vehicle.reviews.map((r: any) => ({
           id: r.id,
           rating: r.rating,
-          review: r.review,
+          comment: r.comment,
           createdAt: r.createdAt.toISOString()
         })),
-        recentMaintenance: vehicle.serviceRecords.map(s => ({
+        recentMaintenance: vehicle.VehicleServiceRecord.map((s: any) => ({
           id: s.id,
           type: s.serviceType,
           date: s.serviceDate.toISOString(),
@@ -188,10 +184,10 @@ export async function GET(
         stats: {
           totalRevenue: revenueStats._sum.totalAmount || 0,
           completedBookings: revenueStats._count,
-          totalBookings: bookingStats.reduce((sum, s) => sum + s._count, 0),
-          pendingBookings: bookingStats.find(s => s.status === 'PENDING')?._count || 0,
-          confirmedBookings: bookingStats.find(s => s.status === 'CONFIRMED')?._count || 0,
-          cancelledBookings: bookingStats.find(s => s.status === 'CANCELLED')?._count || 0,
+          totalBookings: bookingStats.reduce((sum: number, s: any) => sum + s._count, 0),
+          pendingBookings: bookingStats.find((s: any) => s.status === 'PENDING')?._count || 0,
+          confirmedBookings: bookingStats.find((s: any) => s.status === 'CONFIRMED')?._count || 0,
+          cancelledBookings: bookingStats.find((s: any) => s.status === 'CANCELLED')?._count || 0,
           avgRating: avgRating._avg.rating || 0,
           reviewCount: avgRating._count
         }
@@ -218,7 +214,7 @@ export async function PUT(
     const body = await request.json()
     const { action, notes, adminId } = body
 
-    const vehicle = await prisma.rentalCar.findUnique({
+    const vehicle: any = await prisma.rentalCar.findUnique({
       where: { id },
       include: {
         host: {
@@ -237,11 +233,7 @@ export async function PUT(
     switch (action) {
       case 'approve':
         updateData = {
-          fleetApprovalStatus: 'APPROVED',
-          fleetApprovalDate: new Date(),
-          fleetApprovalNotes: notes || 'Approved by fleet admin',
-          fleetApprovedBy: adminId || 'fleet_admin',
-          status: vehicle.status === 'PENDING_APPROVAL' ? 'ACTIVE' : vehicle.status
+          isActive: true
         }
         logMessage = `Vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model} approved`
         break
@@ -254,41 +246,27 @@ export async function PUT(
           )
         }
         updateData = {
-          fleetApprovalStatus: 'REJECTED',
-          fleetApprovalDate: new Date(),
-          fleetApprovalNotes: notes,
-          fleetApprovedBy: adminId || 'fleet_admin',
-          status: 'INACTIVE'
+          isActive: false
         }
         logMessage = `Vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model} rejected: ${notes}`
         break
 
       case 'suspend':
         updateData = {
-          status: 'SUSPENDED',
-          fleetApprovalNotes: notes || 'Suspended by fleet admin'
+          isActive: false
         }
         logMessage = `Vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model} suspended`
         break
 
       case 'reactivate':
-        if (vehicle.fleetApprovalStatus !== 'APPROVED') {
-          return NextResponse.json(
-            { error: 'Vehicle must be approved before reactivating' },
-            { status: 400 }
-          )
-        }
         updateData = {
-          status: 'ACTIVE'
+          isActive: true
         }
         logMessage = `Vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model} reactivated`
         break
 
       case 'request_changes':
-        updateData = {
-          fleetApprovalStatus: 'CHANGES_REQUESTED',
-          fleetApprovalNotes: notes || 'Changes requested by fleet admin'
-        }
+        updateData = {}
         logMessage = `Changes requested for vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model}`
         break
 
@@ -297,7 +275,7 @@ export async function PUT(
     }
 
     // Update vehicle
-    const updated = await prisma.rentalCar.update({
+    const updated: any = await prisma.rentalCar.update({
       where: { id },
       data: updateData
     })
@@ -305,17 +283,18 @@ export async function PUT(
     // Log activity
     await prisma.activityLog.create({
       data: {
-        type: 'VEHICLE_STATUS_CHANGE',
+        id: crypto.randomUUID(),
+        action: 'VEHICLE_STATUS_CHANGE',
+        entityType: 'RentalCar',
+        entityId: id,
         hostId: vehicle.hostId,
-        message: logMessage,
         metadata: {
           vehicleId: id,
           action,
           notes,
-          previousStatus: vehicle.status,
-          previousApprovalStatus: vehicle.fleetApprovalStatus,
-          newStatus: updateData.status || vehicle.status,
-          newApprovalStatus: updateData.fleetApprovalStatus || vehicle.fleetApprovalStatus,
+          logMessage,
+          previousIsActive: vehicle.isActive,
+          newIsActive: updated.isActive,
           adminId: adminId || 'fleet_admin'
         }
       }
@@ -326,9 +305,7 @@ export async function PUT(
       message: logMessage,
       vehicle: {
         id: updated.id,
-        status: updated.status,
-        fleetApprovalStatus: updated.fleetApprovalStatus,
-        fleetApprovalNotes: updated.fleetApprovalNotes
+        isActive: updated.isActive
       }
     })
 
@@ -352,7 +329,7 @@ export async function PATCH(
     const body = await request.json()
     const { action, reason } = body
 
-    const vehicle = await prisma.rentalCar.findUnique({
+    const vehicle: any = await prisma.rentalCar.findUnique({
       where: { id },
       include: {
         host: {
@@ -371,10 +348,6 @@ export async function PATCH(
     switch (action) {
       case 'approve':
         updateData = {
-          fleetApprovalStatus: 'APPROVED',
-          fleetApprovalDate: new Date(),
-          fleetApprovalNotes: reason || 'Approved by fleet admin',
-          fleetApprovedBy: 'fleet_admin',
           isActive: true
         }
         logMessage = `Vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model} approved`
@@ -382,10 +355,6 @@ export async function PATCH(
 
       case 'reject':
         updateData = {
-          fleetApprovalStatus: 'REJECTED',
-          fleetApprovalDate: new Date(),
-          fleetApprovalNotes: reason || 'Rejected by fleet admin',
-          fleetApprovedBy: 'fleet_admin',
           isActive: false
         }
         logMessage = `Vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model} rejected`
@@ -393,8 +362,7 @@ export async function PATCH(
 
       case 'suspend':
         updateData = {
-          isActive: false,
-          fleetApprovalNotes: reason || 'Suspended by fleet admin'
+          isActive: false
         }
         logMessage = `Vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model} suspended`
         break
@@ -411,7 +379,7 @@ export async function PATCH(
     }
 
     // Update vehicle
-    const updated = await prisma.rentalCar.update({
+    const updated: any = await prisma.rentalCar.update({
       where: { id },
       data: updateData
     })
@@ -420,13 +388,16 @@ export async function PATCH(
     try {
       await prisma.activityLog.create({
         data: {
-          type: 'VEHICLE_STATUS_CHANGE',
+          id: crypto.randomUUID(),
+          action: 'VEHICLE_STATUS_CHANGE',
+          entityType: 'RentalCar',
+          entityId: id,
           hostId: vehicle.hostId,
-          message: logMessage,
           metadata: {
             vehicleId: id,
             action,
             reason,
+            logMessage,
             previousIsActive: vehicle.isActive,
             newIsActive: updated.isActive,
             adminId: 'fleet_admin'
@@ -442,9 +413,7 @@ export async function PATCH(
       message: logMessage,
       vehicle: {
         id: updated.id,
-        isActive: updated.isActive,
-        fleetApprovalStatus: updated.fleetApprovalStatus,
-        fleetApprovalNotes: updated.fleetApprovalNotes
+        isActive: updated.isActive
       }
     })
 

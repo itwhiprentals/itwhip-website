@@ -144,7 +144,7 @@ export async function POST(
         changeReason: verificationNotes || 'Insurance verified by admin',
         ipAddress: ipAddress,
         userAgent: userAgent
-      }
+      } as any
     })
 
     // TODO: Send email notification to guest
@@ -415,7 +415,7 @@ export async function DELETE(
         changeReason: `Verification rejected by admin: ${reason}`,
         ipAddress: ipAddress,
         userAgent: userAgent
-      }
+      } as any
     })
 
     // TODO: Send email to guest explaining rejection reason

@@ -7,7 +7,7 @@ import prisma from '@/app/lib/database/prisma'
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2025-08-27.basil' as any,
 })
 
 // SECURITY FIX: Removed amount/deposit from validation - these MUST be calculated server-side
@@ -211,6 +211,7 @@ export async function POST(request: NextRequest) {
     // Save payment intent ID to database for tracking
     await prisma.transaction.create({
       data: {
+        id: crypto.randomUUID(),
         hotelId: 'rental_platform', // Or use actual hotel ID if linked
         type: 'BOOKING',
         category: 'rental',
@@ -291,7 +292,7 @@ export async function GET(request: NextRequest) {
       currency: paymentIntent.currency,
       metadata: paymentIntent.metadata,
       created: paymentIntent.created,
-      receipt_url: paymentIntent.charges?.data[0]?.receipt_url
+      receipt_url: (paymentIntent as any).charges?.data[0]?.receipt_url
     })
 
   } catch (error) {

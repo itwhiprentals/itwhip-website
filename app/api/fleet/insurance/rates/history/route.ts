@@ -51,10 +51,10 @@ export async function GET(req: NextRequest) {
     }
 
     // Get rate history with provider details
-    const history = await prisma.insuranceRateHistory.findMany({
+    const history: any[] = await prisma.insuranceRateHistory.findMany({
       where,
       include: {
-        provider: {
+        InsuranceProvider: {
           select: {
             id: true,
             name: true,
@@ -97,10 +97,10 @@ export async function GET(req: NextRequest) {
     const byProvider: { [key: string]: any } = {}
     
     history.forEach(h => {
-      const providerId = h.providerId
+      const providerId = h.InsuranceProviderId
       if (!byProvider[providerId]) {
         byProvider[providerId] = {
-          provider: h.provider,
+          provider: h.InsuranceProvider,
           changes: 0,
           increases: 0,
           decreases: 0,
@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
     // Format history for response
     const formattedHistory = history.map(h => ({
       id: h.id,
-      provider: h.provider,
+      provider: h.InsuranceProvider,
       tier: h.tier,
       vehicleClass: h.vehicleClass,
       oldRate: h.oldRate,
@@ -173,10 +173,10 @@ export async function POST(req: NextRequest) {
       if (endDate) where.effectiveDate.lte = new Date(endDate)
     }
 
-    const history = await prisma.insuranceRateHistory.findMany({
+    const history: any[] = await prisma.insuranceRateHistory.findMany({
       where,
       include: {
-        provider: {
+        InsuranceProvider: {
           select: {
             name: true,
             type: true
@@ -199,8 +199,8 @@ export async function POST(req: NextRequest) {
       
       csvRows.push([
         h.effectiveDate.toISOString().split('T')[0],
-        h.provider.name,
-        h.provider.type,
+        h.InsuranceProvider.name,
+        h.InsuranceProvider.type,
         h.vehicleClass,
         h.tier,
         h.oldRate.toString(),

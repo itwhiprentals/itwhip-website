@@ -257,6 +257,9 @@ export default function TrackingDemoPage() {
   const [hornWaves, setHornWaves] = useState(0)
   const [killSwitchConfirm, setKillSwitchConfirm] = useState(false)
 
+  // Map ref for programmatic control
+  const mapRef = useRef<any>(null)
+
   // Alert detail modal state
   const [selectedAlert, setSelectedAlert] = useState<typeof DEMO_ALERTS[0] | null>(null)
   const [alertMessage, setAlertMessage] = useState('')
@@ -700,7 +703,7 @@ export default function TrackingDemoPage() {
             <div className="flex-1 min-h-0">
               {process.env.NEXT_PUBLIC_MAPBOX_TOKEN ? (
                 <TrackingMap
-                  vehicles={vehicles}
+                  vehicles={vehicles as any}
                   geofences={DEMO_GEOFENCES}
                   homeBase={SCOTTSDALE}
                   onVehicleSelect={setSelectedVehicle}

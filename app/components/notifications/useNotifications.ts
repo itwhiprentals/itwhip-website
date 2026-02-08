@@ -72,9 +72,9 @@ export function useNotifications(
       const data: NotificationsResponse = await response.json()
 
       if (data.success) {
-        setNotifications(data.notifications)
+        setNotifications(data.notifications || [])
         // 🔧 FIX: Always update count from API, never reset to 0 unless API says so
-        setUnreadCount(data.notifications.length)
+        setUnreadCount((data.notifications || []).length)
         setError(null)
       } else {
         throw new Error('Invalid response from server')

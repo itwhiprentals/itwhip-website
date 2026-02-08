@@ -568,7 +568,7 @@ export default function CarMapView({
       if (baseLat === undefined || baseLat === null ||
           baseLng === undefined || baseLng === null ||
           !isFinite(baseLat) || !isFinite(baseLng)) {
-        const fallback = getFallbackCoords(car.location?.city || car.city)
+        const fallback = getFallbackCoords(car.location?.city || (car as any).city)
         baseLat = fallback.lat
         baseLng = fallback.lng
       }

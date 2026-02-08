@@ -107,7 +107,7 @@ export default function HostMessagesPage() {
   const [managesOwnCars, setManagesOwnCars] = useState<boolean | null>(null)
   const [hasApprovedOwners, setHasApprovedOwners] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const fetchTimeoutRef = useRef<NodeJS.Timeout>()
+  const fetchTimeoutRef = useRef<NodeJS.Timeout>(undefined)
 
   // Computed value for Fleet Manager detection
   const isFleetManager = managesOwnCars === false

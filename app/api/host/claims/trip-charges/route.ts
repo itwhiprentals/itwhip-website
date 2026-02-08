@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
         bookingId: bookingId
       },
       include: {
-        adjustments: {
+        ChargeAdjustment: {
           orderBy: {
             createdAt: 'desc'
           }
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
       guestNotifiedAt: charge.guestNotifiedAt?.toISOString() || null,
       
       // Adjustments history
-      adjustments: charge.adjustments.map(adj => ({
+      adjustments: ((charge as any).TripChargeAdjustment || []).map((adj: any) => ({
         id: adj.id,
         adjustmentType: adj.adjustmentType,
         reason: adj.reason,

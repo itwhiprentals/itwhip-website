@@ -227,7 +227,7 @@ export async function POST(request: NextRequest) {
 
     // Send email to customer
     const customerName = customer.name || 'Customer'
-    const partnerName = partner.partnerCompanyName || partner.partnerFirstName || 'Your rental partner'
+    const partnerName = partner.partnerCompanyName || (partner as any).partnerFirstName || 'Your rental partner'
     const vehicleName = `${car.year} ${car.make} ${car.model}`
 
     let emailSent = false
@@ -366,7 +366,7 @@ export async function POST(request: NextRequest) {
     // Send via SMTP using the existing email infrastructure
     try {
       const emailResult = await sendEmail(
-        customer.email,
+        customer.email!,
         `Booking Review: ${vehicleName} - ${formatDate(bookingStart)}`,
         emailHtml,
         emailText,

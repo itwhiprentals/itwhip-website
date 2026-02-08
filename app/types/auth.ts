@@ -290,53 +290,50 @@ export enum UserRole {
   /**
    * Permissions for each role
    */
+  // Base permission sets for building role hierarchies
+  const _anonymousPerms: Permission[] = [
+    Permission.VIEW_DASHBOARD,
+    Permission.VIEW_GHOST_RIDES,
+    Permission.VIEW_METRICS,
+    Permission.VIEW_PUBLIC_DATA,
+    Permission.CALCULATE_ROI
+  ]
+
+  const _claimedPerms: Permission[] = [
+    ..._anonymousPerms,
+    Permission.MANAGE_BOOKINGS,
+    Permission.CANCEL_RESERVATIONS,
+    Permission.VIEW_GUEST_DETAILS,
+    Permission.CONTACT_GUESTS,
+    Permission.CLAIM_PROPERTY
+  ]
+
+  const _starterPerms: Permission[] = [
+    ..._claimedPerms,
+    Permission.PROCESS_RIDES,
+    Permission.ACCESS_REVENUE,
+    Permission.GENERATE_REPORTS,
+    Permission.USE_API
+  ]
+
+  const _businessPerms: Permission[] = [
+    ..._starterPerms,
+    Permission.ACCESS_COMPLIANCE,
+    Permission.USE_SDK,
+    Permission.MANAGE_DRIVERS
+  ]
+
+  const _enterprisePerms: Permission[] = [
+    ..._businessPerms,
+    Permission.WITHDRAW_FUNDS
+  ]
+
   export const RolePermissions: Record<UserRole, Permission[]> = {
-    [UserRole.ANONYMOUS]: [
-      Permission.VIEW_DASHBOARD,
-      Permission.VIEW_GHOST_RIDES,
-      Permission.VIEW_METRICS,
-      Permission.VIEW_PUBLIC_DATA,
-      Permission.CALCULATE_ROI
-    ],
-    
-    [UserRole.CLAIMED]: [
-      // Inherits anonymous permissions
-      Permission.VIEW_DASHBOARD,
-      Permission.VIEW_GHOST_RIDES,
-      Permission.VIEW_METRICS,
-      Permission.VIEW_PUBLIC_DATA,
-      Permission.CALCULATE_ROI,
-      // Plus claimed permissions
-      Permission.MANAGE_BOOKINGS,
-      Permission.CANCEL_RESERVATIONS,
-      Permission.VIEW_GUEST_DETAILS,
-      Permission.CONTACT_GUESTS,
-      Permission.CLAIM_PROPERTY
-    ],
-    
-    [UserRole.STARTER]: [
-      // All claimed permissions plus starter
-      ...RolePermissions[UserRole.CLAIMED],
-      Permission.PROCESS_RIDES,
-      Permission.ACCESS_REVENUE,
-      Permission.GENERATE_REPORTS,
-      Permission.USE_API
-    ],
-    
-    [UserRole.BUSINESS]: [
-      // All starter permissions plus business
-      ...RolePermissions[UserRole.STARTER],
-      Permission.ACCESS_COMPLIANCE,
-      Permission.USE_SDK,
-      Permission.MANAGE_DRIVERS
-    ],
-    
-    [UserRole.ENTERPRISE]: [
-      // All business permissions plus enterprise
-      ...RolePermissions[UserRole.BUSINESS],
-      Permission.WITHDRAW_FUNDS
-    ],
-    
+    [UserRole.ANONYMOUS]: _anonymousPerms,
+    [UserRole.CLAIMED]: _claimedPerms,
+    [UserRole.STARTER]: _starterPerms,
+    [UserRole.BUSINESS]: _businessPerms,
+    [UserRole.ENTERPRISE]: _enterprisePerms,
     [UserRole.ADMIN]: [
       // All permissions
       ...Object.values(Permission)

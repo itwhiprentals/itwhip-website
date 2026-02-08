@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
         },
         _count: {
           select: {
-            bookings: true
+            rentalBookings: true
           }
         }
       },
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
       location: user.reviewerProfile?.city && user.reviewerProfile?.state
         ? `${user.reviewerProfile.city}, ${user.reviewerProfile.state}`
         : null,
-      totalBookings: user._count.bookings,
+      totalBookings: (user._count as any).rentalBookings,
       isPreviousCustomer: previousCustomerIds.includes(user.id)
     }))
 

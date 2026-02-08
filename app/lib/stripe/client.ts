@@ -12,7 +12,7 @@ if (!STRIPE_KEY) {
 export const stripe = new Stripe(
   STRIPE_KEY,
   {
-    apiVersion: '2024-11-20.acacia',
+    apiVersion: '2025-08-27.basil' as any,
     typescript: true,
   }
 )

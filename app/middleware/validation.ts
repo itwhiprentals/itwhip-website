@@ -6,8 +6,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z, ZodError, ZodSchema } from 'zod'
 import { createAuditLog } from '@/app/lib/database/audit'
-import { detectAnomaly } from '@/app/lib/security/anomaly'
-import type { ValidationError } from '@/app/types/security'
+import AnomalyDetector from '@/app/lib/security/anomaly'
+
+interface ValidationError {
+  field: string
+  message: string
+  code: string
+  value?: any
+}
 
 // Common validation schemas
 export const schemas = {
@@ -259,23 +265,23 @@ async function validateBody(
     return { valid: true, data: validated }
   } catch (error) {
     if (error instanceof ZodError) {
-      const errors: ValidationError[] = error.errors.map(err => ({
+      const errors: ValidationError[] = error.issues.map((err: { path: PropertyKey[]; message: string; code?: string }) => ({
         field: err.path.join('.'),
         message: err.message,
-        code: err.code,
-        value: err.path.reduce((obj, key) => obj?.[key], body)
+        code: err.code || 'VALIDATION_ERROR',
+        value: err.path.reduce((obj: any, key: PropertyKey) => obj?.[key as string], body)
       }))
-      
+
       return { valid: false, errors }
     }
-    
-    return { 
-      valid: false, 
-      errors: [{ 
-        field: 'unknown', 
+
+    return {
+      valid: false,
+      errors: [{
+        field: 'unknown',
         message: 'Validation error',
         code: 'UNKNOWN_ERROR'
-      }] 
+      }]
     }
   }
 }
@@ -314,22 +320,22 @@ function validateQuery(
     return { valid: true, data: validated }
   } catch (error) {
     if (error instanceof ZodError) {
-      const errors: ValidationError[] = error.errors.map(err => ({
+      const errors: ValidationError[] = error.issues.map((err: { path: PropertyKey[]; message: string; code?: string }) => ({
         field: err.path.join('.'),
         message: err.message,
-        code: err.code
+        code: err.code || 'VALIDATION_ERROR'
       }))
-      
+
       return { valid: false, errors }
     }
-    
-    return { 
-      valid: false, 
-      errors: [{ 
-        field: 'unknown', 
+
+    return {
+      valid: false,
+      errors: [{
+        field: 'unknown',
         message: 'Query validation error',
         code: 'UNKNOWN_ERROR'
-      }] 
+      }]
     }
   }
 }
@@ -382,13 +388,20 @@ export async function validationMiddleware(
           category: 'SECURITY',
           eventType: 'validation.query_failed',
           severity: 'MEDIUM',
-          ipAddress: clientIp,
-          userAgent: request.headers.get('user-agent') || 'unknown',
-          action: 'reject',
-          resource: pathname,
-          details: { 
+          actor: {
+            ip: clientIp,
+            userAgent: request.headers.get('user-agent') || 'unknown'
+          },
+          action: {
+            type: 'reject',
+            resource: pathname
+          },
+          context: {
+            requestId: `val_${Date.now()}`
+          },
+          metadata: {
             errors: queryValidation.errors,
-            method 
+            method
           }
         })
         
@@ -431,14 +444,21 @@ export async function validationMiddleware(
           category: 'SECURITY',
           eventType: 'validation.body_too_large',
           severity: 'MEDIUM',
-          ipAddress: clientIp,
-          userAgent: request.headers.get('user-agent') || 'unknown',
-          action: 'reject',
-          resource: pathname,
-          details: { 
+          actor: {
+            ip: clientIp,
+            userAgent: request.headers.get('user-agent') || 'unknown'
+          },
+          action: {
+            type: 'reject',
+            resource: pathname
+          },
+          context: {
+            requestId: `val_${Date.now()}`
+          },
+          metadata: {
             size: contentLength,
             maxSize,
-            method 
+            method
           }
         })
         
@@ -459,13 +479,12 @@ export async function validationMiddleware(
         // Check for potential data exfiltration (too many fields)
         const fieldCount = JSON.stringify(body).split(':').length - 1
         if (fieldCount > 100) {
-          await detectAnomaly({
-            type: 'data_exfiltration',
-            identifier: clientIp,
-            details: {
-              fieldCount,
-              endpoint: pathname
-            }
+          await AnomalyDetector.getInstance().checkRequest({
+            ip: clientIp,
+            userAgent: request.headers.get('user-agent') || 'unknown',
+            endpoint: pathname,
+            method,
+            body: { fieldCount }
           })
           
           return NextResponse.json(
@@ -485,13 +504,20 @@ export async function validationMiddleware(
             category: 'SECURITY',
             eventType: 'validation.body_failed',
             severity: 'MEDIUM',
-            ipAddress: clientIp,
-            userAgent: request.headers.get('user-agent') || 'unknown',
-            action: 'reject',
-            resource: pathname,
-            details: { 
+            actor: {
+              ip: clientIp,
+              userAgent: request.headers.get('user-agent') || 'unknown'
+            },
+            action: {
+              type: 'reject',
+              resource: pathname
+            },
+            context: {
+              requestId: `val_${Date.now()}`
+            },
+            metadata: {
               errors: bodyValidation.errors,
-              method 
+              method
             }
           })
           
@@ -521,13 +547,20 @@ export async function validationMiddleware(
           category: 'SECURITY',
           eventType: 'validation.parse_error',
           severity: 'HIGH',
-          ipAddress: clientIp,
-          userAgent: request.headers.get('user-agent') || 'unknown',
-          action: 'reject',
-          resource: pathname,
-          details: { 
+          actor: {
+            ip: clientIp,
+            userAgent: request.headers.get('user-agent') || 'unknown'
+          },
+          action: {
+            type: 'reject',
+            resource: pathname
+          },
+          context: {
+            requestId: `val_${Date.now()}`
+          },
+          metadata: {
             error: error instanceof Error ? error.message : 'Parse error',
-            method 
+            method
           }
         })
         
@@ -547,11 +580,18 @@ export async function validationMiddleware(
       category: 'DATA_ACCESS',
       eventType: 'validation.success',
       severity: 'LOW',
-      ipAddress: clientIp,
-      userAgent: request.headers.get('user-agent') || 'unknown',
-      action: 'allow',
-      resource: pathname,
-      details: { method }
+      actor: {
+        ip: clientIp,
+        userAgent: request.headers.get('user-agent') || 'unknown'
+      },
+      action: {
+        type: 'allow',
+        resource: pathname
+      },
+      context: {
+        requestId: `val_${Date.now()}`
+      },
+      metadata: { method }
     })
     
     return null // Allow request to proceed
@@ -563,13 +603,20 @@ export async function validationMiddleware(
       category: 'SECURITY',
       eventType: 'validation.error',
       severity: 'CRITICAL',
-      ipAddress: clientIp,
-      userAgent: request.headers.get('user-agent') || 'unknown',
-      action: 'error',
-      resource: pathname,
-      details: { 
+      actor: {
+        ip: clientIp,
+        userAgent: request.headers.get('user-agent') || 'unknown'
+      },
+      action: {
+        type: 'error',
+        resource: pathname
+      },
+      context: {
+        requestId: `val_${Date.now()}`
+      },
+      metadata: {
         error: error instanceof Error ? error.message : 'Unknown error',
-        method 
+        method
       }
     })
     
@@ -594,17 +641,17 @@ export function createValidator(schema: ZodSchema) {
       return { success: true, data: validated }
     } catch (error) {
       if (error instanceof ZodError) {
-        return { 
-          success: false, 
-          errors: error.errors.map(e => ({
+        return {
+          success: false,
+          errors: error.issues.map((e: { path: PropertyKey[]; message: string }) => ({
             field: e.path.join('.'),
             message: e.message
           }))
         }
       }
-      return { 
-        success: false, 
-        errors: [{ field: 'unknown', message: 'Validation failed' }] 
+      return {
+        success: false,
+        errors: [{ field: 'unknown', message: 'Validation failed' }]
       }
     }
   }

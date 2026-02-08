@@ -7,9 +7,9 @@ import prisma from '@/app/lib/database/prisma'
 
 interface VisitorStats {
   visitorId: string
-  sessionCount: number
-  pageViews: number
-  uniquePages: number
+  sessionCount: bigint | number
+  pageViews: bigint | number
+  uniquePages: bigint | number
   firstVisit: string
   lastVisit: string
 }
@@ -209,10 +209,10 @@ export async function GET(request: NextRequest) {
 
     // Parse summary
     const summary = summaryStats[0] || {
-      total_visitors: 0n,
-      returning_visitors: 0n,
-      total_sessions: 0n,
-      total_pageviews: 0n
+      total_visitors: BigInt(0),
+      returning_visitors: BigInt(0),
+      total_sessions: BigInt(0),
+      total_pageviews: BigInt(0)
     }
 
     const totalVisitors = Number(summary.total_visitors)
@@ -228,7 +228,7 @@ export async function GET(request: NextRequest) {
       '11+ visits': 0
     }
 
-    frequencyDistribution.forEach(f => {
+    frequencyDistribution.forEach((f: any) => {
       if (f.bucket in frequencyBuckets) {
         frequencyBuckets[f.bucket] = Number(f.count)
       }
@@ -240,7 +240,7 @@ export async function GET(request: NextRequest) {
       topReturning = visitors.filter(v => v.isReturning).slice(0, 10)
     }
 
-    const totalCount = Number(totalVisitorCount[0]?.count || 0)
+    const totalCount = Number((totalVisitorCount as any)[0]?.count || 0)
     const totalPages = Math.ceil(totalCount / limit)
 
     const response = NextResponse.json({

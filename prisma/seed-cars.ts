@@ -26,7 +26,7 @@ async function main() {
         bio: "Luxury and exotic car enthusiast. Treat my cars with respect and enjoy the ride!",
         profilePhoto: null,
         active: true
-      }
+      } as any
     })
   }
 
@@ -72,7 +72,7 @@ async function main() {
       instantBook: true,
       totalTrips: 0,
       rating: 0
-    }
+    } as any
   })
 
   // Add all 14 photos
@@ -96,6 +96,7 @@ async function main() {
   for (let i = 0; i < photos.length; i++) {
     await prisma.rentalCarPhoto.create({
       data: {
+        id: crypto.randomUUID(),
         carId: lambo.id,
         url: photos[i],
         order: i,

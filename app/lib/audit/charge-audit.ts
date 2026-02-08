@@ -1,6 +1,7 @@
 // app/lib/audit/charge-audit.ts
 
 import { prisma } from '@/app/lib/database/prisma'
+import { AuditSeverity as PrismaAuditSeverity, AuditCategory as PrismaAuditCategory } from '@prisma/client'
 
 export enum AuditAction {
   // Charge Actions
@@ -91,21 +92,27 @@ export class ChargeAuditService {
     try {
       await prisma.auditLog.create({
         data: {
+          id: crypto.randomUUID(),
           action: entry.action,
-          severity: entry.severity || AuditSeverity.INFO,
-          entityType: 'RentalBooking',
-          entityId: entry.bookingId,
-          performedBy: entry.adminId || 'system',
-          performedByEmail: entry.adminEmail,
-          description: this.generateDescription(entry),
+          category: PrismaAuditCategory.CHARGE_MANAGEMENT,
+          eventType: entry.action,
+          severity: (entry.severity || AuditSeverity.INFO) as PrismaAuditSeverity,
+          resource: 'RentalBooking',
+          resourceId: entry.bookingId,
+          adminId: entry.adminId || 'system',
+          adminEmail: entry.adminEmail,
           amount: entry.amount,
-          previousValue: entry.previousAmount ? JSON.stringify({ amount: entry.previousAmount }) : null,
-          newValue: entry.newAmount ? JSON.stringify({ amount: entry.newAmount }) : null,
-          reason: entry.reason,
+          details: {
+            description: this.generateDescription(entry),
+            previousValue: entry.previousAmount ? { amount: entry.previousAmount } : null,
+            newValue: entry.newAmount ? { amount: entry.newAmount } : null,
+            reason: entry.reason,
+          },
           metadata: entry.metadata || {},
-          stripeReferenceId: entry.stripeChargeId,
-          ipAddress: entry.ipAddress,
-          userAgent: entry.userAgent,
+          stripeId: entry.stripeChargeId,
+          ipAddress: entry.ipAddress || '',
+          userAgent: entry.userAgent || '',
+          hash: '',
           timestamp: new Date()
         }
       })
@@ -295,8 +302,8 @@ export class ChargeAuditService {
     try {
       const logs = await prisma.auditLog.findMany({
         where: {
-          entityId: params.bookingId,
-          entityType: 'RentalBooking',
+          resourceId: params.bookingId,
+          resource: 'RentalBooking',
           timestamp: {
             gte: params.startDate,
             lte: params.endDate
@@ -329,7 +336,7 @@ export class ChargeAuditService {
         switch (log.action) {
           case AuditAction.CHARGE_PROCESSED:
             summary.totalChargesProcessed++
-            summary.totalAmountProcessed += log.amount || 0
+            summary.totalAmountProcessed += Number(log.amount || 0)
             break
           case AuditAction.CHARGE_WAIVED:
           case AuditAction.CHARGE_PARTIAL_WAIVED:
@@ -347,8 +354,8 @@ export class ChargeAuditService {
             break
         }
         
-        if (log.performedBy && log.performedBy !== 'system') {
-          summary.uniqueAdmins.add(log.performedBy)
+        if (log.adminId && log.adminId !== 'system') {
+          summary.uniqueAdmins.add(log.adminId)
         }
       })
 
@@ -380,8 +387,8 @@ export class ChargeAuditService {
     try {
       return await prisma.auditLog.findMany({
         where: {
-          entityId: bookingId,
-          entityType: 'RentalBooking'
+          resourceId: bookingId,
+          resource: 'RentalBooking'
         },
         orderBy: {
           timestamp: 'desc'
@@ -451,16 +458,30 @@ export class ChargeAuditService {
    */
   private static async logCriticalEvent(entry: AuditLogEntry): Promise<void> {
     try {
-      await prisma.criticalEvent.create({
+      // CriticalEvent model does not exist; log as a CRITICAL-severity audit entry instead
+      await prisma.auditLog.create({
         data: {
-          eventType: entry.action,
-          bookingId: entry.bookingId,
+          id: crypto.randomUUID(),
+          category: PrismaAuditCategory.SECURITY,
+          eventType: `CRITICAL_${entry.action}`,
+          severity: PrismaAuditSeverity.CRITICAL,
+          action: entry.action,
+          resource: 'RentalBooking',
+          resourceId: entry.bookingId,
           adminId: entry.adminId,
-          description: this.generateDescription(entry),
           amount: entry.amount,
-          metadata: entry.metadata,
-          resolved: false,
-          createdAt: new Date()
+          metadata: {
+            ...(entry.metadata || {}),
+            isCriticalEvent: true,
+            resolved: false,
+          },
+          details: {
+            description: this.generateDescription(entry),
+          },
+          ipAddress: entry.ipAddress || '',
+          userAgent: entry.userAgent || '',
+          hash: '',
+          timestamp: new Date()
         }
       })
     } catch (error) {
@@ -545,11 +566,11 @@ export class ChargeAuditService {
     const rows = logs.map(log => [
       log.timestamp.toISOString(),
       log.action,
-      log.entityId,
-      log.performedBy || 'system',
-      log.amount?.toFixed(2) || '',
-      log.reason || '',
-      log.description || ''
+      log.resourceId || '',
+      log.adminId || 'system',
+      log.amount ? Number(log.amount).toFixed(2) : '',
+      (log.details as any)?.reason || '',
+      (log.details as any)?.description || ''
     ])
 
     return [

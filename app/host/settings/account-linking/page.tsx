@@ -90,7 +90,7 @@ export default async function AccountLinkingPage() {
           </h1>
 
           {/* Account Linking Component */}
-          <AccountLinking currentUser={user} userType="host" />
+          <AccountLinking currentUser={user as any} userType="host" />
         </div>
       </div>
       <Footer />

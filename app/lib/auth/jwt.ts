@@ -6,17 +6,28 @@
 import jwt from 'jsonwebtoken'
 import { randomBytes, createHash } from 'crypto'
 import prisma from '@/app/lib/database/prisma'
-import type { 
-  User,
+import {
   UserRole,
   CertificationTier,
   Permission,
+} from '@/app/types/auth'
+import type {
   AccessTokenPayload,
   RefreshTokenPayload,
   PreviewTokenPayload,
   TokenValidation,
   AuthResponse
 } from '@/app/types/auth'
+
+// Local User type matching what jwt.ts actually needs (not the union from auth.ts)
+interface JwtUser {
+  id?: string
+  role: UserRole
+  hotelId?: string
+  hotelName?: string
+  gdsCode?: string
+  permissions?: Permission[]
+}
 
 // ============================================================================
 // CONFIGURATION
@@ -62,7 +73,7 @@ function generateSecret(): string {
  * Generate access token for authenticated users
  */
 export async function generateAccessToken(
-  user: User,
+  user: JwtUser,
   sessionId: string,
   deviceId?: string
 ): Promise<string> {
@@ -149,10 +160,10 @@ export function generatePreviewToken(
     expiresAt: Date.now() + parseExpiry(JWT_CONFIG.EXPIRY.PREVIEW) * 1000
   }
   
-  return jwt.sign(payload, JWT_CONFIG.PREVIEW_SECRET, {
+  return jwt.sign(payload as unknown as Record<string, unknown>, JWT_CONFIG.PREVIEW_SECRET, {
     algorithm: JWT_CONFIG.ALGORITHM,
     expiresIn: JWT_CONFIG.EXPIRY.PREVIEW
-  })
+  } as any)
 }
 
 /**
@@ -303,19 +314,19 @@ export async function verifyAndRotateRefreshToken(
     
     // Generate new token pair
     const newAccessToken = await generateAccessToken(
-      session.user!,
+      session.user as unknown as JwtUser,
       session.id,
       session.deviceId || undefined
     )
-    
+
     const { token: newRefreshToken } = await generateRefreshToken(
       session.userId!,
       session.id
     )
-    
+
     return {
       success: true,
-      user: session.user!,
+      user: session.user as any,
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
       expiresIn: parseExpiry(JWT_CONFIG.EXPIRY.ACCESS)
@@ -339,7 +350,7 @@ export function verifyPreviewToken(token: string): TokenValidation {
     const decoded = jwt.verify(token, JWT_CONFIG.PREVIEW_SECRET, {
       algorithms: [JWT_CONFIG.ALGORITHM]
     }) as PreviewTokenPayload
-    
+
     // Check custom expiry
     if (decoded.expiresAt < Date.now()) {
       return {
@@ -348,11 +359,11 @@ export function verifyPreviewToken(token: string): TokenValidation {
         error: 'Preview token has expired'
       }
     }
-    
+
     return {
       valid: true,
       expired: false,
-      payload: decoded
+      payload: decoded as any
     }
   } catch (error: any) {
     return {
@@ -547,15 +558,15 @@ function parseExpiry(expiry: string): number {
  */
 function getExpiryByRole(role: UserRole): string {
   switch (role) {
-    case 'ANONYMOUS':
+    case UserRole.ANONYMOUS:
       return JWT_CONFIG.EXPIRY.PREVIEW
-    case 'CLAIMED':
+    case UserRole.CLAIMED:
       return JWT_CONFIG.EXPIRY.CLAIMED
-    case 'STARTER':
-    case 'BUSINESS':
-    case 'ENTERPRISE':
+    case UserRole.STARTER:
+    case UserRole.BUSINESS:
+    case UserRole.ENTERPRISE:
       return JWT_CONFIG.EXPIRY.CERTIFIED
-    case 'ADMIN':
+    case UserRole.ADMIN:
       return JWT_CONFIG.EXPIRY.ACCESS
     default:
       return JWT_CONFIG.EXPIRY.ACCESS
@@ -567,12 +578,12 @@ function getExpiryByRole(role: UserRole): string {
  */
 function getTierFromRole(role: UserRole): CertificationTier | undefined {
   switch (role) {
-    case 'STARTER':
-      return 'TU_3_C'
-    case 'BUSINESS':
-      return 'TU_2_B'
-    case 'ENTERPRISE':
-      return 'TU_1_A'
+    case UserRole.STARTER:
+      return CertificationTier.TU_3_C
+    case UserRole.BUSINESS:
+      return CertificationTier.TU_2_B
+    case UserRole.ENTERPRISE:
+      return CertificationTier.TU_1_A
     default:
       return undefined
   }

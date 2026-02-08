@@ -204,7 +204,7 @@ function generateActivations(): ActivationEvent[] {
 
 // Check authentication tier
 async function checkAuthTier(request: Request): Promise<{ authenticated: boolean; tier: string }> {
-  const headersList = headers()
+  const headersList = await headers()
   const apiKey = headersList.get('x-api-key')
   
   if (!apiKey) {

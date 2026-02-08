@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
         accountDeleted: true
       })
 
-      const transactionOps = [
+      const transactionOps: any[] = [
         // Update prospect status first
         prisma.hostProspect.update({
           where: { id: prospect.id },
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
             status: 'DECLINED',
             lastActivityAt: now,
             convertedHostId: null // Unlink the host before deletion
-          }
+          } as any
         }),
         // Delete the host account
         prisma.rentalHost.delete({
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
         transactionOps.push(
           prisma.reservationRequest.update({
             where: { id: prospect.requestId },
-            data: { status: 'DECLINED' }
+            data: { status: 'DECLINED' as any }
           })
         )
       }
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Otherwise, just decline the booking but keep the account
-    const transactionOps = [
+    const transactionOps: any[] = [
       // Update host
       prisma.rentalHost.update({
         where: { id: host.id },
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
         data: {
           status: 'DECLINED',
           lastActivityAt: now
-        }
+        } as any
       })
     ]
 
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
       transactionOps.push(
         prisma.reservationRequest.update({
           where: { id: prospect.requestId },
-          data: { status: 'DECLINED' }
+          data: { status: 'DECLINED' as any }
         })
       )
     }

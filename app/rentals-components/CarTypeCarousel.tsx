@@ -108,7 +108,7 @@ export default function CarTypeCarousel() {
             ref={scrollContainerRef}
             onScroll={handleScroll}
             className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitScrollbar: { display: 'none' } }}
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitScrollbar: { display: 'none' } } as any}
           >
             {carTypes.map((car, index) => (
               <div key={car.id} className="snap-center">

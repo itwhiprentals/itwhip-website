@@ -37,19 +37,19 @@ export async function POST(request: NextRequest) {
         await prisma.rentalCar.update({
           where: { id: carId },
           data: {
-            classificationId: classification.classificationId,
+            classificationId: classification.classificationId ?? null,
             insuranceEligible: classification.isInsurable,
             insuranceCategory: classification.category,
             insuranceRiskLevel: classification.riskLevel,
-            estimatedValue: classification.estimatedValue,
+            estimatedValue: classification.estimatedValue ?? null,
             requiresManualUnderwriting: classification.requiresManualReview,
-            insuranceNotes: classification.insurabilityReason
+            insuranceNotes: classification.insurabilityReason ?? null
           }
         })
-        
+
         // Check eligibility with provider if specified
         const eligibility = await checkVehicleEligibility(
-          { ...car, classificationId: classification.classificationId },
+          { ...car, classificationId: classification.classificationId ?? null } as any,
           providerId
         )
         
@@ -90,33 +90,36 @@ export async function GET(request: NextRequest) {
       const car = await prisma.rentalCar.findUnique({
         where: { id: carId },
         include: {
-          classification: true
+          VehicleClassification: true
         }
       })
-      
+
       if (!car) {
         return NextResponse.json(
           { error: 'Car not found' },
           { status: 404 }
         )
       }
-      
+
       // If car has classification, return it
-      if (car.classification) {
-        const eligibility = await checkVehicleEligibility(car)
-        
+      const carClassification = car.VehicleClassification
+      if (carClassification) {
+        const eligibility = await checkVehicleEligibility(
+          { ...car, classification: carClassification } as any
+        )
+
         return NextResponse.json({
           classification: {
-            category: car.classification.category,
-            riskLevel: car.classification.riskLevel,
-            estimatedValue: Number(car.classification.currentValue),
-            baseRateMultiplier: Number(car.classification.baseRateMultiplier),
-            riskMultiplier: Number(car.classification.riskMultiplier),
-            features: (car.classification.features as any)?.features || [],
-            isInsurable: car.classification.isInsurable,
-            insurabilityReason: car.classification.insurabilityReason,
-            requiresManualReview: car.classification.requiresManualReview,
-            classificationId: car.classification.id
+            category: carClassification.category,
+            riskLevel: carClassification.riskLevel,
+            estimatedValue: Number(carClassification.currentValue),
+            baseRateMultiplier: Number(carClassification.baseRateMultiplier),
+            riskMultiplier: Number(carClassification.riskMultiplier),
+            features: (carClassification.features as any)?.features || [],
+            isInsurable: carClassification.isInsurable,
+            insurabilityReason: carClassification.insurabilityReason,
+            requiresManualReview: carClassification.requiresManualReview,
+            classificationId: carClassification.id
           },
           eligibility
         })
@@ -134,17 +137,17 @@ export async function GET(request: NextRequest) {
       await prisma.rentalCar.update({
         where: { id: carId },
         data: {
-          classificationId: classification.classificationId,
+          classificationId: classification.classificationId ?? null,
           insuranceEligible: classification.isInsurable,
           insuranceCategory: classification.category,
           insuranceRiskLevel: classification.riskLevel,
-          estimatedValue: classification.estimatedValue,
+          estimatedValue: classification.estimatedValue ?? null,
           requiresManualUnderwriting: classification.requiresManualReview
         }
       })
-      
+
       const eligibility = await checkVehicleEligibility(
-        { ...car, classificationId: classification.classificationId }
+        { ...car, classificationId: classification.classificationId ?? null } as any
       )
       
       return NextResponse.json({
@@ -230,9 +233,9 @@ export async function PATCH(request: NextRequest) {
         insuranceEligible: updatedClassification.isInsurable,
         insuranceCategory: updatedClassification.category,
         insuranceRiskLevel: updatedClassification.riskLevel,
-        estimatedValue: updatedClassification.estimatedValue,
+        estimatedValue: updatedClassification.estimatedValue ?? null,
         requiresManualUnderwriting: updatedClassification.requiresManualReview,
-        insuranceNotes: updatedClassification.insurabilityReason
+        insuranceNotes: updatedClassification.insurabilityReason ?? null
       }
     })
     

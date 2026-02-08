@@ -100,6 +100,7 @@ export async function POST(
    // Log the photo upload in the database
    await prisma.activityLog.create({
      data: {
+       id: crypto.randomUUID(),
        action: 'INSPECTION_PHOTO_UPLOADED',
        entityType: 'RentalBooking',
        entityId: bookingId,

@@ -42,7 +42,7 @@ export async function GET(
     // Build filter for bookings
     const bookingFilter: any = {
       OR: [
-        { reviewerId: guestId },
+        { reviewedBy: guestId },
         ...(guest.userId ? [{ renterId: guest.userId }] : [])
       ]
     }
@@ -223,7 +223,7 @@ export async function POST(
       where: {
         id: bookingId,
         OR: [
-          { reviewerId: guestId },
+          { reviewedBy: guestId },
           ...(guest.userId ? [{ renterId: guest.userId }] : [])
         ]
       },
@@ -284,7 +284,7 @@ export async function POST(
     }
 
     // Create the charge
-    const newCharge = await prisma.tripCharge.create({
+    const newCharge = await (prisma.tripCharge.create as any)({
       data: chargeData
     })
 
@@ -292,10 +292,10 @@ export async function POST(
     await prisma.rentalBooking.update({
       where: { id: bookingId },
       data: {
-        paymentStatus: 'PENDING_CHARGES',
+        paymentStatus: 'PENDING_CHARGES' as any,
         pendingChargesAmount: {
           increment: amount
-        },
+        } as any,
         chargesNotes: `Manual ${chargeType} charge added: $${amount.toFixed(2)}`
       }
     })
@@ -306,7 +306,7 @@ export async function POST(
         id: newCharge.id,
         bookingId,
         bookingCode: booking.bookingCode,
-        car: `${booking.car?.year} ${booking.car?.make} ${booking.car?.model}`,
+        car: `${(booking as any).car?.year} ${(booking as any).car?.make} ${(booking as any).car?.model}`,
         chargeType,
         amount,
         description: description || `Manual ${chargeType} charge`,

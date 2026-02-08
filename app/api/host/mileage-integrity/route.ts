@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
         hasActiveClaim: true,
         serviceOverdue: true,
         inspectionExpired: true,
-        mileageAnomalies: {
-          where: { 
+        MileageAnomaly: {
+          where: {
             resolved: false,
             severity: { in: ['WARNING', 'CRITICAL'] }
           },
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       
       // Additional risk factors
       const hasServiceIssues = car.serviceOverdue || car.inspectionExpired
-      const hasRecentAnomaly = car.mileageAnomalies.length > 0
+      const hasRecentAnomaly = car.MileageAnomaly.length > 0
       const hasActiveClaim = car.hasActiveClaim
       
       // Determine overall status
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
         hasServiceIssues,
         hasRecentAnomaly,
         hasActiveClaim,
-        anomalyType: car.mileageAnomalies[0]?.severity || null
+        anomalyType: car.MileageAnomaly[0]?.severity || null
       }
     })
     
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Create mileage anomaly record
-    const anomaly = await prisma.mileageAnomaly.create({
+    const anomaly = await (prisma.mileageAnomaly.create as any)({
       data: {
         carId,
         detectedAt: new Date(),

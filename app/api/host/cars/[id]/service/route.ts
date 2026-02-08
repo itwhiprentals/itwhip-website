@@ -89,7 +89,7 @@ export async function POST(
         hostId: hostId
       },
       include: {
-        serviceRecords: {
+        VehicleServiceRecord: {
           orderBy: {
             serviceDate: 'desc'
           },
@@ -110,7 +110,7 @@ export async function POST(
       where: {
         carId: carId,
         status: {
-          in: ['PENDING_REVIEW', 'UNDER_REVIEW', 'APPROVED']
+          in: ['PENDING_REVIEW', 'UNDER_REVIEW', 'APPROVED'] as any
         }
       }
     })
@@ -129,12 +129,12 @@ export async function POST(
     const body = await request.json()
 
     // Get previous service mileage for validation
-    const previousServiceMileage = car.serviceRecords[0]?.mileageAtService || 0
+    const previousServiceMileage = (car as any).VehicleServiceRecord?.[0]?.mileageAtService || 0
 
     // Validate service record
     const validation = validateServiceRecord(
       body,
-      car.currentMileage || undefined,
+      car.currentMileage ?? undefined,
       previousServiceMileage
     )
 
@@ -164,7 +164,7 @@ export async function POST(
     }
 
     // Create service record
-    const serviceRecord = await prisma.vehicleServiceRecord.create({
+    const serviceRecord = await (prisma.vehicleServiceRecord.create as any)({
       data: {
         carId: carId,
         serviceType: body.serviceType as ServiceType,
@@ -181,7 +181,8 @@ export async function POST(
         itemsServiced: body.itemsServiced || [],
         costTotal: parseFloat(body.costTotal),
         notes: body.notes || null,
-        verifiedByFleet: false
+        verifiedByFleet: false,
+        updatedAt: new Date()
       }
     })
 

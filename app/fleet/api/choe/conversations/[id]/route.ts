@@ -56,8 +56,8 @@ export async function GET(
     // Transform for response
     const data = {
       ...conversation,
-      estimatedCost: conversation.estimatedCost.toNumber(),
-      bookingValue: conversation.bookingValue?.toNumber() || null,
+      estimatedCost: Number(conversation.estimatedCost),
+      bookingValue: conversation.bookingValue ? Number(conversation.bookingValue) : null,
       startedAt: conversation.startedAt.toISOString(),
       lastActivityAt: conversation.lastActivityAt.toISOString(),
       completedAt: conversation.completedAt?.toISOString() || null,

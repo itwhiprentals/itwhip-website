@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get booking details with existing disputes
-    const booking = await prisma.rentalBooking.findUnique({
+    const booking = await (prisma.rentalBooking.findUnique as any)({
       where: { id: bookingId },
       include: {
         car: {
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
           }
         }
       }
-    })
+    }) as any
 
     if (!booking) {
       return NextResponse.json(
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if formal dispute already exists for these reasons
-    const existingDisputes = booking.disputes.filter(d => 
+    const existingDisputes = booking.disputes.filter((d: any) =>
       disputeReasons.some(reason => d.description.includes(reason))
     )
 
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
     // Begin transaction to create formal dispute records
     const result = await prisma.$transaction(async (tx) => {
       // Create main dispute record
-      const mainDispute = await tx.rentalDispute.create({
+      const mainDispute = await (tx.rentalDispute.create as any)({
         data: {
           bookingId,
           type: 'CHARGE_DISPUTE',
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
           priority,
           description: disputeReasons.join('; '),
           amount: totalChargeAmount,
-          openedBy: booking.guestEmail || booking.renter?.email || 'Guest',
+          openedBy: booking.guestEmail || (booking as any).renter?.email || 'Guest',
           metadata: JSON.stringify({
             chargeId,
             chargeBreakdown,
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
             disputedAmount = chargeBreakdown.cleaning || disputedAmount
           }
 
-          return await tx.disputeItem.create({
+          return await (tx as any).disputeItem.create({
             data: {
               disputeId: mainDispute.id,
               category,
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
       )
 
       // Update booking status to reflect dispute
-      await tx.rentalBooking.update({
+      await (tx.rentalBooking.update as any)({
         where: { id: bookingId },
         data: {
           verificationStatus: 'DISPUTE_REVIEW',
@@ -199,8 +199,8 @@ export async function POST(request: NextRequest) {
       })
 
       // Update TripCharge if exists
-      if (chargeId && booking.tripCharges[0]) {
-        await tx.tripCharge.update({
+      if (chargeId && (booking as any).tripCharges[0]) {
+        await (tx.tripCharge.update as any)({
           where: { id: chargeId },
           data: {
             chargeStatus: 'DISPUTED',
@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Create admin notification
-      await tx.adminNotification.create({
+      await (tx.adminNotification.create as any)({
         data: {
           type: 'NEW_DISPUTE',
           title: `New Dispute - ${booking.bookingCode}`,
@@ -222,6 +222,7 @@ export async function POST(request: NextRequest) {
           relatedType: 'RentalDispute',
           actionRequired: true,
           actionUrl: `/admin/disputes/${mainDispute.id}`,
+          updatedAt: new Date(),
           metadata: {
             bookingId,
             chargeId,
@@ -233,15 +234,16 @@ export async function POST(request: NextRequest) {
       })
 
       // Add message to booking conversation
-      await tx.rentalMessage.create({
+      await (tx.rentalMessage.create as any)({
         data: {
           bookingId,
           senderId: 'system',
           senderType: 'admin',
           senderName: 'Dispute System',
-          message: `🔍 Your dispute has been formally submitted and will be reviewed within 24 hours.\n\nDisputed amount: $${totalChargeAmount.toFixed(2)}\nReasons: ${disputeReasons.join(', ')}\nCase #: ${mainDispute.id}\n\nOur team will investigate and respond shortly.`,
+          message: `Your dispute has been formally submitted and will be reviewed within 24 hours.\n\nDisputed amount: $${totalChargeAmount.toFixed(2)}\nReasons: ${disputeReasons.join(', ')}\nCase #: ${mainDispute.id}\n\nOur team will investigate and respond shortly.`,
           category: 'dispute',
           isUrgent: priority === 'URGENT' || priority === 'HIGH',
+          updatedAt: new Date(),
           metadata: {
             disputeId: mainDispute.id,
             priority
@@ -250,7 +252,7 @@ export async function POST(request: NextRequest) {
       })
 
       // Create audit log
-      await tx.auditLog.create({
+      await (tx.auditLog.create as any)({
         data: {
           action: 'DISPUTE_CREATED_FROM_CHARGES',
           entityType: 'RentalDispute',
@@ -278,7 +280,7 @@ export async function POST(request: NextRequest) {
     try {
       // Notify guest
       if (booking.guestEmail) {
-        await sendEmail({
+        await (sendEmail as any)({
           to: booking.guestEmail,
           subject: `Dispute Received - Case #${result.dispute.id}`,
           template: 'dispute-confirmation',
@@ -296,7 +298,7 @@ export async function POST(request: NextRequest) {
 
       // Notify admin team for urgent/high priority
       if (priority === 'URGENT' || priority === 'HIGH') {
-        await sendEmail({
+        await (sendEmail as any)({
           to: process.env.ADMIN_NOTIFICATION_EMAIL || 'disputes@itwhip.com',
           subject: `[${priority}] New Dispute - $${totalChargeAmount} - ${booking.bookingCode}`,
           template: 'admin-dispute-alert',
@@ -362,7 +364,7 @@ export async function GET(request: NextRequest) {
     if (priority) where.priority = priority
 
     // If searching by chargeId, need to parse metadata
-    const disputes = await prisma.rentalDispute.findMany({
+    const disputes = await (prisma.rentalDispute.findMany as any)({
       where,
       include: {
         booking: {
@@ -383,7 +385,7 @@ export async function GET(request: NextRequest) {
         { priority: 'desc' },
         { createdAt: 'desc' }
       ]
-    })
+    }) as any[]
 
     // Filter by chargeId if provided (check in metadata)
     const filteredDisputes = chargeId 
@@ -454,7 +456,7 @@ export async function PATCH(request: NextRequest) {
       updateData.reviewedBy = adminId
     }
 
-    const updatedDispute = await prisma.rentalDispute.update({
+    const updatedDispute = await (prisma.rentalDispute.update as any)({
       where: { id: disputeId },
       data: updateData,
       include: {
@@ -464,7 +466,7 @@ export async function PATCH(request: NextRequest) {
     })
 
     // Create audit log
-    await prisma.auditLog.create({
+    await (prisma.auditLog.create as any)({
       data: {
         action: 'DISPUTE_UPDATED',
         entityType: 'RentalDispute',

@@ -58,9 +58,9 @@ export async function GET(request: NextRequest) {
         name: 'Debit Card',
         last4: host.debitCardLast4,
         isDefault: host.defaultPayoutMethod === 'debit_card',
-        cardBrand: host.cardBrand || 'Visa',
-        expiryMonth: host.cardExpiryMonth,
-        expiryYear: host.cardExpiryYear
+        cardBrand: host.debitCardBrand || 'Visa',
+        expiryMonth: host.debitCardExpMonth,
+        expiryYear: host.debitCardExpYear
       })
     }
     
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
           id: 'stripe_connect',
           type: 'stripe' as const,
           name: 'Stripe Connected Account',
-          last4: host.stripeAccountLast4 || '****',
+          last4: (host as any).stripeAccountLast4 || '****',
           isDefault: host.defaultPayoutMethod === 'stripe',
           status: host.stripeAccountStatus || 'active'
         })
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
     // Get payout schedule preferences
     const payoutSchedule = {
       frequency: host.payoutFrequency || 'standard', // standard, instant, weekly
-      minimumAmount: host.customMinimumPayout || PAYOUT_CONFIG.MINIMUM_PAYOUT_AMOUNT,
+      minimumAmount: host.minimumPayoutAmount || PAYOUT_CONFIG.MINIMUM_PAYOUT_AMOUNT,
       instantPayoutEnabled: host.instantPayoutEnabled || false,
       instantPayoutFee: PAYOUT_CONFIG.INSTANT_PAYOUT_FEE
     }
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
       updateData.bankAccountName = details.accountHolderName || host.name
       updateData.bankName = details.bankName
       updateData.bankAccountType = details.accountType || 'checking'
-      updateData.bankRoutingNumber = details.routingNumber // Should be encrypted in production
+      updateData.bankAccountToken = details.routingNumber // Should be encrypted in production
       
       if (setAsDefault) {
         updateData.defaultPayoutMethod = 'bank_account'
@@ -183,9 +183,9 @@ export async function POST(request: NextRequest) {
       // Validate card is debit (in production, use payment processor API)
       // For now, basic validation
       if (details.cardNumber.startsWith('4')) {
-        updateData.cardBrand = 'Visa'
+        updateData.debitCardBrand = 'Visa'
       } else if (details.cardNumber.startsWith('5')) {
-        updateData.cardBrand = 'Mastercard'
+        updateData.debitCardBrand = 'Mastercard'
       } else {
         return NextResponse.json(
           { error: 'Only Visa and Mastercard debit cards are supported' },
@@ -194,8 +194,8 @@ export async function POST(request: NextRequest) {
       }
       
       updateData.debitCardLast4 = details.cardNumber.slice(-4)
-      updateData.cardExpiryMonth = details.expiryMonth
-      updateData.cardExpiryYear = details.expiryYear
+      updateData.debitCardExpMonth = details.expiryMonth
+      updateData.debitCardExpYear = details.expiryYear
       // In production, tokenize card with Stripe instead of storing
       
       if (setAsDefault) {
@@ -222,6 +222,7 @@ export async function POST(request: NextRequest) {
     // Log activity
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         userId: host.userId,
         action: 'payout_method_added',
         entityType: 'payout_method',
@@ -294,7 +295,7 @@ export async function PUT(request: NextRequest) {
             { status: 400 }
           )
         }
-        updateData.customMinimumPayout = payoutSchedule.minimumAmount
+        updateData.minimumPayoutAmount = payoutSchedule.minimumAmount
       }
       if (payoutSchedule.instantPayoutEnabled !== undefined) {
         // Can only enable instant payouts if they have a debit card
@@ -358,7 +359,7 @@ export async function DELETE(request: NextRequest) {
       updateData.bankAccountName = null
       updateData.bankName = null
       updateData.bankAccountType = null
-      updateData.bankRoutingNumber = null
+      updateData.bankAccountToken = null
       
       // If this was default, clear it
       if (host.defaultPayoutMethod === 'bank_account') {
@@ -367,9 +368,9 @@ export async function DELETE(request: NextRequest) {
       
     } else if (methodId === 'card_primary') {
       updateData.debitCardLast4 = null
-      updateData.cardBrand = null
-      updateData.cardExpiryMonth = null
-      updateData.cardExpiryYear = null
+      updateData.debitCardBrand = null
+      updateData.debitCardExpMonth = null
+      updateData.debitCardExpYear = null
       
       // If this was default, clear it
       if (host.defaultPayoutMethod === 'debit_card') {
@@ -408,6 +409,7 @@ export async function DELETE(request: NextRequest) {
     // Log activity
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         userId: host.userId,
         action: 'payout_method_removed',
         entityType: 'payout_method',

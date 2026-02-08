@@ -246,7 +246,7 @@ async function fetchInsurancePricingRules(): Promise<InsurancePricingRules | nul
       where: { isPrimary: true, isActive: true },
       select: { pricingRules: true },
     })
-    return (provider?.pricingRules as InsurancePricingRules) ?? null
+    return (provider?.pricingRules as unknown as InsurancePricingRules) ?? null
   } catch (error) {
     console.error('[ai-booking-stream] Failed to fetch insurance pricing:', error)
     return null

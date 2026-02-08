@@ -105,6 +105,8 @@ export async function POST(request: NextRequest) {
     // Create the reply message
     const replyMessage = await prisma.rentalMessage.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         bookingId: targetBookingId,
         senderId: userId,
         senderType: 'guest',
@@ -115,7 +117,7 @@ export async function POST(request: NextRequest) {
         isRead: false,
         readByAdmin: false,
         replyToId: messageId || null
-      }
+      } as any
     })
 
     // Mark original message as read (if replying to a specific message)

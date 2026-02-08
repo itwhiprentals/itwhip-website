@@ -167,7 +167,7 @@ class BookingSessionTracker {
 
   private addEventListener(element: Element | Window | Document, event: string, handler: EventListener, useCapture = false): void {
     element.addEventListener(event, handler, useCapture)
-    this.eventListeners.push({ element, event, handler })
+    this.eventListeners.push({ element: element as any, event, handler })
   }
 
   private throttle(func: Function, wait: number): EventListener {

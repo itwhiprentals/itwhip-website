@@ -2,10 +2,11 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
-import { 
+import { VerificationStatus } from '@prisma/client'
+import {
  sendVerificationApprovedEmail,
  sendVerificationRejectedEmail,
- sendHostNotification 
+ sendHostNotification
 } from '@/app/lib/email'
 
 // ========== 🆕 ACTIVITY TRACKING IMPORT ==========
@@ -14,21 +15,21 @@ import { trackActivity } from '@/lib/helpers/guestProfileStatus'
 export async function POST(request: NextRequest) {
  try {
    const body = await request.json()
-   const { 
-     bookingId, 
-     approved, 
-     reviewNotes, 
-     adminId 
+   const {
+     bookingId,
+     approved,
+     reviewNotes,
+     adminId
    } = body
-   
+
    if (!adminId) {
      return NextResponse.json(
        { error: 'Admin authorization required' },
        { status: 403 }
      )
    }
-   
-   const booking = await prisma.rentalBooking.findUnique({
+
+   const booking: any = await prisma.rentalBooking.findUnique({
      where: { id: bookingId },
      include: {
        car: {
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
            photos: true
          }
        },
-       guestAccessTokens: {
+       GuestAccessToken: {
          take: 1,
          orderBy: {
            createdAt: 'desc'
@@ -45,75 +46,62 @@ export async function POST(request: NextRequest) {
        }
      }
    })
-   
+
    if (!booking) {
      return NextResponse.json(
        { error: 'Booking not found' },
        { status: 404 }
      )
    }
-   
+
    const updatedBooking = await prisma.rentalBooking.update({
      where: { id: bookingId },
      data: {
-       verificationStatus: approved ? 'approved' : 'rejected',
+       verificationStatus: approved ? 'APPROVED' : 'REJECTED',
        verificationNotes: reviewNotes,
        reviewedBy: adminId,
        reviewedAt: new Date(),
        status: approved ? 'CONFIRMED' : 'CANCELLED',
        licenseVerified: approved,
        selfieVerified: approved,
-       paymentStatus: approved ? 'completed' : 'cancelled'
+       paymentStatus: approved ? 'PAID' : 'FAILED'
      }
    })
-   
+
    const guestEmail = booking.guestEmail
-   
+
    if (guestEmail) {
      if (approved) {
        // Get or use existing access token for tracking URL
-       const accessToken = booking.guestAccessTokens?.[0]?.token || booking.id
-       
+       const accessToken = booking.GuestAccessToken?.[0]?.token || booking.id
+
        // Send approval email with car image
        await sendVerificationApprovedEmail(guestEmail, {
          guestName: booking.guestName || 'Guest',
-         guestEmail: guestEmail,
          bookingCode: booking.bookingCode,
          carMake: booking.car.make,
          carModel: booking.car.model,
-         carImage: booking.car.photos[0]?.url || 'https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_800/v1756178756/IMG_0324_kgt9ne.jpg',
          startDate: booking.startDate.toLocaleDateString(),
-         endDate: booking.endDate.toLocaleDateString(),
          pickupLocation: booking.pickupLocation || 'North Scottsdale',
-         pickupTime: booking.startTime || '10:00 AM',
-         hostName: booking.car.host.name,
-         hostPhone: booking.car.host.phone || '',
-         totalAmount: booking.totalAmount.toFixed(2),
-         dashboardUrl: `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/rentals/track/${accessToken}`
-       })
-       
+       } as any)
+
        // Notify host
-       await sendHostNotification({
-         hostEmail: booking.car.host.email,
+       await (sendHostNotification as any)(booking.car.host.email, {
          hostName: booking.car.host.name,
-         bookingId: booking.bookingCode,
+         bookingCode: booking.bookingCode,
          guestName: booking.guestName || 'Guest',
          carMake: booking.car.make,
          carModel: booking.car.model,
          startDate: booking.startDate.toLocaleDateString(),
          endDate: booking.endDate.toLocaleDateString(),
-         totalEarnings: (booking.totalAmount * 0.8).toFixed(2)
+         totalAmount: booking.totalAmount * 0.8
        })
      } else {
        await sendVerificationRejectedEmail(guestEmail, {
          guestName: booking.guestName || 'Guest',
          bookingCode: booking.bookingCode,
-         carMake: booking.car.make,
-         carModel: booking.car.model,
          reason: reviewNotes || 'Verification requirements not met',
-         canRebook: true,
-         supportEmail: 'info@itwhip.com'
-       })
+       } as any)
      }
    }
 
@@ -121,7 +109,7 @@ export async function POST(request: NextRequest) {
    try {
      // Find guest's ReviewerProfile
      let guestProfileId = booking.reviewerProfileId
-     
+
      if (!guestProfileId && booking.guestEmail) {
        const reviewerProfile = await prisma.reviewerProfile.findFirst({
          where: { email: booking.guestEmail },
@@ -144,25 +132,25 @@ export async function POST(request: NextRequest) {
              carId: booking.carId,
              hostName: booking.car.host.name,
              hostId: booking.car.host.id,
-             
+
              // Verification details
              verificationStatus: 'approved',
              reviewedBy: adminId,
              reviewedAt: new Date().toISOString(),
              reviewNotes: reviewNotes || null,
-             
+
              // Booking details
              startDate: booking.startDate.toISOString(),
              endDate: booking.endDate.toISOString(),
              pickupLocation: booking.pickupLocation,
              totalAmount: booking.totalAmount,
-             
+
              // Status changes
              previousStatus: booking.status,
              newStatus: 'CONFIRMED',
              licenseVerified: true,
              selfieVerified: true,
-             
+
              // Next steps
              canStartTrip: true,
              dashboardAccess: true
@@ -184,17 +172,17 @@ export async function POST(request: NextRequest) {
              bookingId: booking.id,
              bookingCode: booking.bookingCode,
              carName: `${booking.car.year} ${booking.car.make} ${booking.car.model}`,
-             
+
              // Rejection details
              verificationStatus: 'rejected',
              rejectionReason: reviewNotes || 'Verification requirements not met',
              reviewedBy: adminId,
              reviewedAt: new Date().toISOString(),
-             
+
              // Status changes
              previousStatus: booking.status,
              newStatus: 'CANCELLED',
-             
+
              // Next steps
              canRebook: true,
              requiresNewDocuments: true
@@ -215,7 +203,7 @@ export async function POST(request: NextRequest) {
      // Continue without breaking - tracking is non-critical
    }
    // ========== END ACTIVITY TRACKING ==========
-   
+
    return NextResponse.json({
      success: true,
      message: approved ? 'Booking approved' : 'Booking rejected',
@@ -225,7 +213,7 @@ export async function POST(request: NextRequest) {
        verificationStatus: updatedBooking.verificationStatus
      }
    })
-   
+
  } catch (error) {
    console.error('Approval error:', error)
    return NextResponse.json(
@@ -238,9 +226,9 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
  try {
    const searchParams = request.nextUrl.searchParams
-   const status = searchParams.get('status') || 'submitted'
-   
-   const bookings = await prisma.rentalBooking.findMany({
+   const status = (searchParams.get('status') || 'SUBMITTED') as VerificationStatus
+
+   const bookings: any[] = await prisma.rentalBooking.findMany({
      where: {
        verificationStatus: status,
        car: {
@@ -261,7 +249,7 @@ export async function GET(request: NextRequest) {
        documentsSubmittedAt: 'asc'
      }
    })
-   
+
    return NextResponse.json({
      success: true,
      bookings: bookings.map(booking => ({
@@ -285,7 +273,7 @@ export async function GET(request: NextRequest) {
      })),
      total: bookings.length
    })
-   
+
  } catch (error) {
    console.error('Fetch pending verifications error:', error)
    return NextResponse.json(

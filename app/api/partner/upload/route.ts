@@ -181,6 +181,7 @@ export async function POST(request: NextRequest) {
 
         const photo = await prisma.rentalCarPhoto.create({
           data: {
+            id: crypto.randomUUID(),
             carId: carId,
             url: uploadResult.secure_url,
             isHero: currentPhotoCount === 0 && i === 0,

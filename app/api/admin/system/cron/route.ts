@@ -7,7 +7,7 @@ import { headers } from 'next/headers'
 export async function GET(request: NextRequest) {
   try {
     // Verify cron secret
-    const headersList = headers()
+    const headersList = await headers()
     const authHeader = headersList.get('authorization')
     const cronSecret = process.env.CRON_SECRET || 'itwhip-cron-secret-2024'
     
@@ -176,6 +176,7 @@ export async function GET(request: NextRequest) {
       // Log successful cron run
       await prisma.auditLog.create({
         data: {
+          id: crypto.randomUUID(),
           category: 'SECURITY',
           eventType: 'cron_run',
           severity: 'INFO',

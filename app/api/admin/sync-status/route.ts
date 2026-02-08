@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       }),
       prisma.rentalBooking.count({
         where: {
-          payouts: {
+          RentalPayout: {
             some: {}
           }
         }
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       
       // Users
       prisma.user.count(),
-      prisma.user.count({ where: { role: 'GUEST' } }),
+      prisma.user.count({ where: { role: 'ANONYMOUS' as any } }),
       
       // Booking financial stats
       prisma.rentalBooking.aggregate({

@@ -58,7 +58,7 @@ export async function GET(
               }
             },
             // ✅ NEW: Include detailed inspection photos
-            inspectionPhotos: {
+            InspectionPhoto: {
               orderBy: { uploadedAt: 'asc' }
             },
             // ✅ NEW: Include guest review
@@ -77,9 +77,9 @@ export async function GET(
             }
           }
         },
-        policy: {
+        InsurancePolicy: {
           include: {
-            provider: {
+            InsuranceProvider: {
               select: {
                 id: true,
                 name: true,
@@ -101,7 +101,8 @@ export async function GET(
             commercialInsuranceActive: true,
           }
         },
-        messages: {
+        ClaimDamagePhoto: true,
+        ClaimMessage: {
           orderBy: { createdAt: 'desc' },
           take: 20,
         }
@@ -188,7 +189,7 @@ export async function GET(
         preTripCount: preTripPhotos.length,
         postTripCount: postTripPhotos.length,
         // Detailed inspection photo records
-        detailed: claim.booking.inspectionPhotos.map((photo: any) => ({
+        detailed: claim.booking.InspectionPhoto.map((photo: any) => ({
           id: photo.id,
           type: photo.type,
           category: photo.category,
@@ -216,7 +217,7 @@ export async function GET(
       damage: {
         reported: claim.booking.damageReported,
         description: claim.booking.damageDescription || null,
-        photos: claim.damagePhotos || []
+        photos: claim.ClaimDamagePhoto || []
       }
     }
 
@@ -255,13 +256,13 @@ export async function GET(
     }
 
     // Platform insurance (always included as backup)
-    if (claim.policy) {
+    if (claim.InsurancePolicy) {
       insuranceHierarchy.push({
         level: insuranceHierarchy.length === 0 ? 'PRIMARY' : 'TERTIARY',
         type: 'Platform',
-        provider: claim.policy.provider.name,
-        deductible: claim.policy.deductible,
-        coverage: `${claim.policy.tier} - Liability: $${claim.policy.liabilityCoverage.toLocaleString()}, Collision: $${claim.policy.collisionCoverage.toLocaleString()}`,
+        provider: claim.InsurancePolicy.InsuranceProvider.name,
+        deductible: claim.InsurancePolicy.deductible,
+        coverage: `${claim.InsurancePolicy.tier} - Liability: $${claim.InsurancePolicy.liabilityCoverage.toLocaleString()}, Collision: $${claim.InsurancePolicy.collisionCoverage.toLocaleString()}`,
       });
     }
 

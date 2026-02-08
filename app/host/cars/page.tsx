@@ -433,7 +433,7 @@ export default function HostCarsPage() {
           {/* Pending/Restriction Banner - Hidden for Fleet Managers */}
           {!isFleetManager && !isApproved && hostStatus && (
             <PendingBanner
-              approvalStatus={hostStatus.approvalStatus}
+              approvalStatus={hostStatus.approvalStatus as any}
               page="cars"
               pendingActions={hostStatus.pendingActions}
               restrictionReasons={hostStatus.restrictionReasons}
@@ -694,7 +694,7 @@ export default function HostCarsPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
-                              router.push(`/host/claims/${car.activeClaim.id}`)
+                              router.push(`/host/claims/${car.activeClaim!.id}`)
                             }}
                             className="text-xs text-red-700 dark:text-red-300 underline hover:no-underline mt-1 inline-block"
                           >

@@ -425,10 +425,10 @@ export function toNumber(value: unknown, fallback: number = 0): number {
     return fallback
   }
 
-  // Handle Prisma Decimal objects
-  if (typeof value === 'object' && 'toNumber' in (value as object)) {
+  // Handle Prisma Decimal objects (or any object with numeric conversion)
+  if (typeof value === 'object' && value !== null) {
     try {
-      return (value as { toNumber: () => number }).toNumber()
+      return Number(value) || fallback
     } catch {
       return fallback
     }

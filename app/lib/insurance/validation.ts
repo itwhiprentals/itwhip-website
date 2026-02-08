@@ -34,7 +34,7 @@ export async function checkActiveBookings(hostId: string): Promise<ActiveBooking
     where: {
       hostId,
       status: {
-        in: ['PENDING', 'CONFIRMED', 'ACTIVE', 'IN_PROGRESS']
+        in: ['PENDING', 'CONFIRMED', 'ACTIVE', 'IN_PROGRESS'] as any
       },
       OR: [
         // Current bookings (happening now)

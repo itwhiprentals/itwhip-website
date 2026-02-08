@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
               // Create new payment method record
               await prisma.paymentMethod.create({
                 data: {
+                  id: crypto.randomUUID(),
                   hostId: host.id,
                   type: 'bank_account',
                   stripeMethodId: method.id,
@@ -71,7 +72,8 @@ export async function GET(request: NextRequest) {
                   accountType: method.account_holder_type || 'individual',
                   status: method.status || 'active',
                   isDefault: !defaultMethodId, // First one becomes default
-                  isVerified: method.status === 'verified'
+                  isVerified: method.status === 'verified',
+                  updatedAt: new Date()
                 }
               })
 
@@ -97,6 +99,7 @@ export async function GET(request: NextRequest) {
             if (!existing) {
               await prisma.paymentMethod.create({
                 data: {
+                  id: crypto.randomUUID(),
                   hostId: host.id,
                   type: 'debit_card',
                   stripeMethodId: method.id,
@@ -106,7 +109,8 @@ export async function GET(request: NextRequest) {
                   expiryYear: method.exp_year,
                   status: 'active',
                   isDefault: !defaultMethodId,
-                  isVerified: true
+                  isVerified: true,
+                  updatedAt: new Date()
                 }
               })
 
@@ -146,6 +150,7 @@ export async function GET(request: NextRequest) {
           if (!existing) {
             await prisma.paymentMethod.create({
               data: {
+                id: crypto.randomUUID(),
                 hostId: host.id,
                 type: 'card',
                 stripeMethodId: method.id,
@@ -155,7 +160,8 @@ export async function GET(request: NextRequest) {
                 expiryYear: method.card!.exp_year,
                 status: 'active',
                 isDefault: !defaultMethodId,
-                isVerified: true
+                isVerified: true,
+                updatedAt: new Date()
               }
             })
 

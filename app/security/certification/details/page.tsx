@@ -102,7 +102,7 @@ export default function TUDetailsPage() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
   
-  const scrollToSection = (ref: React.RefObject<HTMLDivElement>, section: string) => {
+  const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>, section: string) => {
     setActiveSection(section)
     if (ref.current) {
       const yOffset = -100

@@ -120,7 +120,7 @@ interface Notification {
   isRead: boolean
   actionRequired: boolean
   actionUrl?: string
-  createdAt: Date
+  createdAt: Date | string
   metadata?: any
 }
 
@@ -710,7 +710,7 @@ function HostDashboardContent() {
                   claimNotifications.find(n => n.type === 'CLAIM_FILED')
 
                 if (priority) {
-                  return <ClaimBanner notification={priority} onDismiss={markNotificationAsRead} />
+                  return <ClaimBanner notification={priority as any} onDismiss={markNotificationAsRead} />
                 }
 
                 // Show generic pending claims banner if no unread notification
@@ -741,7 +741,7 @@ function HostDashboardContent() {
               if (!isApproved) {
                 return (
                   <PendingBanner
-                    approvalStatus={hostData?.approvalStatus || 'PENDING'}
+                    approvalStatus={(hostData?.approvalStatus || 'PENDING') as any}
                     page="dashboard"
                     pendingActions={hostData?.pendingActions}
                     restrictionReasons={hostData?.restrictionReasons}
@@ -893,7 +893,7 @@ function HostDashboardContent() {
             {/* ESG DASHBOARD CARD - Only for hosts who own their cars (not Fleet Managers) */}
             {isApproved && hostData && hostData.managesOwnCars !== false && (
               <div className="mb-8">
-                <ESGDashboardCard hostId={hostData.id} />
+                <ESGDashboardCard {...{ hostId: hostData.id } as any} />
               </div>
             )}
 

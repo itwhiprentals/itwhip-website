@@ -34,7 +34,7 @@ export async function POST(
        car: true,
        host: true
      }
-   })
+   }) as any
 
    if (!booking) {
      return NextResponse.json(
@@ -118,7 +118,7 @@ export async function POST(
      }))
 
      await tx.inspectionPhoto.createMany({
-       data: photoRecords
+       data: photoRecords as any
      })
 
      // Create a message for trip start
@@ -132,11 +132,11 @@ export async function POST(
          category: 'general',
          isRead: false,
          readByAdmin: false
-       }
+       } as any
      })
 
      // Create activity log
-     await tx.activityLog.create({
+     await (tx.activityLog.create as any)({
        data: {
          action: 'TRIP_STARTED',
          entityType: 'RentalBooking',

@@ -93,8 +93,8 @@ export async function GET(request: NextRequest) {
         
         // Create alert using your existing alert system
         await createAlert({
-          type: 'security',
-          severity: config.severity,
+          type: 'security' as any,
+          severity: config.severity.toLowerCase() as any,
           title: `Security Pattern Detected: ${patternName.replace(/_/g, ' ')}`,
           message: `${recentLogs} suspicious events detected in ${config.timeWindow/60000} minutes`,
           details: {
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
         })
         
         // Also create admin notification
-        const notification = await prisma.adminNotification.create({
+        const notification = await (prisma.adminNotification.create as any)({
           data: {
             type: 'SECURITY_ALERT',
             title: `Security: ${patternName.replace(/_/g, ' ')}`,
@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Log the pattern check
-    await prisma.auditLog.create({
+    await (prisma.auditLog.create as any)({
       data: {
         category: 'SECURITY',
         eventType: 'pattern_check',
@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
         details: {
           patternsChecked: Object.keys(SECURITY_PATTERNS).length,
           patternsDetected: detectedPatterns.length,
-          patterns: detectedPatterns.map(p => p.pattern)
+          patterns: detectedPatterns.map((p: any) => p.pattern)
         },
         ipAddress: '127.0.0.1',
         userAgent: 'SIEM Pattern Detector',

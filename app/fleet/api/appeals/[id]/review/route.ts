@@ -164,6 +164,7 @@ export async function POST(
         // 5. Create GuestModeration entry for audit trail
         await tx.guestModeration.create({
           data: {
+            id: crypto.randomUUID(),
             guestId: appeal.guestId,
             actionType: 'UNSUSPEND',
             suspensionLevel: null,
@@ -178,6 +179,7 @@ export async function POST(
         // 6. CREATE APPEAL NOTIFICATION FOR GUEST
         await tx.appealNotification.create({
           data: {
+            id: crypto.randomUUID(),
             guestId: appeal.guestId,
             appealId: appeal.id,
             type: 'APPROVED',
@@ -219,6 +221,7 @@ export async function POST(
         // 2. CREATE APPEAL NOTIFICATION FOR GUEST (DENIED)
         await tx.appealNotification.create({
           data: {
+            id: crypto.randomUUID(),
             guestId: appeal.guestId,
             appealId: appeal.id,
             type: 'DENIED',

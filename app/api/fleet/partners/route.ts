@@ -216,6 +216,10 @@ export async function POST(request: NextRequest) {
     // Create partner host
     const partner = await prisma.rentalHost.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
+        city: 'Phoenix',
+        state: 'AZ',
         userId: user.id,
         email: contactEmail.toLowerCase(),
         name: contactName || companyName,
@@ -227,7 +231,7 @@ export async function POST(request: NextRequest) {
         partnerFleetSize: fleetSize || 0,
         currentCommissionRate: commissionRate || 0.25,
         autoApproveListings: true
-      }
+      } as any
     })
 
     return NextResponse.json({

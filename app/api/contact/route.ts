@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
         subject: subject.trim(),
         message: message.trim(),
         status: 'UNREAD'
-      }
+      } as any
     })
 
     // Prepare email to admin
@@ -255,7 +255,7 @@ ID: ${contactMessage.id}
         }
       } catch (error) {
         console.error('Failed to send admin notification:', error)
-        emailError = error.message
+        emailError = (error as any).message
       }
     }
 

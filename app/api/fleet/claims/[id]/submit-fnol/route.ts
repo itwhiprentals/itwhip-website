@@ -55,7 +55,7 @@ export async function POST(
       include: {
         booking: {
           include: {
-            guest: true,
+            renter: true,
             car: {
               include: {
                 host: true
@@ -63,13 +63,13 @@ export async function POST(
             }
           }
         },
-        policy: {
+        InsurancePolicy: {
           include: {
-            provider: true
+            InsuranceProvider: true
           }
         }
       }
-    })
+    }) as any
 
     if (!claim) {
       return NextResponse.json(
@@ -114,7 +114,7 @@ export async function POST(
     }
 
     // Get insurance provider
-    const provider = claim.policy?.provider
+    const provider = claim.InsurancePolicy?.InsuranceProvider
     if (!provider) {
       return NextResponse.json(
         { 
@@ -199,15 +199,15 @@ export async function POST(
         make: claim.booking.car.make,
         model: claim.booking.car.model,
         year: claim.booking.car.year,
-        licensePlate: claim.booking.car.licensePlate,
-        vin: claim.booking.car.vin
+        licensePlate: claim.booking.car.licensePlate || '',
+        vin: claim.booking.car.vin || ''
       },
       
       // Guest information
       guest: {
-        name: claim.booking.guest?.name || claim.booking.guestName,
-        email: claim.booking.guest?.email || claim.booking.guestEmail,
-        phone: claim.booking.guestPhone
+        name: claim.booking.renter?.name || claim.booking.guestName || '',
+        email: claim.booking.renter?.email || claim.booking.guestEmail || '',
+        phone: claim.booking.guestPhone || ''
       },
       
       // Host information
@@ -219,14 +219,14 @@ export async function POST(
       
       // Policy information
       policy: {
-        policyNumber: claim.policy?.policyNumber,
-        tier: claim.policy?.tier,
-        effectiveDate: claim.policy?.effectiveDate,
-        expirationDate: claim.policy?.expirationDate
+        policyNumber: claim.InsurancePolicy?.policyNumber,
+        tier: claim.InsurancePolicy?.tier,
+        effectiveDate: claim.InsurancePolicy?.effectiveDate,
+        expirationDate: claim.InsurancePolicy?.expiryDate
       },
       
       // Evidence
-      damagePhotos: claim.damagePhotos || [],
+      damagePhotos: claim.damagePhotosLegacy || [],
       
       // Metadata
       platformClaimId: claim.id,
@@ -362,9 +362,9 @@ export async function GET(
         insurerPaidAt: true,
         insurerPaidAmount: true,
         insurerDenialReason: true,
-        policy: {
+        InsurancePolicy: {
           select: {
-            provider: {
+            InsuranceProvider: {
               select: {
                 id: true,
                 name: true,
@@ -374,7 +374,7 @@ export async function GET(
           }
         }
       }
-    })
+    }) as any
 
     if (!claim) {
       return NextResponse.json(
@@ -400,7 +400,7 @@ export async function GET(
           insurerPaidAmount: claim.insurerPaidAmount,
           insurerDenialReason: claim.insurerDenialReason
         },
-        provider: claim.policy?.provider || null
+        provider: claim.InsurancePolicy?.InsuranceProvider || null
       },
       { status: 200 }
     )

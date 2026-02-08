@@ -40,7 +40,7 @@ async function verifyHostToken(request: NextRequest) {
     const decoded = verify(token, JWT_SECRET) as any
 
     // Verify host exists and is active
-    const host = await prisma.rentalHost.findUnique({
+    const host = await (prisma.rentalHost.findUnique as any)({
       where: { id: decoded.hostId },
       select: {
         id: true,
@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
 
       // Create admin notification only when all pages are uploaded
       if (allPagesUploaded) {
-        await prisma.adminNotification.create({
+        await (prisma.adminNotification.create as any)({
           data: {
             type: 'DOCUMENT_RESUBMITTED',
             title: 'Host Photo ID Complete',
@@ -234,7 +234,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Log activity
-      await prisma.activityLog.create({
+      await (prisma.activityLog.create as any)({
         data: {
           entityType: 'HOST',
           entityId: host.id,
@@ -348,7 +348,7 @@ export async function POST(request: NextRequest) {
       })
 
       // Create or update document status record
-      await tx.hostDocumentStatus.upsert({
+      await (tx.hostDocumentStatus.upsert as any)({
         where: {
           hostId_documentType: {
             hostId: host.id,
@@ -376,7 +376,7 @@ export async function POST(request: NextRequest) {
       })
 
       // Create notification record
-      await tx.hostNotification.create({
+      await (tx.hostNotification.create as any)({
         data: {
           hostId: host.id,
           type: 'DOCUMENT_UPLOADED',
@@ -392,7 +392,7 @@ export async function POST(request: NextRequest) {
       })
 
       // Create admin notification
-      await tx.adminNotification.create({
+      await (tx.adminNotification.create as any)({
         data: {
           type: 'DOCUMENT_RESUBMITTED',
           title: 'Host Document Resubmitted',
@@ -409,7 +409,7 @@ export async function POST(request: NextRequest) {
       })
 
       // Log activity
-      await tx.activityLog.create({
+      await (tx.activityLog.create as any)({
         data: {
           entityType: 'HOST',
           entityId: host.id,
@@ -540,7 +540,7 @@ export async function GET(request: NextRequest) {
 
     // Check if any documents need attention
     const needsAction = documentRecords.some(
-      record => record.reviewStatus === 'NEEDS_RESUBMISSION' || record.isExpired
+      record => (record.reviewStatus as string) === 'NEEDS_RESUBMISSION' || record.isExpired
     )
 
     return NextResponse.json({
@@ -620,7 +620,7 @@ export async function PUT(request: NextRequest) {
       })
 
       // Create admin notification for review
-      await prisma.adminNotification.create({
+      await (prisma.adminNotification.create as any)({
         data: {
           type: 'DOCUMENT_SUBMITTED',
           title: 'Photo ID Submitted for Review',
@@ -640,7 +640,7 @@ export async function PUT(request: NextRequest) {
       })
 
       // Log activity
-      await prisma.activityLog.create({
+      await (prisma.activityLog.create as any)({
         data: {
           entityType: 'HOST',
           entityId: host.id,
@@ -702,7 +702,7 @@ export async function PUT(request: NextRequest) {
       })
 
       // Log activity
-      await prisma.activityLog.create({
+      await (prisma.activityLog.create as any)({
         data: {
           entityType: 'HOST',
           entityId: host.id,

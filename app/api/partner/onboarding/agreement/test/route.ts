@@ -122,7 +122,7 @@ export async function POST() {
     const car = host.cars[0]
     const vehicleName = car
       ? `${car.year} ${car.make} ${car.model}`
-      : request.vehicleInfo || 'Your Vehicle'
+      : (request as any).vehicleInfo || 'Your Vehicle'
 
     // Send test email to host
     let emailSent = false

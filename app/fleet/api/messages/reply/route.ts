@@ -98,6 +98,8 @@ export async function POST(request: NextRequest) {
       // Create reply in RentalMessage thread
       const replyMessage = await prisma.rentalMessage.create({
         data: {
+          id: crypto.randomUUID(),
+          updatedAt: new Date(),
           bookingId: rentalMessage.bookingId,
           senderId: 'fleet-admin',
           senderType: senderTypeForDb,
@@ -109,7 +111,7 @@ export async function POST(request: NextRequest) {
           readByAdmin: true,
           replyToId: messageId,
           metadata: attachments.length > 0 ? { attachments } : undefined
-        }
+        } as any
       })
 
       // Mark original as read

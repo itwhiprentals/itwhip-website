@@ -159,17 +159,17 @@ export async function POST(request: NextRequest) {
 
         const { accessToken, refreshToken } = await generateTokens({
           id: existingUser.id,
-          email: existingUser.email,
+          email: existingUser.email || '',
           name: existingUser.name || name || '',
           role: existingUser.role,
         })
 
         await db.updateLastLogin(existingUser.id)
-        await logSuccessfulLogin({ userId: existingUser.id, email: existingUser.email, source: 'guest', ip: clientIp, userAgent })
+        await logSuccessfulLogin({ userId: existingUser.id, email: existingUser.email || '', source: 'guest', ip: clientIp, userAgent })
 
         return NextResponse.json({
           success: true,
-          user: { id: existingUser.id, email: existingUser.email, name: existingUser.name || name || '', role: existingUser.role },
+          user: { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role },
           accessToken,
           refreshToken,
           expiresIn: 15 * 60,
@@ -258,18 +258,18 @@ export async function POST(request: NextRequest) {
 
       const { accessToken, refreshToken } = await generateTokens({
         id: newUser.id,
-        email: newUser.email,
+        email: newUser.email || '',
         name: newUser.name || '',
         role: newUser.role,
       })
 
-      await logSuccessfulLogin({ userId: newUser.id, email: newUser.email, source: 'guest', ip: clientIp, userAgent })
+      await logSuccessfulLogin({ userId: newUser.id, email: newUser.email || '', source: 'guest', ip: clientIp, userAgent })
 
       console.log(`✅ Mobile Google signup (guest): ${newUser.email}`)
 
       return NextResponse.json({
         success: true,
-        user: { id: newUser.id, email: newUser.email, name: newUser.name || '', role: newUser.role },
+        user: { id: newUser.id, email: newUser.email || '', name: newUser.name || '', role: newUser.role },
         accessToken,
         refreshToken,
         expiresIn: 15 * 60,
@@ -302,16 +302,16 @@ export async function POST(request: NextRequest) {
         if (host) {
           // Existing host — generate host tokens with hostId + JWT_SECRET
           const { accessToken, refreshToken } = await generateHostTokens(
-            { id: existingUser.id, email: existingUser.email, name: existingUser.name || name || '', role: existingUser.role },
+            { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role },
             { id: host.id, approvalStatus: host.approvalStatus, hostType: host.hostType }
           )
 
           await db.updateLastLogin(existingUser.id)
-          await logSuccessfulLogin({ userId: existingUser.id, email: existingUser.email, source: 'host', ip: clientIp, userAgent })
+          await logSuccessfulLogin({ userId: existingUser.id, email: existingUser.email || '', source: 'host', ip: clientIp, userAgent })
 
           return NextResponse.json({
             success: true,
-            user: { id: existingUser.id, email: existingUser.email, name: existingUser.name || name || '', role: existingUser.role },
+            user: { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role },
             host: {
               id: host.id,
               approvalStatus: host.approvalStatus,
@@ -334,7 +334,7 @@ export async function POST(request: NextRequest) {
             userId: existingUser.id,
             email: email.toLowerCase(),
             name: name || '',
-            phone: existingUser.phone || '',
+            phone: existingUser.phone ?? '',
             city: 'Phoenix',
             state: 'AZ',
             approvalStatus: 'PENDING',
@@ -347,15 +347,15 @@ export async function POST(request: NextRequest) {
         })
 
         const { accessToken, refreshToken } = await generateHostTokens(
-          { id: existingUser.id, email: existingUser.email, name: existingUser.name || name || '', role: existingUser.role },
+          { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role },
           { id: newHost.id, approvalStatus: 'PENDING', hostType: 'REAL' }
         )
 
-        await logSuccessfulLogin({ userId: existingUser.id, email: existingUser.email, source: 'host', ip: clientIp, userAgent })
+        await logSuccessfulLogin({ userId: existingUser.id, email: existingUser.email || '', source: 'host', ip: clientIp, userAgent })
 
         return NextResponse.json({
           success: true,
-          user: { id: existingUser.id, email: existingUser.email, name: existingUser.name || name || '', role: existingUser.role },
+          user: { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role },
           host: {
             id: newHost.id,
             approvalStatus: 'PENDING',
@@ -434,17 +434,17 @@ export async function POST(request: NextRequest) {
       } catch { /* Non-fatal */ }
 
       const { accessToken, refreshToken } = await generateHostTokens(
-        { id: newUser.id, email: newUser.email, name: newUser.name || '', role: newUser.role },
+        { id: newUser.id, email: newUser.email || '', name: newUser.name || '', role: newUser.role },
         { id: newHost.id, approvalStatus: 'PENDING', hostType: 'REAL' }
       )
 
-      await logSuccessfulLogin({ userId: newUser.id, email: newUser.email, source: 'host', ip: clientIp, userAgent })
+      await logSuccessfulLogin({ userId: newUser.id, email: newUser.email || '', source: 'host', ip: clientIp, userAgent })
 
       console.log(`✅ Mobile Google signup (host): ${newUser.email}`)
 
       return NextResponse.json({
         success: true,
-        user: { id: newUser.id, email: newUser.email, name: newUser.name || '', role: newUser.role },
+        user: { id: newUser.id, email: newUser.email || '', name: newUser.name || '', role: newUser.role },
         host: {
           id: newHost.id,
           approvalStatus: 'PENDING',

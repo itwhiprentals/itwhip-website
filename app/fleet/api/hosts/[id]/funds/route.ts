@@ -5,7 +5,7 @@ import { prisma } from '@/app/lib/database/prisma'
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-11-20.acacia'
+  apiVersion: '2025-08-27.basil' as any
 })
 
 export async function POST(
@@ -101,7 +101,7 @@ export async function POST(
         updateData = {
           holdBalance: { increment: amount },
           holdReason: reason,
-          holdUntil: holdUntil ? new Date(holdUntil) : null
+          holdFundsUntil: holdUntil ? new Date(holdUntil) : null
         }
 
         message = `Held $${amount.toFixed(2)} from ${host.name}'s balance`
@@ -246,7 +246,7 @@ export async function POST(
               status: 'COMPLETED',
               stripeTransferId: transfer.id,
               processedAt: new Date()
-            }
+            } as any
           })
 
         } catch (stripeError: any) {
@@ -294,7 +294,7 @@ export async function POST(
         },
         hash: '', // Would generate hash for integrity
         timestamp: new Date()
-      }
+      } as any
     })
 
     return NextResponse.json({

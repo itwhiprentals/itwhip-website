@@ -1,6 +1,6 @@
 // app/utils/email-validator.ts
 
-interface EmailValidationResult {
+export interface EmailValidationResult {
     isValid: boolean
     riskLevel: 'low' | 'medium' | 'high' | 'critical'
     riskScore: number // 0-100

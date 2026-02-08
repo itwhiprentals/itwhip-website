@@ -1205,7 +1205,7 @@ export default function EditCarPage() {
                           {car.activeClaim.bookingCode}
                         </span>
                       </div>
-                      {car.activeClaimCount > 1 && (
+                      {(car.activeClaimCount ?? 0) > 1 && (
                         <div className="sm:col-span-2">
                           <span className="text-gray-600 dark:text-gray-400">Total Active Claims:</span>
                           <span className="ml-2 font-medium text-gray-900 dark:text-white">

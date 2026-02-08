@@ -1,5 +1,6 @@
 // app/api/admin/hosts/[id]/communications/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import crypto from 'crypto'
 import prisma from '@/app/lib/database/prisma'
 
 export async function GET(
@@ -41,7 +42,7 @@ export async function GET(
     }
 
     // Fetch all communications
-    const communications = []
+    const communications: any[] = []
 
     // 1. Host Notifications (system messages)
     if (!type || type === 'notification') {
@@ -56,13 +57,13 @@ export async function GET(
           id: notif.id,
           type: 'NOTIFICATION',
           direction: 'OUTBOUND',
-          subject: notif.title,
+          subject: notif.subject,
           message: notif.message,
           status: notif.status,
           priority: notif.priority,
           sentAt: notif.createdAt,
           readAt: notif.readAt,
-          requiresAction: notif.requiresAction,
+          requiresAction: notif.responseRequired,
           actionUrl: notif.actionUrl,
           actionLabel: notif.actionLabel,
           metadata: notif.metadata
@@ -85,7 +86,7 @@ export async function GET(
       })
 
       documentRequests.forEach(req => {
-        const details = req.details as any
+        const details = req.metadata as any
         communications.push({
           id: req.id,
           type: 'DOCUMENT_REQUEST',
@@ -123,7 +124,7 @@ export async function GET(
       })
 
       emailLogs.forEach(log => {
-        const details = log.details as any
+        const details = log.metadata as any
         communications.push({
           id: log.id,
           type: 'EMAIL',
@@ -153,7 +154,7 @@ export async function GET(
     })
 
     adminNotes.forEach(note => {
-      const details = note.details as any
+      const details = note.metadata as any
       communications.push({
         id: note.id,
         type: 'INTERNAL_NOTE',
@@ -274,36 +275,40 @@ export async function POST(
         // Create host notification
         result = await prisma.hostNotification.create({
           data: {
+            id: crypto.randomUUID(),
             hostId,
             type: 'ADMIN_MESSAGE',
-            title: subject,
+            category: 'admin',
+            subject,
             message,
             status: 'SENT',
             priority,
-            requiresAction,
+            responseRequired: requiresAction,
             actionUrl: actionUrl || null,
             actionLabel: actionLabel || null,
             metadata: {
               sentBy: adminId,
               sentByEmail: adminEmail,
               sentAt: new Date().toISOString()
-            }
+            } as any,
+            updatedAt: new Date()
           }
         })
 
         // Log activity
         await prisma.activityLog.create({
           data: {
+            id: crypto.randomUUID(),
             entityType: 'HOST',
             entityId: hostId,
             action: 'NOTIFICATION_SENT',
             userId: adminId,
-            details: {
+            metadata: {
               hostId,
               notificationId: result.id,
               subject,
               priority
-            },
+            } as any,
             ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
             userAgent: request.headers.get('user-agent') || 'unknown'
           }
@@ -314,20 +319,23 @@ export async function POST(
         // Create document request notification
         result = await prisma.hostNotification.create({
           data: {
+            id: crypto.randomUUID(),
             hostId,
             type: 'DOCUMENTS_REQUESTED',
-            title: subject,
+            category: 'documents',
+            subject,
             message,
             status: 'SENT',
             priority: 'HIGH',
-            requiresAction: true,
+            responseRequired: true,
             actionUrl: '/host/profile',
             actionLabel: 'Upload Documents',
             metadata: {
               sentBy: adminId,
               requestedDocuments: documents,
               sentAt: new Date().toISOString()
-            }
+            } as any,
+            updatedAt: new Date()
           }
         })
 
@@ -344,15 +352,16 @@ export async function POST(
         // Log activity
         await prisma.activityLog.create({
           data: {
+            id: crypto.randomUUID(),
             entityType: 'HOST',
             entityId: hostId,
             action: 'DOCUMENTS_REQUESTED',
             userId: adminId,
-            details: {
+            metadata: {
               hostId,
               documents,
               message
-            },
+            } as any,
             ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
             userAgent: request.headers.get('user-agent') || 'unknown'
           }
@@ -366,16 +375,17 @@ export async function POST(
         // Log email sending
         await prisma.activityLog.create({
           data: {
+            id: crypto.randomUUID(),
             entityType: 'HOST',
             entityId: hostId,
             action: 'EMAIL_SENT',
             userId: adminId,
-            details: {
+            metadata: {
               hostId,
               subject,
               preview: message.substring(0, 200),
               sentTo: host.email
-            },
+            } as any,
             ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
             userAgent: request.headers.get('user-agent') || 'unknown'
           }

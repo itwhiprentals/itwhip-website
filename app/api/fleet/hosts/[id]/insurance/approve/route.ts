@@ -228,10 +228,10 @@ export async function POST(
             category: 'documents',
             subject: `${insuranceType} Insurance Approved!`,
             message: notificationMessage,
-            status: 'SENT',
+            status: 'SENT' as any,
             priority: 'high',
             responseRequired: false
-          }
+          } as any
         })
         
         // Log activity
@@ -246,7 +246,7 @@ export async function POST(
               insuranceType,
               provider,
               policyNumber,
-              expirationDate,
+              expirationDate: expirationDate?.toISOString() ?? null,
               approvedBy: admin.email,
               previousTier: host.earningsTier,
               newTier: newTier,
@@ -255,7 +255,7 @@ export async function POST(
               autoInactiveAction: otherInsuranceAction || null
             },
             ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
-          }
+          } as any
         })
         
         return updatedHost
@@ -336,12 +336,12 @@ export async function POST(
             category: 'documents',
             subject: `${insuranceType} Insurance Needs Attention`,
             message: `Your ${insuranceType} insurance submission requires updates: ${reason}`,
-            status: 'SENT',
+            status: 'SENT' as any,
             priority: 'high',
             responseRequired: true,
             actionRequired: 'UPDATE_INSURANCE',
             actionUrl: '/host/profile?tab=insurance'
-          }
+          } as any
         })
         
         // Log activity
@@ -358,7 +358,7 @@ export async function POST(
               reason: reason
             },
             ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
-          }
+          } as any
         })
         
         return updatedHost
@@ -567,10 +567,10 @@ export async function DELETE(
           category: 'documents',
           subject: `${insuranceType} Insurance Removed`,
           message: `Your ${insuranceType} insurance has been removed. You are now at ${newTier} tier earning ${earningsPercent} per booking.`,
-          status: 'SENT',
+          status: 'SENT' as any,
           priority: 'high',
           responseRequired: false
-        }
+        } as any
       })
       
       // Log activity
@@ -588,7 +588,7 @@ export async function DELETE(
             newTier: newTier
           },
           ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
-        }
+        } as any
       })
       
       return updatedHost

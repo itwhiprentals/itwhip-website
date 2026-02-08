@@ -494,7 +494,7 @@ export default function RentalsManagementPage() {
       }
 
       // Generate activity
-      const activities = []
+      const activities: any[] = []
       const now = new Date()
       
       activeTrips.forEach(trip => {

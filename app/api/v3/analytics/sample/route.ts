@@ -184,7 +184,7 @@ function generateSurgeData() {
 
 // Check if request has valid authentication
 async function isAuthenticated(request: Request): Promise<{ authenticated: boolean; tier?: string }> {
-  const headersList = headers()
+  const headersList = await headers()
   
   // Check for API key
   const apiKey = headersList.get('x-api-key')

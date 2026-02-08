@@ -100,7 +100,7 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
       {/* Dropdown */}
       {isDropdownOpen && (
         <NotificationDropdown
-          notifications={notifications}
+          notifications={notifications as any}
           onNotificationClick={handleNotificationClick}
           onDismiss={handleDismiss}
           dismissing={localDismissing}

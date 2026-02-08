@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
           status: 'active',
           isVerified: true,
           verifiedAt: new Date()
-        }
+        } as any
       })
 
       return NextResponse.json({
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
           holderName: cardholderName,
           isDefault: false,
           status: 'pending'
-        }
+        } as any
       })
 
       // Generate account update link for manual card addition

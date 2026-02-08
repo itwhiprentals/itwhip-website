@@ -75,7 +75,7 @@ export default function HostProtectionPage() {
   const scrollToSection = (tabId: string) => {
     setActiveTab(tabId)
     
-    const refMap: Record<string, React.RefObject<HTMLElement>> = {
+    const refMap: Record<string, React.RefObject<HTMLElement | null>> = {
       protection: protectionRef,
       tiers: tiersRef,
       coverage: coverageRef,

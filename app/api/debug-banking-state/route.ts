@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       payoutsEnabled: account.payouts_enabled,
       chargesEnabled: account.charges_enabled,
       detailsSubmitted: account.details_submitted,
-      requiresAction: !account.details_submitted || account.requirements?.currently_due?.length > 0,
+      requiresAction: !account.details_submitted || (account.requirements?.currently_due?.length ?? 0) > 0,
       requirements: account.requirements?.currently_due || [],
       balances: {
         current: host.currentBalance,

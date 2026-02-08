@@ -238,7 +238,7 @@ export async function POST(request: NextRequest) {
           status: 'SENT',
           priority: 'high',
           responseRequired: false
-        }
+        } as any
       })
       
       await tx.adminNotification.create({
@@ -262,12 +262,13 @@ export async function POST(request: NextRequest) {
             hasOtherActiveInsurance: hasActiveP2P || hasActiveCommercial,
             keptCurrentTier: !shouldChangeTier
           }
-        }
+        } as any
       })
       
       // Log activity
       await tx.activityLog.create({
         data: {
+          id: crypto.randomUUID(),
           entityType: 'HOST',
           entityId: host.id,
           action: 'INSURANCE_SUBMITTED',

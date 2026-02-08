@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
       }),
       prisma.depositTransaction.create({
         data: {
+          id: crypto.randomUUID(),
           guestId: profile.id,
           type: 'LOAD',
           amount: amount,

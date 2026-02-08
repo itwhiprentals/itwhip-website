@@ -76,12 +76,10 @@ export default function DemoPage() {
     return (
       <main className="min-h-screen bg-gradient-to-br from-green-50 to-white dark:from-gray-950 dark:to-black">
         <Header
-          userType="hotel"
-          onUserTypeChange={() => router.push('/')}
           isMobileMenuOpen={isMobileMenuOpen}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
-        
+
         <section className="pt-24 pb-20 px-4 min-h-[80vh] flex items-center justify-center">
           <div className="max-w-2xl mx-auto text-center">
             <div className="mb-6">
@@ -146,7 +144,7 @@ export default function DemoPage() {
           </div>
         </section>
         
-        <Footer userType="hotel" />
+        <Footer />
       </main>
     )
   }
@@ -154,8 +152,6 @@ export default function DemoPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-950 dark:to-black">
       <Header
-        userType="hotel"
-        onUserTypeChange={() => router.push('/')}
         isMobileMenuOpen={isMobileMenuOpen}
         setIsMobileMenuOpen={setIsMobileMenuOpen}
       />
@@ -569,7 +565,7 @@ export default function DemoPage() {
         </div>
       </section>
 
-      <Footer userType="hotel" />
+      <Footer />
     </main>
   )
 }

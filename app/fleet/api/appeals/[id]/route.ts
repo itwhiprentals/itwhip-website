@@ -70,8 +70,8 @@ export async function GET(
             // Get booking stats
             _count: {
               select: {
-                bookings: true,
-                reviews: true
+                RentalBooking: true,
+                RentalReview: true
               }
             }
           }
@@ -205,8 +205,8 @@ export async function GET(
           requiresManualApproval: appeal.guest.requiresManualApproval,
           
           // Stats
-          totalBookings: appeal.guest._count.bookings,
-          totalReviews: appeal.guest._count.reviews,
+          totalBookings: appeal.guest._count.RentalBooking,
+          totalReviews: appeal.guest._count.RentalReview,
           
           // Calculated fields
           daysSinceSuspension,

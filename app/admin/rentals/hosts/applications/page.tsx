@@ -749,7 +749,8 @@ export default function HostApplicationsPage() {
           }}
           hostId={selectedHostForModal}
           hostName={selectedHostNameForModal}
-          onSubmit={() => {
+          hostEmail=""
+          onSubmit={async () => {
             fetchApplications()
             setShowDocumentModal(false)
             setSelectedHostForModal(null)
@@ -760,8 +761,9 @@ export default function HostApplicationsPage() {
 
       {showBackgroundCheckModal && selectedHostForModal && (
         <BackgroundCheckViewer
+          backgroundCheck={null}
           hostId={selectedHostForModal}
-          onClose={() => {
+          onRefresh={() => {
             setShowBackgroundCheckModal(false)
             setSelectedHostForModal(null)
           }}

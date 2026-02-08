@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
 
     // Verify password (assuming password is on the User model)
     const user = await prisma.user.findUnique({
-      where: { id: host.userId },
+      where: { id: host.userId! },
       select: { passwordHash: true }
     })
 
@@ -461,7 +461,7 @@ export async function GET(request: NextRequest) {
       where: {
         OR: [
           { userId: userId },
-          { email: user?.email }
+          { email: user?.email || undefined }
         ]
       },
       select: {
@@ -663,9 +663,8 @@ export async function PUT(request: NextRequest) {
         userId: session.user.id,  // lowercase 'user'
         refreshToken: refreshToken
       },
-      data: { 
-        token: newAccessToken,
-        updatedAt: new Date()
+      data: {
+        token: newAccessToken
       }
     })
 

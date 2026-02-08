@@ -161,7 +161,7 @@ If you didn't request this, please contact our support team immediately.
       `.trim()
 
       await sendEmail(
-        user.email,
+        user.email as string,
         'Your ItWhip Account Deletion is Scheduled',
         htmlContent,
         textContent

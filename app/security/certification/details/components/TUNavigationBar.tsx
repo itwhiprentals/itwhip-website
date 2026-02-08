@@ -15,15 +15,15 @@ import {
 
 interface TUNavigationBarProps {
   activeSection: string
-  scrollToSection: (ref: React.RefObject<HTMLDivElement>, section: string) => void
+  scrollToSection: (ref: React.RefObject<HTMLDivElement | null>, section: string) => void
   refs: {
-    overviewRef: React.RefObject<HTMLDivElement>
-    levelsRef: React.RefObject<HTMLDivElement>
-    esgRef: React.RefObject<HTMLDivElement>
-    complianceRef: React.RefObject<HTMLDivElement>
-    shieldRef: React.RefObject<HTMLDivElement>
-    roiRef: React.RefObject<HTMLDivElement>
-    ctaRef: React.RefObject<HTMLDivElement>
+    overviewRef: React.RefObject<HTMLDivElement | null>
+    levelsRef: React.RefObject<HTMLDivElement | null>
+    esgRef: React.RefObject<HTMLDivElement | null>
+    complianceRef: React.RefObject<HTMLDivElement | null>
+    shieldRef: React.RefObject<HTMLDivElement | null>
+    roiRef: React.RefObject<HTMLDivElement | null>
+    ctaRef: React.RefObject<HTMLDivElement | null>
   }
 }
 

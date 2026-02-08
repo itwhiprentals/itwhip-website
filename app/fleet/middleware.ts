@@ -20,7 +20,7 @@ export function middleware(request: NextRequest) {
     hasUrlKey: !!urlKey,
     hasHeaderKey: !!headerKey,
     hasCookie: !!cookieKey,
-    ip: request.ip || request.headers.get('x-forwarded-for') || 'unknown',
+    ip: (request as any).ip || request.headers.get('x-forwarded-for') || 'unknown',
     timestamp: new Date().toISOString()
   });
 

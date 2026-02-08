@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Only track for recruited hosts (recruitedVia is source of truth)
-    if (!host.recruitedVia || !host.linkedProspectId) {
+    if (!(host as any).recruitedVia || !host.linkedProspectId) {
       return NextResponse.json({ success: true })
     }
 

@@ -235,13 +235,15 @@ export async function POST(request: NextRequest) {
     // Create the appeal
     const appeal = await prisma.guestAppeal.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         guestId: guest.id,
         moderationId: targetModeration.id,
         reason: reason.trim(),
         evidence: validatedEvidence || undefined,
         status: 'PENDING',
         submittedAt: new Date()
-      }
+      } as any
     })
 
     console.log('✅ Guest appeal submitted:', {

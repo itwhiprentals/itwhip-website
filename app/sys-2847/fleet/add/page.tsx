@@ -31,9 +31,9 @@ export default function AddCarPage() {
   const [formData, setFormData] = useState<Partial<CarFormData>>({
     seats: 4,
     doors: 4,
-    transmission: 'AUTOMATIC',
-    fuelType: 'PREMIUM',
-    category: 'LUXURY',
+    transmission: 'AUTOMATIC' as any,
+    fuelType: 'PREMIUM' as any,
+    category: 'LUXURY' as any,
     carType: 'SEDAN',
     city: 'Phoenix',
     state: 'AZ',
@@ -50,8 +50,8 @@ export default function AddCarPage() {
     monthlyDiscount: 20,
     deliveryFee: 150,
     insuranceDaily: 99,
-    latitude: null,
-    longitude: null
+    latitude: null as any,
+    longitude: null as any
   })
 
   useEffect(() => {

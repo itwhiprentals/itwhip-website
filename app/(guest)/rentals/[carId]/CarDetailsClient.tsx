@@ -496,8 +496,8 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
     : car.dailyRate
 
   // Calculate vehicle classification and fuel type badges
-  const vehicleClass = getVehicleClass(car.make, car.model, car.carType || car.type || undefined)
-  const fuelTypeBadge = formatFuelTypeBadge(car.fuelType)
+  const vehicleClass = getVehicleClass(car.make, car.model, (car.carType || car.type || null) as any)
+  const fuelTypeBadge = formatFuelTypeBadge(car.fuelType || null)
 
   // Rideshare detection - check vehicleType OR if host is a fleet partner
   const isFleetPartner = car.host?.hostType === 'FLEET_PARTNER' || car.host?.hostType === 'PARTNER'
@@ -1004,10 +1004,10 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
           location={car.location}
           hostId={car.hostId || car.host?.id}
           hostName={car.host?.name}
-          hostProfilePhoto={car.host?.profilePhoto || car.host?.profileImage}
+          hostProfilePhoto={car.host?.profilePhoto || (car.host as any)?.profileImage}
           isCompany={car.host?.isCompany}
-          initialSimilarCars={initialSimilarCars}
-          initialHostCars={initialHostCars}
+          initialSimilarCars={initialSimilarCars as any}
+          initialHostCars={initialHostCars as any}
         />
 
         {/* Important Information Footer */}

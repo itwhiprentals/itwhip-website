@@ -124,7 +124,6 @@ export async function DELETE(
               id: carId
             },
             data: {
-              heroPhotoUrl: newHeroPhoto.url,
               updatedAt: new Date()
             }
           })
@@ -169,7 +168,7 @@ export async function DELETE(
     })
 
     // Log the activity
-    await prisma.activityLog.create({
+    await (prisma.activityLog.create as any)({
       data: {
         action: 'CAR_PHOTO_DELETED',
         entityType: 'car',
@@ -263,7 +262,7 @@ export async function GET(
         caption: photo.caption || null,
         isHero: photo.isHero,
         order: photo.order,
-        uploadedAt: photo.uploadedAt
+        uploadedAt: photo.createdAt
       }
     })
 
@@ -340,8 +339,7 @@ export async function PUT(
       },
       data: {
         ...(caption !== undefined && { caption }),
-        ...(order !== undefined && { order }),
-        updatedAt: new Date()
+        ...(order !== undefined && { order })
       }
     })
 

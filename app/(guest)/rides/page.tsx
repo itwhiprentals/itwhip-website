@@ -103,13 +103,13 @@ export default function RidesPage() {
   }
 
   // Scroll functions for horizontal sections
-  const scrollLeft = (ref: React.RefObject<HTMLDivElement>) => {
+  const scrollLeft = (ref: React.RefObject<HTMLDivElement | null>) => {
     if (ref.current) {
       ref.current.scrollBy({ left: -300, behavior: 'smooth' })
     }
   }
 
-  const scrollRight = (ref: React.RefObject<HTMLDivElement>) => {
+  const scrollRight = (ref: React.RefObject<HTMLDivElement | null>) => {
     if (ref.current) {
       ref.current.scrollBy({ left: 300, behavior: 'smooth' })
     }

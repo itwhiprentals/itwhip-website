@@ -86,7 +86,7 @@ export default function HostInsurancePage() {
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId)
-    const refMap: Record<string, React.RefObject<HTMLElement>> = {
+    const refMap: Record<string, React.RefObject<HTMLElement | null>> = {
       overview: overviewRef,
       tiers: tiersRef,
       'primary-secondary': primarySecondaryRef,

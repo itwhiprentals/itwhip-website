@@ -6,10 +6,10 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { CarFormData } from '../types'
-import { 
-  CAR_CATEGORIES, 
-  TRANSMISSION_TYPES, 
-  FUEL_TYPES, 
+import {
+  CAR_CATEGORIES,
+  TRANSMISSION_TYPES,
+  FUEL_TYPES,
   FEATURES_LIST,
   DEFAULT_RULES,
   CITIES_ARIZONA
@@ -45,9 +45,9 @@ export default function AddCarPage() {
   const [formData, setFormData] = useState<Partial<CarFormData>>({
     seats: 4,
     doors: 4,
-    transmission: 'AUTOMATIC',
-    fuelType: 'PREMIUM',
-    category: 'LUXURY',
+    transmission: 'AUTOMATIC' as any,
+    fuelType: 'PREMIUM' as any,
+    category: 'LUXURY' as any,
     carType: 'SEDAN',
     city: 'Phoenix',
     state: 'AZ',
@@ -64,8 +64,8 @@ export default function AddCarPage() {
     monthlyDiscount: 20,
     deliveryFee: 150,
     insuranceDaily: 99,
-    latitude: null,
-    longitude: null
+    latitude: null as any,
+    longitude: null as any
   })
 
   useEffect(() => {
@@ -283,14 +283,14 @@ export default function AddCarPage() {
   const handleModelChange = (model: string) => {
     setFormData(prev => ({ ...prev, model }))
     if (formData.make && formData.year) {
-      setAvailableTrims(getTrimsByModel(formData.make, model, String(formData.year)))
+      setAvailableTrims(getTrimsByModel(formData.make!, model, String(formData.year)))
     }
   }
 
   const handleYearChange = (year: number) => {
     setFormData(prev => ({ ...prev, year }))
     if (formData.make && formData.model) {
-      setAvailableTrims(getTrimsByModel(formData.make, formData.model, String(year)))
+      setAvailableTrims(getTrimsByModel(formData.make!, formData.model!, String(year)))
     }
   }
 

@@ -54,7 +54,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  let booking = null
+  let booking: any = null
   
   try {
     const { id: bookingId } = await params
@@ -115,7 +115,7 @@ export async function POST(
 
     // Validate inputs
     const validations = [
-      validateOdometer(endMileage, booking.startMileage),
+      validateOdometer(endMileage, booking.startMileage ?? undefined),
       validateFuelLevel(fuelLevelEnd),
       validateInspectionPhotos(inspectionPhotos, 'end')
     ]
@@ -144,8 +144,13 @@ export async function POST(
 
     const hasCharges = charges.total > 0
     let chargeStatus: ChargeStatus = ChargeStatus.PENDING
-    let paymentResult = null
-    let statusTransition = STATUS_TRANSITIONS.NO_CHARGES
+    let paymentResult: any = null
+    let statusTransition: {
+      status: RentalBookingStatus
+      verificationStatus: VerificationStatus
+      paymentStatus: PaymentStatus
+      tripStatus: TripStatus
+    } = STATUS_TRANSITIONS.NO_CHARGES
     let stripeChargeId = null
     let chargeFailureReason = null
     let chargeAttempts = 0
@@ -303,6 +308,7 @@ export async function POST(
 
         await tx.tripCharge.create({
           data: {
+            id: crypto.randomUUID(),
             bookingId,
             mileageCharge: charges.mileage?.charge || 0,
             fuelCharge: charges.fuel?.charge || 0,
@@ -325,7 +331,8 @@ export async function POST(
             lastAttemptAt: chargeAttempts > 0 ? new Date() : null,
             holdUntil: chargeStatus === ChargeStatus.PENDING ? holdUntil : null,
             guestNotifiedAt: new Date(),
-            requiresApproval: charges.total > 500
+            requiresApproval: charges.total > 500,
+            updatedAt: new Date()
           }
         })
 
@@ -363,6 +370,7 @@ export async function POST(
 
           await tx.tripIssue.create({
             data: {
+              id: crypto.randomUUID(),
               bookingId,
 
               // Guest report (they reported the damage at trip end)
@@ -379,7 +387,7 @@ export async function POST(
               tripEndMileage: endMileage,
               tripStartFuel: booking.fuelLevelStart,
               tripEndFuel: fuelLevelEnd,
-              startPhotosRef: startPhotos.length > 0 ? startPhotos : null,
+              startPhotosRef: startPhotos.length > 0 ? (startPhotos as any) : null,
               endPhotosRef: inspectionPhotos,
 
               // Resolution workflow
@@ -389,7 +397,8 @@ export async function POST(
               escalationDeadline,
 
               // Notifications
-              guestNotifiedAt: new Date()
+              guestNotifiedAt: new Date(),
+              updatedAt: new Date()
             }
           })
 
@@ -398,6 +407,7 @@ export async function POST(
           // Create admin notification for trip issue
           await tx.adminNotification.create({
             data: {
+              id: crypto.randomUUID(),
               type: 'TRIP_ISSUE_CREATED',
               title: `Trip Issue Reported - ${booking.bookingCode}`,
               message: `Guest reported ${severity.toLowerCase()} ${issueType.toLowerCase()} issue at trip end. ${damageDescription ? `Description: ${damageDescription}` : ''}`,
@@ -413,7 +423,8 @@ export async function POST(
                 damageDescription,
                 escalationDeadline: escalationDeadline.toISOString(),
                 hasPhotos: !!damagePhotos
-              }
+              },
+              updatedAt: new Date()
             }
           })
         }
@@ -428,6 +439,7 @@ export async function POST(
           
           await tx.adminNotification.create({
             data: {
+              id: crypto.randomUUID(),
               type: 'PENDING_CHARGES',
               title: `Trip Charges Need Review - ${booking.bookingCode}`,
               message: `Trip ended with $${charges.total.toFixed(2)} in charges. ${
@@ -444,13 +456,14 @@ export async function POST(
               actionRequired: true,
               actionUrl: `/admin/rentals/verifications/${bookingId}`,
               metadata: {
-                charges,
+                charges: JSON.parse(JSON.stringify(charges)),
                 disputes,
                 hasPaymentMethod: !!booking.stripePaymentMethodId,
                 chargeStatus: ChargeStatus[chargeStatus],
                 failureReason: chargeFailureReason,
                 retryCount: chargeAttempts
-              }
+              },
+              updatedAt: new Date()
             }
           })
         }
@@ -486,6 +499,7 @@ export async function POST(
         // Create RentalPayout record (PENDING status)
         await tx.rentalPayout.create({
           data: {
+            id: crypto.randomUUID(),
             hostId: booking.hostId,
             bookingId: booking.id,
             amount: hostEarnings.hostEarnings,
@@ -500,10 +514,11 @@ export async function POST(
             platformFee: hostEarnings.platformRevenue,
             processingFee: hostEarnings.processingFee,
             netPayout: hostEarnings.hostEarnings,
-            currency: 'USD'
+            currency: 'USD',
+            updatedAt: new Date()
           }
         })
-        
+
         // Update host pending balance
         await tx.rentalHost.update({
           where: { id: booking.hostId },
@@ -515,6 +530,7 @@ export async function POST(
         // Log payout creation
         await tx.activityLog.create({
           data: {
+            id: crypto.randomUUID(),
             action: 'PAYOUT_CREATED',
             entityType: 'RentalPayout',
             entityId: booking.id,
@@ -542,6 +558,7 @@ export async function POST(
 
       // Create inspection photo records
       const photoRecords = Object.entries(inspectionPhotos).map(([category, url]) => ({
+        id: crypto.randomUUID(),
         bookingId,
         type: 'end' as const,
         category,
@@ -575,6 +592,7 @@ export async function POST(
 
           await tx.rentalDispute.create({
             data: {
+              id: crypto.randomUUID(),
               bookingId,
               type: disputeType,
               description: disputeReason,
@@ -616,29 +634,32 @@ export async function POST(
       
       await tx.rentalMessage.create({
         data: {
+          id: crypto.randomUUID(),
           bookingId,
           senderId: 'system',
           senderType: 'admin',
           senderName: 'System',
           message: messageContent,
           category: messageCategory,
-          metadata: charges,
+          metadata: JSON.parse(JSON.stringify(charges)),
           isRead: false,
           readByAdmin: false,
-          isUrgent: isUrgent
+          isUrgent: isUrgent,
+          updatedAt: new Date()
         }
       })
 
       // Create activity log for trip end
       await tx.activityLog.create({
         data: {
+          id: crypto.randomUUID(),
           action: 'TRIP_ENDED',
           entityType: 'RentalBooking',
           entityId: bookingId,
           metadata: {
             endMileage,
             fuelLevelEnd,
-            charges,
+            charges: JSON.parse(JSON.stringify(charges)),
             chargeStatus: ChargeStatus[chargeStatus],
             paymentChoice,
             statusTransition: RentalBookingStatus[statusTransition.status],
@@ -842,6 +863,7 @@ export async function POST(
       try {
         await prisma.auditLog.create({
           data: {
+            id: crypto.randomUUID(),
             category: 'FINANCIAL',
             eventType: 'trip_end_error',
             severity: 'CRITICAL',

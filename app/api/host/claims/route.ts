@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
             }
           }
         },
-        policy: {
+        InsurancePolicy: {
           select: {
             id: true,
             policyNumber: true,
@@ -96,11 +96,11 @@ export async function GET(request: NextRequest) {
       reviewedAt: claim.reviewedAt?.toISOString() || null,
       reviewedBy: claim.reviewedBy,
       reviewNotes: claim.reviewNotes,
-      paidAt: claim.paidAt?.toISOString() || null,
+      paidAt: (claim as any).paidAt?.toISOString() || null,
       resolvedAt: claim.resolvedAt?.toISOString() || null,
       guestAtFault: claim.guestAtFault,
       faultPercentage: claim.faultPercentage,
-      damagePhotos: claim.damagePhotos || [],
+      damagePhotos: claim.damagePhotosLegacy || [],
       overrideHistory: claim.overrideHistory || [],
       
       // Related data
@@ -132,13 +132,13 @@ export async function GET(request: NextRequest) {
         } : null
       },
       
-      policy: claim.policy ? {
-        id: claim.policy.id,
-        policyNumber: claim.policy.policyNumber,
-        tier: claim.policy.tier,
-        deductible: claim.policy.deductible,
-        coverageAmount: claim.policy.collisionCoverage,
-        liabilityCoverage: claim.policy.liabilityCoverage
+      policy: claim.InsurancePolicy ? {
+        id: claim.InsurancePolicy.id,
+        policyNumber: claim.InsurancePolicy.policyNumber,
+        tier: claim.InsurancePolicy.tier,
+        deductible: claim.InsurancePolicy.deductible,
+        coverageAmount: claim.InsurancePolicy.collisionCoverage,
+        liabilityCoverage: claim.InsurancePolicy.liabilityCoverage
       } : null,
 
       // Calculated fields

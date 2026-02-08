@@ -282,6 +282,7 @@ export async function POST(
     // Create the message
     const newMessage = await prisma.rentalMessage.create({
       data: {
+        id: crypto.randomUUID(),
         bookingId,
         senderId: userId || bookingId, // Use bookingId as fallback for guests
         senderType,
@@ -293,7 +294,8 @@ export async function POST(
         hasAttachment: !!attachmentUrl,
         attachmentUrl,
         attachmentName,
-        isRead: false
+        isRead: false,
+        updatedAt: new Date()
       },
       select: {
         id: true,
@@ -315,32 +317,34 @@ export async function POST(
     try {
       // Notify host if message is from guest/renter
       if ((senderType === 'guest' || senderType === 'renter') && booking.car.host.email) {
-        await sendEmail({
-          to: booking.car.host.email,
-          subject: `New message for booking ${booking.bookingCode}`,
-          html: `
+        await sendEmail(
+          booking.car.host.email,
+          `New message for booking ${booking.bookingCode}`,
+          `
             <p>You have a new message from ${senderName} regarding the ${booking.car.year} ${booking.car.make} ${booking.car.model}:</p>
             <blockquote style="border-left: 3px solid #ccc; padding-left: 10px; margin: 10px 0;">
               ${message}
             </blockquote>
             <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/host/bookings/${bookingId}">View booking</a></p>
-          `
-        })
+          `,
+          `New message from ${senderName} for booking ${booking.bookingCode}`
+        )
       }
       
       // Notify guest if message is from host/admin
       if ((senderType === 'host' || senderType === 'admin' || senderType === 'support') && booking.guestEmail) {
-        await sendEmail({
-          to: booking.guestEmail,
-          subject: `New message for your ItWhip booking`,
-          html: `
+        await sendEmail(
+          booking.guestEmail,
+          `New message for your ItWhip booking`,
+          `
             <p>You have a new message from ${senderName} regarding your booking:</p>
             <blockquote style="border-left: 3px solid #ccc; padding-left: 10px; margin: 10px 0;">
               ${message}
             </blockquote>
             <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/rentals/dashboard/bookings/${bookingId}">View booking</a></p>
-          `
-        })
+          `,
+          `New message from ${senderName} for your ItWhip booking`
+        )
       }
     } catch (emailError) {
       console.error('Failed to send email notification:', emailError)

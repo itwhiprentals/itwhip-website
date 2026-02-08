@@ -71,7 +71,7 @@ export async function GET(
                 avatar: true
               }
             },
-            inspectionPhotos: {
+            InspectionPhoto: {
               orderBy: { uploadedAt: 'asc' }
             },
             review: {
@@ -89,7 +89,7 @@ export async function GET(
             }
           }
         },
-        policy: {
+        InsurancePolicy: {
           select: {
             id: true,
             policyNumber: true,
@@ -97,7 +97,7 @@ export async function GET(
             deductible: true,
             liabilityCoverage: true,
             collisionCoverage: true,
-            provider: true
+            providerId: true
           }
         },
         host: {
@@ -109,7 +109,7 @@ export async function GET(
           }
         },
         // ✅ Include damage photos relation (only non-deleted)
-        damagePhotos: {
+        ClaimDamagePhoto: {
           where: {
             deletedAt: null
           },
@@ -215,7 +215,7 @@ export async function GET(
         postTrip: postTripPhotos,
         preTripCount: preTripPhotos.length,
         postTripCount: postTripPhotos.length,
-        detailed: claim.booking.inspectionPhotos.map((photo: any) => ({
+        detailed: claim.booking.InspectionPhoto.map((photo: any) => ({
           id: photo.id,
           type: photo.type,
           category: photo.category,
@@ -247,7 +247,7 @@ export async function GET(
     }
 
     // ✅ Separate HOST damage photos from ClaimDamagePhoto table
-    const hostDamagePhotos = claim.damagePhotos
+    const hostDamagePhotos = claim.ClaimDamagePhoto
       .filter(photo => photo.uploadedBy === 'HOST')
       .map(photo => ({
         id: photo.id,
@@ -270,7 +270,7 @@ export async function GET(
         uploadedAt: claim.booking.tripEndedAt?.toISOString() || claim.createdAt.toISOString()
       })),
       // New guest photos from ClaimDamagePhoto table (claim response)
-      ...claim.damagePhotos
+      ...claim.ClaimDamagePhoto
         .filter(photo => photo.uploadedBy === 'GUEST')
         .map(photo => ({
           id: photo.id,
@@ -441,14 +441,14 @@ export async function GET(
         } : null
       },
       
-      policy: claim.policy ? {
-        id: claim.policy.id,
-        policyNumber: claim.policy.policyNumber,
-        tier: claim.policy.tier,
-        deductible: claim.policy.deductible,
-        liabilityCoverage: claim.policy.liabilityCoverage,
-        collisionCoverage: claim.policy.collisionCoverage,
-        provider: claim.policy.provider
+      policy: claim.InsurancePolicy ? {
+        id: claim.InsurancePolicy.id,
+        policyNumber: claim.InsurancePolicy.policyNumber,
+        tier: claim.InsurancePolicy.tier,
+        deductible: claim.InsurancePolicy.deductible,
+        liabilityCoverage: claim.InsurancePolicy.liabilityCoverage,
+        collisionCoverage: claim.InsurancePolicy.collisionCoverage,
+        provider: claim.InsurancePolicy.providerId
       } : null,
       
       host: {

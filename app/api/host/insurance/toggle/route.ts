@@ -257,6 +257,8 @@ export async function POST(request: NextRequest) {
       const earningsPercent = newTier === 'PREMIUM' ? '90%' : '75%'
       await tx.hostNotification.create({
         data: {
+          id: crypto.randomUUID(),
+          updatedAt: new Date(),
           hostId: host.id,
           type: 'INSURANCE_TOGGLED',
           category: 'documents',
@@ -265,12 +267,13 @@ export async function POST(request: NextRequest) {
           status: 'SENT',
           priority: 'medium',
           responseRequired: false
-        }
+        } as any
       })
-      
+
       // Log activity
       await tx.activityLog.create({
         data: {
+          id: crypto.randomUUID(),
           entityType: 'HOST',
           entityId: host.id,
           action: 'INSURANCE_TOGGLED',

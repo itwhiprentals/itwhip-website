@@ -51,7 +51,7 @@ export async function GET(
 
     // Fetch hosts separately
     const hosts = await prisma.rentalHost.findMany({
-      where: { id: { in: hostIds } },
+      where: { id: { in: hostIds as string[] } },
       select: { id: true, name: true, email: true }
     })
 
@@ -145,7 +145,7 @@ export async function GET(
         id: record.id,
         serviceType: record.serviceType,
         serviceDate: record.serviceDate.toISOString(),
-        description: record.description,
+        description: (record as any).description,
         cost: record.costTotal,
         mileage: record.mileageAtService,
         performedBy: record.shopName,

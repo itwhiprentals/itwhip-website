@@ -72,9 +72,14 @@ interface User {
   avatar?: string
 }
 
-interface HeaderProps {}
+interface HeaderProps {
+  isMobileMenuOpen?: boolean
+  setIsMobileMenuOpen?: (open: boolean) => void
+  handleGetAppClick?: () => void
+  handleSearchClick?: () => void
+}
 
-function HeaderInner({}: HeaderProps = {}) {
+function HeaderInner(_props: HeaderProps = {}) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 

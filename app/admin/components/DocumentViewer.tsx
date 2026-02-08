@@ -10,10 +10,10 @@ import {
   IoCloseCircle,
   IoWarningOutline,
   IoDownloadOutline,
-  IoRotateOutline,
+  IoRefreshOutline,
   IoSwapHorizontalOutline,
-  IoZoomInOutline,
-  IoZoomOutOutline,
+  IoAddOutline,
+  IoRemoveOutline,
   IoPersonOutline,
   IoDocumentTextOutline,
   IoShieldOutline,
@@ -392,21 +392,21 @@ export default function DocumentViewer({
                   className="p-2 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                   title="Zoom In"
                 >
-                  <IoZoomInOutline className="w-5 h-5" />
+                  <IoAddOutline className="w-5 h-5" />
                 </button>
                 <button
                   onClick={handleZoomOut}
                   className="p-2 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                   title="Zoom Out"
                 >
-                  <IoZoomOutOutline className="w-5 h-5" />
+                  <IoRemoveOutline className="w-5 h-5" />
                 </button>
                 <button
                   onClick={handleRotate}
                   className="p-2 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                   title="Rotate"
                 >
-                  <IoRotateOutline className="w-5 h-5" />
+                  <IoRefreshOutline className="w-5 h-5" />
                 </button>
                 <button
                   onClick={handleReset}

@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       partner: {
-        businessAddress: partner.address || '',
+        businessAddress: (partner as any).address || '',
         businessCity: partner.city || '',
         businessState: partner.state || '',
         businessZipCode: partner.zipCode || ''
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
         companyName: partner.partnerCompanyName || '',
         businessType: 'fleet',
         taxId: '',
-        address: partner.address || '',
+        address: (partner as any).address || '',
         city: partner.city || '',
         state: partner.state || '',
         zipCode: partner.zipCode || '',

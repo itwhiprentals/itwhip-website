@@ -109,7 +109,7 @@ export async function GET(request: Request) {
 
    // Calculate refunded amount
    const refundedAmount = bookings
-     .filter(b => b.paymentStatus === 'refunded')
+     .filter(b => (b.paymentStatus as string) === 'refunded')
      .reduce((sum, b) => sum + b.totalAmount, 0)
 
    const totalRevenue = bookings.reduce((sum, b) => sum + b.totalAmount, 0)
@@ -201,8 +201,8 @@ export async function GET(request: Request) {
      })
 
    // Calculate charge success rate
-   const chargedCount = bookings.filter(b => b.paymentStatus === 'paid').length
-   const failedCount = bookings.filter(b => b.paymentStatus === 'failed').length
+   const chargedCount = bookings.filter(b => (b.paymentStatus as string) === 'paid').length
+   const failedCount = bookings.filter(b => (b.paymentStatus as string) === 'failed').length
    const chargeSuccessRate = chargedCount + failedCount > 0
      ? (chargedCount / (chargedCount + failedCount)) * 100
      : 100

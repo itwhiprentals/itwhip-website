@@ -169,6 +169,7 @@ async function liftSuspension(
     // Create GuestModeration entry for the auto-unsuspend action
     await prisma.guestModeration.create({
       data: {
+        id: crypto.randomUUID(),
         guestId,
         actionType: 'UNSUSPEND',
         suspensionLevel: null,

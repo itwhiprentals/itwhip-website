@@ -110,6 +110,7 @@ export async function PATCH(
     // Log activity
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         userId: hostId,
         action: 'claim_location_updated',
         entityType: 'claim',

@@ -262,6 +262,7 @@ export async function POST(request: NextRequest) {
     // Create snapshot
     const snapshot = await prisma.eSGSnapshot.create({
       data: {
+        id: crypto.randomUUID(),
         profileId: hostId,
         compositeScore: profile.compositeScore,
         drivingImpactScore: profile.drivingImpactScore,

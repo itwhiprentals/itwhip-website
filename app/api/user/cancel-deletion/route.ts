@@ -103,7 +103,7 @@ If you didn't cancel this deletion, please contact our support team immediately.
       `.trim()
 
       await sendEmail(
-        user.email,
+        user.email as string,
         'Your ItWhip Account Deletion Has Been Cancelled',
         htmlContent,
         textContent

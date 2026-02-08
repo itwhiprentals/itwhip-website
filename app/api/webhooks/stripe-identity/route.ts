@@ -62,7 +62,7 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
   console.log(`[Stripe Identity] Verification success for session: ${session.id}`)
 
   let profileId = session.metadata?.profileId
-  const email = session.metadata?.email || session.provided_details?.email
+  const email = session.metadata?.email || (session as any).provided_details?.email
   const partnerId = session.metadata?.partnerId  // For partner-sent verifications
   const sentBy = session.metadata?.sentBy  // 'partner' or undefined
 
@@ -85,11 +85,11 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
           data: {
             id: nanoid(),
             email,
-            role: 'CLAIMED',
-            emailVerified: new Date(),
-            status: 'ACTIVE',
+            role: 'CLAIMED' as any,
+            emailVerified: true,
+            status: 'ACTIVE' as any,
             updatedAt: new Date()
-          },
+          } as any,
           include: { reviewerProfile: true }
         })
       }
@@ -101,11 +101,14 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
           data: {
             userId: user.id,
             email: email,
+            name: user.name || email.split('@')[0] || 'Guest',
+            city: 'Not Set',
             emailVerified: true,
             stripeIdentitySessionId: session.id,
             stripeIdentityStatus: 'pending',
-            memberSince: new Date()
-          }
+            memberSince: new Date(),
+            updatedAt: new Date()
+          } as any
         })
         profileId = newProfile.id
       } else {
@@ -161,7 +164,7 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
 
       // Extract data from the report
       if (report.document) {
-        const doc = report.document
+        const doc = report.document as any
         verifiedData = {
           firstName: doc.first_name || undefined,
           lastName: doc.last_name || undefined,
@@ -191,7 +194,7 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
     data: {
       stripeIdentityStatus: 'verified',
       stripeIdentityVerifiedAt: new Date(),
-      stripeIdentityReportId: session.last_verification_report as string || null,
+      stripeIdentityReportId: (session.last_verification_report as string) || null,
       stripeVerifiedFirstName: verifiedData.firstName,
       stripeVerifiedLastName: verifiedData.lastName,
       stripeVerifiedDob: verifiedData.dob,
@@ -210,7 +213,7 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
       // Update driver license info for FNOL
       driverLicenseNumber: verifiedData.idNumber,
       driverLicenseExpiry: verifiedData.idExpiry
-    }
+    } as any
   })
 
   console.log(`[Stripe Identity] Profile ${profileId} verified successfully`)
@@ -291,7 +294,7 @@ async function handleRequiresInput(session: Stripe.Identity.VerificationSession)
   console.log(`[Stripe Identity] Verification requires input for session: ${session.id}`)
 
   const profileId = session.metadata?.profileId
-  const email = session.metadata?.email || session.provided_details?.email
+  const email = session.metadata?.email || (session as any).provided_details?.email
 
   // If we have a profileId, update it
   if (profileId) {
@@ -327,7 +330,7 @@ async function handleCanceled(session: Stripe.Identity.VerificationSession) {
   console.log(`[Stripe Identity] Verification canceled for session: ${session.id}`)
 
   const profileId = session.metadata?.profileId
-  const email = session.metadata?.email || session.provided_details?.email
+  const email = session.metadata?.email || (session as any).provided_details?.email
 
   // If we have a profileId, update it
   if (profileId) {

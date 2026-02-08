@@ -1,6 +1,6 @@
 'use client'
 
-import { signIn } from 'next-auth/react'
+import { signIn, signOut, getSession } from 'next-auth/react'
 
 interface OAuthButtonsMinimalProps {
   roleHint: 'guest' | 'host'
@@ -10,12 +10,23 @@ interface OAuthButtonsMinimalProps {
 export default function OAuthButtonsMinimal({ roleHint, mode = 'login' }: OAuthButtonsMinimalProps) {
   const callbackUrl = roleHint === 'host' ? '/host' : '/'
 
+  // Clear any stale NextAuth session before starting a new OAuth sign-in.
+  // This prevents OAuthAccountNotLinked errors when a previous session cookie
+  // references a different user than the one signing in with OAuth.
+  const clearSessionAndSignIn = async (provider: 'google' | 'apple') => {
+    const session = await getSession()
+    if (session) {
+      await signOut({ redirect: false })
+    }
+    signIn(provider, { callbackUrl })
+  }
+
   const handleAppleSignIn = () => {
-    signIn('apple', { callbackUrl })
+    clearSessionAndSignIn('apple')
   }
 
   const handleGoogleSignIn = () => {
-    signIn('google', { callbackUrl })
+    clearSessionAndSignIn('google')
   }
 
   return (

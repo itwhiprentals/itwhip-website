@@ -71,7 +71,7 @@ export default function VinScannerPage({ params }: PageProps) {
             qrbox: { width: 280, height: 80 },
             aspectRatio: 3.5,
             formatsToSupport: [0, 2, 4] // CODE_39, CODE_128, QR_CODE
-          },
+          } as any,
           (decodedText) => {
             // Validate VIN format (17 alphanumeric, no I, O, Q)
             const cleanVin = decodedText.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, '')

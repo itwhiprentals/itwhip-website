@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
           }
         }
       }
-    })
+    }) as any
 
     if (!backgroundCheck) {
       return NextResponse.json(
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update the background check record
-    const updatedCheck = await prisma.backgroundCheck.update({
+    const updatedCheck = await (prisma.backgroundCheck.update as any)({
       where: { id: checkId },
       data: {
         individual_checks,
@@ -137,22 +137,23 @@ export async function POST(request: NextRequest) {
       await completeBackgroundCheck(checkId, backgroundCheck)
     } else {
       // Create notification for partial completion
-      await prisma.hostNotification.create({
+      await (prisma.hostNotification.create as any)({
         data: {
           hostId: backgroundCheck.hostId,
           type: 'BACKGROUND_CHECK',
-          title: `${checkType} Check ${status === 'PASSED' ? 'Completed' : 'Update'}`,
+          category: 'BACKGROUND_CHECK',
+          subject: `${checkType} Check ${status === 'PASSED' ? 'Completed' : 'Update'}`,
           message: status === 'PASSED'
             ? `Your ${checkType.toLowerCase()} verification has been completed successfully.`
             : `Your ${checkType.toLowerCase()} verification status: ${status.toLowerCase()}`,
           priority: 'LOW',
-          actionRequired: false
+          actionRequired: 'false'
         }
       })
     }
 
     // Log webhook receipt
-    await auditService.log({
+    await (auditService.log as any)({
       eventType: AuditEventType.UPDATE,
       entityType: AuditEntityType.HOST,
       entityId: backgroundCheck.hostId,
@@ -231,7 +232,7 @@ async function completeBackgroundCheck(checkId: string, backgroundCheck: any) {
   // Update background check and host in transaction
   await prisma.$transaction(async (tx) => {
     // Update background check record
-    await tx.backgroundCheck.update({
+    await (tx.backgroundCheck.update as any)({
       where: { id: checkId },
       data: {
         status: finalStatus,
@@ -242,7 +243,7 @@ async function completeBackgroundCheck(checkId: string, backgroundCheck: any) {
     })
 
     // Update host background check status
-    await tx.rentalHost.update({
+    await (tx.rentalHost.update as any)({
       where: { id: backgroundCheck.hostId },
       data: {
         backgroundCheckStatus: finalStatus,
@@ -251,12 +252,13 @@ async function completeBackgroundCheck(checkId: string, backgroundCheck: any) {
     })
 
     // Create host notification
-    await tx.hostNotification.create({
+    await (tx.hostNotification.create as any)({
       data: {
         hostId: backgroundCheck.hostId,
         type: 'BACKGROUND_CHECK',
-        title: finalStatus === 'PASSED' 
-          ? 'Background Check Passed ✓' 
+        category: 'BACKGROUND_CHECK',
+        subject: finalStatus === 'PASSED'
+          ? 'Background Check Passed'
           : finalStatus === 'FAILED'
           ? 'Background Check Requires Review'
           : 'Background Check Error',
@@ -266,13 +268,13 @@ async function completeBackgroundCheck(checkId: string, backgroundCheck: any) {
           ? `Your background check requires additional review. ${failedChecks} check(s) need attention.`
           : 'There was an error processing your background check. Our team will contact you.',
         priority: finalStatus === 'PASSED' ? 'HIGH' : 'CRITICAL',
-        actionRequired: finalStatus !== 'PASSED',
+        actionRequired: finalStatus !== 'PASSED' ? 'true' : null,
         actionUrl: '/host/dashboard'
       }
     })
 
     // Create admin notification
-    await tx.adminNotification.create({
+    await (tx.adminNotification.create as any)({
       data: {
         type: 'BACKGROUND_CHECK_COMPLETED',
         title: `Background Check ${finalStatus}`,
@@ -303,7 +305,7 @@ async function completeBackgroundCheck(checkId: string, backgroundCheck: any) {
 
       // Auto-approve if everything is good
       if (allDocsApproved && host?.approvalStatus === 'PENDING') {
-        await tx.rentalHost.update({
+        await (tx.rentalHost.update as any)({
           where: { id: backgroundCheck.hostId },
           data: {
             approvalStatus: 'APPROVED',
@@ -329,14 +331,15 @@ async function completeBackgroundCheck(checkId: string, backgroundCheck: any) {
         })
 
         // Create approval notification
-        await tx.hostNotification.create({
+        await (tx.hostNotification.create as any)({
           data: {
             hostId: backgroundCheck.hostId,
             type: 'APPROVAL',
-            title: 'Application Approved! 🎉',
+            category: 'APPROVAL',
+            subject: 'Application Approved!',
             message: 'Congratulations! Your host application has been automatically approved. You can now start listing vehicles.',
             priority: 'CRITICAL',
-            actionRequired: true,
+            actionRequired: 'true',
             actionUrl: '/host/dashboard'
           }
         })
@@ -365,35 +368,20 @@ async function completeBackgroundCheck(checkId: string, backgroundCheck: any) {
         result: check.result
       }))
 
-    await sendHostBackgroundCheckStatus(backgroundCheck.host.user.email, {
+    await (sendHostBackgroundCheckStatus as any)(backgroundCheck.host.user.email, {
       hostName: backgroundCheck.host.user.name || 'Host',
-      status: finalStatus === 'PASSED' 
-        ? 'completed' 
+      checkStatus: finalStatus === 'PASSED'
+        ? 'completed'
         : finalStatus === 'FAILED'
-        ? 'requires_review'
-        : 'error',
-      checksPerformed,
-      nextSteps: finalStatus === 'PASSED' 
-        ? [
-            'Your application has been automatically approved!',
-            'You can now start listing vehicles',
-            'Complete your profile to get started',
-            'Visit your dashboard to add your first car'
-          ]
+        ? 'failed'
+        : 'action_required',
+      checks: checksPerformed,
+      nextSteps: finalStatus === 'PASSED'
+        ? 'Your application has been automatically approved! You can now start listing vehicles.'
         : finalStatus === 'FAILED'
-        ? [
-            'Our team is reviewing your background check results',
-            `${failedChecks} check(s) require additional review`,
-            'We may contact you for additional information',
-            'Check your email for further instructions'
-          ]
-        : [
-            'There was a technical error processing your checks',
-            'Our team has been notified',
-            'We will contact you within 24 hours',
-            'No action is required from you at this time'
-          ],
-      dashboardUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/host/dashboard`,
+        ? `Our team is reviewing your background check results. ${failedChecks} check(s) require additional review.`
+        : 'There was a technical error processing your checks. Our team has been notified.',
+      actionUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/host/dashboard`,
       supportEmail: 'info@itwhip.com'
     })
   } catch (emailError) {

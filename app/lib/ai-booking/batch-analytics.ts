@@ -250,7 +250,7 @@ export async function getBatchResults(batchId: string): Promise<Array<{
       results.push({
         customId: result.custom_id,
         result: null,
-        error: result.result.error.message,
+        error: (result.result.error as any).message,
       })
     }
   }

@@ -527,7 +527,7 @@ export default function DocumentUploadSection({
                   // Upload state
                   <div className="aspect-[4/3] flex flex-col items-center justify-center p-4 text-center">
                     <input
-                      ref={el => fileInputRefs.current[page.id] = el}
+                      ref={(el: any): void => { fileInputRefs.current[page.id] = el }}
                       type="file"
                       accept="image/jpeg,image/png,image/jpg,application/pdf"
                       onChange={(e) => {

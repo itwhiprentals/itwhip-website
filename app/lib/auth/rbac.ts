@@ -3,7 +3,6 @@
 // Implements progressive access model: Anonymous → Admin
 
 import { UserRole, CertificationTier } from '@/app/lib/dal/types'
-import type { User, Hotel } from '@/app/lib/dal/types'
 
 // ============================================================================
 // PERMISSION DEFINITIONS
@@ -62,46 +61,52 @@ const ROLE_HIERARCHY: Record<UserRole, number> = {
   [UserRole.ADMIN]: 5,
 }
 
+// Build permission arrays incrementally to avoid self-referencing const
+const ANONYMOUS_PERMISSIONS: Permission[] = [
+  PERMISSIONS.VIEW_PUBLIC_PAGES,
+  PERMISSIONS.VIEW_PRICING,
+  PERMISSIONS.VIEW_COVERAGE,
+  PERMISSIONS.SEARCH_HOTELS,
+  PERMISSIONS.VIEW_API_DOCS,
+]
+
+const CLAIMED_PERMISSIONS: Permission[] = [
+  ...ANONYMOUS_PERMISSIONS,
+  PERMISSIONS.VIEW_DASHBOARD,
+  PERMISSIONS.BOOK_RIDE,
+  PERMISSIONS.VIEW_OWN_BOOKINGS,
+  PERMISSIONS.MANAGE_PROFILE,
+  PERMISSIONS.VIEW_RIDE_HISTORY,
+]
+
+const STARTER_PERMISSIONS: Permission[] = [
+  ...CLAIMED_PERMISSIONS,
+  PERMISSIONS.VIEW_HOTEL_METRICS,
+  PERMISSIONS.MANAGE_HOTEL_BOOKINGS,
+  PERMISSIONS.VIEW_BASIC_REVENUE,
+  PERMISSIONS.MANAGE_HOTEL_PROFILE,
+]
+
+const BUSINESS_PERMISSIONS: Permission[] = [
+  ...STARTER_PERMISSIONS,
+  PERMISSIONS.VIEW_DETAILED_REVENUE,
+  PERMISSIONS.EXPORT_REPORTS,
+  PERMISSIONS.MANAGE_DRIVERS,
+]
+
+const ENTERPRISE_PERMISSIONS: Permission[] = [
+  ...BUSINESS_PERMISSIONS,
+  PERMISSIONS.WITHDRAW_FUNDS,
+  PERMISSIONS.ACCESS_API_KEYS,
+  PERMISSIONS.VIEW_ALL_HOTELS,
+]
+
 const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
-  [UserRole.ANONYMOUS]: [
-    PERMISSIONS.VIEW_PUBLIC_PAGES,
-    PERMISSIONS.VIEW_PRICING,
-    PERMISSIONS.VIEW_COVERAGE,
-    PERMISSIONS.SEARCH_HOTELS,
-    PERMISSIONS.VIEW_API_DOCS,
-  ],
-  
-  [UserRole.CLAIMED]: [
-    ...ROLE_PERMISSIONS[UserRole.ANONYMOUS],
-    PERMISSIONS.VIEW_DASHBOARD,
-    PERMISSIONS.BOOK_RIDE,
-    PERMISSIONS.VIEW_OWN_BOOKINGS,
-    PERMISSIONS.MANAGE_PROFILE,
-    PERMISSIONS.VIEW_RIDE_HISTORY,
-  ],
-  
-  [UserRole.STARTER]: [
-    ...ROLE_PERMISSIONS[UserRole.CLAIMED],
-    PERMISSIONS.VIEW_HOTEL_METRICS,
-    PERMISSIONS.MANAGE_HOTEL_BOOKINGS,
-    PERMISSIONS.VIEW_BASIC_REVENUE,
-    PERMISSIONS.MANAGE_HOTEL_PROFILE,
-  ],
-  
-  [UserRole.BUSINESS]: [
-    ...ROLE_PERMISSIONS[UserRole.STARTER],
-    PERMISSIONS.VIEW_DETAILED_REVENUE,
-    PERMISSIONS.EXPORT_REPORTS,
-    PERMISSIONS.MANAGE_DRIVERS,
-  ],
-  
-  [UserRole.ENTERPRISE]: [
-    ...ROLE_PERMISSIONS[UserRole.BUSINESS],
-    PERMISSIONS.WITHDRAW_FUNDS,
-    PERMISSIONS.ACCESS_API_KEYS,
-    PERMISSIONS.VIEW_ALL_HOTELS,
-  ],
-  
+  [UserRole.ANONYMOUS]: ANONYMOUS_PERMISSIONS,
+  [UserRole.CLAIMED]: CLAIMED_PERMISSIONS,
+  [UserRole.STARTER]: STARTER_PERMISSIONS,
+  [UserRole.BUSINESS]: BUSINESS_PERMISSIONS,
+  [UserRole.ENTERPRISE]: ENTERPRISE_PERMISSIONS,
   [UserRole.ADMIN]: Object.values(PERMISSIONS), // All permissions
 }
 
@@ -358,11 +363,12 @@ export function apiKeyHasPermission(
   
   // Check tier-based permissions if API key has a tier
   if (apiKey.tier) {
-    const tierRole = {
+    const tierToRole: Partial<Record<CertificationTier, UserRole>> = {
       [CertificationTier.TU_3_C]: UserRole.STARTER,
       [CertificationTier.TU_2_B]: UserRole.BUSINESS,
       [CertificationTier.TU_1_A]: UserRole.ENTERPRISE,
-    }[apiKey.tier]
+    }
+    const tierRole = tierToRole[apiKey.tier]
     
     if (tierRole) {
       const tierPermissions = ROLE_PERMISSIONS[tierRole]
@@ -420,7 +426,6 @@ export function requireAnyPermission(...permissions: Permission[]) {
 export {
   UserRole,
   CertificationTier,
-  type Permission,
 }
 
 // Export role upgrade paths for UI

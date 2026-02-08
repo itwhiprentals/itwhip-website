@@ -894,10 +894,10 @@ pip install -r requirements.txt` :
                       </h3>
                       <div className="bg-gray-900 dark:bg-black rounded-lg p-3 md:p-4 relative overflow-hidden">
                         <pre className="text-xs text-gray-300 overflow-x-auto">
-                          <code>{codeExamples[selectedLanguage as keyof typeof codeExamples].flightIntegration}</code>
+                          <code>{(codeExamples[selectedLanguage as keyof typeof codeExamples] as any).flightIntegration}</code>
                         </pre>
-                        <button 
-                          onClick={() => copyToClipboard(codeExamples[selectedLanguage as keyof typeof codeExamples].flightIntegration, 'flight')}
+                        <button
+                          onClick={() => copyToClipboard((codeExamples[selectedLanguage as keyof typeof codeExamples] as any).flightIntegration, 'flight')}
                           className="absolute top-2 right-2 text-gray-400 hover:text-white"
                         >
                           {copySuccess === 'flight' ? <IoCheckmarkCircle className="w-5 h-5 text-green-500" /> : <IoCopyOutline className="w-5 h-5" />}

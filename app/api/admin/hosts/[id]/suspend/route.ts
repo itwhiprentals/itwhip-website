@@ -77,19 +77,16 @@ export async function POST(
       where: { id: hostId },
       data: {
         approvalStatus: 'SUSPENDED',
-        suspensionReason: reason,
-        suspensionType,
-        suspendedBy: adminId,
+        suspendedReason: reason,
         suspendedAt: new Date(),
-        suspensionEndDate,
-        notes: notes || null
-      }
+        suspensionExpiresAt: suspensionEndDate,
+      } as any
     })
 
     // Deactivate all vehicles for this host
     let vehiclesDeactivated = 0
-    if (host.cars.length > 0) {
-      const result = await prisma.car.updateMany({
+    if ((host as any).cars.length > 0) {
+      const result = await prisma.rentalCar.updateMany({
         where: {
           hostId: hostId,
           isActive: true
@@ -102,18 +99,16 @@ export async function POST(
     }
 
     // Check for active bookings and create notifications
-    const activeBookings = await prisma.booking.findMany({
+    const activeBookings = await prisma.rentalBooking.findMany({
       where: {
-        car: {
-          hostId: hostId
-        },
+        hostId: hostId,
         status: {
           in: ['PENDING', 'CONFIRMED']
-        }
+        } as any
       },
       include: {
         car: true,
-        user: true
+        renter: true
       }
     })
 
@@ -135,8 +130,7 @@ export async function POST(
           vehiclesDeactivated
         },
         priority: 'HIGH',
-        category: 'HOST_MANAGEMENT'
-      }
+      } as any
     })
 
     // TODO: Send suspension email to host
@@ -144,16 +138,17 @@ export async function POST(
     console.log(`Suspension email should be sent to: ${host.email}`)
     console.log(`${activeBookings.length} active bookings need guest notifications`)
 
+    const hostResult: any = updatedHost
     return NextResponse.json({
       success: true,
       message: 'Host suspended successfully',
       data: {
-        hostId: updatedHost.id,
-        approvalStatus: updatedHost.approvalStatus,
-        suspensionReason: updatedHost.suspensionReason,
-        suspensionType: updatedHost.suspensionType,
-        suspendedAt: updatedHost.suspendedAt,
-        suspensionEndDate: updatedHost.suspensionEndDate,
+        hostId: hostResult.id,
+        approvalStatus: hostResult.approvalStatus,
+        suspensionReason: hostResult.suspendedReason,
+        suspensionType: suspensionType,
+        suspendedAt: hostResult.suspendedAt,
+        suspensionEndDate: hostResult.suspensionExpiresAt,
         vehiclesDeactivated,
         activeBookingsAffected: activeBookings.length
       },

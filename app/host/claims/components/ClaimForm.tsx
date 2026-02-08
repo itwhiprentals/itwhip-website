@@ -1167,7 +1167,7 @@ export default function ClaimForm({ hostId, onSuccess, onCancel }: ClaimFormProp
             setOtherPartyInsuranceCarrier={setOtherPartyInsuranceCarrier}
             otherPartyInsurancePolicy={otherPartyInsurancePolicy}
             setOtherPartyInsurancePolicy={setOtherPartyInsurancePolicy}
-            usStates={usStates}
+            usStates={usStates as any}
             disabled={isSubmitting || submitSuccess}
           />
         </div>

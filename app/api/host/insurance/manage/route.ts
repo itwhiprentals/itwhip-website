@@ -38,20 +38,20 @@ export async function GET(request: NextRequest) {
       include: {
         user: {
           include: {
-            host: true
+            rentalHost: true
           }
         }
       }
-    })
-    
-    if (!session?.user?.host) {
+    }) as any
+
+    if (!session?.user?.rentalHost) {
       return NextResponse.json(
         { error: 'Host account not found' },
         { status: 404 }
       )
     }
-    
-    const host = session.user.host
+
+    const host = session.user.rentalHost
     const currentTier = calculateHostTier(host)
     const statuses = getInsuranceStatuses(host)
     
@@ -119,22 +119,22 @@ export async function DELETE(request: NextRequest) {
       include: {
         user: {
           include: {
-            host: true
+            rentalHost: true
           }
         }
       }
-    })
-    
-    if (!session?.user?.host) {
+    }) as any
+
+    if (!session?.user?.rentalHost) {
       return NextResponse.json(
         { error: 'Host account not found' },
         { status: 404 }
       )
     }
-    
-    const host = session.user.host
+
+    const host = session.user.rentalHost
     const hostId = host.id
-    
+
     // Validate deletion
     const validation = await validateInsuranceDeletion(hostId, type)
     if (!validation.valid) {
@@ -202,6 +202,7 @@ export async function DELETE(request: NextRequest) {
       // Create activity log
       await tx.activityLog.create({
         data: {
+          id: crypto.randomUUID(),
           entityType: 'HOST',
           entityId: hostId,
           action: 'INSURANCE_DELETED',
@@ -219,8 +220,9 @@ export async function DELETE(request: NextRequest) {
       })
       
       // Create host notification
-      await tx.hostNotification.create({
+      await (tx.hostNotification as any).create({
         data: {
+          id: crypto.randomUUID(),
           hostId,
           type: 'INSURANCE_DELETED',
           category: 'insurance',
@@ -234,6 +236,7 @@ export async function DELETE(request: NextRequest) {
       // Create admin notification
       await tx.adminNotification.create({
         data: {
+          id: crypto.randomUUID(),
           type: 'INSURANCE_DELETED',
           title: 'Host Deleted Insurance',
           message: `${host.name} (${host.email}) deleted their ${type} insurance. Tier: ${currentTier.tier} → ${newTier.tier}`,
@@ -241,6 +244,7 @@ export async function DELETE(request: NextRequest) {
           status: 'UNREAD',
           relatedId: hostId,
           relatedType: 'HOST',
+          updatedAt: new Date(),
           metadata: {
             hostName: host.name,
             hostEmail: host.email,
@@ -304,22 +308,22 @@ export async function PATCH(request: NextRequest) {
       include: {
         user: {
           include: {
-            host: true
+            rentalHost: true
           }
         }
       }
-    })
-    
-    if (!session?.user?.host) {
+    }) as any
+
+    if (!session?.user?.rentalHost) {
       return NextResponse.json(
         { error: 'Host account not found' },
         { status: 404 }
       )
     }
-    
-    const host = session.user.host
+
+    const host = session.user.rentalHost
     const hostId = host.id
-    
+
     // Validate toggle
     const validation = await validateInsuranceToggle(hostId, targetType)
     if (!validation.valid) {
@@ -363,6 +367,7 @@ export async function PATCH(request: NextRequest) {
       // Log the toggle
       await tx.activityLog.create({
         data: {
+          id: crypto.randomUUID(),
           entityType: 'HOST',
           entityId: hostId,
           action: 'INSURANCE_TOGGLED',
@@ -379,8 +384,9 @@ export async function PATCH(request: NextRequest) {
       })
       
       // Notify host
-      await tx.hostNotification.create({
+      await (tx.hostNotification as any).create({
         data: {
+          id: crypto.randomUUID(),
           hostId,
           type: 'INSURANCE_TOGGLED',
           category: 'insurance',

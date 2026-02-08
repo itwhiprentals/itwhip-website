@@ -14,10 +14,10 @@ export async function POST(
     const { id } = await params
 
     // Find the partner
-    const partner = await prisma.rentalHost.findUnique({
+    const partner = await (prisma.rentalHost.findUnique as any)({
       where: { id },
       include: {
-        partnerDocuments: {
+        partner_documents: {
           where: { isExpired: true }
         }
       }
@@ -38,12 +38,12 @@ export async function POST(
     }
 
     // Check for expired documents
-    if (partner.partnerDocuments.length > 0) {
-      const expiredTypes = partner.partnerDocuments.map(d => d.type).join(', ')
+    if (partner.partner_documents.length > 0) {
+      const expiredTypes = partner.partner_documents.map((d: any) => d.type).join(', ')
       return NextResponse.json(
         {
           error: `Cannot reactivate: Partner has expired documents (${expiredTypes}). Documents must be updated first.`,
-          expiredDocuments: partner.partnerDocuments.map(d => ({
+          expiredDocuments: partner.partner_documents.map((d: any) => ({
             id: d.id,
             type: d.type,
             expiresAt: d.expiresAt
@@ -70,7 +70,7 @@ export async function POST(
     // })
 
     // Log the reactivation
-    await prisma.activityLog.create({
+    await (prisma.activityLog.create as any)({
       data: {
         entityType: 'PARTNER',
         entityId: id,
@@ -86,7 +86,7 @@ export async function POST(
     // Send reactivation email to partner
     try {
       const emailTemplate = getPartnerReactivatedTemplate({
-        companyName: partner.partnerCompanyName || partner.displayName || 'Partner',
+        companyName: partner.partnerCompanyName || partner.name || 'Partner',
         contactName: partner.name || 'Partner',
         contactEmail: partner.email,
         dashboardUrl: 'https://itwhip.com/partner/dashboard',
@@ -106,14 +106,14 @@ export async function POST(
       // Send admin notification (industry standard: notify operations team)
       const adminEmail = process.env.FLEET_ADMIN_EMAIL || 'info@itwhip.com'
       const adminNotification = {
-        subject: `[Fleet Alert] Partner Reactivated: ${partner.partnerCompanyName || partner.displayName}`,
+        subject: `[Fleet Alert] Partner Reactivated: ${partner.partnerCompanyName || partner.name}`,
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: #16a34a; color: white; padding: 20px; text-align: center;">
               <h2 style="margin: 0;">Partner Reactivation Alert</h2>
             </div>
             <div style="padding: 24px; background: #fff; border: 1px solid #e5e7eb;">
-              <p><strong>Partner:</strong> ${partner.partnerCompanyName || partner.displayName}</p>
+              <p><strong>Partner:</strong> ${partner.partnerCompanyName || partner.name}</p>
               <p><strong>Contact:</strong> ${partner.name} (${partner.email})</p>
               <p><strong>Status:</strong> Active</p>
               <p><strong>Time:</strong> ${new Date().toISOString()}</p>
@@ -123,7 +123,7 @@ export async function POST(
             </div>
           </div>
         `,
-        text: `Partner Reactivation Alert\n\nPartner: ${partner.partnerCompanyName || partner.displayName}\nContact: ${partner.name} (${partner.email})\nStatus: Active\nTime: ${new Date().toISOString()}\n\nNote: Vehicle listings require manual reactivation.`
+        text: `Partner Reactivation Alert\n\nPartner: ${partner.partnerCompanyName || partner.name}\nContact: ${partner.name} (${partner.email})\nStatus: Active\nTime: ${new Date().toISOString()}\n\nNote: Vehicle listings require manual reactivation.`
       }
 
       await sendEmail(

@@ -15,10 +15,10 @@ export async function GET(
   try {
     const { id: profileId } = await params
 
-    const profile = await prisma.reviewerProfile.findUnique({
+    const profile = await (prisma.reviewerProfile as any).findUnique({
       where: { id: profileId },
       include: {
-        reviews: {
+        RentalReview: {
           include: {
             car: {
               select: {
@@ -118,7 +118,7 @@ export async function PUT(
       data: updateData,
       include: {
         _count: {
-          select: { reviews: true }
+          select: { RentalReview: true } as any
         }
       }
     })
@@ -133,7 +133,7 @@ export async function PUT(
           : 'Documents verified by admin'
 
         await trackActivity(profileId, {
-          action: 'DOCUMENT_VERIFIED',
+          action: 'DOCUMENT_VERIFIED' as any,
           description,
           performedBy: 'FLEET_ADMIN',
           metadata: {
@@ -168,7 +168,7 @@ export async function PUT(
     if (isBeingRejectedNow) {
       try {
         await trackActivity(profileId, {
-          action: 'DOCUMENT_REJECTED',
+          action: 'DOCUMENT_REJECTED' as any,
           description: 'Documents rejected by admin - Verification status revoked',
           performedBy: 'FLEET_ADMIN',
           metadata: {

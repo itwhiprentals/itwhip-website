@@ -196,6 +196,7 @@ async function logVehicleActivity(params: {
   try {
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         entityType: 'CAR',
         entityId: carId,
         hostId: hostId,
@@ -204,14 +205,14 @@ async function logVehicleActivity(params: {
         severity: severity,
         oldValue: changes?.oldValues ? JSON.stringify(changes.oldValues) : null,
         newValue: changes?.newValues ? JSON.stringify(changes.newValues) : null,
-        metadata: metadata ? JSON.stringify({
+        metadata: metadata ? {
           ...metadata,
           hostName,
           timestamp: new Date().toISOString()
-        }) : JSON.stringify({
+        } : {
           hostName,
           timestamp: new Date().toISOString()
-        }),
+        },
         createdAt: new Date()
       }
     })
@@ -415,7 +416,7 @@ export async function PUT(
     }
 
     // Server-side validation: Reject changes to locked fields for approved vehicles
-    const isCarApproved = existingCar.status === 'APPROVED'
+    const isCarApproved = (existingCar as any).status === 'APPROVED'
     if (isCarApproved) {
       const lockedFields = ['make', 'model', 'year', 'color', 'vin', 'licensePlate', 'registrationState']
       const attemptedLockedChanges: string[] = []
@@ -852,13 +853,15 @@ export async function PATCH(
     if (!isActive) {
       await prisma.adminNotification.create({
         data: {
+          id: crypto.randomUUID(),
           type: 'CAR_DEACTIVATED',
           title: 'Car Deactivated',
           message: `Host ${host.name || host.email} deactivated car: ${car.year} ${car.make} ${car.model}`,
           priority: 'LOW',
           status: 'UNREAD',
           relatedId: carId,
-          relatedType: 'CAR'
+          relatedType: 'CAR',
+          updatedAt: new Date()
         }
       })
     }
@@ -938,7 +941,7 @@ export async function DELETE(
     const historicalBookings = await prisma.rentalBooking.count({
       where: {
         carId,
-        status: { in: ['COMPLETED', 'CANCELLED', 'EXPIRED', 'NO_SHOW'] }
+        status: { in: ['COMPLETED', 'CANCELLED', 'EXPIRED', 'NO_SHOW'] as any }
       }
     })
 
@@ -1000,6 +1003,7 @@ export async function DELETE(
 
     await prisma.adminNotification.create({
       data: {
+        id: crypto.randomUUID(),
         type: 'CAR_DELETED',
         title: 'Car Deleted',
         message: `Host ${host.name || host.email} deleted car: ${car.year} ${car.make} ${car.model}`,
@@ -1007,6 +1011,7 @@ export async function DELETE(
         status: 'UNREAD',
         relatedId: carId,
         relatedType: 'CAR',
+        updatedAt: new Date(),
         metadata: {
           hostId: host.id,
           carDetails: {

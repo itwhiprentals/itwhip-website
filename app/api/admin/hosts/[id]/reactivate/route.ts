@@ -65,7 +65,8 @@ export async function POST(
     }
 
     // Prepare permissions (restrict if needed)
-    let permissions = host.permissions || {}
+    const hostAny: any = host
+    let permissions: any = hostAny.permissions || {}
     if (restrictedPermissions) {
       permissions = {
         ...permissions,
@@ -82,23 +83,16 @@ export async function POST(
       where: { id: hostId },
       data: {
         approvalStatus: 'APPROVED',
-        suspensionReason: null,
-        suspensionType: null,
-        suspendedBy: null,
+        suspendedReason: null,
         suspendedAt: null,
-        suspensionEndDate: null,
-        reactivatedBy: adminId,
-        reactivatedAt: new Date(),
-        probationEndDate,
-        permissions,
-        notes: notes || null
-      }
+        suspensionExpiresAt: null,
+      } as any
     })
 
     // Reactivate vehicles if requested
     let vehiclesReactivated = 0
-    if (reactivateVehicles && host.cars.length > 0) {
-      const result = await prisma.car.updateMany({
+    if (reactivateVehicles && hostAny.cars.length > 0) {
+      const result = await prisma.rentalCar.updateMany({
         where: {
           hostId: hostId,
           isActive: false
@@ -124,28 +118,28 @@ export async function POST(
           probationPeriod: probationPeriod || 'none',
           restrictedPermissions,
           vehiclesReactivated,
-          previousSuspensionReason: host.suspensionReason
+          previousSuspensionReason: host.suspendedReason
         },
         priority: 'MEDIUM',
-        category: 'HOST_MANAGEMENT'
-      }
+      } as any
     })
 
     // TODO: Send reactivation email to host
     console.log(`Reactivation email should be sent to: ${host.email}`)
     console.log(`Probation period: ${probationPeriod} days`)
 
+    const updatedHostAny: any = updatedHost
     return NextResponse.json({
       success: true,
       message: 'Host reactivated successfully',
       data: {
-        hostId: updatedHost.id,
-        approvalStatus: updatedHost.approvalStatus,
-        reactivatedAt: updatedHost.reactivatedAt,
-        probationEndDate: updatedHost.probationEndDate,
+        hostId: updatedHostAny.id,
+        approvalStatus: updatedHostAny.approvalStatus,
+        reactivatedAt: new Date().toISOString(),
+        probationEndDate: probationEndDate?.toISOString() || null,
         vehiclesReactivated,
         restrictedPermissions,
-        permissions: updatedHost.permissions
+        permissions
       },
       info: probationPeriod > 0 ? [
         `Host is on probation for ${probationPeriod} days`,

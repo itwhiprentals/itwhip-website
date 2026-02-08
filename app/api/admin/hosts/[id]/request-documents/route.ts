@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyAdminToken } from '@/app/lib/admin/auth'
-import { sendHostDocumentRequest, sendHostActionRequired } from '@/app/lib/email'
+import { sendHostDocumentRequest } from '@/app/lib/email'
 
 // POST - Request specific documents from a host
 export async function POST(
@@ -55,10 +55,10 @@ export async function POST(
       'vehicleRegistration'
     ]
     
-    const invalidDocs = documents.filter(doc => !validDocumentTypes.includes(doc.type))
+    const invalidDocs = documents.filter((doc: any) => !validDocumentTypes.includes(doc.type))
     if (invalidDocs.length > 0) {
       return NextResponse.json(
-        { error: `Invalid document types: ${invalidDocs.map(d => d.type).join(', ')}` },
+        { error: `Invalid document types: ${invalidDocs.map((d: any) => d.type).join(', ')}` },
         { status: 400 }
       )
     }
@@ -72,9 +72,9 @@ export async function POST(
             email: true
           }
         },
-        documentStatusRecords: true
+        HostDocumentStatus: true
       }
-    })
+    }) as any
     
     if (!host) {
       return NextResponse.json(
@@ -120,7 +120,7 @@ export async function POST(
       
       // Create or update document status records
       for (const doc of documents) {
-        await tx.hostDocumentStatus.upsert({
+        await (tx.hostDocumentStatus.upsert as any)({
           where: {
             hostId_documentType: {
               hostId: hostId,
@@ -149,7 +149,7 @@ export async function POST(
       }
       
       // Create host notification
-      const notification = await tx.hostNotification.create({
+      const notification = await (tx.hostNotification.create as any)({
         data: {
           hostId: hostId,
           type: 'DOCUMENT_REQUEST',
@@ -171,7 +171,7 @@ export async function POST(
       })
       
       // Create admin notification for tracking
-      await tx.adminNotification.create({
+      await (tx.adminNotification.create as any)({
         data: {
           type: 'DOCUMENT_REQUEST_SENT',
           title: 'Document Request Sent',
@@ -184,12 +184,13 @@ export async function POST(
             documents: documents.map((d: any) => d.type),
             deadline: deadlineDate.toISOString(),
             adminId: adminPayload.userId
-          }
+          },
+          updatedAt: new Date()
         }
       })
       
       // Create activity log
-      await tx.activityLog.create({
+      await (tx.activityLog.create as any)({
         data: {
           entityType: 'HOST',
           entityId: hostId,
@@ -227,7 +228,7 @@ export async function POST(
           uploadUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/host/profile`,
           deadline: `${Math.ceil((deadlineDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days`,
           supportEmail: process.env.SUPPORT_EMAIL || 'info@itwhip.com'
-        })
+        } as any)
       }
     } catch (emailError) {
       console.error('Failed to send email notification:', emailError)
@@ -295,7 +296,7 @@ export async function GET(
             }
           }
         }
-      }),
+      }) as any,
       
       prisma.hostNotification.findMany({
         where: {
@@ -336,29 +337,29 @@ export async function GET(
       governmentId: {
         uploaded: !!host.governmentIdUrl,
         url: host.governmentIdUrl,
-        status: documentRecords.find(d => d.documentType === 'governmentId') || null
+        status: documentRecords.find((d: any) => d.documentType === 'governmentId') || null
       },
       driversLicense: {
         uploaded: !!host.driversLicenseUrl,
         url: host.driversLicenseUrl,
-        status: documentRecords.find(d => d.documentType === 'driversLicense') || null
+        status: documentRecords.find((d: any) => d.documentType === 'driversLicense') || null
       },
       insurance: {
         uploaded: !!host.insuranceDocUrl,
         url: host.insuranceDocUrl,
-        status: documentRecords.find(d => d.documentType === 'insurance') || null
+        status: documentRecords.find((d: any) => d.documentType === 'insurance') || null
       }
     }
     
     // Calculate pending document requests
     const pendingRequests = documentRecords.filter(
-      record => record.reviewStatus === 'NEEDS_RESUBMISSION' && 
+      (record: any) => record.reviewStatus === 'NEEDS_RESUBMISSION' &&
                 (!record.uploadedAt || record.uploadedAt < record.requestedAt!)
     )
-    
+
     // Check for overdue requests
     const overdueRequests = pendingRequests.filter(
-      record => record.requestDeadline && new Date(record.requestDeadline) < new Date()
+      (record: any) => record.requestDeadline && new Date(record.requestDeadline) < new Date()
     )
     
     return NextResponse.json({

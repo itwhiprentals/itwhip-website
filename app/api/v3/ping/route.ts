@@ -14,8 +14,8 @@ const RATE_LIMIT = {
 }
 
 // Get client IP from various headers (works with proxies/load balancers)
-function getClientIp(): string {
-  const headersList = headers()
+async function getClientIp(): Promise<string> {
+  const headersList = await headers()
   const forwardedFor = headersList.get('x-forwarded-for')
   const realIp = headersList.get('x-real-ip')
   const clientIp = headersList.get('x-client-ip')
@@ -68,7 +68,7 @@ export async function GET(request: Request) {
   
   try {
     // Get client IP for rate limiting
-    const clientIp = getClientIp()
+    const clientIp = await getClientIp()
     
     // Check rate limit
     const { allowed, remaining, resetTime } = checkRateLimit(clientIp)

@@ -65,7 +65,7 @@ export async function POST(
     }
 
     // Check if already paid
-    if (claim.status === 'PAID' || claim.paidToHost) {
+    if ((claim.status as string) === 'PAID' || claim.paidToHost) {
       return NextResponse.json(
         { error: 'Claim has already been paid out' },
         { status: 400 }

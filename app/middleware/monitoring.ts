@@ -4,7 +4,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createAuditLog } from '@/app/lib/database/audit'
 import { trackMetric, incrementCounter } from '@/app/lib/monitoring/metrics'
 import { logger } from '@/app/lib/monitoring/logger'
 import { createAlert } from '@/app/lib/monitoring/alerts'
@@ -220,8 +219,8 @@ async function checkPerformanceThresholds(
   // Check response time
   if (responseTime > PERFORMANCE_THRESHOLDS.responseTime.poor) {
     await createAlert({
-      type: 'performance',
-      severity: 'HIGH',
+      type: 'performance' as any,
+      severity: 'HIGH' as any,
       title: 'Slow Response Time',
       message: `Endpoint ${endpoint} took ${responseTime}ms to respond`,
       details: {
@@ -239,8 +238,8 @@ async function checkPerformanceThresholds(
     
     if (errorRate > PERFORMANCE_THRESHOLDS.errorRate.poor) {
       await createAlert({
-        type: 'error_rate',
-        severity: 'CRITICAL',
+        type: 'error_rate' as any,
+        severity: 'CRITICAL' as any,
         title: 'High Error Rate',
         message: `Endpoint ${endpoint} has ${errorRate.toFixed(2)}% error rate`,
         details: {
@@ -290,6 +289,10 @@ export async function monitoringMiddleware(
   // Determine if we should sample this request
   const sample = shouldSample()
   
+  // Store original methods for potential restoration in catch
+  let originalJson = NextResponse.json
+  let originalNext = NextResponse.next
+
   try {
     // Log request start
     if (!options?.skipLogging && sample) {
@@ -332,8 +335,8 @@ export async function monitoringMiddleware(
     }
     
     // Create response handler to track metrics
-    const originalJson = NextResponse.json
-    const originalNext = NextResponse.next
+    originalJson = NextResponse.json
+    originalNext = NextResponse.next
     
     // Override response methods to capture metrics
     ;(NextResponse as any).json = function(
@@ -374,10 +377,10 @@ export async function monitoringMiddleware(
       
       // Log response
       if (!options?.skipLogging && sample) {
-        const logLevel = statusCode >= 500 ? 'error' : 
+        const logLevelValue: string = statusCode >= 500 ? 'error' :
                         statusCode >= 400 ? 'warn' : 'info'
-        
-        logger[logLevel]('Request completed', {
+
+        (logger as any)[logLevelValue]('Request completed', {
           requestId,
           method,
           path: pathname,
@@ -584,9 +587,9 @@ export async function healthCheck(): Promise<{
   
   // Check error rates
   for (const [endpoint, errors] of Object.entries(metrics.errors)) {
-    const requests = metrics.requests[endpoint as keyof typeof metrics.requests] || 0
+    const requests = (metrics.requests as any)[endpoint] || 0
     if (requests > 0) {
-      const errorRate = (errors / requests) * 100
+      const errorRate = ((errors as number) / requests) * 100
       if (errorRate > 10) {
         issues.push(`High error rate for ${endpoint}: ${errorRate.toFixed(2)}%`)
       }

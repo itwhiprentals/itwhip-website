@@ -78,6 +78,7 @@ export async function GET(request: NextRequest) {
 
       esgProfile = await prisma.hostESGProfile.create({
         data: {
+          id: crypto.randomUUID(),
           hostId: host.id,
           compositeScore: calculation.scores.compositeScore,
           drivingImpactScore: calculation.scores.drivingImpactScore,
@@ -128,6 +129,8 @@ export async function GET(request: NextRequest) {
           nextMilestone: calculation.scores.nextMilestone,
           calculationVersion: calculation.scores.calculationVersion,
           dataConfidence: calculation.scores.dataConfidence,
+          lastCalculatedAt: new Date(),
+          updatedAt: new Date(),
         },
         include: {
           snapshots: {
@@ -139,7 +142,8 @@ export async function GET(request: NextRequest) {
 
       await prisma.eSGSnapshot.create({
         data: {
-          profileId: esgProfile.id,
+          id: crypto.randomUUID(),
+          profileId: esgProfile!.id,
           compositeScore: calculation.scores.compositeScore,
           drivingImpactScore: calculation.scores.drivingImpactScore,
           emissionsScore: calculation.scores.emissionsScore,
@@ -153,6 +157,9 @@ export async function GET(request: NextRequest) {
       console.log("✅ ESG profile created");
     }
 
+    // At this point esgProfile is guaranteed non-null (either found or created above)
+    const profile = esgProfile!;
+
     // ✅ Fetch fleet composition
     console.log('🚗 Fetching fleet composition for host:', host.id);
     const fleetComposition = await analyzeFleetComposition(host.id);
@@ -165,71 +172,71 @@ export async function GET(request: NextRequest) {
       success: true,
       data: {
         profile: {
-          compositeScore: esgProfile.compositeScore,
-          safetyScore: esgProfile.safetyScore,
-          drivingImpactScore: esgProfile.drivingImpactScore,
-          emissionsScore: esgProfile.emissionsScore,
-          maintenanceScore: esgProfile.maintenanceScore,
-          complianceScore: esgProfile.complianceScore,
-          totalTrips: esgProfile.totalTrips,
-          incidentFreeTrips: esgProfile.incidentFreeTrips,
-          currentIncidentStreak: esgProfile.currentIncidentStreak,
-          totalClaimsFiled: esgProfile.totalClaimsFiled,
-          evTripPercentage: esgProfile.evTripPercentage,
-          estimatedCO2Saved: esgProfile.estimatedCO2Saved,
-          totalCO2Impact: esgProfile.totalCO2Impact || 0,
-          avgCO2PerMile: esgProfile.avgCO2PerMile || 0,
-          claimResponseRate: esgProfile.fnolCompletionRate,
-          avgResponseTimeHours: esgProfile.avgResponseTimeHours,
-          maintenanceOnTime: esgProfile.maintenanceOnTime,
-          unauthorizedMileage: esgProfile.unauthorizedMileage,
-          totalMilesDriven: esgProfile.totalMilesDriven,
-          tripCompletionRate: esgProfile.tripCompletionRate,
+          compositeScore: profile.compositeScore,
+          safetyScore: profile.safetyScore,
+          drivingImpactScore: profile.drivingImpactScore,
+          emissionsScore: profile.emissionsScore,
+          maintenanceScore: profile.maintenanceScore,
+          complianceScore: profile.complianceScore,
+          totalTrips: profile.totalTrips,
+          incidentFreeTrips: profile.incidentFreeTrips,
+          currentIncidentStreak: profile.currentIncidentStreak,
+          totalClaimsFiled: profile.totalClaimsFiled,
+          evTripPercentage: profile.evTripPercentage,
+          estimatedCO2Saved: profile.estimatedCO2Saved,
+          totalCO2Impact: profile.totalCO2Impact || 0,
+          avgCO2PerMile: profile.avgCO2PerMile || 0,
+          claimResponseRate: profile.fnolCompletionRate,
+          avgResponseTimeHours: profile.avgResponseTimeHours,
+          maintenanceOnTime: profile.maintenanceOnTime,
+          unauthorizedMileage: profile.unauthorizedMileage,
+          totalMilesDriven: profile.totalMilesDriven,
+          tripCompletionRate: profile.tripCompletionRate,
           metrics: {
             safety: {
-              totalTrips: esgProfile.totalTrips,
-              incidentFreeTrips: esgProfile.incidentFreeTrips,
-              totalClaimsFiled: esgProfile.totalClaimsFiled,
-              currentStreak: esgProfile.currentIncidentStreak,
-              longestStreak: esgProfile.longestIncidentStreak,
-              lastIncidentDate: esgProfile.lastIncidentDate,
+              totalTrips: profile.totalTrips,
+              incidentFreeTrips: profile.incidentFreeTrips,
+              totalClaimsFiled: profile.totalClaimsFiled,
+              currentStreak: profile.currentIncidentStreak,
+              longestStreak: profile.longestIncidentStreak,
+              lastIncidentDate: profile.lastIncidentDate,
             },
             drivingImpact: {
-              totalMiles: esgProfile.totalMilesDriven,
-              avgMilesPerTrip: esgProfile.avgMilesPerTrip,
-              completionRate: esgProfile.tripCompletionRate,
-              unauthorizedMileage: esgProfile.unauthorizedMileage,
-              lateReturns: esgProfile.lateReturnCount,
+              totalMiles: profile.totalMilesDriven,
+              avgMilesPerTrip: profile.avgMilesPerTrip,
+              completionRate: profile.tripCompletionRate,
+              unauthorizedMileage: profile.unauthorizedMileage,
+              lateReturns: profile.lateReturnCount,
             },
             environmental: {
-              totalEVTrips: esgProfile.totalEVTrips,
-              evTripPercentage: esgProfile.evTripPercentage,
-              estimatedCO2Saved: esgProfile.estimatedCO2Saved,
-              totalCO2Impact: esgProfile.totalCO2Impact || 0,
-              avgCO2PerMile: esgProfile.avgCO2PerMile || 0,
-              fuelEfficiencyRating: esgProfile.fuelEfficiencyRating,
+              totalEVTrips: profile.totalEVTrips,
+              evTripPercentage: profile.evTripPercentage,
+              estimatedCO2Saved: profile.estimatedCO2Saved,
+              totalCO2Impact: profile.totalCO2Impact || 0,
+              avgCO2PerMile: profile.avgCO2PerMile || 0,
+              fuelEfficiencyRating: profile.fuelEfficiencyRating,
             },
             maintenance: {
-              onTime: esgProfile.maintenanceOnTime,
-              lastMaintenanceDate: esgProfile.lastMaintenanceDate,
-              overdueCount: esgProfile.overdueMaintenanceCount,
+              onTime: profile.maintenanceOnTime,
+              lastMaintenanceDate: profile.lastMaintenanceDate,
+              overdueCount: profile.overdueMaintenanceCount,
             },
             compliance: {
-              responseRate: esgProfile.fnolCompletionRate,
-              avgResponseTimeHours: esgProfile.avgResponseTimeHours,
+              responseRate: profile.fnolCompletionRate,
+              avgResponseTimeHours: profile.avgResponseTimeHours,
             },
             fleet: {
-              totalVehicles: esgProfile.totalVehicles,
-              activeVehicles: esgProfile.activeVehicles,
-              evVehicleCount: esgProfile.evVehicleCount,
-              avgVehicleAge: esgProfile.avgVehicleAge,
+              totalVehicles: profile.totalVehicles,
+              activeVehicles: profile.activeVehicles,
+              evVehicleCount: profile.evVehicleCount,
+              avgVehicleAge: profile.avgVehicleAge,
             },
           },
-          lastCalculatedAt: esgProfile.lastCalculatedAt,
-          dataConfidence: esgProfile.dataConfidence,
+          lastCalculatedAt: profile.lastCalculatedAt,
+          dataConfidence: profile.dataConfidence,
         },
         fleetComposition,
-        history: esgProfile.snapshots.map((snapshot) => ({
+        history: profile.snapshots.map((snapshot) => ({
           date: snapshot.snapshotDate,
           compositeScore: snapshot.compositeScore,
           safetyScore: snapshot.safetyScore,

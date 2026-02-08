@@ -57,7 +57,7 @@ export async function GET(
         guest = {
           ...profile.user,
           reviewerProfile: profile
-        }
+        } as any
       }
     }
 
@@ -101,7 +101,7 @@ export async function GET(
         
         return {
           id: warning.id,
-          category: warning.category || 'GENERAL',
+          category: (warning as any).warningCategory || 'GENERAL',
           reason: warning.publicReason || 'No reason provided',
           issuedAt: warning.takenAt,
           expiresAt: warning.expiresAt,
@@ -111,7 +111,7 @@ export async function GET(
 
     // Get current suspension
     let suspension = null
-    if (profile.suspensionLevel && profile.suspensionLevel !== 'NONE') {
+    if (profile.suspensionLevel && !['NONE'].includes(profile.suspensionLevel as string)) {
       const suspensionAction = moderationActions.find(
         action => ['SUSPEND', 'BAN'].includes(action.actionType)
       )
@@ -201,8 +201,8 @@ export async function GET(
       totalModerationActions: moderationActions.length,
       guestInfo: {
         id: profile.id,
-        name: guest.name,
-        email: guest.email,
+        name: guest.name || '',
+        email: guest.email || '',
         verified: profile.isVerified || false,
         memberSince: guest.createdAt
       }

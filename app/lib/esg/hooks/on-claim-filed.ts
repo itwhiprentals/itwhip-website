@@ -318,6 +318,7 @@ async function logESGEvent(data: {
 
   await prisma.eSGEvent.create({
     data: {
+      id: crypto.randomUUID(),
       hostId: data.hostId,
       eventType: data.eventType,
       eventCategory: data.eventCategory,

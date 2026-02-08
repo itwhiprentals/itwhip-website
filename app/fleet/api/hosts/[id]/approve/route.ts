@@ -138,7 +138,7 @@ export async function POST(
         },
         hash: '',
         verified: false
-      }
+      } as any
     })
 
     // Send approval email (placeholder - implement your email service)
@@ -275,7 +275,7 @@ export async function DELETE(
         },
         hash: '',
         verified: false
-      }
+      } as any
     })
 
     // Send rejection email (placeholder - implement your email service)

@@ -86,16 +86,18 @@ export async function POST(
    // Create the dispute
    const dispute = await prisma.rentalDispute.create({
      data: {
+       id: require('crypto').randomUUID(),
        bookingId,
        type: type || 'OTHER',
        description,
        status: 'OPEN'
-     }
+     } as any
    })
 
    // Create a message about the dispute
    await prisma.rentalMessage.create({
      data: {
+       id: require('crypto').randomUUID(),
        bookingId,
        senderId: 'system',
        senderType: 'admin',
@@ -110,13 +112,15 @@ export async function POST(
          requestedResolution
        },
        isRead: false,
-       readByAdmin: false
-     }
+       readByAdmin: false,
+       updatedAt: new Date()
+     } as any
    })
 
    // Create activity log
    await prisma.activityLog.create({
      data: {
+       id: require('crypto').randomUUID(),
        action: 'DISPUTE_CREATED',
        entityType: 'RentalDispute',
        entityId: dispute.id,
@@ -127,12 +131,13 @@ export async function POST(
          timestamp: new Date()
        },
        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
-     }
+     } as any
    })
 
    // Create admin notification
    await prisma.adminNotification.create({
      data: {
+       id: require('crypto').randomUUID(),
        type: 'BOOKING_ISSUE',
        title: `New Dispute - Booking ${booking.bookingCode}`,
        message: `Guest has submitted a dispute: ${description}`,
@@ -148,8 +153,9 @@ export async function POST(
          hostId: booking.host.id,
          hostName: booking.host.name,
          disputeType: type
-       }
-     }
+       },
+       updatedAt: new Date()
+     } as any
    })
 
    // Send notification emails
@@ -285,6 +291,7 @@ export async function PATCH(
    if (additionalInfo) {
      await prisma.rentalMessage.create({
        data: {
+         id: require('crypto').randomUUID(),
          bookingId,
          senderId: guestEmail || 'guest',
          senderType: 'guest',
@@ -296,14 +303,16 @@ export async function PATCH(
            evidence
          },
          isRead: false,
-         readByAdmin: false
-       }
+         readByAdmin: false,
+         updatedAt: new Date()
+       } as any
      })
    }
 
    // Log the update
    await prisma.activityLog.create({
      data: {
+       id: require('crypto').randomUUID(),
        action: 'DISPUTE_UPDATED',
        entityType: 'RentalDispute',
        entityId: dispute.id,
@@ -313,7 +322,7 @@ export async function PATCH(
          timestamp: new Date()
        },
        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
-     }
+     } as any
    })
 
    return NextResponse.json({

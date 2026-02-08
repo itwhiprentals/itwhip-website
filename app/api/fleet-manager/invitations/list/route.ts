@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
       if (inv.negotiationHistory) {
         try {
           negotiationHistory = Array.isArray(inv.negotiationHistory)
-            ? inv.negotiationHistory as NegotiationHistoryEntry[]
+            ? inv.negotiationHistory as unknown as NegotiationHistoryEntry[]
             : JSON.parse(inv.negotiationHistory as string)
         } catch {
           negotiationHistory = []

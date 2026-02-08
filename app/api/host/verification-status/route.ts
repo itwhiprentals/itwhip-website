@@ -308,7 +308,7 @@ export async function GET(request: NextRequest) {
         isFullyVerified: verificationProgress === 100,
         requirements: verificationSteps,
         nextSteps: nextSteps.sort((a, b) => {
-          const priorityOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 }
+          const priorityOrder: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 }
           return priorityOrder[a.priority] - priorityOrder[b.priority]
         }),
         permissions,

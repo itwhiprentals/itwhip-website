@@ -47,7 +47,7 @@ export async function POST(
     }
 
     // Check status
-    if (!['PENDING', 'COUNTER_OFFERED'].includes(invitation.status)) {
+    if (!['PENDING', 'COUNTER_OFFERED'].includes(invitation.status as string)) {
       return NextResponse.json(
         { error: `Invitation cannot be accepted - current status: ${invitation.status}` },
         { status: 400 }
@@ -58,7 +58,7 @@ export async function POST(
     if (new Date() > invitation.expiresAt) {
       await prisma.managementInvitation.update({
         where: { id: invitation.id },
-        data: { status: 'EXPIRED' }
+        data: { status: 'EXPIRED' as any }
       })
       return NextResponse.json(
         { error: 'Invitation has expired' },
@@ -97,12 +97,15 @@ export async function POST(
           email: user.email,
           name: user.name || user.email.split('@')[0],
           phone: '',
-          status: 'ACTIVE',
+          city: 'Not Set',
+          state: 'N/A',
+          active: true,
           hostType: 'INDIVIDUAL',
           isVehicleOwner: invitation.type === 'MANAGER_INVITES_OWNER',
           isHostManager: invitation.type === 'OWNER_INVITES_MANAGER',
-          managesOthersCars: invitation.type === 'OWNER_INVITES_MANAGER'
-        }
+          managesOthersCars: invitation.type === 'OWNER_INVITES_MANAGER',
+          updatedAt: new Date()
+        } as any
       })
     }
 
@@ -153,7 +156,7 @@ export async function POST(
             canHandleIssues: invitation.proposedCanHandleIssues,
             status: 'ACTIVE',
             agreementSignedAt: new Date()
-          },
+          } as any,
           include: {
             vehicle: {
               select: {
@@ -214,7 +217,7 @@ export async function POST(
     await prisma.managementInvitation.update({
       where: { id: invitation.id },
       data: {
-        status: 'ACCEPTED',
+        status: 'ACCEPTED' as any,
         recipientId: acceptorHost.id,
         respondedAt: new Date()
       }
@@ -254,7 +257,7 @@ export async function POST(
       agreementDate
     }
 
-    const acceptorEmail = getInvitationAcceptedTemplate(acceptorEmailData)
+    const acceptorEmail = getInvitationAcceptedTemplate(acceptorEmailData as any)
     await sendEmail({
       to: acceptorHost.email,
       subject: acceptorEmail.subject,
@@ -279,7 +282,7 @@ export async function POST(
       agreementDate
     }
 
-    const senderEmail = getInvitationAcceptedTemplate(senderEmailData)
+    const senderEmail = getInvitationAcceptedTemplate(senderEmailData as any)
     await sendEmail({
       to: invitation.sender.email,
       subject: senderEmail.subject,
@@ -290,6 +293,7 @@ export async function POST(
     // Log activity
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         userId: user.id,
         action: 'invitation_accepted',
         entityType: 'ManagementInvitation',

@@ -278,7 +278,7 @@ export async function POST(
               netAmount: amount,
               status: 'COMPLETED',
               paidAt: new Date()
-            }
+            } as any
           })
 
         } catch (stripeError: any) {
@@ -306,6 +306,7 @@ export async function POST(
     // Create activity log entry
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         entityType: 'HOST',
         entityId: id,
         hostId: id,

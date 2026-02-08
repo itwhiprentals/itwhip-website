@@ -337,6 +337,8 @@ export async function POST(request: NextRequest) {
     // Create the car with classification
     const newCar = await prisma.rentalCar.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         hostId: host.id,
         make: body.make,
         model: body.model,
@@ -357,13 +359,13 @@ export async function POST(request: NextRequest) {
         currentMileage: body.currentMileage,
         
         // Insurance Classification
-        classificationId: classification.classificationId,
+        classificationId: classification.classificationId ?? null,
         insuranceEligible: classification.isInsurable,
         insuranceCategory: classification.category,
         insuranceRiskLevel: classification.riskLevel,
-        estimatedValue: classification.estimatedValue,
+        estimatedValue: classification.estimatedValue as any,
         requiresManualUnderwriting: classification.requiresManualReview,
-        insuranceNotes: classification.insurabilityReason,
+        insuranceNotes: classification.insurabilityReason ?? null,
         
         // Pricing
         dailyRate: body.dailyRate,
@@ -425,6 +427,7 @@ export async function POST(request: NextRequest) {
     if (classification.requiresManualReview) {
       await prisma.adminNotification.create({
         data: {
+          id: crypto.randomUUID(),
           type: 'MANUAL_UNDERWRITING_REQUIRED',
           title: 'Manual Insurance Review Required',
           message: `${newCar.year} ${newCar.make} ${newCar.model} requires manual insurance underwriting`,
@@ -433,6 +436,7 @@ export async function POST(request: NextRequest) {
           relatedId: newCar.id,
           relatedType: 'car',
           actionRequired: true,
+          updatedAt: new Date(),
           metadata: {
             carId: newCar.id,
             hostName: host.name,
@@ -442,7 +446,7 @@ export async function POST(request: NextRequest) {
               estimatedValue: classification.estimatedValue,
               reason: classification.insurabilityReason
             },
-            eligibility: eligibility
+            eligibility: JSON.parse(JSON.stringify(eligibility))
           }
         }
       })
@@ -451,7 +455,8 @@ export async function POST(request: NextRequest) {
     // Log activity
     await prisma.activityLog.create({
       data: {
-        userId: host.userId,
+        id: crypto.randomUUID(),
+        userId: host.userId ?? undefined,
         action: 'car_added',
         entityType: 'car',
         entityId: newCar.id,
@@ -469,6 +474,7 @@ export async function POST(request: NextRequest) {
     // Create standard admin notification
     await prisma.adminNotification.create({
       data: {
+        id: crypto.randomUUID(),
         type: 'NEW_CAR',
         title: 'New Car Added',
         message: `${host.name} added a ${newCar.year} ${newCar.make} ${newCar.model}`,
@@ -477,6 +483,7 @@ export async function POST(request: NextRequest) {
         relatedId: newCar.id,
         relatedType: 'car',
         actionRequired: false,
+        updatedAt: new Date(),
         metadata: {
           hostName: host.name,
           carDetails: {
@@ -516,7 +523,7 @@ export async function POST(request: NextRequest) {
         fuelType: newCar.fuelType,
         isElectric: newCar.fuelType === 'ELECTRIC',
         isHybrid: newCar.fuelType === 'HYBRID',
-        estimatedValue: newCar.estimatedValue || classification.estimatedValue,
+        estimatedValue: Number(newCar.estimatedValue) || classification.estimatedValue,
         insuranceEligible: newCar.insuranceEligible
       })
 

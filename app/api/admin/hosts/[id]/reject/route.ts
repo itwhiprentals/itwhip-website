@@ -1,6 +1,7 @@
 // app/api/admin/hosts/[id]/reject/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/app/lib/database/prisma'
+import { nanoid } from 'nanoid'
 
 export async function POST(
   request: NextRequest,
@@ -63,18 +64,13 @@ export async function POST(
       where: { id: hostId },
       data: {
         approvalStatus: 'REJECTED',
-        rejectionReason: reason,
-        rejectionDetails: rejectionDetails || null,
-        canReapply,
-        rejectedBy: adminId,
-        rejectedAt: new Date(),
-        notes: notes || null
-      }
+        rejectedReason: reason,
+      } as any
     })
 
     // Deactivate all vehicles for this host
     if (host.cars.length > 0) {
-      await prisma.car.updateMany({
+      await prisma.rentalCar.updateMany({
         where: {
           hostId: hostId
         },
@@ -85,8 +81,9 @@ export async function POST(
     }
 
     // Create admin notification
-    await prisma.adminNotification.create({
+    await (prisma.adminNotification.create as any)({
       data: {
+        id: nanoid(),
         type: 'HOST_REJECTED',
         title: `Host Rejected: ${host.name}`,
         message: `${host.name} (${host.email}) application was rejected`,
@@ -99,7 +96,7 @@ export async function POST(
           canReapply
         },
         priority: 'MEDIUM',
-        category: 'HOST_MANAGEMENT'
+        updatedAt: new Date()
       }
     })
 
@@ -114,9 +111,9 @@ export async function POST(
       data: {
         hostId: updatedHost.id,
         approvalStatus: updatedHost.approvalStatus,
-        rejectionReason: updatedHost.rejectionReason,
-        canReapply: updatedHost.canReapply,
-        rejectedAt: updatedHost.rejectedAt,
+        rejectionReason: (updatedHost as any).rejectedReason,
+        canReapply: canReapply,
+        rejectedAt: new Date().toISOString(),
         vehiclesDeactivated: host.cars.length
       }
     })

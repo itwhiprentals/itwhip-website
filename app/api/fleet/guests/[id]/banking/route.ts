@@ -147,7 +147,7 @@ export async function GET(
     // Fetch claims against this guest
     const claimsAgainstGuest = await prisma.claim.findMany({
       where: {
-        booking: { reviewerId: guestId },
+        booking: { reviewedBy: guestId },
         status: { in: ['PENDING', 'UNDER_REVIEW', 'APPROVED', 'GUEST_RESPONDED'] }
       },
       include: {
@@ -501,7 +501,7 @@ export async function POST(
               processedAt: new Date(),
               stripeRefundId: refund.id,
               autoApproved: true
-            }
+            } as any
           })
 
           // Update booking

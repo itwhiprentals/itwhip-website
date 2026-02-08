@@ -11,7 +11,7 @@ export interface CarSpec {
   doors: number
   transmission: TransmissionType
   carType: CarType
-  fuelType: FuelType | 'gas/hybrid' | 'gas/electric' | 'gas/hybrid/electric' // "gas/hybrid" means user picks
+  fuelType: FuelType | 'gas/hybrid' | 'gas/electric' | 'gas/diesel' | 'gas/hybrid/electric' // "gas/hybrid" means user picks
 }
 
 export interface VehicleDatabase {
@@ -5501,15 +5501,18 @@ export function getModelSpec(make: string, model: string): CarSpec | null {
 // Get trims for a specific make/model (optionally filtered by year)
 export function getTrimsByModel(make: string, model: string, year?: string): string[] {
   // If year provided and year-specific data exists, use it
-  if (year && vehicleSpecsByYear[make]?.[model]?.[year]) {
-    return vehicleSpecsByYear[make][model][year].trims
+  const yearData = year ? vehicleSpecsByYear[make]?.[model]?.[year] : undefined
+  if (yearData) {
+    return yearData.trims
   }
 
   // Fallback to current year if available in year-based data
-  if (vehicleSpecsByYear[make]?.[model]) {
+  const makeModelData = vehicleSpecsByYear[make]?.[model]
+  if (makeModelData) {
     const currentYear = new Date().getFullYear().toString()
-    if (vehicleSpecsByYear[make][model][currentYear]) {
-      return vehicleSpecsByYear[make][model][currentYear].trims
+    const currentYearData = makeModelData[currentYear]
+    if (currentYearData) {
+      return currentYearData.trims
     }
   }
 
@@ -5519,10 +5522,11 @@ export function getTrimsByModel(make: string, model: string, year?: string): str
 
 // Get available years for a specific make/model from year-based data
 export function getYearsByModel(make: string, model: string): string[] {
-  if (!vehicleSpecsByYear[make]?.[model]) {
+  const makeModelData = vehicleSpecsByYear[make]?.[model]
+  if (!makeModelData) {
     return []
   }
-  return Object.keys(vehicleSpecsByYear[make][model]).sort((a, b) => parseInt(b) - parseInt(a))
+  return Object.keys(makeModelData).sort((a, b) => parseInt(b) - parseInt(a))
 }
 
 // Check if year-specific data exists for a make/model/year
@@ -5672,7 +5676,7 @@ export function requiresFuelTypeSelection(make: string, model: string): boolean 
 export function requiresTransmissionTypeSelection(make: string, model: string): boolean {
   const spec = getModelSpec(make, model)
   if (!spec) return false
-  return spec.TransmissionType === 'both'
+  return spec.transmission === 'both'
 }
 
 // Get fuel type options for a model
@@ -5697,10 +5701,10 @@ export function getTransmissionTypeOptions(make: string, model: string): ('autom
   const spec = getModelSpec(make, model)
   if (!spec) return ['automatic']
 
-  if (spec.TransmissionType === 'both') {
+  if (spec.transmission === 'both') {
     return ['automatic', 'manual']
   }
-  return [spec.TransmissionType as 'automatic' | 'manual']
+  return [spec.transmission as 'automatic' | 'manual']
 }
 
 // Legacy compatibility - old vehicleDatabase format for any code that depends on it

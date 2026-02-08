@@ -750,7 +750,7 @@ export default function HostBookingsPage() {
           {/* Pending Banner - Hidden for Fleet Managers */}
           {!isFleetManager && !isApproved && hostStatus && (
             <PendingBanner
-              approvalStatus={hostStatus.approvalStatus}
+              approvalStatus={hostStatus.approvalStatus as any}
               page="bookings"
               pendingActions={hostStatus.pendingActions}
               restrictionReasons={hostStatus.restrictionReasons}

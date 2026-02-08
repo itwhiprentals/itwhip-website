@@ -274,6 +274,7 @@ export async function PATCH(request: NextRequest) {
     // Log the action
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         action: action || 'update_booking',
         entityType: 'RentalBooking',
         entityId: bookingId,

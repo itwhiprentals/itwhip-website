@@ -110,11 +110,11 @@ export async function GET(request: NextRequest) {
       
       // Price similarity (within 20% range)
       if (currentCar && currentCar.dailyRate && car.dailyRate) {
-        const currentPrice = typeof currentCar.dailyRate === 'object' 
-          ? parseFloat(currentCar.dailyRate.toString()) 
+        const currentPrice = typeof currentCar.dailyRate === 'object'
+          ? parseFloat((currentCar.dailyRate as any).toString())
           : parseFloat(currentCar.dailyRate as any)
         const carPrice = typeof car.dailyRate === 'object'
-          ? parseFloat(car.dailyRate.toString())
+          ? parseFloat((car.dailyRate as any).toString())
           : parseFloat(car.dailyRate as any)
         
         const priceDiff = Math.abs(carPrice - currentPrice)

@@ -202,7 +202,7 @@ export async function GET(
         id: `activity-${a.id}`,
         type: a.action || 'ACTIVITY',
         title: a.action?.replace(/_/g, ' ') || 'Activity',
-        description: a.details as string || undefined,
+        description: (a as any).details as string || undefined,
         timestamp: a.createdAt,
         severity: 'INFO',
         metadata: {

@@ -59,16 +59,15 @@ export async function POST(
         commissionRate,
         minDailyRate,
         maxDailyRate,
-        permissions: permissions,
         approvedBy: adminId,
         approvedAt: new Date(),
         notes: notes || null
-      }
+      } as any
     })
 
     // Activate all pending vehicles for this host
     if (host.cars.length > 0) {
-      await prisma.car.updateMany({
+      await (prisma as any).car.updateMany({
         where: {
           hostId: hostId,
           isActive: false
@@ -92,8 +91,7 @@ export async function POST(
           approvedBy: adminId,
           vehicleCount: host.cars.length
         },
-        priority: 'LOW',
-        category: 'HOST_MANAGEMENT'
+        priority: 'LOW'
       }
     })
 

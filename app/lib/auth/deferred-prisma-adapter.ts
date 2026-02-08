@@ -14,7 +14,7 @@ export function DeferredPrismaAdapter(prisma: PrismaClient): Adapter {
 
     // Override createUser to NOT create user during OAuth
     // Instead, return a "pending" user object that signals this is a new signup
-    createUser: async (user) => {
+    createUser: async (user: any) => {
       // Return a virtual user object that will NOT be saved to database
       // The actual user will be created in complete-profile when phone is submitted
       console.log('[DeferredAdapter] createUser called - returning pending user (not saving to DB)')
@@ -29,7 +29,7 @@ export function DeferredPrismaAdapter(prisma: PrismaClient): Adapter {
     },
 
     // Override linkAccount to defer account linking for pending users
-    linkAccount: async (account) => {
+    linkAccount: async (account: any) => {
       // If the userId is a pending ID, don't create the account record
       if (account.userId.startsWith('pending_')) {
         console.log('[DeferredAdapter] linkAccount called for pending user - deferring (not saving to DB)')

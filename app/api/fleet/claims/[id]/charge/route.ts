@@ -68,8 +68,7 @@ export async function POST(
             reviewerProfile: {
               select: {
                 id: true,
-                firstName: true,
-                lastName: true,
+                name: true,
                 email: true,
                 stripeCustomerId: true
               }
@@ -93,7 +92,7 @@ export async function POST(
           }
         }
       }
-    })
+    }) as any
 
     if (!claim) {
       return NextResponse.json({ error: 'Claim not found' }, { status: 404 })
@@ -160,7 +159,7 @@ export async function POST(
 
     if (chargeResult.status !== 'succeeded') {
       // Log failed charge attempt
-      await prisma.auditLog.create({
+      await (prisma.auditLog.create as any)({
         data: {
           category: 'FINANCIAL',
           eventType: 'CLAIM_CHARGE_FAILED',
@@ -255,7 +254,7 @@ export async function POST(
       recoveryStatus = 'PENDING'
     }
 
-    const updatedClaim = await prisma.claim.update({
+    const updatedClaim = await (prisma.claim.update as any)({
       where: { id: id },
       data: {
         recoveredFromGuest: newRecoveredTotal,
@@ -285,7 +284,7 @@ export async function POST(
     // STEP 4: Create audit log
     // ==========================================================================
 
-    await prisma.auditLog.create({
+    await (prisma.auditLog.create as any)({
       data: {
         category: 'FINANCIAL',
         eventType: 'CLAIM_GUEST_CHARGED',

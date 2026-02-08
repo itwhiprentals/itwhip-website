@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
         sender: msg.name,
         senderEmail: msg.email,
         category: 'general',
-        isRead: msg.status !== 'NEW',
+        isRead: (msg.status as string) !== 'NEW',
         isUrgent: false,
         timestamp: msg.createdAt.toISOString()
       })),

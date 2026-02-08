@@ -59,7 +59,7 @@ import {
         this.accessToken = data.access_token
         this.tokenExpiry = new Date(Date.now() + (data.expires_in * 1000))
         
-        return this.accessToken
+        return this.accessToken!
       } catch (error) {
         console.error('Amadeus authentication error:', error)
         throw error
@@ -228,7 +228,7 @@ import {
       : undefined
   
     // Create a mock RentalCar object
-    const rentalCar: RentalCarWithDetails = {
+    const rentalCar: RentalCarWithDetails = ({
       id: `amadeus-${amadeusCar.vehicleCode}-${Date.now()}`,
       hostId: 'amadeus-host',
       source: 'amadeus',
@@ -300,7 +300,7 @@ import {
         joinedAt: new Date('2020-01-01'),
         createdAt: new Date(),
         updatedAt: new Date()
-      },
+      } as any,
       photos: [
         {
           id: '1',
@@ -310,7 +310,7 @@ import {
           isHero: true,
           order: 0,
           createdAt: new Date()
-        },
+        } as any,
         {
           id: '2',
           carId: '',
@@ -319,13 +319,13 @@ import {
           isHero: false,
           order: 1,
           createdAt: new Date()
-        }
+        } as any
       ],
       availability: [],
       reviews: [],
       amadeusData: amadeusCar
-    }
-  
+    }) as any
+
     return rentalCar
   }
   
@@ -597,7 +597,7 @@ import {
     const features = ['Air Conditioning', 'Power Windows', 'Power Locks']
     
     if (car.transmission === 'automatic') features.push('Automatic Transmission')
-    if (car.mileage.unlimited) features.push('Unlimited Mileage')
+    if (car.mileage?.unlimited) features.push('Unlimited Mileage')
     if (car.seats >= 7) features.push('7+ Seats')
     if (car.vehicleCategory === 'luxury') {
       features.push('Leather Seats', 'Premium Audio', 'Navigation')
@@ -660,6 +660,7 @@ import {
       
       await prisma.amadeusCarCache.create({
         data: {
+          id: crypto.randomUUID(),
           location: key,
           searchDate: new Date(),
           carData: JSON.stringify(data),

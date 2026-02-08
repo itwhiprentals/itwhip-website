@@ -103,6 +103,7 @@ export async function POST(request: NextRequest) {
   // Create link request with guest link token
   const linkRequest = await prisma.accountLinkRequest.create({
     data: {
+      id: crypto.randomUUID(),
       initiatingUserId: user.id,
       targetEmail: targetEmail,
       verificationCode: verificationCode,

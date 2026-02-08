@@ -1,8 +1,8 @@
 // app/api/rentals/book/guest/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/app/lib/database/prisma'
-import { createGuestToken } from '@/app/lib/auth/guest-tokens'
-import sendEmail from '@/app/lib/email'
+import prisma from '@/app/lib/database/prisma'
+import { GuestTokenHandler } from '@/app/lib/auth/guest-tokens'
+import { sendEmail } from '@/app/lib/email/sender'
 import { addHours } from 'date-fns'
 
 export async function POST(request: NextRequest) {
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
           canInstantBook: false,
           totalTrips: 0,
           averageRating: 0
-        }
+        } as any
       })
       console.log(`[Guest Booking] Created ReviewerProfile for new guest: ${reviewerProfile.id}`)
 
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
             carName: `${car.year} ${car.make} ${car.model}`,
             isFirstBooking: true
           }
-        }
+        } as any
       })
       console.log(`[Guest Booking] AdminNotification created for new guest`)
     }
@@ -141,11 +141,14 @@ export async function POST(request: NextRequest) {
         serviceFee,
         taxes,
         totalAmount,
-        status: initialStatus,
+        depositHeld: 0,
+        securityDeposit: 0,
+        updatedAt: new Date(),
+        status: initialStatus as any,
         paymentStatus: 'PENDING',
         verificationStatus: verificationRequired ? 'PENDING' : 'APPROVED',
         verificationDeadline: verificationRequired ? addHours(new Date(), 24) : null
-      },
+      } as any,
       include: {
         car: {
           include: {
@@ -157,47 +160,27 @@ export async function POST(request: NextRequest) {
     })
 
     // Create guest access token
-    const token = await createGuestToken(booking.id, guestEmail)
+    const token = await GuestTokenHandler.createGuestToken(booking.id, guestEmail)
     
     // Prepare email data
     const dashboardUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/rentals/dashboard/guest/${token}`
     const verifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/rentals/verify/${token}`
     
     // Send appropriate email based on car type
+    const carName = `${car.year} ${car.make} ${car.model}`
+    const guest = guestName || 'Guest'
     if (isP2P) {
       // P2P requires verification
-      await sendEmail({
-        to: guestEmail,
-        subject: 'Action Required: Complete Verification for Your Rental',
-        template: 'rental-verification-required',
-        data: {
-          guestName: guestName || 'Guest',
-          carName: `${car.year} ${car.make} ${car.model}`,
-          bookingCode,
-          verifyUrl,
-          dashboardUrl,
-          deadline: '24 hours',
-          hostName: car.host.name,
-          pickupDate: startDateTime.toLocaleDateString(),
-          totalAmount: totalAmount.toFixed(2)
-        }
-      })
+      const emailSubject = 'Action Required: Complete Verification for Your Rental'
+      const emailHtml = `<p>Hi ${guest}, your booking for ${carName} (${bookingCode}) requires verification. <a href="${verifyUrl}">Verify now</a> within 24 hours. Total: $${totalAmount.toFixed(2)}</p>`
+      const emailText = `Hi ${guest}, your booking for ${carName} (${bookingCode}) requires verification. Verify: ${verifyUrl} within 24 hours. Total: $${totalAmount.toFixed(2)}`
+      await sendEmail(guestEmail, emailSubject, emailHtml, emailText)
     } else {
       // Amadeus - instant confirmation
-      await sendEmail({
-        to: guestEmail,
-        subject: 'Booking Confirmed - Your Rental is Ready!',
-        template: 'rental-confirmation',
-        data: {
-          guestName: guestName || 'Guest',
-          carName: `${car.year} ${car.make} ${car.model}`,
-          bookingCode,
-          dashboardUrl,
-          pickupDate: startDateTime.toLocaleDateString(),
-          pickupLocation,
-          totalAmount: totalAmount.toFixed(2)
-        }
-      })
+      const emailSubject = 'Booking Confirmed - Your Rental is Ready!'
+      const emailHtml = `<p>Hi ${guest}, your booking for ${carName} (${bookingCode}) is confirmed! <a href="${dashboardUrl}">View dashboard</a>. Total: $${totalAmount.toFixed(2)}</p>`
+      const emailText = `Hi ${guest}, your booking for ${carName} (${bookingCode}) is confirmed! Dashboard: ${dashboardUrl}. Total: $${totalAmount.toFixed(2)}`
+      await sendEmail(guestEmail, emailSubject, emailHtml, emailText)
     }
 
     return NextResponse.json({

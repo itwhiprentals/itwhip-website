@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
         id: true,
         email: true,
         emailVerificationCode: true,
-        emailVerificationCodeExpiry: true,
+        emailVerificationExpiry: true,
         emailVerified: true
       }
     })
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check expiry (15 minutes)
-    if (!user.emailVerificationCodeExpiry || new Date() > user.emailVerificationCodeExpiry) {
+    if (!user.emailVerificationExpiry || new Date() > user.emailVerificationExpiry) {
       return NextResponse.json(
         { error: 'Verification code expired. Please request a new one.' },
         { status: 400 }
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       data: {
         emailVerified: true,
         emailVerificationCode: null,
-        emailVerificationCodeExpiry: null
+        emailVerificationExpiry: null
       }
     })
 

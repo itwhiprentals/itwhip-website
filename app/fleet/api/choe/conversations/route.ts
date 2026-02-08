@@ -100,8 +100,8 @@ export async function GET(request: NextRequest) {
     // Transform for response
     const data = conversations.map(conv => ({
       ...conv,
-      estimatedCost: conv.estimatedCost.toNumber(),
-      bookingValue: conv.bookingValue?.toNumber() || null,
+      estimatedCost: Number(conv.estimatedCost),
+      bookingValue: conv.bookingValue ? Number(conv.bookingValue) : null,
       startedAt: conv.startedAt.toISOString(),
       lastActivityAt: conv.lastActivityAt.toISOString(),
       completedAt: conv.completedAt?.toISOString() || null,

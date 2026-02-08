@@ -46,7 +46,7 @@ async function upgradePasswordHash(userId: string, password: string) {
       parallelism: 4,
       hashLength: 32,
       saltLength: 16,
-    })
+    } as any)
     await db.updateUserPasswordHash(userId, newHash)
   } catch (error) {
     console.error('Background password upgrade failed:', error)

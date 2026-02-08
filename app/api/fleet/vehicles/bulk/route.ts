@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
     const activityPromises = Array.from(partnerMap.entries()).map(([hostId, vehicleNames]) =>
       prisma.activityLog.create({
         data: {
-          type: 'VEHICLE_BULK_ACTION',
+          action: 'VEHICLE_BULK_ACTION',
           hostId,
           message: `Bulk ${action}: ${vehicleNames.length} vehicle(s) - ${vehicleNames.join(', ')}`,
           metadata: {
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
             notes,
             adminId: adminId || 'fleet_admin'
           }
-        }
+        } as any
       })
     )
 

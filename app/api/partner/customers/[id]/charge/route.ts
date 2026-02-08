@@ -131,9 +131,11 @@ export async function POST(
     // Create TripCharge linked to RentalBooking
     const tripCharge = await prisma.tripCharge.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         bookingId: booking.id,
         ...chargeData
-      }
+      } as any
     })
 
     return NextResponse.json({

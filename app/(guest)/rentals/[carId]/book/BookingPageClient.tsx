@@ -495,7 +495,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       console.log('[Booking] Returned from Stripe verification with email:', email)
 
       // Set the verification email so the UI knows they just verified
-      setVerificationEmail(email)
+      // setVerificationEmail was removed - email tracked via session state
 
       // Check if they now have an account (auto-created by webhook)
       const checkVerificationStatus = async () => {
@@ -1117,7 +1117,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     if (!savedBookingDetails?.pricing || !balancesLoaded || !car) return false
 
     // Calculate pricing
-    const carCity = car?.city || getCityFromAddress(car?.address || 'Phoenix, AZ')
+    const carCity = (car as any)?.city || getCityFromAddress(car?.address || 'Phoenix, AZ')
     const pricing = calculateBookingPricing({
       dailyRate: savedBookingDetails.pricing.dailyRate,
       days: savedBookingDetails.pricing.days,
@@ -1250,7 +1250,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       if (!car) return
 
       // Calculate the ACTUAL amount to charge (after credits/bonus + deposit)
-      const carCity = car?.city || getCityFromAddress(car?.address || 'Phoenix, AZ')
+      const carCity = (car as any)?.city || getCityFromAddress(car?.address || 'Phoenix, AZ')
       const pricing = calculateBookingPricing({
         dailyRate: savedBookingDetails.pricing.dailyRate,
         days: savedBookingDetails.pricing.days,
@@ -3105,9 +3105,9 @@ export default function BookingPageClient({ carId }: { carId: string }) {
 
         {/* Phase 14: Insurance Pill - Prompts users to upload insurance for deposit discount */}
         <InsurancePill
-          userProfile={userProfile}
           isLoggedIn={sessionStatus === 'authenticated'}
-          disabled={!isIdentityVerified}
+          hasInsurance={!!userProfile?.insuranceVerified}
+          insurancePhotoUrl={userProfile?.insuranceCardUrl}
         />
 
         {/* Payment Section */}
@@ -3295,7 +3295,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           <div className="border-t dark:border-gray-700 pt-6">
             {(() => {
               // Use shared pricing utility for consistent calculations with BookingWidget
-              const carCity = car?.city || getCityFromAddress(car?.address || 'Phoenix, AZ')
+              const carCity = (car as any)?.city || getCityFromAddress(car?.address || 'Phoenix, AZ')
               const pricing = calculateBookingPricing({
                 dailyRate: savedBookingDetails.pricing.dailyRate,
                 days: savedBookingDetails.pricing.days,
@@ -3522,7 +3522,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             {/* Pricing Info - Compact on mobile */}
             {(() => {
               // Use shared pricing utility for consistent calculations with BookingWidget
-              const carCity = car?.city || getCityFromAddress(car?.address || 'Phoenix, AZ')
+              const carCity = (car as any)?.city || getCityFromAddress(car?.address || 'Phoenix, AZ')
               const pricing = calculateBookingPricing({
                 dailyRate: savedBookingDetails.pricing.dailyRate,
                 days: savedBookingDetails.pricing.days,
@@ -3607,7 +3607,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         isOpen={showRentalAgreement}
         onClose={() => setShowRentalAgreement(false)}
         carDetails={car}
-        bookingDetails={savedBookingDetails}
+        bookingDetails={savedBookingDetails as any}
         guestDetails={{
           name: `${guestName} ${guestLastName}`.trim() || session?.user?.name || `${driverFirstName} ${driverLastName}`.trim() || '',
           email: guestEmail || session?.user?.email || driverEmail || '',

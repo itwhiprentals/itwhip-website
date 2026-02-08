@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
-import { prisma } from '@/app/lib/database/prisma'
+import prisma from '@/app/lib/database/prisma'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'fallback-secret-key'
@@ -43,9 +43,9 @@ export async function GET(
       where: { id: guestId },
       select: {
         id: true,
-        fullName: true,
+        name: true,
         email: true,
-        phone: true,
+        phoneNumber: true,
         stripeIdentityStatus: true,
         stripeIdentityVerifiedAt: true,
         stripeIdentitySessionId: true,
@@ -55,7 +55,7 @@ export async function GET(
         stripeVerifiedIdExpiry: true,
         driverLicenseNumber: true,
         driverLicenseState: true,
-        profileImage: true,
+        profilePhotoUrl: true,
         createdAt: true
       }
     })
@@ -67,8 +67,8 @@ export async function GET(
     // Verify this guest has booked with this partner
     const hasBooking = await prisma.rentalBooking.count({
       where: {
-        guestId,
-        car: { rentalHostId: partnerId }
+        reviewerProfileId: guestId,
+        car: { hostId: partnerId }
       }
     })
 
@@ -92,10 +92,10 @@ export async function GET(
       id: guest.id,
       name: guest.stripeVerifiedFirstName
         ? `${guest.stripeVerifiedFirstName} ${guest.stripeVerifiedLastName}`
-        : guest.fullName,
+        : guest.name,
       email: guest.email,
-      phone: guest.phone,
-      profileImage: guest.profileImage,
+      phone: guest.phoneNumber,
+      profileImage: guest.profilePhotoUrl,
       verification: {
         status: guest.stripeIdentityStatus || 'not_started',
         verifiedAt: guest.stripeIdentityVerifiedAt,

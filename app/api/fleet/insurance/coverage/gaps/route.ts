@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
           in: cars.map(c => c.id)
         }
       },
-      include: { provider: true }
+      include: { insuranceProvider: true }
     })
 
     // Create override lookup map
@@ -123,8 +123,8 @@ export async function GET(req: NextRequest) {
         hasOverride: !!override,
         override: override ? {
           provider: {
-            id: override.provider.id,
-            name: override.provider.name
+            id: (override as any).insuranceProvider?.id ?? override.providerId,
+            name: (override as any).insuranceProvider?.name ?? 'Unknown'
           },
           reason: override.reason,
           overriddenBy: override.overriddenBy

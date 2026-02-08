@@ -38,7 +38,7 @@ export async function GET(
     }
     
     // Fetch booking with all related data INCLUDING CLAIMS
-    const booking = await prisma.rentalBooking.findFirst({
+    const booking = await (prisma.rentalBooking.findFirst as any)({
       where: {
         id: bookingId,
         hostId: host.id
@@ -334,6 +334,7 @@ export async function PUT(
     // Log activity
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         userId: host.userId,
         action: 'booking_updated',
         entityType: 'booking',
@@ -410,26 +411,29 @@ export async function POST(
         await prisma.rentalBooking.update({
           where: { id: bookingId },
           data: {
-            status: 'CONFIRMED',
-            verificationStatus: 'APPROVED'
+            status: 'CONFIRMED' as any,
+            verificationStatus: 'APPROVED' as any
           }
         })
         
         // Send confirmation message
         await prisma.rentalMessage.create({
           data: {
+            id: crypto.randomUUID(),
             bookingId: bookingId,
             senderId: host.id,
             senderType: 'host',
             senderName: host.name,
             message: 'Your booking has been approved! Looking forward to hosting you.',
-            category: 'general'
+            category: 'general',
+            updatedAt: new Date()
           }
         })
         
         // Log activity
         await prisma.activityLog.create({
           data: {
+            id: crypto.randomUUID(),
             userId: host.userId,
             action: 'booking_approved',
             entityType: 'booking',
@@ -458,8 +462,8 @@ export async function POST(
         await prisma.rentalBooking.update({
           where: { id: bookingId },
           data: {
-            status: 'CANCELLED',
-            cancelledBy: 'HOST',
+            status: 'CANCELLED' as any,
+            cancelledBy: 'HOST' as any,
             cancelledAt: new Date(),
             cancellationReason: reason || 'Host declined the booking'
           }
@@ -468,18 +472,21 @@ export async function POST(
         // Send decline message
         await prisma.rentalMessage.create({
           data: {
+            id: crypto.randomUUID(),
             bookingId: bookingId,
             senderId: host.id,
             senderType: 'host',
             senderName: host.name,
             message: reason || 'Unfortunately, we cannot accommodate this booking.',
-            category: 'general'
+            category: 'general',
+            updatedAt: new Date()
           }
         })
         
         // Log activity
         await prisma.activityLog.create({
           data: {
+            id: crypto.randomUUID(),
             userId: host.userId,
             action: 'booking_declined',
             entityType: 'booking',
@@ -508,13 +515,15 @@ export async function POST(
         
         const newMessage = await prisma.rentalMessage.create({
           data: {
+            id: crypto.randomUUID(),
             bookingId: bookingId,
             senderId: host.id,
             senderType: 'host',
             senderName: host.name,
             senderEmail: host.email,
             message: message.trim(),
-            category: 'general'
+            category: 'general',
+            updatedAt: new Date()
           }
         })
         
@@ -536,7 +545,7 @@ export async function POST(
         await prisma.rentalBooking.update({
           where: { id: bookingId },
           data: {
-            tripStatus: 'ACTIVE',
+            tripStatus: 'ACTIVE' as any,
             actualStartTime: new Date(),
             startMileage: startData.mileage,
             fuelLevelStart: startData.fuelLevel,
@@ -547,6 +556,7 @@ export async function POST(
         // Log activity
         await prisma.activityLog.create({
           data: {
+            id: crypto.randomUUID(),
             userId: host.userId,
             action: 'trip_started',
             entityType: 'booking',
@@ -576,8 +586,8 @@ export async function POST(
         await prisma.rentalBooking.update({
           where: { id: bookingId },
           data: {
-            tripStatus: 'COMPLETED',
-            status: 'COMPLETED',
+            tripStatus: 'COMPLETED' as any,
+            status: 'COMPLETED' as any,
             actualEndTime: new Date(),
             endMileage: endData.mileage,
             fuelLevelEnd: endData.fuelLevel,
@@ -598,7 +608,7 @@ export async function POST(
           await prisma.rentalBooking.update({
             where: { id: bookingId },
             data: {
-              pendingChargesAmount: mileageCharge,
+              pendingChargesAmount: mileageCharge as any,
               chargesNotes: `Extra mileage charge: ${extraMiles} miles @ $3.00/mile`
             }
           })
@@ -607,6 +617,7 @@ export async function POST(
         // Log activity
         await prisma.activityLog.create({
           data: {
+            id: crypto.randomUUID(),
             userId: host.userId,
             action: 'trip_ended',
             entityType: 'booking',

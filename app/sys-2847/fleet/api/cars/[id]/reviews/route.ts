@@ -211,7 +211,7 @@ export async function POST(
           tripCount: body.tripCount || 1,
           reviewCount: 1,
           isVerified: body.isVerified || false
-        }
+        } as any
       })
       reviewerProfileId = newProfile.id
     } else if (!reviewerProfileId && body.reviewerName) {
@@ -236,7 +236,7 @@ export async function POST(
             memberSince: memberSince,
             tripCount: 1,
             reviewCount: 1
-          }
+          } as any
         })
         reviewerProfileId = newProfile.id
       }
@@ -293,7 +293,7 @@ export async function POST(
         supportResponse: body.supportResponse || null,
         supportRespondedAt: body.supportRespondedAt ? new Date(body.supportRespondedAt) : null,
         supportRespondedBy: body.supportRespondedBy || null
-      },
+      } as any,
       include: {
         reviewerProfile: true,
         host: {
@@ -314,9 +314,9 @@ export async function POST(
           isVisible: true
         }
       })
-      
-      review.reviewerProfile.reviewCount = actualCount
-      review.reviewerProfile.tripCount = actualCount
+
+      ;(review as any).reviewerProfile.reviewCount = actualCount
+      ;(review as any).reviewerProfile.tripCount = actualCount
     }
 
     // ONLY update stats if the review is visible (represents a real completed trip)

@@ -39,7 +39,7 @@ export async function PATCH(
       where: { id: id },
       include: {
         booking: true,
-        policy: true
+        InsurancePolicy: true
       }
     });
 
@@ -103,7 +103,7 @@ export async function PATCH(
             guestEmail: true
           }
         },
-        policy: {
+        InsurancePolicy: {
           select: {
             tier: true,
             deductible: true

@@ -22,12 +22,23 @@ import {
   getTrimsByModel,
   getModelSpec,
   requiresFuelTypeSelection,
-  requiresTransmissionSelection,
   getFuelTypeOptions,
-  getTransmissionOptions,
   CarSpec,
   FuelType
 } from '@/app/lib/data/vehicles'
+
+// Stub helpers not exported from vehicles module
+function requiresTransmissionSelection(make: string, model: string): boolean {
+  const spec = getModelSpec(make, model)
+  return spec?.transmission === 'both' || spec?.transmission === 'automatic/manual'
+}
+
+function getTransmissionOptions(make: string, model: string): string[] {
+  if (requiresTransmissionSelection(make, model)) {
+    return ['automatic', 'manual']
+  }
+  return []
+}
 
 // Standard car colors
 const CAR_COLORS = [
@@ -244,7 +255,7 @@ export default function AddCarPage() {
 
       const finalFuelType = needsFuelType
         ? formData.fuelType
-        : (autoSpecs?.fuelType && !autoSpecs.fuelType.includes('/'))
+        : (autoSpecs?.fuelType && !(autoSpecs.fuelType as string).includes('/'))
           ? autoSpecs.fuelType as FuelType
           : 'gas'
 

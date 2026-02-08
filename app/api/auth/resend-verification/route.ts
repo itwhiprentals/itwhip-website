@@ -117,7 +117,7 @@ If you didn't request this code, please ignore this email.
       `.trim()
 
       await sendEmail(
-        user.email,
+        user.email as string,
         'Your ItWhip Verification Code',
         htmlContent,
         textContent

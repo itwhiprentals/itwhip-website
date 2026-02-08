@@ -194,18 +194,18 @@ export async function POST(request: NextRequest) {
           )
         }
         
-        const tierMap = {
+        const tierMap: Record<string, { commission: number; earnings: number }> = {
           'BASIC': { commission: 0.60, earnings: 0.40 },
           'STANDARD': { commission: 0.25, earnings: 0.75 },
           'PREMIUM': { commission: 0.10, earnings: 0.90 }
         }
-        
+
         const result = await prisma.$transaction(async (tx) => {
           // Update host tier
           const updatedHost = await tx.rentalHost.update({
             where: { id: hostId },
             data: {
-              earningsTier: tier,
+              earningsTier: tier as any,
               commissionRate: tierMap[tier].commission,
               lastTierChange: new Date(),
               tierChangeReason: `Admin override: ${reason}`,
@@ -216,6 +216,7 @@ export async function POST(request: NextRequest) {
           // Log the admin action
           await tx.activityLog.create({
             data: {
+              id: crypto.randomUUID(),
               entityType: 'HOST',
               entityId: hostId,
               action: 'ADMIN_TIER_OVERRIDE',
@@ -239,9 +240,9 @@ export async function POST(request: NextRequest) {
               category: 'insurance',
               subject: 'Earnings Tier Updated',
               message: `Your earnings tier has been updated to ${tier} (${Math.round(tierMap[tier].earnings * 100)}%) by admin. Reason: ${reason}`,
-              status: 'SENT',
+              status: 'SENT' as any,
               priority: 'high'
-            }
+            } as any
           })
           
           await tx.adminNotification.create({
@@ -257,9 +258,9 @@ export async function POST(request: NextRequest) {
                 action: 'FORCE_TIER_CHANGE',
                 adminEmail,
                 hostName: host.name,
-                tierChange: `${currentTier.tier} → ${tier}`
+                tierChange: `${currentTier.tier} -> ${tier}`
               }
-            }
+            } as any
           })
           
           return updatedHost
@@ -315,7 +316,7 @@ export async function POST(request: NextRequest) {
             await tx.rentalHost.update({
               where: { id: hostId },
               data: {
-                earningsTier: newTier.tier,
+                earningsTier: newTier.tier as any,
                 commissionRate: newTier.platformCommission
               }
             })
@@ -324,6 +325,7 @@ export async function POST(request: NextRequest) {
           // Log action
           await tx.activityLog.create({
             data: {
+              id: crypto.randomUUID(),
               entityType: 'HOST',
               entityId: hostId,
               action: 'ADMIN_INSURANCE_EXPIRED',

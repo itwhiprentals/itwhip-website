@@ -43,11 +43,11 @@ export async function GET(
           },
           orderBy: { createdAt: 'desc' }
         },
-        hostPayouts: {
+        HostPayout: {
           orderBy: { createdAt: 'desc' }
         }
       }
-    })
+    }) as any
 
     if (!booking) {
       return NextResponse.json(
@@ -75,7 +75,7 @@ export async function GET(
         color: booking.car.color,
         licensePlate: booking.car.licensePlate,
         vin: booking.car.vin,
-        photos: booking.car.photos.map(photo => ({
+        photos: booking.car.photos.map((photo: any) => ({
           id: photo.id,
           url: photo.url,
           caption: photo.caption,
@@ -178,7 +178,7 @@ export async function GET(
       // Related data
       messages: booking.messages,
       disputes: booking.disputes,
-      hostPayouts: booking.hostPayouts,
+      hostPayouts: booking.HostPayout,
       
       // Summary flags
       hasDispute: booking.disputes.length > 0,
@@ -260,6 +260,7 @@ export async function PATCH(
     // Log the action
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         action: 'update_booking_details',
         entityType: 'RentalBooking',
         entityId: id,
@@ -304,7 +305,7 @@ export async function DELETE(
       where: { id },
       data: {
         status: 'CANCELLED',
-        paymentStatus: 'refunded',
+        paymentStatus: 'REFUNDED',
         cancellationReason: reason,
         cancelledBy: 'ADMIN',
         cancelledAt: new Date()
@@ -324,6 +325,7 @@ export async function DELETE(
     // Log the cancellation
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         action: 'cancel_booking',
         entityType: 'RentalBooking',
         entityId: id,

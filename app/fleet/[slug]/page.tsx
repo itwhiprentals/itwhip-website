@@ -43,7 +43,7 @@ async function getFleetData(slug: string) {
         managesOthersCars: true,
         createdAt: true,
         // Get own vehicles if they manage their own cars
-        vehicles: {
+        cars: {
           where: {
             isActive: true
           },
@@ -73,7 +73,7 @@ async function getFleetData(slug: string) {
         // Get managed vehicles
         managedVehicles: {
           where: {
-            status: 'ACTIVE'
+            status: 'ACTIVE' as any
           },
           include: {
             vehicle: {
@@ -104,17 +104,17 @@ async function getFleetData(slug: string) {
           }
         }
       }
-    })
+    }) as any
 
     if (!manager) {
       return null
     }
 
     // Combine own vehicles and managed vehicles
-    const ownVehicles = manager.managesOwnCars ? manager.vehicles : []
+    const ownVehicles = manager.managesOwnCars ? manager.cars : []
     const managedVehicles = manager.managedVehicles
-      .filter(mv => mv.vehicle.isActive)
-      .map(mv => mv.vehicle)
+      .filter((mv: any) => mv.vehicle.isActive)
+      .map((mv: any) => mv.vehicle)
 
     // Deduplicate vehicles (in case same vehicle appears in both)
     const vehicleMap = new Map()

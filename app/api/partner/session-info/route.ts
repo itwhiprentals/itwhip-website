@@ -157,7 +157,7 @@ export async function GET(request: NextRequest) {
       recruitedVia: host.recruitedVia || null,
       hasCars: (host._count?.cars || 0) > 0
     } : {
-      id: session?.user?.id,
+      id: (session?.user as any)?.id,
       name: session?.user?.name || 'User',
       email: session?.user?.email,
       companyName: null,

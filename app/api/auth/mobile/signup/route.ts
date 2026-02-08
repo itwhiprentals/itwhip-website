@@ -134,6 +134,8 @@ export async function POST(request: NextRequest) {
 
         await prisma.adminNotification.create({
           data: {
+            id: crypto.randomUUID(),
+            updatedAt: new Date(),
             type: 'NEW_GUEST_SIGNUP',
             title: 'New Guest Registered (Mobile)',
             message: `${name || email} signed up via mobile app`,
@@ -148,7 +150,7 @@ export async function POST(request: NextRequest) {
               guestName: name || null,
               signupSource: 'mobile_app',
             },
-          },
+          } as any,
         }).catch(() => {})
       } catch (profileError) {
         console.error('[Mobile Signup] ReviewerProfile creation failed:', profileError)

@@ -153,7 +153,7 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
   // Create default if doesn't exist
   if (!settings) {
     settings = await prisma.platformSettings.create({
-      data: { id: 'global' }
+      data: { id: 'global', updatedAt: new Date() }
     })
   }
 

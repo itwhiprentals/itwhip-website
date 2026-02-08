@@ -70,8 +70,8 @@ export default function InsuranceManagementModal({
   }
 
   // Calculate financial impact
-  const impact = targetTier 
-    ? calculateFinancialImpact(currentTier, targetTier, 1000)
+  const impact = targetTier
+    ? calculateFinancialImpact(currentTier as any, targetTier as any, 1000)
     : null
 
   // Determine severity based on action and tiers

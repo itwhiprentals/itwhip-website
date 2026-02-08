@@ -1,6 +1,6 @@
 // app/utils/risk-calculator.ts
 
-import type { EmailValidationResult } from './email-validator'
+type EmailValidationResult = { isValid: boolean; riskLevel: string; reasons: string[]; details: any }
 
 interface BookingData {
   // Guest information

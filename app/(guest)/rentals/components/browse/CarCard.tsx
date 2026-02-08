@@ -42,7 +42,7 @@ export default function CarCard({
   const [isFavorite, setIsFavorite] = useState(isFavorited)
 
   const images = car.photos?.length > 0 
-    ? car.photos.map(p => p.url)
+    ? car.photos.map((p: any) => p.url)
     : ['/images/car-placeholder.jpg']
 
   const features = car.features ? JSON.parse(car.features) : []
@@ -232,7 +232,7 @@ export default function CarCard({
                 <IoCarSportOutline className="w-4 h-4" />
               </button>
               <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                {images.map((_, index) => (
+                {images.map((_: any, index: number) => (
                   <div
                     key={index}
                     className={`w-1.5 h-1.5 rounded-full transition-colors ${

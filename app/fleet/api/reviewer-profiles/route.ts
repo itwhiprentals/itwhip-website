@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         _count: {
-          select: { reviews: true }
+          select: { RentalReview: true }
         }
       },
       orderBy: [
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         tripCount: body.tripCount || 1,
         reviewCount: body.reviewCount || 0,
         isVerified: body.isVerified || false
-      }
+      } as any
     })
 
     return NextResponse.json({
@@ -120,7 +120,7 @@ export async function DELETE(request: NextRequest) {
     // Find all profiles with no reviews
     const orphanedProfiles = await prisma.reviewerProfile.findMany({
       where: {
-        reviews: {
+        RentalReview: {
           none: {}
         }
       },

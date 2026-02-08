@@ -1148,7 +1148,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                         hasOwnInsurance: newValue,
                         useForRentals: newValue ? (formData.insuranceInfo?.useForRentals ?? true) : false
                       })
-                      handleChange('hasOwnInsurance', newValue)
+                      handleChange('hasOwnInsurance' as any, newValue)
                     }}
                     className="w-5 h-5 text-blue-600 rounded focus:ring-blue-600"
                   />
@@ -1170,7 +1170,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                               ...(formData.insuranceInfo || {}),
                               provider: e.target.value
                             })
-                            handleChange('insuranceProvider', e.target.value)
+                            handleChange('insuranceProvider' as any, e.target.value)
                           }}
                           placeholder="e.g., State Farm, Progressive"
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-white"
@@ -1189,7 +1189,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                               ...(formData.insuranceInfo || {}),
                               policyNumber: e.target.value
                             })
-                            handleChange('insurancePolicyNumber', e.target.value)
+                            handleChange('insurancePolicyNumber' as any, e.target.value)
                           }}
                           placeholder="Policy number"
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-white"
@@ -1225,7 +1225,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                             ...(formData.insuranceInfo || {}),
                             useForRentals: e.target.checked
                           })
-                          handleChange('useForRentals', e.target.checked)
+                          handleChange('useForRentals' as any, e.target.checked)
                         }}
                         className="w-5 h-5 text-blue-600 rounded focus:ring-blue-600"
                       />

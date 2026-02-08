@@ -52,7 +52,7 @@ export default function VinScanner({ onScan, onClose }: VinScannerProps) {
             // 11=PDF_417 (state registration documents)
             // 4=CODE_93 (some automotive applications)
             formatsToSupport: [0, 3, 4, 5, 6, 11]
-          },
+          } as any,
           (decodedText) => {
             // Validate VIN format (17 alphanumeric, no I, O, Q)
             const cleanVin = decodedText.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, '')

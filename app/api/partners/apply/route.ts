@@ -131,10 +131,14 @@ export async function POST(request: NextRequest) {
     // Create RentalHost with PENDING hostType
     const host = await prisma.rentalHost.create({
       data: {
+        id: crypto.randomUUID(),
         userId: user.id,
         email: contactEmail.toLowerCase(),
         name: contactName,
         phone: contactPhone,
+        city: operatingCities?.[0] || '',
+        state: operatingStates?.[0] || '',
+        updatedAt: new Date(),
 
         // Host status
         hostType: 'PENDING', // Will be changed to FLEET_PARTNER upon approval
@@ -170,6 +174,7 @@ export async function POST(request: NextRequest) {
     // Create PartnerApplication record
     await prisma.partner_applications.create({
       data: {
+        id: crypto.randomUUID(),
         hostId: host.id,
         companyName,
         businessType,
@@ -182,7 +187,8 @@ export async function POST(request: NextRequest) {
         operatingCities: operatingCities || [],
         currentStep: 6, // Completed all steps
         status: 'SUBMITTED',
-        submittedAt: new Date()
+        submittedAt: new Date(),
+        updatedAt: new Date()
       }
     })
 
@@ -228,7 +234,11 @@ export async function POST(request: NextRequest) {
 
     if (documentsToCreate.length > 0) {
       await prisma.partner_documents.createMany({
-        data: documentsToCreate
+        data: documentsToCreate.map(doc => ({
+          id: crypto.randomUUID(),
+          ...doc,
+          updatedAt: new Date()
+        }))
       })
     }
 

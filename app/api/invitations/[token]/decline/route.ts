@@ -157,6 +157,7 @@ export async function POST(
     // Log activity
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         userId: user.id,
         action: 'invitation_declined',
         entityType: 'ManagementInvitation',

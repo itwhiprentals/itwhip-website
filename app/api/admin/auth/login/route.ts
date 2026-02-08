@@ -6,6 +6,7 @@ import { compare } from 'bcryptjs'
 import argon2 from 'argon2'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
+import crypto from 'crypto'
 
 // SECURITY FIX: Admin login rate limiter - stricter than regular login
 const adminLoginRateLimit = new Ratelimit({
@@ -34,6 +35,7 @@ async function logAdminAttempt(
   try {
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         category: 'AUTHENTICATION',
         eventType: 'ADMIN_LOGIN_ATTEMPT',
         severity: success ? 'INFO' : 'WARNING',
@@ -48,9 +50,9 @@ async function logAdminAttempt(
           timestamp: new Date().toISOString(),
           authType: 'admin'
         } as any,
-        hash: '', // You can implement hash if needed
+        hash: '',
         timestamp: new Date()
-      }
+      } as any
     })
   } catch (error) {
     console.error('Failed to log admin attempt:', error)

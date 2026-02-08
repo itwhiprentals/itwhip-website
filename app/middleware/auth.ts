@@ -7,7 +7,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyAccessToken, verifyApiKey, extractTokenFromHeader } from '@/app/lib/auth/jwt'
 import { checkRateLimit } from '@/app/lib/security/rateLimit'
 import { createAuditLog } from '@/app/lib/database/audit'
-import type { UserRole, Permission } from '@/app/types/auth'
+import { randomBytes } from 'crypto'
+
+type UserRole = string
+type Permission = string
+
+function generateRequestId(): string {
+  return `req_${Date.now()}_${randomBytes(8).toString('hex')}`
+}
 
 // Public routes that don't require authentication
 const PUBLIC_ROUTES = [
@@ -145,12 +152,17 @@ export async function authMiddleware(
         category: 'AUTHENTICATION',
         eventType: 'auth.failed',
         severity: 'MEDIUM',
-        ipAddress: clientIp,
-        userAgent: request.headers.get('user-agent') || 'unknown',
-        action: 'deny',
-        resource: pathname,
-        details: { reason: 'No credentials provided' }
-      })
+        actor: {
+          ip: clientIp,
+          userAgent: request.headers.get('user-agent') || 'unknown',
+        },
+        action: {
+          type: 'deny',
+          resource: pathname,
+        },
+        context: { requestId: generateRequestId() },
+        metadata: { reason: 'No credentials provided' }
+      } as any)
       
       return NextResponse.json(
         {
@@ -174,16 +186,21 @@ export async function authMiddleware(
           category: 'AUTHENTICATION',
           eventType: 'auth.failed',
           severity: 'HIGH',
-          ipAddress: clientIp,
-          userAgent: request.headers.get('user-agent') || 'unknown',
-          action: 'deny',
-          resource: pathname,
-          details: { 
+          actor: {
+            ip: clientIp,
+            userAgent: request.headers.get('user-agent') || 'unknown',
+          },
+          action: {
+            type: 'deny',
+            resource: pathname,
+          },
+          context: { requestId: generateRequestId() },
+          metadata: {
             reason: validation.error,
-            expired: validation.expired 
+            expired: validation.expired
           }
-        })
-        
+        } as any)
+
         return NextResponse.json(
           {
             error: validation.expired ? 'Token expired' : 'Invalid token',
@@ -204,16 +221,21 @@ export async function authMiddleware(
           category: 'AUTHENTICATION',
           eventType: 'auth.failed',
           severity: 'HIGH',
-          ipAddress: clientIp,
-          userAgent: request.headers.get('user-agent') || 'unknown',
-          action: 'deny',
-          resource: pathname,
-          details: { 
+          actor: {
+            ip: clientIp,
+            userAgent: request.headers.get('user-agent') || 'unknown',
+          },
+          action: {
+            type: 'deny',
+            resource: pathname,
+          },
+          context: { requestId: generateRequestId() },
+          metadata: {
             reason: validation.error,
             apiKey: credential.substring(0, 20) + '...'
           }
-        })
-        
+        } as any)
+
         return NextResponse.json(
           {
             error: 'Invalid API key',
@@ -235,17 +257,22 @@ export async function authMiddleware(
           category: 'AUTHORIZATION',
           eventType: 'auth.permission_denied',
           severity: 'MEDIUM',
-          userId: user.sub || user.hotelId,
-          ipAddress: clientIp,
-          userAgent: request.headers.get('user-agent') || 'unknown',
-          action: 'deny',
-          resource: pathname,
-          details: { 
+          actor: {
+            userId: user.sub || user.hotelId,
+            ip: clientIp,
+            userAgent: request.headers.get('user-agent') || 'unknown',
+          },
+          action: {
+            type: 'deny',
+            resource: pathname,
+          },
+          context: { requestId: generateRequestId() },
+          metadata: {
             required: ROUTE_PERMISSIONS[pathname],
-            had: user.permissions 
+            had: user.permissions
           }
-        })
-        
+        } as any)
+
         return NextResponse.json(
           {
             error: 'Insufficient permissions',
@@ -262,17 +289,22 @@ export async function authMiddleware(
           category: 'AUTHORIZATION',
           eventType: 'auth.role_denied',
           severity: 'MEDIUM',
-          userId: user.sub || user.hotelId,
-          ipAddress: clientIp,
-          userAgent: request.headers.get('user-agent') || 'unknown',
-          action: 'deny',
-          resource: pathname,
-          details: { 
+          actor: {
+            userId: user.sub || user.hotelId,
+            ip: clientIp,
+            userAgent: request.headers.get('user-agent') || 'unknown',
+          },
+          action: {
+            type: 'deny',
+            resource: pathname,
+          },
+          context: { requestId: generateRequestId() },
+          metadata: {
             required: ROUTE_ROLES[pathname],
-            had: user.role 
+            had: user.role
           }
-        })
-        
+        } as any)
+
         return NextResponse.json(
           {
             error: 'Insufficient role',
@@ -328,17 +360,22 @@ export async function authMiddleware(
           category: 'SECURITY',
           eventType: 'rate_limit.exceeded',
           severity: 'HIGH',
-          userId: user?.sub,
-          ipAddress: clientIp,
-          userAgent: request.headers.get('user-agent') || 'unknown',
-          action: 'block',
-          resource: pathname,
-          details: { 
+          actor: {
+            userId: user?.sub,
+            ip: clientIp,
+            userAgent: request.headers.get('user-agent') || 'unknown',
+          },
+          action: {
+            type: 'block',
+            resource: pathname,
+          },
+          context: { requestId: generateRequestId() },
+          metadata: {
             limit: rateLimit.limit,
-            status: rateLimit.status 
+            status: rateLimit.status
           }
-        })
-        
+        } as any)
+
         const response = NextResponse.json(
           {
             error: 'Rate limit exceeded',
@@ -365,18 +402,22 @@ export async function authMiddleware(
       category: 'DATA_ACCESS',
       eventType: 'api.access',
       severity: 'LOW',
-      userId: user?.sub || user?.hotelId,
-      ipAddress: clientIp,
-      userAgent: request.headers.get('user-agent') || 'unknown',
-      action: 'allow',
-      resource: pathname,
-      details: { 
-        method,
+      actor: {
+        userId: user?.sub || user?.hotelId,
+        ip: clientIp,
+        userAgent: request.headers.get('user-agent') || 'unknown',
+      },
+      action: {
+        type: 'allow',
+        resource: pathname,
+      },
+      context: { requestId: generateRequestId(), method },
+      metadata: {
         role: user?.role,
-        tier: user?.tier 
+        tier: user?.tier
       }
-    })
-    
+    } as any)
+
     // Add user context to request for downstream use
     if (user) {
       // Clone the request and add user context
@@ -409,15 +450,20 @@ export async function authMiddleware(
       category: 'SECURITY',
       eventType: 'auth.error',
       severity: 'CRITICAL',
-      ipAddress: clientIp,
-      userAgent: request.headers.get('user-agent') || 'unknown',
-      action: 'error',
-      resource: pathname,
-      details: { 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      actor: {
+        ip: clientIp,
+        userAgent: request.headers.get('user-agent') || 'unknown',
+      },
+      action: {
+        type: 'error',
+        resource: pathname,
+      },
+      context: { requestId: generateRequestId() },
+      metadata: {
+        error: error instanceof Error ? error.message : 'Unknown error'
       }
-    })
-    
+    } as any)
+
     return NextResponse.json(
       {
         error: 'Authentication error',
