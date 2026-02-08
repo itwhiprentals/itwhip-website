@@ -48,6 +48,7 @@ export default function ChoeAdminPage() {
   const [securityEvents, setSecurityEvents] = useState<SecurityEventSummary[]>([])
   const [securityStats, setSecurityStats] = useState<ChoeSecurityResponse['stats'] | null>(null)
   const [toolUsage, setToolUsage] = useState<Record<string, number> | null>(null)
+  const [conversionFunnel, setConversionFunnel] = useState<{ label: string; value: number; percentage: number }[] | null>(null)
 
   // Anthropic Admin API usage data
   const [anthropicUsage, setAnthropicUsage] = useState<{
@@ -57,6 +58,9 @@ export default function ChoeAdminPage() {
     month: { tokens: number; cost: number; requests: number }
     cacheSavings: number
   } | null>(null)
+
+  // Cross-tab navigation: auto-open a conversation from Overview
+  const [pendingConversationId, setPendingConversationId] = useState<string | null>(null)
 
   // Settings edit state
   const [editingSettings, setEditingSettings] = useState<Partial<ChoeAISettings>>({})
@@ -81,6 +85,7 @@ export default function ChoeAdminPage() {
         setLiveMetrics(data.liveMetrics)
         setDailyStats(data.dailyStats || [])
         setToolUsage(data.toolUsage || null)
+        setConversionFunnel(data.conversionFunnel || null)
 
         // Fetch Anthropic Admin API usage (if configured)
         try {
@@ -96,6 +101,15 @@ export default function ChoeAdminPage() {
           }
         } catch (e) {
           console.log('[Choe Dashboard] Anthropic Admin API not available')
+        }
+      }
+
+      if (activeTab === 'overview') {
+        // Also fetch recent conversations for Overview tab
+        const convRes = await fetch(`/fleet/api/choe/conversations?key=${apiKey}&page=1&limit=5`)
+        if (convRes.ok) {
+          const convData: ChoeConversationListResponse = await convRes.json()
+          setConversations(convData.data)
         }
       }
 
@@ -272,7 +286,16 @@ export default function ChoeAdminPage() {
       {!loading && (
         <>
           {activeTab === 'overview' && stats && (
-            <OverviewTab stats={stats} dailyStats={dailyStats} conversations={conversations} anthropicUsage={anthropicUsage} />
+            <OverviewTab
+              stats={stats}
+              dailyStats={dailyStats}
+              conversations={conversations}
+              anthropicUsage={anthropicUsage}
+              onConversationClick={(id) => {
+                setPendingConversationId(id)
+                setActiveTab('conversations')
+              }}
+            />
           )}
 
           {activeTab === 'conversations' && (
@@ -281,6 +304,8 @@ export default function ChoeAdminPage() {
               pagination={conversationsPagination}
               onPageChange={(page) => setConversationsPagination(prev => ({ ...prev, page }))}
               apiKey={apiKey}
+              pendingConversationId={pendingConversationId}
+              onPendingHandled={() => setPendingConversationId(null)}
             />
           )}
 
@@ -295,11 +320,11 @@ export default function ChoeAdminPage() {
           )}
 
           {activeTab === 'security' && (
-            <SecurityTab events={securityEvents} stats={securityStats} />
+            <SecurityTab events={securityEvents} stats={securityStats} apiKey={apiKey} />
           )}
 
           {activeTab === 'analytics' && stats && (
-            <AnalyticsTab stats={stats} dailyStats={dailyStats} toolUsage={toolUsage} apiKey={apiKey} />
+            <AnalyticsTab stats={stats} dailyStats={dailyStats} toolUsage={toolUsage} apiKey={apiKey} conversionFunnel={conversionFunnel} />
           )}
         </>
       )}

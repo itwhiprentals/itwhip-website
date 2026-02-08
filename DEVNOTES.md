@@ -57,6 +57,66 @@ Hook (`app/hooks/useCheckout.ts`):
 
 ## Recent Fixes (February 2026)
 
+### Choé Dashboard Refactor + Security Audit Fixes - DEPLOYED ✅ (Feb 7)
+**Refactored 1457-line monolithic page into modular components + fixed 6 audit issues**
+
+**Dashboard Refactor:**
+- Extracted `app/fleet/choe/page.tsx` from 1457 → 308 lines (thin orchestrator)
+- Created 11 new component files in `app/fleet/choe/components/`:
+  - Tab components: OverviewTab, ConversationsTab, SettingsTab, SecurityTab, AnalyticsTab
+  - Helper components: StatCard, SettingsSection, OutcomeBadge, SeverityBadge, FunnelStep
+  - Barrel export via updated `index.ts`
+
+**Audit Fixes (6 issues):**
+1. **Security config mismatch** — `MAX_MESSAGE_LENGTH` 500→200, `MAX_SESSION_MESSAGES` 50→30 (matches DB defaults)
+2. **Budget filter accuracy** — Replaced hardcoded `1.234` multiplier with dynamic `getPricingConfig()` computation
+3. **Deprecated rate limiters** — Removed 3 unused Upstash Ratelimit exports from `security.ts`
+4. **Fleet API key centralized** — Created shared `auth.ts` with `process.env.FLEET_API_KEY` fallback, updated all 7 Choé route files
+5. **Duplicate feature flag fetch** — Removed redundant `getFeatureFlags()` call in non-streaming route
+6. **Stats counting fix** — Changed `getStatsForPeriod()` to filter by `lastActivityAt` instead of `startedAt`
+
+**Files Created:**
+- `app/fleet/api/choe/auth.ts` — Shared fleet key validation
+- `app/fleet/choe/components/` — 11 new component files
+
+**Files Modified:**
+- `app/fleet/choe/page.tsx` — Slimmed to orchestrator
+- `app/fleet/choe/components/index.ts` — Updated barrel exports
+- `app/api/ai/booking/route.ts` — Removed duplicate getFeatureFlags()
+- `app/api/ai/booking/stream/route.ts` — Dynamic budget multiplier
+- `app/lib/ai-booking/security.ts` — Config alignment + deprecated code removal
+- `app/fleet/api/choe/stats/route.ts` — lastActivityAt filter + shared auth
+- 6 more Choé route files — Migrated to shared auth module
+
+**Deployment:** Commit `9b5d7a4`
+
+---
+
+### TSC Zero Errors + CI Pipeline - DEPLOYED ✅ (Feb 7)
+**Achieved zero TypeScript errors across entire codebase + automated CI gate**
+
+- Reduced from 3700+ TSC errors to 0 across 800+ files
+- GitHub Actions CI pipeline: TypeScript check runs on every push/PR
+- Fixed Next.js 15 patterns: `Promise<>` route params, `await headers()`, `await cookies()`
+- Fixed Prisma patterns: missing required fields, relation access, enum mismatches
+- Fixed React 19 patterns: `RefObject<T | null>`, implicit any parameters
+- Node 22 in CI (matches local npm lockfile format)
+
+**Deployment:** Commits `119a11b` → `1823c5d`
+
+---
+
+### Mapbox + Streaming Persistence - DEPLOYED ✅ (Feb 7)
+**Fixed Mapbox CSP, TrackingMap hydration, and Choé message persistence**
+
+- CSP headers: Added `api.mapbox.com`, `events.mapbox.com`, `*.tiles.mapbox.com` to connect-src
+- TrackingMap: Fixed hydration mismatch with dynamic import (`ssr: false`)
+- Streaming endpoint: Messages now persist to ChoeAIConversation + ChoeAIMessage tables
+
+**Deployment:** Commit `d4567f3`
+
+---
+
 ### Calculator Tool Chaining + PTC Support - DEPLOYED ✅ (Feb 5)
 **Fixed calculator → search chaining and added Programmatic Tool Calling support**
 

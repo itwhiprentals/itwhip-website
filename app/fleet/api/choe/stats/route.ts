@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
       todayCost,
       dailyStatsRaw,
       toolUsageStats,
+      conversionFunnel,
     ] = await Promise.all([
       // Today's stats
       getStatsForPeriod(todayStart, now),
@@ -69,6 +70,8 @@ export async function GET(request: NextRequest) {
       getDailyStatsForRange(range),
       // Tool usage stats (last 30 days)
       getToolUsageStats(),
+      // Conversion funnel (last 30 days)
+      getConversionFunnel(monthAgo, now),
     ])
 
     return NextResponse.json({
@@ -86,6 +89,7 @@ export async function GET(request: NextRequest) {
       },
       dailyStats: dailyStatsRaw,
       toolUsage: toolUsageStats,
+      conversionFunnel,
     })
   } catch (error) {
     console.error('[Choé Stats API] Error:', error)
@@ -174,23 +178,45 @@ async function getDailyStatsForRange(range: string) {
   fromDate.setDate(fromDate.getDate() - daysBack)
   fromDate.setHours(0, 0, 0, 0)
 
-  const dailyStats = await prisma.choeAIDailyStats.findMany({
-    where: {
-      date: { gte: fromDate }
+  // Query actual conversations (ChoeAIDailyStats table is never populated)
+  const conversations = await prisma.choeAIConversation.findMany({
+    where: { startedAt: { gte: fromDate } },
+    select: {
+      startedAt: true,
+      outcome: true,
+      totalTokens: true,
+      estimatedCost: true,
+      bookingId: true,
+      bookingValue: true,
     },
-    orderBy: { date: 'asc' },
   })
 
-  return dailyStats.map(stat => ({
-    date: stat.date.toISOString().split('T')[0],
-    conversations: stat.totalConversations,
-    completed: stat.completedCount,
-    abandoned: stat.abandonedCount,
-    cost: Number(stat.estimatedCostUsd),
-    tokens: stat.totalTokens,
-    bookings: stat.bookingsFromChoe,
-    revenue: Number(stat.revenueFromChoe),
-  }))
+  // Pre-fill all days in range so chart shows zero-bars, not gaps
+  const dayMap = new Map<string, { conversations: number; completed: number; abandoned: number; cost: number; tokens: number; bookings: number; revenue: number }>()
+  for (let d = new Date(fromDate); d <= now; d = new Date(d.getTime() + 86400000)) {
+    const key = d.toISOString().split('T')[0]
+    dayMap.set(key, { conversations: 0, completed: 0, abandoned: 0, cost: 0, tokens: 0, bookings: 0, revenue: 0 })
+  }
+
+  // Bucket conversations into days
+  for (const conv of conversations) {
+    const key = conv.startedAt.toISOString().split('T')[0]
+    const day = dayMap.get(key)
+    if (!day) continue
+    day.conversations++
+    if (conv.outcome === 'COMPLETED') day.completed++
+    if (conv.outcome === 'ABANDONED') day.abandoned++
+    day.tokens += conv.totalTokens
+    day.cost += Number(conv.estimatedCost)
+    if (conv.bookingId) {
+      day.bookings++
+      day.revenue += Number(conv.bookingValue || 0)
+    }
+  }
+
+  return Array.from(dayMap.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, stats]) => ({ date, ...stats }))
 }
 
 async function getToolUsageStats(): Promise<Record<string, number>> {
@@ -237,4 +263,57 @@ async function getToolUsageStats(): Promise<Record<string, number>> {
   }
 
   return toolCounts
+}
+
+async function getConversionFunnel(from: Date, to: Date) {
+  const stateCounts = await prisma.choeAIConversation.groupBy({
+    by: ['state'],
+    where: { lastActivityAt: { gte: from, lte: to } },
+    _count: { id: true },
+  })
+
+  // Build a state-to-count map
+  const counts: Record<string, number> = {}
+  for (const s of stateCounts) {
+    counts[s.state] = s._count.id
+  }
+
+  // States progress: INIT → COLLECTING_LOCATION → COLLECTING_DATES → COLLECTING_VEHICLE → CONFIRMING → CHECKING_AUTH → READY_FOR_PAYMENT
+  // Cumulative funnel: each stage = conversations that reached AT LEAST that stage
+  const total =
+    (counts['INIT'] || 0) +
+    (counts['COLLECTING_LOCATION'] || 0) +
+    (counts['COLLECTING_DATES'] || 0) +
+    (counts['COLLECTING_VEHICLE'] || 0) +
+    (counts['CONFIRMING'] || 0) +
+    (counts['CHECKING_AUTH'] || 0) +
+    (counts['READY_FOR_PAYMENT'] || 0)
+
+  const locationSet =
+    (counts['COLLECTING_DATES'] || 0) +
+    (counts['COLLECTING_VEHICLE'] || 0) +
+    (counts['CONFIRMING'] || 0) +
+    (counts['CHECKING_AUTH'] || 0) +
+    (counts['READY_FOR_PAYMENT'] || 0)
+
+  const datesSet =
+    (counts['COLLECTING_VEHICLE'] || 0) +
+    (counts['CONFIRMING'] || 0) +
+    (counts['CHECKING_AUTH'] || 0) +
+    (counts['READY_FOR_PAYMENT'] || 0)
+
+  const vehicleSelected =
+    (counts['CONFIRMING'] || 0) +
+    (counts['CHECKING_AUTH'] || 0) +
+    (counts['READY_FOR_PAYMENT'] || 0)
+
+  const completed = counts['READY_FOR_PAYMENT'] || 0
+
+  return [
+    { label: 'Started', value: total, percentage: 100 },
+    { label: 'Location Set', value: locationSet, percentage: total > 0 ? Math.round((locationSet / total) * 100) : 0 },
+    { label: 'Dates Set', value: datesSet, percentage: total > 0 ? Math.round((datesSet / total) * 100) : 0 },
+    { label: 'Vehicle Selected', value: vehicleSelected, percentage: total > 0 ? Math.round((vehicleSelected / total) * 100) : 0 },
+    { label: 'Completed', value: completed, percentage: total > 0 ? Math.round((completed / total) * 100) : 0 },
+  ]
 }

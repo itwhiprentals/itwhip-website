@@ -87,6 +87,26 @@ export const AI_SECURITY_CONFIG = {
     /show.*instructions/i,
   ],
 
+  // Content moderation patterns (abusive, sexual, threatening content)
+  // Follows Anthropic's content moderation guide: pre-screen before Claude API call
+  CONTENT_MODERATION_PATTERNS: [
+    // Sexual content / solicitation
+    { pattern: /\b(sex|fuck|pussy|dick|cock|anal|blowjob|handjob|nude|naked|porn)\b/i, category: 'sexual_content' as const },
+    { pattern: /\b(tits|boobs|ass\s*hole|orgasm|masturbat|erotic)\b/i, category: 'sexual_content' as const },
+    { pattern: /\bwanna\s*(fuck|bang|screw|hook\s*up)\b/i, category: 'sexual_content' as const },
+    { pattern: /\b(send\s*nudes|show\s*me\s*your\s*body|take\s*off)\b/i, category: 'sexual_content' as const },
+    // Harassment / slurs / degrading language
+    { pattern: /\b(nigger|nigga|faggot|retard|spic|chink|kike)\b/i, category: 'harassment' as const },
+    { pattern: /\b(kill\s*yourself|go\s*die|hope\s*you\s*die)\b/i, category: 'threats' as const },
+    { pattern: /\b(stupid\s*(bitch|bot|ai)|dumb\s*(bitch|bot|ai)|worthless\s*(bitch|bot|ai))\b/i, category: 'harassment' as const },
+    { pattern: /\b(shut\s*the\s*fuck\s*up|stfu)\b/i, category: 'harassment' as const },
+    // Threats / violence
+    { pattern: /\b(i('ll|m\s*going\s*to|will)\s*(kill|shoot|stab|hurt|bomb|attack))\b/i, category: 'threats' as const },
+    { pattern: /\b(gonna\s*(kill|shoot|stab|hurt|bomb|attack))\b/i, category: 'threats' as const },
+    { pattern: /\b(blow\s*up|shoot\s*up|burn\s*down)\b/i, category: 'threats' as const },
+    { pattern: /\b(where\s*do\s*you\s*live|find\s*you|come\s*for\s*you)\b/i, category: 'threats' as const },
+  ] as { pattern: RegExp; category: 'sexual_content' | 'harassment' | 'threats' }[],
+
   // Allowed (booking-related) topics
   ALLOWED_TOPICS: [
     'car', 'vehicle', 'rental', 'book', 'reserve',
@@ -227,6 +247,23 @@ export async function checkAISecurity(
   }
 
   // ==========================================================================
+  // 6.5 CONTENT MODERATION (sexual, harassment, threats)
+  // ==========================================================================
+  for (const { pattern, category } of AI_SECURITY_CONFIG.CONTENT_MODERATION_PATTERNS) {
+    if (pattern.test(message)) {
+      await logSecurityEvent('content_moderation', ip, {
+        category,
+        pattern: pattern.toString(),
+        message: message.substring(0, 100),
+      }, visitorId, sessionId, true)
+      return {
+        allowed: false,
+        reason: "I can only help with car rentals. Please keep our conversation respectful.",
+      }
+    }
+  }
+
+  // ==========================================================================
   // 7. EMPTY OR NONSENSE MESSAGE
   // ==========================================================================
   if (message.trim().length < 2) {
@@ -267,7 +304,7 @@ async function logSecurityEvent(
   try {
     // Determine severity based on event type
     let severity: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO'
-    if (eventType === 'prompt_injection' || eventType === 'bot_detected') {
+    if (eventType === 'prompt_injection' || eventType === 'bot_detected' || eventType === 'content_moderation' || eventType === 'session_terminated') {
       severity = 'CRITICAL'
     } else if (eventType === 'rate_limit' || eventType === 'session_limit') {
       severity = 'WARNING'

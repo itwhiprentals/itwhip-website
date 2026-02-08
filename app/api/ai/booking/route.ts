@@ -295,6 +295,9 @@ async function upsertConversation(
     })
 
     if (existing) {
+      const actualMessageCount = await prisma.choeAIMessage.count({
+        where: { conversationId: existing.id },
+      })
       await prisma.choeAIConversation.update({
         where: { sessionId: session.sessionId },
         data: {
@@ -302,7 +305,7 @@ async function upsertConversation(
           location: session.location,
           vehicleType: session.vehicleType,
           lastActivityAt: new Date(),
-          messageCount: session.messages.length,
+          messageCount: actualMessageCount,
         }
       })
       return existing.id
@@ -373,6 +376,11 @@ async function updateConversationStats(
   if (conversationId.startsWith('temp-')) return
 
   try {
+    // Count actual saved messages instead of trusting in-memory count
+    const actualMessageCount = await prisma.choeAIMessage.count({
+      where: { conversationId },
+    })
+
     let outcome: string | null = null
     if (session.state === BookingState.READY_FOR_PAYMENT) {
       outcome = 'COMPLETED'
@@ -382,14 +390,13 @@ async function updateConversationStats(
       where: { id: conversationId },
       data: {
         state: session.state,
-        messageCount: session.messages.length,
+        messageCount: actualMessageCount,
         location: session.location,
         vehicleType: session.vehicleType,
         totalTokens: { increment: totalTokens },
         estimatedCost: { increment: estimatedCost },
         lastActivityAt: new Date(),
         ...(outcome && { outcome }),
-        // vehicleId tracked in session, not in DB (field not in schema)
       }
     })
   } catch (error) {

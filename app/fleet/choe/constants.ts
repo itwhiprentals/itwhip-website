@@ -117,6 +117,8 @@ export const SECURITY_EVENT_LABELS = {
   rate_limit: 'Rate Limit',
   bot_detected: 'Bot Detected',
   prompt_injection: 'Prompt Injection',
+  content_moderation: 'Content Moderation',
+  session_terminated: 'Session Terminated',
   session_limit: 'Session Limit',
   message_length: 'Message Length',
   suspicious_pattern: 'Suspicious Pattern',

@@ -116,6 +116,9 @@ async function upsertConversation(
     })
 
     if (existing) {
+      const actualMessageCount = await prisma.choeAIMessage.count({
+        where: { conversationId: existing.id },
+      })
       await prisma.choeAIConversation.update({
         where: { sessionId: session.sessionId },
         data: {
@@ -123,7 +126,7 @@ async function upsertConversation(
           location: session.location,
           vehicleType: session.vehicleType,
           lastActivityAt: new Date(),
-          messageCount: session.messages.length,
+          messageCount: actualMessageCount,
         }
       })
       return existing.id
@@ -159,6 +162,11 @@ async function updateConversationStats(
   if (conversationId.startsWith('temp-')) return
 
   try {
+    // Count actual saved messages instead of trusting in-memory count
+    const actualMessageCount = await prisma.choeAIMessage.count({
+      where: { conversationId },
+    })
+
     let outcome: string | null = null
     if (session.state === BookingState.READY_FOR_PAYMENT) {
       outcome = 'COMPLETED'
@@ -168,7 +176,7 @@ async function updateConversationStats(
       where: { id: conversationId },
       data: {
         state: session.state,
-        messageCount: session.messages.length,
+        messageCount: actualMessageCount,
         location: session.location,
         vehicleType: session.vehicleType,
         totalTokens: { increment: totalTokens },
@@ -412,6 +420,19 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
                request.headers.get('x-real-ip') || '127.0.0.1'
     conversationId = await upsertConversation(session, body.userId, body.visitorId, ip)
+
+    // Check if conversation was terminated by admin
+    if (conversationId && !conversationId.startsWith('temp-')) {
+      const convRecord = await prisma.choeAIConversation.findUnique({
+        where: { id: conversationId },
+        select: { outcome: true },
+      })
+      if (convRecord?.outcome === 'BLOCKED') {
+        await sse.sendEvent('error', { error: 'This conversation has been ended by an administrator.' })
+        await sse.close()
+        return
+      }
+    }
 
     // Add user message
     session = addMessage(session, 'user', body.message)

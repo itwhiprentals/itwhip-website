@@ -163,6 +163,8 @@ export type SecurityEventType =
   | 'rate_limit'
   | 'bot_detected'
   | 'prompt_injection'
+  | 'content_moderation'
+  | 'session_terminated'
   | 'session_limit'
   | 'message_length'
   | 'suspicious_pattern'

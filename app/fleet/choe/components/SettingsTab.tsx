@@ -20,6 +20,17 @@ export default function SettingsTab({ settings, editingSettings, onChange, onSav
     return key in editingSettings ? editingSettings[key] as ChoeAISettings[K] : settings[key]
   }
 
+  // Safe accessor for number inputs — converts null/undefined to empty string to avoid React NaN warning
+  const getNum = (key: keyof ChoeAISettings): number | string => {
+    const v = getValue(key)
+    if (v == null) return ''
+    const n = Number(v)
+    return isNaN(n) ? '' : n
+  }
+
+  const safeInt = (v: string) => { const n = parseInt(v); return isNaN(n) ? null : n }
+  const safeFloat = (v: string) => { const n = parseFloat(v); return isNaN(n) ? null : n }
+
   const hasChanges = Object.keys(editingSettings).length > 0
 
   return (
@@ -43,8 +54,8 @@ export default function SettingsTab({ settings, editingSettings, onChange, onSav
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Max Tokens</label>
             <input
               type="number"
-              value={getValue('maxTokens')}
-              onChange={e => onChange('maxTokens', parseInt(e.target.value))}
+              value={getNum('maxTokens')}
+              onChange={e => onChange('maxTokens', safeInt(e.target.value))}
               min={256}
               max={4096}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
@@ -55,8 +66,8 @@ export default function SettingsTab({ settings, editingSettings, onChange, onSav
             <input
               type="number"
               step={0.1}
-              value={getValue('temperature')}
-              onChange={e => onChange('temperature', parseFloat(e.target.value))}
+              value={getNum('temperature')}
+              onChange={e => onChange('temperature', safeFloat(e.target.value))}
               min={0}
               max={1}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
@@ -72,8 +83,8 @@ export default function SettingsTab({ settings, editingSettings, onChange, onSav
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Messages per Window</label>
             <input
               type="number"
-              value={getValue('messagesPerWindow')}
-              onChange={e => onChange('messagesPerWindow', parseInt(e.target.value))}
+              value={getNum('messagesPerWindow')}
+              onChange={e => onChange('messagesPerWindow', safeInt(e.target.value))}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
             />
           </div>
@@ -81,8 +92,8 @@ export default function SettingsTab({ settings, editingSettings, onChange, onSav
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Window (minutes)</label>
             <input
               type="number"
-              value={getValue('rateLimitWindowMins')}
-              onChange={e => onChange('rateLimitWindowMins', parseInt(e.target.value))}
+              value={getNum('rateLimitWindowMins')}
+              onChange={e => onChange('rateLimitWindowMins', safeInt(e.target.value))}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
             />
           </div>
@@ -90,8 +101,8 @@ export default function SettingsTab({ settings, editingSettings, onChange, onSav
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Daily API Limit</label>
             <input
               type="number"
-              value={getValue('dailyApiLimit')}
-              onChange={e => onChange('dailyApiLimit', parseInt(e.target.value))}
+              value={getNum('dailyApiLimit')}
+              onChange={e => onChange('dailyApiLimit', safeInt(e.target.value))}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
             />
           </div>
@@ -99,8 +110,8 @@ export default function SettingsTab({ settings, editingSettings, onChange, onSav
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Session Limit</label>
             <input
               type="number"
-              value={getValue('sessionMessageLimit')}
-              onChange={e => onChange('sessionMessageLimit', parseInt(e.target.value))}
+              value={getNum('sessionMessageLimit')}
+              onChange={e => onChange('sessionMessageLimit', safeInt(e.target.value))}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
             />
           </div>

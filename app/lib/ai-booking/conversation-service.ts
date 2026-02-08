@@ -131,7 +131,7 @@ export async function loadConversation(
 // =============================================================================
 
 /**
- * Save a message to the conversation
+ * Save a message to the conversation (with single retry for transient DB issues)
  */
 export async function saveMessage(
   conversationId: string,
@@ -144,23 +144,33 @@ export async function saveMessage(
 ): Promise<string | null> {
   if (conversationId.startsWith('temp-')) return null;
 
-  try {
-    const message = await prisma.choeAIMessage.create({
-      data: {
-        conversationId,
-        role,
-        content,
-        tokensUsed,
-        responseTimeMs: responseTimeMs || null,
-        searchPerformed: toolsUsed.includes('search_vehicles'),
-        vehiclesReturned,
-        toolsUsed: toolsUsed.length > 0 ? toolsUsed : undefined,
-      },
-    });
+  const data = {
+    conversationId,
+    role,
+    content,
+    tokensUsed,
+    responseTimeMs: responseTimeMs || null,
+    searchPerformed: toolsUsed.includes('search_vehicles'),
+    vehiclesReturned,
+    toolsUsed: toolsUsed.length > 0 ? toolsUsed : undefined,
+  };
 
+  // Attempt 1
+  try {
+    const message = await prisma.choeAIMessage.create({ data });
     return message.id;
   } catch (error) {
-    console.error('[conversation-service] Failed to save message:', error);
+    console.warn('[conversation-service] Message save failed, retrying in 500ms:', error);
+  }
+
+  // Retry after 500ms (handles transient Neon connection issues)
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  try {
+    const message = await prisma.choeAIMessage.create({ data });
+    return message.id;
+  } catch (error) {
+    console.error('[conversation-service] Message save failed after retry:', error);
     return null;
   }
 }
@@ -184,6 +194,9 @@ export async function upsertConversation(
     });
 
     if (existing) {
+      const actualMessageCount = await prisma.choeAIMessage.count({
+        where: { conversationId: existing.id },
+      });
       await prisma.choeAIConversation.update({
         where: { sessionId: session.sessionId },
         data: {
@@ -196,7 +209,7 @@ export async function upsertConversation(
           startTime: session.startTime,
           endTime: session.endTime,
           lastActivityAt: new Date(),
-          messageCount: session.messages.length,
+          messageCount: actualMessageCount,
         },
       });
       return existing.id;
@@ -225,6 +238,7 @@ export async function upsertConversation(
 
 /**
  * Update conversation stats after API call
+ * Uses actual DB message count instead of in-memory count to stay consistent
  */
 export async function updateConversationStats(
   conversationId: string,
@@ -235,6 +249,11 @@ export async function updateConversationStats(
   if (conversationId.startsWith('temp-')) return;
 
   try {
+    // Count actual saved messages instead of trusting in-memory count
+    const actualMessageCount = await prisma.choeAIMessage.count({
+      where: { conversationId },
+    });
+
     let outcome: string | null = null;
     if (session.state === BookingState.READY_FOR_PAYMENT) {
       outcome = 'COMPLETED';
@@ -244,7 +263,7 @@ export async function updateConversationStats(
       where: { id: conversationId },
       data: {
         state: session.state,
-        messageCount: session.messages.length,
+        messageCount: actualMessageCount,
         location: session.location,
         vehicleType: session.vehicleType,
         vehicleId: session.vehicleId,

@@ -23,14 +23,21 @@ interface BatchJob {
   conversationCount?: number
 }
 
+interface FunnelStage {
+  label: string
+  value: number
+  percentage: number
+}
+
 interface AnalyticsTabProps {
   stats: ChoeStatsResponse['data']
   dailyStats: { date: string; conversations: number; cost: number }[]
   toolUsage: Record<string, number> | null
   apiKey: string
+  conversionFunnel?: FunnelStage[] | null
 }
 
-export default function AnalyticsTab({ stats, dailyStats, toolUsage, apiKey }: AnalyticsTabProps) {
+export default function AnalyticsTab({ stats, dailyStats, toolUsage, apiKey, conversionFunnel }: AnalyticsTabProps) {
   const [batchJobs, setBatchJobs] = useState<BatchJob[]>([])
   const [batchError, setBatchError] = useState<string | null>(null)
   const [creatingBatch, setCreatingBatch] = useState<string | null>(null)
@@ -117,13 +124,24 @@ export default function AnalyticsTab({ stats, dailyStats, toolUsage, apiKey }: A
 
       {/* Conversion Funnel */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Conversion Funnel</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Conversion Funnel (Last 30 Days)</h3>
         <div className="space-y-4">
-          <FunnelStep label="Started" value={stats.month.conversations} percentage={100} />
-          <FunnelStep label="Location Set" value={Math.round(stats.month.conversations * 0.85)} percentage={85} />
-          <FunnelStep label="Dates Set" value={Math.round(stats.month.conversations * 0.65)} percentage={65} />
-          <FunnelStep label="Vehicle Selected" value={Math.round(stats.month.conversations * 0.45)} percentage={45} />
-          <FunnelStep label="Completed" value={stats.month.completed} percentage={stats.month.conversionRate} highlight />
+          {conversionFunnel && conversionFunnel.length > 0 ? (
+            conversionFunnel.map((stage, i) => (
+              <FunnelStep
+                key={stage.label}
+                label={stage.label}
+                value={stage.value}
+                percentage={stage.percentage}
+                highlight={i === conversionFunnel.length - 1}
+              />
+            ))
+          ) : (
+            <>
+              <FunnelStep label="Started" value={stats.month.conversations} percentage={100} />
+              <FunnelStep label="Completed" value={stats.month.completed} percentage={stats.month.conversionRate} highlight />
+            </>
+          )}
         </div>
       </div>
 

@@ -19,9 +19,10 @@ interface OverviewTabProps {
   dailyStats: { date: string; conversations: number; cost: number }[]
   conversations: ConversationSummary[]
   anthropicUsage: AnthropicUsage | null
+  onConversationClick?: (id: string) => void
 }
 
-export default function OverviewTab({ stats, dailyStats, conversations, anthropicUsage }: OverviewTabProps) {
+export default function OverviewTab({ stats, dailyStats, conversations, anthropicUsage, onConversationClick }: OverviewTabProps) {
   return (
     <div className="space-y-6">
       {/* Quick Stats */}
@@ -98,20 +99,27 @@ export default function OverviewTab({ stats, dailyStats, conversations, anthropi
         </div>
       )}
 
-      {/* Usage Chart Placeholder */}
+      {/* 7-Day Usage Chart */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">7-Day Usage</h3>
-        <div className="h-48 flex items-end justify-around gap-2">
-          {dailyStats.slice(-7).map((day, i) => (
-            <div key={i} className="flex flex-col items-center gap-2">
-              <div
-                className="w-12 bg-purple-500 rounded-t"
-                style={{ height: `${Math.max(8, (day.conversations / Math.max(...dailyStats.map(d => d.conversations), 1)) * 150)}px` }}
-              />
-              <span className="text-xs text-gray-500">{day.date.slice(5)}</span>
-            </div>
-          ))}
-        </div>
+        {dailyStats.length > 0 ? (
+          <div className="h-48 flex items-end justify-around gap-2">
+            {dailyStats.slice(-7).map((day, i) => (
+              <div key={i} className="flex flex-col items-center gap-2 flex-1">
+                <span className="text-xs text-gray-500 font-medium">{day.conversations}</span>
+                <div
+                  className="w-full max-w-12 bg-purple-500 rounded-t"
+                  style={{ height: `${Math.max(8, (day.conversations / Math.max(...dailyStats.slice(-7).map(d => d.conversations), 1)) * 130)}px` }}
+                />
+                <span className="text-xs text-gray-500">{day.date.slice(5)}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
+            No conversation data yet
+          </div>
+        )}
       </div>
 
       {/* Recent Conversations */}
@@ -119,7 +127,11 @@ export default function OverviewTab({ stats, dailyStats, conversations, anthropi
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Conversations</h3>
         <div className="space-y-3">
           {conversations.slice(0, 5).map(conv => (
-            <div key={conv.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+            <div
+              key={conv.id}
+              className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded px-2 -mx-2 transition-colors"
+              onClick={() => onConversationClick?.(conv.id)}
+            >
               <div className="flex items-center gap-3">
                 <div className={`w-2 h-2 rounded-full ${conv.isAuthenticated ? 'bg-green-500' : 'bg-gray-400'}`} />
                 <div>

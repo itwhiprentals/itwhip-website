@@ -11,10 +11,90 @@ import SeverityBadge from './SeverityBadge'
 interface SecurityTabProps {
   events: SecurityEventSummary[]
   stats: ChoeSecurityResponse['stats'] | null
+  apiKey: string
 }
 
-export default function SecurityTab({ events, stats }: SecurityTabProps) {
+export default function SecurityTab({ events, stats, apiKey }: SecurityTabProps) {
   const [selectedEvent, setSelectedEvent] = useState<SecurityEventSummary | null>(null)
+  const [terminating, setTerminating] = useState(false)
+  const [terminateResult, setTerminateResult] = useState<string | null>(null)
+  const [terminatingAll, setTerminatingAll] = useState(false)
+  const [terminateAllResult, setTerminateAllResult] = useState<string | null>(null)
+  const [disablingChoe, setDisablingChoe] = useState(false)
+
+  const terminateAllSessions = async () => {
+    if (!confirm('DEFCON: Terminate ALL active Choé sessions? This will immediately block every ongoing conversation.')) return
+    if (!confirm('Are you absolutely sure? This cannot be undone.')) return
+    setTerminatingAll(true)
+    setTerminateAllResult(null)
+    try {
+      const res = await fetch(`/fleet/api/choe/conversations/terminate-all?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: 'DEFCON emergency termination' }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setTerminateAllResult(`${data.terminated} sessions terminated`)
+      } else {
+        setTerminateAllResult('Failed to terminate sessions')
+      }
+    } catch {
+      setTerminateAllResult('Network error')
+    } finally {
+      setTerminatingAll(false)
+    }
+  }
+
+  const disableChoe = async () => {
+    if (!confirm('DEFCON: Disable Choé completely? No new conversations will be allowed until re-enabled in Settings.')) return
+    setDisablingChoe(true)
+    try {
+      await fetch(`/fleet/api/choe?key=${apiKey}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: false, updatedBy: 'fleet-admin-defcon' }),
+      })
+      // Also terminate all active
+      await fetch(`/fleet/api/choe/conversations/terminate-all?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: 'DEFCON: Choé disabled + all sessions terminated' }),
+      })
+      setTerminateAllResult('Choé disabled and all sessions terminated')
+    } catch {
+      setTerminateAllResult('Failed to disable Choé')
+    } finally {
+      setDisablingChoe(false)
+    }
+  }
+
+  const terminateSession = async (sessionId: string) => {
+    if (!confirm('Terminate this session? The user will be blocked from continuing.')) return
+    setTerminating(true)
+    setTerminateResult(null)
+    try {
+      // First find the conversation by sessionId
+      const listRes = await fetch(`/fleet/api/choe/conversations?key=${apiKey}&search=${sessionId}&limit=1`)
+      if (!listRes.ok) { setTerminateResult('Failed to find conversation'); return }
+      const listData = await listRes.json()
+      const conv = listData.data?.[0]
+      if (!conv) { setTerminateResult('Conversation not found'); return }
+      if (conv.outcome === 'BLOCKED') { setTerminateResult('Already terminated'); return }
+
+      const res = await fetch(`/fleet/api/choe/conversations/${conv.id}/terminate?key=${apiKey}`, { method: 'POST' })
+      if (res.ok) {
+        setTerminateResult('Session terminated')
+      } else {
+        const err = await res.json()
+        setTerminateResult(err.error || 'Failed to terminate')
+      }
+    } catch {
+      setTerminateResult('Network error')
+    } finally {
+      setTerminating(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -43,6 +123,39 @@ export default function SecurityTab({ events, stats }: SecurityTabProps) {
           />
         </div>
       )}
+
+      {/* DEFCON Controls */}
+      <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-red-800 dark:text-red-400">Emergency Controls</h3>
+            <p className="text-xs text-red-600 dark:text-red-500 mt-1">
+              Use these in case of a coordinated attack or abuse
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {terminateAllResult && (
+              <span className="text-sm text-red-700 dark:text-red-400 font-medium">
+                {terminateAllResult}
+              </span>
+            )}
+            <button
+              onClick={terminateAllSessions}
+              disabled={terminatingAll || disablingChoe}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 text-sm font-medium"
+            >
+              {terminatingAll ? 'Terminating...' : 'Terminate All Sessions'}
+            </button>
+            <button
+              onClick={disableChoe}
+              disabled={disablingChoe || terminatingAll}
+              className="px-4 py-2 bg-red-900 text-white rounded-lg hover:bg-red-950 disabled:opacity-50 text-sm font-medium"
+            >
+              {disablingChoe ? 'Disabling...' : 'Disable Choé + Kill All'}
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Security Events Table */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -188,9 +301,25 @@ export default function SecurityTab({ events, stats }: SecurityTabProps) {
                 </pre>
               </details>
             </div>
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-between">
+              <div className="flex items-center gap-3">
+                {selectedEvent.sessionId && (
+                  <button
+                    onClick={() => terminateSession(selectedEvent.sessionId!)}
+                    disabled={terminating}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 text-sm"
+                  >
+                    {terminating ? 'Terminating...' : 'Terminate Session'}
+                  </button>
+                )}
+                {terminateResult && (
+                  <span className={`text-sm ${terminateResult.includes('terminated') ? 'text-green-600' : 'text-red-500'}`}>
+                    {terminateResult}
+                  </span>
+                )}
+              </div>
               <button
-                onClick={() => setSelectedEvent(null)}
+                onClick={() => { setSelectedEvent(null); setTerminateResult(null) }}
                 className="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
               >
                 Close
