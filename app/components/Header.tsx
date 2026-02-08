@@ -128,7 +128,8 @@ function HeaderInner(_props: HeaderProps = {}) {
   // Check if we're on specific pages
   const isHostPage = pathname?.startsWith('/host/')
   const isAdminPage = pathname?.startsWith('/admin/')
-  const isChoePage = pathname?.startsWith('/help/choe')
+  const isChoePage = pathname?.startsWith('/help/choe') || pathname === '/choe'
+  const isChoeStandalone = pathname === '/choe'
 
   // Override isLoggedIn display when guard screen is active
   // User should appear logged out until they choose an action on the guard screen
@@ -280,15 +281,18 @@ function HeaderInner(_props: HeaderProps = {}) {
                 className="flex items-center mr-4 group"
               >
                 {isChoePage ? (
-                  <div className="-ml-2 -my-2">
+                  <div className={`-ml-2 ${isChoeStandalone ? '-my-4 -mt-10' : '-my-2'}`}>
                     <Image
                       src="/images/choe-logo.png"
                       alt="Choé"
                       width={300}
                       height={87}
-                      className="h-[60px] w-auto group-hover:opacity-80 transition-opacity"
+                      className={`${isChoeStandalone ? 'h-[83px]' : 'h-[60px]'} w-auto group-hover:opacity-80 transition-opacity`}
                       priority
                     />
+                    {isChoeStandalone && (
+                      <span className="text-[9px] text-gray-400 block -mt-7">ItWhip Search Studio</span>
+                    )}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center -ml-2">
@@ -319,8 +323,8 @@ function HeaderInner(_props: HeaderProps = {}) {
                 )}
               </Link>
 
-              {/* Desktop Navigation - Show for non-admin and non-host pages */}
-              {!isAdminPage && !isHostPage && (
+              {/* Desktop Navigation - Show for non-admin, non-host, non-choe-standalone pages */}
+              {!isAdminPage && !isHostPage && !isChoeStandalone && (
                 <nav className="hidden lg:flex items-center space-x-1">
                   {navItems.map((item) => (
                     <div key={item.label} className="nav-dropdown relative">
@@ -411,6 +415,7 @@ function HeaderInner(_props: HeaderProps = {}) {
               isAdmin={isAdmin}
               isHostPage={isHostPage}
               isAdminPage={isAdminPage}
+              isChoeStandalone={isChoeStandalone}
               profilePhotoUrl={profilePhotoUrl}
               userName={user?.name}
               isMobileMenuOpen={isMobileMenuOpen}

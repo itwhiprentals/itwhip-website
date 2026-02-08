@@ -14,6 +14,7 @@ import AddOnsCard from './AddOnsCard'
 import GrandTotalCard from './GrandTotalCard'
 import PaymentCard from './PaymentCard'
 import ConfirmationCard from './ConfirmationCard'
+import { IoSunnyOutline, IoMoonOutline } from 'react-icons/io5'
 import { useStreamingChat } from '@/app/hooks/useStreamingChat'
 import { useCheckout } from '@/app/hooks/useCheckout'
 import type {
@@ -32,6 +33,9 @@ interface ChatViewStreamingProps {
   onNavigateToBooking?: (vehicleId: string, startDate: string, endDate: string) => void
   onNavigateToLogin?: () => void
   onClassicSearch?: () => void
+  isDarkMode?: boolean
+  onToggleTheme?: () => void
+  hideHeader?: boolean
 }
 
 // =============================================================================
@@ -42,6 +46,9 @@ export default function ChatViewStreaming({
   onNavigateToBooking,
   onNavigateToLogin,
   onClassicSearch,
+  isDarkMode,
+  onToggleTheme,
+  hideHeader,
 }: ChatViewStreamingProps) {
   const [persistedSession, setPersistedSession] = useState<BookingSession | null>(null)
   const [persistedVehicles, setPersistedVehicles] = useState<VehicleSummary[] | null>(null)
@@ -239,10 +246,12 @@ export default function ChatViewStreaming({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={springTransition}
-      className="flex flex-col h-[100dvh] bg-white dark:bg-gray-900 overflow-hidden"
+      className="flex flex-col h-full bg-white dark:bg-gray-900 overflow-hidden"
     >
-      {/* Header */}
-      <ChatHeader onClassicSearch={onClassicSearch} />
+      {/* Header — hidden when parent provides its own (e.g. /choe uses the real Header) */}
+      {!hideHeader && (
+        <ChatHeader onClassicSearch={onClassicSearch} isDarkMode={isDarkMode} onToggleTheme={onToggleTheme} />
+      )}
 
       {/* Progress bar — only shows once Choé detects intent (past INIT state) */}
       <AnimatePresence>
@@ -535,24 +544,45 @@ export default function ChatViewStreaming({
 // SUB-COMPONENTS
 // =============================================================================
 
-function ChatHeader({ onClassicSearch }: { onClassicSearch?: () => void }) {
+function ChatHeader({ onClassicSearch, isDarkMode, onToggleTheme }: {
+  onClassicSearch?: () => void
+  isDarkMode?: boolean
+  onToggleTheme?: () => void
+}) {
   return (
     <div className="flex-shrink-0 flex items-center justify-between px-4 pb-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
       <div className="-mt-4">
         <Image src="/images/choe-logo.png" alt="Choé" width={300} height={87} className="h-[83px] w-auto" />
         <span className="text-[9px] text-gray-400 block -mt-7">ItWhip Search Studio</span>
       </div>
-      {onClassicSearch && (
-        <button
-          onClick={onClassicSearch}
-          type="button"
-          className="text-[11px] font-semibold text-white
-            px-3 py-1.5 rounded-md bg-gray-900 dark:bg-white dark:text-gray-900
-            hover:bg-gray-700 dark:hover:bg-gray-200 transition-colors shadow-sm"
-        >
-          Classic Search
-        </button>
-      )}
+      <div className="flex items-center gap-2">
+        {onToggleTheme && (
+          <button
+            onClick={onToggleTheme}
+            type="button"
+            aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="p-2 rounded-md text-gray-500 dark:text-gray-400
+              hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            {isDarkMode ? (
+              <IoSunnyOutline className="w-5 h-5" />
+            ) : (
+              <IoMoonOutline className="w-5 h-5" />
+            )}
+          </button>
+        )}
+        {onClassicSearch && (
+          <button
+            onClick={onClassicSearch}
+            type="button"
+            className="text-[11px] font-semibold text-white
+              px-3 py-1.5 rounded-md bg-gray-900 dark:bg-white dark:text-gray-900
+              hover:bg-gray-700 dark:hover:bg-gray-200 transition-colors shadow-sm"
+          >
+            Classic Search
+          </button>
+        )}
+      </div>
     </div>
   )
 }

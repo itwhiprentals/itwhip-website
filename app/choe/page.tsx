@@ -1,8 +1,16 @@
 // app/choe/page.tsx — Standalone fullscreen Choé AI chat page
 // Outside (guest) route group: no Header/Footer, just the chat
 
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import ChoePageClient from './ChoePageClient'
+
+// Same viewport pattern as /help/choe — server-rendered meta tags that Safari reads
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#111827' },
+  ],
+}
 
 export const metadata: Metadata = {
   title: 'Choé | AI Car Search | ItWhip',

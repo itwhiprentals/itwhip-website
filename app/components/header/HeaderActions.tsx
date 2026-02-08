@@ -33,6 +33,7 @@ interface HeaderActionsProps {
   // Page context
   isHostPage: boolean
   isAdminPage: boolean
+  isChoeStandalone?: boolean
 
   // User data for RoleSwitcher
   profilePhotoUrl?: string
@@ -54,6 +55,7 @@ export default function HeaderActions({
   isAdmin,
   isHostPage,
   isAdminPage,
+  isChoeStandalone,
   profilePhotoUrl,
   userName,
   isMobileMenuOpen,
@@ -74,67 +76,76 @@ export default function HeaderActions({
         )}
       </button>
 
-      {/* Notifications - Show for logged in users */}
-      {isLoggedIn && !isTransitioning && (
-        <>
-          {isGuest && <NotificationBell userRole="GUEST" />}
-          {isHost && <NotificationBell userRole="HOST" />}
-          {isAdmin && <NotificationBell userRole="ADMIN" />}
-        </>
-      )}
-
-      {/* Sign In Button - Only when not logged in */}
-      {!isLoggedIn && !isCheckingAuth && (
+      {/* On /choe standalone: just show Classic Search, skip everything else */}
+      {isChoeStandalone ? (
         <Link
-          href={
-            isAdminPage ? '/admin/auth/login' :
-            isHostPage ? '/host/login' :
-            '/auth/login'
-          }
-          className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-medium rounded-lg transition-all transform hover:scale-105 shadow-sm"
+          href="/rentals/search"
+          className="text-[11px] font-semibold text-white px-3 py-1.5 rounded-md bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-200 transition-colors shadow-sm"
         >
-          Sign In
+          Classic Search
         </Link>
-      )}
-
-      {/* Role Switcher with integrated hamburger (when logged in) */}
-      {/* Hamburger shows on mobile (lg:hidden) inside the pill */}
-      {isLoggedIn && (
+      ) : (
         <>
-          {/* On mobile: show RoleSwitcher with hamburger */}
-          <div className="lg:hidden ml-2 -mr-2">
-            <RoleSwitcher
-              profilePhoto={profilePhotoUrl}
-              userName={userName}
-              showHamburger={true}
-              isMobileMenuOpen={isMobileMenuOpen}
-              onToggleMobileMenu={onToggleMobileMenu}
-            />
-          </div>
-          {/* On desktop: show RoleSwitcher without hamburger */}
-          <div className="hidden lg:block ml-2 -mr-2">
-            <RoleSwitcher
-              profilePhoto={profilePhotoUrl}
-              userName={userName}
-              showHamburger={false}
-            />
-          </div>
-        </>
-      )}
-
-      {/* Standalone Mobile Menu Toggle - Only when NOT logged in */}
-      {!isLoggedIn && (
-        <button
-          onClick={onToggleMobileMenu}
-          className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900"
-          aria-label="Toggle menu"
-        >
-          {isMobileMenuOpen ? (
-            <IoCloseOutline className="w-6 h-6 text-gray-700 dark:text-gray-300" />
-          ) : (
-            <IoMenuOutline className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+          {/* Notifications - Show for logged in users */}
+          {isLoggedIn && !isTransitioning && (
+            <>
+              {isGuest && <NotificationBell userRole="GUEST" />}
+              {isHost && <NotificationBell userRole="HOST" />}
+              {isAdmin && <NotificationBell userRole="ADMIN" />}
+            </>
           )}
-        </button>
+
+          {/* Sign In Button - Only when not logged in */}
+          {!isLoggedIn && !isCheckingAuth && (
+            <Link
+              href={
+                isAdminPage ? '/admin/auth/login' :
+                isHostPage ? '/host/login' :
+                '/auth/login'
+              }
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-medium rounded-lg transition-all transform hover:scale-105 shadow-sm"
+            >
+              Sign In
+            </Link>
+          )}
+
+          {/* Role Switcher with integrated hamburger (when logged in) */}
+          {isLoggedIn && (
+            <>
+              <div className="lg:hidden ml-2 -mr-2">
+                <RoleSwitcher
+                  profilePhoto={profilePhotoUrl}
+                  userName={userName}
+                  showHamburger={true}
+                  isMobileMenuOpen={isMobileMenuOpen}
+                  onToggleMobileMenu={onToggleMobileMenu}
+                />
+              </div>
+              <div className="hidden lg:block ml-2 -mr-2">
+                <RoleSwitcher
+                  profilePhoto={profilePhotoUrl}
+                  userName={userName}
+                  showHamburger={false}
+                />
+              </div>
+            </>
+          )}
+
+          {/* Standalone Mobile Menu Toggle - Only when NOT logged in */}
+          {!isLoggedIn && (
+            <button
+              onClick={onToggleMobileMenu}
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900"
+              aria-label="Toggle menu"
+            >
+              {isMobileMenuOpen ? (
+                <IoCloseOutline className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              ) : (
+                <IoMenuOutline className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              )}
+            </button>
+          )}
+        </>
       )}
     </div>
   )

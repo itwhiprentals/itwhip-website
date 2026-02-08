@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { IoSend, IoRefresh } from 'react-icons/io5'
 import { useAuthOptional } from '@/app/contexts/AuthContext'
 
@@ -33,7 +34,7 @@ export default function ChatInput({
 }: ChatInputProps) {
   const [value, setValue] = useState('')
   const [placeholderIndex, setPlaceholderIndex] = useState(0)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const auth = useAuthOptional()
 
   // Rotate placeholder text every 2 seconds
@@ -44,10 +45,18 @@ export default function ChatInput({
     return () => clearInterval(interval)
   }, [])
 
+  // Auto-resize textarea as content changes
+  const autoResize = useCallback(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px` // max ~5 lines
+  }, [])
+
   // Only focus after user has sent their first message (not on initial mount)
   const hasSentMessage = useRef(false)
   useEffect(() => {
-    if (!disabled && hasSentMessage.current) inputRef.current?.focus()
+    if (!disabled && hasSentMessage.current) textareaRef.current?.focus()
   }, [disabled])
 
   const handleSubmit = () => {
@@ -56,6 +65,8 @@ export default function ChatInput({
     hasSentMessage.current = true
     onSend(trimmed)
     setValue('')
+    // Reset textarea height after sending
+    if (textareaRef.current) textareaRef.current.style.height = 'auto'
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -74,8 +85,8 @@ export default function ChatInput({
   const userName = auth?.user?.name
 
   return (
-    <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 pb-safe">
-      {/* Suggestion chips */}
+    <div className="pb-safe">
+      {/* Suggestion chips — above the input box */}
       {suggestions.length > 0 && !hasMessages && (
         <SuggestionChips
           suggestions={suggestions}
@@ -84,73 +95,69 @@ export default function ChatInput({
         />
       )}
 
-      {/* Input box — contains input row + status bar */}
-      <div className="mx-3 mt-2 mb-0.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 overflow-hidden">
-        {/* Input row */}
-        <div className="flex items-center gap-2 px-2 py-2">
+      {/* The box — container IS the typing area */}
+      <div className="mx-2 mb-1 bg-gray-100 dark:bg-gray-800/60 border border-gray-500/50 dark:border-gray-500/40 focus-within:border-blue-400 dark:focus-within:border-blue-500 rounded-lg overflow-hidden transition-colors">
+        {/* Typing area (above the line) */}
+        <div className="flex items-end gap-0 px-3 py-2">
+          <textarea
+            ref={textareaRef}
+            value={value}
+            onChange={(e) => { setValue(e.target.value); autoResize() }}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholderExamples[placeholderIndex]}
+            disabled={disabled}
+            rows={1}
+            className="flex-1 bg-transparent text-xs text-gray-900 dark:text-white placeholder-gray-400/60 dark:placeholder-gray-500/50 focus:outline-none disabled:opacity-50 resize-none overflow-y-auto leading-5"
+            style={{ maxHeight: 120 }}
+          />
+
           <button
             onClick={onReset}
             disabled={!hasMessages}
-            className={`flex-shrink-0 p-2 transition-colors ${
+            className={`flex-shrink-0 p-2 transition-colors rounded-lg ${
               hasMessages
-                ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                : 'text-gray-300 dark:text-gray-700 cursor-default'
+                ? 'text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                : 'text-gray-300/40 dark:text-gray-600/40 cursor-default'
             }`}
             title="Start over"
           >
             <IoRefresh size={18} />
           </button>
 
-          <input
-            ref={inputRef}
-            type="text"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholderExamples[placeholderIndex]}
-            disabled={disabled}
-            className="flex-1 px-4 py-2.5 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-400 dark:border-blue-500 rounded-lg text-sm text-gray-900 dark:text-white placeholder-blue-400/70 dark:placeholder-blue-400/50 focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-500 disabled:opacity-50 transition-colors shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30"
-          />
-
           <button
             onClick={handleSubmit}
             disabled={disabled || !value.trim()}
-            className="flex-shrink-0 p-2.5 bg-[#3D9970] text-white rounded-lg hover:bg-[#2E8B57] disabled:opacity-30 disabled:cursor-not-allowed transition-colors shadow-sm shadow-[#3D9970]/30"
+            className="flex-shrink-0 p-2 bg-[#3D9970] text-white rounded-lg hover:bg-[#2E8B57] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
-            <IoSend size={16} />
+            <IoSend size={14} />
           </button>
         </div>
 
-        {/* Status bar — inside the input box */}
-        <StatusBar isLoggedIn={isLoggedIn} userName={userName} />
+        {/* Tiny separator line — edge to edge, black */}
+        <div className="border-t border-gray-900/15 dark:border-gray-100/10" />
+
+        {/* Status bar (below the line) */}
+        <div className="flex items-center justify-center gap-3 px-3 py-1.5">
+          <span className="flex items-center gap-1 text-[9px] text-gray-400/70 dark:text-gray-500/60">
+            <span className={`w-1.5 h-1.5 rounded-full ${isLoggedIn ? 'bg-green-400' : 'bg-gray-300/50 dark:bg-gray-600/50'}`} />
+            {isLoggedIn ? (userName || 'Logged In') : 'Not Logged In'}
+          </span>
+          <span className="text-[9px] text-gray-300/40 dark:text-gray-600/40">|</span>
+          <span className="flex items-center gap-1 text-[9px] text-gray-400/70 dark:text-gray-500/60">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+            ItWhip Platform
+          </span>
+        </div>
       </div>
 
-      {/* Disclaimer — only thing outside the box */}
-      <div className="text-center pb-1">
+      {/* Disclaimer — OUTSIDE the box */}
+      <div className="text-center pb-0.5">
         <p className="text-[9px] text-gray-400 dark:text-gray-500">
-          Choé can make mistakes. Verify booking details before confirming.
+          Choé can make mistakes. Verify booking details before confirming.{' '}
+          <Link href="/help/choe" className="underline hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Learn more</Link>
         </p>
       </div>
     </div>
-  )
-}
-
-function StatusBar({ isLoggedIn, userName }: { isLoggedIn: boolean; userName?: string }) {
-  return (
-    <>
-      <div className="border-t border-gray-100 dark:border-gray-800 mx-3" />
-      <div className="flex items-center justify-center gap-3 px-3 py-1.5">
-        <span className="flex items-center gap-1 text-[9px] text-gray-400 dark:text-gray-500">
-          <span className={`w-1.5 h-1.5 rounded-full ${isLoggedIn ? 'bg-green-400' : 'bg-gray-300 dark:bg-gray-600'}`} />
-          {isLoggedIn ? (userName || 'Logged In') : 'Not Logged In'}
-        </span>
-        <span className="text-[9px] text-gray-300 dark:text-gray-700">|</span>
-        <span className="flex items-center gap-1 text-[9px] text-gray-400 dark:text-gray-500">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-          ItWhip Platform
-        </span>
-      </div>
-    </>
   )
 }
 
@@ -164,13 +171,13 @@ function SuggestionChips({
   disabled: boolean
 }) {
   return (
-    <div className="flex flex-wrap gap-2 px-3 pt-3">
+    <div className="flex flex-wrap gap-2 px-3 pt-2.5">
       {suggestions.map((text) => (
         <button
           key={text}
           onClick={() => onSelect(text)}
           disabled={disabled}
-          className="px-3 py-1.5 text-xs font-medium text-primary bg-primary/5 border border-primary/20 rounded-full hover:bg-primary/10 disabled:opacity-50 transition-colors"
+          className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white/60 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-600/40 rounded-full hover:bg-white/80 dark:hover:bg-gray-700/50 disabled:opacity-50 transition-colors"
         >
           {text}
         </button>
