@@ -5,14 +5,9 @@ import { z } from 'zod'
 import { RentalBookingStatus } from '@/app/lib/dal/types'
 import { sendHostNotification } from '@/app/lib/email'
 import { calculatePricing } from '@/app/(guest)/rentals/lib/pricing'
-import { checkAvailability } from '@/app/(guest)/rentals/lib/rental-utils'
 import { addHours } from 'date-fns'
 import { extractIpAddress } from '@/app/utils/ip-lookup'
-
-// Stub email functions not yet implemented
-const sendBookingConfirmation = async (..._args: any[]) => { console.log('[email] sendBookingConfirmation stub') }
-const sendPendingReviewEmail = async (..._args: any[]) => { console.log('[email] sendPendingReviewEmail stub') }
-const sendFraudAlertEmail = async (..._args: any[]) => { console.log('[email] sendFraudAlertEmail stub') }
+import { sendBookingConfirmation, sendPendingReviewEmail, sendFraudAlertEmail } from '@/app/lib/email/booking-emails'
 
 // Import new verification rules
 import { 
@@ -265,14 +260,10 @@ export async function POST(request: NextRequest) {
 
     // ========== END SELF-BOOKING GUARD ==========
 
-    // Check availability - TEMPORARILY BYPASSED FOR TESTING
-    // TODO: Fix checkAvailability function - it's returning false incorrectly
-    // const isAvailable = await checkAvailability(
-    //   bookingData.carId,
-    //   bookingData.startDate,
-    //   bookingData.endDate
-    // )
-    const isAvailable = true // TEMP: Force available for Stripe testing
+    // Check availability — are there overlapping CONFIRMED/ACTIVE bookings?
+    // The Prisma query above (car.bookings) already fetches bookings with date overlap
+    const overlappingBookings = car.bookings || []
+    const isAvailable = overlappingBookings.length === 0
 
     if (!isAvailable) {
       return NextResponse.json(

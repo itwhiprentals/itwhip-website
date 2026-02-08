@@ -1295,6 +1295,8 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             amount: grandTotalCents,
             email: driverEmail || guestEmail || userProfile?.email,
             carId,
+            startDate: savedBookingDetails.startDate,
+            endDate: savedBookingDetails.endDate,
             metadata: {
               carId,
               days: savedBookingDetails.pricing.days?.toString(),
