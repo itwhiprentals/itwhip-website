@@ -70,12 +70,7 @@ export default function TripStartPage() {
           
           setBooking(booking)
           
-          // AUTO-PASS LOCATION VERIFICATION (internal bypass)
-          // Set a default Phoenix location automatically
-          setTripData(prev => ({
-            ...prev,
-            location: { lat: 33.4484, lng: -112.0740 } // Downtown Phoenix
-          }))
+          // Location will be verified by the LocationVerify component via GPS
         } else {
           setError('Booking not found')
         }
@@ -121,16 +116,12 @@ export default function TripStartPage() {
 
   const validateCurrentStep = (): boolean => {
     switch (currentStep) {
-      case 0: // Location - AUTO-PASS
-        // Always pass location verification internally
+      case 0: // Location verification via GPS
         if (!tripData.location) {
-          // Set default location if somehow missing
-          setTripData(prev => ({
-            ...prev,
-            location: { lat: 33.4484, lng: -112.0740 }
-          }))
+          setError('Please verify your location before continuing')
+          return false
         }
-        return true // Always pass
+        return true
         
       case 1: // Photos
         const photoValidation = validateInspectionPhotos(tripData.photos, 'start')

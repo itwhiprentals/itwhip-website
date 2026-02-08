@@ -1863,7 +1863,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         driverInfo: {
           licenseNumber: driverLicense || '',
           licenseState: 'AZ',
-          licenseExpiry: '2028-12-31',
+          // licenseExpiry collected during identity verification (Stripe Identity)
           dateOfBirth: formatDOB(driverAge),
           licensePhotoUrl: licensePhotoUrl || '',
           insurancePhotoUrl: insurancePhotoUrl || '',

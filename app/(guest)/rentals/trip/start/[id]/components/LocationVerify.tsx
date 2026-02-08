@@ -19,13 +19,20 @@ export function LocationVerify({ booking, data, onLocationVerified }: LocationVe
   const [isVerified, setIsVerified] = useState(false)
   const [distance, setDistance] = useState<number | null>(null)
 
-  // Auto-verify on mount if location already exists (from parent auto-pass)
+  // Auto-verify on mount if real GPS location already exists
   useEffect(() => {
     if (data.location && !isVerified) {
       setIsVerified(true)
       setLocation(data.location)
     }
   }, [data.location])
+
+  // Request GPS location on mount
+  useEffect(() => {
+    if (!data.location) {
+      getLocation()
+    }
+  }, [])
 
   const getLocation = () => {
     if (!navigator.geolocation) {
@@ -75,15 +82,27 @@ export function LocationVerify({ booking, data, onLocationVerified }: LocationVe
   }
 
   const handleAutoLocation = () => {
-    // Use Phoenix, AZ coordinates as default
-    const defaultLocation = {
-      lat: 33.4484,
-      lng: -112.0740
+    // Try lower-accuracy GPS as fallback (no high accuracy requirement)
+    if (navigator.geolocation) {
+      setIsLocating(true)
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const loc = { lat: position.coords.latitude, lng: position.coords.longitude }
+          setLocation(loc)
+          setIsVerified(true)
+          onLocationVerified(loc)
+          setError(null)
+          setIsLocating(false)
+        },
+        () => {
+          setIsLocating(false)
+          setError('Unable to determine your location. Please enable location services and try again.')
+        },
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
+      )
+    } else {
+      setError('Location services are not available on this device. Please use a device with GPS.')
     }
-    setLocation(defaultLocation)
-    setIsVerified(true)
-    onLocationVerified(defaultLocation)
-    setError(null)
   }
 
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {

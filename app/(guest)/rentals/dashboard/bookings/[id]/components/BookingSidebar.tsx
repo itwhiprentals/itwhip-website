@@ -41,18 +41,17 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
   }
 
   const handleEmergency = () => {
-    // Show emergency contact info or dial emergency number
-    if (confirm('Call emergency support?')) {
-      window.location.href = 'tel:911'
+    if (confirm('Call ItWhip Support? For life-threatening emergencies, please call 911.')) {
+      window.location.href = 'tel:+16025551234'
     }
   }
 
   const handleModifyDates = () => {
-    window.location.href = `/rentals/modify/${booking.id}`
+    window.location.href = `/support?booking=${booking.bookingCode}&action=modify-dates`
   }
 
   const handleUpdatePayment = () => {
-    window.location.href = `/rentals/payment/update/${booking.id}`
+    window.location.href = `/support?booking=${booking.bookingCode}&action=update-payment`
   }
 
   return (

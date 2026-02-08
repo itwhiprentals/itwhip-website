@@ -142,14 +142,11 @@ export default function RentalSearchCard({
 
   // Handle location change (from typing)
   const handleLocationChange = (value: string) => {
-    console.log('🔄 Parent: Location changed to:', value)
     setSearchParams(prev => ({ ...prev, location: value }))
   }
 
   // Handle location selection (from dropdown)
   const handleLocationSelect = (location: Location) => {
-    console.log('✅ Parent: Location selected:', location.name)
-    // This will update the location, which will flow back to LocationInput via the value prop
     setSearchParams(prev => ({ ...prev, location: location.name }))
   }
 

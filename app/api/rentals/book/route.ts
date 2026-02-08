@@ -84,7 +84,7 @@ const bookingSchema = z.object({
   driverInfo: z.object({
     licenseNumber: z.string(),
     licenseState: z.string(),
-    licenseExpiry: z.string(),
+    licenseExpiry: z.string().optional(),
     dateOfBirth: z.string(),
     licensePhotoUrl: z.string().optional(),
     insurancePhotoUrl: z.string().optional(),
@@ -612,7 +612,7 @@ export async function POST(request: NextRequest) {
           licenseVerified: (needsVerification || requiresManualReview) ? false : true,
           licenseNumber: bookingData.driverInfo.licenseNumber,
           licenseState: bookingData.driverInfo.licenseState,
-          licenseExpiry: parseArizonaDate(bookingData.driverInfo.licenseExpiry),
+          licenseExpiry: bookingData.driverInfo.licenseExpiry ? parseArizonaDate(bookingData.driverInfo.licenseExpiry) : null,
           licensePhotoUrl: bookingData.driverInfo.licensePhotoUrl,
           insurancePhotoUrl: bookingData.driverInfo.insurancePhotoUrl,
           selfieVerified: (needsVerification || requiresManualReview) ? false : true,
