@@ -505,6 +505,27 @@ export async function DELETE(
 
     console.log(`[Cancel Booking] Booking ${bookingId} cancelled by partner ${partner.id}`)
 
+    // Auto-create refund request if booking was paid
+    if (booking.paymentStatus === 'PAID' && booking.paymentIntentId) {
+      try {
+        await prisma.refundRequest.create({
+          data: {
+            id: crypto.randomUUID(),
+            bookingId: booking.id,
+            amount: booking.totalAmount,
+            reason: 'Booking cancelled by host',
+            requestedBy: partner.id,
+            requestedByType: 'HOST',
+            status: 'PENDING',
+            updatedAt: new Date(),
+          }
+        })
+        console.log(`[Cancel Booking] Auto-created refund request for booking ${bookingId}`)
+      } catch (refundError) {
+        console.error('[Cancel Booking] Failed to create refund request:', refundError)
+      }
+    }
+
     // Send cancellation email ONLY if booking was CONFIRMED (not PENDING/Reserved)
     // PENDING bookings will naturally expire - no notification needed
     let emailSent = false

@@ -438,13 +438,38 @@ export async function DELETE(
       select: {
         id: true,
         status: true,
-        cancelledAt: true
+        cancelledAt: true,
+        paymentStatus: true,
+        paymentIntentId: true,
+        totalAmount: true,
+        guestEmail: true,
       }
     })
 
+    // Auto-create refund request if booking was paid
+    if (cancelledBooking.paymentStatus === 'PAID' && cancelledBooking.paymentIntentId) {
+      try {
+        await prisma.refundRequest.create({
+          data: {
+            id: crypto.randomUUID(),
+            bookingId: cancelledBooking.id,
+            amount: cancelledBooking.totalAmount,
+            reason: `Booking cancelled by ${cancelledBy.toLowerCase()}`,
+            requestedBy: cancelledBooking.guestEmail || cancelledBy.toLowerCase(),
+            requestedByType: cancelledBy,
+            status: 'PENDING',
+            updatedAt: new Date(),
+          }
+        })
+        console.log(`[Cancel Booking] Auto-created refund request for booking ${cancelledBooking.id}`)
+      } catch (refundError) {
+        console.error('[Cancel Booking] Failed to create refund request:', refundError)
+      }
+    }
+
     return NextResponse.json({
       message: 'Booking cancelled successfully',
-      booking: cancelledBooking
+      booking: { id: cancelledBooking.id, status: cancelledBooking.status, cancelledAt: cancelledBooking.cancelledAt }
     })
     
   } catch (error) {
