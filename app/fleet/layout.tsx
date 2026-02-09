@@ -198,6 +198,12 @@ function InternalLayoutContent({
                     E-Sign
                   </Link>
                   <Link
+                    href="/fleet/verifications"
+                    className="px-2.5 py-1.5 rounded-md text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors whitespace-nowrap font-medium"
+                  >
+                    ID Check
+                  </Link>
+                  <Link
                     href="/fleet/settings"
                     className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
                   >
@@ -331,6 +337,13 @@ function InternalLayoutContent({
                     className="px-3 py-2 rounded-md text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 font-medium"
                   >
                     E-Sign
+                  </Link>
+                  <Link
+                    href="/fleet/verifications"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2 rounded-md text-sm text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-900/20 font-medium"
+                  >
+                    ID Check
                   </Link>
                   <Link
                     href="/fleet/settings"

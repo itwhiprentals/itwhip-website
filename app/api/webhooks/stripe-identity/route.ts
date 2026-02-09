@@ -153,7 +153,10 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
     dob?: Date
     idNumber?: string
     idExpiry?: Date
+    issuedDate?: Date
     address?: string
+    issuingCountry?: string
+    documentType?: string
   } = {}
 
   if (session.last_verification_report) {
@@ -173,10 +176,17 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
           idExpiry: doc.expiration_date
             ? new Date(doc.expiration_date.year!, doc.expiration_date.month! - 1, doc.expiration_date.day!)
             : undefined,
+          issuedDate: doc.issued_date
+            ? new Date(doc.issued_date.year!, doc.issued_date.month! - 1, doc.issued_date.day!)
+            : undefined,
           address: doc.address
-            ? `${doc.address.line1 || ''} ${doc.address.city || ''}, ${doc.address.state || ''} ${doc.address.postal_code || ''}`
-            : undefined
+            ? [doc.address.line1, doc.address.line2, doc.address.city, doc.address.state, doc.address.postal_code].filter(Boolean).join(', ')
+            : undefined,
+          issuingCountry: doc.issuing_country || undefined,
+          documentType: doc.type || undefined,
         }
+
+        console.log(`[Stripe Identity] Extracted from report: firstName=${verifiedData.firstName}, lastName=${verifiedData.lastName}, dob=${verifiedData.dob}, idNumber=${verifiedData.idNumber ? '***' : 'none'}, idExpiry=${verifiedData.idExpiry}, issuedDate=${verifiedData.issuedDate}, address=${verifiedData.address ? 'yes' : 'none'}`)
       }
     } catch (err) {
       console.error('[Stripe Identity] Error retrieving verification report:', err)

@@ -10,7 +10,8 @@ import {
   IoDocumentTextOutline,
   IoSettingsOutline,
   IoPricetagOutline,
-  IoAnalyticsOutline
+  IoAnalyticsOutline,
+  IoIdCardOutline
 } from 'react-icons/io5'
 
 const actions = [
@@ -27,6 +28,13 @@ const actions = [
     href: '/partner/bookings',
     icon: IoCalendarOutline,
     color: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+  },
+  {
+    name: 'ID Verification',
+    description: 'Guest DL checks',
+    href: '/partner/verifications',
+    icon: IoIdCardOutline,
+    color: 'bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400'
   },
   {
     name: 'Create Discount',

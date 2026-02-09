@@ -52,3 +52,5 @@ next-env.d.ts
 prisma/migrations/dev/
 cookies.txt
 .env*.local
+
+certificates

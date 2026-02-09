@@ -23,7 +23,8 @@ import {
   IoGiftOutline,
   IoHandRightOutline,
   IoPersonAddOutline,
-  IoMailOutline
+  IoMailOutline,
+  IoIdCardOutline
 } from 'react-icons/io5'
 import { Car, CarStatus } from './types'
 import { StatCard, StatusBadge, EmptyState, LoadingSpinner, SectionHeader } from './components'
@@ -336,6 +337,15 @@ export default function FleetDashboard() {
           >
             <IoDocumentTextOutline className="text-2xl group-hover:scale-110 transition-transform" />
             <span className="text-sm font-medium">E-Sign</span>
+          </Link>
+
+          {/* ID Verification */}
+          <Link
+            href={`/fleet/verifications?key=${apiKey}`}
+            className="px-4 py-3 bg-gradient-to-br from-teal-500 to-cyan-600 text-white rounded-lg hover:from-teal-600 hover:to-cyan-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+          >
+            <IoIdCardOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">ID Check</span>
           </Link>
 
           {/* Settings */}

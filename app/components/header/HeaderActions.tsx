@@ -6,14 +6,17 @@
 // When logged out: Standalone hamburger button
 
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import {
   IoSunnyOutline,
   IoMoonOutline,
   IoMenuOutline,
   IoCloseOutline
 } from 'react-icons/io5'
-import NotificationBell from '../notifications/NotificationBell'
 import RoleSwitcher from '../RoleSwitcher'
+
+// Dynamic import: react-query in useNotifications crashes during SSR
+const NotificationBell = dynamic(() => import('../notifications/NotificationBell'), { ssr: false })
 
 interface HeaderActionsProps {
   // Theme

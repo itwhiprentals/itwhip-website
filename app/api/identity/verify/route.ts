@@ -227,6 +227,7 @@ export async function POST(request: NextRequest) {
     const returnUrl = body.returnUrl || `${process.env.NEXT_PUBLIC_APP_URL}/profile?tab=documents&verified=true`
 
     // Create new verification session with document + selfie
+    // Request all extractable fields: name, DOB, address, document number, expiry
     const verificationSession = await stripe.identity.verificationSessions.create({
       type: 'document',
       provided_details: {
@@ -235,7 +236,8 @@ export async function POST(request: NextRequest) {
       options: {
         document: {
           require_matching_selfie: true,
-          allowed_types: ['driving_license']  // Only allow driver's license
+          require_id_number: true,
+          allowed_types: ['driving_license']
         }
       },
       return_url: returnUrl,

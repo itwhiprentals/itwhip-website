@@ -4,6 +4,7 @@
 // POST /api/bookings/verify-dl
 
 import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/app/lib/database/prisma'
 import {
   quickVerifyDriverLicense,
   compareNames,
@@ -14,7 +15,7 @@ import {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { frontImageUrl, backImageUrl, expectedName, expectedDob, stateHint } = body
+    const { frontImageUrl, backImageUrl, expectedName, expectedDob, stateHint, bookingId } = body
 
     if (!frontImageUrl) {
       return NextResponse.json(
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
       (expectedName ? nameMatch : true) &&
       ageValid
 
-    return NextResponse.json({
+    const responseData = {
       success: true,
       quickVerifyPassed,
       requiresFullVerification: true,
@@ -104,7 +105,27 @@ export async function POST(request: NextRequest) {
         : criticalFlags.length > 0
           ? 'Manual review recommended. Critical issues detected.'
           : 'Proceed with caution. Minor quality issues noted.',
-    })
+    }
+
+    // Store AI verification results to DB if bookingId is provided
+    if (bookingId) {
+      try {
+        await prisma.rentalBooking.update({
+          where: { id: bookingId },
+          data: {
+            aiVerificationResult: JSON.parse(JSON.stringify(responseData)),
+            aiVerificationScore: result.confidence,
+            aiVerificationAt: new Date(),
+            aiVerificationModel: result.model || 'claude-sonnet-4-5',
+          }
+        })
+        console.log(`[DL Verify] Stored AI results for booking ${bookingId} — score: ${result.confidence}, passed: ${quickVerifyPassed}`)
+      } catch (dbErr) {
+        console.error(`[DL Verify] Failed to store results for booking ${bookingId}:`, dbErr)
+      }
+    }
+
+    return NextResponse.json(responseData)
   } catch (error) {
     console.error('[API] DL verification error:', error)
     return NextResponse.json(

@@ -160,6 +160,7 @@ export async function POST(request: NextRequest) {
     const fullReturnUrl = `${baseReturnUrl}${baseReturnUrl.includes('?') ? '&' : '?'}verified=true&email=${encodeURIComponent(verificationEmail)}`
 
     // Create new verification session
+    // Request all extractable fields: name, DOB, address, document number, expiry
     const verificationSession = await stripe.identity.verificationSessions.create({
       type: 'document',
       provided_details: {
@@ -168,6 +169,7 @@ export async function POST(request: NextRequest) {
       options: {
         document: {
           require_matching_selfie: true,
+          require_id_number: true,
           allowed_types: ['driving_license']
         }
       },

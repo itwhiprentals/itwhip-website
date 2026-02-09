@@ -57,6 +57,23 @@ Hook (`app/hooks/useCheckout.ts`):
 
 ## Recent Fixes (February 2026)
 
+### Claude DL Verification Upgrade — State-Aware AI + Admin Dashboard - DEPLOYED ✅ (Feb 9)
+Fixed 3 real-world false-positives in Claude Vision driver's license verification:
+
+1. **AZ expiration false-positive** — Added 12-state DL rules (`dl-state-rules.ts`). AZ licenses valid until 65, so 2051 expiration is normal. Claude prompt now knows state rules.
+2. **Photo quality over-sensitivity** — Rewrote prompt with inherent phone-photo tolerance. Split flags into `criticalFlags` (blocks verification) vs `informationalFlags` (admin visibility only).
+3. **Name format mismatch** — Rewrote `compareNames()` to handle LAST FIRST MIDDLE format (common on US DLs). Tries 4 strategies: LAST FIRST, FIRST LAST, comma format, all-parts-present.
+
+**New features:**
+- **Structured Outputs** — Guaranteed JSON schema from Claude (no more regex parsing)
+- **Prompt Caching** — State DL rules cached in system prompt (~90% cost reduction on repeated verifications)
+- **Auto-trigger** — AI verification runs automatically when both license front + back uploaded
+- **Admin AI Analysis panel** — Extraction comparison table, security features, photo quality, state checks, confidence score with APPROVE/REVIEW/REJECT recommendation
+- **Verification status banner** — Shows Claude AI + Stripe Identity status at top of admin verification page
+
+Files: `dl-state-rules.ts` (new), `license-analyzer.ts` (rewrite), `verify-dl/route.ts`, `upload/route.ts`, admin verification page
+DB: 4 new fields on RentalBooking (`aiVerificationResult`, `aiVerificationScore`, `aiVerificationAt`, `aiVerificationModel`)
+
 ### Choé Dashboard Deep Audit: Content Moderation + DEFCON Controls - DEPLOYED ✅ (Feb 8)
 **Content moderation, session termination, DEFCON emergency controls, 6 dashboard fixes**
 
