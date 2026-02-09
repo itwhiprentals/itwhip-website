@@ -14,8 +14,9 @@ import { TripStartCard } from './components/trip/TripStartCard'
 import { TripActiveCard } from './components/trip/TripActiveCard'
 import { TripEndCard } from './components/trip/TripEndCard'
 import { BookingOnboarding } from './components/BookingOnboarding'
-import { 
-  getTimeUntilPickup, validateFileUpload 
+import RentalAgreementModal from '../../../components/modals/RentalAgreementModal'
+import {
+  getTimeUntilPickup, validateFileUpload
 } from './utils/helpers'
 import { 
   BOOKING_POLLING_INTERVAL, 
@@ -35,6 +36,7 @@ export default function BookingDetailsPage() {
   const [uploadingFile, setUploadingFile] = useState(false)
   const [copiedCode, setCopiedCode] = useState(false)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const [showAgreement, setShowAgreement] = useState(false)
   const [previousStatus, setPreviousStatus] = useState<string | null>(null)
 
   // ✅ FIXED: Load booking data - removed booking from dependencies
@@ -296,6 +298,9 @@ export default function BookingDetailsPage() {
           paymentStatus={booking.paymentStatus}
           documentsSubmittedAt={typeof booking.documentsSubmittedAt === 'string' ? booking.documentsSubmittedAt : undefined}
           reviewedAt={typeof booking.reviewedAt === 'string' ? booking.reviewedAt : undefined}
+          onCancel={booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? () => setShowCancelDialog(true) : undefined}
+          onModify={() => { window.location.href = `/support?booking=${booking.bookingCode}&action=modify-dates` }}
+          onDownloadInvoice={() => setShowAgreement(true)}
         />
 
         {/* Payment hold alert — PENDING only */}
@@ -352,47 +357,14 @@ export default function BookingDetailsPage() {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          {/* Left Column - Details & Messages Button */}
+          {/* Left Column - Details */}
           <div className="lg:col-span-2 space-y-6">
-            <BookingDetails 
+            <BookingDetails
               booking={booking}
               messages={[]}
               onUploadClick={() => fileInputRef.current?.click()}
               uploadingFile={uploadingFile}
             />
-            
-            {/* Messages Card - only after booking confirmed */}
-            {booking.status !== 'PENDING' && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                      <MessageSquare className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        Messages
-                      </h2>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Communicate with host and support
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => router.push('/messages')}
-                  className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-                >
-                  <MessageSquare className="w-5 h-5" />
-                  <span>View All Messages</span>
-                </button>
-
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-                  All your booking conversations in one place
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Right Column - Sidebar */}
@@ -427,6 +399,54 @@ export default function BookingDetailsPage() {
 
         {/* Policy Footer */}
         <PolicyFooter booking={booking} />
+
+        {/* Rental Agreement Modal (triggered from StatusProgression) */}
+        <RentalAgreementModal
+          isOpen={showAgreement}
+          onClose={() => setShowAgreement(false)}
+          carDetails={{
+            id: booking.car.id || '',
+            make: booking.car.make,
+            model: booking.car.model,
+            year: booking.car.year,
+            carType: booking.car.type || 'standard',
+            seats: booking.car.seats || 4,
+            dailyRate: booking.dailyRate,
+            city: booking.pickupLocation
+          }}
+          bookingDetails={{
+            carId: booking.car.id || '',
+            carClass: booking.car.type || 'standard',
+            startDate: booking.startDate,
+            endDate: booking.endDate,
+            startTime: booking.startTime || '10:00 AM',
+            endTime: booking.endTime || '10:00 AM',
+            deliveryType: booking.pickupType || 'pickup',
+            deliveryAddress: booking.pickupLocation || 'Phoenix, AZ',
+            insuranceType: booking.insuranceType || 'basic',
+            addOns: { refuelService: false, additionalDriver: false, extraMiles: false, vipConcierge: false },
+            pricing: {
+              days: Math.ceil((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / (1000 * 60 * 60 * 24)),
+              dailyRate: booking.dailyRate,
+              basePrice: booking.dailyRate * Math.ceil((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / (1000 * 60 * 60 * 24)),
+              insurancePrice: booking.insuranceFee,
+              deliveryFee: booking.deliveryFee,
+              serviceFee: booking.serviceFee,
+              taxes: booking.taxes,
+              total: booking.totalAmount,
+              deposit: booking.depositAmount,
+              breakdown: { refuelService: 0, additionalDriver: 0, extraMiles: 0, vipConcierge: 0 }
+            }
+          }}
+          guestDetails={{
+            name: booking.guestName || '',
+            email: booking.guestEmail || '',
+            bookingCode: booking.bookingCode,
+            verificationStatus: (booking.verificationStatus?.toUpperCase() as 'PENDING' | 'APPROVED' | 'REJECTED') || 'PENDING'
+          }}
+          context="dashboard"
+          isDraft={booking.status === 'PENDING'}
+        />
       </div>
     </div>
   )

@@ -4,7 +4,7 @@ import React, { useRef } from 'react'
 import { Booking } from '../types'
 import {
   ShieldCheck, CheckCircle, Key, User, Phone, Calendar,
-  AlertCircle
+  AlertCircle, MessageSquare
 } from './Icons'
 import { IoHourglassOutline as HourglassOutline } from 'react-icons/io5'
 import {
@@ -166,112 +166,10 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow-sm p-4 sm:p-5 lg:p-6">
-        <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Quick Actions</h2>
-        
-        <div className="grid grid-cols-2 sm:grid-cols-1 gap-2">
-          {/* Actions for Pending Booking */}
-          {booking.status === 'PENDING' && (
-            <button
-              onClick={onCancelClick}
-              className="px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-xs sm:text-sm"
-            >
-              Cancel Booking
-            </button>
-          )}
-
-          {/* Actions for Payment Failed */}
-          {(booking.paymentStatus === 'failed' || booking.paymentStatus === 'FAILED') && (
-            <>
-              <button
-                onClick={handleUpdatePayment}
-                className="px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-xs sm:text-sm"
-              >
-                Update Payment
-              </button>
-              <button
-                onClick={onCancelClick}
-                className="px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-xs sm:text-sm"
-              >
-                Cancel Booking
-              </button>
-            </>
-          )}
-          
-          {/* Actions for Confirmed - FIXED payment status check */}
-          {booking.status === 'CONFIRMED' && (booking.paymentStatus === 'paid' || booking.paymentStatus === 'PAID') && (
-            <>
-              <button 
-                onClick={handleModifyDates}
-                className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-xs sm:text-sm"
-              >
-                Modify Dates
-              </button>
-              <button
-                onClick={onCancelClick}
-                className="px-3 sm:px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition-colors font-medium text-xs sm:text-sm"
-              >
-                Cancel
-              </button>
-            </>
-          )}
-          
-          {/* Actions for Active Trip */}
-          {booking.status === 'ACTIVE' && (
-            <>
-              <button 
-                onClick={handleReportIssue}
-                className="px-3 sm:px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium text-xs sm:text-sm"
-              >
-                Report Issue
-              </button>
-              <button 
-                onClick={handleEmergency}
-                className="px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-xs sm:text-sm flex items-center justify-center gap-1.5"
-              >
-                <Phone className="w-3.5 h-3.5" />
-                <span>Emergency</span>
-              </button>
-            </>
-          )}
-          
-          {/* Actions for Completed - REMOVED REVIEW BUTTON */}
-          {booking.status === 'COMPLETED' && (
-            <button
-              onClick={handlePrintInvoice}
-              className="col-span-2 sm:col-span-1 px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-xs sm:text-sm"
-            >
-              View Trip Summary
-            </button>
-          )}
-          
-          {/* Always Available Actions */}
-          {booking.status !== 'COMPLETED' && (
-            <button
-              onClick={handlePrintInvoice}
-              className="col-span-2 sm:col-span-1 px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-xs sm:text-sm"
-            >
-              Download Invoice
-            </button>
-          )}
-          
-          {booking.status === 'CONFIRMED' && (
-            <button
-              onClick={onAddToCalendar}
-              className="col-span-2 sm:col-span-1 px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-xs sm:text-sm flex items-center justify-center gap-1.5"
-              >
-              <Calendar className="w-3.5 h-3.5" />
-              <span>Add to Calendar</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Host Info */}
+      {/* Host & Messages */}
       <div className="bg-white rounded-lg shadow-sm p-4 sm:p-5 lg:p-6">
         <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Host</h2>
-        
+
         <div className="flex items-start gap-2.5 sm:gap-3">
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
             <User className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
@@ -288,13 +186,32 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
             </div>
           </div>
         </div>
-        
+
         {(booking.status === 'ACTIVE' || (booking.status === 'CONFIRMED' && hoursUntilPickup <= TIME_THRESHOLDS.SHOW_FULL_DETAILS_HOURS)) && (
           <button className="w-full mt-3 sm:mt-4 px-3 sm:px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-1.5 sm:gap-2">
             <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             Contact Host: {booking.host.phone}
           </button>
         )}
+
+        {/* Messages */}
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          {booking.status === 'PENDING' ? (
+            <div className="w-full flex flex-col items-center gap-1.5 px-3 py-3 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed">
+              <MessageSquare className="w-5 h-5" />
+              <span className="text-xs font-medium">Message Host</span>
+              <span className="text-[10px]">Available after confirmation</span>
+            </div>
+          ) : (
+            <a
+              href="/messages"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs sm:text-sm font-medium transition-colors"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Message Host
+            </a>
+          )}
+        </div>
       </div>
     </div>
   )

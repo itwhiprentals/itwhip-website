@@ -199,7 +199,7 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking }) => {
               className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
             >
               <DocumentText className="w-4 h-4 mr-2" />
-              View Rental Agreement
+              Invoice
             </button>
           </div>
 

@@ -2,11 +2,14 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { 
-  IoCheckmarkCircle, 
-  IoCloseCircle, 
+import {
+  IoCheckmarkCircle,
+  IoCloseCircle,
   IoHourglassOutline,
-  IoAlertCircle 
+  IoAlertCircle,
+  IoCloseOutline,
+  IoCreateOutline,
+  IoReceiptOutline
 } from 'react-icons/io5'
 
 interface StatusProgressionProps {
@@ -18,6 +21,9 @@ interface StatusProgressionProps {
   paymentStatus: string
   documentsSubmittedAt?: string
   reviewedAt?: string
+  onCancel?: () => void
+  onModify?: () => void
+  onDownloadInvoice?: () => void
 }
 
 export default function StatusProgression({
@@ -28,7 +34,10 @@ export default function StatusProgression({
   verificationStatus,
   paymentStatus,
   documentsSubmittedAt,
-  reviewedAt
+  reviewedAt,
+  onCancel,
+  onModify,
+  onDownloadInvoice
 }: StatusProgressionProps) {
   
   // Determine which steps are complete - FIXED case sensitivity
@@ -271,6 +280,39 @@ export default function StatusProgression({
           
           return null
         })()}
+
+        {/* Action Buttons */}
+        {(onCancel || onModify || onDownloadInvoice) && (
+          <div className="grid grid-cols-3 gap-2 pt-2">
+            {onCancel && (
+              <button
+                onClick={onCancel}
+                className="flex items-center justify-center gap-1.5 px-2 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium"
+              >
+                <IoCloseOutline className="w-3.5 h-3.5" />
+                <span>Cancel</span>
+              </button>
+            )}
+            {onModify && (
+              <button
+                onClick={onModify}
+                className="flex items-center justify-center gap-1.5 px-2 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-xs font-medium"
+              >
+                <IoCreateOutline className="w-3.5 h-3.5" />
+                <span>Modify</span>
+              </button>
+            )}
+            {onDownloadInvoice && (
+              <button
+                onClick={onDownloadInvoice}
+                className="flex items-center justify-center gap-1.5 px-2 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-xs font-medium"
+              >
+                <IoReceiptOutline className="w-3.5 h-3.5" />
+                <span>Invoice</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
