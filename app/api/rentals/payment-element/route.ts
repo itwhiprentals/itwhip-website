@@ -92,13 +92,14 @@ export async function POST(request: NextRequest) {
       ...(metadata && typeof metadata === 'object' ? metadata : {})
     }
 
-    // Create Payment Intent
+    // Create Payment Intent — manual capture: funds held until host approves
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount),
       currency: 'usd',
       automatic_payment_methods: {
         enabled: true,
       },
+      capture_method: 'manual',
       metadata: paymentMetadata,
       ...(email && { receipt_email: email }),
       description: 'ItWhip Car Rental',

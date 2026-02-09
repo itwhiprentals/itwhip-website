@@ -54,13 +54,31 @@ export function BookingDetailDrawer({
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">
               {booking.bookingCode}
             </h2>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
               <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(booking.status)}`}>
                 {booking.status}
               </span>
               <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getVerificationColor(booking.verificationStatus)}`}>
                 {booking.verificationStatus}
               </span>
+              {booking.fleetStatus && (
+                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                  booking.fleetStatus === 'APPROVED' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                  booking.fleetStatus === 'REJECTED' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
+                  'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+                }`}>
+                  Fleet: {booking.fleetStatus}
+                </span>
+              )}
+              {booking.hostStatus && (
+                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                  booking.hostStatus === 'APPROVED' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                  booking.hostStatus === 'REJECTED' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
+                  'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                }`}>
+                  Host: {booking.hostStatus}
+                </span>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -276,9 +294,12 @@ export function BookingDetailDrawer({
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Payment Status</span>
                 <span className={`text-sm font-medium ${
-                  booking.paymentStatus === 'PAID' ? 'text-green-600' : 'text-yellow-600'
+                  booking.paymentStatus === 'PAID' ? 'text-green-600' :
+                  booking.paymentStatus === 'AUTHORIZED' ? 'text-blue-600' :
+                  booking.paymentStatus === 'CANCELLED' ? 'text-red-600' :
+                  'text-yellow-600'
                 }`}>
-                  {booking.paymentStatus}
+                  {booking.paymentStatus === 'AUTHORIZED' ? 'AUTHORIZED (Hold)' : booking.paymentStatus}
                 </span>
               </div>
             </div>

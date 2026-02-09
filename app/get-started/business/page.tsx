@@ -17,7 +17,7 @@ import {
   IoBusinessOutline
 } from 'react-icons/io5'
 
-type BusinessType = 'own_cars' | 'manage_others' | 'both'
+type BusinessType = 'own_cars' | 'manage_others' | 'both' | 'fleet_owner'
 
 export default function BusinessTypePage() {
   const router = useRouter()
@@ -110,6 +110,19 @@ export default function BusinessTypePage() {
         'Best of both worlds',
         'Maximum flexibility'
       ]
+    },
+    {
+      id: 'fleet_owner',
+      icon: IoBusinessOutline,
+      title: 'I own 5+ vehicles',
+      subtitle: 'Fleet Owner',
+      description: 'You own a fleet of 5 or more vehicles and want to list them all on ItWhip.',
+      benefits: [
+        'List your entire fleet',
+        'Fleet management dashboard',
+        'Get your branded landing page',
+        'Volume pricing & priority support'
+      ]
     }
   ]
 
@@ -176,7 +189,7 @@ export default function BusinessTypePage() {
         </p>
 
         {/* Options */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
           {options.map((option) => {
             const Icon = option.icon
             const isSelected = selectedType === option.id

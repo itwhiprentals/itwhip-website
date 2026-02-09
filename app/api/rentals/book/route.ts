@@ -7,7 +7,7 @@ import { sendHostNotification } from '@/app/lib/email'
 import { calculatePricing } from '@/app/(guest)/rentals/lib/pricing'
 import { addHours } from 'date-fns'
 import { extractIpAddress } from '@/app/utils/ip-lookup'
-import { sendBookingConfirmation, sendPendingReviewEmail, sendFraudAlertEmail } from '@/app/lib/email/booking-emails'
+import { sendBookingConfirmation, sendPendingReviewEmail, sendFraudAlertEmail, sendHostReviewEmail } from '@/app/lib/email/booking-emails'
 
 // Import new verification rules
 import { 
@@ -597,10 +597,11 @@ export async function POST(request: NextRequest) {
           securityDeposit: depositAmount || 0,
           depositHeld: 0,
 
-          // Status based on verification requirements AND fraud risk
-          status: ((needsVerification || requiresManualReview) ? RentalBookingStatus.PENDING : RentalBookingStatus.CONFIRMED) as any,
-          // Payment is PAID if already confirmed via Payment Element, otherwise based on verification
-          paymentStatus: (paymentAlreadyConfirmed ? 'PAID' : ((needsVerification || requiresManualReview) ? 'PENDING' : 'PAID')) as any,
+          // ALL bookings start PENDING — three-tier approval: fleet → host → confirmed
+          status: RentalBookingStatus.PENDING as any,
+          // Payment is held via manual capture (AUTHORIZED), not charged until host approves
+          paymentStatus: 'AUTHORIZED' as any,
+          fleetStatus: 'PENDING',
           paymentIntentId: stripePaymentIntentId || bookingData.paymentIntentId,
           
           // ========== STRIPE FIELDS ==========
@@ -1056,87 +1057,51 @@ export async function POST(request: NextRequest) {
       return { booking: newBooking, token: accessToken.token }
     }) as any
 
-    // Send appropriate emails based on status
-    if (requiresManualReview) {
-      // FRAUD REVIEW: Send special review email to guest
-      sendPendingReviewEmail({
-        guestEmail: booking.booking.guestEmail,
-        guestName: booking.booking.guestName,
-        bookingCode: booking.booking.bookingCode,
-        carMake: booking.booking.car.make,
-        carModel: booking.booking.car.model,
-        carImage: booking.booking.car.photos?.[0]?.url || '',
-        startDate: booking.booking.startDate.toISOString(),
-        endDate: booking.booking.endDate.toISOString(),
-        pickupLocation: booking.booking.pickupLocation,
-        totalAmount: booking.booking.totalAmount.toFixed(2),
-        documentsSubmittedAt: new Date().toISOString(),
-        estimatedReviewTime: 'within 1 hour',
-        trackingUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/rentals/dashboard/guest/${booking.token}`,
-        accessToken: booking.token
-      }).catch(error => {
-        console.error('Error sending review email:', error)
-      })
-    } else if (needsVerification) {
-      // Verification required: Send pending review email to guest
-      sendPendingReviewEmail({
-        guestEmail: booking.booking.guestEmail,
-        guestName: booking.booking.guestName,
-        bookingCode: booking.booking.bookingCode,
-        carMake: booking.booking.car.make,
-        carModel: booking.booking.car.model,
-        carImage: booking.booking.car.photos?.[0]?.url || '',
-        startDate: booking.booking.startDate.toISOString(),
-        endDate: booking.booking.endDate.toISOString(),
-        pickupLocation: booking.booking.pickupLocation,
-        totalAmount: booking.booking.totalAmount.toFixed(2),
-        documentsSubmittedAt: new Date().toISOString(),
-        estimatedReviewTime,
-        trackingUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/rentals/dashboard/guest/${booking.token}`,
-        accessToken: booking.token
-      }).catch(error => {
-        console.error('Error sending pending review email:', error)
-      })
-    } else {
-      // Instant confirmation: Send immediate confirmation
-      Promise.all([
-        sendBookingConfirmation({
-          ...booking.booking,
-          accessToken: booking.token
-        })
-      ]).catch(error => {
-        console.error('Error sending booking emails:', error)
-      })
-    }
+    // ALL bookings are now pending review (three-tier approval: fleet → host → confirmed)
+    // Send pending review email to guest — never instant confirmation
+    sendPendingReviewEmail({
+      guestEmail: booking.booking.guestEmail,
+      guestName: booking.booking.guestName,
+      bookingCode: booking.booking.bookingCode,
+      carMake: booking.booking.car.make,
+      carModel: booking.booking.car.model,
+      carImage: booking.booking.car.photos?.[0]?.url || '',
+      startDate: booking.booking.startDate.toISOString(),
+      endDate: booking.booking.endDate.toISOString(),
+      pickupLocation: booking.booking.pickupLocation,
+      totalAmount: booking.booking.totalAmount.toFixed(2),
+      documentsSubmittedAt: new Date().toISOString(),
+      estimatedReviewTime: requiresManualReview ? 'within 1 hour' : (needsVerification ? estimatedReviewTime : 'within a few hours'),
+      trackingUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/rentals/dashboard/guest/${booking.token}`,
+      accessToken: booking.token
+    }).catch(error => {
+      console.error('Error sending pending review email:', error)
+    })
 
-    // Return booking details with appropriate message and status code
-    const responseStatus = requiresManualReview ? 202 : 201
-    
+    // ALL bookings are pending review — return 202 Accepted
+    const responseStatus = 202
+
     return NextResponse.json({
       success: true,
       verificationRequired: needsVerification,
       verificationReason: needsVerification ? verificationReason : null,
       paymentTiming,
-      status: requiresManualReview ? 'fraud_review' : (needsVerification ? 'pending_review' : 'confirmed'),
+      status: requiresManualReview ? 'fraud_review' : 'pending_review',
       riskAssessment: {
         score: riskScore,
         level: riskLevel
       },
-      // ========== STRIPE TEST INFO ==========
       stripe: stripeCustomerId ? {
         testMode: true,
         customerId: stripeCustomerId,
         paymentIntentId: stripePaymentIntentId,
-        paymentStatus: 'PENDING',
+        paymentStatus: 'AUTHORIZED',
         amountToCharge: pricing.total,
-        message: 'TEST MODE: Card will be charged on approval'
+        message: 'Payment held — will be charged when booking is confirmed'
       } : null,
-      // ========== END STRIPE INFO ==========
-      message: requiresManualReview 
+      message: requiresManualReview
         ? 'Your booking is under review for security verification. We\'ll notify you within 1 hour.'
-        : (needsVerification 
-          ? getVerificationMessage(verificationReason)
-          : 'Your booking is confirmed!'),
+        : 'Your booking request has been received and is under review. Your card has been authorized but will not be charged until the booking is confirmed.',
       booking: {
         id: booking.booking.id,
         bookingCode: booking.booking.bookingCode,
@@ -1486,7 +1451,8 @@ export async function PATCH(request: NextRequest) {
     let updatedBooking
     switch (action) {
       case 'approve':
-        // Only for bookings in PENDING status
+        // FLEET APPROVAL — does NOT capture payment or confirm booking
+        // Sets fleetStatus=APPROVED, hostStatus=PENDING, notifies host
         if (booking.status !== (RentalBookingStatus.PENDING as any)) {
           return NextResponse.json(
             { error: 'Booking is not pending approval' },
@@ -1494,77 +1460,13 @@ export async function PATCH(request: NextRequest) {
           )
         }
 
-        // ========== STRIPE TEST PAYMENT PROCESSING ==========
-        let paymentResult = null
-        if (booking.stripeCustomerId && booking.paymentIntentId) {
-          try {
-            console.log('🔷 Processing TEST Stripe payment for booking:', booking.bookingCode)
-            console.log('🔷 Customer ID:', booking.stripeCustomerId)
-            console.log('🔷 Payment Intent ID:', booking.paymentIntentId)
-            
-            // For testing, we'll use a test payment method
-            // In production, you'd use the saved payment method
-            const testPaymentMethod = await stripe.paymentMethods.create({
-              type: 'card',
-              card: {
-                token: 'tok_visa' // Stripe test token
-              }
-            })
-            
-            // Attach test payment method to customer
-            await stripe.paymentMethods.attach(testPaymentMethod.id, {
-              customer: booking.stripeCustomerId
-            })
-            
-            // Confirm the payment intent
-            const paymentIntent = await stripe.paymentIntents.confirm(
-              booking.paymentIntentId,
-              {
-                payment_method: testPaymentMethod.id,
-                return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/rentals/dashboard/bookings/${booking.id}`
-              }
-            )
-            
-            console.log('🔷 Payment Intent Status:', paymentIntent.status)
-            console.log('🔷 Amount charged (TEST):', `$${(paymentIntent.amount / 100).toFixed(2)}`)
-            
-            // If payment requires capture (manual capture mode)
-            if (paymentIntent.status === 'requires_capture') {
-              const capturedIntent = await stripe.paymentIntents.capture(booking.paymentIntentId)
-              console.log('🔷 Payment captured:', capturedIntent.status)
-              paymentResult = {
-                success: true,
-                status: capturedIntent.status,
-                amount: capturedIntent.amount / 100,
-                testMode: true
-              }
-            } else if (paymentIntent.status === 'succeeded') {
-              paymentResult = {
-                success: true,
-                status: paymentIntent.status,
-                amount: paymentIntent.amount / 100,
-                testMode: true
-              }
-            }
-            
-          } catch (stripeError: any) {
-            console.error('❌ Stripe TEST payment error:', stripeError)
-            paymentResult = {
-              success: false,
-              error: stripeError.message,
-              testMode: true
-            }
-          }
-        }
-        // ========== END STRIPE PAYMENT ==========
-
         updatedBooking = await prisma.$transaction(async (tx) => {
-          // Update booking status
           const updated = await tx.rentalBooking.update({
             where: { id: bookingId },
             data: {
-              status: RentalBookingStatus.CONFIRMED as any,
-              paymentStatus: (paymentResult?.success ? 'PAID' : 'FAILED') as any,
+              fleetStatus: 'APPROVED',
+              hostStatus: 'PENDING',
+              hostNotifiedAt: new Date(),
               verificationStatus: 'APPROVED' as any,
               reviewedBy: data?.reviewedBy || 'admin',
               reviewedAt: new Date(),
@@ -1572,63 +1474,31 @@ export async function PATCH(request: NextRequest) {
               selfieVerified: true,
               flaggedForReview: false,
               riskNotes: data?.notes || null,
-              // Store payment result
-              paymentIntentId: booking.paymentIntentId,
-              paymentProcessedAt: paymentResult?.success ? new Date() : null
             },
             select: {
               id: true,
               bookingCode: true,
               status: true,
+              fleetStatus: true,
+              hostStatus: true,
               paymentStatus: true,
               verificationStatus: true,
               updatedAt: true
             }
           })
 
-          // Update car statistics
-          await tx.rentalCar.update({
-            where: { id: booking.carId },
-            data: {
-              totalTrips: { increment: 1 }
-            }
-          })
-
-          // Block availability dates
-          const dates = []
-          const currentDate = new Date(booking.startDate)
-          const endDate = new Date(booking.endDate)
-
-          while (currentDate <= endDate) {
-            dates.push(new Date(currentDate))
-            currentDate.setDate(currentDate.getDate() + 1)
-          }
-
-          await tx.rentalAvailability.createMany({
-            data: dates.map(date => ({
-              id: crypto.randomUUID(),
-              carId: booking.carId,
-              date,
-              isAvailable: false,
-              note: `Booked - ${booking.bookingCode}`
-            })),
-            skipDuplicates: true
-          })
-
-          // Log approval with payment info
+          // Log fleet approval
           await tx.activityLog.create({
             data: {
               id: crypto.randomUUID(),
-              action: 'booking_approved',
+              action: 'fleet_approved',
               entityType: 'RentalBooking',
               entityId: bookingId,
               metadata: {
                 reviewedBy: data?.reviewedBy || 'admin',
-                wasFlaged: booking.flaggedForReview,
+                wasFlagged: booking.flaggedForReview,
                 riskScore: booking.riskScore,
-                paymentProcessed: paymentResult?.success || false,
-                paymentAmount: paymentResult?.amount || 0,
-                stripeTestMode: true
+                note: 'Fleet approved — awaiting host approval'
               },
               ipAddress: '127.0.0.1'
             }
@@ -1637,25 +1507,30 @@ export async function PATCH(request: NextRequest) {
           return updated
         })
 
-        // Send confirmation emails
-        const fullBooking = await prisma.rentalBooking.findUnique({
+        // Send host review email — host needs to approve/reject
+        const fullBookingForHost = await prisma.rentalBooking.findUnique({
           where: { id: bookingId },
           select: {
+            id: true,
             guestEmail: true,
             guestName: true,
             bookingCode: true,
             startDate: true,
             endDate: true,
             totalAmount: true,
+            numberOfDays: true,
+            pickupLocation: true,
             car: {
               select: {
                 make: true,
                 model: true,
-                year: true
+                year: true,
+                photos: { select: { url: true }, take: 1 }
               }
             },
             host: {
               select: {
+                id: true,
                 name: true,
                 email: true
               }
@@ -1663,19 +1538,30 @@ export async function PATCH(request: NextRequest) {
           }
         }) as any
 
-        if (fullBooking) {
-          Promise.all([
-            sendBookingConfirmation(fullBooking),
-            sendHostNotification(fullBooking)
-          ]).catch(error => {
-            console.error('Error sending approval emails:', error)
+        if (fullBookingForHost?.host?.email) {
+          sendHostReviewEmail({
+            hostEmail: fullBookingForHost.host.email,
+            hostName: fullBookingForHost.host.name || 'Host',
+            bookingCode: fullBookingForHost.bookingCode,
+            guestName: fullBookingForHost.guestName,
+            carMake: fullBookingForHost.car.make,
+            carModel: fullBookingForHost.car.model,
+            carYear: fullBookingForHost.car.year,
+            carImage: fullBookingForHost.car.photos?.[0]?.url || '',
+            startDate: fullBookingForHost.startDate.toISOString(),
+            endDate: fullBookingForHost.endDate.toISOString(),
+            pickupLocation: fullBookingForHost.pickupLocation || 'TBD',
+            totalAmount: fullBookingForHost.totalAmount?.toFixed(2) || '0.00',
+            numberOfDays: fullBookingForHost.numberOfDays || 1,
+            reviewUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/partner/bookings/${fullBookingForHost.id}`
+          }).catch(error => {
+            console.error('Error sending host review email:', error)
           })
         }
-        
-        // Include payment result in response
-        return NextResponse.json({ 
+
+        return NextResponse.json({
           booking: updatedBooking,
-          payment: paymentResult
+          message: 'Fleet approved — host has been notified for review'
         })
 
       case 'reject':

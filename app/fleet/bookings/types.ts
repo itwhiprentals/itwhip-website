@@ -56,6 +56,8 @@ export interface FleetBooking {
   // Status
   status: BookingStatus
   paymentStatus: PaymentStatus
+  fleetStatus?: string
+  hostStatus?: string | null
   verificationStatus: VerificationStatus
   tripStatus: TripStatus
 
@@ -113,8 +115,10 @@ export type BookingStatus =
 
 export type PaymentStatus =
   | 'PENDING'
+  | 'AUTHORIZED'
   | 'PAID'
   | 'FAILED'
+  | 'CANCELLED'
   | 'REFUNDED'
   | 'PARTIALLY_REFUNDED'
 
@@ -166,7 +170,7 @@ export interface BookingStats {
 
 export interface BookingActionPayload {
   bookingId: string
-  action: 'approve' | 'reject' | 'cancel' | 'modify' | 'change_car' | 'request_documents'
+  action: 'approve' | 'reject' | 'cancel' | 'modify' | 'change_car' | 'request_documents' | 'resend_email'
   reason?: string
   notes?: string
   newCarId?: string

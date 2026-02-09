@@ -1756,6 +1756,19 @@ model RentalBooking {
   fleetNotes                 String?               @db.Text
   hostNotifiedAt             DateTime?             // Only set when host is notified after Fleet approval
 
+  // ===== HOST APPROVAL SYSTEM =====
+  hostStatus                 String?               // PENDING, APPROVED, REJECTED (null = not yet sent to host)
+  hostReviewedBy             String?               // Host user ID who reviewed
+  hostReviewedAt             DateTime?
+  hostNotes                  String?               @db.Text // Host's reason for rejection
+
+  // ===== VEHICLE CHANGE FLOW =====
+  originalBookingId          String?               // Points to the original booking if this is a replacement
+  originalCarId              String?               // The car that was originally booked (before reassignment)
+  vehicleChangeToken         String?               @unique // Secure token for guest vehicle change page
+  vehicleChangeExpiresAt     DateTime?             // Token expiry (48 hours)
+  vehicleChangeReason        String?               // Why the vehicle was changed (host rejected, etc.)
+
   // ===== AI VERIFICATION FIELDS =====
   aiLicenseVerified          Boolean               @default(false)
   aiLicenseConfidence        Float?                // 0-100 confidence score
@@ -1816,6 +1829,8 @@ model RentalBooking {
   @@index([tripStatus])
   @@index([verificationStatus])
   @@index([fleetStatus])
+  @@index([hostStatus])
+  @@index([vehicleChangeToken])
   @@index([autoLoginToken])
   @@index([fleetReviewedBy])
 

@@ -147,12 +147,38 @@ export default function FleetBookingsPage() {
       case 'request_documents':
         setShowRequestDocsModal(true)
         break
+      case 'resend_email':
+        handleResendEmail(booking.id)
+        break
     }
   }
 
   const handleDrawerAction = (action: string) => {
     if (selectedBooking) {
       handleBookingAction(selectedBooking, action)
+    }
+  }
+
+  // Resend email handler
+  const handleResendEmail = async (bookingId: string) => {
+    setActionLoading(true)
+    try {
+      const response = await fetch(`/fleet/api/bookings?key=phoenix-fleet-2847`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId, action: 'resend_email' })
+      })
+      const json = await response.json()
+      if (response.ok) {
+        alert(json.message || 'Email resent successfully')
+      } else {
+        alert(json.error || 'Failed to resend email')
+      }
+    } catch (err) {
+      console.error('Resend email error:', err)
+      alert('Failed to resend email')
+    } finally {
+      setActionLoading(false)
     }
   }
 

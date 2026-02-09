@@ -22,7 +22,8 @@ import {
   IoLayersOutline,
   IoCloudUploadOutline,
   IoImageOutline,
-  IoTrashOutline
+  IoTrashOutline,
+  IoBusinessOutline
 } from 'react-icons/io5'
 import Image from 'next/image'
 
@@ -64,7 +65,7 @@ function HostSignupContent() {
     confirmPassword: '',
     agreeToTerms: false,
     // Host role selection
-    hostRole: '' as 'own' | 'manage' | 'both' | ''
+    hostRole: '' as 'own' | 'manage' | 'both' | 'fleet_owner' | ''
   })
 
   // Track if we've already initialized OAuth user (to prevent resetting step on session changes)
@@ -116,7 +117,7 @@ function HostSignupContent() {
   useEffect(() => {
     const typeParam = searchParams.get('type')
     if (typeParam) {
-      let role: 'own' | 'manage' | 'both' | '' = ''
+      let role: 'own' | 'manage' | 'both' | 'fleet_owner' | '' = ''
       switch (typeParam) {
         case 'own_cars':
           role = 'own'
@@ -126,6 +127,9 @@ function HostSignupContent() {
           break
         case 'both':
           role = 'both'
+          break
+        case 'fleet_owner':
+          role = 'fleet_owner'
           break
       }
       if (role) {
@@ -295,9 +299,10 @@ function HostSignupContent() {
 
     try {
       // Determine host role flags
-      const managesOwnCars = formData.hostRole === 'own' || formData.hostRole === 'both'
+      const managesOwnCars = formData.hostRole === 'own' || formData.hostRole === 'both' || formData.hostRole === 'fleet_owner'
       const isHostManager = formData.hostRole === 'manage' || formData.hostRole === 'both'
       const managesOthersCars = formData.hostRole === 'manage' || formData.hostRole === 'both'
+      const isFleetOwner = formData.hostRole === 'fleet_owner'
 
       // Build request body - OAuth users don't need password
       const requestBody: any = {
@@ -310,7 +315,9 @@ function HostSignupContent() {
         isHostManager,
         managesOthersCars,
         // Is manage-only fleet manager
-        isManageOnly
+        isManageOnly,
+        // Fleet owner (5+ vehicles) — gets fleet partner profile
+        isFleetOwner
       }
 
       // Only include vehicle data for hosts who own cars
@@ -760,6 +767,33 @@ function HostSignupContent() {
                             </div>
                             <p className="text-xs lg:text-sm text-gray-600 dark:text-gray-400 mt-1">
                               I&apos;ll rent my own vehicles AND manage for other owners
+                            </p>
+                          </div>
+                        </label>
+
+                        {/* Option: Fleet Owner (5+ vehicles) */}
+                        <label
+                          className={`flex items-start gap-3 p-3 lg:p-4 rounded-lg cursor-pointer transition border-2 ${
+                            formData.hostRole === 'fleet_owner'
+                              ? 'bg-orange-50 dark:bg-orange-900/30 border-orange-500'
+                              : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-transparent hover:border-orange-300 dark:hover:border-gray-600'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="hostRole"
+                            value="fleet_owner"
+                            checked={formData.hostRole === 'fleet_owner'}
+                            onChange={() => setFormData({...formData, hostRole: 'fleet_owner'})}
+                            className="mt-1 w-4 h-4 text-orange-600 focus:ring-orange-500"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <IoBusinessOutline className="w-5 h-5 text-orange-500" />
+                              <span className="font-medium text-gray-900 dark:text-white text-sm lg:text-base">Fleet Owner - I own 5+ vehicles</span>
+                            </div>
+                            <p className="text-xs lg:text-sm text-gray-600 dark:text-gray-400 mt-1">
+                              I own a fleet of 5 or more vehicles and want to list them all
                             </p>
                           </div>
                         </label>

@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { sendPendingReviewEmail, sendHostReviewEmail } from '@/app/lib/email/booking-emails'
 
 export async function GET(request: NextRequest) {
   try {
@@ -205,6 +206,8 @@ export async function GET(request: NextRequest) {
       // Status
       status: booking.status,
       paymentStatus: booking.paymentStatus,
+      fleetStatus: booking.fleetStatus,
+      hostStatus: booking.hostStatus,
       verificationStatus: booking.verificationStatus,
       tripStatus: booking.tripStatus,
 
@@ -340,19 +343,56 @@ export async function PATCH(request: NextRequest) {
 
     // Handle different actions
     switch (action) {
-      case 'approve':
+      case 'approve': {
+        // Three-tier: fleet approves → host reviews next (payment NOT captured yet)
+        updateData.fleetStatus = 'APPROVED'
+        updateData.hostStatus = 'PENDING'
+        updateData.hostNotifiedAt = new Date()
         updateData.verificationStatus = 'APPROVED'
-        updateData.status = 'CONFIRMED'
         updateData.reviewedAt = new Date()
         updateData.reviewedBy = 'fleet-admin'
         updateData.licenseVerified = true
         updateData.selfieVerified = true
         if (notes) updateData.verificationNotes = notes
+
+        // Send host review email
+        const approvedBooking = await prisma.rentalBooking.findUnique({
+          where: { id: bookingId },
+          select: {
+            id: true, bookingCode: true, guestName: true,
+            startDate: true, endDate: true, pickupLocation: true,
+            totalAmount: true, numberOfDays: true,
+            car: { select: { make: true, model: true, year: true, photos: { select: { url: true }, take: 1 } } },
+            host: { select: { email: true, name: true } }
+          }
+        })
+        if (approvedBooking?.host?.email) {
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://itwhip.com'
+          sendHostReviewEmail({
+            hostEmail: approvedBooking.host.email,
+            hostName: approvedBooking.host.name || 'Host',
+            bookingCode: approvedBooking.bookingCode,
+            guestName: approvedBooking.guestName || 'Guest',
+            carMake: approvedBooking.car.make,
+            carModel: approvedBooking.car.model,
+            carYear: approvedBooking.car.year,
+            carImage: approvedBooking.car.photos?.[0]?.url || '',
+            startDate: approvedBooking.startDate.toISOString(),
+            endDate: approvedBooking.endDate.toISOString(),
+            pickupLocation: approvedBooking.pickupLocation || 'TBD',
+            totalAmount: approvedBooking.totalAmount?.toFixed(2) || '0.00',
+            numberOfDays: approvedBooking.numberOfDays || 1,
+            reviewUrl: `${baseUrl}/partner/bookings/${approvedBooking.id}`
+          }).catch(err => console.error('[Fleet Approve] Host email error:', err))
+        }
         break
+      }
 
       case 'reject':
+        updateData.fleetStatus = 'REJECTED'
         updateData.verificationStatus = 'REJECTED'
         updateData.status = 'CANCELLED'
+        updateData.paymentStatus = 'CANCELLED'
         updateData.cancelledAt = new Date()
         updateData.cancelledBy = 'ADMIN'
         updateData.cancellationReason = reason || notes || 'Rejected by fleet admin'
@@ -394,6 +434,74 @@ export async function PATCH(request: NextRequest) {
           }
         }
         break
+
+      case 'resend_email': {
+        // Resend the appropriate email based on booking state
+        const booking = await prisma.rentalBooking.findUnique({
+          where: { id: bookingId },
+          select: {
+            id: true, bookingCode: true, status: true, fleetStatus: true, hostStatus: true,
+            guestEmail: true, guestName: true, guestPhone: true,
+            startDate: true, endDate: true, startTime: true, endTime: true,
+            pickupLocation: true, totalAmount: true, numberOfDays: true,
+            carId: true, hostId: true,
+            car: { select: { make: true, model: true, year: true, photos: { select: { url: true }, take: 1 } } },
+            host: { select: { id: true, name: true, email: true } },
+          }
+        })
+        if (!booking) {
+          return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+        }
+
+        // Find guest access token
+        const guestToken = await prisma.guestAccessToken.findFirst({
+          where: { bookingId },
+          select: { token: true },
+          orderBy: { createdAt: 'desc' }
+        })
+
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://itwhip.com'
+
+        if (booking.fleetStatus === 'APPROVED' && booking.hostStatus === 'PENDING') {
+          // Resend host review email
+          await sendHostReviewEmail({
+            hostEmail: booking.host.email || '',
+            hostName: booking.host.name || 'Host',
+            bookingCode: booking.bookingCode,
+            guestName: booking.guestName || 'Guest',
+            carMake: booking.car.make,
+            carModel: booking.car.model,
+            carYear: booking.car.year,
+            carImage: booking.car.photos?.[0]?.url || '',
+            startDate: booking.startDate.toISOString(),
+            endDate: booking.endDate.toISOString(),
+            pickupLocation: booking.pickupLocation || 'TBD',
+            totalAmount: booking.totalAmount?.toFixed(2) || '0.00',
+            numberOfDays: booking.numberOfDays || 1,
+            reviewUrl: `${baseUrl}/partner/bookings/${booking.id}`
+          })
+          return NextResponse.json({ success: true, message: 'Host review email resent' })
+        } else {
+          // Default: resend pending review email to guest
+          await sendPendingReviewEmail({
+            guestEmail: booking.guestEmail || '',
+            guestName: booking.guestName || 'Guest',
+            bookingCode: booking.bookingCode,
+            carMake: booking.car.make,
+            carModel: booking.car.model,
+            carImage: booking.car.photos?.[0]?.url || '',
+            startDate: booking.startDate.toISOString(),
+            endDate: booking.endDate.toISOString(),
+            pickupLocation: booking.pickupLocation || 'TBD',
+            totalAmount: booking.totalAmount?.toFixed(2) || '0.00',
+            documentsSubmittedAt: new Date().toISOString(),
+            estimatedReviewTime: '1-2 hours',
+            trackingUrl: `${baseUrl}/rentals/dashboard/guest/${guestToken?.token || ''}`,
+            accessToken: guestToken?.token || '',
+          })
+          return NextResponse.json({ success: true, message: 'Guest booking email resent' })
+        }
+      }
 
       case 'flag_review':
         updateData.flaggedForReview = true

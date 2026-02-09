@@ -68,6 +68,8 @@ export async function POST(request: NextRequest) {
       managesOwnCars,
       isHostManager,
       managesOthersCars,
+      // Fleet owner flag
+      isFleetOwner,
       // OAuth
       isOAuthUser,
       oauthUserId
@@ -241,7 +243,7 @@ export async function POST(request: NextRequest) {
         zipCode: zipCode || null,
 
         // Host type and status
-        hostType: 'REAL',
+        hostType: isFleetOwner ? 'FLEET_PARTNER' : 'REAL',
         approvalStatus: 'PENDING',
         dashboardAccess: false,
 

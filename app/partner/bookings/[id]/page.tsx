@@ -41,6 +41,10 @@ interface BookingDetails {
   id: string
   status: string
   paymentStatus: string
+  fleetStatus: string
+  hostStatus: string | null
+  hostNotes: string | null
+  hostReviewedAt: string | null
   startDate: string
   endDate: string
   startTime: string
@@ -161,6 +165,12 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   const [sendingVerification, setSendingVerification] = useState(false)
   const [sendingAgreement, setSendingAgreement] = useState(false)
 
+  // Host review states
+  const [hostApproving, setHostApproving] = useState(false)
+  const [hostRejecting, setHostRejecting] = useState(false)
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
+
   // UI states
   const [showChargeModal, setShowChargeModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -249,6 +259,59 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       showToast('error', 'Failed to cancel booking')
     } finally {
       setCancelling(false)
+    }
+  }
+
+  // Host approve/reject handlers
+  const hostApproveBooking = async () => {
+    if (!booking || !confirm('Are you sure you want to approve this booking? The guest will be charged.')) return
+
+    setHostApproving(true)
+    try {
+      const response = await fetch(`/api/partner/bookings/${booking.id}/host-review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'approve' })
+      })
+      const data = await response.json()
+
+      if (response.ok) {
+        setBooking(prev => prev ? { ...prev, status: 'CONFIRMED', hostStatus: 'APPROVED', paymentStatus: 'PAID' } : null)
+        showToast('success', 'Booking approved — guest has been charged and notified')
+      } else {
+        showToast('error', data.error || 'Failed to approve booking')
+      }
+    } catch {
+      showToast('error', 'Failed to approve booking')
+    } finally {
+      setHostApproving(false)
+    }
+  }
+
+  const hostRejectBooking = async () => {
+    if (!booking || !rejectReason.trim()) return
+
+    setHostRejecting(true)
+    try {
+      const response = await fetch(`/api/partner/bookings/${booking.id}/host-review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reject', notes: rejectReason.trim() })
+      })
+      const data = await response.json()
+
+      if (response.ok) {
+        setBooking(prev => prev ? { ...prev, hostStatus: 'REJECTED', hostNotes: rejectReason.trim() } : null)
+        setShowRejectModal(false)
+        setRejectReason('')
+        showToast('success', 'Booking rejected — fleet has been notified')
+      } else {
+        showToast('error', data.error || 'Failed to reject booking')
+      }
+    } catch {
+      showToast('error', 'Failed to reject booking')
+    } finally {
+      setHostRejecting(false)
     }
   }
 
@@ -539,6 +602,75 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   return `${hoursLeft}h ${minutesLeft}m remaining to confirm`
                 })()}
               </span>
+            </div>
+          )}
+
+          {/* Host Review Banner — when fleet approved and host needs to act */}
+          {booking.fleetStatus === 'APPROVED' && booking.hostStatus === 'PENDING' && (
+            <div className="mt-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <IoAlertCircleOutline className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-purple-900 dark:text-purple-200">
+                    Your Approval Required
+                  </p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                    Fleet has approved this booking. Please review and approve or reject. The guest&apos;s payment is being held and they are waiting for your confirmation.
+                  </p>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={hostApproveBooking}
+                      disabled={hostApproving}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-medium text-sm flex items-center gap-2"
+                    >
+                      {hostApproving ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                      ) : (
+                        <IoCheckmarkOutline className="w-4 h-4" />
+                      )}
+                      Approve Booking
+                    </button>
+                    <button
+                      onClick={() => setShowRejectModal(true)}
+                      className="px-4 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-50 dark:hover:bg-red-900/20 text-sm flex items-center gap-2"
+                    >
+                      <IoCloseOutline className="w-4 h-4" />
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Host Approved Banner */}
+          {booking.hostStatus === 'APPROVED' && (
+            <div className="mt-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg px-4 py-3 flex items-center gap-2">
+              <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <span className="text-sm text-green-800 dark:text-green-200 font-medium">You approved this booking</span>
+              {booking.hostReviewedAt && (
+                <span className="text-xs text-green-600 dark:text-green-400 ml-auto">
+                  {new Date(booking.hostReviewedAt).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Host Rejected Banner */}
+          {booking.hostStatus === 'REJECTED' && (
+            <div className="mt-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg px-4 py-3">
+              <div className="flex items-center gap-2">
+                <IoCloseCircleOutline className="w-5 h-5 text-red-600 dark:text-red-400" />
+                <span className="text-sm text-red-800 dark:text-red-200 font-medium">You rejected this booking</span>
+                {booking.hostReviewedAt && (
+                  <span className="text-xs text-red-600 dark:text-red-400 ml-auto">
+                    {new Date(booking.hostReviewedAt).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+              {booking.hostNotes && (
+                <p className="text-xs text-red-700 dark:text-red-300 mt-2 ml-7">Reason: {booking.hostNotes}</p>
+              )}
             </div>
           )}
 
@@ -1627,6 +1759,50 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Host Reject Modal */}
+      {showRejectModal && booking && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Reject Booking</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              The guest will <strong>not</strong> be notified directly. Our fleet team will handle next steps (reassign or cancel).
+            </p>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Reason for rejection <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                rows={3}
+                placeholder="e.g., Vehicle unavailable due to maintenance, scheduling conflict..."
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 text-sm"
+              />
+            </div>
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => { setShowRejectModal(false); setRejectReason('') }}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={hostRejectBooking}
+                disabled={hostRejecting || !rejectReason.trim()}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm flex items-center justify-center gap-2"
+              >
+                {hostRejecting ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                ) : (
+                  <IoCloseOutline className="w-4 h-4" />
+                )}
+                Reject Booking
+              </button>
+            </div>
           </div>
         </div>
       )}

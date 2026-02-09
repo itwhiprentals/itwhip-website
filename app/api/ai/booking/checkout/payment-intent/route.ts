@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
       description: `Car rental: ${car.year} ${car.make} ${car.model} (via Choé)`,
       statement_descriptor: 'ITWHIP RENTAL',
       automatic_payment_methods: { enabled: true },
-      capture_method: 'automatic',
+      capture_method: 'manual',
       setup_future_usage: 'on_session',
       receipt_email: user.email!,
     })

@@ -7,7 +7,8 @@ import {
   IoBanOutline,
   IoCreateOutline,
   IoCarOutline,
-  IoDocumentTextOutline
+  IoDocumentTextOutline,
+  IoMailOutline
 } from 'react-icons/io5'
 import { FleetBooking } from '../types'
 
@@ -83,6 +84,16 @@ export function BookingQuickActions({ booking, onAction, loading }: BookingQuick
       >
         <IoCarOutline className="w-5 h-5" />
         Change Car
+      </button>
+
+      {/* Resend Email */}
+      <button
+        onClick={() => onAction('resend_email')}
+        disabled={loading}
+        className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 min-h-[44px]"
+      >
+        <IoMailOutline className="w-5 h-5" />
+        Resend Email
       </button>
 
       {/* Cancel Booking */}
