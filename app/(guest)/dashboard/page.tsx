@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useReducer, useEffect, useCallback, useRef, Component, ErrorInfo, ReactNode } from 'react'
+import { useReducer, useState, useEffect, useCallback, useRef, Component, ErrorInfo, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { IoLockClosedOutline } from 'react-icons/io5'
@@ -20,6 +20,7 @@ import AppealStatusBanner from './components/AppealStatusBanner'
 import VerificationAlert from './components/VerificationAlert'
 import { SuspensionInfo } from './types'
 import { useDashboard } from '@/app/hooks/useDashboard'
+import { SecureAccountBanner } from '@/app/(guest)/rentals/dashboard/bookings/[id]/components/SecureAccountBanner'
 
 // ========== SVG ICONS ==========
 const Car = ({ className = "w-5 h-5" }: { className?: string }) => (
@@ -566,6 +567,9 @@ export default function GuestDashboard() {
   
   // ========== USE NEW UNIFIED HOOK ==========
   const { data: dashboardData, loading: dashboardLoading, error: dashboardError, refetch: refetchDashboard } = useDashboard()
+
+  // Secure account banner state
+  const [hasPassword, setHasPassword] = useState<boolean | null>(null)
   
   // Refs for cleanup
   const toastTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
@@ -581,6 +585,18 @@ export default function GuestDashboard() {
         clearTimeout(refreshDebounceRef.current)
       }
     }
+  }, [])
+
+  // Fetch hasPassword for secure account banner
+  useEffect(() => {
+    fetch('/api/guest/profile', { credentials: 'include' })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.profile?.hasPassword !== undefined) {
+          setHasPassword(data.profile.hasPassword)
+        }
+      })
+      .catch(() => {})
   }, [])
 
   const showToast = useCallback((type: Toast['type'], message: string) => {
@@ -1126,6 +1142,13 @@ export default function GuestDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Secure Account Banner - for temp accounts without password */}
+        {hasPassword === false && (
+          <div className="mt-4">
+            <SecureAccountBanner hasPassword={hasPassword} />
+          </div>
+        )}
 
         {/* Dual-Role Suspension Banner - Highest Priority */}
         <SuspensionBanner />

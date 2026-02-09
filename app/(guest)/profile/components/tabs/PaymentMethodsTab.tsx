@@ -126,24 +126,25 @@ export default function PaymentMethodsTab() {
         </p>
       </div>
 
-      {/* Verification Required Banner - Show if not verified */}
+      {/* Add Payment Info Banner - Show if not verified */}
       {!isVerified && (
         <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg">
           <div className="flex items-start gap-2.5">
             <IoAlertCircleOutline className="w-4 h-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <h3 className="text-xs font-semibold text-yellow-900 dark:text-yellow-100 mb-0.5">
-                Identity Verification Required
+                Save Your Payment Info
               </h3>
               <p className="text-[10px] text-yellow-800 dark:text-yellow-300 mb-2">
-                Verify your identity and add a payment method to unlock payments. Get a signup bonus from ItWhip!
+                Add your banking and personal information with Stripe to enable automatic charges for future bookings.
+                Your one-time checkout payment wasn't saved — add a method now for seamless rentals and a signup bonus!
               </p>
               <Link
-                href="/dashboard"
+                href="/payments/methods"
                 className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white text-[10px] font-medium rounded transition-colors"
               >
-                <IoShieldCheckmarkOutline className="w-3 h-3" />
-                Verify Now
+                <IoCardOutline className="w-3 h-3" />
+                Add Now
               </Link>
             </div>
           </div>

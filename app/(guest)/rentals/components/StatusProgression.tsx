@@ -9,7 +9,7 @@ import {
   IoAlertCircle,
   IoCloseOutline,
   IoCreateOutline,
-  IoReceiptOutline
+  IoDocumentTextOutline
 } from 'react-icons/io5'
 
 interface StatusProgressionProps {
@@ -23,7 +23,7 @@ interface StatusProgressionProps {
   reviewedAt?: string
   onCancel?: () => void
   onModify?: () => void
-  onDownloadInvoice?: () => void
+  onViewAgreement?: () => void
 }
 
 export default function StatusProgression({
@@ -37,7 +37,7 @@ export default function StatusProgression({
   reviewedAt,
   onCancel,
   onModify,
-  onDownloadInvoice
+  onViewAgreement
 }: StatusProgressionProps) {
   
   // Determine which steps are complete - FIXED case sensitivity
@@ -282,7 +282,7 @@ export default function StatusProgression({
         })()}
 
         {/* Action Buttons */}
-        {(onCancel || onModify || onDownloadInvoice) && (
+        {(onCancel || onModify || onViewAgreement) && (
           <div className="grid grid-cols-3 gap-2 pt-2">
             {onCancel && (
               <button
@@ -302,13 +302,13 @@ export default function StatusProgression({
                 <span>Modify</span>
               </button>
             )}
-            {onDownloadInvoice && (
+            {onViewAgreement && (
               <button
-                onClick={onDownloadInvoice}
+                onClick={onViewAgreement}
                 className="flex items-center justify-center gap-1.5 px-2 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-xs font-medium"
               >
-                <IoReceiptOutline className="w-3.5 h-3.5" />
-                <span>Invoice</span>
+                <IoDocumentTextOutline className="w-3.5 h-3.5" />
+                <span>Agreement</span>
               </button>
             )}
           </div>

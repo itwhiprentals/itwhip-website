@@ -14,6 +14,8 @@ import { TripStartCard } from './components/trip/TripStartCard'
 import { TripActiveCard } from './components/trip/TripActiveCard'
 import { TripEndCard } from './components/trip/TripEndCard'
 import { BookingOnboarding } from './components/BookingOnboarding'
+import { ModifyDatesModal } from './components/ModifyDatesModal'
+import { SecureAccountBanner } from './components/SecureAccountBanner'
 import RentalAgreementModal from '../../../components/modals/RentalAgreementModal'
 import {
   getTimeUntilPickup, validateFileUpload
@@ -37,6 +39,8 @@ export default function BookingDetailsPage() {
   const [copiedCode, setCopiedCode] = useState(false)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [showAgreement, setShowAgreement] = useState(false)
+  const [showModifyModal, setShowModifyModal] = useState(false)
+  const [hasPassword, setHasPassword] = useState<boolean | null>(null)
   const [previousStatus, setPreviousStatus] = useState<string | null>(null)
 
   // ✅ FIXED: Load booking data - removed booking from dependencies
@@ -193,6 +197,22 @@ export default function BookingDetailsPage() {
     setPreviousStatus(booking?.status || null)
   }, [booking?.status, previousStatus])
 
+  // Check if user has set a password (for secure account banner)
+  useEffect(() => {
+    async function checkPasswordStatus() {
+      try {
+        const res = await fetch('/api/guest/profile')
+        if (res.ok) {
+          const data = await res.json()
+          setHasPassword(data.profile?.hasPassword ?? null)
+        }
+      } catch {
+        // Non-critical, silently fail
+      }
+    }
+    checkPasswordStatus()
+  }, [])
+
   // ✅ FIXED: Initial load and polling - only depend on bookingId
   useEffect(() => {
     loadBooking()
@@ -288,6 +308,9 @@ export default function BookingDetailsPage() {
           </div>
         </div>
 
+        {/* Secure Account Banner */}
+        <SecureAccountBanner hasPassword={hasPassword} />
+
         {/* Status Progression Component */}
         <StatusProgression
           status={booking.status}
@@ -299,8 +322,8 @@ export default function BookingDetailsPage() {
           documentsSubmittedAt={typeof booking.documentsSubmittedAt === 'string' ? booking.documentsSubmittedAt : undefined}
           reviewedAt={typeof booking.reviewedAt === 'string' ? booking.reviewedAt : undefined}
           onCancel={booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? () => setShowCancelDialog(true) : undefined}
-          onModify={() => { window.location.href = `/support?booking=${booking.bookingCode}&action=modify-dates` }}
-          onDownloadInvoice={() => setShowAgreement(true)}
+          onModify={booking.status === 'PENDING' ? () => setShowModifyModal(true) : undefined}
+          onViewAgreement={() => setShowAgreement(true)}
         />
 
         {/* Payment hold alert — PENDING only */}
@@ -384,6 +407,17 @@ export default function BookingDetailsPage() {
           onChange={handleFileUpload}
           className="hidden"
           accept={FILE_UPLOAD_CONFIG.acceptedFormats}
+        />
+
+        {/* Modify Dates Modal */}
+        <ModifyDatesModal
+          booking={booking}
+          isOpen={showModifyModal}
+          onClose={() => setShowModifyModal(false)}
+          onSuccess={() => {
+            loadBooking()
+            setShowModifyModal(false)
+          }}
         />
 
         {/* Cancellation Dialog */}
