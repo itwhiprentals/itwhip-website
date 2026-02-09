@@ -135,9 +135,17 @@ export function BookingDetailDrawer({
               Guest Information
             </h3>
             <div className="space-y-2">
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-500">Name</span>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">{booking.guestName}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">{booking.guestName}</span>
+                  {booking.guestStripeVerified && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded text-[10px] font-medium">
+                      <IoShieldCheckmarkOutline className="w-3 h-3" />
+                      Stripe Verified
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Email</span>

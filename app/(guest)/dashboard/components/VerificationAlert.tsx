@@ -1,8 +1,9 @@
 // app/(guest)/dashboard/components/VerificationAlert.tsx
-// ✅ STRIPE IDENTITY VERIFICATION ALERT SYSTEM
-// State 1: Not Verified (Yellow - Action Required) - "Verify with Stripe"
-// State 2: Verification Pending (Blue - In Progress)
-// State 3: Verified (No Alert - Success)
+// ✅ ONBOARDING ALERT SYSTEM (post-booking, after host approval)
+// Only shows when guest has a CONFIRMED booking and hasn't completed onboarding
+// State 1: Not Started (Blue - Action Required) - "Start Onboarding"
+// State 2: In Progress (Orange - Needs Completion)
+// State 3: Verified (No Alert - Hidden)
 
 'use client'
 
@@ -55,12 +56,14 @@ interface DocumentVerificationState {
 interface VerificationAlertProps {
   verificationState: DocumentVerificationState
   onNavigate: (path: string) => void
+  hasConfirmedBooking?: boolean
 }
 
 // ========== MAIN COMPONENT ==========
 export default function VerificationAlert({
   verificationState,
-  onNavigate
+  onNavigate,
+  hasConfirmedBooking = false
 }: VerificationAlertProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -77,8 +80,11 @@ export default function VerificationAlert({
   const needsCompletion = stripeIdentityStatus === 'requires_input' // User started but didn't finish
   const hasPhone = !!phoneNumber
 
-  // Don't render if verified
+  // Don't render if verified or no confirmed booking yet
   if (isVerified) {
+    return null
+  }
+  if (!hasConfirmedBooking) {
     return null
   }
 
@@ -126,10 +132,10 @@ export default function VerificationAlert({
             <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600 dark:text-orange-400 mr-2 sm:mr-3 flex-shrink-0 mt-0.5" />
             <div className="min-w-0 flex-1">
               <p className="font-medium text-sm sm:text-base text-orange-900 dark:text-orange-100">
-                Complete Your Verification
+                Complete Your Onboarding
               </p>
               <p className="text-xs sm:text-sm mt-1 text-orange-700 dark:text-orange-300">
-                You started the verification process but didn't finish. Complete it to start booking cars.
+                Complete your onboarding to finalize your booking.
               </p>
               <div className="mt-3 flex items-center space-x-2 text-xs text-orange-700 dark:text-orange-300">
                 <ExternalLink className="w-4 h-4" />
@@ -169,10 +175,10 @@ export default function VerificationAlert({
             <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600 dark:text-orange-400 mr-2 sm:mr-3 flex-shrink-0 mt-0.5" />
             <div className="min-w-0 flex-1">
               <p className="font-medium text-sm sm:text-base text-orange-900 dark:text-orange-100">
-                Complete Your Verification
+                Complete Your Onboarding
               </p>
               <p className="text-xs sm:text-sm mt-1 text-orange-700 dark:text-orange-300">
-                You started the verification process but it's not complete yet. Finish to start booking cars.
+                Your onboarding is being reviewed. We'll notify you when it's complete.
               </p>
               <div className="mt-3 flex items-center space-x-2 text-xs text-orange-700 dark:text-orange-300">
                 <ExternalLink className="w-4 h-4" />
@@ -214,10 +220,10 @@ export default function VerificationAlert({
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-sm text-gray-900 dark:text-white">
-              Complete Stripe Verification
+              Complete Onboarding
             </p>
             <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-              {!hasPhone ? 'Add phone number to continue' : 'Verify your ID with Stripe to unlock booking'}
+              {!hasPhone ? 'Add phone number to continue' : 'Complete your onboarding to finalize your booking'}
             </p>
           </div>
         </div>
@@ -238,7 +244,7 @@ export default function VerificationAlert({
           ) : (
             <>
               <Shield className="w-4 h-4" />
-              <span>{hasPhone ? 'Verify Now' : 'Add Phone'}</span>
+              <span>{hasPhone ? 'Start Onboarding' : 'Add Phone'}</span>
             </>
           )}
         </button>

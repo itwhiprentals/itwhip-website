@@ -13,6 +13,7 @@ import StatusProgression from '../../../components/StatusProgression'
 import { TripStartCard } from './components/trip/TripStartCard'
 import { TripActiveCard } from './components/trip/TripActiveCard'
 import { TripEndCard } from './components/trip/TripEndCard'
+import { BookingOnboarding } from './components/BookingOnboarding'
 import { 
   getTimeUntilPickup, validateFileUpload 
 } from './utils/helpers'
@@ -297,10 +298,43 @@ export default function BookingDetailsPage() {
           reviewedAt={typeof booking.reviewedAt === 'string' ? booking.reviewedAt : undefined}
         />
 
-        {/* Trip Management Cards */}
-        {booking.status === 'CONFIRMED' && !booking.tripStartedAt && (
+        {/* Payment hold alert — PENDING only */}
+        {booking.status === 'PENDING' && (
+          <div className="mt-4">
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="p-1.5 bg-gray-200 rounded-full flex-shrink-0 mt-0.5">
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Payment on hold</p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Your payment will be confirmed after the booking is approved. No charges have been made yet.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Booking Onboarding (grayed out when PENDING, active when CONFIRMED) */}
+        {(booking.status === 'PENDING' || (booking.status === 'CONFIRMED' && !booking.onboardingCompletedAt)) && (
+          <div className="mt-6">
+            <BookingOnboarding booking={booking} onDocumentUploaded={loadBooking} />
+          </div>
+        )}
+
+        {/* Trip Management Cards - only after onboarding complete */}
+        {booking.status === 'CONFIRMED' && !booking.tripStartedAt && booking.onboardingCompletedAt && (
           <div className="mt-6">
             <TripStartCard booking={booking} onTripStarted={loadBooking} />
+          </div>
+        )}
+        {booking.status === 'CONFIRMED' && !booking.tripStartedAt && !booking.onboardingCompletedAt && (
+          <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+            <p className="text-sm text-gray-500">Complete onboarding above to start your trip</p>
           </div>
         )}
 
@@ -327,36 +361,38 @@ export default function BookingDetailsPage() {
               uploadingFile={uploadingFile}
             />
             
-            {/* Messages Card - Link to Central Messages */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                    <MessageSquare className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      Messages
-                    </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Communicate with host and support
-                    </p>
+            {/* Messages Card - only after booking confirmed */}
+            {booking.status !== 'PENDING' && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                      <MessageSquare className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        Messages
+                      </h2>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Communicate with host and support
+                      </p>
+                    </div>
                   </div>
                 </div>
+
+                <button
+                  onClick={() => router.push('/messages')}
+                  className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <MessageSquare className="w-5 h-5" />
+                  <span>View All Messages</span>
+                </button>
+
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
+                  All your booking conversations in one place
+                </p>
               </div>
-
-              <button
-                onClick={() => router.push('/messages')}
-                className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-              >
-                <MessageSquare className="w-5 h-5" />
-                <span>View All Messages</span>
-              </button>
-
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-                All your booking conversations in one place
-              </p>
-            </div>
+            )}
           </div>
 
           {/* Right Column - Sidebar */}

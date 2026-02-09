@@ -2,13 +2,13 @@
 
 import React, { useRef } from 'react'
 import { Booking } from '../types'
-import { 
+import {
   ShieldCheck, CheckCircle, Key, User, Phone, Calendar,
   AlertCircle
 } from './Icons'
 import { IoHourglassOutline as HourglassOutline } from 'react-icons/io5'
-import { 
-  calculateTripDays, formatCurrency, getHoursUntilPickup 
+import {
+  calculateTripDays, formatCurrency, getHoursUntilPickup
 } from '../utils/helpers'
 import { TIME_THRESHOLDS } from '../constants'
 
@@ -60,37 +60,6 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
       <div className="bg-white rounded-lg shadow-sm p-4 sm:p-5 lg:p-6">
         <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Payment Summary</h2>
         
-        {/* Documents Under Review */}
-        {(booking.verificationStatus === 'pending' || booking.verificationStatus === 'submitted') && (
-          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="flex items-start">
-              <HourglassOutline className="w-5 h-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" />
-              <div className="text-xs sm:text-sm text-yellow-800">
-                <p className="font-medium mb-1">Documents Under Review</p>
-                <p className="text-xs">
-                  We're verifying your driver's license and insurance. This typically takes 1-2 hours during business hours.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Documents Verified, Processing Payment */}
-        {booking.verificationStatus === 'approved' && (booking.paymentStatus === 'pending' || booking.paymentStatus === 'PENDING') && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-start">
-              <HourglassOutline className="w-5 h-5 text-blue-600 mr-2 flex-shrink-0 mt-0.5 animate-spin" />
-              <div className="text-xs sm:text-sm text-blue-800">
-                <p className="font-medium mb-1">Processing Payment</p>
-                <p className="text-xs">
-                  Documents approved! Processing your payment of {formatCurrency(booking.totalAmount)}. 
-                  This may take a few moments.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Payment Failed */}
         {booking.verificationStatus === 'approved' && (booking.paymentStatus === 'failed' || booking.paymentStatus === 'FAILED') && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -188,7 +157,7 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
                     Security Deposit: {formatCurrency(booking.depositAmount)}
                   </p>
                   <p className="text-xs text-amber-700 mt-1">
-                    Refundable hold • Released 2-7 days after trip • Covers damages up to $3,000
+                    Refundable hold • Released 2-7 days after trip • Covers damages up to {formatCurrency(booking.depositAmount)}
                   </p>
                 </div>
               </div>
@@ -202,25 +171,16 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
         <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Quick Actions</h2>
         
         <div className="grid grid-cols-2 sm:grid-cols-1 gap-2">
-          {/* Actions for Documents Pending */}
-          {(booking.verificationStatus === 'pending' || booking.verificationStatus === 'submitted') && (
-            <>
-              <button
-                onClick={onUploadClick}
-                disabled={uploadingFile}
-                className="px-3 sm:px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors disabled:opacity-50 font-medium text-xs sm:text-sm"
-              >
-                {uploadingFile ? 'Uploading...' : 'Upload Docs'}
-              </button>
-              <button
-                onClick={onCancelClick}
-                className="px-3 sm:px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition-colors font-medium text-xs sm:text-sm"
-              >
-                Cancel Free
-              </button>
-            </>
+          {/* Actions for Pending Booking */}
+          {booking.status === 'PENDING' && (
+            <button
+              onClick={onCancelClick}
+              className="px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-xs sm:text-sm"
+            >
+              Cancel Booking
+            </button>
           )}
-          
+
           {/* Actions for Payment Failed */}
           {(booking.paymentStatus === 'failed' || booking.paymentStatus === 'FAILED') && (
             <>

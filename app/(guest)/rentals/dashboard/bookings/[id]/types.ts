@@ -65,7 +65,12 @@ export interface Booking {
     createdAt?: string | Date
     guestToken?: string
     licenseVerified?: boolean
+    licensePhotoUrl?: string
+    licenseBackPhotoUrl?: string
     insurancePhotoUrl?: string
+    onboardingCompletedAt?: string | Date | null
+    guestStripeVerified?: boolean
+    guestInsuranceOnFile?: boolean
     exactAddress?: string
     parkingInstructions?: string
     keyboxCode?: string

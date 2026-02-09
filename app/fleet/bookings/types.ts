@@ -10,6 +10,7 @@ export interface FleetBooking {
   guestEmail: string
   guestPhone: string
   guestProfileUrl?: string
+  guestStripeVerified?: boolean
 
   // Car information
   car: {

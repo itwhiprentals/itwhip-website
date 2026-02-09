@@ -1643,9 +1643,11 @@ model RentalBooking {
   licenseState               String?
   licenseExpiry              DateTime?
   licensePhotoUrl            String?
+  licenseBackPhotoUrl        String?
   insurancePhotoUrl          String?
   selfieVerified             Boolean               @default(false)
   selfiePhotoUrl             String?
+  onboardingCompletedAt      DateTime?
   dateOfBirth                DateTime?
   bookingIpAddress           String?
   bookingUserAgent           String?

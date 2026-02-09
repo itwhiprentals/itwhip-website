@@ -108,8 +108,10 @@ export async function GET(request: NextRequest) {
         b."licenseVerified",
         b."selfieVerified",
         b."licensePhotoUrl",
+        b."licenseBackPhotoUrl",
         b."insurancePhotoUrl",
         b."selfiePhotoUrl",
+        b."onboardingCompletedAt",
         b."dailyRate",
         b.subtotal,
         b."deliveryFee",
@@ -183,10 +185,20 @@ export async function GET(request: NextRequest) {
         COALESCE((
           SELECT COUNT(*)::int
           FROM "RentalMessage" m
-          WHERE m."bookingId" = b.id 
+          WHERE m."bookingId" = b.id
             AND m."isRead" = false
-        ), 0) as unread_messages_count
-        
+        ), 0) as unread_messages_count,
+
+        (SELECT json_build_object(
+          'stripeIdentityStatus', rp."stripeIdentityStatus",
+          'documentsVerified', rp."documentsVerified",
+          'insuranceVerified', rp."insuranceVerified",
+          'insuranceCardFrontUrl', rp."insuranceCardFrontUrl"
+        )
+        FROM "ReviewerProfile" rp
+        WHERE rp.email = b."guestEmail"
+        LIMIT 1) as "guestProfile"
+
       FROM "RentalBooking" b
       LEFT JOIN "RentalCar" c ON c.id = b."carId"
       LEFT JOIN "RentalHost" h ON h.id = b."hostId"
@@ -247,8 +259,12 @@ export async function GET(request: NextRequest) {
         licenseVerified: booking.licenseVerified,
         selfieVerified: booking.selfieVerified,
         licensePhotoUrl: booking.licensePhotoUrl,
+        licenseBackPhotoUrl: booking.licenseBackPhotoUrl,
         insurancePhotoUrl: booking.insurancePhotoUrl,
         selfiePhotoUrl: booking.selfiePhotoUrl,
+        onboardingCompletedAt: booking.onboardingCompletedAt,
+        guestStripeVerified: booking.guestProfile?.stripeIdentityStatus === 'verified' || booking.guestProfile?.documentsVerified === true,
+        guestInsuranceOnFile: booking.guestProfile?.insuranceVerified === true,
         car: {
           id: booking.car.id,
           make: booking.car.make,

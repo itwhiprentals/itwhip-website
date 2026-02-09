@@ -217,13 +217,116 @@ export default function RentalAgreementModal({
     window.print()
   }
 
-  const handleDownload = () => {
-    if (!isVerified) {
-      alert('PDF download is only available for verified bookings.')
-      return
+  const handleDownload = async () => {
+    try {
+      const { default: jsPDF } = await import('jspdf')
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+      const pageWidth = doc.internal.pageSize.getWidth()
+      const margin = 15
+      const contentWidth = pageWidth - margin * 2
+      let y = 20
+
+      const addLine = (text: string, fontSize: number, bold = false, color: [number, number, number] = [0, 0, 0]) => {
+        doc.setFontSize(fontSize)
+        doc.setFont('helvetica', bold ? 'bold' : 'normal')
+        doc.setTextColor(...color)
+        const lines = doc.splitTextToSize(text, contentWidth)
+        if (y + lines.length * (fontSize * 0.5) > 275) {
+          doc.addPage()
+          y = 20
+        }
+        doc.text(lines, margin, y)
+        y += lines.length * (fontSize * 0.45) + 2
+      }
+
+      const addGap = (gap = 4) => { y += gap }
+
+      // Header
+      addLine('VEHICLE RENTAL AGREEMENT', 16, true)
+      addLine('ItWhip Technologies, Inc.', 10, false, [100, 100, 100])
+      addGap(2)
+      if (guestDetails?.bookingCode) {
+        addLine(`Booking Reference: ${guestDetails.bookingCode}`, 10, false, [80, 80, 80])
+      }
+      addLine(`Generated: ${format(new Date(), 'MMMM d, yyyy')}`, 9, false, [120, 120, 120])
+      addGap(6)
+
+      // Parties
+      doc.setDrawColor(200, 200, 200)
+      doc.line(margin, y, pageWidth - margin, y)
+      addGap(4)
+      addLine('RENTAL AGREEMENT PARTIES', 11, true)
+      addLine(`Vehicle Owner (Host): ${hostDisplayName}`, 9)
+      addLine(`Renter (Guest): ${guestDisplayName}`, 9)
+      addLine('Platform Facilitator: ItWhip Technologies, Inc.', 9)
+      addLine('Governing Law: State of Arizona', 9)
+      addLine('Venue: Maricopa County Superior Court', 9)
+      addGap(4)
+
+      // Vehicle & Rental
+      if (carDetails && bookingDetails) {
+        doc.line(margin, y, pageWidth - margin, y)
+        addGap(4)
+        addLine('VEHICLE & RENTAL PERIOD', 11, true)
+        addLine(`Vehicle: ${carDetails.year} ${carDetails.make} ${carDetails.model}`, 9)
+        addLine(`Category: ${carDetails.carType || 'Standard'} (${carDetails.seats} seats)`, 9)
+        addLine(`Pickup: ${format(new Date(bookingDetails.startDate), 'MMMM d, yyyy')} at ${bookingDetails.startTime}`, 9)
+        addLine(`Return: ${format(new Date(bookingDetails.endDate), 'MMMM d, yyyy')} at ${bookingDetails.endTime}`, 9)
+        addLine(`Location: ${bookingDetails.deliveryAddress || 'Phoenix, AZ'}`, 9)
+        addLine(`Total Days: ${bookingDetails.pricing.days}`, 9)
+        addGap(4)
+      }
+
+      // Terms sections
+      const sections = [
+        { title: '1. DRIVER ELIGIBILITY', text: `The renter must be at least ${tierInfo.minAge} years of age and possess a valid driver's license active for a minimum of one year. International renters must provide a valid passport and international driving permit if their license is not in English.` },
+        { title: '2. AUTHORIZED USE & RESTRICTIONS', text: 'The vehicle may only be operated on properly maintained roads and highways. Prohibited uses include: racing, towing, off-road driving, commercial use including rideshare or delivery, transporting hazardous materials, driving outside Arizona without written permission, and allowing unauthorized persons to operate the vehicle.' },
+        { title: '3. RENTER RESPONSIBILITIES', text: 'Return the vehicle with the same fuel level as at pickup. Maintain the vehicle in the same condition as received. Lock the vehicle when unattended. Report any mechanical issues immediately. No smoking/vaping ($250 cleaning fee). No unauthorized pets ($100 cleaning fee). Pay all tolls, parking fees, and traffic violations. Do not exceed 200 miles per day average (excess at $0.45 per mile).' },
+        { title: '4. ACCIDENT & EMERGENCY', text: 'In case of accident: ensure safety, call 911 if needed, contact police and obtain report number (A.R.S. §28-667), document scene with photos, exchange information, report to host and ItWhip support immediately, do not admit fault.' },
+        { title: '5. CANCELLATION POLICY', text: '72+ hours before: 100% refund. 24-72 hours: 75% refund. 12-24 hours: 50% refund. Under 12 hours: No refund. Service fees non-refundable. No-shows forfeit entire payment.' },
+        { title: '6. PLATFORM FACILITATOR DISCLOSURE', text: `This rental agreement is between ${hostDisplayName} and ${guestDisplayName}. ItWhip Technologies, Inc. operates as a marketplace facilitator under Arizona law (A.R.S. §42-5001) and is not a party to this rental contract.` }
+      ]
+
+      for (const section of sections) {
+        doc.line(margin, y, pageWidth - margin, y)
+        addGap(4)
+        addLine(section.title, 10, true)
+        addLine(section.text, 9)
+        addGap(2)
+      }
+
+      // Payment Summary
+      if (bookingDetails) {
+        doc.line(margin, y, pageWidth - margin, y)
+        addGap(4)
+        addLine('PAYMENT SUMMARY', 11, true)
+        const p = bookingDetails.pricing
+        addLine(`Daily Rate: $${p.dailyRate.toFixed(2)}/day x ${p.days} days = $${p.basePrice.toFixed(2)}`, 9)
+        if (p.insurancePrice > 0) addLine(`Trip Protection: $${p.insurancePrice.toFixed(2)}`, 9)
+        if (p.deliveryFee > 0) addLine(`Delivery Fee: $${p.deliveryFee.toFixed(2)}`, 9)
+        addLine(`Service Fee: $${p.serviceFee.toFixed(2)}`, 9)
+        addLine(`Arizona TPT Tax (${taxRateDisplay}): $${p.taxes.toFixed(2)}`, 9)
+        addGap(2)
+        addLine(`TOTAL: $${p.total.toFixed(2)}`, 11, true)
+        addLine(`Security Deposit (Authorization Hold): $${p.deposit.toFixed(2)}`, 9)
+        addLine('Deposit refundable per A.R.S. §33-1321(D)', 8, false, [120, 120, 120])
+        addGap(4)
+      }
+
+      // Footer
+      doc.line(margin, y, pageWidth - margin, y)
+      addGap(4)
+      addLine('This electronic agreement has the same legal validity as a written signature under the Uniform Electronic Transactions Act.', 8, false, [120, 120, 120])
+      addLine('Platform services provided by ItWhip Technologies, Inc. | Arizona Marketplace Facilitator', 8, false, [150, 150, 150])
+
+      const filename = guestDetails?.bookingCode
+        ? `ItWhip-Agreement-${guestDetails.bookingCode}.pdf`
+        : 'ItWhip-Rental-Agreement.pdf'
+      doc.save(filename)
+    } catch (err) {
+      console.error('PDF generation failed:', err)
+      alert('Unable to generate PDF. Please try printing instead.')
     }
-    // This would typically call an API to generate PDF
-    alert('PDF generation will be implemented with backend integration')
   }
 
   const handleAgree = () => {
@@ -243,25 +346,29 @@ export default function RentalAgreementModal({
       <style jsx global>{`
         @media print {
           body * {
-            visibility: hidden;
+            visibility: hidden !important;
           }
           .rental-agreement-content,
           .rental-agreement-content * {
-            visibility: visible;
+            visibility: visible !important;
           }
           .rental-agreement-content {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-height: none !important;
+            overflow: visible !important;
             background: white !important;
             color: black !important;
+            padding: 20px !important;
           }
           .no-print {
             display: none !important;
           }
           .print-only {
             display: block !important;
+            visibility: visible !important;
           }
           .page-break {
             page-break-after: always;
@@ -864,13 +971,8 @@ export default function RentalAgreementModal({
               <div className="flex items-center space-x-3 sm:space-x-4">
                 <button
                   onClick={handleDownload}
-                  disabled={!isVerified}
-                  className={`text-xs sm:text-sm flex items-center ${
-                    isVerified
-                      ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                      : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
-                  }`}
-                  title={!isVerified ? 'PDF available after verification' : 'Download PDF'}
+                  className="text-xs sm:text-sm flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  title="Download PDF"
                 >
                   <IoDownloadOutline className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                   Download PDF

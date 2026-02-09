@@ -123,7 +123,9 @@ export async function GET(request: NextRequest) {
             id: true,
             name: true,
             email: true,
-            phoneNumber: true
+            phoneNumber: true,
+            stripeIdentityStatus: true,
+            documentsVerified: true
           }
         },
         disputes: {
@@ -160,6 +162,7 @@ export async function GET(request: NextRequest) {
       guestName: booking.guestName || booking.reviewerProfile?.name || 'Guest',
       guestEmail: booking.guestEmail || booking.reviewerProfile?.email || '',
       guestPhone: booking.guestPhone || booking.reviewerProfile?.phoneNumber || '',
+      guestStripeVerified: booking.reviewerProfile?.stripeIdentityStatus === 'verified' || booking.reviewerProfile?.documentsVerified === true,
 
       // Car info
       car: {

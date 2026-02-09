@@ -92,6 +92,7 @@ export async function POST(
     // Parse form data
     const formData = await request.formData()
     const file = formData.get('file') as File
+    const documentType = formData.get('documentType') as string | null // 'license-front' | 'license-back' | 'insurance'
 
     if (!file) {
       return NextResponse.json(
@@ -153,6 +154,19 @@ export async function POST(
             { width: 2000, crop: 'limit' } // Max width 2000px for images
           ]
     })
+
+    // Save URL to the appropriate booking field based on documentType
+    if (documentType === 'license-front' || documentType === 'license-back' || documentType === 'insurance') {
+      const fieldMap: Record<string, string> = {
+        'license-front': 'licensePhotoUrl',
+        'license-back': 'licenseBackPhotoUrl',
+        'insurance': 'insurancePhotoUrl'
+      }
+      await prisma.rentalBooking.update({
+        where: { id: bookingId },
+        data: { [fieldMap[documentType]]: uploadResponse.secure_url }
+      })
+    }
 
     // If this is a verification document and booking needs verification, update status
     if (isVerificationDoc && booking.verificationStatus === 'PENDING') {

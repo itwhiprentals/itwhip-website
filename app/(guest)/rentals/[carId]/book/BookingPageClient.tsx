@@ -3584,9 +3584,9 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             {/* Book Button */}
             <button
               onClick={handleCheckoutClick}
-              disabled={isProcessing || isUploading || !eligibility.allowed}
+              disabled={isProcessing || isUploading || !eligibility.allowed || !isIdentityVerified}
               className={`flex-shrink-0 px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-semibold shadow-lg rounded-lg transition-all ${
-                !isProcessing && !isUploading && eligibility.allowed
+                !isProcessing && !isUploading && eligibility.allowed && isIdentityVerified
                   ? 'bg-black text-white hover:bg-gray-800 active:scale-[0.98]'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
@@ -3596,6 +3596,8 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   <span className="hidden sm:inline">Processing...</span>
                 </span>
+              ) : !isIdentityVerified ? (
+                'Verify Identity to Book'
               ) : (
                 'Complete Booking'
               )}

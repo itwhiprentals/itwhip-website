@@ -1259,6 +1259,7 @@ export default function GuestDashboard() {
               <VerificationAlert
                 verificationState={state.documentVerification}
                 onNavigate={(path) => router.push(path)}
+                hasConfirmedBooking={state.rentalBookings.some(b => b.status === 'CONFIRMED')}
               />
             )
           }

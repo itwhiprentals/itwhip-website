@@ -769,9 +769,27 @@ export async function POST(request: NextRequest) {
               bonusBalance: true,
               depositWalletBalance: true,
               stripeIdentityStatus: true,
-              documentsVerified: true
+              documentsVerified: true,
+              insuranceVerified: true,
+              insuranceCardFrontUrl: true,
+              insuranceProvider: true,
+              policyNumber: true
             }
           })
+
+          // Auto-link profile insurance to booking if verified
+          if (guestProfile?.insuranceVerified && guestProfile.insuranceCardFrontUrl) {
+            await tx.rentalBooking.update({
+              where: { id: newBooking.id },
+              data: {
+                insurancePhotoUrl: guestProfile.insuranceCardFrontUrl,
+                guestInsuranceActive: true,
+                guestInsuranceProvider: guestProfile.insuranceProvider || undefined,
+                guestInsurancePolicyNumber: guestProfile.policyNumber || undefined
+              }
+            })
+            console.log('🔗 Auto-linked profile insurance to booking:', newBooking.id)
+          }
 
           // ========== VERIFICATION GATE FOR CREDITS ==========
           // Credits can only be used if guest is verified

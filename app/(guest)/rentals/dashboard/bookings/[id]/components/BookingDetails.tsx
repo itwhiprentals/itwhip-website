@@ -351,53 +351,53 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
       )}
 
       {/* Trip Details Card */}
-      <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Trip Details</h2>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="flex items-start space-x-3">
-            <Calendar className="w-5 h-5 text-gray-400 mt-0.5" />
+      <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4">
+        <h2 className="text-sm font-semibold text-gray-900 mb-3">Trip Details</h2>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex items-start space-x-2">
+            <Calendar className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-medium text-gray-900">Dates</p>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs font-medium text-gray-700">Dates</p>
+              <p className="text-xs text-gray-600">
                 {formatDate(booking.startDate)}
               </p>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs text-gray-600">
                 to {formatDate(booking.endDate)}
               </p>
             </div>
           </div>
 
-          <div className="flex items-start space-x-3">
-            <Clock className="w-5 h-5 text-gray-400 mt-0.5" />
+          <div className="flex items-start space-x-2">
+            <Clock className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-medium text-gray-900">Time</p>
-              <p className="text-sm text-gray-600">Pickup: {booking.startTime}</p>
-              <p className="text-sm text-gray-600">Return: {booking.endTime}</p>
+              <p className="text-xs font-medium text-gray-700">Time</p>
+              <p className="text-xs text-gray-600">Pickup: {booking.startTime}</p>
+              <p className="text-xs text-gray-600">Return: {booking.endTime}</p>
             </div>
           </div>
 
-          <div className="flex items-start space-x-3">
-            <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
+          <div className="flex items-start space-x-2">
+            <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-medium text-gray-900">Location</p>
-              <p className="text-sm text-gray-600">
-                {hoursUntilPickup <= TIME_THRESHOLDS.SHOW_FULL_DETAILS_HOURS 
+              <p className="text-xs font-medium text-gray-700">Location</p>
+              <p className="text-xs text-gray-600">
+                {hoursUntilPickup <= TIME_THRESHOLDS.SHOW_FULL_DETAILS_HOURS
                   ? (booking.exactAddress || booking.pickupLocation || 'Phoenix, AZ')
                   : (booking.pickupLocation || 'Phoenix, AZ')}
               </p>
               {hoursUntilPickup > TIME_THRESHOLDS.SHOW_FULL_DETAILS_HOURS && (
-                <p className="text-xs text-gray-500 mt-1">Full address available 24hrs before</p>
+                <p className="text-xs text-gray-500 mt-0.5">Full address available 24hrs before</p>
               )}
             </div>
           </div>
 
-          <div className="flex items-start space-x-3">
-            <Car className="w-5 h-5 text-gray-400 mt-0.5" />
+          <div className="flex items-start space-x-2">
+            <Car className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-medium text-gray-900">Vehicle</p>
-              <p className="text-sm text-gray-600">{booking.car.type || 'CONVERTIBLE'}</p>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs font-medium text-gray-700">Vehicle</p>
+              <p className="text-xs text-gray-600">{booking.car.type || 'CONVERTIBLE'}</p>
+              <p className="text-xs text-gray-600">
                 {booking.car.transmission || 'AUTOMATIC'} • {booking.car.seats || 2} seats
               </p>
             </div>
