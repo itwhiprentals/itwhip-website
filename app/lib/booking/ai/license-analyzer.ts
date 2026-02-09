@@ -248,9 +248,16 @@ export async function quickVerifyDriverLicense(
       type: 'text' as const,
       text: `Analyze the driver's license image(s) above. Today's date is ${today}.
 
+ACCEPTED DOCUMENTS:
+- ONLY state-issued driver's licenses are accepted.
+- If the document says "IDENTIFICATION CARD" instead of "DRIVER LICENSE", it is NOT a valid document for rental verification. Flag this as a critical issue: "Document is a state identification card, not a driver's license. A valid driver's license is required to rent a vehicle."
+
 EXTRACTION: For each field, report what you see (rawText) and your parsed value. Give confidence 0-100.
 
 ${stateRules}
+
+"NOT VALID FOR OFFICIAL FEDERAL PURPOSES":
+This text appears on all non-REAL ID compliant driver's licenses. It is COMPLETELY NORMAL and does NOT indicate the card is fake or invalid. Do NOT flag this as any kind of issue — not critical, not informational. Ignore it entirely.
 
 PHOTO QUALITY TOLERANCE:
 Phone-captured photos will have minor lighting variations, slight angles, and occasional glare. These are NORMAL.
@@ -258,19 +265,29 @@ Only flag photo quality if critical fields (name, DOB, expiration, license numbe
 A slightly obscured security feature is informational, NOT a critical flag.
 
 FLAG CLASSIFICATION:
-- criticalFlags: ONLY for serious issues that indicate the document may be fraudulent, digitally altered, a screenshot of a photo, completely unreadable, or a non-driver's-license document. An expiration date that matches the state's rules is NOT a critical flag.
-- informationalFlags: Minor photo quality notes (slight glare, minor angle tilt, partially obscured features). These do NOT indicate fraud.
+- criticalFlags: ONLY for genuinely serious issues: document is not a driver's license (e.g. state ID card), document is clearly digitally fabricated/photoshopped, a screenshot of a photo, completely unreadable text on all fields, or a non-government-issued document. "Not valid for federal purposes" is NOT a critical flag.
+- informationalFlags: Minor photo quality notes (slight glare, minor angle tilt, partially obscured features), non-REAL ID status. These do NOT indicate fraud.
+
+IMPORTANT — DO NOT over-flag:
+- Do NOT flag "formatting inconsistencies" unless you can point to a SPECIFIC field that appears digitally altered
+- Do NOT flag "physical card appearance" concerns for normal wear, standard state card designs, or expected card features
+- Do NOT flag the card design as suspicious if it matches the issuing state's known format
+- Do NOT invent vague concerns like "multiple formatting inconsistencies" or "card condition raises concerns" without specific evidence
+- "Recently issued" is NOT suspicious — people get new licenses all the time
+- When in doubt, do NOT flag it at all
 
 EXPIRATION RULES:
-- Arizona (AZ): Licenses are valid until the holder turns 65. A 2051 expiration on an AZ license for someone born in 1986 is COMPLETELY NORMAL. Do NOT flag this.
+- Arizona (AZ): Driver's licenses are valid until the holder turns 65. A 2051 expiration on an AZ license for someone born in 1986 is COMPLETELY NORMAL. Do NOT flag this.
+- If no expiration date is visible in the EXP field, set expirationDate to "N/A" and isExpired to false.
 - Most other states: 4-8 year validity. Check against the state rules provided.
-- Only mark isExpired=true if the expiration date is BEFORE today (${today}).
+- Only mark isExpired=true if the expiration date is clearly visible AND is BEFORE today (${today}).
+- CRITICAL: NEVER confuse the date of birth (DOB) with the expiration date (EXP). These are separate labeled fields. The large date at the bottom of some cards is the DOB, NOT the expiration.
 
 SECURITY FEATURES:
 - "detected": features you can clearly see
 - "notDetected": features you cannot see (may be due to photo limitations, NOT necessarily suspicious)
 - "obscured": features partially visible but not clear
-- assessment: PASS if the document looks genuine. REVIEW only if multiple features seem wrong. FAIL only if document appears fraudulent.
+- assessment: PASS if the document looks like a genuine state-issued driver's license. REVIEW only if multiple features appear digitally altered. FAIL only if document is clearly fabricated.
 
 NAME FORMAT:
 DL names are typically in "LAST FIRST MIDDLE" or "LAST, FIRST MIDDLE" format.
