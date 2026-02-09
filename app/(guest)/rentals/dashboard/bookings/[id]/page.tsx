@@ -14,7 +14,7 @@ import { TripStartCard } from './components/trip/TripStartCard'
 import { TripActiveCard } from './components/trip/TripActiveCard'
 import { TripEndCard } from './components/trip/TripEndCard'
 import { BookingOnboarding } from './components/BookingOnboarding'
-import { ModifyDatesModal } from './components/ModifyDatesModal'
+import { ModifyBookingSheet } from './components/ModifyBookingSheet'
 import { SecureAccountBanner } from './components/SecureAccountBanner'
 import RentalAgreementModal from '../../../components/modals/RentalAgreementModal'
 import {
@@ -409,8 +409,8 @@ export default function BookingDetailsPage() {
           accept={FILE_UPLOAD_CONFIG.acceptedFormats}
         />
 
-        {/* Modify Dates Modal */}
-        <ModifyDatesModal
+        {/* Modify Booking Sheet */}
+        <ModifyBookingSheet
           booking={booking}
           isOpen={showModifyModal}
           onClose={() => setShowModifyModal(false)}

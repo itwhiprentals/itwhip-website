@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState, useRef } from 'react'
+import BottomSheet from '@/app/components/BottomSheet'
 
 // Icon Components
 const XCircle = ({ className = "w-5 h-5" }: any) => (
@@ -93,50 +93,12 @@ export default function TrustSafetyModal({
   isOpen, 
   onClose 
 }: TrustSafetyModalProps) {
-  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false)
-  const contentRef = useRef<HTMLDivElement>(null)
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const element = e.currentTarget
-    const threshold = 50
-    const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < threshold
-    if (isNearBottom && !hasScrolledToBottom) {
-      setHasScrolledToBottom(true)
-    }
-  }
-
-  const handlePrint = () => {
-    window.print()
-  }
-
-  const handleDownload = () => {
-    alert('PDF download will be implemented')
-  }
-
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <ShieldCheck className="w-6 h-6 text-purple-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Trust & Safety at ItWhip</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <XCircle className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Scrollable Content */}
-        <div 
-          ref={contentRef}
-          onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-6 py-4"
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Trust & Safety at ItWhip"
+      size="large"
         >
           <div className="prose prose-sm max-w-none">
             {/* Professional Platform Overview */}
@@ -550,36 +512,6 @@ export default function TrustSafetyModal({
               </div>
             </section>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleDownload}
-                className="text-sm text-gray-600 hover:text-gray-900 flex items-center"
-              >
-                <Download className="w-4 h-4 mr-1" />
-                Download PDF
-              </button>
-              <button
-                onClick={handlePrint}
-                className="text-sm text-gray-600 hover:text-gray-900 flex items-center"
-              >
-                <DocumentText className="w-4 h-4 mr-1" />
-                Print
-              </button>
-            </div>
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    </BottomSheet>
   )
 }

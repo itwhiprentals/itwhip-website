@@ -108,89 +108,89 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking }) => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition-shadow">
+            <button
+              onClick={() => setShowInsuranceModal(true)}
+              className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md hover:border-gray-300 transition-all text-left"
+            >
               <div className="flex items-start space-x-3">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <ShieldCheck className="w-5 h-5 text-green-600" />
+                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <ShieldCheck className="w-5 h-5 text-gray-600" />
                 </div>
                 <div className="flex-1">
                   <h4 className="text-sm font-semibold text-gray-900 mb-2">Insurance Requirements</h4>
                   <ul className="text-xs text-gray-600 space-y-1 mb-3">
                     <li className="flex items-start">
-                      <span className="text-green-500 mr-1">✓</span>
+                      <span className="text-gray-400 mr-1">✓</span>
                       <span>Host insurance verification required</span>
                     </li>
                     <li className="flex items-start">
-                      <span className="text-green-500 mr-1">✓</span>
+                      <span className="text-gray-400 mr-1">✓</span>
                       <span>Renters must have valid coverage</span>
                     </li>
                   </ul>
-                  <button 
-                    onClick={() => setShowInsuranceModal(true)}
-                    className="text-xs font-medium text-blue-600 hover:text-blue-700 inline-flex items-center"
-                  >
+                  <span className="text-xs font-medium text-gray-500 inline-flex items-center">
                     View requirements
                     <ArrowForward className="w-3 h-3 ml-1" />
-                  </button>
+                  </span>
                 </div>
               </div>
-            </div>
+            </button>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition-shadow">
+            <button
+              onClick={() => setShowCancellationModal(true)}
+              className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md hover:border-gray-300 transition-all text-left"
+            >
               <div className="flex items-start space-x-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-5 h-5 text-gray-600" />
                 </div>
                 <div className="flex-1">
                   <h4 className="text-sm font-semibold text-gray-900 mb-2">Cancellation & Refunds</h4>
                   <ul className="text-xs text-gray-600 space-y-1 mb-3">
                     <li className="flex items-start">
-                      <span className="text-blue-500 mr-1">•</span>
+                      <span className="text-gray-400 mr-1">•</span>
                       <span>Full refund 48hrs+ before</span>
                     </li>
                     <li className="flex items-start">
-                      <span className="text-blue-500 mr-1">•</span>
+                      <span className="text-gray-400 mr-1">•</span>
                       <span>50% refund 24-48hrs before</span>
                     </li>
                   </ul>
-                  <button 
-                    onClick={() => setShowCancellationModal(true)}
-                    className="text-xs font-medium text-blue-600 hover:text-blue-700 inline-flex items-center"
-                  >
+                  <span className="text-xs font-medium text-gray-500 inline-flex items-center">
                     Refund policy
                     <ArrowForward className="w-3 h-3 ml-1" />
-                  </button>
+                  </span>
                 </div>
               </div>
-            </div>
+            </button>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition-shadow">
+            <button
+              onClick={() => setShowTrustSafetyModal(true)}
+              className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md hover:border-gray-300 transition-all text-left"
+            >
               <div className="flex items-start space-x-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <DocumentText className="w-5 h-5 text-purple-600" />
+                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <DocumentText className="w-5 h-5 text-gray-600" />
                 </div>
                 <div className="flex-1">
                   <h4 className="text-sm font-semibold text-gray-900 mb-2">Trust & Safety</h4>
                   <ul className="text-xs text-gray-600 space-y-1 mb-3">
                     <li className="flex items-start">
-                      <span className="text-purple-500 mr-1">✓</span>
+                      <span className="text-gray-400 mr-1">✓</span>
                       <span>ID verification required</span>
                     </li>
                     <li className="flex items-start">
-                      <span className="text-purple-500 mr-1">✓</span>
+                      <span className="text-gray-400 mr-1">✓</span>
                       <span>Vehicle photos verified</span>
                     </li>
                   </ul>
-                  <button 
-                    onClick={() => setShowTrustSafetyModal(true)}
-                    className="text-xs font-medium text-blue-600 hover:text-blue-700 inline-flex items-center"
-                  >
+                  <span className="text-xs font-medium text-gray-500 inline-flex items-center">
                     Learn about safety
                     <ArrowForward className="w-3 h-3 ml-1" />
-                  </button>
+                  </span>
                 </div>
               </div>
-            </div>
+            </button>
           </div>
 
           <div className="text-center mb-6">

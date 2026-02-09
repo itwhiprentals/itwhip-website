@@ -71,6 +71,12 @@ export interface Booking {
     onboardingCompletedAt?: string | Date | null
     guestStripeVerified?: boolean
     guestInsuranceOnFile?: boolean
+    insuranceSelection?: string
+    refuelService?: boolean
+    additionalDriver?: boolean
+    extraMilesPackage?: boolean
+    vipConcierge?: boolean
+    enhancementsTotal?: number
     exactAddress?: string
     parkingInstructions?: string
     keyboxCode?: string

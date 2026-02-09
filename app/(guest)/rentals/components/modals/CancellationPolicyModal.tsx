@@ -2,7 +2,8 @@
 
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
+import BottomSheet from '@/app/components/BottomSheet'
 
 // Icon Components
 const XCircle = ({ className = "w-5 h-5" }: any) => (
@@ -68,31 +69,11 @@ export default function CancellationPolicyModal({
   isOpen, 
   onClose 
 }: CancellationPolicyModalProps) {
-  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false)
   const [refundCalculator, setRefundCalculator] = useState({
     tripTotal: 500,
     hoursBeforePickup: 72,
     includesProtection: true
   })
-  const contentRef = useRef<HTMLDivElement>(null)
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const element = e.currentTarget
-    const threshold = 50
-    const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < threshold
-    if (isNearBottom && !hasScrolledToBottom) {
-      setHasScrolledToBottom(true)
-    }
-  }
-
-  const handlePrint = () => {
-    window.print()
-  }
-
-  const handleDownload = () => {
-    alert('PDF download will be implemented')
-  }
-
   const calculateRefund = () => {
     const { tripTotal, hoursBeforePickup } = refundCalculator
     let refundPercentage = 0
@@ -125,27 +106,15 @@ export default function CancellationPolicyModal({
     }
   }
 
-  if (!isOpen) return null
-
   const refund = calculateRefund()
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Calendar className="w-6 h-6 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Cancellation & Refund Policy</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-          >
-            <XCircle className="w-6 h-6" />
-          </button>
-        </div>
-
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Cancellation & Refund Policy"
+      size="large"
+    >
         {/* Trip Protection Notice */}
         <div className="px-6 py-3 bg-green-50 dark:bg-green-900/20 border-b border-green-200 dark:border-green-800">
           <div className="flex items-center">
@@ -157,46 +126,56 @@ export default function CancellationPolicyModal({
           </div>
         </div>
 
-        {/* Scrollable Content */}
-        <div 
-          ref={contentRef}
-          onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-6 py-4"
-        >
-          <div className="prose prose-sm max-w-none dark:prose-invert">
+          <div className="prose prose-sm max-w-none">
             {/* Quick Reference Timeline */}
             <section className="mb-6">
               <h3 className="text-base font-semibold mb-3 text-gray-900 dark:text-white">Cancellation Timeline</h3>
-              
-              <div className="bg-gradient-to-r from-green-50 via-yellow-50 to-red-50 dark:from-green-900/20 dark:via-yellow-900/20 dark:to-red-900/20 rounded-lg p-1">
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
+
+              {/* Mobile: vertical timeline */}
+              <div className="sm:hidden space-y-0">
+                {[
+                  { time: '72+ hours', refund: '100% refund', color: 'bg-green-500', textColor: 'text-green-700', subColor: 'text-green-600' },
+                  { time: '24-72 hours', refund: '75% refund', color: 'bg-blue-500', textColor: 'text-blue-700', subColor: 'text-blue-600' },
+                  { time: '12-24 hours', refund: '50% refund', color: 'bg-yellow-500', textColor: 'text-yellow-700', subColor: 'text-yellow-600' },
+                  { time: '< 12 hours', refund: 'No refund', color: 'bg-red-500', textColor: 'text-red-700', subColor: 'text-red-600' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-3 h-3 ${item.color} rounded-full flex-shrink-0`} />
+                      {i < 3 && <div className="w-0.5 h-8 bg-gray-200" />}
+                    </div>
+                    <div className="pb-3">
+                      <p className={`text-xs font-semibold ${item.textColor}`}>{item.time}</p>
+                      <p className={`text-xs ${item.subColor}`}>{item.refund}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop: horizontal timeline */}
+              <div className="hidden sm:block">
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                   <div className="relative">
-                    {/* Timeline Bar */}
-                    <div className="absolute top-8 left-0 right-0 h-2 bg-gray-200 dark:bg-gray-600 rounded-full"></div>
-                    <div className="absolute top-8 left-0 w-1/4 h-2 bg-green-500 rounded-l-full"></div>
-                    <div className="absolute top-8 left-1/4 w-1/4 h-2 bg-blue-500"></div>
-                    <div className="absolute top-8 left-2/4 w-1/4 h-2 bg-yellow-500"></div>
-                    <div className="absolute top-8 left-3/4 w-1/4 h-2 bg-red-500 rounded-r-full"></div>
-                    
-                    {/* Timeline Points */}
-                    <div className="relative flex justify-between">
+                    <div className="absolute top-1.5 left-0 right-0 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full" />
+                    <div className="absolute top-1.5 left-0 w-1/4 h-1.5 bg-green-500 rounded-l-full" />
+                    <div className="absolute top-1.5 left-1/4 w-1/4 h-1.5 bg-blue-500" />
+                    <div className="absolute top-1.5 left-2/4 w-1/4 h-1.5 bg-yellow-500" />
+                    <div className="absolute top-1.5 left-3/4 w-1/4 h-1.5 bg-red-500 rounded-r-full" />
+
+                    <div className="relative flex justify-between pt-5">
                       <div className="text-center">
-                        <div className="w-4 h-4 bg-green-500 rounded-full mb-2"></div>
                         <p className="text-xs font-semibold text-green-700 dark:text-green-300">72+ hours</p>
                         <p className="text-xs text-green-600 dark:text-green-400">100% refund</p>
                       </div>
                       <div className="text-center">
-                        <div className="w-4 h-4 bg-blue-500 rounded-full mb-2"></div>
                         <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">24-72 hours</p>
                         <p className="text-xs text-blue-600 dark:text-blue-400">75% refund</p>
                       </div>
                       <div className="text-center">
-                        <div className="w-4 h-4 bg-yellow-500 rounded-full mb-2"></div>
                         <p className="text-xs font-semibold text-yellow-700 dark:text-yellow-300">12-24 hours</p>
                         <p className="text-xs text-yellow-600 dark:text-yellow-400">50% refund</p>
                       </div>
                       <div className="text-center">
-                        <div className="w-4 h-4 bg-red-500 rounded-full mb-2"></div>
                         <p className="text-xs font-semibold text-red-700 dark:text-red-300">&lt; 12 hours</p>
                         <p className="text-xs text-red-600 dark:text-red-400">No refund</p>
                       </div>
@@ -612,36 +591,7 @@ export default function CancellationPolicyModal({
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleDownload}
-                className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 flex items-center"
-              >
-                <Download className="w-4 h-4 mr-1" />
-                Download PDF
-              </button>
-              <button
-                onClick={handlePrint}
-                className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 flex items-center"
-              >
-                <DocumentText className="w-4 h-4 mr-1" />
-                Print
-              </button>
-            </div>
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    </BottomSheet>
   )
 }

@@ -1718,6 +1718,12 @@ model RentalBooking {
   policySnapshot             Json?
   guestInsuranceApplied      Boolean               @default(false)
   guestInsuranceVerified     Boolean               @default(false)
+  // Add-on enhancements
+  refuelService              Boolean               @default(false)
+  additionalDriver           Boolean               @default(false)
+  extraMilesPackage          Boolean               @default(false)
+  vipConcierge               Boolean               @default(false)
+  enhancementsTotal          Float                 @default(0)
   hostRevenueSplit           Int?
   adminCompletedById         String?
   adminCompletionNotes       String?

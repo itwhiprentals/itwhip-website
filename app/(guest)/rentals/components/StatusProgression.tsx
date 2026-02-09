@@ -135,53 +135,53 @@ export default function StatusProgression({
       
       {/* Progress Bar */}
       <div className="relative">
-        <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200">
-          <motion.div 
+        <div className="absolute top-3.5 sm:top-5 left-0 right-0 h-0.5 bg-gray-200">
+          <motion.div
             className="h-full bg-green-500"
             initial={{ width: '0%' }}
-            animate={{ 
-              width: isCompleted ? '100%' : 
-                     isActive ? '75%' : 
-                     isConfirmed ? '50%' : 
-                     isVerified ? '25%' : '0%' 
+            animate={{
+              width: isCompleted ? '100%' :
+                     isActive ? '75%' :
+                     isConfirmed ? '50%' :
+                     isVerified ? '25%' : '0%'
             }}
             transition={{ duration: 0.5, ease: 'easeInOut' }}
           />
         </div>
-        
+
         {/* Steps */}
         <div className="relative flex justify-between">
           {steps.map((step, index) => (
-            <div key={step.name} className="flex flex-col items-center">
+            <div key={step.name} className="flex flex-col items-center min-w-0">
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: index * 0.1 }}
                 className={`
-                  w-10 h-10 rounded-full flex items-center justify-center z-10 relative
-                  ${step.complete ? 'bg-green-500' : 
-                    step.active ? 'bg-yellow-500 animate-pulse' : 
+                  w-7 h-7 sm:w-10 sm:h-10 rounded-full flex items-center justify-center z-10 relative
+                  ${step.complete ? 'bg-green-500' :
+                    step.active ? 'bg-yellow-500 animate-pulse' :
                     step.error ? 'bg-red-500' : 'bg-gray-300'}
                 `}
               >
                 {step.complete ? (
-                  <IoCheckmarkCircle className="w-6 h-6 text-white" />
+                  <IoCheckmarkCircle className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                 ) : step.active ? (
-                  <IoHourglassOutline className="w-5 h-5 text-white animate-spin" />
+                  <IoHourglassOutline className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-white animate-spin" />
                 ) : step.error ? (
-                  <IoCloseCircle className="w-6 h-6 text-white" />
+                  <IoCloseCircle className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                 ) : (
-                  <div className="w-3 h-3 bg-white rounded-full" />
+                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-white rounded-full" />
                 )}
               </motion.div>
-              
-              <div className="mt-2 text-center">
-                <p className={`text-sm font-medium ${
+
+              <div className="mt-1.5 sm:mt-2 text-center">
+                <p className={`text-[10px] sm:text-sm font-medium ${
                   step.complete || step.active ? 'text-gray-900' : 'text-gray-500'
                 }`}>
                   {step.name}
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5 hidden sm:block max-w-[100px]">
+                <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 max-w-[60px] sm:max-w-[100px] truncate sm:whitespace-normal">
                   {step.description}
                 </p>
               </div>

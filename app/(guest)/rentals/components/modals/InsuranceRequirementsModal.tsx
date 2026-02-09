@@ -2,7 +2,8 @@
 
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
+import BottomSheet from '@/app/components/BottomSheet'
 
 // Icon Components (keeping existing icons)
 const XCircle = ({ className = "w-5 h-5" }: any) => (
@@ -64,9 +65,6 @@ export default function InsuranceRequirementsModal({
   onClose,
   vehicleType = 'standard'
 }: InsuranceRequirementsModalProps) {
-  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false)
-  const contentRef = useRef<HTMLDivElement>(null)
-
   // Coverage details by vehicle type
   const coverageByType = {
     economy: {
@@ -98,50 +96,14 @@ export default function InsuranceRequirementsModal({
 
   const coverage = coverageByType[vehicleType]
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const element = e.currentTarget
-    const threshold = 50
-    const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < threshold
-    if (isNearBottom && !hasScrolledToBottom) {
-      setHasScrolledToBottom(true)
-    }
-  }
-
-  const handlePrint = () => {
-    window.print()
-  }
-
-  const handleDownload = () => {
-    // Implementation for PDF download
-    alert('PDF download will be available soon')
-  }
-
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900">Trip Protection & Coverage</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <XCircle className="w-5 h-5 sm:w-6 sm:h-6" />
-          </button>
-        </div>
-
-        {/* Scrollable Content */}
-        <div 
-          ref={contentRef}
-          onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-4 sm:px-6 py-4"
-        >
-          <div className="prose prose-sm max-w-none">
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Trip Protection & Coverage"
+      size="large"
+    >
+      <div className="prose prose-sm max-w-none">
             
             {/* Protection Included Banner */}
             <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
@@ -448,75 +410,6 @@ export default function InsuranceRequirementsModal({
               </div>
             </section>
           </div>
-        </div>
-
-        {/* Footer - Fixed for mobile */}
-        <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-gray-50">
-          {/* Mobile Layout */}
-          <div className="sm:hidden">
-            <div className="flex flex-col space-y-3">
-              <div className="text-center">
-                <span className="text-xs text-gray-600 block mb-2">
-                  Protection included • No additional insurance required
-                </span>
-              </div>
-              <button
-                onClick={onClose}
-                className="w-full px-4 py-3 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                I Understand
-              </button>
-              <div className="flex items-center justify-center space-x-4">
-                <button
-                  onClick={handleDownload}
-                  className="text-xs text-gray-600 hover:text-gray-900 flex items-center"
-                >
-                  <Download className="w-4 h-4 mr-1" />
-                  Download
-                </button>
-                <button
-                  onClick={handlePrint}
-                  className="text-xs text-gray-600 hover:text-gray-900 flex items-center"
-                >
-                  <DocumentText className="w-4 h-4 mr-1" />
-                  Print
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Desktop Layout */}
-          <div className="hidden sm:flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleDownload}
-                className="text-sm text-gray-600 hover:text-gray-900 flex items-center"
-              >
-                <Download className="w-4 h-4 mr-1" />
-                Download PDF
-              </button>
-              <button
-                onClick={handlePrint}
-                className="text-sm text-gray-600 hover:text-gray-900 flex items-center"
-              >
-                <DocumentText className="w-4 h-4 mr-1" />
-                Print
-              </button>
-            </div>
-            <div className="flex items-center space-x-3">
-              <span className="text-xs text-gray-500">
-                Protection included • No additional insurance required
-              </span>
-              <button
-                onClick={onClose}
-                className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                I Understand
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    </BottomSheet>
   )
 }
