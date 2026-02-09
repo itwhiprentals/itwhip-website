@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyJWT } from '@/lib/auth/jwt'
 import { v2 as cloudinary } from 'cloudinary'
+import { quickVerifyDriverLicense, compareNames, validateAge } from '@/app/lib/booking/ai/license-analyzer'
 
 // Configure Cloudinary
 cloudinary.config({
@@ -168,6 +169,35 @@ export async function POST(
       })
     }
 
+    // Auto-trigger Claude AI verification when both license front and back are uploaded
+    if (documentType === 'license-front' || documentType === 'license-back') {
+      // Re-fetch to get current license URLs
+      const updatedBooking = await prisma.rentalBooking.findUnique({
+        where: { id: bookingId },
+        select: {
+          licensePhotoUrl: true,
+          licenseBackPhotoUrl: true,
+          guestName: true,
+          licenseState: true,
+          dateOfBirth: true,
+        }
+      })
+
+      if (updatedBooking?.licensePhotoUrl && updatedBooking?.licenseBackPhotoUrl) {
+        // Both sides uploaded — trigger AI verification asynchronously (non-blocking)
+        triggerAIVerification(
+          bookingId,
+          updatedBooking.licensePhotoUrl,
+          updatedBooking.licenseBackPhotoUrl,
+          updatedBooking.guestName || undefined,
+          updatedBooking.licenseState || undefined,
+          updatedBooking.dateOfBirth ? updatedBooking.dateOfBirth.toISOString().split('T')[0] : undefined
+        ).catch(err => {
+          console.error('[Upload] AI verification background error:', err)
+        })
+      }
+    }
+
     // If this is a verification document and booking needs verification, update status
     if (isVerificationDoc && booking.verificationStatus === 'PENDING') {
       await prisma.rentalBooking.update({
@@ -257,5 +287,123 @@ export async function POST(
       { error: 'Failed to upload file' },
       { status: 500 }
     )
+  }
+}
+
+/**
+ * Background AI verification — runs after both license sides are uploaded.
+ * Non-blocking: errors are logged but don't affect the upload response.
+ */
+async function triggerAIVerification(
+  bookingId: string,
+  frontUrl: string,
+  backUrl: string,
+  guestName?: string,
+  licenseState?: string,
+  dateOfBirth?: string
+) {
+  console.log(`[AI Verify] Starting for booking ${bookingId}`)
+  const startTime = Date.now()
+
+  try {
+    const result = await quickVerifyDriverLicense(frontUrl, backUrl, {
+      stateHint: licenseState,
+      expectedName: guestName,
+    })
+
+    if (!result.success) {
+      console.log(`[AI Verify] Failed for ${bookingId}: ${result.error}`)
+      await prisma.rentalBooking.update({
+        where: { id: bookingId },
+        data: {
+          aiVerificationResult: { success: false, error: result.error },
+          aiVerificationScore: 0,
+          aiVerificationAt: new Date(),
+          aiVerificationModel: result.model || 'unknown',
+        }
+      })
+      return
+    }
+
+    // Run name comparison if we have both names
+    let nameMatch = true
+    let nameComparison = null
+    if (guestName && result.data?.fullName) {
+      const comparison = compareNames(result.data.fullName, guestName)
+      nameMatch = comparison.match
+      nameComparison = comparison
+    }
+
+    // Age validation
+    let ageValid = true
+    if (result.data?.dateOfBirth) {
+      ageValid = validateAge(result.data.dateOfBirth, 18)
+    }
+
+    // Build critical flags (only these block verification)
+    const criticalFlags = [...(result.validation.criticalFlags || [])]
+    if (!nameMatch) {
+      criticalFlags.push(
+        `Name mismatch: DL shows "${result.data?.fullName}", booking name is "${guestName}"`
+      )
+    }
+    if (!ageValid) {
+      criticalFlags.push('Driver must be at least 18 years old')
+    }
+
+    const quickVerifyPassed =
+      result.confidence >= 70 &&
+      !result.validation.isExpired &&
+      criticalFlags.length === 0 &&
+      (guestName ? nameMatch : true) &&
+      ageValid
+
+    // Store full analysis to DB (JSON.parse(JSON.stringify()) strips typed interfaces for Prisma InputJsonValue)
+    const aiResult = JSON.parse(JSON.stringify({
+      quickVerifyPassed,
+      confidence: result.confidence,
+      data: result.data,
+      extractedFields: result.extractedFields,
+      securityFeatures: result.securityFeatures,
+      photoQuality: result.photoQuality,
+      stateSpecificChecks: result.stateSpecificChecks,
+      validation: {
+        isExpired: result.validation.isExpired,
+        isValid: result.validation.isValid,
+        nameMatch,
+        nameComparison,
+        ageValid,
+        criticalFlags,
+        informationalFlags: result.validation.informationalFlags || [],
+      },
+    }))
+
+    await prisma.rentalBooking.update({
+      where: { id: bookingId },
+      data: {
+        aiVerificationResult: aiResult,
+        aiVerificationScore: result.confidence,
+        aiVerificationAt: new Date(),
+        aiVerificationModel: result.model || 'claude-sonnet-4-5',
+      }
+    })
+
+    const elapsed = Date.now() - startTime
+    console.log(`[AI Verify] Done for ${bookingId} in ${elapsed}ms — score: ${result.confidence}, passed: ${quickVerifyPassed}`)
+  } catch (error) {
+    console.error(`[AI Verify] Error for ${bookingId}:`, error)
+    // Store error so admin can see it failed
+    await prisma.rentalBooking.update({
+      where: { id: bookingId },
+      data: {
+        aiVerificationResult: {
+          success: false,
+          error: error instanceof Error ? error.message : 'AI verification failed',
+        },
+        aiVerificationScore: 0,
+        aiVerificationAt: new Date(),
+        aiVerificationModel: 'error',
+      }
+    }).catch(() => {}) // Don't throw if DB update also fails
   }
 }

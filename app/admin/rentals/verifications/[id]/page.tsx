@@ -135,6 +135,63 @@ interface Booking {
     createdAt: string
   }>
   
+  // AI verification
+  aiVerificationResult?: {
+    quickVerifyPassed?: boolean
+    confidence?: number
+    data?: {
+      fullName?: string
+      dateOfBirth?: string
+      licenseNumber?: string
+      expirationDate?: string
+      stateOrCountry?: string
+      address?: string
+    }
+    extractedFields?: Record<string, { value: string | null; confidence: number; rawText?: string }>
+    securityFeatures?: {
+      detected: string[]
+      notDetected: string[]
+      obscured: string[]
+      assessment: 'PASS' | 'REVIEW' | 'FAIL'
+    }
+    photoQuality?: {
+      lighting: string
+      angle: string
+      focus: string
+      glare: string
+      cropping: string
+    }
+    stateSpecificChecks?: {
+      formatValid: boolean
+      expirationNormal: boolean
+      cardOrientation: string
+      realIdCompliant: boolean | null
+      notes: string
+    }
+    validation?: {
+      isExpired: boolean
+      isValid: boolean
+      nameMatch: boolean
+      nameComparison?: {
+        match: boolean
+        dlParsed: { first: string; middle?: string; last: string; raw: string }
+        bookingParsed: { first: string; last: string; raw: string }
+        mismatchDetails?: string
+      }
+      ageValid: boolean
+      criticalFlags: string[]
+      informationalFlags: string[]
+    }
+    error?: string
+    success?: boolean
+  } | null
+  aiVerificationScore?: number | null
+  aiVerificationAt?: string | null
+  aiVerificationModel?: string | null
+
+  // Back of license
+  licenseBackPhotoUrl?: string
+
   car: {
     make: string
     model: string
@@ -152,6 +209,322 @@ interface Booking {
   endTime: string
   pickupLocation: string
   pickupType: string
+}
+
+// ─── Claude AI Verification Panel ─────────────────────────────────────────
+function AIVerificationPanel({ booking }: { booking: Booking }) {
+  const ai = booking.aiVerificationResult
+  if (!ai) return null
+
+  // Error state
+  if (ai.success === false || ai.error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold mb-3 flex items-center text-red-800">
+          <IoShieldCheckmarkOutline className="mr-2" />
+          Claude AI Analysis
+          <span className="ml-2 px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-full">Error</span>
+        </h2>
+        <p className="text-sm text-red-700">{ai.error || 'AI verification failed'}</p>
+      </div>
+    )
+  }
+
+  const passed = ai.quickVerifyPassed
+  const score = ai.confidence ?? booking.aiVerificationScore ?? 0
+  const validation = ai.validation
+  const fields = ai.extractedFields
+  const security = ai.securityFeatures
+  const photoQ = ai.photoQuality
+  const stateChecks = ai.stateSpecificChecks
+
+  // Score color
+  const scoreColor = score >= 85 ? 'green' : score >= 60 ? 'yellow' : 'red'
+  const scoreLabel = score >= 85 ? 'High Confidence' : score >= 60 ? 'Moderate' : 'Low Confidence'
+
+  // Comparison rows
+  const comparisonRows = [
+    {
+      label: 'Name',
+      extracted: ai.data?.fullName || fields?.fullName?.value || '—',
+      provided: booking.guestName || '—',
+      match: validation?.nameMatch,
+      confidence: fields?.fullName?.confidence,
+    },
+    {
+      label: 'DOB',
+      extracted: ai.data?.dateOfBirth || fields?.dateOfBirth?.value || '—',
+      provided: booking.dateOfBirth ? new Date(booking.dateOfBirth).toLocaleDateString() : '—',
+      match: ai.data?.dateOfBirth && booking.dateOfBirth
+        ? ai.data.dateOfBirth === new Date(booking.dateOfBirth).toISOString().split('T')[0]
+        : undefined,
+      confidence: fields?.dateOfBirth?.confidence,
+    },
+    {
+      label: 'License #',
+      extracted: ai.data?.licenseNumber || fields?.licenseNumber?.value || '—',
+      provided: booking.licenseNumber || '—',
+      match: ai.data?.licenseNumber && booking.licenseNumber
+        ? ai.data.licenseNumber.replace(/[\s-]/g, '').toLowerCase() === booking.licenseNumber.replace(/[\s-]/g, '').toLowerCase()
+        : undefined,
+      confidence: fields?.licenseNumber?.confidence,
+    },
+    {
+      label: 'Expiration',
+      extracted: ai.data?.expirationDate || fields?.expirationDate?.value || '—',
+      provided: booking.licenseExpiry || '—',
+      match: stateChecks?.expirationNormal !== false ? true : undefined,
+      confidence: fields?.expirationDate?.confidence,
+    },
+    {
+      label: 'State',
+      extracted: ai.data?.stateOrCountry || fields?.state?.value || '—',
+      provided: booking.licenseState || '—',
+      match: ai.data?.stateOrCountry && booking.licenseState
+        ? ai.data.stateOrCountry.toUpperCase() === booking.licenseState.toUpperCase()
+        : undefined,
+      confidence: fields?.state?.confidence,
+    },
+  ]
+
+  const getConfidenceBadge = (conf?: number) => {
+    if (conf === undefined || conf === null) return null
+    const color = conf >= 90 ? 'green' : conf >= 70 ? 'yellow' : 'red'
+    return (
+      <span className={`text-xs px-1.5 py-0.5 rounded bg-${color}-100 text-${color}-700`}>
+        {conf}%
+      </span>
+    )
+  }
+
+  const getMatchIcon = (match?: boolean) => {
+    if (match === undefined) return <span className="text-gray-400">—</span>
+    return match
+      ? <IoCheckmarkCircle className="text-green-500 text-lg" />
+      : <IoCloseCircle className="text-red-500 text-lg" />
+  }
+
+  const photoQualityIcon = (val?: string) => {
+    if (!val) return null
+    const good = ['good', 'straight', 'clear', 'none', 'full_card']
+    const ok = ['adequate', 'slight_tilt', 'slightly_blurry', 'minor', 'partial']
+    if (good.includes(val)) return <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+    if (ok.includes(val)) return <span className="w-2 h-2 rounded-full bg-yellow-500 inline-block" />
+    return <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
+  }
+
+  return (
+    <div className={`rounded-lg shadow p-6 border-2 ${
+      passed ? 'bg-green-50 border-green-200' : score >= 60 ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200'
+    }`}>
+      {/* Header with score */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold flex items-center">
+          <IoShieldCheckmarkOutline className="mr-2" />
+          Claude AI Analysis
+        </h2>
+        <div className="flex items-center gap-3">
+          {booking.aiVerificationModel && (
+            <span className="text-xs text-gray-500">{booking.aiVerificationModel}</span>
+          )}
+          {booking.aiVerificationAt && (
+            <span className="text-xs text-gray-500">
+              {new Date(booking.aiVerificationAt).toLocaleString()}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Status Banner */}
+      <div className={`rounded-lg p-4 mb-4 ${
+        passed ? 'bg-green-100' : score >= 60 ? 'bg-yellow-100' : 'bg-red-100'
+      }`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold ${
+              scoreColor === 'green' ? 'bg-green-200 text-green-800' :
+              scoreColor === 'yellow' ? 'bg-yellow-200 text-yellow-800' :
+              'bg-red-200 text-red-800'
+            }`}>
+              {score}
+            </div>
+            <div>
+              <p className={`font-semibold ${
+                passed ? 'text-green-800' : score >= 60 ? 'text-yellow-800' : 'text-red-800'
+              }`}>
+                {passed ? 'AI Recommends: APPROVE' : score >= 60 ? 'AI Recommends: MANUAL REVIEW' : 'AI Recommends: REJECT'}
+              </p>
+              <p className={`text-sm ${
+                passed ? 'text-green-700' : score >= 60 ? 'text-yellow-700' : 'text-red-700'
+              }`}>
+                {scoreLabel} &middot; {validation?.criticalFlags?.length || 0} critical flags &middot; {validation?.informationalFlags?.length || 0} info flags
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-gray-600">Age Valid</p>
+            <p className="font-medium">{validation?.ageValid !== false ? 'Yes' : 'No'}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Extraction Comparison Table */}
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Extraction Comparison</h3>
+        <div className="overflow-hidden rounded-lg border border-gray-200">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Field</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Claude Extracted</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Guest Provided</th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500">Conf</th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500">Match</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100">
+              {comparisonRows.map((row) => (
+                <tr key={row.label}>
+                  <td className="px-3 py-2 font-medium text-gray-700">{row.label}</td>
+                  <td className="px-3 py-2 text-gray-900 font-mono text-xs">{row.extracted}</td>
+                  <td className="px-3 py-2 text-gray-600 text-xs">{row.provided}</td>
+                  <td className="px-3 py-2 text-center">{getConfidenceBadge(row.confidence)}</td>
+                  <td className="px-3 py-2 text-center">{getMatchIcon(row.match)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {/* Name comparison detail */}
+        {validation?.nameComparison && !validation.nameComparison.match && (
+          <div className="mt-2 p-2 bg-red-50 border border-red-100 rounded text-xs text-red-700">
+            <strong>Name parsing:</strong> DL parsed as &ldquo;{validation.nameComparison.dlParsed.first} {validation.nameComparison.dlParsed.last}&rdquo;,
+            booking parsed as &ldquo;{validation.nameComparison.bookingParsed.first} {validation.nameComparison.bookingParsed.last}&rdquo;
+            {validation.nameComparison.mismatchDetails && ` — ${validation.nameComparison.mismatchDetails}`}
+          </div>
+        )}
+      </div>
+
+      {/* Security Features */}
+      {security && (
+        <div className="mb-4">
+          <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center justify-between">
+            Security Features
+            <span className={`px-2 py-0.5 text-xs rounded-full ${
+              security.assessment === 'PASS' ? 'bg-green-100 text-green-700' :
+              security.assessment === 'REVIEW' ? 'bg-yellow-100 text-yellow-700' :
+              'bg-red-100 text-red-700'
+            }`}>
+              {security.assessment}
+            </span>
+          </h3>
+          <div className="grid grid-cols-1 gap-1 text-xs">
+            {security.detected.map((f, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <IoCheckmarkCircle className="text-green-500 flex-shrink-0" />
+                <span className="text-gray-700">{f}</span>
+              </div>
+            ))}
+            {security.obscured.map((f, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <IoWarningOutline className="text-yellow-500 flex-shrink-0" />
+                <span className="text-gray-600">{f}</span>
+              </div>
+            ))}
+            {security.notDetected.map((f, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <span className="w-4 h-4 flex items-center justify-center text-gray-400 flex-shrink-0">—</span>
+                <span className="text-gray-400">{f}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Photo Quality + State Checks row */}
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        {/* Photo Quality */}
+        {photoQ && (
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Photo Quality</h3>
+            <div className="space-y-1 text-xs">
+              {Object.entries(photoQ).map(([key, val]) => (
+                <div key={key} className="flex items-center justify-between">
+                  <span className="text-gray-600 capitalize">{key}</span>
+                  <div className="flex items-center gap-1.5">
+                    {photoQualityIcon(val)}
+                    <span className="text-gray-700 capitalize">{val?.replace(/_/g, ' ')}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* State-Specific */}
+        {stateChecks && (
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">State Checks</h3>
+            <div className="space-y-1 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Format Valid</span>
+                {getMatchIcon(stateChecks.formatValid)}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Expiration Normal</span>
+                {getMatchIcon(stateChecks.expirationNormal)}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Orientation</span>
+                <span className="text-gray-700 capitalize">{stateChecks.cardOrientation}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">REAL ID</span>
+                {stateChecks.realIdCompliant === null
+                  ? <span className="text-gray-400">Unknown</span>
+                  : getMatchIcon(stateChecks.realIdCompliant)}
+              </div>
+              {stateChecks.notes && (
+                <p className="text-gray-500 mt-1 italic">{stateChecks.notes}</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Flags */}
+      {((validation?.criticalFlags?.length || 0) > 0 || (validation?.informationalFlags?.length || 0) > 0) && (
+        <div>
+          {validation?.criticalFlags && validation.criticalFlags.length > 0 && (
+            <div className="mb-2">
+              <h3 className="text-sm font-semibold text-red-700 mb-1">Critical Flags</h3>
+              <ul className="text-xs text-red-700 space-y-1">
+                {validation.criticalFlags.map((flag, i) => (
+                  <li key={i} className="flex items-start gap-1.5">
+                    <IoCloseCircle className="text-red-500 flex-shrink-0 mt-0.5" />
+                    {flag}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {validation?.informationalFlags && validation.informationalFlags.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-yellow-700 mb-1">Informational Flags</h3>
+              <ul className="text-xs text-yellow-700 space-y-1">
+                {validation.informationalFlags.map((flag, i) => (
+                  <li key={i} className="flex items-start gap-1.5">
+                    <IoInformationCircleOutline className="text-yellow-500 flex-shrink-0 mt-0.5" />
+                    {flag}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function VerificationReviewPage() {
@@ -606,6 +979,40 @@ export default function VerificationReviewPage() {
         </div>
       </div>
 
+      {/* AI Verification Status Banner */}
+      {booking.aiVerificationResult && !isPostTrip && (
+        <div className={`rounded-lg p-4 mb-6 border ${
+          booking.aiVerificationResult.quickVerifyPassed
+            ? 'bg-green-50 border-green-200'
+            : (booking.aiVerificationScore ?? 0) >= 60
+              ? 'bg-yellow-50 border-yellow-200'
+              : 'bg-red-50 border-red-200'
+        }`}>
+          <div className="flex items-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-600 font-medium">Claude AI:</span>
+              {booking.aiVerificationResult.quickVerifyPassed
+                ? <span className="text-green-700 font-semibold">Pass (Score: {booking.aiVerificationScore})</span>
+                : booking.aiVerificationResult.error
+                  ? <span className="text-red-700 font-semibold">Error</span>
+                  : <span className="text-yellow-700 font-semibold">Review (Score: {booking.aiVerificationScore})</span>
+              }
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-600 font-medium">Stripe Identity:</span>
+              <span className="text-gray-500">Not yet available</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-600 font-medium">Status:</span>
+              {booking.aiVerificationResult.quickVerifyPassed
+                ? <span className="text-green-700 font-semibold">Ready to Approve</span>
+                : <span className="text-yellow-700 font-semibold">Manual Review</span>
+              }
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Test Mode Notice */}
       {isTestMode && (
         <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6">
@@ -945,6 +1352,11 @@ export default function VerificationReviewPage() {
                 </div>
               </div>
 
+              {/* Claude AI Analysis Panel */}
+              {booking.aiVerificationResult && (
+                <AIVerificationPanel booking={booking} />
+              )}
+
               {/* Documents Section */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold mb-4 flex items-center">
@@ -952,20 +1364,45 @@ export default function VerificationReviewPage() {
                   Submitted Documents
                 </h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* License */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* License Front */}
                   <div className="border rounded-lg p-4">
-                    <p className="text-sm font-medium mb-2">Driver's License</p>
+                    <p className="text-sm font-medium mb-2">DL Front</p>
                     {booking.licensePhotoUrl ? (
                       <div className="relative">
-                        <img 
-                          src={booking.licensePhotoUrl} 
-                          alt="License"
+                        <img
+                          src={booking.licensePhotoUrl}
+                          alt="License Front"
                           className="w-full h-32 object-cover rounded cursor-pointer"
                           onClick={() => setExpandedImage(booking.licensePhotoUrl!)}
                         />
                         <button
                           onClick={() => window.open(booking.licensePhotoUrl, '_blank')}
+                          className="absolute top-2 right-2 bg-white rounded p-1 shadow"
+                        >
+                          <IoExpandOutline className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-full h-32 bg-gray-100 rounded flex items-center justify-center text-gray-400">
+                        Not uploaded
+                      </div>
+                    )}
+                  </div>
+
+                  {/* License Back */}
+                  <div className="border rounded-lg p-4">
+                    <p className="text-sm font-medium mb-2">DL Back</p>
+                    {booking.licenseBackPhotoUrl ? (
+                      <div className="relative">
+                        <img
+                          src={booking.licenseBackPhotoUrl}
+                          alt="License Back"
+                          className="w-full h-32 object-cover rounded cursor-pointer"
+                          onClick={() => setExpandedImage(booking.licenseBackPhotoUrl!)}
+                        />
+                        <button
+                          onClick={() => window.open(booking.licenseBackPhotoUrl, '_blank')}
                           className="absolute top-2 right-2 bg-white rounded p-1 shadow"
                         >
                           <IoExpandOutline className="w-4 h-4" />

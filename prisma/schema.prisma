@@ -1645,6 +1645,11 @@ model RentalBooking {
   licensePhotoUrl            String?
   licenseBackPhotoUrl        String?
   insurancePhotoUrl          String?
+  // Claude AI verification results
+  aiVerificationResult       Json?
+  aiVerificationScore        Float?
+  aiVerificationAt           DateTime?
+  aiVerificationModel        String?
   selfieVerified             Boolean               @default(false)
   selfiePhotoUrl             String?
   onboardingCompletedAt      DateTime?

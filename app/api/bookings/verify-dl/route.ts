@@ -1,17 +1,21 @@
 // app/api/bookings/verify-dl/route.ts
 // AI-powered driver's license verification endpoint
-// Used during booking to verify DL before Stripe verification
+// Claude is the FIRST verification — guests book without accounts, no Stripe data yet.
 // POST /api/bookings/verify-dl
 
 import { NextRequest, NextResponse } from 'next/server'
-import { quickVerifyDriverLicense, compareNames, validateAge } from '@/app/lib/booking/ai/license-analyzer'
+import {
+  quickVerifyDriverLicense,
+  compareNames,
+  validateAge,
+  type NameComparisonResult,
+} from '@/app/lib/booking/ai/license-analyzer'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { frontImageUrl, backImageUrl, expectedName, expectedDob } = body
+    const { frontImageUrl, backImageUrl, expectedName, expectedDob, stateHint } = body
 
-    // Validate required fields
     if (!frontImageUrl) {
       return NextResponse.json(
         { error: 'Front image URL is required' },
@@ -20,7 +24,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the driver's license using Claude Vision
-    const result = await quickVerifyDriverLicense(frontImageUrl, backImageUrl)
+    const result = await quickVerifyDriverLicense(frontImageUrl, backImageUrl, {
+      stateHint,
+      expectedName,
+    })
 
     if (!result.success) {
       return NextResponse.json({
@@ -30,61 +37,73 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Additional validation checks
-    const validationResults = {
-      licenseValid: result.validation.isValid,
-      licenseExpired: result.validation.isExpired,
-      confidence: result.confidence,
-      redFlags: result.validation.redFlags,
-      nameMatch: false,
-      ageValid: false,
-    }
+    // Track critical flags separately from informational
+    const criticalFlags = [...(result.validation.criticalFlags || [])]
+    const informationalFlags = [...(result.validation.informationalFlags || [])]
 
-    // Check name match if provided
+    // Name comparison with detailed reporting
+    let nameComparison: NameComparisonResult | null = null
+    let nameMatch = true
+
     if (expectedName && result.data?.fullName) {
-      validationResults.nameMatch = compareNames(result.data.fullName, expectedName)
-      if (!validationResults.nameMatch) {
-        validationResults.redFlags.push('Name on license does not match booking name')
+      nameComparison = compareNames(result.data.fullName, expectedName)
+      nameMatch = nameComparison.match
+      if (!nameMatch) {
+        // Name mismatch is critical — but now we show what was parsed
+        criticalFlags.push(
+          `Name mismatch: DL shows "${result.data.fullName}" (parsed as ${nameComparison.dlParsed.first} ${nameComparison.dlParsed.last}), ` +
+          `booking name is "${expectedName}" (parsed as ${nameComparison.bookingParsed.first} ${nameComparison.bookingParsed.last})`
+        )
       }
     }
 
-    // Check age if DOB extracted
-    // If DOB is not extracted, skip age check (don't fail, let other checks determine)
+    // Age validation
+    let ageValid = true
     if (result.data?.dateOfBirth) {
-      validationResults.ageValid = validateAge(result.data.dateOfBirth, 18)
-      if (!validationResults.ageValid) {
-        validationResults.redFlags.push('Driver must be at least 18 years old')
+      ageValid = validateAge(result.data.dateOfBirth, 18)
+      if (!ageValid) {
+        criticalFlags.push('Driver must be at least 18 years old')
       }
-    } else {
-      // If DOB not extracted, don't fail on age - assume valid for now
-      // Full Stripe verification will catch underage users later
-      validationResults.ageValid = true
     }
 
-    // Determine overall pass/fail
+    // Pass/fail based on CRITICAL flags only (not informational)
     const quickVerifyPassed =
       result.confidence >= 70 &&
       !result.validation.isExpired &&
-      result.validation.redFlags.length === 0 &&
-      validationResults.redFlags.length === 0 &&
-      (expectedName ? validationResults.nameMatch : true) &&
-      validationResults.ageValid
+      criticalFlags.length === 0 &&
+      (expectedName ? nameMatch : true) &&
+      ageValid
 
     return NextResponse.json({
       success: true,
       quickVerifyPassed,
-      requiresFullVerification: true, // Always require Stripe during onboarding
+      requiresFullVerification: true,
       confidence: result.confidence,
       data: result.data,
+      // Full analysis detail for admin dashboard
+      extractedFields: result.extractedFields,
+      securityFeatures: result.securityFeatures,
+      photoQuality: result.photoQuality,
+      stateSpecificChecks: result.stateSpecificChecks,
+      // Validation results
       validation: {
-        ...result.validation,
-        nameMatch: validationResults.nameMatch,
-        ageValid: validationResults.ageValid,
-        allRedFlags: validationResults.redFlags,
+        isExpired: result.validation.isExpired,
+        isValid: result.validation.isValid,
+        nameMatch,
+        nameComparison,
+        ageValid,
+        criticalFlags,
+        informationalFlags,
+        // Backward-compatible: combined list for legacy consumers
+        allRedFlags: [...criticalFlags, ...informationalFlags],
+        redFlags: criticalFlags, // Only critical flags in the legacy field
       },
+      model: result.model,
       recommendation: quickVerifyPassed
         ? 'Proceed with booking. Full Stripe verification required during onboarding.'
-        : 'Manual review recommended. Consider requesting additional documents.',
+        : criticalFlags.length > 0
+          ? 'Manual review recommended. Critical issues detected.'
+          : 'Proceed with caution. Minor quality issues noted.',
     })
   } catch (error) {
     console.error('[API] DL verification error:', error)
