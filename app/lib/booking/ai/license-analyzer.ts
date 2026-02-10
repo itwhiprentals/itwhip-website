@@ -205,6 +205,21 @@ const DL_ANALYSIS_SCHEMA = {
   additionalProperties: false,
 }
 
+// ─── Image Optimization ─────────────────────────────────────────────────────
+
+/**
+ * Optimize Cloudinary images before sending to Claude.
+ * Phone photos are typically 2200x1500+ — Claude auto-resizes anything over 1568px
+ * on a side, but doing it via Cloudinary URL transform avoids the latency penalty.
+ * Non-Cloudinary URLs are returned unchanged.
+ */
+function optimizeImageForClaude(url: string): string {
+  if (!url.includes('cloudinary.com')) return url
+  // Insert resize transform into Cloudinary URL: c_limit keeps aspect ratio,
+  // w/h 1568 matches Claude's max, q_90 reduces file size with minimal quality loss
+  return url.replace('/upload/', '/upload/c_limit,w_1568,h_1568,q_90/')
+}
+
 // ─── Main Verification Function ─────────────────────────────────────────────
 
 /**
@@ -226,17 +241,21 @@ export async function quickVerifyDriverLicense(
     // Build image content — images BEFORE text (Claude Vision best practice)
     const content: Anthropic.ContentBlockParam[] = []
 
+    // Optimize image sizes via Cloudinary transform (avoids Claude's auto-resize latency)
+    const optimizedFront = optimizeImageForClaude(frontImageUrl)
+    const optimizedBack = backImageUrl ? optimizeImageForClaude(backImageUrl) : undefined
+
     content.push({ type: 'text' as const, text: 'Image 1: Driver\'s License Front' })
     content.push({
       type: 'image' as const,
-      source: { type: 'url' as const, url: frontImageUrl },
+      source: { type: 'url' as const, url: optimizedFront },
     })
 
-    if (backImageUrl) {
+    if (optimizedBack) {
       content.push({ type: 'text' as const, text: 'Image 2: Driver\'s License Back' })
       content.push({
         type: 'image' as const,
-        source: { type: 'url' as const, url: backImageUrl },
+        source: { type: 'url' as const, url: optimizedBack },
       })
     }
 
@@ -266,7 +285,8 @@ A slightly obscured security feature is informational, NOT a critical flag.
 
 FLAG CLASSIFICATION:
 - criticalFlags: ONLY for genuinely serious issues: document is not a driver's license (e.g. state ID card), document is clearly digitally fabricated/photoshopped, a screenshot of a photo, completely unreadable text on all fields, or a non-government-issued document. "Not valid for federal purposes" is NOT a critical flag.
-- informationalFlags: Minor photo quality notes (slight glare, minor angle tilt, partially obscured features), non-REAL ID status. These do NOT indicate fraud.
+- informationalFlags: Minor photo quality notes (slight glare, minor angle tilt, partially obscured features). These do NOT indicate fraud.
+- Do NOT flag "non-REAL ID compliant" or "no gold star" — REAL ID status is irrelevant for car rental verification.
 
 IMPORTANT — DO NOT over-flag:
 - Do NOT flag "formatting inconsistencies" unless you can point to a SPECIFIC field that appears digitally altered
@@ -276,12 +296,14 @@ IMPORTANT — DO NOT over-flag:
 - "Recently issued" is NOT suspicious — people get new licenses all the time
 - When in doubt, do NOT flag it at all
 
-EXPIRATION RULES:
-- Arizona (AZ): Driver's licenses are valid until the holder turns 65. A 2051 expiration on an AZ license for someone born in 1986 is COMPLETELY NORMAL. Do NOT flag this.
-- If no expiration date is visible in the EXP field, set expirationDate to "N/A" and isExpired to false.
-- Most other states: 4-8 year validity. Check against the state rules provided.
-- Only mark isExpired=true if the expiration date is clearly visible AND is BEFORE today (${today}).
-- CRITICAL: NEVER confuse the date of birth (DOB) with the expiration date (EXP). These are separate labeled fields. The large date at the bottom of some cards is the DOB, NOT the expiration.
+EXPIRATION — TWO CASES:
+1. If the EXP field shows a date → compare it to today (${today}). If before today, isExpired=true.
+2. If the EXP field is BLANK or missing → use state rules to calculate:
+   - Arizona (AZ): Valid until age 65. Calculate expiration = DOB + 65 years. If that calculated date is before today, isExpired=true. Set expirationDate to the calculated 65th birthday.
+   - Most other states: Set expirationDate to "N/A" and isExpired to false (cannot determine from card).
+- A far-future expiration (e.g. 2051) on an AZ license for someone born in 1986 is COMPLETELY NORMAL. Do NOT flag this.
+- Do NOT hallucinate or invent an expiration date that isn't printed on the card. Only report dates you can actually read in the EXP field.
+- CRITICAL: The large date at the BOTTOM of many state cards (especially AZ) is the DATE OF BIRTH repeated. Look at the specifically labeled "4b EXP" or "EXP" field for expiration. These are DIFFERENT fields — never confuse them.
 
 SECURITY FEATURES:
 - "detected": features you can clearly see
@@ -295,7 +317,7 @@ Parse the name and report both the raw text and the parsed first/last name.`,
     })
 
     // Build system prompt with state rules (cacheable)
-    const systemPrompt: Anthropic.TextBlockParam[] = [
+    const systemPrompt: Anthropic.MessageCreateParams['system'] = [
       {
         type: 'text' as const,
         text: `You are an expert document verification specialist with extensive knowledge of US driver's licenses across all 50 states. You have deep knowledge of each state's unique license format, security features, and expiration rules.
@@ -303,7 +325,7 @@ Parse the name and report both the raw text and the parsed first/last name.`,
 Your task is to extract information from driver's license photos and assess their authenticity. You are thorough but fair — minor photo quality issues from phone cameras are expected and should not be treated as red flags.
 
 ${buildAllStateRulesPrompt()}`,
-        // Note: cache_control would be added here for prompt caching in production
+        cache_control: { type: 'ephemeral' as const },
       },
     ]
 
@@ -331,7 +353,61 @@ ${buildAllStateRulesPrompt()}`,
       }
     }
 
-    const parsed = JSON.parse(textContent.text)
+    let parsed = JSON.parse(textContent.text)
+
+    // ── Extended Thinking Retry ──────────────────────────────────────────
+    // If confidence is low but no critical flags, retry with extended thinking
+    // for deeper analysis. This helps with edge cases (bad lighting, unusual
+    // state formats) without slowing down the happy path.
+    if (
+      parsed.confidence < 70 &&
+      (!parsed.criticalFlags || parsed.criticalFlags.length === 0)
+    ) {
+      try {
+        console.log(`[license-analyzer] Low confidence (${parsed.confidence}), retrying with extended thinking...`)
+
+        const retryResponse = await anthropic.messages.create({
+          model: 'claude-sonnet-4-5-20250929',
+          max_tokens: 16000,
+          thinking: { type: 'enabled', budget_tokens: 8000 },
+          system: typeof systemPrompt === 'string'
+            ? systemPrompt
+            : systemPrompt.map(b => b.type === 'text' ? b.text : '').join('\n'),
+          messages: [
+            {
+              role: 'user',
+              content: [
+                ...content,
+                {
+                  type: 'text' as const,
+                  text: `\n\nIMPORTANT: Respond ONLY with a JSON object matching this exact schema (no markdown, no code fences):\n${JSON.stringify(DL_ANALYSIS_SCHEMA, null, 2)}`,
+                },
+              ],
+            },
+          ],
+          // Note: structured outputs not compatible with thinking, parse manually
+        })
+
+        const retryText = retryResponse.content.find((b) => b.type === 'text')
+        if (retryText && retryText.type === 'text') {
+          // Extract JSON from response (may have thinking blocks before it)
+          const jsonMatch = retryText.text.match(/\{[\s\S]*\}/)
+          if (jsonMatch) {
+            const retryParsed = JSON.parse(jsonMatch[0])
+            // Use retry result only if confidence improved
+            if (retryParsed.confidence > parsed.confidence) {
+              console.log(`[license-analyzer] Extended thinking improved confidence: ${parsed.confidence} → ${retryParsed.confidence}`)
+              parsed = retryParsed
+            } else {
+              console.log(`[license-analyzer] Extended thinking did not improve confidence (${retryParsed.confidence}), keeping original`)
+            }
+          }
+        }
+      } catch (retryErr) {
+        console.error('[license-analyzer] Extended thinking retry failed:', retryErr)
+        // Keep original result on retry failure
+      }
+    }
 
     // Extract first/last name from the parsed data
     const nameField = parsed.extractedFields?.fullName

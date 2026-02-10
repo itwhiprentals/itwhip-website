@@ -99,3 +99,17 @@ export interface VerificationStats {
 }
 
 export type FilterTab = 'pending' | 'needs_review' | 'ai_passed' | 'stripe_verified' | 'reviewed' | 'all'
+
+// Batch verification types
+export interface BatchJob {
+  id: string
+  batchId: string
+  type: string
+  status: string // processing | ended | canceled | expired
+  totalRequests: number
+  completedCount: number
+  failedCount: number
+  estimatedCost: number | null
+  createdAt: string
+  completedAt: string | null
+}

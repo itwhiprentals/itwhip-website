@@ -19,7 +19,7 @@ export const STATE_DL_RULES: Record<string, StateDLRules> = {
   AZ: {
     name: 'Arizona',
     abbreviation: 'AZ',
-    expirationRules: 'Standard licenses issued before age 60 are valid until the holder turns 65. After 65, renewed every 5 years in person. Travel ID / REAL ID cards valid for 8 years. Under-65 renewals every 12 years.',
+    expirationRules: 'Standard DLs issued before age 60 are valid until the holder turns 65 — the 4b EXP field may be BLANK or show the 65th birthday date. After 65, renewed every 5 years in person. Travel ID / REAL ID valid for 8 years. Photo update required every 12 years.',
     maxValidYears: 49, // Issued at 16, valid to 65
     securityFeatures: [
       'Polycarbonate card material (100% polycarbonate since 2023)',
@@ -36,6 +36,9 @@ export const STATE_DL_RULES: Record<string, StateDLRules> = {
     licenseNumberFormat: '1 letter + 8 digits (e.g., D12345678) or 9 digits',
     knownQuirks: [
       'Expiration date can be 30-49 years in the future — this is COMPLETELY NORMAL for AZ',
+      'The 4b EXP field is often BLANK on Arizona DLs — this means valid until age 65, NOT expired',
+      'The large date at the bottom of the card is the DATE OF BIRTH, not the expiration date',
+      '"NOT VALID FOR OFFICIAL FEDERAL PURPOSES" is standard on non-REAL ID cards — not suspicious',
       'Under-21 cards are vertical/portrait orientation',
       '21+ cards are horizontal/landscape orientation',
       'REAL ID compliant cards have a gold star in upper right corner',

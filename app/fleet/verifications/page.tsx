@@ -10,8 +10,9 @@ import {
   IoSearchOutline,
   IoCheckmarkCircle,
   IoCloudDownloadOutline,
+  IoLayersOutline,
 } from 'react-icons/io5'
-import type { Verification, VerificationStats, FilterTab, StripeGuestProfile } from './types'
+import type { Verification, VerificationStats, FilterTab, StripeGuestProfile, BatchJob } from './types'
 import { StatBox, VerificationCard, StripeGuestsList } from './components'
 
 export default function FleetVerificationsPage() {
@@ -32,6 +33,11 @@ export default function FleetVerificationsPage() {
   const [syncing, setSyncing] = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  // Batch verification state
+  const [batchJobs, setBatchJobs] = useState<BatchJob[]>([])
+  const [batchPending, setBatchPending] = useState(0)
+  const [batchCreating, setBatchCreating] = useState(false)
+  const [batchMessage, setBatchMessage] = useState<string | null>(null)
 
   const fetchVerifications = useCallback(async () => {
     try {
@@ -60,6 +66,72 @@ export default function FleetVerificationsPage() {
     const interval = setInterval(fetchVerifications, 60000)
     return () => clearInterval(interval)
   }, [fetchVerifications])
+
+  // Fetch batch job status
+  const fetchBatchJobs = useCallback(async () => {
+    try {
+      const res = await fetch(`/fleet/api/verifications/batch?key=${apiKey}`)
+      if (res.ok) {
+        const data = await res.json()
+        setBatchJobs(data.jobs || [])
+        setBatchPending(data.pendingCount || 0)
+      }
+    } catch {
+      // Silently fail — batch feature is supplementary
+    }
+  }, [apiKey])
+
+  useEffect(() => {
+    fetchBatchJobs()
+  }, [fetchBatchJobs])
+
+  // Create batch verification job
+  const handleBatchVerify = async () => {
+    setBatchCreating(true)
+    setBatchMessage(null)
+    try {
+      const res = await fetch(`/fleet/api/verifications/batch?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to create batch')
+      setBatchMessage(`Batch started: ${data.bookingCount} verifications at 50% cost`)
+      await fetchBatchJobs()
+    } catch (err) {
+      setBatchMessage(err instanceof Error ? err.message : 'Failed to start batch')
+    } finally {
+      setBatchCreating(false)
+      setTimeout(() => setBatchMessage(null), 8000)
+    }
+  }
+
+  // Process completed batch results
+  const handleProcessBatchResults = async (batchId: string) => {
+    setBatchMessage(null)
+    try {
+      const res = await fetch(`/fleet/api/verifications/batch?key=${apiKey}&batchId=${batchId}&action=results`)
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to process results')
+      setBatchMessage(`Processed: ${data.succeeded} succeeded, ${data.failed} failed`)
+      await Promise.all([fetchBatchJobs(), fetchVerifications()])
+    } catch (err) {
+      setBatchMessage(err instanceof Error ? err.message : 'Failed to process batch')
+    } finally {
+      setTimeout(() => setBatchMessage(null), 8000)
+    }
+  }
+
+  // Sync batch status
+  const handleSyncBatch = async (batchId: string) => {
+    try {
+      await fetch(`/fleet/api/verifications/batch?key=${apiKey}&batchId=${batchId}&action=sync`)
+      await fetchBatchJobs()
+    } catch {
+      // Silently fail
+    }
+  }
 
   const handleAction = async (bookingId: string, action: 'approve' | 'reject', notes?: string) => {
     setActionLoading(bookingId)
@@ -168,6 +240,103 @@ export default function FleetVerificationsPage() {
         <StatBox label="Stripe Verified" value={stats.stripeVerifiedProfiles} color="text-blue-600" />
         <StatBox label="Reviewed Today" value={stats.reviewedToday} color="text-purple-600" />
         <StatBox label="Total Submitted" value={stats.totalWithDocs} color="text-gray-600" />
+      </div>
+
+      {/* Batch Verification Panel */}
+      <div className="mb-5 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <IoLayersOutline className="text-lg text-purple-600" />
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Batch AI Verification
+            </h2>
+            <span className="text-xs text-gray-500 dark:text-gray-400">(50% cost savings)</span>
+          </div>
+          <button
+            onClick={handleBatchVerify}
+            disabled={batchCreating || batchPending === 0}
+            className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50"
+          >
+            {batchCreating ? (
+              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <IoLayersOutline className="text-sm" />
+            )}
+            {batchCreating ? 'Creating...' : `Batch Verify (${batchPending} pending)`}
+          </button>
+        </div>
+
+        {batchMessage && (
+          <div className={`mb-3 p-2 rounded-lg text-xs ${
+            batchMessage.includes('Failed') || batchMessage.includes('error')
+              ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
+              : 'bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-400'
+          }`}>
+            {batchMessage}
+          </div>
+        )}
+
+        {batchJobs.length > 0 && (
+          <div className="space-y-2">
+            {batchJobs.slice(0, 5).map((job) => {
+              const isProcessing = job.status === 'processing'
+              const isEnded = job.status === 'ended'
+              const hasUnprocessed = isEnded && job.completedCount === 0 && job.totalRequests > 0
+
+              return (
+                <div
+                  key={job.id}
+                  className="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-xs"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2 py-0.5 rounded-full font-medium ${
+                      isProcessing ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                        : isEnded ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                        : 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
+                    }`}>
+                      {job.status}
+                    </span>
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {job.totalRequests} verification{job.totalRequests !== 1 ? 's' : ''}
+                    </span>
+                    {isEnded && !hasUnprocessed && (
+                      <span className="text-gray-500 dark:text-gray-400">
+                        {job.completedCount} passed, {job.failedCount} failed
+                      </span>
+                    )}
+                    <span className="text-gray-400 dark:text-gray-500">
+                      {new Date(job.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <div className="flex gap-1.5">
+                    {isProcessing && (
+                      <button
+                        onClick={() => handleSyncBatch(job.batchId)}
+                        className="px-2 py-1 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded text-xs transition-colors"
+                      >
+                        Refresh
+                      </button>
+                    )}
+                    {hasUnprocessed && (
+                      <button
+                        onClick={() => handleProcessBatchResults(job.batchId)}
+                        className="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs transition-colors"
+                      >
+                        Process Results
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {batchJobs.length === 0 && batchPending === 0 && (
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            No pending verifications and no batch jobs.
+          </p>
+        )}
       </div>
 
       {/* Search + Tabs */}
