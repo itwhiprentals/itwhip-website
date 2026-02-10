@@ -63,38 +63,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if token is expired
-    if (prospect.inviteTokenExp && new Date(prospect.inviteTokenExp) < new Date()) {
-      // Track expired access attempt (spy system)
+    const isTokenExpired = prospect.inviteTokenExp && new Date(prospect.inviteTokenExp) < new Date()
+
+    // ========================================================================
+    // RETURNING PROSPECT: Already converted — log them in regardless of expiry
+    // Prospects use their onboard link as a magic login link. Token expiry
+    // should NOT block returning hosts who already have an account.
+    // ========================================================================
+    if (prospect.convertedHostId) {
+      // Track page view for returning prospect
       await prisma.hostProspect.update({
         where: { id: prospect.id },
         data: {
-          expiredAccessCount: { increment: 1 },
-          lastExpiredAccessAt: new Date(),
-          lastActivityAt: new Date()
+          pageViewedAt: prospect.pageViewedAt || new Date(),
+          pageViewCount: { increment: 1 },
+          lastActivityAt: new Date(),
+          linkClickedAt: prospect.linkClickedAt || new Date()
         }
       })
 
-      return NextResponse.json(
-        { error: 'This link has expired. Please request a new one.' },
-        { status: 410 }
-      )
-    }
-
-    // Track page view (spy system)
-    await prisma.hostProspect.update({
-      where: { id: prospect.id },
-      data: {
-        pageViewedAt: prospect.pageViewedAt || new Date(),
-        pageViewCount: { increment: 1 },
-        lastActivityAt: new Date(),
-        linkClickedAt: prospect.linkClickedAt || new Date(),
-        status: prospect.status === 'EMAIL_SENT' ? 'EMAIL_OPENED' : prospect.status
-      }
-    })
-
-    // Check if already converted - if so, just log them in
-    if (prospect.convertedHostId) {
       const existingHost = await prisma.rentalHost.findUnique({
         where: { id: prospect.convertedHostId },
         include: {
@@ -123,6 +110,8 @@ export async function POST(request: NextRequest) {
           console.log(`[Onboard] Reactivated expired returning host: ${existingHost.id}`)
         }
 
+        console.log(`[Onboard] Returning prospect ${prospect.name} → host ${existingHost.id} (token ${isTokenExpired ? 'expired' : 'valid'})`)
+
         // Generate tokens and log them in
         const tokens = await generateTokensAndSession(existingHost, request)
 
@@ -135,7 +124,43 @@ export async function POST(request: NextRequest) {
         setAuthCookies(response, tokens)
         return response
       }
+      // If convertedHostId exists but host was deleted, fall through to re-create
+      console.warn(`[Onboard] Converted host ${prospect.convertedHostId} not found — will re-create`)
     }
+
+    // ========================================================================
+    // NEW PROSPECT: Token expiry matters — they haven't converted yet
+    // ========================================================================
+    if (isTokenExpired) {
+      // Track expired access attempt (spy system)
+      await prisma.hostProspect.update({
+        where: { id: prospect.id },
+        data: {
+          expiredAccessCount: { increment: 1 },
+          lastExpiredAccessAt: new Date(),
+          lastActivityAt: new Date()
+        }
+      })
+
+      console.log(`[Onboard] Token expired for unconverted prospect: ${prospect.name} (${prospect.email})`)
+
+      return NextResponse.json(
+        { error: 'This link has expired. Please request a new one.' },
+        { status: 410 }
+      )
+    }
+
+    // Track page view (spy system)
+    await prisma.hostProspect.update({
+      where: { id: prospect.id },
+      data: {
+        pageViewedAt: prospect.pageViewedAt || new Date(),
+        pageViewCount: { increment: 1 },
+        lastActivityAt: new Date(),
+        linkClickedAt: prospect.linkClickedAt || new Date(),
+        status: prospect.status === 'EMAIL_SENT' ? 'EMAIL_OPENED' : prospect.status
+      }
+    })
 
     // Check if a host already exists with this email
     let host = await prisma.rentalHost.findUnique({
