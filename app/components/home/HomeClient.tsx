@@ -71,7 +71,18 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
   const showSkeleton = isLoading && deduplicatedCityCars.length === 0
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <>
+      {/* iOS Safari bottom bar picks up body background — match page/footer theme */}
+      <style jsx global>{`
+        body:has(.home-page) {
+          background-color: #f3f4f6 !important; /* gray-100 — matches Footer */
+        }
+        html.dark body:has(.home-page) {
+          background-color: #030712 !important; /* gray-950 — matches Footer dark */
+        }
+      `}</style>
+
+    <main className="home-page min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header />
 
       <div className="pt-16">
@@ -273,5 +284,6 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
 
       <Footer />
     </main>
+    </>
   )
 }
