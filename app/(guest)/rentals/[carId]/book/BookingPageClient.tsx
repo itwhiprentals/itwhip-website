@@ -2849,6 +2849,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                           if (backUrl) setLicenseBackPhotoUrl(backUrl)
                         }}
                         driverName={`${driverFirstName} ${driverLastName}`.trim()}
+                        driverEmail={driverEmail}
                         disabled={!emailValidation.isValid}
                       />
                     </>

@@ -1850,6 +1850,7 @@ model RentalBooking {
   // Relations to new booking models
   bookingDocuments           BookingDocument[]
   tripPhotos                 TripPhoto[]
+  dlVerificationLogs         DLVerificationLog[] @relation("dlVerificationLogs")
 }
 
 // ===== BOOKING DOCUMENT MODEL =====
@@ -5186,6 +5187,45 @@ model ClaudeBatchJob {
   @@index([type, status])
   @@index([status, createdAt])
   @@map("claude_batch_jobs")
+}
+
+// =============================================================================
+// DL Verification Log — records EVERY AI verification attempt (pass AND fail)
+// =============================================================================
+
+model DLVerificationLog {
+  id              String   @id @default(cuid())
+
+  // Guest info (may not have a booking yet)
+  guestEmail      String?
+  guestName       String?
+
+  // Document images
+  frontImageUrl   String
+  backImageUrl    String?
+  selfieUrl       String?
+
+  // AI result
+  passed          Boolean
+  score           Float?
+  recommendation  String?  // APPROVE | REVIEW | REJECT
+  result          Json?    // Full AI response
+  criticalFlags   Json?    // Array of critical flag strings
+  infoFlags       Json?    // Array of informational flag strings
+  extractedName   String?  // Name extracted from DL
+  extractedState  String?  // State extracted from DL
+  model           String?  // AI model used
+
+  // Link to booking (if one was later created)
+  bookingId       String?
+  booking         RentalBooking? @relation("dlVerificationLogs", fields: [bookingId], references: [id])
+
+  createdAt       DateTime @default(now())
+
+  @@index([guestEmail])
+  @@index([createdAt])
+  @@index([bookingId])
+  @@map("dl_verification_logs")
 }
 
 // =============================================================================

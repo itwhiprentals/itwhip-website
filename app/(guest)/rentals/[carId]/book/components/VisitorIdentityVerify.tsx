@@ -44,6 +44,7 @@ interface VisitorIdentityVerifyProps {
   onVerificationComplete: (result: VerificationResult) => void
   onPhotosUploaded?: (frontUrl: string, backUrl?: string) => void
   driverName?: string
+  driverEmail?: string
   disabled?: boolean
 }
 
@@ -55,6 +56,7 @@ export function VisitorIdentityVerify({
   onVerificationComplete,
   onPhotosUploaded,
   driverName,
+  driverEmail,
   disabled = false,
 }: VisitorIdentityVerifyProps) {
   // Step flow
@@ -163,6 +165,7 @@ export function VisitorIdentityVerify({
           backImageUrl: dlBackUrl,
           selfieUrl: selfieUrl || undefined,
           expectedName: driverName || undefined,
+          guestEmail: driverEmail || undefined,
         }),
       })
 

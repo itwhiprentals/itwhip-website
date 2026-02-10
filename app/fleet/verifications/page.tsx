@@ -9,10 +9,12 @@ import {
   IoRefreshOutline,
   IoSearchOutline,
   IoCheckmarkCircle,
+  IoCloseCircle,
   IoCloudDownloadOutline,
   IoLayersOutline,
+  IoDocumentTextOutline,
 } from 'react-icons/io5'
-import type { Verification, VerificationStats, FilterTab, StripeGuestProfile, BatchJob } from './types'
+import type { Verification, VerificationStats, FilterTab, StripeGuestProfile, BatchJob, VerificationLogEntry } from './types'
 import { StatBox, VerificationCard, StripeGuestsList } from './components'
 
 export default function FleetVerificationsPage() {
@@ -38,6 +40,9 @@ export default function FleetVerificationsPage() {
   const [batchPending, setBatchPending] = useState(0)
   const [batchCreating, setBatchCreating] = useState(false)
   const [batchMessage, setBatchMessage] = useState<string | null>(null)
+  // Verification log state
+  const [verificationLogs, setVerificationLogs] = useState<VerificationLogEntry[]>([])
+  const [logStats, setLogStats] = useState({ total: 0, passed: 0, failed: 0 })
 
   const fetchVerifications = useCallback(async () => {
     try {
@@ -84,6 +89,24 @@ export default function FleetVerificationsPage() {
   useEffect(() => {
     fetchBatchJobs()
   }, [fetchBatchJobs])
+
+  // Fetch verification logs
+  const fetchVerificationLogs = useCallback(async () => {
+    try {
+      const res = await fetch(`/fleet/api/verifications/logs?key=${apiKey}&limit=50`)
+      if (res.ok) {
+        const data = await res.json()
+        setVerificationLogs(data.logs || [])
+        setLogStats(data.stats || { total: 0, passed: 0, failed: 0 })
+      }
+    } catch {
+      // Silently fail
+    }
+  }, [apiKey])
+
+  useEffect(() => {
+    if (filter === 'log') fetchVerificationLogs()
+  }, [filter, fetchVerificationLogs])
 
   // Create batch verification job
   const handleBatchVerify = async () => {
@@ -197,6 +220,7 @@ export default function FleetVerificationsPage() {
     { id: 'needs_review', label: 'Needs Review' },
     { id: 'reviewed', label: 'Reviewed', count: stats.reviewedToday },
     { id: 'all', label: 'All' },
+    { id: 'log', label: 'AI Log', count: logStats.total },
   ]
 
   if (loading) {
@@ -410,8 +434,138 @@ export default function FleetVerificationsPage() {
         </div>
       )}
 
+      {/* AI Verification Log — shown when log tab is active */}
+      {filter === 'log' && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <IoDocumentTextOutline className="text-lg text-teal-600" />
+              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                AI Verification Log
+              </h2>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {logStats.passed} passed, {logStats.failed} failed
+              </span>
+            </div>
+            <button
+              onClick={fetchVerificationLogs}
+              className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs flex items-center gap-1.5 transition-colors"
+            >
+              <IoRefreshOutline className="text-sm" />
+              Refresh
+            </button>
+          </div>
+
+          {verificationLogs.length === 0 ? (
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
+              <IoDocumentTextOutline className="w-10 h-10 mx-auto text-gray-400 mb-2" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">No verification attempts yet</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {verificationLogs.map((log) => (
+                <div
+                  key={log.id}
+                  className={`p-3 rounded-lg border ${
+                    log.passed
+                      ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
+                      : 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {log.passed ? (
+                        <IoCheckmarkCircle className="text-green-500 text-lg flex-shrink-0" />
+                      ) : (
+                        <IoCloseCircle className="text-red-500 text-lg flex-shrink-0" />
+                      )}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {log.extractedName || log.guestName || 'Unknown'}
+                          </span>
+                          {log.extractedState && (
+                            <span className="px-1.5 py-0.5 text-[10px] rounded bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 font-medium">
+                              {log.extractedState}
+                            </span>
+                          )}
+                          <span className={`px-1.5 py-0.5 text-[10px] rounded font-semibold ${
+                            log.passed
+                              ? 'bg-green-200 dark:bg-green-800 text-green-700 dark:text-green-300'
+                              : 'bg-red-200 dark:bg-red-800 text-red-700 dark:text-red-300'
+                          }`}>
+                            {log.passed ? 'PASSED' : 'FAILED'}
+                          </span>
+                          {log.score !== null && (
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                              Score: {log.score}
+                            </span>
+                          )}
+                        </div>
+                        {log.guestEmail && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            {log.guestEmail}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                        {new Date(log.createdAt).toLocaleDateString('en-US', {
+                          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                        })}
+                      </p>
+                      {log.bookingId && (
+                        <p className="text-[10px] text-teal-600 dark:text-teal-400">Linked to booking</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Critical flags (show why it failed) */}
+                  {log.criticalFlags && log.criticalFlags.length > 0 && (
+                    <div className="mt-2 pl-7">
+                      <p className="text-[10px] font-semibold text-red-600 dark:text-red-400 mb-0.5">Issues:</p>
+                      <ul className="space-y-0.5">
+                        {log.criticalFlags.map((flag, i) => (
+                          <li key={i} className="text-xs text-red-600 dark:text-red-400 flex items-start gap-1.5">
+                            <span className="w-1 h-1 rounded-full bg-red-500 flex-shrink-0 mt-1.5" />
+                            {flag}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* DL image thumbnails */}
+                  <div className="mt-2 pl-7 flex gap-2">
+                    {log.frontImageUrl && (
+                      <a href={log.frontImageUrl} target="_blank" rel="noopener noreferrer">
+                        <img
+                          src={log.frontImageUrl}
+                          alt="DL Front"
+                          className="w-20 h-14 object-cover rounded border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
+                        />
+                      </a>
+                    )}
+                    {log.backImageUrl && (
+                      <a href={log.backImageUrl} target="_blank" rel="noopener noreferrer">
+                        <img
+                          src={log.backImageUrl}
+                          alt="DL Back"
+                          className="w-20 h-14 object-cover rounded border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
+                        />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Booking Verification list */}
-      {verifications.length === 0 && filter !== 'stripe_verified' ? (
+      {verifications.length === 0 && filter !== 'stripe_verified' && filter !== 'log' ? (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
           <IoCheckmarkCircle className="w-12 h-12 mx-auto text-green-500 mb-3" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">All clear</h3>

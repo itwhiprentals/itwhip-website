@@ -98,7 +98,26 @@ export interface VerificationStats {
   totalWithDocs: number
 }
 
-export type FilterTab = 'pending' | 'needs_review' | 'ai_passed' | 'stripe_verified' | 'reviewed' | 'all'
+export type FilterTab = 'pending' | 'needs_review' | 'ai_passed' | 'stripe_verified' | 'reviewed' | 'all' | 'log'
+
+// DL Verification Log entry (every AI check, pass and fail)
+export interface VerificationLogEntry {
+  id: string
+  guestEmail: string | null
+  guestName: string | null
+  frontImageUrl: string
+  backImageUrl: string | null
+  passed: boolean
+  score: number | null
+  recommendation: string | null
+  criticalFlags: string[] | null
+  infoFlags: string[] | null
+  extractedName: string | null
+  extractedState: string | null
+  model: string | null
+  bookingId: string | null
+  createdAt: string
+}
 
 // Batch verification types
 export interface BatchJob {

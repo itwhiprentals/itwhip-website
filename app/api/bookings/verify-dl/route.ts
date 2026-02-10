@@ -15,7 +15,7 @@ import {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { frontImageUrl, backImageUrl, expectedName, expectedDob, stateHint, bookingId } = body
+    const { frontImageUrl, backImageUrl, expectedName, expectedDob, stateHint, bookingId, guestEmail } = body
 
     if (!frontImageUrl) {
       return NextResponse.json(
@@ -123,6 +123,32 @@ export async function POST(request: NextRequest) {
       } catch (dbErr) {
         console.error(`[DL Verify] Failed to store results for booking ${bookingId}:`, dbErr)
       }
+    }
+
+    // Log EVERY verification attempt (pass and fail) for fleet dashboard visibility
+    try {
+      const recommendation = quickVerifyPassed ? 'APPROVE' : criticalFlags.length > 0 ? 'REJECT' : 'REVIEW'
+      await prisma.dLVerificationLog.create({
+        data: {
+          guestEmail: guestEmail || null,
+          guestName: expectedName || result.data?.fullName || null,
+          frontImageUrl,
+          backImageUrl: backImageUrl || null,
+          passed: quickVerifyPassed,
+          score: result.confidence,
+          recommendation,
+          result: JSON.parse(JSON.stringify(responseData)),
+          criticalFlags: criticalFlags.length > 0 ? criticalFlags : undefined,
+          infoFlags: informationalFlags.length > 0 ? informationalFlags : undefined,
+          extractedName: result.data?.fullName || null,
+          extractedState: result.data?.stateOrCountry || null,
+          model: result.model || 'claude-sonnet-4-5',
+          bookingId: bookingId || null,
+        },
+      })
+      console.log(`[DL Verify] Logged verification: ${quickVerifyPassed ? 'PASS' : 'FAIL'} | ${result.data?.fullName || 'unknown'} | score: ${result.confidence}`)
+    } catch (logErr) {
+      console.error('[DL Verify] Failed to log verification attempt:', logErr)
     }
 
     return NextResponse.json(responseData)
