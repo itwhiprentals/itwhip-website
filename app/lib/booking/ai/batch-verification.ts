@@ -228,6 +228,12 @@ IMPORTANT: Always return fullName in NATURAL ORDER: "First Middle Last"
 - If the card uses comma format (e.g., "KIRVEN, JEMIEA SHERAE"), parse the same way.
 - Do NOT return the name in DL field order (last first middle) — always natural order.
 
+COMMON OCR CONFUSIONS IN SMALL DL TEXT — READ CAREFULLY:
+- "m" (two humps) vs "ni" or "rn" (two separate chars) — if you see "ni" in a name, check if it's actually "m"
+- "rn" vs "m" — if you see "m", verify it's not actually "rn"
+- "cl" vs "d", "I" vs "l" vs "1", "0" vs "O"
+Examine each character in the name field carefully. If ambiguous, use context (e.g., is it a real name?).
+
 LICENSE NUMBER VALIDATION:
 After identifying the state, validate the license number format:
 - Arizona (AZ): 1 letter + 8 digits (e.g., D01699143) or 9 digits. Field labeled "4d DLN".

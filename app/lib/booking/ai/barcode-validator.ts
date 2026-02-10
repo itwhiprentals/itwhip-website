@@ -9,8 +9,8 @@
 //   3. Sharp-preprocessed raw RGBA (ImageData path) → zxing-wasm
 //   4. Rotated variants (90°, 180°, 270°) → zxing-wasm
 
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { readFileSync, existsSync } from 'node:fs'
+import { join, dirname } from 'node:path'
 
 // ─── AAMVA Field Codes ──────────────────────────────────────────────────────
 // Reference: https://www.aamva.org/identity/driver-license-data-standards
@@ -151,18 +151,38 @@ function namesMatch(
 
 let zxingReady: Promise<any> | null = null
 
+function findWasmFile(): string {
+  const candidates = [
+    join(process.cwd(), 'node_modules/zxing-wasm/dist/reader/zxing_reader.wasm'),
+    join(process.cwd(), '.next/server/node_modules/zxing-wasm/dist/reader/zxing_reader.wasm'),
+    join(dirname(require.resolve('zxing-wasm/reader')), 'zxing_reader.wasm'),
+  ]
+  for (const p of candidates) {
+    if (existsSync(p)) {
+      console.log(`[barcode-validator] Found WASM at: ${p}`)
+      return p
+    }
+  }
+  throw new Error(`zxing_reader.wasm not found. Searched: ${candidates.join(', ')}`)
+}
+
 async function getZxingReader() {
   const { readBarcodes, prepareZXingModule } = await import('zxing-wasm/reader')
 
   if (!zxingReady) {
-    const wasmPath = join(process.cwd(), 'node_modules/zxing-wasm/dist/reader/zxing_reader.wasm')
+    const wasmPath = findWasmFile()
     const wasmBinary = readFileSync(wasmPath)
+    console.log(`[barcode-validator] WASM binary size: ${wasmBinary.byteLength} bytes`)
+
+    // CRITICAL: Buffer.buffer returns the entire underlying ArrayBuffer pool,
+    // not just this Buffer's slice. We must copy to a clean ArrayBuffer.
+    const cleanBuffer = new Uint8Array(wasmBinary).buffer
 
     // fireImmediately: true ensures the WASM module is fully instantiated
     // before we return. Without this, readBarcodes may race against initialization.
     zxingReady = prepareZXingModule({
       overrides: {
-        wasmBinary: wasmBinary.buffer as ArrayBuffer,
+        wasmBinary: cleanBuffer,
       },
       fireImmediately: true,
     })

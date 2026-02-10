@@ -8,6 +8,13 @@ const nextConfig = {
   // Exclude geoip-lite from webpack bundling (use native Node.js require)
   serverExternalPackages: ['geoip-lite'],
 
+  // Ensure WASM binaries are included in Vercel serverless function bundles
+  experimental: {
+    outputFileTracingIncludes: {
+      '/api/bookings/verify-dl': ['./node_modules/zxing-wasm/dist/reader/zxing_reader.wasm'],
+    },
+  },
+
   // Performance optimizations
   compress: true, // Enable gzip compression
   poweredByHeader: false, // Remove X-Powered-By header for security

@@ -11,6 +11,7 @@
 // - Per-field confidence and extraction detail
 
 import Anthropic from '@anthropic-ai/sdk'
+import { jaroWinkler } from 'jaro-winkler-typescript'
 import { buildStateRulesPrompt, buildAllStateRulesPrompt, getStateDLRules } from './dl-state-rules'
 
 const anthropic = new Anthropic({
@@ -331,6 +332,12 @@ IMPORTANT: Always return fullName in NATURAL ORDER: "First Middle Last"
 - value: Combine as "First Middle Last" (e.g., "Jemiea Sherae Kirven")
 - If the card uses comma format (e.g., "KIRVEN, JEMIEA SHERAE"), parse the same way.
 - Do NOT return the name in DL field order (last first middle) — always natural order.
+
+COMMON OCR CONFUSIONS IN SMALL DL TEXT — READ CAREFULLY:
+- "m" (two humps) vs "ni" or "rn" (two separate chars) — if you see "ni" in a name, check if it's actually "m"
+- "rn" vs "m" — if you see "m", verify it's not actually "rn"
+- "cl" vs "d", "I" vs "l" vs "1", "0" vs "O"
+Examine each character in the name field carefully. If ambiguous, use context (e.g., is it a real name?).
 
 LICENSE NUMBER VALIDATION:
 After identifying the state, validate the license number format:
@@ -660,6 +667,38 @@ export function compareNames(dlName: string, bookingName: string): NameCompariso
       match: true,
       dlParsed: { first: dlClean[0], last: dlClean[dlClean.length - 1], raw: dlName },
       bookingParsed: { first: bookingFirst, last: bookingLast, raw: bookingName },
+    }
+  }
+
+  // Strategy 6: Jaro-Winkler fuzzy matching for OCR errors
+  // Handles cases like "HAGUMA" → "HAGUNIA" (m/ni confusion), edit distance 2
+  // Industry standard: Jaro-Winkler >= 0.85 for identity verification (Onfido, AML screening)
+  const FUZZY_THRESHOLD = 0.85
+  if (dlClean.length >= 2 && bookingClean.length >= 2) {
+    // Try natural order: first matches first, last matches last
+    const jwFirst = jaroWinkler(dlClean[0], bookingFirst, { caseSensitive: false })
+    const jwLast = jaroWinkler(dlClean[dlClean.length - 1], bookingLast, { caseSensitive: false })
+
+    if (jwFirst >= FUZZY_THRESHOLD && jwLast >= FUZZY_THRESHOLD) {
+      return {
+        match: true,
+        dlParsed: { first: dlClean[0], middle: dlClean.length > 2 ? dlClean.slice(1, -1).join(' ') : undefined, last: dlClean[dlClean.length - 1], raw: dlName },
+        bookingParsed: { first: bookingFirst, last: bookingLast, raw: bookingName },
+        mismatchDetails: `Fuzzy match (Jaro-Winkler): first=${jwFirst.toFixed(2)}, last=${jwLast.toFixed(2)} (threshold: ${FUZZY_THRESHOLD})`,
+      }
+    }
+
+    // Try reversed order (DL might be LAST FIRST)
+    const jwFirstRev = jaroWinkler(dlClean[dlClean.length - 1], bookingFirst, { caseSensitive: false })
+    const jwLastRev = jaroWinkler(dlClean[0], bookingLast, { caseSensitive: false })
+
+    if (jwFirstRev >= FUZZY_THRESHOLD && jwLastRev >= FUZZY_THRESHOLD) {
+      return {
+        match: true,
+        dlParsed: { first: dlClean[dlClean.length - 1], middle: dlClean.length > 2 ? dlClean.slice(1, -1).join(' ') : undefined, last: dlClean[0], raw: dlName },
+        bookingParsed: { first: bookingFirst, last: bookingLast, raw: bookingName },
+        mismatchDetails: `Fuzzy match reversed (Jaro-Winkler): first=${jwFirstRev.toFixed(2)}, last=${jwLastRev.toFixed(2)} (threshold: ${FUZZY_THRESHOLD})`,
+      }
     }
   }
 

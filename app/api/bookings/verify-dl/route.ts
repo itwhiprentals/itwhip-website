@@ -93,6 +93,27 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // When barcode decoded successfully, use barcode name as authoritative source
+    // (barcode data is machine-encoded at issuance, no OCR errors — same as Stripe/Onfido approach)
+    if (barcodeValidation?.decoded && barcodeValidation.barcodeData && expectedName && result.data?.fullName) {
+      const barcodeFirst = barcodeValidation.barcodeData.firstName
+      const barcodeLast = barcodeValidation.barcodeData.lastName
+      if (barcodeFirst || barcodeLast) {
+        const barcodeName = [barcodeFirst, barcodeValidation.barcodeData.middleName, barcodeLast].filter(Boolean).join(' ')
+        const barcodeNameComparison = compareNames(barcodeName, expectedName)
+        if (barcodeNameComparison.match && !nameMatch) {
+          // Barcode name matches booking but AI OCR didn't — trust the barcode
+          console.log(`[DL Verify] Barcode name override: AI OCR "${result.data.fullName}" misread, barcode confirms "${barcodeName}" matches booking "${expectedName}"`)
+          nameMatch = true
+          nameComparison = barcodeNameComparison
+          // Remove the AI OCR name mismatch from critical flags
+          const ocrMismatchIdx = criticalFlags.findIndex(f => f.startsWith('Name mismatch:'))
+          if (ocrMismatchIdx >= 0) criticalFlags.splice(ocrMismatchIdx, 1)
+          informationalFlags.push(`AI OCR read name as "${result.data.fullName}" but barcode confirms "${barcodeName}" — barcode data used as authoritative source`)
+        }
+      }
+    }
+
     // Pass/fail based on CRITICAL flags only (not informational)
     const quickVerifyPassed =
       result.confidence >= 70 &&
