@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
     // Build metadata with server-verified breakdown
     const paymentMetadata: Record<string, string> = {
       type: 'car_rental_booking',
+      guestEmail: email || 'unknown',
       carId,
       serverTotal: serverTotalCents.toString(),
       days: pricing.days.toString(),

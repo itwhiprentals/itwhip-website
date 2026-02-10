@@ -90,7 +90,7 @@ function PaymentFormWrapper({ onReady, onComplete, onError, confirmPaymentRef, b
         const { error, paymentIntent } = await stripe.confirmPayment({
           elements,
           confirmParams: {
-            return_url: `${window.location.origin}/rentals/confirmation`,
+            return_url: `${window.location.href.split('?')[0]}?payment_return=true`,
             payment_method_data: {
               billing_details: {
                 name: billingDetails?.name || undefined,
@@ -307,6 +307,29 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       url.searchParams.delete('email')
       window.history.replaceState({}, '', url.pathname + url.search)
     }
+
+    // Handle 3DS redirect return — payment was confirmed off-page
+    if (params.get('payment_return') === 'true' && params.get('payment_intent')) {
+      const piId = params.get('payment_intent')
+      const redirectStatus = params.get('redirect_status')
+      console.log('[3DS Return] Payment redirect detected:', piId, redirectStatus)
+
+      if (redirectStatus === 'succeeded' && piId) {
+        setPaymentIntentId(piId)
+        setPaymentAlreadyConfirmed(true)
+        alert('Your payment was confirmed. Please click "Book Now" to complete your reservation.')
+      } else if (redirectStatus === 'failed') {
+        setPaymentError('Payment failed during verification. Please try again.')
+      }
+
+      // Clean URL params
+      const url = new URL(window.location.href)
+      url.searchParams.delete('payment_return')
+      url.searchParams.delete('payment_intent')
+      url.searchParams.delete('payment_intent_client_secret')
+      url.searchParams.delete('redirect_status')
+      window.history.replaceState({}, '', url.pathname + url.search)
+    }
   }, [])
   
   // Refs for scroll to incomplete sections
@@ -384,6 +407,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   const [isPaymentElementReady, setIsPaymentElementReady] = useState(false)
   const [isPaymentElementComplete, setIsPaymentElementComplete] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [paymentAlreadyConfirmed, setPaymentAlreadyConfirmed] = useState(false)
 
   // Saved payment methods state
   const [savedPaymentMethods, setSavedPaymentMethods] = useState<{
@@ -1752,6 +1776,11 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       if (isZeroPaymentBooking) {
         console.log('[Checkout] $0 booking - skipping payment confirmation')
         confirmedPaymentIntentId = undefined // No payment needed
+      }
+      // Check if payment was already confirmed (e.g., 3DS redirect return)
+      else if (paymentAlreadyConfirmed && paymentIntentId) {
+        console.log('[Checkout] Using pre-confirmed PaymentIntent (3DS return):', paymentIntentId)
+        confirmedPaymentIntentId = paymentIntentId
       }
       // Check if using saved payment method or new card via Payment Element
       else if (selectedPaymentMethod !== 'new' && savedPaymentMethods.length > 0) {

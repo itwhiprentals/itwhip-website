@@ -36,6 +36,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
+    // Look up guest's ReviewerProfile for linking
+    const reviewerProfile = await prisma.reviewerProfile.findUnique({
+      where: { email: user.email! },
+      select: { id: true },
+    })
+
     // Parse request
     const body = await request.json()
     const parsed = confirmSchema.safeParse(body)
@@ -159,49 +165,55 @@ export async function POST(request: NextRequest) {
       home: 'home',
     }
 
-    const booking = await prisma.rentalBooking.create({
-      data: {
-        id: bookingId,
-        bookingCode,
-        carId: pending.vehicleId,
-        hostId: car.hostId,
-        renterId: user.id,
-        guestEmail: user.email,
-        guestPhone: user.phone,
-        guestName: user.name,
-        startDate,
-        endDate,
-        startTime: '10:00',
-        endTime: '10:00',
-        pickupLocation: city,
-        pickupType: pickupTypeMap[deliveryType] || 'host_pickup',
-        dailyRate: car.dailyRate,
-        numberOfDays,
-        subtotal: basePrice,
-        deliveryFee: 0,
-        insuranceFee,
-        serviceFee,
-        taxes,
-        totalAmount,
-        depositAmount: deposit,
-        depositHeld: 0,
-        securityDeposit: deposit,
-        updatedAt: new Date(),
-        status: 'CONFIRMED',
-        paymentStatus: 'AUTHORIZED',
-        paymentIntentId,
-        stripeCustomerId: typeof paymentIntent.customer === 'string' ? paymentIntent.customer : undefined,
-        sessionId: checkoutSessionId,
-        insuranceTier: pending.selectedInsurance,
-        bookingIpAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || null,
-        bookingUserAgent: request.headers.get('user-agent') || null,
-      },
-    })
+    // Create booking + mark checkout completed atomically
+    const booking = await prisma.$transaction(async (tx) => {
+      const newBooking = await tx.rentalBooking.create({
+        data: {
+          id: bookingId,
+          bookingCode,
+          carId: pending.vehicleId,
+          hostId: car.hostId,
+          renterId: user.id,
+          reviewerProfileId: reviewerProfile?.id || null,
+          guestEmail: user.email,
+          guestPhone: user.phone,
+          guestName: user.name,
+          startDate,
+          endDate,
+          startTime: '10:00',
+          endTime: '10:00',
+          pickupLocation: city,
+          pickupType: pickupTypeMap[deliveryType] || 'host_pickup',
+          dailyRate: car.dailyRate,
+          numberOfDays,
+          subtotal: basePrice,
+          deliveryFee: 0,
+          insuranceFee,
+          serviceFee,
+          taxes,
+          totalAmount,
+          depositAmount: deposit,
+          depositHeld: 0,
+          securityDeposit: deposit,
+          updatedAt: new Date(),
+          status: 'CONFIRMED',
+          paymentStatus: 'AUTHORIZED',
+          paymentIntentId,
+          stripeCustomerId: typeof paymentIntent.customer === 'string' ? paymentIntent.customer : undefined,
+          sessionId: checkoutSessionId,
+          insuranceTier: pending.selectedInsurance,
+          bookingIpAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || null,
+          bookingUserAgent: request.headers.get('user-agent') || null,
+        },
+      })
 
-    // Mark checkout session as completed
-    await prisma.pendingCheckout.update({
-      where: { checkoutSessionId },
-      data: { status: 'completed' },
+      // Mark checkout session as completed (atomic with booking creation)
+      await tx.pendingCheckout.update({
+        where: { checkoutSessionId },
+        data: { status: 'completed' },
+      })
+
+      return newBooking
     })
 
     // Extract payment method details for confirmation
