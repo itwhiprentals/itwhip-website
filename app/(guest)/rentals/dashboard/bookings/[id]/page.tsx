@@ -91,16 +91,9 @@ export default function BookingDetailsPage() {
       const formData = new FormData()
       formData.append('file', file)
 
-      // Get current booking email from state
-      const currentBooking = booking
-      const headers: HeadersInit = {}
-      if (currentBooking?.guestEmail) {
-        headers['x-guest-email'] = currentBooking.guestEmail
-      }
-
       const response = await fetch(`/api/rentals/bookings/${bookingId}/upload`, {
         method: 'POST',
-        headers,
+        credentials: 'include',
         body: formData
       })
 
@@ -130,9 +123,9 @@ export default function BookingDetailsPage() {
     try {
       const response = await fetch(`/api/rentals/bookings/${bookingId}/cancel`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'x-guest-email': currentBooking.guestEmail || ''
         },
         body: JSON.stringify({
           reason: reason || 'Guest requested cancellation',

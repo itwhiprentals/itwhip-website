@@ -44,9 +44,7 @@ export function PhotoCapture({ booking, data, onPhotoCapture }: PhotoCaptureProp
 
      const response = await fetch(`/api/rentals/bookings/${booking.id}/trip/inspection-photos`, {
        method: 'POST',
-       headers: {
-         'x-guest-email': booking.guestEmail || ''
-       },
+       credentials: 'include',
        body: formData
      })
 

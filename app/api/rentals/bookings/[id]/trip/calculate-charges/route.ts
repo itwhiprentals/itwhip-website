@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { calculateTripCharges } from '@/app/lib/trip/calculations'
 import { TRIP_CONSTANTS } from '@/app/lib/trip/constants'
 
@@ -19,8 +20,11 @@ export async function POST(
      returnTime = new Date()
    } = body
 
-   // Get guest email from header
-   const guestEmail = request.headers.get('x-guest-email')
+   // Verify JWT auth
+   const user = await verifyRequest(request)
+   if (!user) {
+     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+   }
 
    // Fetch booking
    const booking = await prisma.rentalBooking.findUnique({
@@ -46,12 +50,11 @@ export async function POST(
      )
    }
 
-   // Verify guest access
-   if (booking.guestEmail !== guestEmail && booking.renterId) {
-     return NextResponse.json(
-       { error: 'Unauthorized' },
-       { status: 403 }
-     )
+   // Verify ownership via JWT identity
+   const isOwner = (user.id && booking.renterId === user.id) ||
+                   (user.email && booking.guestEmail === user.email)
+   if (!isOwner) {
+     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
    }
 
    // Verify trip has started
@@ -185,7 +188,12 @@ export async function GET(
 ) {
  try {
    const { id: bookingId } = await params
-   const guestEmail = request.headers.get('x-guest-email')
+
+   // Verify JWT auth
+   const user = await verifyRequest(request)
+   if (!user) {
+     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+   }
 
    const booking = await prisma.rentalBooking.findUnique({
      where: { id: bookingId },
@@ -211,12 +219,11 @@ export async function GET(
      )
    }
 
-   // Verify guest access
-   if (booking.guestEmail !== guestEmail && booking.renterId) {
-     return NextResponse.json(
-       { error: 'Unauthorized' },
-       { status: 403 }
-     )
+   // Verify ownership via JWT identity
+   const isOwner = (user.id && booking.renterId === user.id) ||
+                   (user.email && booking.guestEmail === user.email)
+   if (!isOwner) {
+     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
    }
 
    return NextResponse.json({

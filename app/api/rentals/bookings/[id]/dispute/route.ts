@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { z } from 'zod'
 
 const disputeSchema = z.object({
@@ -27,8 +28,11 @@ export async function POST(
    }
    const { type, description, evidence, requestedResolution } = parsed.data
 
-   // Get guest email from header
-   const guestEmail = request.headers.get('x-guest-email')
+   // Verify JWT auth
+   const user = await verifyRequest(request)
+   if (!user) {
+     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+   }
 
    // Fetch booking
    const booking = await prisma.rentalBooking.findUnique({
@@ -57,12 +61,11 @@ export async function POST(
      )
    }
 
-   // Verify guest access
-   if (booking.guestEmail !== guestEmail && booking.renterId) {
-     return NextResponse.json(
-       { error: 'Unauthorized' },
-       { status: 403 }
-     )
+   // Verify ownership via JWT identity
+   const isOwner = (user.id && booking.renterId === user.id) ||
+                   (user.email && booking.guestEmail === user.email)
+   if (!isOwner) {
+     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
    }
 
    // Check if dispute can be created (within 48 hours of trip end)
@@ -195,7 +198,12 @@ export async function GET(
 ) {
  try {
    const { id: bookingId } = await params
-   const guestEmail = request.headers.get('x-guest-email')
+
+   // Verify JWT auth
+   const user = await verifyRequest(request)
+   if (!user) {
+     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+   }
 
    // Verify booking and access
    const booking = await prisma.rentalBooking.findUnique({
@@ -214,12 +222,11 @@ export async function GET(
      )
    }
 
-   // Verify guest access
-   if (booking.guestEmail !== guestEmail && booking.renterId) {
-     return NextResponse.json(
-       { error: 'Unauthorized' },
-       { status: 403 }
-     )
+   // Verify ownership via JWT identity
+   const isOwner = (user.id && booking.renterId === user.id) ||
+                   (user.email && booking.guestEmail === user.email)
+   if (!isOwner) {
+     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
    }
 
    // Get all disputes for this booking
@@ -256,7 +263,11 @@ export async function PATCH(
      evidence
    } = body
 
-   const guestEmail = request.headers.get('x-guest-email')
+   // Verify JWT auth
+   const user = await verifyRequest(request)
+   if (!user) {
+     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+   }
 
    // Verify dispute exists and user has access
    const dispute = await prisma.rentalDispute.findFirst({
@@ -281,12 +292,11 @@ export async function PATCH(
      )
    }
 
-   // Verify guest access
-   if (dispute.booking.guestEmail !== guestEmail && dispute.booking.renterId) {
-     return NextResponse.json(
-       { error: 'Unauthorized' },
-       { status: 403 }
-     )
+   // Verify ownership via JWT identity
+   const isOwner = (user.id && dispute.booking.renterId === user.id) ||
+                   (user.email && dispute.booking.guestEmail === user.email)
+   if (!isOwner) {
+     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
    }
 
    // Check if dispute is still open
@@ -303,7 +313,7 @@ export async function PATCH(
        data: {
          id: require('crypto').randomUUID(),
          bookingId,
-         senderId: guestEmail || 'guest',
+         senderId: user.email || 'guest',
          senderType: 'guest',
          senderName: 'Guest',
          message: `Additional dispute information: ${additionalInfo}`,

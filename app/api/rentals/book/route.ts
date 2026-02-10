@@ -145,11 +145,32 @@ export async function POST(request: NextRequest) {
     }
     // ========== END ACCOUNT HOLD CHECK ==========
 
+    // ========== SUSPENDED IDENTIFIER CHECK ==========
+    // Block bookings from emails/phones that have been explicitly suspended
+    const suspendedEmail = await prisma.suspendedIdentifier.findUnique({
+      where: {
+        identifierType_identifierValue: {
+          identifierType: 'email',
+          identifierValue: bookingData.guestEmail.toLowerCase(),
+        }
+      },
+      select: { reason: true, expiresAt: true }
+    })
+
+    if (suspendedEmail && (!suspendedEmail.expiresAt || suspendedEmail.expiresAt > new Date())) {
+      console.warn(`[book] Suspended email attempted booking: ${bookingData.guestEmail}`)
+      return NextResponse.json(
+        { error: 'This account has been suspended. Please contact support.' },
+        { status: 403 }
+      )
+    }
+    // ========== END SUSPENDED IDENTIFIER CHECK ==========
+
     // ========== LINK GUEST PROFILE & USER ==========
     // Look up ReviewerProfile and User by email so bookings are properly linked
     const guestProfile = await prisma.reviewerProfile.findUnique({
       where: { email: bookingData.guestEmail },
-      select: { id: true, userId: true },
+      select: { id: true, userId: true, documentsVerified: true },
     })
     const reviewerProfileId = guestProfile?.id || null
     const renterId = guestProfile?.userId || null
@@ -474,6 +495,24 @@ export async function POST(request: NextRequest) {
     
     // ========== END FRAUD DETECTION ==========
 
+    // ========== DL VERIFICATION GATE ==========
+    // Guest must have either AI-verified DL or profile-level verification
+    const aiVerificationPassed = bookingData.aiVerification?.passed === true
+    const guestDocumentsVerified = guestProfile?.documentsVerified === true
+
+    if (!aiVerificationPassed && !guestDocumentsVerified) {
+      console.warn(`[book] DL verification failed for ${bookingData.guestEmail}`)
+      return NextResponse.json(
+        {
+          error: 'Driver verification required',
+          message: 'Your driver\'s license must be verified before booking. Please upload clear photos of your license and try again.',
+          code: 'DL_VERIFICATION_REQUIRED'
+        },
+        { status: 403 }
+      )
+    }
+    // ========== END DL VERIFICATION GATE ==========
+
     // ========== VERIFICATION LOGIC USING BUSINESS RULES ==========
     const bookingInfo = {
       numberOfDays: pricing.days,
@@ -507,6 +546,16 @@ export async function POST(request: NextRequest) {
       try {
         console.log('🔷 Verifying pre-confirmed PaymentIntent:', bookingData.paymentIntentId)
         const existingPaymentIntent = await stripe.paymentIntents.retrieve(bookingData.paymentIntentId)
+
+        // Verify PaymentIntent belongs to this guest (prevent using someone else's payment)
+        const piEmail = existingPaymentIntent.metadata?.guestEmail || existingPaymentIntent.receipt_email
+        if (piEmail && piEmail !== bookingData.guestEmail && piEmail !== 'unknown') {
+          console.warn(`[book] PI ownership mismatch: PI email=${piEmail}, guest=${bookingData.guestEmail}`)
+          return NextResponse.json(
+            { error: 'Payment does not belong to this booking. Please refresh and try again.' },
+            { status: 400 }
+          )
+        }
 
         // Check if payment is in a valid state
         if (existingPaymentIntent.status === 'succeeded') {

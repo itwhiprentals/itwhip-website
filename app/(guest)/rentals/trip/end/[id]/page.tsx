@@ -282,9 +282,9 @@ export default function TripEndPage() {
     try {
       const response = await fetch(`/api/rentals/bookings/${bookingId}/trip/end`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'x-guest-email': booking.guestEmail || ''
         },
         body: JSON.stringify({
           endMileage: tripData.odometer,

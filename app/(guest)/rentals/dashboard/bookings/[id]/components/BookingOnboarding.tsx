@@ -83,14 +83,9 @@ export function BookingOnboarding({ booking, onDocumentUploaded }: BookingOnboar
       formData.append('file', file)
       formData.append('documentType', docType)
 
-      const headers: HeadersInit = {}
-      if (booking.guestEmail) {
-        headers['x-guest-email'] = booking.guestEmail
-      }
-
       const response = await fetch(`/api/rentals/bookings/${booking.id}/upload`, {
         method: 'POST',
-        headers,
+        credentials: 'include',
         body: formData
       })
 

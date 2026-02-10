@@ -1,7 +1,7 @@
 // app/api/rentals/bookings/[id]/messages/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
-import { verifyJWT } from '@/lib/auth/jwt'
+import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { sendEmail } from '@/app/lib/email/sender'
 
 // GET /api/rentals/bookings/[id]/messages - Get messages for a booking
@@ -10,36 +10,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Fix for Next.js 15 - await params
     const { id: bookingId } = await params
 
-    // Get auth token if available
-    const token = request.cookies.get('auth-token')?.value || 
-                  request.headers.get('authorization')?.replace('Bearer ', '')
-    
-    let userEmail = null
-    let userId = null
-    let isAdmin = false
-
-    // Try to verify authenticated user
-    if (token) {
-      try {
-        const payload = await verifyJWT(token)
-        if (payload?.userId) {
-          const user = await prisma.user.findUnique({
-            where: { id: payload.userId },
-            select: { id: true, email: true, role: true }
-          })
-          if (user) {
-            userId = user.id
-            userEmail = user.email
-            isAdmin = user.role === 'ADMIN'
-          }
-        }
-      } catch (error) {
-        console.log('Auth verification failed, checking as guest')
-      }
+    // Verify JWT auth
+    const user = await verifyRequest(request)
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
+
+    const isAdmin = user.role === 'ADMIN'
 
     // SECURE QUERY - Get booking with SELECT
     const booking = await prisma.rentalBooking.findUnique({
@@ -75,22 +54,13 @@ export async function GET(
       )
     }
 
-    // Check authorization - user must own the booking, be the host, or be admin
-    const isOwner = (userId && booking.renterId === userId) || 
-                    (userEmail && booking.guestEmail === userEmail) ||
-                    (!token && booking.guestEmail) // Allow guest access without token
-    
-    const isHost = booking.car.host && userEmail === booking.car.host.email
+    // Verify ownership via JWT identity (no spoofable headers)
+    const isOwner = (user.id && booking.renterId === user.id) ||
+                    (user.email && booking.guestEmail === user.email)
+    const isHost = booking.car.host && user.email === booking.car.host.email
 
     if (!isOwner && !isHost && !isAdmin) {
-      // For guest bookings, check if they provided the booking email
-      const guestEmail = request.headers.get('x-guest-email')
-      if (!guestEmail || guestEmail !== booking.guestEmail) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 403 }
-        )
-      }
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     // Get all messages for this booking with SELECT
@@ -180,34 +150,13 @@ export async function POST(
       )
     }
 
-    // Get auth token if available
-    const token = request.cookies.get('auth-token')?.value || 
-                  request.headers.get('authorization')?.replace('Bearer ', '')
-    
-    let userEmail = null
-    let userId = null
-    let userName = null
-    let isAdmin = false
-
-    if (token) {
-      try {
-        const payload = await verifyJWT(token)
-        if (payload?.userId) {
-          const user = await prisma.user.findUnique({
-            where: { id: payload.userId },
-            select: { id: true, email: true, name: true, role: true }
-          })
-          if (user) {
-            userId = user.id
-            userEmail = user.email
-            userName = user.name
-            isAdmin = user.role === 'ADMIN'
-          }
-        }
-      } catch (error) {
-        console.log('Auth verification failed')
-      }
+    // Verify JWT auth
+    const user = await verifyRequest(request)
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
+
+    const isAdmin = user.role === 'ADMIN'
 
     // SECURE QUERY - Get booking with SELECT
     const booking = await prisma.rentalBooking.findUnique({
@@ -249,34 +198,25 @@ export async function POST(
     let senderName: string
     let senderEmail: string
 
-    const isOwner = (userId && booking.renterId === userId) || 
-                    (userEmail && booking.guestEmail === userEmail)
-    const isHost = booking.car.host && userEmail === booking.car.host.email
+    // Verify ownership via JWT identity (no spoofable headers)
+    const isOwner = (user.id && booking.renterId === user.id) ||
+                    (user.email && booking.guestEmail === user.email)
+    const isHost = booking.car.host && user.email === booking.car.host.email
 
     if (isAdmin) {
       senderType = category === 'support' ? 'support' : 'admin'
-      senderName = userName || 'ItWhip Admin'
-      senderEmail = userEmail || 'admin@itwhip.com'
+      senderName = user.name || 'ItWhip Admin'
+      senderEmail = user.email || 'admin@itwhip.com'
     } else if (isHost) {
       senderType = 'host'
       senderName = booking.car.host.name
       senderEmail = booking.car.host.email
     } else if (isOwner) {
       senderType = booking.renterId ? 'renter' : 'guest'
-      senderName = userName || booking.guestName || 'Guest'
-      senderEmail = userEmail || booking.guestEmail || ''
+      senderName = user.name || booking.guestName || 'Guest'
+      senderEmail = user.email || booking.guestEmail || ''
     } else {
-      // For guest messages without auth
-      const guestEmail = request.headers.get('x-guest-email')
-      if (!guestEmail || guestEmail !== booking.guestEmail) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 403 }
-        )
-      }
-      senderType = 'guest'
-      senderName = booking.guestName || 'Guest'
-      senderEmail = booking.guestEmail || ''
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     // Create the message
@@ -284,7 +224,7 @@ export async function POST(
       data: {
         id: crypto.randomUUID(),
         bookingId,
-        senderId: userId || bookingId, // Use bookingId as fallback for guests
+        senderId: user.id || bookingId, // Use bookingId as fallback for guests
         senderType,
         senderName,
         senderEmail,

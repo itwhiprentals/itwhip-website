@@ -77,8 +77,24 @@ export async function POST(request: NextRequest) {
     const depositAmount = getActualDeposit(car)
     const serverTotalCents = Math.round((pricing.total + depositAmount) * 100)
 
-    // Allow tolerance for credits/wallet/rounding (client may apply credits reducing the amount)
-    // Client amount should be <= server total (credits reduce it) but never MORE than server total
+    // Stripe minimum is $0.50 (50 cents)
+    if (amount < 50) {
+      return NextResponse.json(
+        { error: 'Payment amount is too low.' },
+        { status: 400 }
+      )
+    }
+
+    // Lower bound: client amount must be at least 50% of server total (credits can reduce but not eliminate)
+    if (serverTotalCents > 0 && amount < serverTotalCents * 0.5) {
+      console.warn(`[Payment Element] Amount suspiciously low: client=${amount}c, server=${serverTotalCents}c, carId=${carId}`)
+      return NextResponse.json(
+        { error: 'Payment amount is below the minimum for this booking. Please refresh and try again.' },
+        { status: 400 }
+      )
+    }
+
+    // Upper bound: client amount should never exceed server total (credits can only reduce, not increase)
     if (amount > serverTotalCents * 1.05) {
       console.warn(`[Payment Element] Amount mismatch: client=${amount}c, server=${serverTotalCents}c, carId=${carId}`)
       return NextResponse.json(

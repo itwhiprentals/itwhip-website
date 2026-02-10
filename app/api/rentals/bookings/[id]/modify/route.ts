@@ -30,7 +30,9 @@ const DELIVERY_FEES: Record<string, number> = {
 // Shared: validate ownership + fetch booking
 async function getBookingWithAuth(request: NextRequest, bookingId: string) {
   const user = await verifyRequest(request)
-  const guestEmail = request.headers.get('x-guest-email')
+  if (!user) {
+    return { error: 'Authentication required', status: 401 }
+  }
 
   const booking = await prisma.rentalBooking.findUnique({
     where: { id: bookingId },
@@ -84,9 +86,9 @@ async function getBookingWithAuth(request: NextRequest, bookingId: string) {
     return { error: 'Booking not found', status: 404 }
   }
 
-  const isOwner = (user?.id && booking.renterId === user.id) ||
-                  (user?.email && booking.guestEmail === user.email) ||
-                  (guestEmail && booking.guestEmail === guestEmail)
+  // Verify ownership via JWT identity only (no spoofable headers)
+  const isOwner = (user.id && booking.renterId === user.id) ||
+                  (user.email && booking.guestEmail === user.email)
 
   if (!isOwner) {
     return { error: 'Unauthorized', status: 403 }

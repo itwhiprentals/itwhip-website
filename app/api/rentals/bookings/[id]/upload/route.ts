@@ -1,7 +1,7 @@
 // app/api/rentals/bookings/[id]/upload/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
-import { verifyJWT } from '@/lib/auth/jwt'
+import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { v2 as cloudinary } from 'cloudinary'
 import { quickVerifyDriverLicense, compareNames, validateAge } from '@/app/lib/booking/ai/license-analyzer'
 
@@ -20,33 +20,13 @@ export async function POST(
   try {
     const { id: bookingId } = await params
 
-    // Get auth token if available
-    const token = request.cookies.get('auth-token')?.value || 
-                  request.headers.get('authorization')?.replace('Bearer ', '')
-    
-    let userEmail = null
-    let userId = null
-    let isAdmin = false
-
-    // Try to verify authenticated user
-    if (token) {
-      try {
-        const payload = await verifyJWT(token)
-        if (payload?.userId) {
-          const user = await prisma.user.findUnique({
-            where: { id: payload.userId },
-            select: { id: true, email: true, role: true }
-          })
-          if (user) {
-            userId = user.id
-            userEmail = user.email
-            isAdmin = user.role === 'ADMIN'
-          }
-        }
-      } catch (error) {
-        console.log('Auth verification failed, checking as guest')
-      }
+    // Verify JWT auth
+    const user = await verifyRequest(request)
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
+
+    const isAdmin = user.role === 'ADMIN'
 
     // Get booking to verify ownership
     const booking = await prisma.rentalBooking.findUnique({
@@ -74,20 +54,12 @@ export async function POST(
       )
     }
 
-    // Check authorization
-    const isOwner = (userId && booking.renterId === userId) || 
-                    (userEmail && booking.guestEmail === userEmail) ||
-                    (!token && booking.guestEmail) // Allow guest access
+    // Verify ownership via JWT identity (no spoofable headers)
+    const isOwner = (user.id && booking.renterId === user.id) ||
+                    (user.email && booking.guestEmail === user.email)
 
     if (!isOwner && !isAdmin) {
-      // For guest bookings, check header
-      const guestEmail = request.headers.get('x-guest-email')
-      if (!guestEmail || guestEmail !== booking.guestEmail) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 403 }
-        )
-      }
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     // Parse form data
@@ -213,7 +185,7 @@ export async function POST(
         data: {
           id: crypto.randomUUID(),
           bookingId,
-          senderId: userId || booking.guestEmail || 'guest',
+          senderId: user.id || booking.guestEmail || 'guest',
           senderType: 'guest',
           message: `Uploaded verification document: ${file.name}`,
           isRead: false,

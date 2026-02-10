@@ -12,9 +12,9 @@ export async function POST(
   try {
     const { id: bookingId } = await params
     const user = await verifyRequest(request)
-
-    // Also check x-guest-email header for guest access
-    const guestEmail = request.headers.get('x-guest-email')
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
 
     const booking = await prisma.rentalBooking.findUnique({
       where: { id: bookingId },
@@ -36,10 +36,9 @@ export async function POST(
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
     }
 
-    // Verify ownership
-    const isOwner = (user?.id && booking.renterId === user.id) ||
-                    (user?.email && booking.guestEmail === user.email) ||
-                    (guestEmail && booking.guestEmail === guestEmail)
+    // Verify ownership via JWT identity only (no spoofable headers)
+    const isOwner = (user.id && booking.renterId === user.id) ||
+                    (user.email && booking.guestEmail === user.email)
 
     if (!isOwner) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })

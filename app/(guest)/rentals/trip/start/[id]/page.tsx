@@ -181,9 +181,9 @@ export default function TripStartPage() {
     try {
       const response = await fetch(`/api/rentals/bookings/${bookingId}/trip/start`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'x-guest-email': booking.guestEmail || ''
         },
         body: JSON.stringify({
           startMileage: tripData.odometer,

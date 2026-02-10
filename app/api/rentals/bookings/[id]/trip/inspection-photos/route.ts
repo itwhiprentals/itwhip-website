@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { v2 as cloudinary } from 'cloudinary'
 import { prisma } from '@/app/lib/database/prisma'
+import { verifyRequest } from '@/app/lib/auth/verify-request'
 
 // Configure Cloudinary
 cloudinary.config({
@@ -45,8 +46,11 @@ export async function POST(
      )
    }
 
-   // Get guest email from header
-   const guestEmail = request.headers.get('x-guest-email')
+   // Verify JWT auth
+   const user = await verifyRequest(request)
+   if (!user) {
+     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+   }
 
    // Verify booking exists and user has access
    const booking = await prisma.rentalBooking.findUnique({
@@ -66,12 +70,11 @@ export async function POST(
      )
    }
 
-   // Verify guest access
-   if (booking.guestEmail !== guestEmail && booking.renterId) {
-     return NextResponse.json(
-       { error: 'Unauthorized' },
-       { status: 403 }
-     )
+   // Verify ownership via JWT identity
+   const isOwner = (user.id && booking.renterId === user.id) ||
+                   (user.email && booking.guestEmail === user.email)
+   if (!isOwner) {
+     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
    }
 
    // Convert file to base64
@@ -137,8 +140,13 @@ export async function GET(
 ) {
  try {
    const { id: bookingId } = await params
-   const guestEmail = request.headers.get('x-guest-email')
    const photoType = request.nextUrl.searchParams.get('type') // 'start' or 'end'
+
+   // Verify JWT auth
+   const user = await verifyRequest(request)
+   if (!user) {
+     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+   }
 
    // Verify booking and access
    const booking = await prisma.rentalBooking.findUnique({
@@ -159,12 +167,11 @@ export async function GET(
      )
    }
 
-   // Verify guest access
-   if (booking.guestEmail !== guestEmail && booking.renterId) {
-     return NextResponse.json(
-       { error: 'Unauthorized' },
-       { status: 403 }
-     )
+   // Verify ownership via JWT identity
+   const isOwner = (user.id && booking.renterId === user.id) ||
+                   (user.email && booking.guestEmail === user.email)
+   if (!isOwner) {
+     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
    }
 
    // Get photos from InspectionPhoto table
