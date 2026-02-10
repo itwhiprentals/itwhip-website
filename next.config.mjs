@@ -14,7 +14,7 @@ const nextConfig = {
   },
 
   // Performance optimizations
-  compress: true, // Enable gzip compression
+  // compress: false — Vercel handles gzip at CDN level, skip during build
   poweredByHeader: false, // Remove X-Powered-By header for security
 
   // Production optimizations
