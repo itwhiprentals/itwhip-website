@@ -211,10 +211,7 @@ const CAR_TYPE_SEO_DATA: Record<string, {
   }
 }
 
-// Generate static params for all types
-export async function generateStaticParams() {
-  return Object.keys(CAR_TYPE_SEO_DATA).map((type) => ({ type }))
-}
+// No generateStaticParams — pages render on-demand via ISR (revalidate = 60)
 
 // Generate metadata
 export async function generateMetadata({

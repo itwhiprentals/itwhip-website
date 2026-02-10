@@ -7,7 +7,7 @@ import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import prisma from '@/app/lib/database/prisma'
-import { getAirportBySlug, getAllAirportSlugs, AIRPORT_DATA, type AirportData } from '@/app/lib/data/airports'
+import { getAirportBySlug, AIRPORT_DATA, type AirportData } from '@/app/lib/data/airports'
 import {
   IoAirplaneOutline,
   IoCarOutline,
@@ -29,12 +29,7 @@ import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatter
 // ISR - Revalidate every 60 seconds
 export const revalidate = 60
 
-// ============================================
-// STATIC PARAMS FOR PRE-RENDERING
-// ============================================
-export async function generateStaticParams() {
-  return getAllAirportSlugs().map((airport) => ({ airport }))
-}
+// No generateStaticParams — pages render on-demand via ISR (revalidate = 60)
 
 // ============================================
 // METADATA GENERATION

@@ -27,7 +27,7 @@ import {
   IoCashOutline,
   IoSearchOutline
 } from 'react-icons/io5'
-import { getCitySeoData, getAllCitySlugs, CITY_SEO_DATA, CitySeoData } from '@/app/lib/data/city-seo-data'
+import { getCitySeoData, CITY_SEO_DATA, CitySeoData } from '@/app/lib/data/city-seo-data'
 import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 
 // Add ISR - Revalidate every 60 seconds
@@ -157,30 +157,8 @@ export async function generateMetadata({
   }
 }
 
-// ============================================
-// STATIC PARAMS FOR PRE-RENDERING
-// ============================================
-export async function generateStaticParams() {
-  // Get cities from database
-  const dbCities = await prisma.rentalCar.findMany({
-    where: { isActive: true },
-    select: { city: true },
-    distinct: ['city'],
-  })
-
-  const dbCitySlugs = dbCities.map((item: { city: string | null }) => ({
-    city: (item.city || 'phoenix').toLowerCase().replace(/\s+/g, '-'),
-  }))
-
-  // Combine with all SEO data slugs to ensure all pages are generated
-  const seoSlugs = getAllCitySlugs().map(slug => ({ city: slug }))
-
-  // Merge and deduplicate
-  const allSlugs = [...dbCitySlugs, ...seoSlugs]
-  const uniqueSlugs = Array.from(new Set(allSlugs.map(s => s.city))).map(city => ({ city }))
-
-  return uniqueSlugs
-}
+// No generateStaticParams — pages render on-demand via ISR (revalidate = 60)
+// This avoids ~31 DB queries at build time while keeping the same SEO result
 
 // ============================================
 // COMPONENTS

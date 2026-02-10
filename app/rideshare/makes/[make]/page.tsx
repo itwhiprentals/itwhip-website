@@ -174,10 +174,7 @@ const getRelatedMakes = (currentMake: string) => {
     }))
 }
 
-// Generate static params
-export async function generateStaticParams() {
-  return Object.keys(RIDESHARE_MAKE_SEO_DATA).map((make) => ({ make }))
-}
+// No generateStaticParams — pages render on-demand via ISR (revalidate = 60)
 
 // Generate metadata
 export async function generateMetadata({

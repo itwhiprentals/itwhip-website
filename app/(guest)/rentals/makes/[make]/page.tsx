@@ -396,10 +396,7 @@ const CAR_MAKE_SEO_DATA: Record<string, {
   }
 }
 
-// Generate static params
-export async function generateStaticParams() {
-  return Object.keys(CAR_MAKE_SEO_DATA).map((make) => ({ make }))
-}
+// No generateStaticParams — pages render on-demand via ISR (revalidate = 60)
 
 // Slug aliases for makes with different URL formats
 const MAKE_SLUG_ALIASES: Record<string, string> = {
