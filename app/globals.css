@@ -34,6 +34,14 @@ body {
   color: #111827;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Global body bg — matches Header (white/gray-900).
+     Safari uses body bg for top/bottom bar colors.
+     Pages with custom palettes (e.g. /help/choe) override via body:has() */
+  background-color: #ffffff;
+}
+html.dark body {
+  background-color: #111827;
+  color: #f9fafb;
 }
 
 /* Heading Hierarchy */
