@@ -275,7 +275,9 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   const [savedBookingDetails, setSavedBookingDetails] = useState<SavedBookingDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isProcessing, setIsProcessing] = useState(false)
-  
+  const [bookingSuccess, setBookingSuccess] = useState<{ bookingCode: string; accessToken?: string; status?: string } | null>(null)
+  const [bookingError, setBookingError] = useState<string | null>(null)
+
   // User profile states
   const [userProfile, setUserProfile] = useState<ReviewerProfile | null>(null)
   const [moderationStatus, setModerationStatus] = useState<ModerationStatus | null>(null)
@@ -288,7 +290,19 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   
   // Track page load time for fraud detection
   useEffect(() => {
-    (window as any).pageLoadTime = Date.now()
+    (window as any).pageLoadTime = Date.now();
+    (window as any).__interactionCount = 0;
+    (window as any).__copyPasteUsed = false
+    const countInteraction = () => { (window as any).__interactionCount++ }
+    const detectPaste = () => { (window as any).__copyPasteUsed = true }
+    document.addEventListener('click', countInteraction)
+    document.addEventListener('keydown', countInteraction)
+    document.addEventListener('paste', detectPaste)
+    return () => {
+      document.removeEventListener('click', countInteraction)
+      document.removeEventListener('keydown', countInteraction)
+      document.removeEventListener('paste', detectPaste)
+    }
   }, [])
 
   // Handle Stripe Identity return — ?verified=true in URL
@@ -317,7 +331,8 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       if (redirectStatus === 'succeeded' && piId) {
         setPaymentIntentId(piId)
         setPaymentAlreadyConfirmed(true)
-        alert('Your payment was confirmed. Please click "Book Now" to complete your reservation.')
+        setBookingError(null)
+        setPaymentError('Your payment was confirmed. Please click "Book Now" to complete your reservation.')
       } else if (redirectStatus === 'failed') {
         setPaymentError('Payment failed during verification. Please try again.')
       }
@@ -1229,7 +1244,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           router.push(`/rentals/${carId}`)
         }
       } else {
-        alert('Please select your booking options first')
+        // No booking details in session — redirect back to car page
         router.push(`/rentals/${carId}`)
       }
     }
@@ -1245,14 +1260,20 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         const response = await fetch(`/api/rentals/cars/${carId}`)
         if (!response.ok) throw new Error('Car not found')
         const data = await response.json()
-        setCar(data)
 
-        // ✅ NEW: Log vehicle availability status
-        console.log('🚗 Vehicle loaded:', {
-          id: data.id,
-          name: `${data.year} ${data.make} ${data.model}`,
-          isActive: data.isActive
-        })
+        // Check if car is still active/bookable before proceeding
+        if (data.isActive === false) {
+          setBookingError('This vehicle is no longer available for booking.')
+          setIsLoading(false)
+          return
+        }
+        if (data.hostStatus && data.hostStatus !== 'APPROVED') {
+          setBookingError('This vehicle is temporarily unavailable.')
+          setIsLoading(false)
+          return
+        }
+
+        setCar(data)
 
         // ✅ RECALCULATE deposit from fresh car data (overrides stale sessionStorage)
         const freshDeposit = getActualDeposit(data)
@@ -1377,31 +1398,32 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   
   const handleFileUpload = async (file: File, type: 'license' | 'insurance' | 'selfie') => {
     if (!file) return
-    
+
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB')
+      setBookingError('File size must be less than 5MB')
       return
     }
-    
+
     if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file')
+      setBookingError('Please upload an image file')
       return
     }
-    
+
     setIsUploading(true)
-    
+    setBookingError(null)
+
     try {
       const formData = new FormData()
       formData.append('file', file)
       formData.append('type', type)
-      
+
       const response = await fetch('/api/rentals/upload', {
         method: 'POST',
         body: formData
       })
-      
+
       const data = await response.json()
-      
+
       if (response.ok && data.url) {
         if (type === 'license') {
           setLicensePhotoUrl(data.url)
@@ -1413,14 +1435,14 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           setSelfiePhotoUrl(data.url)
           setSelfieUploaded(true)
         }
-        
+
         console.log(`${type} uploaded successfully:`, data.url)
       } else {
-        alert(`Failed to upload ${type}: ${data.error || 'Unknown error'}`)
+        setBookingError(`Failed to upload ${type}: ${data.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Upload error:', error)
-      alert(`Error uploading ${type}. Please try again.`)
+      setBookingError(`Error uploading ${type}. Please try again.`)
     } finally {
       setIsUploading(false)
     }
@@ -1734,7 +1756,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       // Only alert if there's a specific reason (account restriction)
       // Field validation errors show inline - no alert needed
       if (eligibility.reason) {
-        alert(`❌ Booking Restricted\n\n${eligibility.reason}`)
+        setBookingError(eligibility.reason || 'Booking restricted')
       }
       return
     }
@@ -1761,12 +1783,13 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     const insuranceSelection = (savedBookingDetails?.insuranceType || savedBookingDetails?.insuranceTier || '')?.toLowerCase()
     const insurancePrice = savedBookingDetails?.pricing?.insurancePrice ?? 0
     if (!insuranceSelection || insuranceSelection === 'none' || insurancePrice <= 0) {
-      alert('Insurance is required for all bookings. Please go back and select an insurance option.')
+      setBookingError('Insurance is required for all bookings. Please go back and select an insurance option.')
       return
     }
 
     setIsProcessing(true)
     setPaymentError(null)
+    setBookingError(null)
 
     try {
       // Step 1: Confirm payment (skip for $0 bookings)
@@ -1788,7 +1811,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         console.log('[Checkout] Confirming with saved payment method:', selectedPaymentMethod)
 
         if (!paymentIntentId) {
-          alert('Payment intent not ready. Please try again.')
+          setBookingError('Payment intent not ready. Please try again.')
           setIsProcessing(false)
           return
         }
@@ -1818,7 +1841,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       } else {
         // Using new card via Payment Element
         if (!confirmPaymentRef.current) {
-          alert('Payment system not ready. Please try again.')
+          setBookingError('Payment system not ready. Please try again.')
           setIsProcessing(false)
           return
         }
@@ -1854,11 +1877,15 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       
       const mapInsuranceType = (type: string) => {
         switch(type?.toLowerCase()) {
+          case 'minimum':
+            return 'minimum'
           case 'standard':
           case 'basic':
             return 'basic'
           case 'premium':
             return 'premium'
+          case 'luxury':
+            return 'luxury'
           case 'none':
             return 'none'
           default:
@@ -1914,7 +1941,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         // Driver info
         driverInfo: {
           licenseNumber: driverLicense || '',
-          licenseState: 'AZ',
+          licenseState: aiVerificationResult?.data?.state || 'AZ',
           // licenseExpiry collected during identity verification (Stripe Identity)
           dateOfBirth: formatDOB(driverAge),
           licensePhotoUrl: licensePhotoUrl || '',
@@ -1936,7 +1963,12 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         fraudData: {
           deviceFingerprint: `web_${Date.now()}_${Math.random().toString(36).substring(7)}`,
           sessionData: {
+            sessionId: `ses_${(window as any).pageLoadTime || Date.now()}`,
+            startTime: (window as any).pageLoadTime || Date.now(),
+            duration: Math.floor((Date.now() - ((window as any).pageLoadTime || Date.now())) / 1000),
             formCompletionTime: Math.floor((Date.now() - ((window as any).pageLoadTime || Date.now())) / 1000),
+            totalInteractions: (window as any).__interactionCount || 0,
+            copyPasteUsed: (window as any).__copyPasteUsed || false,
             userAgent: navigator.userAgent,
             screenResolution: `${window.screen.width}x${window.screen.height}`,
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -1944,9 +1976,10 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         }
       }
       
-      // Call booking API
+      // Call booking API (credentials: 'include' sends cookies for self-booking prevention)
       const response = await fetch('/api/rentals/book', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         },
@@ -1958,34 +1991,38 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       
       if (response.ok && data.booking) {
         sessionStorage.removeItem('rentalBookingDetails')
-        
-        alert(`✅ Booking successful!\n\nReference: ${data.booking.bookingCode}\nStatus: ${data.status || 'pending_review'}\n\nCheck your email for confirmation.`)
-        
-        if (data.booking.accessToken) {
-          router.push(`/rentals/track/${data.booking.accessToken}`)
-        } else if (data.booking.bookingCode) {
-          router.push(`/rentals/confirmation/${data.booking.bookingCode}`)
-        } else {
-          router.push('/rentals')
-        }
+        setBookingError(null)
+        setBookingSuccess({
+          bookingCode: data.booking.bookingCode,
+          accessToken: data.booking.accessToken,
+          status: data.status || 'pending_review',
+        })
+        // Auto-redirect after a short delay so guest can see confirmation
+        setTimeout(() => {
+          if (data.booking.accessToken) {
+            router.push(`/rentals/track/${data.booking.accessToken}`)
+          } else {
+            router.push('/rentals/dashboard/bookings')
+          }
+        }, 3000)
       } else {
         const errorMessage = data.error || data.message || 'Booking failed'
         console.error('Booking error:', errorMessage)
-        
+
         if (data.details) {
           console.error('Validation errors:', data.details)
           const fieldErrors = data.details.fieldErrors || {}
           const errorsList = Object.entries(fieldErrors)
-            .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
-            .join('\n')
-          alert(`Booking failed:\n${errorMessage}\n\n${errorsList}`)
+            .map(([field, errors]: [string, any]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
+            .join('; ')
+          setBookingError(`${errorMessage} — ${errorsList}`)
         } else {
-          alert(`Booking failed: ${errorMessage}`)
+          setBookingError(errorMessage)
         }
       }
     } catch (error) {
       console.error('Booking submission error:', error)
-      alert('Failed to submit booking. Please check console for details.')
+      setBookingError('Failed to submit booking. Please try again or contact support.')
     } finally {
       setIsProcessing(false)
     }
@@ -3586,6 +3623,50 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       </div>
 
       {/* Sticky Floating Checkout Bar - Mobile Optimized */}
+      {/* Booking Success Banner */}
+      {bookingSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-md w-full text-center shadow-2xl">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <IoCheckmarkCircle className="w-10 h-10 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Booking Submitted!</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Reference: <span className="font-mono font-semibold text-gray-900 dark:text-white">{bookingSuccess.bookingCode}</span>
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              Your booking is under review. Check your email for updates.
+            </p>
+            <button
+              onClick={() => {
+                if (bookingSuccess.accessToken) {
+                  router.push(`/rentals/track/${bookingSuccess.accessToken}`)
+                } else {
+                  router.push('/rentals/dashboard/bookings')
+                }
+              }}
+              className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+            >
+              View Booking Status
+            </button>
+            <p className="text-xs text-gray-400 mt-3">Redirecting automatically...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Booking Error Banner */}
+      {bookingError && !bookingSuccess && (
+        <div className="fixed bottom-[72px] left-0 right-0 z-40 px-4 pb-2">
+          <div className="max-w-2xl mx-auto bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3 flex items-start gap-3">
+            <IoCloseCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-red-700 dark:text-red-300 flex-1">{bookingError}</p>
+            <button onClick={() => setBookingError(null)} className="text-red-400 hover:text-red-600">
+              <IoCloseCircleOutline className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-2xl z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3">
           <div className="flex items-center justify-between gap-3">

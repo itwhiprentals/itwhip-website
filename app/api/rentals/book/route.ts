@@ -4,7 +4,7 @@ import prisma from '@/app/lib/database/prisma'
 import { z } from 'zod'
 import { RentalBookingStatus } from '@/app/lib/dal/types'
 import { sendHostNotification } from '@/app/lib/email'
-import { calculatePricing } from '@/app/(guest)/rentals/lib/pricing'
+import { calculateBookingPricing, getActualDeposit } from '@/app/(guest)/rentals/lib/booking-pricing'
 import { addHours } from 'date-fns'
 import { extractIpAddress } from '@/app/utils/ip-lookup'
 import { sendBookingConfirmation, sendPendingReviewEmail, sendFraudAlertEmail, sendHostReviewEmail } from '@/app/lib/email/booking-emails'
@@ -78,7 +78,7 @@ const bookingSchema = z.object({
   
   // Extras and insurance
   extras: z.array(z.string()).optional(),
-  insurance: z.enum(['none', 'basic', 'premium']),
+  insurance: z.enum(['none', 'minimum', 'basic', 'premium', 'luxury']),
   
   // Driver verification info
   driverInfo: z.object({
@@ -145,6 +145,16 @@ export async function POST(request: NextRequest) {
     }
     // ========== END ACCOUNT HOLD CHECK ==========
 
+    // ========== LINK GUEST PROFILE & USER ==========
+    // Look up ReviewerProfile and User by email so bookings are properly linked
+    const guestProfile = await prisma.reviewerProfile.findUnique({
+      where: { email: bookingData.guestEmail },
+      select: { id: true, userId: true },
+    })
+    const reviewerProfileId = guestProfile?.id || null
+    const renterId = guestProfile?.userId || null
+    // ========== END LINK ==========
+
     // SECURE QUERY - Get car details WITHOUT source field
     const car = await prisma.rentalCar.findUnique({
       where: { id: bookingData.carId },
@@ -165,6 +175,12 @@ export async function POST(request: NextRequest) {
         deliveryFee: true,
         insuranceDaily: true,
         city: true,  // For city-specific tax rate
+        estimatedValue: true, // For insurance pricing lookup
+
+        // Deposit fields (for getActualDeposit)
+        noDeposit: true,
+        customDepositAmount: true,
+        vehicleDepositMode: true,
 
         // Host info - minimal for notifications
         hostId: true,
@@ -177,7 +193,9 @@ export async function POST(request: NextRequest) {
             isVerified: true,
             responseTime: true,
             userId: true,
-            depositAmount: true
+            depositAmount: true,
+            requireDeposit: true,
+            makeDeposits: true,
           }
         },
         
@@ -280,17 +298,60 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Calculate pricing with city-specific tax rate
+    // Calculate pricing with city-specific tax rate using unified pricing function
     const driverAge = calculateDriverAge(bookingData.driverInfo.dateOfBirth)
-    const pricing = calculatePricing({
+    const numberOfDays = Math.max(1, Math.ceil(
+      (bookingData.endDate.getTime() - bookingData.startDate.getTime()) / (1000 * 60 * 60 * 24)
+    ))
+
+    // Look up insurance price server-side (same logic as /api/bookings/insurance/quote)
+    let insurancePrice = 0
+    if (bookingData.insurance !== 'none') {
+      try {
+        const provider = await prisma.insuranceProvider.findFirst({
+          where: { isPrimary: true, isActive: true },
+          select: { pricingRules: true }
+        })
+        if (provider?.pricingRules) {
+          const vehicleValue = Number(car.estimatedValue) || car.dailyRate * 365
+          const rules = provider.pricingRules as any
+          let bracket: any
+          if (vehicleValue < 25000) bracket = rules.under25k
+          else if (vehicleValue < 50000) bracket = rules['25to50k']
+          else if (vehicleValue < 100000) bracket = rules['50to100k']
+          else bracket = rules.over100k
+          const tierKey = bookingData.insurance.toUpperCase()
+          const dailyPremium = bracket?.[tierKey] || 0
+          insurancePrice = dailyPremium * numberOfDays
+        }
+      } catch (insErr) {
+        console.warn('[book] Insurance lookup failed (using 0):', insErr)
+      }
+    }
+
+    const pricingResult = calculateBookingPricing({
       dailyRate: car.dailyRate,
-      startDate: bookingData.startDate,
-      endDate: bookingData.endDate,
+      days: numberOfDays,
+      weeklyRate: car.weeklyRate || undefined,
+      monthlyRate: car.monthlyRate || undefined,
+      insurancePrice,
       deliveryFee: car.deliveryFee || 0,
-      city: car.city || 'Phoenix'  // Pass city for tax calculation
+      city: car.city || 'Phoenix',
     })
-    // Deposit comes from the host, not from calculatePricing
-    const depositAmount = car.host.depositAmount || 0
+
+    // Map to shape expected by the rest of this file
+    const pricing = {
+      subtotal: pricingResult.basePrice,
+      serviceFee: pricingResult.serviceFee,
+      taxes: pricingResult.taxes,
+      insurance: pricingResult.insurancePrice,
+      delivery: pricingResult.deliveryFee,
+      total: pricingResult.total,
+      days: numberOfDays,
+    }
+
+    // Deposit uses per-vehicle logic (global/individual mode, make overrides, etc.)
+    const depositAmount = getActualDeposit(car)
 
     // ========== SIMPLIFIED FRAUD DETECTION ==========
     
@@ -575,10 +636,12 @@ export async function POST(request: NextRequest) {
           carId: bookingData.carId,
           hostId: car.hostId,
           
-          // Guest information (no renterId for guest bookings)
+          // Guest information — link to profile & user when available
           guestEmail: bookingData.guestEmail,
           guestPhone: bookingData.guestPhone,
           guestName: bookingData.guestName,
+          reviewerProfileId,
+          renterId,
           
           // Dates - now properly parsed in Arizona timezone
           startDate: bookingData.startDate,
@@ -598,6 +661,7 @@ export async function POST(request: NextRequest) {
           subtotal: pricing.subtotal,
           deliveryFee: pricing.delivery,
           insuranceFee: pricing.insurance,
+          insuranceTier: bookingData.insurance !== 'none' ? bookingData.insurance : null,
           serviceFee: pricing.serviceFee,
           taxes: pricing.taxes,
           totalAmount: pricing.total,
@@ -828,7 +892,7 @@ export async function POST(request: NextRequest) {
               const maxBonusPercentage = 0.25 // 25% max of base price
 
               // 1. Calculate max bonus (25% of base rental price)
-              const basePrice = pricing.subtotal - pricing.insurance - pricing.delivery
+              const basePrice = pricing.subtotal // Already the base rental price (after discounts)
               const maxBonusAllowed = Math.round(basePrice * maxBonusPercentage * 100) / 100
               bonusApplied = Math.min(balances.bonusBalance, maxBonusAllowed, pricing.total)
 
@@ -1113,6 +1177,22 @@ export async function POST(request: NextRequest) {
     }).catch(error => {
       console.error('Error sending pending review email:', error)
     })
+
+    // Notify host about new booking (non-blocking)
+    if (car.host.email) {
+      sendHostNotification(car.host.email, {
+        hostName: car.host.name || 'Host',
+        bookingCode: booking.booking.bookingCode,
+        guestName: booking.booking.guestName,
+        carMake: booking.booking.car.make,
+        carModel: booking.booking.car.model,
+        startDate: booking.booking.startDate,
+        endDate: booking.booking.endDate,
+        totalAmount: booking.booking.totalAmount,
+      }).catch(error => {
+        console.error('Error sending host notification:', error)
+      })
+    }
 
     // ALL bookings are pending review — return 202 Accepted
     const responseStatus = 202

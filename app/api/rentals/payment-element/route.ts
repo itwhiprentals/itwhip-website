@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import prisma from '@/app/lib/database/prisma'
 import { calculatePricing } from '@/app/(guest)/rentals/lib/pricing'
+import { getActualDeposit } from '@/app/(guest)/rentals/lib/booking-pricing'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil' as Stripe.LatestApiVersion,
@@ -40,9 +41,16 @@ export async function POST(request: NextRequest) {
         city: true,
         weeklyDiscount: true,
         monthlyDiscount: true,
+        make: true,
+        // Deposit fields for getActualDeposit()
+        noDeposit: true,
+        customDepositAmount: true,
+        vehicleDepositMode: true,
         host: {
           select: {
             depositAmount: true,
+            requireDeposit: true,
+            makeDeposits: true,
           }
         }
       }
@@ -66,7 +74,7 @@ export async function POST(request: NextRequest) {
       city: car.city || 'Phoenix',
     })
 
-    const depositAmount = car.host.depositAmount || 0
+    const depositAmount = getActualDeposit(car)
     const serverTotalCents = Math.round((pricing.total + depositAmount) * 100)
 
     // Allow tolerance for credits/wallet/rounding (client may apply credits reducing the amount)
