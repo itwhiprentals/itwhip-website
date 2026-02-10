@@ -305,6 +305,7 @@ async function handleRequiresInput(session: Stripe.Identity.VerificationSession)
 
   const profileId = session.metadata?.profileId
   const email = session.metadata?.email || (session as any).provided_details?.email
+  const source = session.metadata?.source
 
   // If we have a profileId, update it
   if (profileId) {
@@ -314,11 +315,8 @@ async function handleRequiresInput(session: Stripe.Identity.VerificationSession)
         stripeIdentityStatus: 'requires_input'
       }
     })
-    return
-  }
-
-  // If no profileId but have email, try to find existing profile
-  if (email) {
+  } else if (email) {
+    // If no profileId but have email, try to find existing profile
     const profile = await prisma.reviewerProfile.findFirst({
       where: { email }
     })
@@ -332,7 +330,40 @@ async function handleRequiresInput(session: Stripe.Identity.VerificationSession)
         }
       })
     }
-    // If no profile exists, that's fine - they'll create one when they continue
+  }
+
+  // Freeze user for 7 days if this was a booking-fallback verification attempt
+  if (source === 'booking-fallback' && email) {
+    try {
+      const normalizedEmail = email.toLowerCase().trim()
+      const sevenDaysFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+
+      // Upsert to handle potential existing record
+      await prisma.suspendedIdentifier.upsert({
+        where: {
+          identifierType_identifierValue: {
+            identifierType: 'email',
+            identifierValue: normalizedEmail
+          }
+        },
+        create: {
+          identifierType: 'email',
+          identifierValue: normalizedEmail,
+          reason: 'Stripe Identity verification failed after DL fallback',
+          suspendedBy: 'system',
+          expiresAt: sevenDaysFromNow
+        },
+        update: {
+          reason: 'Stripe Identity verification failed after DL fallback',
+          suspendedAt: new Date(),
+          expiresAt: sevenDaysFromNow
+        }
+      })
+
+      console.log(`[Stripe Identity] Froze email ${normalizedEmail} for 7 days after booking-fallback failure`)
+    } catch (freezeError) {
+      console.error('[Stripe Identity] Error freezing user:', freezeError)
+    }
   }
 }
 

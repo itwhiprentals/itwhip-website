@@ -2,10 +2,11 @@
 // Step-by-step DL verification for visitors (not logged in).
 // Opens an in-app camera with DL positioning guide, shows image previews,
 // and auto-verifies via Claude AI when both DL sides are captured.
+// After 2 failed AI attempts, offers Stripe Identity or manual selfie fallback.
 
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import {
   IoCheckmarkCircle,
   IoIdCardOutline,
@@ -17,6 +18,9 @@ import {
   IoCameraOutline,
   IoChevronDownOutline,
   IoChevronUpOutline,
+  IoLockClosedOutline,
+  IoCardOutline,
+  IoTimeOutline,
 } from 'react-icons/io5'
 import { CameraCapture } from './CameraCapture'
 
@@ -38,6 +42,10 @@ interface VerificationResult {
   criticalFlags?: string[]
   informationalFlags?: string[]
   error?: string
+  stripeVerified?: boolean
+  manualPending?: boolean
+  frozen?: boolean
+  frozenUntil?: string
 }
 
 interface VisitorIdentityVerifyProps {
@@ -45,10 +53,17 @@ interface VisitorIdentityVerifyProps {
   onPhotosUploaded?: (frontUrl: string, backUrl?: string) => void
   driverName?: string
   driverEmail?: string
+  driverPhone?: string
+  carId?: string
   disabled?: boolean
 }
 
-type VerifyStep = 'front' | 'back' | 'verifying' | 'success' | 'failed'
+type VerifyStep =
+  | 'front' | 'back' | 'verifying' | 'success' | 'failed'
+  | 'fallback-options' | 'stripe-redirect' | 'selfie-verify' | 'manual-pending'
+  | 'frozen' | 'already-verified'
+
+const MAX_AI_ATTEMPTS = 2
 
 // ─── Main Component ─────────────────────────────────────────────────────────
 
@@ -57,6 +72,8 @@ export function VisitorIdentityVerify({
   onPhotosUploaded,
   driverName,
   driverEmail,
+  driverPhone,
+  carId,
   disabled = false,
 }: VisitorIdentityVerifyProps) {
   // Step flow
@@ -84,14 +101,69 @@ export function VisitorIdentityVerify({
   // Camera state
   const [cameraOpen, setCameraOpen] = useState(false)
   const [cameraTarget, setCameraTarget] = useState<'front' | 'back' | 'selfie'>('front')
+  const [cameraGuideShape, setCameraGuideShape] = useState<'rectangle' | 'circle'>('rectangle')
 
   // Selfie accordion
   const [showSelfie, setShowSelfie] = useState(false)
+
+  // Attempt tracking
+  const [attemptCount, setAttemptCount] = useState(0)
+  const [initialCheckDone, setInitialCheckDone] = useState(false)
+  const [frozenUntil, setFrozenUntil] = useState<string | null>(null)
+
+  // Stripe fallback
+  const [stripeLoading, setStripeLoading] = useState(false)
+
+  // Manual selfie fallback
+  const [manualSelfieUrl, setManualSelfieUrl] = useState<string | null>(null)
+  const [submittingManual, setSubmittingManual] = useState(false)
 
   // Fallback file inputs
   const frontInputRef = useRef<HTMLInputElement>(null)
   const backInputRef = useRef<HTMLInputElement>(null)
   const selfieInputRef = useRef<HTMLInputElement>(null)
+
+  // ── Check verification status on mount / email change ──
+  const checkVerificationStatus = useCallback(async () => {
+    if (!driverEmail) return
+    try {
+      const res = await fetch(`/api/bookings/verify-dl/check-attempts?email=${encodeURIComponent(driverEmail)}`)
+      const data = await res.json()
+      if (!data.success) return
+
+      if (data.isAlreadyVerified) {
+        setStep('already-verified')
+        onVerificationComplete({ success: true, passed: true, stripeVerified: true })
+        return
+      }
+
+      if (data.isFrozen) {
+        setFrozenUntil(data.frozenUntil)
+        setStep('frozen')
+        onVerificationComplete({ success: false, passed: false, frozen: true, frozenUntil: data.frozenUntil })
+        return
+      }
+
+      if (data.hasManualPending) {
+        setStep('manual-pending')
+        onVerificationComplete({ success: false, passed: false, manualPending: true })
+        return
+      }
+
+      setAttemptCount(data.failedAttempts || 0)
+      if (data.failedAttempts >= MAX_AI_ATTEMPTS) {
+        setStep('fallback-options')
+      }
+    } catch (err) {
+      console.error('[VisitorIdentityVerify] Check attempts error:', err)
+    } finally {
+      setInitialCheckDone(true)
+    }
+  }, [driverEmail]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    checkVerificationStatus()
+  }, [checkVerificationStatus])
 
   // ── Blob URL cleanup ──
   useEffect(() => {
@@ -192,16 +264,40 @@ export function VisitorIdentityVerify({
       }
 
       setVerificationResult(result)
-      setStep(result.passed ? 'success' : 'failed')
+
+      if (result.passed) {
+        setStep('success')
+      } else {
+        // Increment attempt count
+        const newCount = attemptCount + 1
+        setAttemptCount(newCount)
+
+        if (newCount >= MAX_AI_ATTEMPTS) {
+          // Show fallback options after 2 failures
+          setStep('fallback-options')
+        } else {
+          setStep('failed')
+        }
+      }
+
       onVerificationComplete(result)
     } catch {
+      const newCount = attemptCount + 1
+      setAttemptCount(newCount)
+
       const result: VerificationResult = {
         success: false,
         passed: false,
         error: "Failed to verify driver's license",
       }
       setVerificationResult(result)
-      setStep('failed')
+
+      if (newCount >= MAX_AI_ATTEMPTS) {
+        setStep('fallback-options')
+      } else {
+        setStep('failed')
+      }
+
       onVerificationComplete(result)
     } finally {
       setVerifying(false)
@@ -212,6 +308,7 @@ export function VisitorIdentityVerify({
   const handleUploadTap = (target: 'front' | 'back' | 'selfie') => {
     if (disabled) return
     setCameraTarget(target)
+    setCameraGuideShape(target === 'selfie' ? 'circle' : 'rectangle')
     setCameraOpen(true)
   }
 
@@ -293,9 +390,125 @@ export function VisitorIdentityVerify({
     setVerificationResult(null)
   }
 
+  // ── Stripe Identity fallback ──
+  const handleStripeVerify = async () => {
+    if (!driverEmail) return
+    setStripeLoading(true)
+    setStep('stripe-redirect')
+
+    try {
+      const response = await fetch('/api/identity/verify-guest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: driverEmail,
+          carId: carId || undefined,
+          returnUrl: window.location.href.split('?')[0], // Clean URL without params
+          source: 'booking-fallback'
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.url) {
+        // Redirect to Stripe Identity
+        window.location.href = data.url
+      } else if (data.existingAccount && data.verified) {
+        // Already verified
+        setStep('already-verified')
+        onVerificationComplete({ success: true, passed: true, stripeVerified: true })
+      } else {
+        setStep('fallback-options')
+      }
+    } catch (err) {
+      console.error('[VisitorIdentityVerify] Stripe redirect error:', err)
+      setStep('fallback-options')
+    } finally {
+      setStripeLoading(false)
+    }
+  }
+
+  // ── Manual selfie verification ──
+  const handleManualSelfieCapture = async (file: File) => {
+    setCameraOpen(false)
+    const preview = URL.createObjectURL(file)
+    if (selfiePreview) URL.revokeObjectURL(selfiePreview)
+    setSelfiePreview(preview)
+
+    // Upload to Cloudinary
+    setUploadingSelfie(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'selfie')
+
+      const uploadRes = await fetch('/api/upload/document', {
+        method: 'POST',
+        body: formData,
+      })
+      if (!uploadRes.ok) throw new Error('Upload failed')
+
+      const uploadData = await uploadRes.json()
+      setManualSelfieUrl(uploadData.url)
+
+      // Auto-submit manual verification
+      await submitManualVerification(uploadData.url)
+    } catch (error) {
+      console.error('[VisitorIdentityVerify] Manual selfie upload error:', error)
+    } finally {
+      setUploadingSelfie(false)
+    }
+  }
+
+  const submitManualVerification = async (uploadedSelfieUrl: string) => {
+    setSubmittingManual(true)
+    try {
+      const response = await fetch('/api/identity/manual-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: driverEmail,
+          name: driverName,
+          phone: driverPhone,
+          selfieUrl: uploadedSelfieUrl,
+          dlFrontUrl: dlFrontUrl || undefined,
+          dlBackUrl: dlBackUrl || undefined,
+          carId: carId || undefined,
+        }),
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        setStep('manual-pending')
+        onVerificationComplete({ success: false, passed: false, manualPending: true })
+      }
+    } catch (error) {
+      console.error('[VisitorIdentityVerify] Manual verification submit error:', error)
+    } finally {
+      setSubmittingManual(false)
+    }
+  }
+
+  // ── Open selfie camera for manual verification ──
+  const openManualSelfieCamera = () => {
+    setCameraTarget('selfie')
+    setCameraGuideShape('circle')
+    setCameraOpen(true)
+  }
+
   // ────────────────────────────────────────────────────────────────────────────
   // RENDER
   // ────────────────────────────────────────────────────────────────────────────
+
+  // Show loading while checking initial status
+  if (!initialCheckDone && driverEmail) {
+    return (
+      <div className="py-6 text-center">
+        <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+        <p className="text-xs text-gray-500 dark:text-gray-400">Checking verification status...</p>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -307,7 +520,7 @@ export function VisitorIdentityVerify({
       {/* Camera modal */}
       <CameraCapture
         isOpen={cameraOpen}
-        onCapture={handleCameraCapture}
+        onCapture={step === 'selfie-verify' ? handleManualSelfieCapture : handleCameraCapture}
         onClose={() => setCameraOpen(false)}
         onCameraError={handleCameraError}
         label={
@@ -315,10 +528,23 @@ export function VisitorIdentityVerify({
             ? 'Front of Driver\'s License'
             : cameraTarget === 'back'
               ? 'Back of Driver\'s License'
-              : 'Take a Selfie'
+              : step === 'selfie-verify'
+                ? 'Selfie with License'
+                : 'Take a Selfie'
         }
         facingMode={cameraTarget === 'selfie' ? 'user' : 'environment'}
+        guideShape={cameraGuideShape}
       />
+
+      {/* ════════════ STEP: ALREADY VERIFIED ════════════ */}
+      {step === 'already-verified' && (
+        <AlreadyVerifiedCard />
+      )}
+
+      {/* ════════════ STEP: FROZEN ════════════ */}
+      {step === 'frozen' && (
+        <FrozenCard frozenUntil={frozenUntil} />
+      )}
 
       {/* ════════════ STEP: FRONT ════════════ */}
       {step === 'front' && (
@@ -475,9 +701,50 @@ export function VisitorIdentityVerify({
         </>
       )}
 
-      {/* ════════════ STEP: FAILED ════════════ */}
+      {/* ════════════ STEP: FAILED (1st attempt) ════════════ */}
       {step === 'failed' && verificationResult && (
         <ErrorCard result={verificationResult} onRetry={resetVerification} />
+      )}
+
+      {/* ════════════ STEP: FALLBACK OPTIONS (after 2 fails) ════════════ */}
+      {step === 'fallback-options' && (
+        <FallbackOptionsCard
+          onStripeVerify={handleStripeVerify}
+          onSelfieVerify={() => setStep('selfie-verify')}
+          lastResult={verificationResult}
+        />
+      )}
+
+      {/* ════════════ STEP: STRIPE REDIRECT ════════════ */}
+      {step === 'stripe-redirect' && (
+        <div className="py-8 text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900/30 mb-3">
+            <IoCardOutline className="text-3xl text-blue-600" />
+          </div>
+          <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+            Redirecting to Stripe...
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            You&apos;ll be redirected to complete verification
+          </p>
+          <div className="mt-4 mx-auto w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+
+      {/* ════════════ STEP: SELFIE VERIFY ════════════ */}
+      {step === 'selfie-verify' && (
+        <SelfieVerifyStep
+          selfiePreview={selfiePreview}
+          uploadingSelfie={uploadingSelfie}
+          submittingManual={submittingManual}
+          onOpenCamera={openManualSelfieCamera}
+          onBack={() => setStep('fallback-options')}
+        />
+      )}
+
+      {/* ════════════ STEP: MANUAL PENDING ════════════ */}
+      {step === 'manual-pending' && (
+        <ManualPendingCard />
       )}
 
       {/* Info text (shown on upload steps only) */}
@@ -735,6 +1002,230 @@ function ErrorCard({
         <IoRefreshOutline className="text-lg" />
         Try Again
       </button>
+    </div>
+  )
+}
+
+// ─── New Fallback Components ─────────────────────────────────────────────────
+
+function FallbackOptionsCard({
+  onStripeVerify,
+  onSelfieVerify,
+  lastResult,
+}: {
+  onStripeVerify: () => void
+  onSelfieVerify: () => void
+  lastResult: VerificationResult | null
+}) {
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="text-center">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 mb-2">
+          <IoShieldCheckmarkOutline className="text-2xl text-amber-600" />
+        </div>
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+          Verification Options
+        </h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          We couldn&apos;t verify your license automatically. Choose how to verify:
+        </p>
+      </div>
+
+      {/* Last error summary (if any) */}
+      {lastResult?.error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-2.5">
+          <p className="text-xs text-red-700 dark:text-red-300 flex items-center gap-1.5">
+            <IoCloseCircleOutline className="flex-shrink-0" />
+            {lastResult.error}
+          </p>
+        </div>
+      )}
+
+      {/* Option Cards */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Stripe Identity */}
+        <button
+          onClick={onStripeVerify}
+          className="flex flex-col items-center gap-2 p-4 border-2 border-blue-200 dark:border-blue-800 rounded-lg bg-blue-50 dark:bg-blue-900/20 hover:border-blue-400 dark:hover:border-blue-600 transition-colors text-center"
+        >
+          <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+            <IoCardOutline className="text-xl text-white" />
+          </div>
+          <span className="text-sm font-semibold text-blue-800 dark:text-blue-200">
+            Verify with Stripe
+          </span>
+          <span className="text-[11px] text-blue-600 dark:text-blue-400 leading-tight">
+            Official ID verification. Takes ~2 minutes.
+          </span>
+        </button>
+
+        {/* Manual Selfie */}
+        <button
+          onClick={onSelfieVerify}
+          className="flex flex-col items-center gap-2 p-4 border-2 border-orange-200 dark:border-orange-800 rounded-lg bg-orange-50 dark:bg-orange-900/20 hover:border-orange-400 dark:hover:border-orange-600 transition-colors text-center"
+        >
+          <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center">
+            <IoCameraOutline className="text-xl text-white" />
+          </div>
+          <span className="text-sm font-semibold text-orange-800 dark:text-orange-200">
+            Verify with Selfie
+          </span>
+          <span className="text-[11px] text-orange-600 dark:text-orange-400 leading-tight">
+            Hold your license. Quick review by our team.
+          </span>
+        </button>
+      </div>
+
+      <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center">
+        We may request additional information to verify your identity.
+      </p>
+    </div>
+  )
+}
+
+function SelfieVerifyStep({
+  selfiePreview,
+  uploadingSelfie,
+  submittingManual,
+  onOpenCamera,
+  onBack,
+}: {
+  selfiePreview: string | null
+  uploadingSelfie: boolean
+  submittingManual: boolean
+  onOpenCamera: () => void
+  onBack: () => void
+}) {
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="text-center">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 mb-2">
+          <IoPersonOutline className="text-2xl text-orange-600" />
+        </div>
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+          Selfie Verification
+        </h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Take a selfie while holding your driver&apos;s license next to your face.
+        </p>
+      </div>
+
+      {/* Instructions */}
+      <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+        <ul className="space-y-1.5 text-xs text-orange-700 dark:text-orange-300">
+          <li className="flex items-start gap-2">
+            <span className="font-bold mt-0.5">1.</span>
+            Hold your driver&apos;s license next to your face
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="font-bold mt-0.5">2.</span>
+            Make sure both your face and license are clearly visible
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="font-bold mt-0.5">3.</span>
+            Good lighting, no glare on the license
+          </li>
+        </ul>
+      </div>
+
+      {/* Selfie preview or capture button */}
+      {selfiePreview ? (
+        <div className="text-center">
+          <div className="relative w-32 h-32 mx-auto rounded-full overflow-hidden border-3 border-orange-500">
+            <img src={selfiePreview} alt="Selfie with license" className="w-full h-full object-cover" />
+          </div>
+          {(uploadingSelfie || submittingManual) && (
+            <div className="flex items-center justify-center gap-2 mt-3">
+              <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs text-gray-500">
+                {uploadingSelfie ? 'Uploading...' : 'Submitting for review...'}
+              </span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <button
+          onClick={onOpenCamera}
+          className="w-full py-4 rounded-lg font-medium flex flex-col items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white transition-colors"
+        >
+          <IoCameraOutline className="text-2xl" />
+          <span>Take Selfie with License</span>
+        </button>
+      )}
+
+      {/* Back button */}
+      <button
+        onClick={onBack}
+        className="w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+      >
+        Back to options
+      </button>
+    </div>
+  )
+}
+
+function AlreadyVerifiedCard() {
+  return (
+    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-5 text-center">
+      <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-500 mb-3">
+        <IoShieldCheckmarkOutline className="text-2xl text-white" />
+      </div>
+      <h3 className="text-sm font-semibold text-green-800 dark:text-green-200">
+        Identity Already Verified
+      </h3>
+      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+        You&apos;ve been verified through Stripe Identity. No additional verification needed.
+      </p>
+    </div>
+  )
+}
+
+function FrozenCard({ frozenUntil }: { frozenUntil: string | null }) {
+  const frozenDate = frozenUntil ? new Date(frozenUntil) : null
+  const formattedDate = frozenDate
+    ? frozenDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : 'a few days'
+
+  return (
+    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-5 text-center">
+      <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-red-500 mb-3">
+        <IoLockClosedOutline className="text-2xl text-white" />
+      </div>
+      <h3 className="text-sm font-semibold text-red-800 dark:text-red-200">
+        Verification Temporarily Unavailable
+      </h3>
+      <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+        Your account has been temporarily frozen due to multiple failed verification attempts.
+      </p>
+      <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-red-700 dark:text-red-300">
+        <IoTimeOutline className="text-sm" />
+        <span>Try again after: <strong>{formattedDate}</strong></span>
+      </div>
+      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-3">
+        Need help? Contact support@itwhip.com
+      </p>
+    </div>
+  )
+}
+
+function ManualPendingCard() {
+  return (
+    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-5 text-center">
+      <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-amber-500 mb-3">
+        <IoTimeOutline className="text-2xl text-white" />
+      </div>
+      <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+        Under Review
+      </h3>
+      <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
+        Your verification is being reviewed by our team.
+        We&apos;ll notify you by email once approved.
+      </p>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+        You can continue browsing — we&apos;ll hold your spot.
+      </p>
     </div>
   )
 }

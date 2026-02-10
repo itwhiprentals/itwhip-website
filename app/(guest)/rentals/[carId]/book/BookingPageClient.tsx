@@ -290,6 +290,24 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   useEffect(() => {
     (window as any).pageLoadTime = Date.now()
   }, [])
+
+  // Handle Stripe Identity return — ?verified=true in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('verified') === 'true') {
+      // Mark as Stripe-verified so DL verification shows "Already Verified"
+      setAiVerificationResult({
+        success: true,
+        passed: true,
+        stripeVerified: true,
+      } as any)
+      // Clean the URL params
+      const url = new URL(window.location.href)
+      url.searchParams.delete('verified')
+      url.searchParams.delete('email')
+      window.history.replaceState({}, '', url.pathname + url.search)
+    }
+  }, [])
   
   // Refs for scroll to incomplete sections
   const documentsRef = useRef<HTMLDivElement>(null)
@@ -343,6 +361,10 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     confidence?: number
     redFlags?: string[]
     error?: string
+    stripeVerified?: boolean
+    manualPending?: boolean
+    frozen?: boolean
+    frozenUntil?: string
   } | null>(null)
   
   // Payment form states
@@ -2850,6 +2872,8 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                         }}
                         driverName={`${driverFirstName} ${driverLastName}`.trim()}
                         driverEmail={driverEmail}
+                        driverPhone={driverPhone}
+                        carId={carId}
                         disabled={!emailValidation.isValid}
                       />
                     </>

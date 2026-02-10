@@ -16,6 +16,7 @@ interface CameraCaptureProps {
   onCameraError?: () => void
   label: string
   facingMode?: 'environment' | 'user'
+  guideShape?: 'rectangle' | 'circle'
 }
 
 export function CameraCapture({
@@ -25,6 +26,7 @@ export function CameraCapture({
   onCameraError,
   label,
   facingMode = 'environment',
+  guideShape = 'rectangle',
 }: CameraCaptureProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -60,12 +62,17 @@ export function CameraCapture({
         const scanner = new Html5Qrcode('dl-capture-container')
         scannerRef.current = scanner
 
+        // Use square qrbox for circle (selfie) mode, rectangular for DL
+        const qrbox = guideShape === 'circle'
+          ? { width: 250, height: 250 }
+          : { width: 300, height: 190 }
+
         await scanner.start(
           { facingMode },
           {
             fps: 1, // Low FPS — we're capturing photos, not scanning
-            qrbox: { width: 300, height: 190 }, // DL aspect ratio ~1.586:1
-            aspectRatio: 1.75,
+            qrbox,
+            aspectRatio: guideShape === 'circle' ? 1.0 : 1.75,
           } as any,
           () => {
             // Barcode decoded — we don't need this, but callback is required
@@ -74,6 +81,64 @@ export function CameraCapture({
             // Scan error per frame — ignore
           }
         )
+
+        // For circle mode, inject a circular face guide overlay
+        if (guideShape === 'circle' && !cancelled) {
+          requestAnimationFrame(() => {
+            const container = document.getElementById('dl-capture-container')
+            if (!container) return
+
+            // Hide the default rectangular qrbox border
+            const qrRegion = container.querySelector('#qr-shaded-region')
+            if (qrRegion) (qrRegion as HTMLElement).style.display = 'none'
+
+            // Add circular overlay
+            const existing = container.querySelector('.face-guide-overlay')
+            if (!existing) {
+              const overlay = document.createElement('div')
+              overlay.className = 'face-guide-overlay'
+              overlay.style.cssText = `
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                z-index: 10;
+              `
+              overlay.innerHTML = `
+                <div style="
+                  position: absolute;
+                  inset: 0;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                ">
+                  <div style="
+                    width: 200px;
+                    height: 200px;
+                    border-radius: 50%;
+                    border: 3px dashed rgba(255, 255, 255, 0.8);
+                    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+                  "></div>
+                </div>
+                <div style="
+                  position: absolute;
+                  bottom: 12px;
+                  left: 0;
+                  right: 0;
+                  text-align: center;
+                ">
+                  <p style="color: rgba(255,255,255,0.9); font-size: 13px; font-weight: 600; margin: 0;">
+                    Position your face here
+                  </p>
+                  <p style="color: rgba(255,255,255,0.6); font-size: 11px; margin-top: 2px;">
+                    Hold your license next to your face
+                  </p>
+                </div>
+              `
+              container.style.position = 'relative'
+              container.appendChild(overlay)
+            }
+          })
+        }
 
         if (!cancelled) setIsStarting(false)
       } catch (err) {
@@ -93,7 +158,7 @@ export function CameraCapture({
       document.body.style.overflow = ''
       stopCamera()
     }
-  }, [isOpen, facingMode, stopCamera])
+  }, [isOpen, facingMode, guideShape, stopCamera])
 
   // Capture a photo from the video stream
   const handleCapture = useCallback(async () => {
@@ -240,12 +305,25 @@ export function CameraCapture({
           <div className="flex items-start gap-3 text-white/80 text-xs">
             <IoFlashOutline className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium mb-1">Tips for a good capture:</p>
+              <p className="font-medium mb-1">
+                {guideShape === 'circle' ? 'Tips for a good selfie:' : 'Tips for a good capture:'}
+              </p>
               <ul className="space-y-0.5 text-white/60">
-                <li>• Position your license within the frame</li>
-                <li>• Place on a flat, dark surface</li>
-                <li>• Ensure good lighting, no glare</li>
-                <li>• All 4 corners must be visible</li>
+                {guideShape === 'circle' ? (
+                  <>
+                    <li>• Position your face within the circle</li>
+                    <li>• Hold your license next to your face</li>
+                    <li>• Make sure both are clearly visible</li>
+                    <li>• Good lighting, no shadows</li>
+                  </>
+                ) : (
+                  <>
+                    <li>• Position your license within the frame</li>
+                    <li>• Place on a flat, dark surface</li>
+                    <li>• Ensure good lighting, no glare</li>
+                    <li>• All 4 corners must be visible</li>
+                  </>
+                )}
               </ul>
             </div>
           </div>

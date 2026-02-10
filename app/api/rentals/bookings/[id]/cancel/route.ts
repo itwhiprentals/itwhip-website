@@ -97,8 +97,7 @@ export async function POST(
 
     // If payment was only authorized (not captured), void it
     if (cancelledBooking.paymentIntentId &&
-        (cancelledBooking.paymentStatus === 'AUTHORIZED' ||
-         cancelledBooking.paymentStatus === 'requires_capture')) {
+        cancelledBooking.paymentStatus === 'AUTHORIZED') {
       try {
         const stripe = (await import('stripe')).default
         const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY!)
@@ -106,7 +105,7 @@ export async function POST(
 
         await prisma.rentalBooking.update({
           where: { id: bookingId },
-          data: { paymentStatus: 'VOIDED' }
+          data: { paymentStatus: 'REFUNDED' }
         })
       } catch (stripeError) {
         console.error('[Cancel Booking] Failed to void payment:', stripeError)

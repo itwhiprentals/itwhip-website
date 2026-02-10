@@ -2848,6 +2848,27 @@ model SuspendedIdentifier {
   @@index([expiresAt])
 }
 
+model ManualVerificationRequest {
+  id            String    @id @default(cuid())
+  email         String
+  name          String?
+  phone         String?
+  selfieUrl     String    // Selfie holding license
+  dlFrontUrl    String?   // DL front (already captured from AI attempts)
+  dlBackUrl     String?   // DL back
+  status        String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  reviewNotes   String?
+  ipAddress     String?
+  userAgent     String?
+  bookingCarId  String?   // Which car they were trying to book
+  createdAt     DateTime  @default(now())
+
+  @@index([email])
+  @@index([status])
+}
+
 model MonitoringAlert {
   id             String         @id @default(cuid())
   type           String // security, performance, error_rate, availability, business, fraud

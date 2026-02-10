@@ -44,7 +44,7 @@ async function getCurrentUser() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}))
-    const { email, returnUrl, carId } = body
+    const { email, returnUrl, carId, source } = body
 
     // Check if user is already logged in
     const user = await getCurrentUser()
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
         profileId: profileId.startsWith('pending-') ? '' : profileId,
         userId: user?.id || existingUser?.id || '',
         carId: carId || '',
-        source: 'booking-page'
+        source: source || 'booking-page'
       }
     })
 
