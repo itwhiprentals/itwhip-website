@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verify } from 'argon2'
 import { sign, verify as jwtVerify } from 'jsonwebtoken'
+import { nanoid } from 'nanoid'
 import { logFailedLogin, logSuccessfulLogin, isIpBlocked } from '@/app/lib/security/loginMonitor'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
@@ -199,10 +200,10 @@ export async function POST(request: NextRequest) {
     console.log('✅ Password verified - generating tokens')
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
-    // Generate JWT tokens
+    // Generate JWT tokens — jti ensures unique tokens (prevents P2002 on Session.token)
     const accessToken = sign(
       {
-        userId: host.user.id,  // lowercase 'user'
+        userId: host.user.id,
         hostId: host.id,
         email: host.email,
         name: host.name,
@@ -210,7 +211,8 @@ export async function POST(request: NextRequest) {
         isRentalHost: true,
         approvalStatus: host.approvalStatus,
         hostType: host.hostType,
-        isFleetPartner: isFleetPartner
+        isFleetPartner: isFleetPartner,
+        jti: nanoid()
       },
       JWT_SECRET,
       { expiresIn: '15m' }
@@ -218,19 +220,23 @@ export async function POST(request: NextRequest) {
 
     const refreshToken = sign(
       {
-        userId: host.user.id,  // lowercase 'user'
+        userId: host.user.id,
         hostId: host.id,
         email: host.email,
-        type: 'refresh'
+        type: 'refresh',
+        jti: nanoid()
       },
       JWT_REFRESH_SECRET,
       { expiresIn: '7d' }
     )
 
-    // Create session record
+    // Create session record — clean up old sessions first to avoid P2002
+    await prisma.session.deleteMany({
+      where: { userId: host.user.id }
+    })
     const session = await prisma.session.create({
       data: {
-        userId: host.user.id,  // lowercase 'user'
+        userId: host.user.id,
         token: accessToken,
         refreshToken: refreshToken,
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
@@ -651,7 +657,8 @@ export async function PUT(request: NextRequest) {
         isRentalHost: true,
         approvalStatus: host.approvalStatus,
         hostType: host.hostType,
-        isFleetPartner: isFleetPartner
+        isFleetPartner: isFleetPartner,
+        jti: nanoid()
       },
       JWT_SECRET,
       { expiresIn: '15m' }

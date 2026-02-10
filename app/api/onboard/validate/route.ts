@@ -294,6 +294,7 @@ async function generateTokensAndSession(
   host: any,
   request: NextRequest
 ): Promise<{ accessToken: string; refreshToken: string }> {
+  // jti (JWT ID) ensures every token is unique — prevents P2002 on Session.token
   const accessToken = sign(
     {
       userId: host.user?.id || host.userId,
@@ -304,7 +305,8 @@ async function generateTokensAndSession(
       isRentalHost: true,
       approvalStatus: host.approvalStatus,
       hostType: host.hostType,
-      recruitedVia: host.recruitedVia
+      recruitedVia: host.recruitedVia,
+      jti: nanoid()
     },
     JWT_SECRET,
     { expiresIn: '7d' } // Longer expiry for external hosts
@@ -315,15 +317,20 @@ async function generateTokensAndSession(
       userId: host.user?.id || host.userId,
       hostId: host.id,
       email: host.email,
-      type: 'refresh'
+      type: 'refresh',
+      jti: nanoid()
     },
     JWT_REFRESH_SECRET,
     { expiresIn: '30d' }
   )
 
-  // Create session record
+  // Create session record — clean up old sessions first to avoid P2002
   if (host.user?.id) {
     try {
+      // Delete stale sessions for this user (they're getting a fresh token)
+      await prisma.session.deleteMany({
+        where: { userId: host.user.id }
+      })
       await prisma.session.create({
         data: {
           userId: host.user.id,
@@ -334,8 +341,10 @@ async function generateTokensAndSession(
           expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
         }
       })
+      console.log(`[Onboard] Session created for user ${host.user.id}`)
     } catch (sessionError) {
       console.error('[Onboard] Session create error:', sessionError)
+      // Non-blocking — JWT in cookie still works for partner APIs
     }
   }
 
