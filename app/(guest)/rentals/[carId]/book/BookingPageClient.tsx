@@ -287,6 +287,8 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   const [showRentalAgreement, setShowRentalAgreement] = useState(false)
   const [showInsuranceModal, setShowInsuranceModal] = useState(false)
   const [showTrustSafetyModal, setShowTrustSafetyModal] = useState(false)
+  const [showManualApprovalModal, setShowManualApprovalModal] = useState<string | null>(null)
+  const manualApprovalAccepted = useRef(false)
   
   // Track page load time for fraud detection
   useEffect(() => {
@@ -328,11 +330,17 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       const redirectStatus = params.get('redirect_status')
       console.log('[3DS Return] Payment redirect detected:', piId, redirectStatus)
 
-      if (redirectStatus === 'succeeded' && piId) {
+      // Validate PI matches the one we created (prevent URL manipulation)
+      const expectedPi = sessionStorage.getItem('_expected_pi')
+      if (expectedPi && piId !== expectedPi) {
+        console.error('[3DS Return] PI mismatch! Expected:', expectedPi, 'Got:', piId)
+        setPaymentError('Payment verification failed. Please try again.')
+      } else if (redirectStatus === 'succeeded' && piId) {
         setPaymentIntentId(piId)
         setPaymentAlreadyConfirmed(true)
         setBookingError(null)
         setPaymentError('Your payment was confirmed. Please click "Book Now" to complete your reservation.')
+        sessionStorage.removeItem('_expected_pi')
       } else if (redirectStatus === 'failed') {
         setPaymentError('Payment failed during verification. Please try again.')
       }
@@ -1381,6 +1389,10 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           const data = await response.json()
           setClientSecret(data.clientSecret)
           setPaymentIntentId(data.paymentIntentId)
+          // Store PI ID for 3DS redirect validation
+          if (data.paymentIntentId) {
+            sessionStorage.setItem('_expected_pi', data.paymentIntentId)
+          }
         } else {
           setPaymentError('Unable to initialize payment. Please try again.')
         }
@@ -1762,9 +1774,9 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     }
 
     // Show warning if manual approval required
-    if (eligibility.reason && eligibility.reason.includes('manual approval')) {
-      const proceed = confirm(`⚠️ Manual Approval Required\n\n${eligibility.reason}\n\nDo you want to proceed?`)
-      if (!proceed) return
+    if (eligibility.reason && eligibility.reason.includes('manual approval') && !manualApprovalAccepted.current) {
+      setShowManualApprovalModal(eligibility.reason)
+      return
     }
 
     // Validation checks - scroll to incomplete sections instead of alert
@@ -1961,7 +1973,19 @@ export default function BookingPageClient({ carId }: { carId: string }) {
 
         // Fraud detection data
         fraudData: {
-          deviceFingerprint: `web_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+          deviceFingerprint: (() => {
+            // Stable fingerprint from browser properties (persists within session)
+            const stored = sessionStorage.getItem('_dfp')
+            if (stored) return stored
+            const raw = [navigator.userAgent, navigator.language, screen.width, screen.height,
+              screen.colorDepth, new Date().getTimezoneOffset(), navigator.hardwareConcurrency || 0,
+              navigator.maxTouchPoints || 0].join('|')
+            let hash = 0
+            for (let i = 0; i < raw.length; i++) { hash = ((hash << 5) - hash + raw.charCodeAt(i)) | 0 }
+            const fp = `web_${Math.abs(hash).toString(36)}`
+            sessionStorage.setItem('_dfp', fp)
+            return fp
+          })(),
           sessionData: {
             sessionId: `ses_${(window as any).pageLoadTime || Date.now()}`,
             startTime: (window as any).pageLoadTime || Date.now(),
@@ -3779,6 +3803,37 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         isOpen={showTrustSafetyModal}
         onClose={() => setShowTrustSafetyModal(false)}
       />
+
+      {/* Manual Approval Warning Modal */}
+      {showManualApprovalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <IoWarningOutline className="w-7 h-7 text-amber-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">Manual Approval Required</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-6">{showManualApprovalModal}</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowManualApprovalModal(null)}
+                className="flex-1 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowManualApprovalModal(null)
+                  manualApprovalAccepted.current = true
+                  handleCheckoutClick()
+                }}
+                className="flex-1 py-2.5 rounded-lg bg-amber-600 text-white font-medium hover:bg-amber-700 transition-colors"
+              >
+                Continue Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
