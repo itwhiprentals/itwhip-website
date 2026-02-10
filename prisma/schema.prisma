@@ -4343,6 +4343,7 @@ enum ProspectStatus {
   CONVERTED // Created account / logged in
   CLAIMED_REQUEST // Claimed a request
   FULFILLED // Successfully completed a booking
+  EXPIRED // No car added within deadline — account deactivated
   ARCHIVED // No longer pursuing
   BOUNCED // Email bounced
   UNSUBSCRIBED // Opted out

@@ -42,11 +42,99 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    // ===== PROSPECT ACCOUNT EXPIRY =====
+    // Expire prospect hosts who haven't added a car within their deadline (3 days)
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+    let prospectExpiredCount = 0
+
+    try {
+      const staleProspects = await prisma.hostProspect.findMany({
+        where: {
+          status: 'CONVERTED',
+          convertedHostId: { not: null },
+          convertedAt: { lt: threeDaysAgo },
+          // Skip if they still have time from a recent new-request
+          OR: [
+            { inviteTokenExp: null },
+            { inviteTokenExp: { lt: now } }
+          ]
+        },
+        select: {
+          id: true,
+          name: true,
+          convertedHostId: true,
+          convertedHost: {
+            select: {
+              id: true,
+              name: true,
+              _count: { select: { cars: true } }
+            }
+          }
+        }
+      })
+
+      for (const prospect of staleProspects) {
+        // Skip if host has added cars (truly converted)
+        if (!prospect.convertedHost || (prospect.convertedHost._count?.cars || 0) > 0) {
+          continue
+        }
+
+        try {
+          // 1. Expire the prospect
+          await prisma.hostProspect.update({
+            where: { id: prospect.id },
+            data: {
+              status: 'EXPIRED',
+              inviteToken: null,
+              inviteTokenExp: null
+            }
+          })
+
+          // 2. Deactivate the host account
+          await prisma.rentalHost.update({
+            where: { id: prospect.convertedHostId! },
+            data: {
+              active: false,
+              dashboardAccess: false,
+              suspendedAt: now,
+              suspendedReason: 'Expired prospect - no car added within deadline'
+            }
+          })
+
+          // 3. Expire any pending claims for this host
+          await prisma.requestClaim.updateMany({
+            where: {
+              hostId: prospect.convertedHostId!,
+              status: 'PENDING_CAR'
+            },
+            data: {
+              status: 'EXPIRED',
+              expiredAt: now
+            }
+          })
+
+          prospectExpiredCount++
+          console.log(`[Expire Claims Cron] Expired prospect account: ${prospect.name} (host ${prospect.convertedHostId})`)
+        } catch (prospectError: any) {
+          console.error(`[Expire Claims Cron] Error expiring prospect ${prospect.id}:`, prospectError)
+        }
+      }
+
+      if (prospectExpiredCount > 0) {
+        console.log(`[Expire Claims Cron] Expired ${prospectExpiredCount} stale prospect accounts`)
+      }
+    } catch (prospectErr: any) {
+      console.error('[Expire Claims Cron] Error in prospect expiry:', prospectErr)
+    }
+
     if (expiredClaims.length === 0) {
       return NextResponse.json({
         success: true,
-        message: 'No expired claims to process',
-        processed: 0
+        message: prospectExpiredCount > 0
+          ? `No expired claims, but expired ${prospectExpiredCount} prospect accounts`
+          : 'No expired claims to process',
+        processed: 0,
+        prospectExpired: prospectExpiredCount
       })
     }
 
@@ -111,9 +199,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Processed ${expiredClaims.length} expired claims`,
+      message: `Processed ${expiredClaims.length} expired claims, ${prospectExpiredCount} prospect accounts expired`,
       processed: successCount,
       failed: failCount,
+      prospectExpired: prospectExpiredCount,
       details: results
     })
 

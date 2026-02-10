@@ -109,6 +109,20 @@ export async function POST(request: NextRequest) {
       })
 
       if (existingHost) {
+        // Reactivate if previously expired from prospect deadline
+        if (!existingHost.active && existingHost.suspendedReason?.includes('Expired prospect')) {
+          await prisma.rentalHost.update({
+            where: { id: existingHost.id },
+            data: {
+              active: true,
+              dashboardAccess: true,
+              suspendedAt: null,
+              suspendedReason: null
+            }
+          })
+          console.log(`[Onboard] Reactivated expired returning host: ${existingHost.id}`)
+        }
+
         // Generate tokens and log them in
         const tokens = await generateTokensAndSession(existingHost, request)
 
@@ -138,14 +152,27 @@ export async function POST(request: NextRequest) {
     })
 
     if (host) {
-      // Update existing host to mark as recruited if not already
+      // Reactivate if previously expired from prospect deadline
+      const needsReactivation = !host.active && host.suspendedReason?.includes('Expired prospect')
+      const updateData: any = {}
+
       if (!host.recruitedVia) {
+        updateData.recruitedVia = prospect.source || 'email_invite'
+        updateData.recruitedAt = new Date()
+      }
+
+      if (needsReactivation) {
+        updateData.active = true
+        updateData.dashboardAccess = true
+        updateData.suspendedAt = null
+        updateData.suspendedReason = null
+        console.log(`[Onboard] Reactivating expired prospect host: ${host.id}`)
+      }
+
+      if (Object.keys(updateData).length > 0) {
         host = await prisma.rentalHost.update({
           where: { id: host.id },
-          data: {
-            recruitedVia: prospect.source || 'email_invite',
-            recruitedAt: new Date()
-          },
+          data: updateData,
           include: {
             user: {
               select: {

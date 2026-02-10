@@ -57,7 +57,10 @@ export async function GET(request: NextRequest) {
               name: true,
               email: true,
               profilePhoto: true,
-              approvalStatus: true
+              approvalStatus: true,
+              _count: {
+                select: { cars: true }
+              }
             }
           }
         },
@@ -150,6 +153,16 @@ export async function GET(request: NextRequest) {
           ...prospect.request,
           isGuestEmailKnown: !!guestEmailOwner,
           guestLinkedTo: guestEmailOwner?.owner || null
+        } : null,
+        // Enrich convertedHost with hasCar/carCount
+        convertedHost: prospect.convertedHost ? {
+          id: prospect.convertedHost.id,
+          name: prospect.convertedHost.name,
+          email: prospect.convertedHost.email,
+          profilePhoto: prospect.convertedHost.profilePhoto,
+          approvalStatus: prospect.convertedHost.approvalStatus,
+          hasCar: ((prospect.convertedHost as any)._count?.cars || 0) > 0,
+          carCount: (prospect.convertedHost as any)._count?.cars || 0
         } : null
       }
     })

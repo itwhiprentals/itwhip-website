@@ -54,6 +54,9 @@ export async function GET(
                 isActive: true
               },
               take: 5
+            },
+            _count: {
+              select: { cars: true }
             }
           }
         }
@@ -67,9 +70,19 @@ export async function GET(
       )
     }
 
+    // Enrich convertedHost with hasCar/carCount
+    const enrichedProspect = {
+      ...prospect,
+      convertedHost: prospect.convertedHost ? {
+        ...prospect.convertedHost,
+        hasCar: ((prospect.convertedHost as any)._count?.cars || 0) > 0,
+        carCount: (prospect.convertedHost as any)._count?.cars || 0
+      } : null
+    }
+
     return NextResponse.json({
       success: true,
-      prospect
+      prospect: enrichedProspect
     })
 
   } catch (error: any) {

@@ -18,7 +18,8 @@ import {
   IoPencilOutline,
   IoAlertCircleOutline,
   IoShieldCheckmarkOutline,
-  IoWarningOutline
+  IoWarningOutline,
+  IoSwapHorizontalOutline
 } from 'react-icons/io5'
 
 export interface HostProspect {
@@ -60,6 +61,8 @@ export interface HostProspect {
   convertedHost?: {
     id: string
     name: string
+    hasCar?: boolean
+    carCount?: number
   }
   createdAt: string
 }
@@ -71,6 +74,7 @@ interface ProspectCardProps {
   copiedLink: string | null
   onSendInvite: (id: string) => void
   onEdit: (prospect: HostProspect) => void
+  onNewRequest: (prospectId: string) => void
 }
 
 export function getStatusBadge(status: string) {
@@ -126,7 +130,8 @@ export default function ProspectCard({
   sendingInvite,
   copiedLink,
   onSendInvite,
-  onEdit
+  onEdit,
+  onNewRequest
 }: ProspectCardProps) {
   const tokenExpired = isTokenExpired(prospect.inviteTokenExp)
   const canSendInvite = prospect.status !== 'CONVERTED' && (
@@ -176,13 +181,30 @@ export default function ProspectCard({
         {/* Desktop Actions Preview */}
         <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
           {prospect.status === 'CONVERTED' ? (
-            <Link
-              href={`/fleet/hosts/${prospect.convertedHost?.id}?key=${apiKey}`}
-              className="flex items-center gap-1 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded text-sm hover:bg-green-200 dark:hover:bg-green-800/50 transition-colors"
-            >
-              <IoCheckmarkCircleOutline className="w-4 h-4" />
-              View Host
-            </Link>
+            <>
+              <Link
+                href={`/fleet/hosts/${prospect.convertedHost?.id}?key=${apiKey}`}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm transition-colors ${
+                  prospect.convertedHost?.hasCar
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800/50'
+                    : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-800/50'
+                }`}
+              >
+                {prospect.convertedHost?.hasCar ? (
+                  <IoCheckmarkCircleOutline className="w-4 h-4" />
+                ) : (
+                  <IoTimeOutline className="w-4 h-4" />
+                )}
+                {prospect.convertedHost?.hasCar ? 'View Host' : 'Pending Setup'}
+              </Link>
+              <button
+                onClick={(e) => { e.stopPropagation(); onNewRequest(prospect.id); }}
+                className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-sm hover:bg-blue-200 dark:hover:bg-blue-800/50 transition-colors"
+              >
+                <IoSwapHorizontalOutline className="w-4 h-4" />
+                <span className="hidden lg:inline">New Request</span>
+              </button>
+            </>
           ) : (
             <button
               onClick={(e) => { e.stopPropagation(); onSendInvite(prospect.id); }}
@@ -351,13 +373,29 @@ export default function ProspectCard({
       {/* Mobile Actions Row */}
       <div className="sm:hidden flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
         {prospect.status === 'CONVERTED' ? (
-          <Link
-            href={`/fleet/hosts/${prospect.convertedHost?.id}?key=${apiKey}`}
-            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded text-sm"
-          >
-            <IoCheckmarkCircleOutline className="w-4 h-4" />
-            View Host
-          </Link>
+          <>
+            <Link
+              href={`/fleet/hosts/${prospect.convertedHost?.id}?key=${apiKey}`}
+              className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded text-sm ${
+                prospect.convertedHost?.hasCar
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                  : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
+              }`}
+            >
+              {prospect.convertedHost?.hasCar ? (
+                <IoCheckmarkCircleOutline className="w-4 h-4" />
+              ) : (
+                <IoTimeOutline className="w-4 h-4" />
+              )}
+              {prospect.convertedHost?.hasCar ? 'View Host' : 'Pending'}
+            </Link>
+            <button
+              onClick={() => onNewRequest(prospect.id)}
+              className="px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-sm"
+            >
+              <IoSwapHorizontalOutline className="w-4 h-4" />
+            </button>
+          </>
         ) : (
           <>
             <button
@@ -399,6 +437,14 @@ export default function ProspectCard({
             >
               <IoPencilOutline className="w-4 h-4" />
             </button>
+            {prospect.request && (
+              <button
+                onClick={() => onNewRequest(prospect.id)}
+                className="px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-sm"
+              >
+                <IoSwapHorizontalOutline className="w-4 h-4" />
+              </button>
+            )}
             {prospect.sourceUrl && (
               <a
                 href={prospect.sourceUrl}
@@ -418,7 +464,7 @@ export default function ProspectCard({
 
       {/* Desktop Extra Actions */}
       <div className="hidden sm:flex items-center gap-2 mt-2 pl-14">
-        {prospect.status !== 'CONVERTED' && (
+        {prospect.status !== 'CONVERTED' ? (
           <>
             <button
               onClick={() => onEdit(prospect)}
@@ -427,6 +473,15 @@ export default function ProspectCard({
               <IoPencilOutline className="w-4 h-4" />
               Edit
             </button>
+            {prospect.request && (
+              <button
+                onClick={() => onNewRequest(prospect.id)}
+                className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-sm hover:bg-blue-200 dark:hover:bg-blue-800/50 transition-colors"
+              >
+                <IoSwapHorizontalOutline className="w-4 h-4" />
+                New Request
+              </button>
+            )}
             {prospect.sourceUrl && (
               <a
                 href={prospect.sourceUrl}
@@ -439,6 +494,14 @@ export default function ProspectCard({
               </a>
             )}
           </>
+        ) : (
+          <button
+            onClick={() => onEdit(prospect)}
+            className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          >
+            <IoPencilOutline className="w-4 h-4" />
+            Edit
+          </button>
         )}
         <span className="text-xs text-gray-400 ml-auto">
           Added {formatDate(prospect.createdAt)}

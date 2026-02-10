@@ -29,7 +29,7 @@ import {
   IoPencilOutline,
   IoTrashOutline
 } from 'react-icons/io5'
-import { ProspectCard, HostProspect, ConversionFunnel, FunnelStats, getStatusBadge, getSourceIcon, formatDate, isTokenExpired } from './components'
+import { ProspectCard, HostProspect, ConversionFunnel, FunnelStats, NewRequestModal, getStatusBadge, getSourceIcon, formatDate, isTokenExpired } from './components'
 
 export default function FleetProspectsPage() {
   const searchParams = useSearchParams()
@@ -55,6 +55,7 @@ export default function FleetProspectsPage() {
   const [editingProspect, setEditingProspect] = useState<HostProspect | null>(null)
   const [sendingInvite, setSendingInvite] = useState<string | null>(null)
   const [copiedLink, setCopiedLink] = useState<string | null>(null)
+  const [newRequestProspectId, setNewRequestProspectId] = useState<string | null>(null)
 
   const fetchProspects = useCallback(async () => {
     try {
@@ -243,6 +244,7 @@ export default function FleetProspectsPage() {
                 copiedLink={copiedLink}
                 onSendInvite={sendInvite}
                 onEdit={setEditingProspect}
+                onNewRequest={setNewRequestProspectId}
               />
             ))}
           </div>
@@ -272,6 +274,20 @@ export default function FleetProspectsPage() {
             fetchProspects()
           }}
           apiKey={apiKey}
+        />
+      )}
+
+      {/* New Request Modal */}
+      {newRequestProspectId && (
+        <NewRequestModal
+          prospectId={newRequestProspectId}
+          currentRequestId={prospects.find(p => p.id === newRequestProspectId)?.request?.id}
+          apiKey={apiKey}
+          onClose={() => setNewRequestProspectId(null)}
+          onSuccess={() => {
+            setNewRequestProspectId(null)
+            fetchProspects()
+          }}
         />
       )}
     </div>
