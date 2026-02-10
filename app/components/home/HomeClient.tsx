@@ -72,13 +72,13 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
 
   return (
     <>
-      {/* iOS Safari bottom bar picks up body background — match page/footer theme */}
+      {/* iOS Safari bars pick up body background — match Header (bg-white / gray-900) */}
       <style jsx global>{`
         body:has(.home-page) {
-          background-color: #f3f4f6 !important; /* gray-100 — matches Footer */
+          background-color: #ffffff !important;
         }
         html.dark body:has(.home-page) {
-          background-color: #030712 !important; /* gray-950 — matches Footer dark */
+          background-color: #111827 !important;
         }
       `}</style>
 

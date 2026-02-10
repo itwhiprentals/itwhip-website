@@ -9,10 +9,8 @@ const nextConfig = {
   serverExternalPackages: ['geoip-lite'],
 
   // Ensure WASM binaries are included in Vercel serverless function bundles
-  experimental: {
-    outputFileTracingIncludes: {
-      '/api/bookings/verify-dl': ['./node_modules/zxing-wasm/dist/reader/zxing_reader.wasm'],
-    },
+  outputFileTracingIncludes: {
+    '/api/bookings/verify-dl': ['./node_modules/zxing-wasm/dist/reader/zxing_reader.wasm'],
   },
 
   // Performance optimizations
