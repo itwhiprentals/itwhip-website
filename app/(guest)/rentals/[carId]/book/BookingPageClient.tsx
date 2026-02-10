@@ -310,6 +310,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   
   // Store actual upload URLs
   const [licensePhotoUrl, setLicensePhotoUrl] = useState('')
+  const [licenseBackPhotoUrl, setLicenseBackPhotoUrl] = useState('')
   const [insurancePhotoUrl, setInsurancePhotoUrl] = useState('')
   const [selfiePhotoUrl, setSelfiePhotoUrl] = useState('')
   const [isUploading, setIsUploading] = useState(false)
@@ -1866,9 +1867,19 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           // licenseExpiry collected during identity verification (Stripe Identity)
           dateOfBirth: formatDOB(driverAge),
           licensePhotoUrl: licensePhotoUrl || '',
+          licenseBackPhotoUrl: licenseBackPhotoUrl || '',
           insurancePhotoUrl: insurancePhotoUrl || '',
           selfiePhotoUrl: selfiePhotoUrl || ''
         },
+
+        // AI DL verification result (from VisitorIdentityVerify)
+        ...(aiVerificationResult?.passed && {
+          aiVerification: {
+            result: aiVerificationResult,
+            score: aiVerificationResult.confidence || 0,
+            passed: true,
+          }
+        }),
 
         // Fraud detection data
         fraudData: {
@@ -2830,9 +2841,12 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                         onVerificationComplete={(result) => {
                           setAiVerificationResult(result)
                           if (result.passed && result.data) {
-                            // Store DL data for booking submission
                             console.log('[Booking] AI DL verification passed:', result.data)
                           }
+                        }}
+                        onPhotosUploaded={(frontUrl, backUrl) => {
+                          setLicensePhotoUrl(frontUrl)
+                          if (backUrl) setLicenseBackPhotoUrl(backUrl)
                         }}
                         driverName={`${driverFirstName} ${driverLastName}`.trim()}
                         disabled={!emailValidation.isValid}

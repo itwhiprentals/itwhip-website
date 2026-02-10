@@ -279,13 +279,13 @@ ${stateRules}
 This text appears on all non-REAL ID compliant driver's licenses. It is COMPLETELY NORMAL and does NOT indicate the card is fake or invalid. Do NOT flag this as any kind of issue — not critical, not informational. Ignore it entirely.
 
 PHOTO QUALITY TOLERANCE:
-Phone-captured photos will have minor lighting variations, slight angles, and occasional glare. These are NORMAL.
-Only flag photo quality if critical fields (name, DOB, expiration, license number) are COMPLETELY UNREADABLE.
-A slightly obscured security feature is informational, NOT a critical flag.
+These photos are taken by phone cameras. Minor blurriness, slight angles, glare, wear marks, scratches, and resolution limitations are ALL EXPECTED and NORMAL.
+Do NOT mention any of these as informational flags — they add noise and no value.
+Only flag photo quality if it makes a specific critical field (name, DOB, expiration, license number) COMPLETELY UNREADABLE — and that would be a critical flag, not informational.
 
 FLAG CLASSIFICATION:
 - criticalFlags: ONLY for genuinely serious issues: document is not a driver's license (e.g. state ID card), document is clearly digitally fabricated/photoshopped, a screenshot of a photo, completely unreadable text on all fields, or a non-government-issued document. "Not valid for federal purposes" is NOT a critical flag.
-- informationalFlags: Minor photo quality notes (slight glare, minor angle tilt, partially obscured features). These do NOT indicate fraud.
+- informationalFlags: ONLY for genuinely unusual observations not covered by critical flags (e.g. two different names on front vs back). Do NOT include photo quality notes, card wear, resolution limitations, or camera artifacts. In most verifications, this array should be EMPTY.
 - Do NOT flag "non-REAL ID compliant" or "no gold star" — REAL ID status is irrelevant for car rental verification.
 
 IMPORTANT — DO NOT over-flag:
@@ -294,6 +294,10 @@ IMPORTANT — DO NOT over-flag:
 - Do NOT flag the card design as suspicious if it matches the issuing state's known format
 - Do NOT invent vague concerns like "multiple formatting inconsistencies" or "card condition raises concerns" without specific evidence
 - "Recently issued" is NOT suspicious — people get new licenses all the time
+- Do NOT flag "minor blurriness" or "slightly blurry text" — phone photos are always somewhat blurry
+- Do NOT flag "card wear", "scratches", or "surface condition" — normal for carried cards
+- Do NOT flag "security features not visible due to photo resolution" — phone cameras cannot capture microprinting
+- Do NOT flag anything about photo quality as informational — it is expected and adds noise
 - When in doubt, do NOT flag it at all
 
 EXPIRATION — TWO CASES:
@@ -341,6 +345,16 @@ ${buildAllStateRulesPrompt()}`,
         },
       },
     })
+
+    // Log token usage for cost tracking
+    const usage = (response as any).usage
+    if (usage) {
+      const inputCost = (usage.input_tokens / 1_000_000) * 3
+      const outputCost = (usage.output_tokens / 1_000_000) * 15
+      const cacheRead = usage.cache_read_input_tokens || 0
+      const cacheSavings = cacheRead > 0 ? ((cacheRead / 1_000_000) * 2.7).toFixed(4) : '0'
+      console.log(`[license-analyzer] Usage: ${usage.input_tokens} in, ${usage.output_tokens} out, cache_read: ${cacheRead} | Cost: $${(inputCost + outputCost).toFixed(4)} (saved $${cacheSavings} from cache)`)
+    }
 
     // With Structured Outputs, response is guaranteed valid JSON
     const textContent = response.content.find((block) => block.type === 'text')

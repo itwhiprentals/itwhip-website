@@ -87,9 +87,17 @@ const bookingSchema = z.object({
     licenseExpiry: z.string().optional(),
     dateOfBirth: z.string(),
     licensePhotoUrl: z.string().optional(),
+    licenseBackPhotoUrl: z.string().optional(),
     insurancePhotoUrl: z.string().optional(),
     selfiePhotoUrl: z.string().optional(),
   }),
+
+  // AI DL verification result (from visitor flow)
+  aiVerification: z.object({
+    result: z.any(),
+    score: z.number(),
+    passed: z.boolean(),
+  }).optional(),
   
   // Payment (verification determines timing)
   paymentIntentId: z.string().optional(),
@@ -615,14 +623,24 @@ export async function POST(request: NextRequest) {
           licenseState: bookingData.driverInfo.licenseState,
           licenseExpiry: bookingData.driverInfo.licenseExpiry ? parseArizonaDate(bookingData.driverInfo.licenseExpiry) : null,
           licensePhotoUrl: bookingData.driverInfo.licensePhotoUrl,
+          licenseBackPhotoUrl: bookingData.driverInfo.licenseBackPhotoUrl || null,
           insurancePhotoUrl: bookingData.driverInfo.insurancePhotoUrl,
           selfieVerified: (needsVerification || requiresManualReview) ? false : true,
           selfiePhotoUrl: bookingData.driverInfo.selfiePhotoUrl,
           dateOfBirth: parseArizonaDate(bookingData.driverInfo.dateOfBirth),
           
+          // AI DL verification (from visitor flow)
+          ...(bookingData.aiVerification && {
+            aiVerificationResult: bookingData.aiVerification.result,
+            aiVerificationScore: bookingData.aiVerification.score,
+            aiVerificationAt: new Date(),
+            aiVerificationModel: 'claude-sonnet-4-5-20250929',
+          }),
+
           // Verification status
           verificationStatus: (requiresManualReview ? 'SUBMITTED' : (needsVerification ? 'SUBMITTED' : 'APPROVED')) as any,
-          documentsSubmittedAt: (needsVerification || requiresManualReview) ? new Date() : null,
+          // Always set documentsSubmittedAt when we have DL photos or AI verification
+          documentsSubmittedAt: (needsVerification || requiresManualReview || bookingData.aiVerification) ? new Date() : null,
           flaggedForReview: requiresManualReview,
           
           // SIMPLIFIED FRAUD DATA

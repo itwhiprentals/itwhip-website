@@ -42,6 +42,7 @@ interface VerificationResult {
 
 interface VisitorIdentityVerifyProps {
   onVerificationComplete: (result: VerificationResult) => void
+  onPhotosUploaded?: (frontUrl: string, backUrl?: string) => void
   driverName?: string
   disabled?: boolean
 }
@@ -52,6 +53,7 @@ type VerifyStep = 'front' | 'back' | 'verifying' | 'success' | 'failed'
 
 export function VisitorIdentityVerify({
   onVerificationComplete,
+  onPhotosUploaded,
   driverName,
   disabled = false,
 }: VisitorIdentityVerifyProps) {
@@ -125,9 +127,13 @@ export function VisitorIdentityVerify({
       const data = await response.json()
       if (type === 'front') {
         setDlFrontUrl(data.url)
+        // Notify parent of front URL immediately
+        onPhotosUploaded?.(data.url)
         setStep('back')
       } else if (type === 'back') {
         setDlBackUrl(data.url)
+        // Notify parent with both URLs (front was already set)
+        if (dlFrontUrl) onPhotosUploaded?.(dlFrontUrl, data.url)
         // Step transitions to 'verifying' via the auto-verify useEffect
       } else {
         setSelfieUrl(data.url)
