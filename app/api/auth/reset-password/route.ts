@@ -1,8 +1,9 @@
 // app/api/auth/reset-password/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
-import bcrypt from 'bcryptjs'
+import * as argon2 from 'argon2'
 import crypto from 'crypto'
+import db from '@/app/lib/db'
 
 export async function POST(req: NextRequest) {
   try {
@@ -51,9 +52,15 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Hash the new password with bcrypt
-    const salt = await bcrypt.genSalt(10)
-    const hashedPassword = await bcrypt.hash(password, salt)
+    // Hash the new password with Argon2 (matching login/signup config)
+    const hashedPassword = await argon2.hash(password, {
+      type: argon2.argon2id,
+      memoryCost: 65536,
+      timeCost: 3,
+      parallelism: 4,
+      hashLength: 32,
+      saltLength: 16
+    })
 
     // Update user password and invalidate token
     await prisma.user.update({
@@ -70,7 +77,16 @@ export async function POST(req: NextRequest) {
 
     console.log(`[Password Reset] Successfully reset password for: ${user.email}`)
 
-    // Send confirmation email (optional but recommended)
+    // Invalidate ALL existing sessions — forces re-login on every device
+    try {
+      await db.deleteUserRefreshTokens(user.id)
+      console.log(`[Password Reset] Invalidated all sessions for user: ${user.email}`)
+    } catch (sessionErr) {
+      console.error('[Password Reset] Failed to invalidate sessions:', sessionErr)
+      // Don't fail the reset if session cleanup fails
+    }
+
+    // Send confirmation email
     try {
       const { sendEmail } = await import('@/app/lib/email/sender')
       

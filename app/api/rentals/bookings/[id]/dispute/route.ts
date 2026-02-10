@@ -2,6 +2,14 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { z } from 'zod'
+
+const disputeSchema = z.object({
+  type: z.enum(['DAMAGE', 'BILLING', 'SERVICE', 'SAFETY', 'OTHER']).default('OTHER'),
+  description: z.string().min(10, 'Description must be at least 10 characters').max(2000),
+  evidence: z.array(z.string().url()).max(10).default([]),
+  requestedResolution: z.string().max(500).optional(),
+})
 
 export async function POST(
  request: NextRequest,
@@ -10,12 +18,14 @@ export async function POST(
  try {
    const { id: bookingId } = await params
    const body = await request.json()
-   const {
-     type,
-     description,
-     evidence = [],
-     requestedResolution
-   } = body
+   const parsed = disputeSchema.safeParse(body)
+   if (!parsed.success) {
+     return NextResponse.json(
+       { error: 'Validation failed', details: parsed.error.flatten().fieldErrors },
+       { status: 400 }
+     )
+   }
+   const { type, description, evidence, requestedResolution } = parsed.data
 
    // Get guest email from header
    const guestEmail = request.headers.get('x-guest-email')

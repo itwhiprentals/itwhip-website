@@ -1,8 +1,19 @@
 // File: app/api/rentals/user-bookings/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/app/lib/database/prisma'
 import type { RentalBookingStatus } from '@/app/lib/dal/types'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
+
+// Whitelist of allowed sort columns to prevent SQL injection via column names
+const ALLOWED_SORT_COLUMNS: Record<string, string> = {
+  createdAt: 'b."createdAt"',
+  startDate: 'b."startDate"',
+  endDate: 'b."endDate"',
+  totalAmount: 'b."totalAmount"',
+  updatedAt: 'b."updatedAt"',
+  status: 'b.status',
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,35 +47,38 @@ export async function GET(request: NextRequest) {
       guestEmail
     }))
 
-    const whereConditions: string[] = []
-    
+    // Build parameterized WHERE conditions (prevents SQL injection)
+    const conditions: Prisma.Sql[] = []
+
     if (bookingId) {
-      whereConditions.push(`b.id = '${bookingId}'`)
+      conditions.push(Prisma.sql`b.id = ${bookingId}`)
     } else if (guestEmail && userEmail && guestEmail === userEmail) {
-      whereConditions.push(`b."guestEmail" = '${userEmail}'`)
+      conditions.push(Prisma.sql`b."guestEmail" = ${userEmail}`)
     } else {
-      const orParts: string[] = []
-      if (userId) orParts.push(`b."renterId" = '${userId}'`)
-      if (userEmail) orParts.push(`b."guestEmail" = '${userEmail}'`)
+      const orParts: Prisma.Sql[] = []
+      if (userId) orParts.push(Prisma.sql`b."renterId" = ${userId}`)
+      if (userEmail) orParts.push(Prisma.sql`b."guestEmail" = ${userEmail}`)
       if (orParts.length > 0) {
-        whereConditions.push(`(${orParts.join(' OR ')})`)
+        conditions.push(Prisma.sql`(${Prisma.join(orParts, ' OR ')})`)
       }
     }
 
     if (status) {
-      whereConditions.push(`b.status = '${status}'`)
+      conditions.push(Prisma.sql`b.status = ${status}::text`)
     }
 
-    const whereClause = whereConditions.length > 0 
-      ? `WHERE ${whereConditions.join(' AND ')}` 
-      : ''
+    const whereClause = conditions.length > 0
+      ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`
+      : Prisma.empty
 
     const orderDirection = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
+    const sortColumn = ALLOWED_SORT_COLUMNS[sortBy] || 'b."createdAt"'
+    const orderByClause = Prisma.raw(`${sortColumn} ${orderDirection}`)
     const offset = (page - 1) * limit
 
-    // ✅ FIXED: Optimized single query
-    const query = `
-      SELECT 
+    // Parameterized query (no string interpolation of user values)
+    const bookingsRaw = await prisma.$queryRaw<any[]>`
+      SELECT
         b.id,
         b."bookingCode",
         b.status,
@@ -209,12 +223,10 @@ export async function GET(request: NextRequest) {
       LEFT JOIN "RentalCar" c ON c.id = b."carId"
       LEFT JOIN "RentalHost" h ON h.id = b."hostId"
       ${whereClause}
-      ORDER BY b."${sortBy}" ${orderDirection}
+      ORDER BY ${orderByClause}
       LIMIT ${limit}
       OFFSET ${offset}
     `
-
-    const bookingsRaw = await prisma.$queryRawUnsafe(query) as any[]
 
     console.log(`Found ${bookingsRaw.length} bookings for authenticated user: ${userEmail}`)
 

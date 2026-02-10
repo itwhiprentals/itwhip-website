@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { processEligiblePayouts } from '@/app/lib/payouts/process-eligible'
 import { prisma } from '@/app/lib/database/prisma'
+import { stripe } from '@/app/lib/stripe'
 
 /**
  * Vercel Cron Job Endpoint - Process Eligible Payouts
@@ -29,6 +30,82 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[Cron] Starting automated payout processing...')
+
+    // ========================================================================
+    // STEP 0: Activate pending bank accounts that have passed the 24-hour delay
+    // ========================================================================
+    try {
+      const hostsWithPendingBanks = await prisma.rentalHost.findMany({
+        where: {
+          pendingBankAccountId: { not: null },
+          pendingBankActivatesAt: { lte: new Date() },
+        },
+        select: {
+          id: true,
+          email: true,
+          stripeAccountId: true,
+          pendingBankAccountId: true,
+          pendingBankLast4: true,
+          pendingBankName: true,
+          pendingBankType: true,
+        }
+      })
+
+      for (const host of hostsWithPendingBanks) {
+        try {
+          // Set the pending bank as default on Stripe Connect
+          if (host.stripeAccountId && host.pendingBankAccountId) {
+            await stripe.accounts.updateExternalAccount(
+              host.stripeAccountId,
+              host.pendingBankAccountId,
+              { default_for_currency: true } as any
+            )
+          }
+
+          // Move pending fields to active fields
+          await prisma.rentalHost.update({
+            where: { id: host.id },
+            data: {
+              defaultPayoutMethod: host.pendingBankAccountId,
+              bankAccountLast4: host.pendingBankLast4,
+              bankName: host.pendingBankName,
+              bankAccountType: host.pendingBankType,
+              bankVerified: false,
+              // Clear pending fields
+              pendingBankAccountId: null,
+              pendingBankLast4: null,
+              pendingBankName: null,
+              pendingBankType: null,
+              pendingBankActivatesAt: null,
+            }
+          })
+
+          console.log(`[Cron] Activated pending bank for host ${host.id}: ***${host.pendingBankLast4}`)
+
+          // Notify host
+          try {
+            const { sendEmail } = await import('@/app/lib/email/sender')
+            await sendEmail(
+              host.email,
+              'Your New Payout Account is Now Active',
+              `<p>Your new bank account ending in ${host.pendingBankLast4} is now your active payout method on ItWhip.</p>`,
+              `Your new bank account ending in ${host.pendingBankLast4} is now your active payout method on ItWhip.`
+            )
+          } catch (emailErr) {
+            console.error(`[Cron] Failed to send bank activation email to ${host.email}:`, emailErr)
+          }
+        } catch (activationErr) {
+          console.error(`[Cron] Failed to activate pending bank for host ${host.id}:`, activationErr)
+        }
+      }
+
+      if (hostsWithPendingBanks.length > 0) {
+        console.log(`[Cron] Activated ${hostsWithPendingBanks.length} pending bank account(s)`)
+      }
+    } catch (bankErr) {
+      console.error('[Cron] Error processing pending bank activations:', bankErr)
+      // Don't fail the whole cron — continue to payout processing
+    }
 
     // Process eligible payouts
     const result = await processEligiblePayouts()

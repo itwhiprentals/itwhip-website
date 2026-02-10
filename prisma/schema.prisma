@@ -2228,6 +2228,13 @@ model RentalHost {
   payoutsDisabledReason         String?
   payoutsEnabled                Boolean                @default(false)
   pendingBalance                Float                  @default(0)
+
+  // Pending bank account change (24-hour activation delay for security)
+  pendingBankAccountId          String?
+  pendingBankLast4              String?
+  pendingBankName               String?
+  pendingBankType               String?
+  pendingBankActivatesAt        DateTime?
   platformFeeRate               Float                  @default(0.25)
   stripeConnectAccountId        String?                @unique
   stripeOnboardingLink          String?

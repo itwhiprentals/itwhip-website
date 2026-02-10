@@ -5,6 +5,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
+import { z } from 'zod'
+
+const tripChargeSchema = z.object({
+  chargeType: z.enum(['damage', 'cleaning', 'late_fee', 'mileage_overage', 'fuel', 'toll', 'traffic_violation', 'other']),
+  amount: z.number().positive().max(50000),
+  description: z.string().max(1000).optional(),
+})
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key'
@@ -48,14 +55,14 @@ export async function POST(
 
     const { id: bookingId } = await params
     const body = await request.json()
-    const { chargeType, amount, description } = body
-
-    if (!chargeType || !amount) {
+    const parsed = tripChargeSchema.safeParse(body)
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Charge type and amount are required' },
+        { error: 'Validation failed', details: parsed.error.flatten().fieldErrors },
         { status: 400 }
       )
     }
+    const { chargeType, amount, description } = parsed.data
 
     // Verify booking belongs to partner
     const booking = await prisma.rentalBooking.findFirst({

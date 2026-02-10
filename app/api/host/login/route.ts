@@ -6,6 +6,7 @@ import { verify } from 'argon2'
 import { sign, verify as jwtVerify } from 'jsonwebtoken'
 import { nanoid } from 'nanoid'
 import { logFailedLogin, logSuccessfulLogin, isIpBlocked } from '@/app/lib/security/loginMonitor'
+import { checkNewDeviceAndNotify } from '@/app/lib/security/loginNotification'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key'
@@ -229,6 +230,15 @@ export async function POST(request: NextRequest) {
       JWT_REFRESH_SECRET,
       { expiresIn: '7d' }
     )
+
+    // New device/IP detection — check BEFORE old sessions are deleted
+    checkNewDeviceAndNotify({
+      userId: host.user.id,
+      email: host.email,
+      name: host.name,
+      ip,
+      userAgent,
+    }).catch(() => {}) // Fire-and-forget, never block login
 
     // Create session record — clean up old sessions first to avoid P2002
     await prisma.session.deleteMany({

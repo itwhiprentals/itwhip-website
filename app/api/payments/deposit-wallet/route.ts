@@ -3,6 +3,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { stripe, formatAmountForStripe } from '@/app/lib/stripe/client'
+import { z } from 'zod'
+
+const depositSchema = z.object({
+  amount: z.number().min(50, 'Minimum deposit is $50').max(5000, 'Maximum deposit is $5,000'),
+})
 
 // GET: Get deposit wallet balance and transaction history
 export async function GET(request: NextRequest) {
@@ -65,15 +70,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { amount } = body
-
-    // Validate amount
-    if (!amount || amount < 50 || amount > 5000) {
+    const parsed = depositSchema.safeParse(body)
+    if (!parsed.success) {
       return NextResponse.json({
         success: false,
-        error: 'Amount must be between $50 and $5,000'
+        error: parsed.error.issues[0]?.message || 'Invalid amount'
       }, { status: 400 })
     }
+    const { amount } = parsed.data
 
     // Get guest profile
     const profile = await prisma.reviewerProfile.findFirst({

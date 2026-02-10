@@ -10,6 +10,7 @@ import { prisma } from '@/app/lib/database/prisma'
 import { loginRateLimit, getClientIp, createRateLimitResponse } from '@/app/lib/rate-limit'
 import { logFailedLogin, logSuccessfulLogin } from '@/app/lib/security/loginMonitor'
 import { checkSuspendedIdentifiers } from '@/app/lib/services/identityResolution'
+import { checkNewDeviceAndNotify } from '@/app/lib/security/loginNotification'
 
 // Lockout thresholds
 const LOCKOUT_TIERS = [
@@ -471,6 +472,15 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       console.error('[Login] Session creation failed (non-blocking):', e)
     }
+
+    // ✅ STEP 9.7: New device/IP detection — notify user if login from unknown location
+    checkNewDeviceAndNotify({
+      userId: user.id,
+      email: user.email || email,
+      name: user.name,
+      ip: clientIp,
+      userAgent,
+    }).catch(() => {}) // Fire-and-forget, never block login
 
     // ✅ STEP 10: Create response with cookies
     const response = NextResponse.json({

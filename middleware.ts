@@ -31,10 +31,13 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
     "font-src 'self' data: https://fonts.gstatic.com",
     "connect-src 'self' https://www.google.com https://*.googleapis.com https://api.stripe.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://cloudflareinsights.com https://api.mapbox.com https://*.tiles.mapbox.com https://events.mapbox.com https://res.cloudinary.com https://api.smartcar.com https://lh3.googleusercontent.com https://images.unsplash.com",
     "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.google.com https://*.firebaseapp.com",
+    "frame-ancestors 'self'",
+    "form-action 'self' https://checkout.stripe.com",
     "worker-src 'self' blob:",
     "child-src 'self' blob:",
     "object-src 'none'",
-    "base-uri 'self'"
+    "base-uri 'self'",
+    "upgrade-insecure-requests"
   ].join('; ')
   response.headers.set('Content-Security-Policy', csp)
 

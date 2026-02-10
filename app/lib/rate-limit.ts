@@ -56,6 +56,15 @@ export const phoneLoginRateLimit = new Ratelimit({
   prefix: 'ratelimit:phone-login',
 })
 
+// ✅ DL VERIFICATION RATE LIMIT: 5 attempts per hour per IP/email
+// Prevents AI cost abuse — each call invokes Claude Vision (~$0.01-0.05)
+export const dlVerificationRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(5, '1 h'),
+  analytics: true,
+  prefix: 'ratelimit:dl-verify',
+})
+
 // ✅ VERIFY-LINK RATE LIMIT: 5 attempts per 10 minutes per token
 export const verifyLinkRateLimit = new Ratelimit({
   redis,

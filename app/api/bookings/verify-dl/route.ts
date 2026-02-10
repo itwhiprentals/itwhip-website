@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { dlVerificationRateLimit, getClientIp } from '@/app/lib/rate-limit'
 import {
   quickVerifyDriverLicense,
   compareNames,
@@ -24,6 +25,58 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // ========================================================================
+    // RATE LIMITING — primary gate, fires before any AI call
+    // ========================================================================
+
+    // Step 1: Rate limit by IP (5 attempts per hour)
+    const ip = getClientIp(request)
+    const ipLimit = await dlVerificationRateLimit.limit(ip)
+    if (!ipLimit.success) {
+      const retryAfter = Math.ceil((ipLimit.reset - Date.now()) / 1000)
+      console.log(`[DL Verify] Rate limited by IP: ${ip} (retry in ${retryAfter}s)`)
+      return NextResponse.json(
+        { error: 'Too many verification attempts. Please try again later.', retryAfter },
+        { status: 429, headers: { 'Retry-After': String(retryAfter) } }
+      )
+    }
+
+    // Step 2: Rate limit by email (5 attempts per hour) — prevents distributed attacks
+    if (guestEmail) {
+      const emailLimit = await dlVerificationRateLimit.limit(`email:${guestEmail.toLowerCase()}`)
+      if (!emailLimit.success) {
+        const retryAfter = Math.ceil((emailLimit.reset - Date.now()) / 1000)
+        console.log(`[DL Verify] Rate limited by email: ${guestEmail} (retry in ${retryAfter}s)`)
+        return NextResponse.json(
+          { error: 'Too many verification attempts for this email. Please try again later.', retryAfter },
+          { status: 429, headers: { 'Retry-After': String(retryAfter) } }
+        )
+      }
+    }
+
+    // Step 3: Check SuspendedIdentifier (existing freeze system — secondary gate)
+    if (guestEmail) {
+      const frozen = await prisma.suspendedIdentifier.findUnique({
+        where: {
+          identifierType_identifierValue: {
+            identifierType: 'email',
+            identifierValue: guestEmail.toLowerCase()
+          }
+        }
+      })
+      if (frozen && (!frozen.expiresAt || frozen.expiresAt > new Date())) {
+        console.log(`[DL Verify] Frozen email blocked: ${guestEmail} (until ${frozen.expiresAt?.toISOString() || 'indefinite'})`)
+        return NextResponse.json(
+          { error: 'Verification suspended for this account.', frozenUntil: frozen.expiresAt?.toISOString() || null },
+          { status: 403 }
+        )
+      }
+    }
+
+    // ========================================================================
+    // AI VERIFICATION — Claude Vision call (rate limit passed)
+    // ========================================================================
 
     // Verify the driver's license using Claude Vision
     const result = await quickVerifyDriverLicense(frontImageUrl, backImageUrl, {

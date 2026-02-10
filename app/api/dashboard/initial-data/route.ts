@@ -1,5 +1,6 @@
 // app/api/dashboard/initial-data/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { prisma } from '@/app/lib/database/prisma'
 import { checkAccountHold } from '@/app/lib/claims/account-hold'
@@ -115,9 +116,9 @@ export async function GET(request: NextRequest) {
         }
       }),
 
-      // Query 3: Recent Bookings (Optimized with raw SQL)
-      prisma.$queryRawUnsafe(`
-        SELECT 
+      // Query 3: Recent Bookings (Optimized with parameterized raw SQL)
+      prisma.$queryRaw`
+        SELECT
           b.id,
           b."bookingCode",
           b.status,
@@ -135,7 +136,7 @@ export async function GET(request: NextRequest) {
           b."createdAt",
           b."guestName",
           b."guestEmail",
-          
+
           -- Car details
           json_build_object(
             'id', c.id,
@@ -144,15 +145,15 @@ export async function GET(request: NextRequest) {
             'year', c.year,
             'type', c."carType",
             'photo', (
-              SELECT url 
-              FROM "RentalCarPhoto" 
-              WHERE "carId" = c.id 
-              ORDER BY "order" 
+              SELECT url
+              FROM "RentalCarPhoto"
+              WHERE "carId" = c.id
+              ORDER BY "order"
               LIMIT 1
             ),
             'location', CONCAT(c.city, ', ', c.state)
           ) as car,
-          
+
           -- Host details
           json_build_object(
             'id', h.id,
@@ -160,23 +161,23 @@ export async function GET(request: NextRequest) {
             'rating', h.rating,
             'photo', h."profilePhoto"
           ) as host,
-          
+
           -- Unread message count
           COALESCE((
             SELECT COUNT(*)::int
             FROM "RentalMessage" m
-            WHERE m."bookingId" = b.id 
+            WHERE m."bookingId" = b.id
               AND m."isRead" = false
               AND m."senderType" NOT IN ('guest', 'renter')
           ), 0) as "unreadMessages"
-          
+
         FROM "RentalBooking" b
         LEFT JOIN "RentalCar" c ON c.id = b."carId"
         LEFT JOIN "RentalHost" h ON h.id = b."hostId"
-        WHERE (b."renterId" = '${userId}' OR b."guestEmail" = '${userEmail}')
+        WHERE (b."renterId" = ${userId} OR b."guestEmail" = ${userEmail})
         ORDER BY b."createdAt" DESC
         LIMIT 10
-      `),
+      `,
 
       // Query 4: Booking Stats (Count by status)
       prisma.rentalBooking.groupBy({
