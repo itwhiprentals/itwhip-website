@@ -315,9 +315,47 @@ SECURITY FEATURES:
 - "obscured": features partially visible but not clear
 - assessment: PASS if the document looks like a genuine state-issued driver's license. REVIEW only if multiple features appear digitally altered. FAIL only if document is clearly fabricated.
 
-NAME FORMAT:
-DL names are typically in "LAST FIRST MIDDLE" or "LAST, FIRST MIDDLE" format.
-Parse the name and report both the raw text and the parsed first/last name.`,
+NAME FORMAT — US DRIVER'S LICENSE FIELD LAYOUT:
+On US driver's licenses, names are displayed in numbered fields:
+- Field 1 (labeled "1"): LAST NAME (family name)
+- Field 2 (labeled "2"): FIRST NAME and MIDDLE NAME (given names)
+
+Example — Arizona DL showing:
+  1  KIRVEN
+  2  JEMIEA
+     SHERAE
+→ fullName = "Jemiea Sherae Kirven" (First Middle Last — natural order)
+
+IMPORTANT: Always return fullName in NATURAL ORDER: "First Middle Last"
+- rawText: Report exactly what you see on each field (e.g., "1 KIRVEN  2 JEMIEA SHERAE")
+- value: Combine as "First Middle Last" (e.g., "Jemiea Sherae Kirven")
+- If the card uses comma format (e.g., "KIRVEN, JEMIEA SHERAE"), parse the same way.
+- Do NOT return the name in DL field order (last first middle) — always natural order.
+
+LICENSE NUMBER VALIDATION:
+After identifying the state, validate the license number format:
+- Arizona (AZ): 1 letter + 8 digits (e.g., D01699143) or 9 digits. Field labeled "4d DLN".
+  The letter is typically (but not always) the first letter of the last name.
+  For ID cards, the field is labeled "4d IDN" instead of "4d DLN" — this confirms it's NOT a driver's license.
+- If the license number doesn't match the expected format for the identified state, note as informational.
+
+BACK OF CARD VERIFICATION:
+When a back image is provided, perform these critical checks:
+
+1. CARD MATCH: Verify the back appears to be from the SAME physical card as the front:
+   - Same card design/generation (e.g., 2023+ polycarbonate vs older PVC)
+   - Same state issuer
+   - DOB printed on back should match DOB on front
+   - If these don't match, add a critical flag: "Front and back appear to be from different cards"
+
+2. ID CARD REJECTION (BACK): Look for the text "FOR IDENTIFICATION ONLY" or
+   "NOT FOR OPERATION OF A MOTOR VEHICLE" printed on the back of the card.
+   If present, this CONFIRMS the document is a state ID card, not a driver's license.
+   Add critical flag: "Back of card states 'FOR IDENTIFICATION ONLY, NOT FOR OPERATION OF A MOTOR VEHICLE' — this is a state identification card, not a driver's license."
+   Note: Driver's licenses do NOT have this text on the back.
+
+3. BARCODE PRESENCE: The back should have a PDF417 2D barcode (large rectangular barcode).
+   If no barcode is visible, note as informational: "No PDF417 barcode detected on back of card."`,
     })
 
     // Build system prompt with state rules (cacheable)
@@ -477,10 +515,8 @@ ${buildAllStateRulesPrompt()}`,
 
 /**
  * Parse a DL name into first/middle/last components.
- * Handles common DL formats:
- *   - "LAST FIRST MIDDLE" (most common on US DLs)
- *   - "LAST, FIRST MIDDLE" (comma-separated)
- *   - "FIRST MIDDLE LAST" (less common)
+ * Our AI prompt instructs Claude to return names in "FIRST MIDDLE LAST" (natural order).
+ * Also handles comma format: "LAST, FIRST MIDDLE"
  */
 function parseDLName(dlName: string): { first: string; middle?: string; last: string } {
   const cleaned = dlName.trim()
@@ -496,20 +532,19 @@ function parseDLName(dlName: string): { first: string; middle?: string; last: st
     }
   }
 
-  // Default: assume "LAST FIRST MIDDLE" (most US DLs)
+  // Default: "FIRST MIDDLE LAST" (natural order — matching our prompt instruction)
   const parts = cleaned.split(/\s+/)
   if (parts.length === 1) {
     return { first: parts[0], last: parts[0] }
   }
   if (parts.length === 2) {
-    // Could be "LAST FIRST" or "FIRST LAST" — we'll try both in comparison
-    return { last: parts[0], first: parts[1] }
+    return { first: parts[0], last: parts[1] }
   }
-  // 3+ parts: "LAST FIRST MIDDLE..." is the DL convention
+  // 3+ parts: "FIRST MIDDLE... LAST"
   return {
-    last: parts[0],
-    first: parts[1],
-    middle: parts.slice(2).join(' ') || undefined,
+    first: parts[0],
+    middle: parts.slice(1, -1).join(' ') || undefined,
+    last: parts[parts.length - 1],
   }
 }
 
@@ -556,20 +591,7 @@ export function compareNames(dlName: string, bookingName: string): NameCompariso
   const dlClean = stripSuffix(dlParts)
   const bookingClean = stripSuffix(bookingParts)
 
-  // Strategy 1: DL is "LAST FIRST [MIDDLE]" (most common US DL format)
-  if (dlClean.length >= 2) {
-    const dlLast = dlClean[0]
-    const dlFirst = dlClean[1]
-    if (dlFirst === bookingFirst && dlLast === bookingLast) {
-      return {
-        match: true,
-        dlParsed: { first: dlFirst, middle: dlClean.slice(2).join(' ') || undefined, last: dlLast, raw: dlName },
-        bookingParsed: { first: bookingFirst, last: bookingLast, raw: bookingName },
-      }
-    }
-  }
-
-  // Strategy 2: DL is "FIRST [MIDDLE] LAST" (same order as booking)
+  // Strategy 1: DL is "FIRST [MIDDLE] LAST" (natural order — our prompt instruction)
   if (dlClean.length >= 2) {
     const dlFirst = dlClean[0]
     const dlLast = dlClean[dlClean.length - 1]
@@ -577,6 +599,19 @@ export function compareNames(dlName: string, bookingName: string): NameCompariso
       return {
         match: true,
         dlParsed: { first: dlFirst, middle: dlClean.slice(1, -1).join(' ') || undefined, last: dlLast, raw: dlName },
+        bookingParsed: { first: bookingFirst, last: bookingLast, raw: bookingName },
+      }
+    }
+  }
+
+  // Strategy 2: DL is "LAST FIRST [MIDDLE]" (legacy DL format, in case AI returns it)
+  if (dlClean.length >= 2) {
+    const dlLast = dlClean[0]
+    const dlFirst = dlClean[1]
+    if (dlFirst === bookingFirst && dlLast === bookingLast) {
+      return {
+        match: true,
+        dlParsed: { first: dlFirst, middle: dlClean.slice(2).join(' ') || undefined, last: dlLast, raw: dlName },
         bookingParsed: { first: bookingFirst, last: bookingLast, raw: bookingName },
       }
     }
@@ -596,20 +631,43 @@ export function compareNames(dlName: string, bookingName: string): NameCompariso
     }
   }
 
-  // Strategy 4: Check if all booking name parts exist somewhere in DL name parts
+  // Strategy 4: Middle-name-tolerant matching
+  // DL has "First Middle Last" but booking only has "First Last" — ignore middle
+  // e.g., DL "Christian M Haguma" vs booking "Christian Haguma" → match
+  if (dlClean.length > bookingClean.length && bookingClean.length >= 2) {
+    // Try: first word matches + last word matches (DL has extra middle name parts)
+    if (dlClean[0] === bookingFirst && dlClean[dlClean.length - 1] === bookingLast) {
+      return {
+        match: true,
+        dlParsed: { first: dlClean[0], middle: dlClean.slice(1, -1).join(' ') || undefined, last: dlClean[dlClean.length - 1], raw: dlName },
+        bookingParsed: { first: bookingFirst, last: bookingLast, raw: bookingName },
+      }
+    }
+    // Also try reversed (DL in LAST FIRST MIDDLE order with extra parts)
+    if (dlClean[dlClean.length - 1] === bookingFirst && dlClean[0] === bookingLast) {
+      return {
+        match: true,
+        dlParsed: { first: dlClean[dlClean.length - 1], middle: dlClean.slice(1, -1).join(' ') || undefined, last: dlClean[0], raw: dlName },
+        bookingParsed: { first: bookingFirst, last: bookingLast, raw: bookingName },
+      }
+    }
+  }
+
+  // Strategy 5: Check if all booking name parts exist somewhere in DL name parts
   const allBookingPartsInDL = bookingClean.every(part => dlClean.includes(part))
   if (allBookingPartsInDL && bookingClean.length >= 2) {
     return {
       match: true,
-      dlParsed: { first: dlClean[1] || dlClean[0], last: dlClean[0], raw: dlName },
+      dlParsed: { first: dlClean[0], last: dlClean[dlClean.length - 1], raw: dlName },
       bookingParsed: { first: bookingFirst, last: bookingLast, raw: bookingName },
     }
   }
 
   // No match found
+  const dlParsed = parseDLName(dlName)
   return {
     match: false,
-    dlParsed: { first: dlParts[1] || dlParts[0], last: dlParts[0], raw: dlName },
+    dlParsed: { first: normalize(dlParsed.first), middle: dlParsed.middle, last: normalize(dlParsed.last), raw: dlName },
     bookingParsed: { first: bookingFirst, last: bookingLast, raw: bookingName },
     mismatchDetails: `DL name "${dlName}" does not match booking name "${bookingName}". ` +
       `DL parts: [${dlParts.join(', ')}], Booking parts: [${bookingParts.join(', ')}]`,

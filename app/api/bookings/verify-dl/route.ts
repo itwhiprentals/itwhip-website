@@ -11,6 +11,7 @@ import {
   validateAge,
   type NameComparisonResult,
 } from '@/app/lib/booking/ai/license-analyzer'
+import { decodeAndValidateBarcode } from '@/app/lib/booking/ai/barcode-validator'
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,6 +68,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Server-side barcode cross-validation (if back image provided)
+    let barcodeValidation = null
+    if (backImageUrl && result.data) {
+      try {
+        barcodeValidation = await decodeAndValidateBarcode(backImageUrl, {
+          fullName: result.data.fullName,
+          dateOfBirth: result.data.dateOfBirth,
+          licenseNumber: result.data.licenseNumber,
+          state: result.data.stateOrCountry,
+        })
+        // Merge barcode mismatches as critical flags
+        if (barcodeValidation.mismatches.length > 0) {
+          criticalFlags.push(...barcodeValidation.mismatches)
+        }
+        // Merge notes as informational
+        if (barcodeValidation.notes.length > 0) {
+          informationalFlags.push(...barcodeValidation.notes)
+        }
+        console.log(`[DL Verify] Barcode validation: decoded=${barcodeValidation.decoded}, mismatches=${barcodeValidation.mismatches.length}`)
+      } catch (barcodeErr) {
+        console.error('[DL Verify] Barcode validation error (non-blocking):', barcodeErr)
+        informationalFlags.push('Barcode cross-validation could not be performed')
+      }
+    }
+
     // Pass/fail based on CRITICAL flags only (not informational)
     const quickVerifyPassed =
       result.confidence >= 70 &&
@@ -100,6 +126,11 @@ export async function POST(request: NextRequest) {
         redFlags: criticalFlags, // Only critical flags in the legacy field
       },
       model: result.model,
+      barcodeValidation: barcodeValidation ? {
+        decoded: barcodeValidation.decoded,
+        data: barcodeValidation.barcodeData || null,
+        mismatches: barcodeValidation.mismatches,
+      } : null,
       recommendation: quickVerifyPassed
         ? 'Proceed with booking. Full Stripe verification required during onboarding.'
         : criticalFlags.length > 0

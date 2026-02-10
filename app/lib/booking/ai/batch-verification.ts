@@ -211,9 +211,47 @@ SECURITY FEATURES:
 - "obscured": features partially visible but not clear
 - assessment: PASS if the document looks like a genuine state-issued driver's license. REVIEW only if multiple features appear digitally altered. FAIL only if document is clearly fabricated.
 
-NAME FORMAT:
-DL names are typically in "LAST FIRST MIDDLE" or "LAST, FIRST MIDDLE" format.
-Parse the name and report both the raw text and the parsed first/last name.`
+NAME FORMAT — US DRIVER'S LICENSE FIELD LAYOUT:
+On US driver's licenses, names are displayed in numbered fields:
+- Field 1 (labeled "1"): LAST NAME (family name)
+- Field 2 (labeled "2"): FIRST NAME and MIDDLE NAME (given names)
+
+Example — Arizona DL showing:
+  1  KIRVEN
+  2  JEMIEA
+     SHERAE
+→ fullName = "Jemiea Sherae Kirven" (First Middle Last — natural order)
+
+IMPORTANT: Always return fullName in NATURAL ORDER: "First Middle Last"
+- rawText: Report exactly what you see on each field (e.g., "1 KIRVEN  2 JEMIEA SHERAE")
+- value: Combine as "First Middle Last" (e.g., "Jemiea Sherae Kirven")
+- If the card uses comma format (e.g., "KIRVEN, JEMIEA SHERAE"), parse the same way.
+- Do NOT return the name in DL field order (last first middle) — always natural order.
+
+LICENSE NUMBER VALIDATION:
+After identifying the state, validate the license number format:
+- Arizona (AZ): 1 letter + 8 digits (e.g., D01699143) or 9 digits. Field labeled "4d DLN".
+  The letter is typically (but not always) the first letter of the last name.
+  For ID cards, the field is labeled "4d IDN" instead of "4d DLN" — this confirms it's NOT a driver's license.
+- If the license number doesn't match the expected format for the identified state, note as informational.
+
+BACK OF CARD VERIFICATION:
+When a back image is provided, perform these critical checks:
+
+1. CARD MATCH: Verify the back appears to be from the SAME physical card as the front:
+   - Same card design/generation (e.g., 2023+ polycarbonate vs older PVC)
+   - Same state issuer
+   - DOB printed on back should match DOB on front
+   - If these don't match, add a critical flag: "Front and back appear to be from different cards"
+
+2. ID CARD REJECTION (BACK): Look for the text "FOR IDENTIFICATION ONLY" or
+   "NOT FOR OPERATION OF A MOTOR VEHICLE" printed on the back of the card.
+   If present, this CONFIRMS the document is a state ID card, not a driver's license.
+   Add critical flag: "Back of card states 'FOR IDENTIFICATION ONLY, NOT FOR OPERATION OF A MOTOR VEHICLE' — this is a state identification card, not a driver's license."
+   Note: Driver's licenses do NOT have this text on the back.
+
+3. BARCODE PRESENCE: The back should have a PDF417 2D barcode (large rectangular barcode).
+   If no barcode is visible, note as informational: "No PDF417 barcode detected on back of card."`
 }
 
 // ─── Batch Job Creator ──────────────────────────────────────────────────────
