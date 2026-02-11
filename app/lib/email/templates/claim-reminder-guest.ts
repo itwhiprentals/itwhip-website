@@ -1,6 +1,7 @@
 // app/lib/email/templates/claim-reminder-guest.ts
 
 import { ClaimReminderGuestData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
  * Email template for guest 24hr reminder
@@ -199,7 +200,7 @@ export function getClaimReminderGuestTemplate(data: ClaimReminderGuestData): Ema
 
           <div class="content">
             <p style="font-size: 16px; color: #111827; margin-bottom: 20px;">
-              Hi ${data.guestName},
+              Hi ${escapeHtml(data.guestName)},
             </p>
 
             <p style="color: #374151; margin-bottom: 24px; font-weight: 600; font-size: 15px;">
@@ -244,7 +245,7 @@ export function getClaimReminderGuestTemplate(data: ClaimReminderGuestData): Ema
               </div>
               <div class="info-row">
                 <span class="info-label">Vehicle</span>
-                <span class="info-value">${data.carDetails}</span>
+                <span class="info-value">${escapeHtml(data.carDetails)}</span>
               </div>
             </div>
 
@@ -295,7 +296,7 @@ export function getClaimReminderGuestTemplate(data: ClaimReminderGuestData): Ema
   const text = `
 🚨 FINAL REMINDER - ${data.hoursRemaining} HOURS REMAINING
 
-Hi ${data.guestName},
+Hi ${escapeHtml(data.guestName)},
 
 URGENT: This is your final reminder. You have less than 24 hours remaining to respond to an insurance claim filed against your account.
 
@@ -314,7 +315,7 @@ RESPOND NOW: ${data.responseUrl}
 CLAIM DETAILS:
 Claim ID: #${data.claimId.slice(0, 8).toUpperCase()}
 Booking Code: ${data.bookingCode}
-Vehicle: ${data.carDetails}
+Vehicle: ${escapeHtml(data.carDetails)}
 
 📋 WHAT HAPPENS IF YOU DON'T RESPOND:
 ${data.consequences}

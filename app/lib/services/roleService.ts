@@ -6,8 +6,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verify, TokenExpiredError } from 'jsonwebtoken'
 
 // JWT secrets
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
-const GUEST_JWT_SECRET = process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
+const JWT_SECRET = process.env.JWT_SECRET!
+const GUEST_JWT_SECRET = process.env.GUEST_JWT_SECRET!
 
 // ============================================
 // TYPES

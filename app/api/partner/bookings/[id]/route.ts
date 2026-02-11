@@ -9,7 +9,7 @@ import { sendEmail } from '@/app/lib/email/send-email'
 import { getBookingCancelledTemplate } from '@/app/lib/email/templates/booking-cancelled'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-secret-key'
+  process.env.JWT_SECRET!
 )
 
 // Helper to determine charge type from individual charge fields

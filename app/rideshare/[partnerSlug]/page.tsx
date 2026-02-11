@@ -23,7 +23,7 @@ import Footer from '@/app/components/Footer'
 import Header from '@/app/components/Header'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-secret-key'
+  process.env.JWT_SECRET!
 )
 
 interface PageProps {

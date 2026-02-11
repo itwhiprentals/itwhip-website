@@ -19,7 +19,7 @@ function generateId(): string {
 }
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 )
 
 // Get partner from token

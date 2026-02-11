@@ -1,6 +1,7 @@
 // app/lib/email/templates/booking-received.ts
 
 import { BookingReceivedData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
  * Email template for initial booking confirmation
@@ -108,7 +109,7 @@ export function getBookingReceivedTemplate(data: BookingReceivedData): EmailTemp
           </div>
           
           <div class="content">
-            <p style="font-size: 16px; margin-bottom: 16px;">Dear ${data.guestName},</p>
+            <p style="font-size: 16px; margin-bottom: 16px;">Dear ${escapeHtml(data.guestName)},</p>
             
             <p>Thank you for choosing ItWhip! We've received your booking request and are processing it now.</p>
             
@@ -131,10 +132,10 @@ export function getBookingReceivedTemplate(data: BookingReceivedData): EmailTemp
             </div>
             `}
             
-            <img src="${data.carImage}" alt="${data.carMake} ${data.carModel}" class="car-image" />
+            <img src="${data.carImage}" alt="${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}" class="car-image" />
             
             <div class="details-box">
-              <h3 style="margin: 0 0 16px 0; font-size: 18px;">${data.carMake} ${data.carModel}</h3>
+              <h3 style="margin: 0 0 16px 0; font-size: 18px;">${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}</h3>
               <div class="detail-row">
                 <span>Booking Code</span>
                 <strong>${data.bookingCode}</strong>
@@ -153,7 +154,7 @@ export function getBookingReceivedTemplate(data: BookingReceivedData): EmailTemp
               </div>
               <div class="detail-row">
                 <span>Location</span>
-                <strong>${data.pickupLocation}</strong>
+                <strong>${escapeHtml(data.pickupLocation)}</strong>
               </div>
               <div class="detail-row">
                 <span>Total Amount</span>
@@ -196,7 +197,7 @@ export function getBookingReceivedTemplate(data: BookingReceivedData): EmailTemp
   const text = `
 Booking Received
 
-Dear ${data.guestName},
+Dear ${escapeHtml(data.guestName)},
 
 Thank you for choosing ItWhip! We've received your booking request and are processing it now.
 
@@ -208,10 +209,10 @@ Important: Your booking will be confirmed after verification (usually within 2-4
 
 BOOKING DETAILS:
 - Booking Code: ${data.bookingCode}
-- Vehicle: ${data.carMake} ${data.carModel}
+- Vehicle: ${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}
 - Pick-up: ${data.startDate} at ${data.pickupTime}
 - Return: ${data.endDate}
-- Location: ${data.pickupLocation}
+- Location: ${escapeHtml(data.pickupLocation)}
 - Total: $${data.totalAmount}
 
 Next Steps:

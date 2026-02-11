@@ -1,6 +1,7 @@
 // app/lib/email/templates/booking-rejected.ts
 
 import { BookingRejectedData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
 * Email template for rejected bookings
@@ -141,17 +142,17 @@ export function getBookingRejectedTemplate(data: BookingRejectedData): EmailTemp
          </div>
          
          <div class="content">
-           <p style="font-size: 16px; margin-bottom: 16px;">Dear ${data.guestName},</p>
+           <p style="font-size: 16px; margin-bottom: 16px;">Dear ${escapeHtml(data.guestName)},</p>
            
            <div class="alert-message">
-             Unfortunately, we were unable to verify your booking for the <strong>${data.carMake} ${data.carModel}</strong>. 
+             Unfortunately, we were unable to verify your booking for the <strong>${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}</strong>. 
              Your booking #${data.bookingCode} has been cancelled and no charges have been processed.
            </div>
            
            <div class="reason-box">
              <h3>Reason for Rejection:</h3>
              <p style="font-size: 14px; color: #4b5563;">
-               ${data.reason}
+               ${escapeHtml(data.reason)}
              </p>
            </div>
            
@@ -194,13 +195,13 @@ export function getBookingRejectedTemplate(data: BookingRejectedData): EmailTemp
  const text = `
 Booking Could Not Be Verified
 
-Dear ${data.guestName},
+Dear ${escapeHtml(data.guestName)},
 
-Unfortunately, we were unable to verify your booking for the ${data.carMake} ${data.carModel}.
+Unfortunately, we were unable to verify your booking for the ${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}.
 Your booking #${data.bookingCode} has been cancelled and no charges have been processed.
 
 REASON FOR REJECTION:
-${data.reason}
+${escapeHtml(data.reason)}
 
 ${data.canRebook ? `WHAT YOU CAN DO:
 - Ensure all photos are clear and well-lit

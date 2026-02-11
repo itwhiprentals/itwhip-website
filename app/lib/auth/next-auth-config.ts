@@ -10,12 +10,12 @@ import { SignJWT, importPKCS8 } from 'jose'
 
 // JWT secrets for issuing tokens compatible with existing system
 const GUEST_JWT_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
+  process.env.GUEST_JWT_SECRET!
 )
 
 // JWT secret for pending link tokens (10-min expiry)
 const LINK_TOKEN_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
+  process.env.GUEST_JWT_SECRET!
 )
 
 // Generate Apple client secret dynamically

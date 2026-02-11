@@ -1,6 +1,7 @@
 // app/lib/email/templates/counter-offer.ts
 
 import { CounterOfferData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
  * Email template for counter-offer notifications
@@ -198,7 +199,7 @@ export function getCounterOfferTemplate(data: CounterOfferData): EmailTemplate {
           </div>
 
           <div class="content">
-            <p style="font-size: 16px; margin-bottom: 16px;">Hi ${data.recipientName},</p>
+            <p style="font-size: 16px; margin-bottom: 16px;">Hi ${escapeHtml(data.recipientName)},</p>
 
             <p style="font-size: 14px; color: #4b5563; margin-bottom: 20px;">
               ${data.counterPartyName} has submitted a counter-offer for the fleet management agreement.
@@ -300,7 +301,7 @@ export function getCounterOfferTemplate(data: CounterOfferData): EmailTemplate {
   const text = `
 Counter-Offer Received - Round ${data.negotiationRound}/${data.maxRounds}
 
-Hi ${data.recipientName},
+Hi ${escapeHtml(data.recipientName)},
 
 ${data.counterPartyName} has submitted a counter-offer for the fleet management agreement.
 

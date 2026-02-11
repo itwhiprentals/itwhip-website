@@ -5,11 +5,11 @@ import { prisma } from '@/app/lib/database/prisma'
 
 // Get both guest and platform JWT secrets
 const GUEST_JWT_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
+  process.env.GUEST_JWT_SECRET!
 )
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 )
 
 // Helper function to verify token with multiple secrets

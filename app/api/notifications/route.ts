@@ -7,8 +7,8 @@ import { prisma } from '@/app/lib/database/prisma'
 
 // Helper to get user ID from JWT (tries both guest and admin secrets)
 async function getUserIdFromToken(token: string): Promise<string | null> {
-  const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key')
-  const GUEST_JWT_SECRET = new TextEncoder().encode(process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key')
+  const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!)
+  const GUEST_JWT_SECRET = new TextEncoder().encode(process.env.GUEST_JWT_SECRET!)
 
   for (const secret of [GUEST_JWT_SECRET, JWT_SECRET]) {
     try {

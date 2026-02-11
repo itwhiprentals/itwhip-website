@@ -9,7 +9,7 @@ import Stripe from 'stripe'
 import { sendBookingConfirmation, sendHostRejectedEmail } from '@/app/lib/email/booking-emails'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-secret-key'
+  process.env.JWT_SECRET!
 )
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {

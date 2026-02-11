@@ -1,6 +1,7 @@
 // app/lib/email/templates/claim-guest-response-received.ts
 
 import { ClaimGuestResponseReceivedData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
  * Email template for Fleet/Admin when guest submits their response to a claim
@@ -167,19 +168,19 @@ export function getClaimGuestResponseReceivedTemplate(data: ClaimGuestResponseRe
               </div>
               <div class="info-row">
                 <span class="info-label">Guest</span>
-                <span class="info-value">${data.guestName} (${data.guestEmail})</span>
+                <span class="info-value">${escapeHtml(data.guestName)} (${data.guestEmail})</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Host</span>
-                <span class="info-value">${data.hostName}</span>
+                <span class="info-value">${escapeHtml(data.hostName)}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Vehicle</span>
-                <span class="info-value">${data.carDetails}</span>
+                <span class="info-value">${escapeHtml(data.carDetails)}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Claim Type</span>
-                <span class="info-value">${data.claimType}</span>
+                <span class="info-value">${escapeHtml(data.claimType)}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Estimated Cost</span>
@@ -236,10 +237,10 @@ The guest has submitted their response to the claim. Both parties have now provi
 CLAIM DETAILS:
 - Claim ID: #${data.claimId.slice(0, 8).toUpperCase()}
 - Booking Code: ${data.bookingCode}
-- Guest: ${data.guestName} (${data.guestEmail})
-- Host: ${data.hostName}
-- Vehicle: ${data.carDetails}
-- Claim Type: ${data.claimType}
+- Guest: ${escapeHtml(data.guestName)} (${data.guestEmail})
+- Host: ${escapeHtml(data.hostName)}
+- Vehicle: ${escapeHtml(data.carDetails)}
+- Claim Type: ${escapeHtml(data.claimType)}
 - Estimated Cost: $${data.estimatedCost.toLocaleString()}
 - Response Submitted: ${new Date(data.respondedAt).toLocaleString()}
 - Evidence Photos: ${data.evidencePhotosCount} uploaded

@@ -7,7 +7,7 @@ import { jwtVerify } from 'jose'
 
 // SECURITY FIX: JWT secret for verifying tokens
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-secret-key'
+  process.env.JWT_SECRET!
 )
 
 // SECURITY FIX: Verify host from JWT token, not from spoofable headers

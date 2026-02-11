@@ -269,7 +269,7 @@ export async function POST(request: NextRequest) {
     if (accessToken) {
       try {
         const jwt = await import('jsonwebtoken')
-        const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
+        const JWT_SECRET = process.env.JWT_SECRET!
         const decoded = jwt.verify(accessToken, JWT_SECRET) as any
         authenticatedUserId = decoded.userId
       } catch (err) {
@@ -495,12 +495,35 @@ export async function POST(request: NextRequest) {
     // ========== END FRAUD DETECTION ==========
 
     // ========== DL VERIFICATION GATE ==========
-    // Guest must have either AI-verified DL or profile-level verification
-    const aiVerificationPassed = bookingData.aiVerification?.passed === true
+    // SECURITY FIX: Query server-side verification results instead of trusting client payload.
+    // Previously accepted `aiVerification.passed` from the client body, which could be spoofed
+    // with a simple `{ passed: true, score: 100 }` to bypass DL verification entirely.
     const guestDocumentsVerified = guestProfile?.documentsVerified === true
 
-    if (!aiVerificationPassed && !guestDocumentsVerified) {
-      console.warn(`[book] DL verification failed for ${bookingData.guestEmail}`)
+    // Check server-side AI verification from DLVerificationLog
+    let serverSideAIVerified = false
+    if (!guestDocumentsVerified) {
+      const latestDLVerification = await prisma.dLVerificationLog.findFirst({
+        where: {
+          guestEmail: bookingData.guestEmail.toLowerCase(),
+          passed: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { passed: true, score: true, createdAt: true }
+      })
+
+      // Require verification to be recent (within 72 hours)
+      if (latestDLVerification) {
+        const hoursAgo = (Date.now() - latestDLVerification.createdAt.getTime()) / (1000 * 60 * 60)
+        serverSideAIVerified = hoursAgo <= 72
+        if (!serverSideAIVerified) {
+          console.warn(`[book] DL verification expired for ${bookingData.guestEmail} (${Math.round(hoursAgo)}h ago)`)
+        }
+      }
+    }
+
+    if (!serverSideAIVerified && !guestDocumentsVerified) {
+      console.warn(`[book] DL verification failed for ${bookingData.guestEmail} (no server-side verification found)`)
       return NextResponse.json(
         {
           error: 'Driver verification required',
@@ -756,10 +779,8 @@ export async function POST(request: NextRequest) {
           selfiePhotoUrl: bookingData.driverInfo.selfiePhotoUrl,
           dateOfBirth: parseArizonaDate(bookingData.driverInfo.dateOfBirth),
           
-          // AI DL verification (from visitor flow)
-          ...(bookingData.aiVerification && {
-            aiVerificationResult: bookingData.aiVerification.result,
-            aiVerificationScore: bookingData.aiVerification.score,
+          // AI DL verification — pulled from server-side DLVerificationLog (never trust client)
+          ...(serverSideAIVerified && {
             aiVerificationAt: new Date(),
             aiVerificationModel: 'claude-sonnet-4-5-20250929',
           }),
@@ -767,7 +788,7 @@ export async function POST(request: NextRequest) {
           // Verification status
           verificationStatus: (requiresManualReview ? 'SUBMITTED' : (needsVerification ? 'SUBMITTED' : 'APPROVED')) as any,
           // Always set documentsSubmittedAt when we have DL photos or AI verification
-          documentsSubmittedAt: (needsVerification || requiresManualReview || bookingData.aiVerification) ? new Date() : null,
+          documentsSubmittedAt: (needsVerification || requiresManualReview || serverSideAIVerified) ? new Date() : null,
           flaggedForReview: requiresManualReview,
           
           // SIMPLIFIED FRAUD DATA

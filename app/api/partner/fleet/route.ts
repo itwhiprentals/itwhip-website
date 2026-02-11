@@ -10,7 +10,7 @@ import { updatePartnerCommissionRate } from '@/app/lib/commission/calculate-tier
 import { getVehicleSpecData } from '@/app/lib/utils/vehicleSpec'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-secret-key'
+  process.env.JWT_SECRET!
 )
 
 async function getPartnerFromToken(request?: NextRequest) {

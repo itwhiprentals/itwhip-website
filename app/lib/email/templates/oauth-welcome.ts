@@ -1,6 +1,7 @@
 // app/lib/email/templates/oauth-welcome.ts
 
 import { EmailTemplate, OAuthWelcomeData } from '../types'
+import { escapeHtml } from '../sanitize'
 
 export function getOAuthWelcomeTemplate(data: OAuthWelcomeData): EmailTemplate {
   const subject = 'Welcome to ItWhip - Complete Your Profile'
@@ -176,12 +177,12 @@ export function getOAuthWelcomeTemplate(data: OAuthWelcomeData): EmailTemplate {
         <div class="container">
           <div class="header">
             <div class="welcome-badge">Welcome</div>
-            <h1>Welcome to ItWhip, ${data.userName}!</h1>
+            <h1>Welcome to ItWhip, ${escapeHtml(data.userName)}!</h1>
             <p>Your account is almost ready</p>
           </div>
 
           <div class="content">
-            <p style="font-size: 16px; margin-bottom: 16px;">Hi ${data.userName},</p>
+            <p style="font-size: 16px; margin-bottom: 16px;">Hi ${escapeHtml(data.userName)},</p>
 
             <p style="color: #4b5563; margin-bottom: 24px;">
               Thanks for joining ItWhip! Your account has been created successfully.
@@ -276,9 +277,9 @@ export function getOAuthWelcomeTemplate(data: OAuthWelcomeData): EmailTemplate {
   `
 
   const text = `
-Welcome to ItWhip, ${data.userName}!
+Welcome to ItWhip, ${escapeHtml(data.userName)}!
 
-Hi ${data.userName},
+Hi ${escapeHtml(data.userName)},
 
 Thanks for joining ItWhip! Your account has been created successfully. Complete a few more steps to start renting cars.
 

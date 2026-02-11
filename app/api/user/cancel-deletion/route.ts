@@ -12,8 +12,8 @@ async function getUserFromToken(req: NextRequest): Promise<string | null> {
     if (!token) return null
 
     const { jwtVerify } = await import('jose')
-    const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key')
-    const GUEST_JWT_SECRET = new TextEncoder().encode(process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key')
+    const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!)
+    const GUEST_JWT_SECRET = new TextEncoder().encode(process.env.GUEST_JWT_SECRET!)
 
     for (const secret of [JWT_SECRET, GUEST_JWT_SECRET]) {
       try {

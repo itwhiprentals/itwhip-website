@@ -9,8 +9,8 @@ import { nanoid } from 'nanoid'
 import { prisma } from '@/app/lib/database/prisma'
 import { decodeToken, readAuthCookies } from '@/app/lib/services/roleService'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret'
+const JWT_SECRET = process.env.JWT_SECRET!
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!
 
 // SECURITY FIX: Helper function to invalidate all old session cookies
 function clearAllAuthCookies(response: NextResponse) {

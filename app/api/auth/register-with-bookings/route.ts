@@ -6,10 +6,10 @@ import { nanoid } from 'nanoid'
 import prisma from '@/app/lib/database/prisma'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-change-in-production'
+  process.env.JWT_SECRET!
 )
 const JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret-change'
+  process.env.JWT_REFRESH_SECRET!
 )
 
 async function createTokens(userId: string, email: string, role: string) {

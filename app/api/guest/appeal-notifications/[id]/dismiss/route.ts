@@ -4,7 +4,7 @@ import { prisma } from '@/app/lib/database/prisma'
 import { jwtVerify } from 'jose'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key-change-in-production'
+  process.env.JWT_SECRET!
 )
 
 export async function POST(

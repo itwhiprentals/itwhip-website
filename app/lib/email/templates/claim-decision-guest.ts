@@ -1,6 +1,7 @@
 // app/lib/email/templates/claim-decision-guest.ts
 
 import { ClaimDecisionGuestData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
  * Email template for guest when claim decision is made
@@ -202,7 +203,7 @@ export function getClaimDecisionGuestTemplate(data: ClaimDecisionGuestData): Ema
 
           <div class="content">
             <p style="font-size: 16px; color: #111827; margin-bottom: 20px;">
-              Hi ${data.guestName},
+              Hi ${escapeHtml(data.guestName)},
             </p>
 
             ${isApproved ? `
@@ -280,7 +281,7 @@ export function getClaimDecisionGuestTemplate(data: ClaimDecisionGuestData): Ema
               </div>
               <div class="info-row">
                 <span class="info-label">Vehicle</span>
-                <span class="info-value">${data.carDetails}</span>
+                <span class="info-value">${escapeHtml(data.carDetails)}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Decision</span>
@@ -308,7 +309,7 @@ export function getClaimDecisionGuestTemplate(data: ClaimDecisionGuestData): Ema
   const text = `
 ${isApproved ? '⚠️ CLAIM APPROVED' : '✅ CLAIM DENIED'} - DECISION MADE
 
-Hi ${data.guestName},
+Hi ${escapeHtml(data.guestName)},
 
 ${isApproved ? `
 After reviewing all documentation and evidence, the insurance claim for your recent rental has been APPROVED.
@@ -342,7 +343,7 @@ View claim details: ${data.claimUrl}
 CLAIM DETAILS:
 Claim ID: #${data.claimId.slice(0, 8).toUpperCase()}
 Booking Code: ${data.bookingCode}
-Vehicle: ${data.carDetails}
+Vehicle: ${escapeHtml(data.carDetails)}
 Decision: ${data.decision.toUpperCase()}
 
 Questions about this decision? Contact us at info@itwhip.com or call (602) 555-0100

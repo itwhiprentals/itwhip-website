@@ -1,4 +1,5 @@
 // app/lib/email/templates/password-changed-notification.tsx
+import { escapeHtml } from '../sanitize'
 
 export interface PasswordChangedEmailData {
     userName: string
@@ -34,7 +35,7 @@ export interface PasswordChangedEmailData {
                       <h2 style="margin: 0 0 20px; color: #1f2937; font-size: 24px; font-weight: 600;">Your Password Was Changed</h2>
                       
                       <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 24px;">
-                        Hi ${data.userName},
+                        Hi ${escapeHtml(data.userName)},
                       </p>
                       
                       <p style="margin: 0 0 24px; color: #4b5563; font-size: 16px; line-height: 24px;">
@@ -117,7 +118,7 @@ export interface PasswordChangedEmailData {
     return `
   Your ItWhip Password Was Changed
   
-  Hi ${data.userName},
+  Hi ${escapeHtml(data.userName)},
   
   Your password was successfully changed on ${data.timestamp}.
   

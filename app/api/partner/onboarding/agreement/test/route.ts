@@ -12,7 +12,7 @@ import {
   generateSigningUrl
 } from '@/app/lib/agreements/tokens'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
+const JWT_SECRET = process.env.JWT_SECRET!
 
 // Helper to get current host from auth
 async function getCurrentHost() {

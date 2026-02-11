@@ -5,7 +5,7 @@ import { jwtVerify } from 'jose'
 
 // JWT secrets (must match collect-email route)
 const GUEST_JWT_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
+  process.env.GUEST_JWT_SECRET!
 )
 
 interface GuestTokenPayload {

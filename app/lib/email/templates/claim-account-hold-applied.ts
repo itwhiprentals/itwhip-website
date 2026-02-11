@@ -1,6 +1,7 @@
 // app/lib/email/templates/claim-account-hold-applied.ts
 
 import { ClaimAccountHoldAppliedData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
  * Email template for guest when their account is placed on hold due to a claim
@@ -177,7 +178,7 @@ export function getClaimAccountHoldAppliedTemplate(data: ClaimAccountHoldApplied
 
           <div class="content">
             <p style="font-size: 16px; color: #111827; margin-bottom: 20px;">
-              Hi ${data.guestName},
+              Hi ${escapeHtml(data.guestName)},
             </p>
 
             <div class="hold-box">
@@ -204,15 +205,15 @@ export function getClaimAccountHoldAppliedTemplate(data: ClaimAccountHoldApplied
               </div>
               <div class="info-row">
                 <span class="info-label">Vehicle</span>
-                <span class="info-value">${data.carDetails}</span>
+                <span class="info-value">${escapeHtml(data.carDetails)}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Claim Type</span>
-                <span class="info-value">${data.claimType}</span>
+                <span class="info-value">${escapeHtml(data.claimType)}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Host</span>
-                <span class="info-value">${data.hostName}</span>
+                <span class="info-value">${escapeHtml(data.hostName)}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Estimated Amount</span>
@@ -259,7 +260,7 @@ export function getClaimAccountHoldAppliedTemplate(data: ClaimAccountHoldApplied
   const text = `
 ACCOUNT HOLD APPLIED - IMMEDIATE ACTION REQUIRED
 
-Hi ${data.guestName},
+Hi ${escapeHtml(data.guestName)},
 
 Your account has been placed on temporary hold.
 
@@ -273,9 +274,9 @@ WHILE ON HOLD, YOU CANNOT:
 CLAIM DETAILS:
 - Claim ID: #${data.claimId.slice(0, 8).toUpperCase()}
 - Booking Code: ${data.bookingCode}
-- Vehicle: ${data.carDetails}
-- Claim Type: ${data.claimType}
-- Host: ${data.hostName}
+- Vehicle: ${escapeHtml(data.carDetails)}
+- Claim Type: ${escapeHtml(data.claimType)}
+- Host: ${escapeHtml(data.hostName)}
 - Estimated Amount: $${data.estimatedCost.toLocaleString()}
 
 HOW TO REMOVE THIS HOLD:

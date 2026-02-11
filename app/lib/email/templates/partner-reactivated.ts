@@ -2,6 +2,7 @@
 // Email notification when a Fleet Partner account is reactivated
 
 import { EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 import { emailFooterHtml, emailFooterText } from './email-footer'
 
 export interface PartnerReactivatedData {
@@ -186,14 +187,14 @@ export function getPartnerReactivatedTemplate(data: PartnerReactivatedData): Ema
           <div class="header">
             <div class="badge">✓ Account Reactivated</div>
             <h1>Welcome Back!</h1>
-            <p>${data.companyName} is back on ItWhip</p>
+            <p>${escapeHtml(data.companyName)} is back on ItWhip</p>
           </div>
 
           <div class="content">
-            <p style="font-size: 16px; margin-bottom: 16px;">Hello ${data.contactName},</p>
+            <p style="font-size: 16px; margin-bottom: 16px;">Hello ${escapeHtml(data.contactName)},</p>
 
             <p style="color: #4b5563; margin-bottom: 24px;">
-              Great news! Your Fleet Partner account for <strong>${data.companyName}</strong>
+              Great news! Your Fleet Partner account for <strong>${escapeHtml(data.companyName)}</strong>
               has been reactivated. Your partner page is now visible on ItWhip again.
             </p>
 
@@ -267,9 +268,9 @@ export function getPartnerReactivatedTemplate(data: PartnerReactivatedData): Ema
   const text = `
 Great News: Your ItWhip Partner Account Has Been Reactivated!
 
-Hello ${data.contactName},
+Hello ${escapeHtml(data.contactName)},
 
-Great news! Your Fleet Partner account for ${data.companyName} has been reactivated. Your partner page is now visible on ItWhip again.
+Great news! Your Fleet Partner account for ${escapeHtml(data.companyName)} has been reactivated. Your partner page is now visible on ItWhip again.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🎉 ACCOUNT REACTIVATED!

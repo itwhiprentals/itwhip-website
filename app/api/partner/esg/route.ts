@@ -9,7 +9,7 @@ import { calculateESGScore } from '@/app/lib/esg/scoring'
 import { getHostBadges } from '@/app/lib/esg/badges'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 )
 
 // Get partner from token

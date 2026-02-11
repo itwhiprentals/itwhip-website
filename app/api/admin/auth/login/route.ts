@@ -21,7 +21,7 @@ const adminLoginRateLimit = new Ratelimit({
 
 // Admin-specific JWT secret
 const ADMIN_JWT_SECRET = new TextEncoder().encode(
-  process.env.ADMIN_JWT_SECRET || 'admin-secret-key-change-this'
+  process.env.ADMIN_JWT_SECRET!
 )
 
 // Audit log function

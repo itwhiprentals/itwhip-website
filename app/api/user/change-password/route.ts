@@ -39,8 +39,8 @@ async function getUserFromToken(req: NextRequest): Promise<string | null> {
     if (!token) return null
 
     const { jwtVerify } = await import('jose')
-    const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key')
-    const GUEST_JWT_SECRET = new TextEncoder().encode(process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key')
+    const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!)
+    const GUEST_JWT_SECRET = new TextEncoder().encode(process.env.GUEST_JWT_SECRET!)
 
     // Try both secrets
     for (const secret of [JWT_SECRET, GUEST_JWT_SECRET]) {
@@ -59,25 +59,14 @@ async function getUserFromToken(req: NextRequest): Promise<string | null> {
   }
 }
 
-// Helper to invalidate all sessions except current
+// SECURITY FIX: Actually invalidate all sessions by deleting refresh tokens
+// Previously was a placeholder that only updated `updatedAt` — attacker's session survived password change
 async function invalidateOtherSessions(userId: string, currentToken: string) {
   try {
-    // This is a placeholder - implement based on your session strategy
-    // Option 1: If using refresh tokens, delete all refresh tokens except current
-    // Option 2: If using JWT with token versioning, increment user's token version
-    // Option 3: If using session table, delete all sessions except current
-    
-    // For now, we'll update a tokenVersion field that invalidates old tokens
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        updatedAt: new Date()
-        // If you have a tokenVersion field:
-        // tokenVersion: { increment: 1 }
-      }
+    const result = await prisma.session.deleteMany({
+      where: { userId }
     })
-
-    console.log(`[Change Password] Invalidated other sessions for user: ${userId}`)
+    console.log(`[Change Password] Invalidated ${result.count} sessions for user: ${userId}`)
   } catch (error) {
     console.error('[Change Password] Session invalidation failed:', error)
     // Don't throw - password change should still succeed

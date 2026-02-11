@@ -1,6 +1,7 @@
 // app/lib/email/templates/trip-complete.ts
 
 import { TripCompleteData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
 * Email template for trip completion
@@ -144,9 +145,9 @@ export function getTripCompleteTemplate(data: TripCompleteData): EmailTemplate {
          </div>
          
          <div class="content">
-           <p style="font-size: 16px; margin-bottom: 16px;">Dear ${data.guestName},</p>
+           <p style="font-size: 16px; margin-bottom: 16px;">Dear ${escapeHtml(data.guestName)},</p>
            
-           <p>We hope you enjoyed your experience with the ${data.carMake} ${data.carModel}!</p>
+           <p>We hope you enjoyed your experience with the ${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}!</p>
            
            <div class="summary-box">
              <h3 style="margin: 0 0 16px 0; font-size: 18px;">Trip Summary</h3>
@@ -156,11 +157,11 @@ export function getTripCompleteTemplate(data: TripCompleteData): EmailTemplate {
              </div>
              <div class="summary-row">
                <span>Vehicle</span>
-               <strong>${data.carMake} ${data.carModel}</strong>
+               <strong>${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}</strong>
              </div>
              <div class="summary-row">
                <span>Host</span>
-               <strong>${data.hostName}</strong>
+               <strong>${escapeHtml(data.hostName)}</strong>
              </div>
              <div class="summary-row">
                <span>Trip Duration</span>
@@ -175,7 +176,7 @@ export function getTripCompleteTemplate(data: TripCompleteData): EmailTemplate {
            <div class="review-box">
              <h2>How was your experience?</h2>
              <p style="font-size: 14px; color: #92400e; margin-bottom: 16px;">
-               Your feedback helps ${data.hostName} and future renters
+               Your feedback helps ${escapeHtml(data.hostName)} and future renters
              </p>
              <div class="star-rating">☆☆☆☆☆</div>
              <a href="${data.reviewUrl}" class="button">Leave a Review</a>
@@ -214,19 +215,19 @@ export function getTripCompleteTemplate(data: TripCompleteData): EmailTemplate {
  const text = `
 Trip Complete
 
-Dear ${data.guestName},
+Dear ${escapeHtml(data.guestName)},
 
-We hope you enjoyed your experience with the ${data.carMake} ${data.carModel}!
+We hope you enjoyed your experience with the ${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}!
 
 TRIP SUMMARY:
 - Booking Code: ${data.bookingCode}
-- Vehicle: ${data.carMake} ${data.carModel}
-- Host: ${data.hostName}
+- Vehicle: ${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}
+- Host: ${escapeHtml(data.hostName)}
 - Trip Duration: ${data.tripDuration}
 - Total Cost: $${data.totalCost}
 
 HOW WAS YOUR EXPERIENCE?
-Your feedback helps ${data.hostName} and future renters.
+Your feedback helps ${escapeHtml(data.hostName)} and future renters.
 Leave a review (takes less than 60 seconds): ${data.reviewUrl}
 
 READY FOR YOUR NEXT ADVENTURE?

@@ -9,10 +9,10 @@ import { SignJWT } from 'jose'
 import { nanoid } from 'nanoid'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 )
 const JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret'
+  process.env.JWT_REFRESH_SECRET!
 )
 
 export async function POST(request: NextRequest) {

@@ -11,7 +11,7 @@ const SMARTCAR_API_URL = 'https://api.smartcar.com/v2.0'
 const SMARTCAR_WEBHOOK_ID = process.env.SMARTCAR_WEBHOOK_ID || ''
 
 const ADMIN_JWT_SECRET = new TextEncoder().encode(
-  process.env.ADMIN_JWT_SECRET || 'admin-secret-key-change-this'
+  process.env.ADMIN_JWT_SECRET!
 )
 
 // Verify admin authentication

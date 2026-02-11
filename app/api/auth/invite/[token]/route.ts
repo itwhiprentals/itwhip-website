@@ -12,7 +12,7 @@ import {
   ACTIVITY_TYPES
 } from '@/app/lib/auth/host-tokens'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
+const JWT_SECRET = process.env.JWT_SECRET!
 
 // Get client IP from request headers
 function getClientIp(request: NextRequest): string | undefined {

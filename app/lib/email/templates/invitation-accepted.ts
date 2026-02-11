@@ -1,6 +1,7 @@
 // app/lib/email/templates/invitation-accepted.ts
 
 import { InvitationAcceptedData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
  * Email template for accepted fleet management invitations
@@ -274,12 +275,12 @@ export function getInvitationAcceptedTemplate(data: InvitationAcceptedData): Ema
               <p>The fleet management agreement has been accepted and is now active.</p>
             </div>
 
-            <p style="font-size: 16px; margin-bottom: 16px;">Hi ${data.recipientName},</p>
+            <p style="font-size: 16px; margin-bottom: 16px;">Hi ${escapeHtml(data.recipientName)},</p>
 
             <p style="font-size: 14px; color: #4b5563; margin-bottom: 20px;">
               Great news! ${isOwner
-                ? `${data.otherPartyName} will now manage your vehicle${data.vehicles.length > 1 ? 's' : ''} on ItWhip.`
-                : `You are now managing ${data.otherPartyName}'s vehicle${data.vehicles.length > 1 ? 's' : ''} on ItWhip.`
+                ? `${escapeHtml(data.otherPartyName)} will now manage your vehicle${data.vehicles.length > 1 ? 's' : ''} on ItWhip.`
+                : `You are now managing ${escapeHtml(data.otherPartyName)}'s vehicle${data.vehicles.length > 1 ? 's' : ''} on ItWhip.`
               }
             </p>
 
@@ -288,7 +289,7 @@ export function getInvitationAcceptedTemplate(data: InvitationAcceptedData): Ema
                 ${data.otherPartyName.charAt(0).toUpperCase()}
               </div>
               <div class="partner-info">
-                <h4>${data.otherPartyName}</h4>
+                <h4>${escapeHtml(data.otherPartyName)}</h4>
                 <p>${data.otherPartyEmail}</p>
                 <p style="color: #6366f1; font-weight: 500; margin-top: 4px;">
                   ${isOwner ? 'Your Fleet Manager' : 'Vehicle Owner'}
@@ -378,14 +379,14 @@ export function getInvitationAcceptedTemplate(data: InvitationAcceptedData): Ema
   const text = `
 Fleet Agreement Confirmed
 
-Hi ${data.recipientName},
+Hi ${escapeHtml(data.recipientName)},
 
 Great news! ${isOwner
-  ? `${data.otherPartyName} will now manage your vehicle${data.vehicles.length > 1 ? 's' : ''} on ItWhip.`
-  : `You are now managing ${data.otherPartyName}'s vehicle${data.vehicles.length > 1 ? 's' : ''} on ItWhip.`
+  ? `${escapeHtml(data.otherPartyName)} will now manage your vehicle${data.vehicles.length > 1 ? 's' : ''} on ItWhip.`
+  : `You are now managing ${escapeHtml(data.otherPartyName)}'s vehicle${data.vehicles.length > 1 ? 's' : ''} on ItWhip.`
 }
 
-PARTNER: ${data.otherPartyName} (${data.otherPartyEmail})
+PARTNER: ${escapeHtml(data.otherPartyName)} (${data.otherPartyEmail})
 ROLE: ${isOwner ? 'Your Fleet Manager' : 'Vehicle Owner'}
 
 VEHICLES:

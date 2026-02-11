@@ -8,8 +8,8 @@ import { nanoid } from 'nanoid'
 import { logFailedLogin, logSuccessfulLogin, isIpBlocked } from '@/app/lib/security/loginMonitor'
 import { checkNewDeviceAndNotify } from '@/app/lib/security/loginNotification'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key'
+const JWT_SECRET = process.env.JWT_SECRET!
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!
 
 // POST - Host login
 export async function POST(request: NextRequest) {

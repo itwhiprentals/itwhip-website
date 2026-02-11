@@ -41,8 +41,8 @@ function normalizeTransmission(transmission: string | null): string | null {
 }
 
 // JWT secrets (same as oauth-redirect)
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret'
+const JWT_SECRET = process.env.JWT_SECRET!
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!
 
 // Helper to generate HOST JWT tokens (for rental hosts)
 function generateHostTokens(host: {

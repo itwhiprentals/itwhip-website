@@ -1,3 +1,4 @@
+import { escapeHtml } from '../sanitize'
 // app/lib/email/templates/declaration-updated.ts
 
 interface DeclarationUpdatedData {
@@ -46,7 +47,7 @@ interface DeclarationUpdatedData {
                 
                 <!-- Greeting -->
                 <p style="margin: 0 0 24px 0; color: #111827; font-size: 16px; line-height: 1.6;">
-                  Hi ${data.hostName},
+                  Hi ${escapeHtml(data.hostName)},
                 </p>
   
                 <p style="margin: 0 0 24px 0; color: #374151; font-size: 15px; line-height: 1.6;">

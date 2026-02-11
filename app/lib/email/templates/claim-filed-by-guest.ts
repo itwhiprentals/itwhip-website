@@ -1,6 +1,7 @@
 // app/lib/email/templates/claim-filed-by-guest.ts
 
 import { ClaimFiledByGuestData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
  * Email template for host when guest files a claim against them
@@ -152,13 +153,13 @@ export function getClaimFiledByGuestTemplate(data: ClaimFiledByGuestData): Email
 
           <div class="content">
             <p style="font-size: 16px; color: #111827; margin-bottom: 20px;">
-              Hi ${data.hostName},
+              Hi ${escapeHtml(data.hostName)},
             </p>
 
             <div class="notice-box">
               <div class="notice-title">A guest has filed a claim regarding a recent rental</div>
               <div class="notice-text">
-                ${data.guestName} has reported an issue with their rental experience and submitted a claim for review. Please review the details below and respond within 48 hours.
+                ${escapeHtml(data.guestName)} has reported an issue with their rental experience and submitted a claim for review. Please review the details below and respond within 48 hours.
               </div>
             </div>
 
@@ -173,11 +174,11 @@ export function getClaimFiledByGuestTemplate(data: ClaimFiledByGuestData): Email
               </div>
               <div class="info-row">
                 <span class="info-label">Vehicle</span>
-                <span class="info-value">${data.carDetails}</span>
+                <span class="info-value">${escapeHtml(data.carDetails)}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Filed By</span>
-                <span class="info-value">${data.guestName}</span>
+                <span class="info-value">${escapeHtml(data.guestName)}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Incident Date</span>
@@ -189,7 +190,7 @@ export function getClaimFiledByGuestTemplate(data: ClaimFiledByGuestData): Email
               </div>
               <div class="info-row">
                 <span class="info-label">Claim Type</span>
-                <span class="info-value">${data.claimType}</span>
+                <span class="info-value">${escapeHtml(data.claimType)}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Estimated Amount</span>
@@ -243,19 +244,19 @@ export function getClaimFiledByGuestTemplate(data: ClaimFiledByGuestData): Email
   const text = `
 CLAIM FILED BY GUEST
 
-Hi ${data.hostName},
+Hi ${escapeHtml(data.hostName)},
 
 A guest has filed a claim regarding a recent rental.
 
-${data.guestName} has reported an issue with their rental experience and submitted a claim for review. Please review the details below and respond within 48 hours.
+${escapeHtml(data.guestName)} has reported an issue with their rental experience and submitted a claim for review. Please review the details below and respond within 48 hours.
 
 CLAIM DETAILS:
 - Claim ID: #${data.claimId.slice(0, 8).toUpperCase()}
 - Booking Code: ${data.bookingCode}
-- Vehicle: ${data.carDetails}
-- Filed By: ${data.guestName}
+- Vehicle: ${escapeHtml(data.carDetails)}
+- Filed By: ${escapeHtml(data.guestName)}
 - Incident Date: ${new Date(data.incidentDate).toLocaleDateString()}
-- Claim Type: ${data.claimType}
+- Claim Type: ${escapeHtml(data.claimType)}
 - Estimated Amount: $${data.estimatedCost.toLocaleString()}
 - Response Deadline: ${new Date(data.responseDeadline).toLocaleString()}
 

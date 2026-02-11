@@ -1,6 +1,7 @@
 // app/lib/email/templates/host-background-check-status.ts
 
 import { EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 export interface BackgroundCheckDetail {
   checkType: string
@@ -228,7 +229,7 @@ export function getHostBackgroundCheckStatusTemplate(data: HostBackgroundCheckDa
           </div>
           
           <div class="content">
-            <p style="font-size: 16px; margin-bottom: 16px;">Hi ${data.hostName},</p>
+            <p style="font-size: 16px; margin-bottom: 16px;">Hi ${escapeHtml(data.hostName)},</p>
             
             ${data.checkStatus === 'started' ? `
               <p style="color: #4b5563; margin-bottom: 24px;">
@@ -340,7 +341,7 @@ export function getHostBackgroundCheckStatusTemplate(data: HostBackgroundCheckDa
   const text = `
 ${subject}
 
-Hi ${data.hostName},
+Hi ${escapeHtml(data.hostName)},
 
 ${statusMessages[data.checkStatus]}
 

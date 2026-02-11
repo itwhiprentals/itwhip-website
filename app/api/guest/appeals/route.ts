@@ -5,10 +5,10 @@ import { prisma } from '@/app/lib/database/prisma'
 import { jwtVerify } from 'jose'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key-change-in-production'
+  process.env.JWT_SECRET!
 )
 const GUEST_JWT_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
+  process.env.GUEST_JWT_SECRET!
 )
 
 // Helper to verify guest token (tries both guest and admin secrets)

@@ -1,6 +1,7 @@
 // app/lib/email/templates/claim-response-confirmation.ts
 
 import { ClaimResponseConfirmationData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
  * Email template for guest after they submit their response to a claim
@@ -157,7 +158,7 @@ export function getClaimResponseConfirmationTemplate(data: ClaimResponseConfirma
 
           <div class="content">
             <p style="font-size: 16px; color: #111827; margin-bottom: 20px;">
-              Hi ${data.guestName},
+              Hi ${escapeHtml(data.guestName)},
             </p>
 
             <div class="success-box">
@@ -178,15 +179,15 @@ export function getClaimResponseConfirmationTemplate(data: ClaimResponseConfirma
               </div>
               <div class="info-row">
                 <span class="info-label">Vehicle</span>
-                <span class="info-value">${data.carDetails}</span>
+                <span class="info-value">${escapeHtml(data.carDetails)}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Claim Type</span>
-                <span class="info-value">${data.claimType}</span>
+                <span class="info-value">${escapeHtml(data.claimType)}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Host</span>
-                <span class="info-value">${data.hostName}</span>
+                <span class="info-value">${escapeHtml(data.hostName)}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Response Submitted</span>
@@ -240,7 +241,7 @@ export function getClaimResponseConfirmationTemplate(data: ClaimResponseConfirma
   const text = `
 RESPONSE SUBMITTED SUCCESSFULLY
 
-Hi ${data.guestName},
+Hi ${escapeHtml(data.guestName)},
 
 Your response has been received!
 
@@ -249,9 +250,9 @@ Thank you for responding to the claim. Our team will now review all information 
 CLAIM DETAILS:
 - Claim ID: #${data.claimId.slice(0, 8).toUpperCase()}
 - Booking Code: ${data.bookingCode}
-- Vehicle: ${data.carDetails}
-- Claim Type: ${data.claimType}
-- Host: ${data.hostName}
+- Vehicle: ${escapeHtml(data.carDetails)}
+- Claim Type: ${escapeHtml(data.claimType)}
+- Host: ${escapeHtml(data.hostName)}
 - Response Submitted: ${new Date(data.responseSubmittedAt).toLocaleString()}
 ${data.evidencePhotosCount > 0 ? `- Evidence Photos: ${data.evidencePhotosCount} uploaded` : ''}
 

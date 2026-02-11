@@ -1,6 +1,7 @@
 // app/lib/email/templates/claim-filed-host.ts
 
 import { ClaimFiledHostData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
  * Email template for host when claim is filed
@@ -169,7 +170,7 @@ export function getClaimFiledHostTemplate(data: ClaimFiledHostData): EmailTempla
 
           <div class="content">
             <p style="font-size: 16px; color: #111827; margin-bottom: 20px;">
-              Hi ${data.hostName},
+              Hi ${escapeHtml(data.hostName)},
             </p>
 
             <p style="color: #374151; margin-bottom: 24px;">
@@ -187,7 +188,7 @@ export function getClaimFiledHostTemplate(data: ClaimFiledHostData): EmailTempla
               </div>
               <div class="info-row">
                 <span class="info-label">Vehicle</span>
-                <span class="info-value">${data.carDetails}</span>
+                <span class="info-value">${escapeHtml(data.carDetails)}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Incident Date</span>
@@ -199,7 +200,7 @@ export function getClaimFiledHostTemplate(data: ClaimFiledHostData): EmailTempla
               </div>
               <div class="info-row">
                 <span class="info-label">Claim Type</span>
-                <span class="info-value">${data.claimType}</span>
+                <span class="info-value">${escapeHtml(data.claimType)}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Estimated Cost</span>
@@ -267,16 +268,16 @@ export function getClaimFiledHostTemplate(data: ClaimFiledHostData): EmailTempla
   const text = `
 CLAIM FILED - YOUR CLAIM HAS BEEN SUBMITTED
 
-Hi ${data.hostName},
+Hi ${escapeHtml(data.hostName)},
 
 Your insurance claim has been successfully submitted and is now under review by our fleet team.
 
 Claim Details:
 - Claim ID: #${data.claimId.slice(0, 8).toUpperCase()}
 - Booking Code: ${data.bookingCode}
-- Vehicle: ${data.carDetails}
+- Vehicle: ${escapeHtml(data.carDetails)}
 - Incident Date: ${new Date(data.incidentDate).toLocaleDateString()}
-- Claim Type: ${data.claimType}
+- Claim Type: ${escapeHtml(data.claimType)}
 - Estimated Cost: $${data.estimatedCost.toLocaleString()}
 
 ${(data as any).fnolSummary?.hasComprehensiveReport ? `

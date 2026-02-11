@@ -12,8 +12,8 @@ import {
   ACTIVITY_TYPES
 } from '@/app/lib/auth/host-tokens'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key'
+const JWT_SECRET = process.env.JWT_SECRET!
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!
 
 // Get client IP from request headers
 function getClientIp(request: NextRequest): string | undefined {

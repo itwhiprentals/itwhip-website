@@ -6,7 +6,7 @@ import { prisma } from '@/app/lib/database/prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
+const JWT_SECRET = process.env.JWT_SECRET!
 
 // Smartcar OAuth configuration
 const SMARTCAR_CLIENT_ID = process.env.SMARTCAR_CLIENT_ID

@@ -37,10 +37,10 @@ function formatLockoutTime(ms: number): string {
 }
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 )
 const JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret'
+  process.env.JWT_REFRESH_SECRET!
 )
 
 async function verifyPassword(

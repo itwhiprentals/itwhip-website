@@ -1,6 +1,7 @@
 // app/lib/email/templates/host-document-request.ts
 
 import { EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 export interface DocumentIssue {
   documentType: string
@@ -186,7 +187,7 @@ export function getHostDocumentRequestTemplate(data: HostDocumentRequestData): E
           </div>
           
           <div class="content">
-            <p style="font-size: 16px; margin-bottom: 16px;">Hi ${data.hostName},</p>
+            <p style="font-size: 16px; margin-bottom: 16px;">Hi ${escapeHtml(data.hostName)},</p>
             
             <p style="color: #4b5563; margin-bottom: 24px;">
               We're reviewing your host application and need you to update some documents before we can proceed. 
@@ -260,7 +261,7 @@ export function getHostDocumentRequestTemplate(data: HostDocumentRequestData): E
   const text = `
 Action Required: Document Updates Needed for Your ItWhip Host Account
 
-Hi ${data.hostName},
+Hi ${escapeHtml(data.hostName)},
 
 We're reviewing your host application and need you to update some documents before we can proceed.
 

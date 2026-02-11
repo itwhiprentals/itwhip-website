@@ -16,10 +16,10 @@ import { checkSuspendedIdentifiers } from '@/app/lib/services/identityResolution
 
 // JWT secrets (must match check-dual-role verification)
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 )
 const REFRESH_TOKEN_SECRET = new TextEncoder().encode(
-  process.env.REFRESH_TOKEN_SECRET || 'fallback-refresh-secret'
+  process.env.REFRESH_TOKEN_SECRET!
 )
 
 // Generate JWT tokens

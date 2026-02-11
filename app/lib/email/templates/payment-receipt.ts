@@ -1,6 +1,7 @@
 // app/lib/email/templates/payment-receipt.ts
 
 import { PaymentReceiptData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
 * Email template for payment receipts
@@ -142,7 +143,7 @@ export function getPaymentReceiptTemplate(data: PaymentReceiptData): EmailTempla
          </div>
          
          <div class="content">
-           <p style="font-size: 16px; margin-bottom: 16px;">Dear ${data.guestName},</p>
+           <p style="font-size: 16px; margin-bottom: 16px;">Dear ${escapeHtml(data.guestName)},</p>
            
            <div class="receipt-header">
              <h2>$${data.totalAmount}</h2>
@@ -160,7 +161,7 @@ export function getPaymentReceiptTemplate(data: PaymentReceiptData): EmailTempla
              </div>
              <div class="payment-row">
                <span>Vehicle</span>
-               <strong>${data.carMake} ${data.carModel}</strong>
+               <strong>${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}</strong>
              </div>
              <div class="payment-row">
                <span>Payment Method</span>
@@ -219,7 +220,7 @@ export function getPaymentReceiptTemplate(data: PaymentReceiptData): EmailTempla
  const text = `
 Payment Receipt
 
-Dear ${data.guestName},
+Dear ${escapeHtml(data.guestName)},
 
 Thank you for your payment.
 
@@ -230,7 +231,7 @@ Date: ${data.paymentDate}
 
 PAYMENT DETAILS:
 - Booking Code: ${data.bookingCode}
-- Vehicle: ${data.carMake} ${data.carModel}
+- Vehicle: ${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}
 - Payment Method: ${data.paymentMethod}
 - Payment Date: ${data.paymentDate}
 

@@ -16,16 +16,16 @@ const APP_SCHEME = 'itwhip'
 const CALLBACK_URL = 'https://itwhip.com/api/auth/mobile/google/callback'
 
 const GUEST_JWT_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
+  process.env.GUEST_JWT_SECRET!
 )
 const GUEST_JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_REFRESH_SECRET || 'fallback-guest-refresh-secret-key'
+  process.env.GUEST_JWT_REFRESH_SECRET!
 )
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-change-in-production'
+  process.env.JWT_SECRET!
 )
 const JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret-change'
+  process.env.JWT_REFRESH_SECRET!
 )
 
 function getJWTSecrets(role: string) {

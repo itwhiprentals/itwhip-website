@@ -9,7 +9,7 @@ import { sendEmail } from '@/app/lib/email/sender'
 import { generateVerificationCode, getEmailVerificationTemplate } from '@/app/lib/email/templates/email-verification'
 
 const LINK_TOKEN_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
+  process.env.GUEST_JWT_SECRET!
 )
 
 export async function POST(request: NextRequest) {

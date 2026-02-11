@@ -28,7 +28,7 @@ interface ApiKeyData {
 }
 
 // Mock JWT secret (in production, use environment variable)
-const JWT_SECRET = process.env.JWT_SECRET || 'itwhip-secret-key-change-in-production'
+const JWT_SECRET = process.env.JWT_SECRET!
 
 // Mock database of valid API keys (in production, use real database)
 const VALID_API_KEYS: Record<string, ApiKeyData> = {

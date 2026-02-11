@@ -6,7 +6,7 @@ import { prisma } from '@/app/lib/database/prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
+const JWT_SECRET = process.env.JWT_SECRET!
 const CLAIM_TIMEOUT_MINUTES = 30 // 30 minutes to add a car
 
 // Helper to get current host from auth

@@ -1,6 +1,7 @@
 // app/lib/email/templates/claim-approved-host.ts
 
 import { ClaimApprovedHostData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
  * Email template for host when claim is approved
@@ -200,7 +201,7 @@ export function getClaimApprovedHostTemplate(data: ClaimApprovedHostData): Email
 
           <div class="content">
             <p style="font-size: 16px; color: #111827; margin-bottom: 20px;">
-              Hi ${data.hostName},
+              Hi ${escapeHtml(data.hostName)},
             </p>
 
             <p style="color: #374151; margin-bottom: 24px;">
@@ -265,7 +266,7 @@ export function getClaimApprovedHostTemplate(data: ClaimApprovedHostData): Email
               <strong>Claim Details:</strong><br>
               Claim ID: #${data.claimId.slice(0, 8).toUpperCase()}<br>
               Booking Code: ${data.bookingCode}<br>
-              Vehicle: ${data.carDetails}
+              Vehicle: ${escapeHtml(data.carDetails)}
             </p>
 
             <div style="text-align: center;">
@@ -292,7 +293,7 @@ export function getClaimApprovedHostTemplate(data: ClaimApprovedHostData): Email
   const text = `
 ✅ CLAIM APPROVED - YOUR CLAIM HAS BEEN APPROVED
 
-Hi ${data.hostName},
+Hi ${escapeHtml(data.hostName)},
 
 Great news! Your insurance claim has been reviewed and approved by our fleet team.
 
@@ -327,7 +328,7 @@ WHAT HAPPENS NEXT?
 CLAIM DETAILS:
 Claim ID: #${data.claimId.slice(0, 8).toUpperCase()}
 Booking Code: ${data.bookingCode}
-Vehicle: ${data.carDetails}
+Vehicle: ${escapeHtml(data.carDetails)}
 
 View full claim details: ${data.claimUrl}
 

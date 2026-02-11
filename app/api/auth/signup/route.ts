@@ -28,18 +28,18 @@ function generateVerificationCode(): string {
 
 // Get JWT secrets - UPDATED FOR GUEST SEPARATION
 const GUEST_JWT_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
+  process.env.GUEST_JWT_SECRET!
 )
 const GUEST_JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_REFRESH_SECRET || 'fallback-guest-refresh-secret-key'
+  process.env.GUEST_JWT_REFRESH_SECRET!
 )
 
 // Fallback to general secrets if guest secrets not available
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-change-in-production'
+  process.env.JWT_SECRET!
 )
 const JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret-change'
+  process.env.JWT_REFRESH_SECRET!
 )
 
 // Argon2 configuration for enterprise-grade security

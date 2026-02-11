@@ -9,7 +9,7 @@ import { calculateHostTier } from '@/app/lib/insurance/tier-calculator'
 // ========== ✅ NEW: ESG EVENT HOOK IMPORT ==========
 import { handleInsuranceUpdated } from '@/app/lib/esg/event-hooks'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+const JWT_SECRET = process.env.JWT_SECRET!
 
 // Helper function to verify host token
 async function verifyHostToken(request: NextRequest) {

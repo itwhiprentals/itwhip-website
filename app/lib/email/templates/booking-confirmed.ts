@@ -1,6 +1,7 @@
 // app/lib/email/templates/booking-confirmed.ts
 
 import { BookingConfirmedData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
 * Email template for confirmed bookings
@@ -161,17 +162,17 @@ export function getBookingConfirmedTemplate(data: BookingConfirmedData): EmailTe
          </div>
          
          <div class="content">
-           <p style="font-size: 16px; margin-bottom: 16px;">Dear ${data.guestName},</p>
+           <p style="font-size: 16px; margin-bottom: 16px;">Dear ${escapeHtml(data.guestName)},</p>
            
            <div class="success-message">
              <strong>Success!</strong> Your documents have been verified and your booking is confirmed. 
              Payment of $${data.totalAmount} has been processed.
            </div>
            
-           <img src="${data.carImage}" alt="${data.carMake} ${data.carModel}" class="car-image" />
+           <img src="${data.carImage}" alt="${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}" class="car-image" />
            
            <div class="details-box">
-             <h3 style="margin: 0 0 16px 0; font-size: 18px;">${data.carMake} ${data.carModel}</h3>
+             <h3 style="margin: 0 0 16px 0; font-size: 18px;">${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}</h3>
              <div class="detail-row">
                <span>Booking Code</span>
                <strong>${data.bookingCode}</strong>
@@ -190,7 +191,7 @@ export function getBookingConfirmedTemplate(data: BookingConfirmedData): EmailTe
              </div>
              <div class="detail-row">
                <span>Location</span>
-               <strong>${data.pickupLocation}</strong>
+               <strong>${escapeHtml(data.pickupLocation)}</strong>
              </div>
              <div class="detail-row">
                <span>Total Amount</span>
@@ -201,7 +202,7 @@ export function getBookingConfirmedTemplate(data: BookingConfirmedData): EmailTe
            <div class="host-box">
              <h3>Host Contact Information</h3>
              <div class="host-detail">
-               <strong>Name:</strong> ${data.hostName}
+               <strong>Name:</strong> ${escapeHtml(data.hostName)}
              </div>
              <div class="host-detail">
                <strong>Phone:</strong> ${data.hostPhone}
@@ -242,22 +243,22 @@ export function getBookingConfirmedTemplate(data: BookingConfirmedData): EmailTe
  const text = `
 Booking Confirmed
 
-Dear ${data.guestName},
+Dear ${escapeHtml(data.guestName)},
 
 Success! Your documents have been verified and your booking is confirmed.
 Payment of $${data.totalAmount} has been processed.
 
 BOOKING DETAILS:
 - Booking Code: ${data.bookingCode}
-- Vehicle: ${data.carMake} ${data.carModel}
+- Vehicle: ${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}
 - Pick-up Date: ${data.startDate}
 - Return Date: ${data.endDate}
 - Pick-up Time: ${data.pickupTime}
-- Location: ${data.pickupLocation}
+- Location: ${escapeHtml(data.pickupLocation)}
 - Total: $${data.totalAmount}
 
 HOST CONTACT:
-- Name: ${data.hostName}
+- Name: ${escapeHtml(data.hostName)}
 - Phone: ${data.hostPhone}
 
 Your host will contact you 24 hours before pickup to coordinate details.

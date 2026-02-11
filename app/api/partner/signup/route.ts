@@ -9,7 +9,7 @@ import { SignJWT } from 'jose'
 import { cookies } from 'next/headers'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 )
 
 export async function POST(request: NextRequest) {

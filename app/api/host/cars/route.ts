@@ -29,22 +29,10 @@ async function getHostFromHeaders() {
 // GET - Fetch all cars for host
 export async function GET(request: NextRequest) {
   try {
-    // Check for hostId in query params first (for VerificationProgress component)
-    const { searchParams } = new URL(request.url)
-    const queryHostId = searchParams.get('hostId')
-    
-    let host = null
-    
-    if (queryHostId) {
-      // Fetch host directly by ID (for components that pass hostId)
-      host = await prisma.rentalHost.findUnique({
-        where: { id: queryHostId }
-      })
-    } else {
-      // Fall back to header-based auth
-      host = await getHostFromHeaders()
-    }
-    
+    // SECURITY FIX: Always use authenticated middleware headers, never trust query params
+    // (Previously accepted ?hostId= which allowed any host to view any other host's vehicles)
+    const host = await getHostFromHeaders()
+
     if (!host) {
       return NextResponse.json(
         { error: 'Unauthorized' },

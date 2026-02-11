@@ -7,11 +7,11 @@ import { cookies } from 'next/headers'
 // SECURITY FIX: Added authentication and ownership verification to prevent IDOR attacks
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-secret-key'
+  process.env.JWT_SECRET!
 )
 
 const ADMIN_JWT_SECRET = new TextEncoder().encode(
-  process.env.ADMIN_JWT_SECRET || 'admin-secret-key-change-this'
+  process.env.ADMIN_JWT_SECRET!
 )
 
 interface AuthUser {

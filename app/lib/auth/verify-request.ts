@@ -6,15 +6,12 @@ import { jwtVerify } from 'jose'
 
 // JWT secrets (same as your verify endpoint)
 const GUEST_JWT_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
+  process.env.GUEST_JWT_SECRET!
 )
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 )
-
-// Legacy secret for backward compatibility with older partner tokens
-const LEGACY_JWT_SECRET = new TextEncoder().encode('your-secret-key')
 
 // User type returned from verification
 export interface VerifiedUser {
@@ -37,8 +34,7 @@ export interface VerifiedUser {
 async function verifyTokenWithSecrets(token: string) {
   const secrets = [
     { secret: GUEST_JWT_SECRET, type: 'guest' as const },
-    { secret: JWT_SECRET, type: 'platform' as const },
-    { secret: LEGACY_JWT_SECRET, type: 'platform' as const } // Backward compatibility
+    { secret: JWT_SECRET, type: 'platform' as const }
   ]
 
   // Try each secret until one works

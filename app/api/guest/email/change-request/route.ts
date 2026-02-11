@@ -17,8 +17,8 @@ async function getUserFromToken(req: NextRequest): Promise<{ userId: string; ema
     if (!token) return null
 
     const { jwtVerify } = await import('jose')
-    const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key')
-    const GUEST_JWT_SECRET = new TextEncoder().encode(process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key')
+    const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!)
+    const GUEST_JWT_SECRET = new TextEncoder().encode(process.env.GUEST_JWT_SECRET!)
 
     // Try both secrets
     for (const secret of [JWT_SECRET, GUEST_JWT_SECRET]) {
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
 
     // Generate verification token (JWT with email change data)
     const EMAIL_CHANGE_SECRET = new TextEncoder().encode(
-      process.env.EMAIL_CHANGE_SECRET || process.env.JWT_SECRET || 'email-change-secret'
+      process.env.EMAIL_CHANGE_SECRET || process.env.JWT_SECRET!
     )
 
     const verificationToken = await new SignJWT({

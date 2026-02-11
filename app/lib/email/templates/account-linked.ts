@@ -1,3 +1,4 @@
+import { escapeHtml } from '../sanitize'
 // Notification email when an OAuth provider is linked to an account
 
 export function getAccountLinkedTemplate(name: string | null, providerName: string) {
@@ -9,7 +10,7 @@ export function getAccountLinkedTemplate(name: string | null, providerName: stri
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${providerName} Sign-In Added</title>
+        <title>${escapeHtml(providerName)} Sign-In Added</title>
       </head>
       <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
         <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
@@ -25,17 +26,17 @@ export function getAccountLinkedTemplate(name: string | null, providerName: stri
             </div>
 
             <h2 style="color: #111827; font-size: 24px; font-weight: 600; margin: 0 0 16px 0; text-align: center;">
-              ${providerName} Sign-In Added
+              ${escapeHtml(providerName)} Sign-In Added
             </h2>
 
             <p style="color: #6b7280; font-size: 16px; line-height: 24px; margin: 0 0 24px 0;">
-              ${name ? `Hi ${name},` : 'Hi,'}<br><br>
-              ${providerName} Sign-In has been successfully linked to your ItWhip account. You can now sign in using ${providerName} in addition to your existing sign-in methods.
+              ${name ? `Hi ${escapeHtml(name)},` : 'Hi,'}<br><br>
+              ${escapeHtml(providerName)} Sign-In has been successfully linked to your ItWhip account. You can now sign in using ${escapeHtml(providerName)} in addition to your existing sign-in methods.
             </p>
 
             <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; border-radius: 4px; margin: 0 0 24px 0;">
               <p style="color: #991b1b; font-size: 14px; line-height: 20px; margin: 0;">
-                <strong>Didn't do this?</strong> Someone may have linked their ${providerName} account to yours. Please change your password immediately and contact support.
+                <strong>Didn't do this?</strong> Someone may have linked their ${escapeHtml(providerName)} account to yours. Please change your password immediately and contact support.
               </p>
             </div>
 
@@ -58,13 +59,13 @@ export function getAccountLinkedTemplate(name: string | null, providerName: stri
       </html>
     `,
     text: `
-${providerName} Sign-In Added to Your ItWhip Account
+${escapeHtml(providerName)} Sign-In Added to Your ItWhip Account
 
-${name ? `Hi ${name},` : 'Hi,'}
+${name ? `Hi ${escapeHtml(name)},` : 'Hi,'}
 
-${providerName} Sign-In has been successfully linked to your ItWhip account. You can now sign in using ${providerName} in addition to your existing sign-in methods.
+${escapeHtml(providerName)} Sign-In has been successfully linked to your ItWhip account. You can now sign in using ${escapeHtml(providerName)} in addition to your existing sign-in methods.
 
-Didn't do this? Someone may have linked their ${providerName} account to yours. Please change your password immediately and contact support.
+Didn't do this? Someone may have linked their ${escapeHtml(providerName)} account to yours. Please change your password immediately and contact support.
 
 Review Account Security: https://itwhip.com/profile?tab=security
 

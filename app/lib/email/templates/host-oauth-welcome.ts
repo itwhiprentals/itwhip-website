@@ -1,6 +1,7 @@
 // app/lib/email/templates/host-oauth-welcome.ts
 
 import { EmailTemplate, HostOAuthWelcomeData } from '../types'
+import { escapeHtml } from '../sanitize'
 
 export function getHostOAuthWelcomeTemplate(data: HostOAuthWelcomeData): EmailTemplate {
   const subject = 'Welcome to ItWhip - Complete Your Host Setup'
@@ -189,12 +190,12 @@ export function getHostOAuthWelcomeTemplate(data: HostOAuthWelcomeData): EmailTe
         <div class="container">
           <div class="header">
             <div class="welcome-badge">Welcome Host</div>
-            <h1>Welcome to ItWhip, ${data.userName}!</h1>
+            <h1>Welcome to ItWhip, ${escapeHtml(data.userName)}!</h1>
             <p>Your host account is almost ready</p>
           </div>
 
           <div class="content">
-            <p style="font-size: 16px; margin-bottom: 16px;">Hi ${data.userName},</p>
+            <p style="font-size: 16px; margin-bottom: 16px;">Hi ${escapeHtml(data.userName)},</p>
 
             <p style="color: #4b5563; margin-bottom: 24px;">
               Thanks for joining ItWhip as a host! Your account has been created and your first vehicle
@@ -333,9 +334,9 @@ export function getHostOAuthWelcomeTemplate(data: HostOAuthWelcomeData): EmailTe
   `
 
   const text = `
-Welcome to ItWhip Host Platform, ${data.userName}!
+Welcome to ItWhip Host Platform, ${escapeHtml(data.userName)}!
 
-Hi ${data.userName},
+Hi ${escapeHtml(data.userName)},
 
 Thanks for joining ItWhip as a host! Your account has been created and your first vehicle information has been recorded. Complete the remaining steps below to activate your host dashboard and start earning.
 

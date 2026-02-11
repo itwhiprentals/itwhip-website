@@ -1,6 +1,7 @@
 // app/lib/email/templates/invitation-declined.ts
 
 import { InvitationDeclinedData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
  * Email template for declined fleet management invitations
@@ -10,8 +11,8 @@ export function getInvitationDeclinedTemplate(data: InvitationDeclinedData): Ema
   const isOwnerInvitingManager = data.invitationType === 'OWNER_INVITES_MANAGER'
 
   const subject = data.wasCounterOffer
-    ? `Counter-offer declined by ${data.declinerName}`
-    : `Fleet invitation declined by ${data.declinerName}`
+    ? `Counter-offer declined by ${escapeHtml(data.declinerName)}`
+    : `Fleet invitation declined by ${escapeHtml(data.declinerName)}`
 
   const vehiclesList = data.vehicles?.map(v => `${v.year} ${v.make} ${v.model}`).join(', ') || 'Not specified'
 
@@ -231,13 +232,13 @@ export function getInvitationDeclinedTemplate(data: InvitationDeclinedData): Ema
                 </svg>
               </div>
               <h3>${data.wasCounterOffer ? 'Negotiation Ended' : 'Invitation Declined'}</h3>
-              <p>${data.declinerName} has declined ${data.wasCounterOffer ? 'your counter-offer' : 'the invitation'}</p>
+              <p>${escapeHtml(data.declinerName)} has declined ${data.wasCounterOffer ? 'your counter-offer' : 'the invitation'}</p>
             </div>
 
-            <p style="font-size: 16px; margin-bottom: 16px;">Hi ${data.recipientName},</p>
+            <p style="font-size: 16px; margin-bottom: 16px;">Hi ${escapeHtml(data.recipientName)},</p>
 
             <p style="font-size: 14px; color: #4b5563; margin-bottom: 20px;">
-              Unfortunately, ${data.declinerName} has decided not to proceed with the fleet management
+              Unfortunately, ${escapeHtml(data.declinerName)} has decided not to proceed with the fleet management
               ${data.wasCounterOffer ? 'agreement after reviewing your counter-offer' : 'invitation'}.
             </p>
 
@@ -246,7 +247,7 @@ export function getInvitationDeclinedTemplate(data: InvitationDeclinedData): Ema
                 ${data.declinerName.charAt(0).toUpperCase()}
               </div>
               <div class="decliner-info">
-                <h4>${data.declinerName}</h4>
+                <h4>${escapeHtml(data.declinerName)}</h4>
                 <p>${data.declinerEmail}</p>
               </div>
             </div>
@@ -305,12 +306,12 @@ export function getInvitationDeclinedTemplate(data: InvitationDeclinedData): Ema
   const text = `
 ${data.wasCounterOffer ? 'Counter-Offer' : 'Invitation'} Declined
 
-Hi ${data.recipientName},
+Hi ${escapeHtml(data.recipientName)},
 
-Unfortunately, ${data.declinerName} has decided not to proceed with the fleet management
+Unfortunately, ${escapeHtml(data.declinerName)} has decided not to proceed with the fleet management
 ${data.wasCounterOffer ? 'agreement after reviewing your counter-offer' : 'invitation'}.
 
-DECLINED BY: ${data.declinerName} (${data.declinerEmail})
+DECLINED BY: ${escapeHtml(data.declinerName)} (${data.declinerEmail})
 
 ${data.declineReason ? `REASON PROVIDED:\n${data.declineReason}\n` : ''}
 ${data.vehicles && data.vehicles.length > 0 ? `VEHICLES:\n${vehiclesList}\n` : ''}

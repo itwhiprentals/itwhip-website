@@ -1,3 +1,4 @@
+import { escapeHtml } from '../sanitize'
 // Security alert when user logs in from new device
 export function getNewDeviceAlertTemplate(
   name: string | null,
@@ -40,7 +41,7 @@ export function getNewDeviceAlertTemplate(
             </h2>
 
             <p style="color: #6b7280; font-size: 16px; line-height: 24px; margin: 0 0 32px 0;">
-              ${name ? `Hi ${name},` : 'Hi,'}<br><br>
+              ${name ? `Hi ${escapeHtml(name)},` : 'Hi,'}<br><br>
               We detected a sign-in to your ItWhip account from a new device. If this was you, no action is needed. If not, please secure your account immediately.
             </p>
 
@@ -123,7 +124,7 @@ export function getNewDeviceAlertTemplate(
     text: `
 New Device Sign-In Detected
 
-${name ? `Hi ${name},` : 'Hi,'}
+${name ? `Hi ${escapeHtml(name)},` : 'Hi,'}
 
 We detected a sign-in to your ItWhip account from a new device. If this was you, no action is needed. If not, please secure your account immediately.
 

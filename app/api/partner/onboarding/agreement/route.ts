@@ -8,7 +8,7 @@ import { verify } from 'jsonwebtoken'
 import { v2 as cloudinary } from 'cloudinary'
 import { validateAgreementPdf } from '@/app/lib/agreements/validate-pdf'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
+const JWT_SECRET = process.env.JWT_SECRET!
 
 // Configure Cloudinary
 cloudinary.config({

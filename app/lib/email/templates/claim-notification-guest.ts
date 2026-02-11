@@ -1,6 +1,7 @@
 // app/lib/email/templates/claim-notification-guest.ts
 
 import { ClaimNotificationGuestData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
  * Email template for guest when claim is filed against them
@@ -194,7 +195,7 @@ export function getClaimNotificationGuestTemplate(data: ClaimNotificationGuestDa
 
           <div class="content">
             <p style="font-size: 16px; color: #111827; margin-bottom: 20px;">
-              Hi ${data.guestName},
+              Hi ${escapeHtml(data.guestName)},
             </p>
 
             <div class="alert-box">
@@ -224,7 +225,7 @@ export function getClaimNotificationGuestTemplate(data: ClaimNotificationGuestDa
               </div>
               <div class="info-row">
                 <span class="info-label">Vehicle</span>
-                <span class="info-value">${data.carDetails}</span>
+                <span class="info-value">${escapeHtml(data.carDetails)}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Incident Date</span>
@@ -236,7 +237,7 @@ export function getClaimNotificationGuestTemplate(data: ClaimNotificationGuestDa
               </div>
               <div class="info-row">
                 <span class="info-label">Claim Type</span>
-                <span class="info-value">${data.claimType}</span>
+                <span class="info-value">${escapeHtml(data.claimType)}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Estimated Damage</span>
@@ -312,7 +313,7 @@ export function getClaimNotificationGuestTemplate(data: ClaimNotificationGuestDa
   const text = `
 ⚠️ ${urgencyText} - INSURANCE CLAIM FILED
 
-Hi ${data.guestName},
+Hi ${escapeHtml(data.guestName)},
 
 IMMEDIATE RESPONSE REQUIRED
 
@@ -323,9 +324,9 @@ An insurance claim has been filed for a recent rental. Your account is currently
 Claim Details:
 - Claim ID: #${data.claimId.slice(0, 8).toUpperCase()}
 - Booking Code: ${data.bookingCode}
-- Vehicle: ${data.carDetails}
+- Vehicle: ${escapeHtml(data.carDetails)}
 - Incident Date: ${new Date(data.incidentDate).toLocaleDateString()}
-- Claim Type: ${data.claimType}
+- Claim Type: ${escapeHtml(data.claimType)}
 - Estimated Damage: $${data.estimatedCost.toLocaleString()}
 - Response Deadline: ${new Date(data.responseDeadline).toLocaleString()}
 

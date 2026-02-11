@@ -175,7 +175,7 @@ The ItWhip Team
 
     // Create JWT tokens for automatic login
     const GUEST_JWT_SECRET = new TextEncoder().encode(
-      process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
+      process.env.GUEST_JWT_SECRET!
     )
 
     const accessToken = await new SignJWT({

@@ -1,6 +1,7 @@
 // app/lib/email/templates/host-verification.ts
 
 import { EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 export interface HostVerificationData {
   hostName: string
@@ -165,7 +166,7 @@ export function getHostVerificationTemplate(data: HostVerificationData): EmailTe
           </div>
           
           <div class="content">
-            <p style="font-size: 16px; margin-bottom: 16px;">Hi ${data.hostName},</p>
+            <p style="font-size: 16px; margin-bottom: 16px;">Hi ${escapeHtml(data.hostName)},</p>
             
             <p style="color: #4b5563; margin-bottom: 24px;">
               Thank you for joining ItWhip as a host! To complete your registration and start listing your vehicles, 
@@ -232,7 +233,7 @@ export function getHostVerificationTemplate(data: HostVerificationData): EmailTe
   const text = `
 Verify Your ItWhip Host Account
 
-Hi ${data.hostName},
+Hi ${escapeHtml(data.hostName)},
 
 Thank you for joining ItWhip as a host! To complete your registration, please verify your ${data.verificationType} address.
 

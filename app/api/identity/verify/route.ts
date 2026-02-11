@@ -13,10 +13,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 // Support both platform and guest JWT secrets
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 )
 const GUEST_JWT_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
+  process.env.GUEST_JWT_SECRET!
 )
 
 // Helper to get current user - tries both JWT secrets

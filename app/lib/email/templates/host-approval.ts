@@ -1,6 +1,7 @@
 // app/lib/email/templates/host-approval.ts
 
 import { EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 import { emailFooterHtml, emailFooterText } from './email-footer'
 
 export interface HostApprovalData {
@@ -235,7 +236,7 @@ export function getHostApprovalTemplate(data: HostApprovalData): EmailTemplate {
           </div>
           
           <div class="content">
-            <p style="font-size: 16px; margin-bottom: 16px;">Congratulations ${data.hostName}!</p>
+            <p style="font-size: 16px; margin-bottom: 16px;">Congratulations ${escapeHtml(data.hostName)}!</p>
             
             <p style="color: #4b5563; margin-bottom: 24px;">
               Great news! Your application has been approved, and you're now part of the ItWhip host community. 
@@ -316,7 +317,7 @@ export function getHostApprovalTemplate(data: HostApprovalData): EmailTemplate {
   const text = `
 🎉 Welcome to ItWhip - You're Approved to Start Hosting!
 
-Congratulations ${data.hostName}!
+Congratulations ${escapeHtml(data.hostName)}!
 
 Great news! Your application has been approved, and you're now part of the ItWhip host community.
 

@@ -8,7 +8,7 @@ import { calculateESGScore } from "@/app/lib/esg/scoring";
 import { getHostBadges } from "@/app/lib/esg/badges";
 import { analyzeFleetComposition } from "@/app/lib/esg/fleet-composition";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET!;
 
 export async function GET(request: NextRequest) {
   try {

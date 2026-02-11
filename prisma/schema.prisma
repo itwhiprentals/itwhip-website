@@ -5286,3 +5286,13 @@ model PendingCheckout {
   @@index([userId])
   @@map("pending_checkouts")
 }
+
+// Email unsubscribe preferences (CAN-SPAM compliance)
+model EmailPreference {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  unsubscribedAt DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  @@map("email_preferences")
+}

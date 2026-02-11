@@ -8,7 +8,7 @@ import { cookies } from 'next/headers'
 import { v2 as cloudinary } from 'cloudinary'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-secret-key-here'
+  process.env.JWT_SECRET!
 )
 
 // Configure Cloudinary

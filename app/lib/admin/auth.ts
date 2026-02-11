@@ -5,7 +5,7 @@ import prisma from '@/app/lib/database/prisma'
 
 // Admin JWT secret
 const ADMIN_JWT_SECRET = new TextEncoder().encode(
-  process.env.ADMIN_JWT_SECRET || 'admin-secret-key-change-this'
+  process.env.ADMIN_JWT_SECRET!
 )
 
 // Types

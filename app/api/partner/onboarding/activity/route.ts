@@ -7,7 +7,7 @@ import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
 import { logProspectActivity } from '@/app/lib/auth/host-tokens'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
+const JWT_SECRET = process.env.JWT_SECRET!
 
 // Helper to get current host from auth
 async function getCurrentHost() {

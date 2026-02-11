@@ -11,7 +11,7 @@ import { verify } from 'jsonwebtoken'
 import { prisma } from '@/app/lib/database/prisma'
 import { HostApprovalStatus, isHostApproved } from './host-guard'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+const JWT_SECRET = process.env.JWT_SECRET!
 
 export type HostType = 'PENDING' | 'MANAGED' | 'REAL' | 'PARTNER' | 'FLEET_PARTNER'
 

@@ -13,15 +13,15 @@ import { getAccountLinkedTemplate } from '@/app/lib/email/templates/account-link
 import crypto from 'crypto'
 
 const LINK_TOKEN_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
+  process.env.GUEST_JWT_SECRET!
 )
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 )
 
 const REFRESH_TOKEN_SECRET = new TextEncoder().encode(
-  process.env.REFRESH_TOKEN_SECRET || 'fallback-refresh-secret'
+  process.env.REFRESH_TOKEN_SECRET!
 )
 
 async function verifyPassword(password: string, hash: string): Promise<boolean> {

@@ -2,6 +2,7 @@
 // Welcome email for approved Fleet Partners with password reset link
 
 import { EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 import { emailFooterHtml, emailFooterText } from './email-footer'
 
 export interface PartnerWelcomeData {
@@ -272,15 +273,15 @@ export function getPartnerWelcomeTemplate(data: PartnerWelcomeData): EmailTempla
           <div class="header">
             <div class="badge">✓ Application Approved</div>
             <h1>Welcome to Fleet Partners!</h1>
-            <p>${data.companyName} is now part of the ItWhip network</p>
+            <p>${escapeHtml(data.companyName)} is now part of the ItWhip network</p>
           </div>
 
           <div class="content">
-            <p style="font-size: 16px; margin-bottom: 16px;">Hello ${data.contactName},</p>
+            <p style="font-size: 16px; margin-bottom: 16px;">Hello ${escapeHtml(data.contactName)},</p>
 
             <p style="color: #4b5563; margin-bottom: 24px;">
               Congratulations! Your Fleet Partner application has been approved. We're thrilled to have
-              <strong>${data.companyName}</strong> join the ItWhip partner network.
+              <strong>${escapeHtml(data.companyName)}</strong> join the ItWhip partner network.
             </p>
 
             <div class="welcome-box">
@@ -409,11 +410,11 @@ export function getPartnerWelcomeTemplate(data: PartnerWelcomeData): EmailTempla
   `
 
   const text = `
-🎉 Welcome to ItWhip Fleet Partners - ${data.companyName} Approved!
+🎉 Welcome to ItWhip Fleet Partners - ${escapeHtml(data.companyName)} Approved!
 
-Hello ${data.contactName},
+Hello ${escapeHtml(data.contactName)},
 
-Congratulations! Your Fleet Partner application has been approved. We're thrilled to have ${data.companyName} join the ItWhip partner network.
+Congratulations! Your Fleet Partner application has been approved. We're thrilled to have ${escapeHtml(data.companyName)} join the ItWhip partner network.
 
 YOU'RE APPROVED!
 Your fleet is ready to start earning on ItWhip

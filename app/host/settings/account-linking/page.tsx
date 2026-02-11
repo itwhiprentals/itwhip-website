@@ -12,7 +12,7 @@ import Footer from '@/app/components/Footer'
 import { IoArrowBackOutline } from 'react-icons/io5'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-key'
+  process.env.JWT_SECRET!
 )
 
 async function getCurrentUser() {

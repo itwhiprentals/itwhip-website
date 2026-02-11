@@ -1,6 +1,7 @@
 // app/lib/email/templates/host-rejection.ts
 
 import { EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 export interface RejectionReason {
   category: string
@@ -211,7 +212,7 @@ export function getHostRejectionTemplate(data: HostRejectionData): EmailTemplate
           </div>
           
           <div class="content">
-            <p style="font-size: 16px; margin-bottom: 16px;">Dear ${data.hostName},</p>
+            <p style="font-size: 16px; margin-bottom: 16px;">Dear ${escapeHtml(data.hostName)},</p>
             
             <p style="color: #4b5563; margin-bottom: 24px;">
               Thank you for your interest in becoming a host on the ItWhip platform. We've carefully reviewed 
@@ -307,7 +308,7 @@ export function getHostRejectionTemplate(data: HostRejectionData): EmailTemplate
   const text = `
 Update on Your ItWhip Host Application
 
-Dear ${data.hostName},
+Dear ${escapeHtml(data.hostName)},
 
 Thank you for your interest in becoming a host on the ItWhip platform. We've carefully reviewed your application.
 

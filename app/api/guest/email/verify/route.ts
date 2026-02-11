@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
     // Verify the token
     const EMAIL_CHANGE_SECRET = new TextEncoder().encode(
-      process.env.EMAIL_CHANGE_SECRET || process.env.JWT_SECRET || 'email-change-secret'
+      process.env.EMAIL_CHANGE_SECRET || process.env.JWT_SECRET!
     )
 
     let payload: any

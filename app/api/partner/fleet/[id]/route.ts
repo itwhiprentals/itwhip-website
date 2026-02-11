@@ -10,7 +10,7 @@ import { prisma } from '@/app/lib/database/prisma'
 import { updatePartnerCommissionRate } from '@/app/lib/commission/calculate-tier'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-secret-key'
+  process.env.JWT_SECRET!
 )
 
 async function getPartnerFromToken() {

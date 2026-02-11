@@ -139,7 +139,7 @@ export default function AddCarPage() {
         // PENDING or NEEDS_ATTENTION hosts should complete their first car first
         if (approvalStatus === 'PENDING' || approvalStatus === 'NEEDS_ATTENTION') {
           // Fetch their existing cars to redirect to edit
-          const carsRes = await fetch(`/api/host/cars?hostId=${profile.id}`, {
+          const carsRes = await fetch('/api/host/cars', {
             credentials: 'include'
           })
 

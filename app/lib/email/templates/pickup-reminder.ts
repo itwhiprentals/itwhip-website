@@ -1,6 +1,7 @@
 // app/lib/email/templates/pickup-reminder.ts
 
 import { PickupReminderData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
 * Email template for pickup reminders
@@ -156,20 +157,20 @@ export function getPickupReminderTemplate(data: PickupReminderData): EmailTempla
          </div>
          
          <div class="content">
-           <p style="font-size: 16px; margin-bottom: 16px;">Dear ${data.guestName},</p>
+           <p style="font-size: 16px; margin-bottom: 16px;">Dear ${escapeHtml(data.guestName)},</p>
            
            <div class="reminder-box">
              <strong>Reminder:</strong> Your rental pickup is scheduled for tomorrow, 
              ${data.pickupDate} at ${data.pickupTime}.
            </div>
            
-           <img src="${data.carImage}" alt="${data.carMake} ${data.carModel}" class="car-image" />
+           <img src="${data.carImage}" alt="${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}" class="car-image" />
            
            <div class="details-box">
              <h3 style="margin: 0 0 16px 0; font-size: 18px;">Pickup Details</h3>
              <div class="detail-row">
                <span>Vehicle</span>
-               <strong>${data.carMake} ${data.carModel}</strong>
+               <strong>${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}</strong>
              </div>
              <div class="detail-row">
                <span>Date</span>
@@ -181,14 +182,14 @@ export function getPickupReminderTemplate(data: PickupReminderData): EmailTempla
              </div>
              <div class="detail-row">
                <span>Location</span>
-               <strong>${data.pickupLocation}</strong>
+               <strong>${escapeHtml(data.pickupLocation)}</strong>
              </div>
            </div>
            
            <div class="host-box">
              <h3>Host Contact Information</h3>
              <p style="font-size: 14px; margin-bottom: 8px;">
-               <strong>Name:</strong> ${data.hostName}<br>
+               <strong>Name:</strong> ${escapeHtml(data.hostName)}<br>
                <strong>Phone:</strong> ${data.hostPhone}
              </p>
              <p style="font-size: 13px; color: #1e3a8a;">
@@ -239,18 +240,18 @@ export function getPickupReminderTemplate(data: PickupReminderData): EmailTempla
  const text = `
 Your Trip is Tomorrow
 
-Dear ${data.guestName},
+Dear ${escapeHtml(data.guestName)},
 
 Reminder: Your rental pickup is scheduled for tomorrow, ${data.pickupDate} at ${data.pickupTime}.
 
 PICKUP DETAILS:
-- Vehicle: ${data.carMake} ${data.carModel}
+- Vehicle: ${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}
 - Date: ${data.pickupDate}
 - Time: ${data.pickupTime}
-- Location: ${data.pickupLocation}
+- Location: ${escapeHtml(data.pickupLocation)}
 
 HOST CONTACT:
-- Name: ${data.hostName}
+- Name: ${escapeHtml(data.hostName)}
 - Phone: ${data.hostPhone}
 
 Your host will contact you today to confirm pickup details. Please have your phone available.

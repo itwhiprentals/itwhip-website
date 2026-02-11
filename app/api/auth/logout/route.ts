@@ -4,7 +4,7 @@ import { jwtVerify } from 'jose'
 import db from '@/app/lib/db'
 
 const JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret'
+  process.env.JWT_REFRESH_SECRET!
 )
 
 export async function POST(request: NextRequest) {

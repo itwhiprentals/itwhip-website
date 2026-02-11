@@ -6,7 +6,7 @@ import { verify } from 'jsonwebtoken'
 import { sendHostDocumentRequest } from '@/app/lib/email'
 import { v2 as cloudinary } from 'cloudinary'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+const JWT_SECRET = process.env.JWT_SECRET!
 
 // Configure Cloudinary
 cloudinary.config({

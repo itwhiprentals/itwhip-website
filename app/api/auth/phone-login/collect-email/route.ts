@@ -12,10 +12,10 @@ import { detectBot } from '@/app/lib/security/botDetection'
 
 // JWT secrets
 const GUEST_JWT_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_SECRET || 'fallback-guest-secret-key'
+  process.env.GUEST_JWT_SECRET!
 )
 const GUEST_JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_REFRESH_SECRET || 'fallback-refresh-secret'
+  process.env.GUEST_JWT_REFRESH_SECRET!
 )
 
 // Generate JWT tokens

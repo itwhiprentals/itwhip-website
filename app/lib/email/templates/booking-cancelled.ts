@@ -1,6 +1,7 @@
 // app/lib/email/templates/booking-cancelled.ts
 
 import { BookingCancelledData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 /**
 * Email template for cancelled bookings
@@ -130,10 +131,10 @@ export function getBookingCancelledTemplate(data: BookingCancelledData): EmailTe
          </div>
          
          <div class="content">
-           <p style="font-size: 16px; margin-bottom: 16px;">Dear ${data.guestName},</p>
+           <p style="font-size: 16px; margin-bottom: 16px;">Dear ${escapeHtml(data.guestName)},</p>
            
            <div class="cancellation-box">
-             Your booking for the <strong>${data.carMake} ${data.carModel}</strong> has been successfully cancelled.
+             Your booking for the <strong>${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}</strong> has been successfully cancelled.
              ${data.cancellationReason ? `<br><br><strong>Reason:</strong> ${data.cancellationReason}` : ''}
            </div>
            
@@ -145,7 +146,7 @@ export function getBookingCancelledTemplate(data: BookingCancelledData): EmailTe
              </div>
              <div class="detail-row">
                <span>Vehicle</span>
-               <strong>${data.carMake} ${data.carModel}</strong>
+               <strong>${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}</strong>
              </div>
              <div class="detail-row">
                <span>Original Pick-up Date</span>
@@ -192,14 +193,14 @@ export function getBookingCancelledTemplate(data: BookingCancelledData): EmailTe
  const text = `
 Booking Cancelled
 
-Dear ${data.guestName},
+Dear ${escapeHtml(data.guestName)},
 
-Your booking for the ${data.carMake} ${data.carModel} has been successfully cancelled.
+Your booking for the ${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)} has been successfully cancelled.
 ${data.cancellationReason ? `Reason: ${data.cancellationReason}` : ''}
 
 CANCELLED BOOKING DETAILS:
 - Booking Code: ${data.bookingCode}
-- Vehicle: ${data.carMake} ${data.carModel}
+- Vehicle: ${escapeHtml(data.carMake)} ${escapeHtml(data.carModel)}
 - Original Pick-up Date: ${data.startDate}
 
 ${data.refundAmount ? `REFUND INFORMATION:

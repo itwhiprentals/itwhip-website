@@ -1,6 +1,7 @@
 // app/lib/email/templates/claim-notification-fleet.ts
 
 import { ClaimNotificationFleetData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 // Extended data type that includes optional FNOL summary
 type ClaimNotificationFleetDataWithFnol = ClaimNotificationFleetData & {
@@ -275,7 +276,7 @@ export function getClaimNotificationFleetTemplate(data: ClaimNotificationFleetDa
               </div>
               <div class="info-card">
                 <div class="info-card-label">Claim Type</div>
-                <div class="info-card-value">${data.claimType}</div>
+                <div class="info-card-value">${escapeHtml(data.claimType)}</div>
               </div>
             </div>
 
@@ -283,15 +284,15 @@ export function getClaimNotificationFleetTemplate(data: ClaimNotificationFleetDa
               <h3 style="color: #111827; margin-bottom: 16px; font-size: 16px;">Claim Details</h3>
               <div class="detail-row">
                 <span class="detail-label">Vehicle</span>
-                <span class="detail-value">${data.carDetails}</span>
+                <span class="detail-value">${escapeHtml(data.carDetails)}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Host</span>
-                <span class="detail-value">${data.hostName}</span>
+                <span class="detail-value">${escapeHtml(data.hostName)}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Guest</span>
-                <span class="detail-value">${data.guestName}</span>
+                <span class="detail-value">${escapeHtml(data.guestName)}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Incident Date</span>
@@ -364,13 +365,13 @@ CLAIM SUMMARY:
 - Claim ID: #${data.claimId.slice(0, 8).toUpperCase()}
 - Booking Code: ${data.bookingCode}
 - Estimated Cost: $${data.estimatedCost.toLocaleString()}
-- Claim Type: ${data.claimType}
+- Claim Type: ${escapeHtml(data.claimType)}
 - Priority: ${data.priority.toUpperCase()}
 
 CLAIM DETAILS:
-- Vehicle: ${data.carDetails}
-- Host: ${data.hostName}
-- Guest: ${data.guestName}
+- Vehicle: ${escapeHtml(data.carDetails)}
+- Host: ${escapeHtml(data.hostName)}
+- Guest: ${escapeHtml(data.guestName)}
 - Incident Date: ${new Date(data.incidentDate).toLocaleDateString()}
 - Host Tier: ${data.earningsTier}
 - Insurance Provider: ${data.insuranceProvider}

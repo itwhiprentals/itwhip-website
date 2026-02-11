@@ -1,6 +1,7 @@
 // app/lib/email/templates/host-action-required.ts
 
 import { EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 export interface HostActionRequiredData {
   hostName: string
@@ -218,7 +219,7 @@ export function getHostActionRequiredTemplate(data: HostActionRequiredData): Ema
           </div>
           
           <div class="content">
-            <p style="font-size: 16px; margin-bottom: 16px;">Hi ${data.hostName},</p>
+            <p style="font-size: 16px; margin-bottom: 16px;">Hi ${escapeHtml(data.hostName)},</p>
             
             <p style="color: #4b5563; margin-bottom: 24px;">
               Your ItWhip host account requires immediate action to maintain your hosting privileges 
@@ -296,7 +297,7 @@ export function getHostActionRequiredTemplate(data: HostActionRequiredData): Ema
   const text = `
 Action Required: ${data.actionType} - ItWhip Host Account
 
-Hi ${data.hostName},
+Hi ${escapeHtml(data.hostName)},
 
 Your ItWhip host account requires immediate action to maintain your hosting privileges.
 

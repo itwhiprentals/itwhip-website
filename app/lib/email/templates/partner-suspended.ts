@@ -2,6 +2,7 @@
 // Email notification when a Fleet Partner account is suspended
 
 import { EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 import { emailFooterHtml, emailFooterText } from './email-footer'
 
 export interface PartnerSuspendedData {
@@ -188,14 +189,14 @@ export function getPartnerSuspendedTemplate(data: PartnerSuspendedData): EmailTe
           <div class="header">
             <div class="badge">Account Suspended</div>
             <h1>Partner Account Suspended</h1>
-            <p>${data.companyName}</p>
+            <p>${escapeHtml(data.companyName)}</p>
           </div>
 
           <div class="content">
-            <p style="font-size: 16px; margin-bottom: 16px;">Hello ${data.contactName},</p>
+            <p style="font-size: 16px; margin-bottom: 16px;">Hello ${escapeHtml(data.contactName)},</p>
 
             <p style="color: #4b5563; margin-bottom: 24px;">
-              We regret to inform you that your Fleet Partner account for <strong>${data.companyName}</strong>
+              We regret to inform you that your Fleet Partner account for <strong>${escapeHtml(data.companyName)}</strong>
               has been suspended. Your vehicles and partner page are temporarily hidden from the platform.
             </p>
 
@@ -272,9 +273,9 @@ export function getPartnerSuspendedTemplate(data: PartnerSuspendedData): EmailTe
   const text = `
 Important: Your ItWhip Partner Account Has Been Suspended
 
-Hello ${data.contactName},
+Hello ${escapeHtml(data.contactName)},
 
-We regret to inform you that your Fleet Partner account for ${data.companyName} has been suspended. Your vehicles and partner page are temporarily hidden from the platform.
+We regret to inform you that your Fleet Partner account for ${escapeHtml(data.companyName)} has been suspended. Your vehicles and partner page are temporarily hidden from the platform.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚠️ ACCOUNT SUSPENDED

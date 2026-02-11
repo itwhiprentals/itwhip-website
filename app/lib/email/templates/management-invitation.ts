@@ -1,6 +1,7 @@
 // app/lib/email/templates/management-invitation.ts
 
 import { ManagementInvitationData, EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 import { emailFooterHtml, emailFooterText } from './email-footer'
 
 /**
@@ -11,8 +12,8 @@ export function getManagementInvitationTemplate(data: ManagementInvitationData):
   const isOwnerInvitingManager = data.invitationType === 'OWNER_INVITES_MANAGER'
 
   const subject = isOwnerInvitingManager
-    ? `${data.senderName} wants you to manage their vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''}`
-    : `${data.senderName} wants to manage your vehicles on ItWhip`
+    ? `${escapeHtml(data.senderName)} wants you to manage their vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''}`
+    : `${escapeHtml(data.senderName)} wants to manage your vehicles on ItWhip`
 
   const roleDescription = isOwnerInvitingManager
     ? 'manage their vehicle' + (data.vehicles && data.vehicles.length > 1 ? 's' : '')
@@ -239,20 +240,20 @@ export function getManagementInvitationTemplate(data: ManagementInvitationData):
 
             <p style="font-size: 14px; color: #4b5563; margin-bottom: 20px;">
               ${isOwnerInvitingManager
-                ? `${data.senderName} has invited you to manage their vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''} on ItWhip. Review the proposed terms below.`
-                : `${data.senderName} operates a fleet on ItWhip and would like you to add your vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''} to their managed fleet.`
+                ? `${escapeHtml(data.senderName)} has invited you to manage their vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''} on ItWhip. Review the proposed terms below.`
+                : `${escapeHtml(data.senderName)} operates a fleet on ItWhip and would like you to add your vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''} to their managed fleet.`
               }
             </p>
 
             <div class="sender-box">
               <div class="sender-avatar">
                 ${data.senderPhoto
-                  ? `<img src="${data.senderPhoto}" alt="${data.senderName}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" />`
+                  ? `<img src="${data.senderPhoto}" alt="${escapeHtml(data.senderName)}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" />`
                   : data.senderName.charAt(0).toUpperCase()
                 }
               </div>
               <div class="sender-info">
-                <h3>${data.senderName}</h3>
+                <h3>${escapeHtml(data.senderName)}</h3>
                 <p>${data.senderEmail}</p>
                 <p style="margin-top: 4px; color: #6366f1; font-weight: 500;">
                   ${isOwnerInvitingManager ? 'Vehicle Owner' : 'Fleet Manager'}
@@ -262,7 +263,7 @@ export function getManagementInvitationTemplate(data: ManagementInvitationData):
 
             ${data.message ? `
               <div class="message-box">
-                <strong>Message from ${data.senderName}:</strong>
+                <strong>Message from ${escapeHtml(data.senderName)}:</strong>
                 ${data.message}
               </div>
             ` : ''}
@@ -340,11 +341,11 @@ Fleet Management Invitation
 Hi ${data.recipientName || 'there'},
 
 ${isOwnerInvitingManager
-  ? `${data.senderName} has invited you to manage their vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''} on ItWhip.`
-  : `${data.senderName} operates a fleet on ItWhip and would like you to add your vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''} to their managed fleet.`
+  ? `${escapeHtml(data.senderName)} has invited you to manage their vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''} on ItWhip.`
+  : `${escapeHtml(data.senderName)} operates a fleet on ItWhip and would like you to add your vehicle${data.vehicles && data.vehicles.length > 1 ? 's' : ''} to their managed fleet.`
 }
 
-FROM: ${data.senderName} (${data.senderEmail})
+FROM: ${escapeHtml(data.senderName)} (${data.senderEmail})
 ROLE: ${isOwnerInvitingManager ? 'Vehicle Owner' : 'Fleet Manager'}
 
 ${data.message ? `MESSAGE:\n${data.message}\n` : ''}

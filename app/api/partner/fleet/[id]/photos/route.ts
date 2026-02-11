@@ -8,12 +8,14 @@ import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-secret-key'
+  process.env.JWT_SECRET!
 )
 
 async function getPartnerFromToken() {
   const cookieStore = await cookies()
-  const token = cookieStore.get('partner_token')?.value
+  // SECURITY FIX: Check both cookie names for consistent auth
+  const token = cookieStore.get('partner_token')?.value ||
+                cookieStore.get('hostAccessToken')?.value
 
   if (!token) return null
 

@@ -1,6 +1,7 @@
 // app/lib/email/templates/partner-application-received.ts
 
 import { EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 import { emailFooterHtml, emailFooterText } from './email-footer'
 
 export interface PartnerApplicationReceivedData {
@@ -212,11 +213,11 @@ export function getPartnerApplicationReceivedTemplate(data: PartnerApplicationRe
           </div>
 
           <div class="content">
-            <p style="font-size: 16px; margin-bottom: 16px;">Hello ${data.contactName},</p>
+            <p style="font-size: 16px; margin-bottom: 16px;">Hello ${escapeHtml(data.contactName)},</p>
 
             <p style="color: #4b5563; margin-bottom: 24px;">
               Thank you for applying to become an ItWhip Fleet Partner! We've received your application
-              for <strong>${data.companyName}</strong> and our team is now reviewing your submission.
+              for <strong>${escapeHtml(data.companyName)}</strong> and our team is now reviewing your submission.
             </p>
 
             <div class="status-box">
@@ -235,7 +236,7 @@ export function getPartnerApplicationReceivedTemplate(data: PartnerApplicationRe
               </div>
               <div class="detail-row">
                 <span class="detail-label">Company Name</span>
-                <span class="detail-value">${data.companyName}</span>
+                <span class="detail-value">${escapeHtml(data.companyName)}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Fleet Size</span>
@@ -323,16 +324,16 @@ export function getPartnerApplicationReceivedTemplate(data: PartnerApplicationRe
   const text = `
 FLEET PARTNER PROGRAM - Application Received
 
-Hello ${data.contactName},
+Hello ${escapeHtml(data.contactName)},
 
-Thank you for applying to become an ItWhip Fleet Partner! We've received your application for ${data.companyName} and our team is now reviewing your submission.
+Thank you for applying to become an ItWhip Fleet Partner! We've received your application for ${escapeHtml(data.companyName)} and our team is now reviewing your submission.
 
 APPLICATION STATUS: Under Review
 Estimated review time: ${data.estimatedReviewTime || '24-48 hours'}
 
 APPLICATION SUMMARY:
 - Application ID: #${data.applicationId.slice(-8).toUpperCase()}
-- Company Name: ${data.companyName}
+- Company Name: ${escapeHtml(data.companyName)}
 - Fleet Size: ${data.fleetSize} vehicles
 - Operating States: ${statesHtml}
 - Submitted: ${data.submittedAt.toLocaleDateString('en-US', {
@@ -480,7 +481,7 @@ export function getFleetTeamNotificationTemplate(data: FleetTeamNotificationData
 
           <div class="content">
             <div class="alert-box">
-              <h2>${data.companyName}</h2>
+              <h2>${escapeHtml(data.companyName)}</h2>
               <p>Fleet size: ${data.fleetSize} vehicles | States: ${data.operatingStates.join(', ')}</p>
             </div>
 
@@ -488,7 +489,7 @@ export function getFleetTeamNotificationTemplate(data: FleetTeamNotificationData
               <h3>Contact Information</h3>
               <div class="detail-row">
                 <span class="detail-label">Name</span>
-                <span class="detail-value">${data.contactName}</span>
+                <span class="detail-value">${escapeHtml(data.contactName)}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Email</span>
@@ -516,12 +517,12 @@ export function getFleetTeamNotificationTemplate(data: FleetTeamNotificationData
   const text = `
 NEW FLEET PARTNER APPLICATION
 
-Company: ${data.companyName}
+Company: ${escapeHtml(data.companyName)}
 Fleet Size: ${data.fleetSize} vehicles
 Operating States: ${data.operatingStates.join(', ')}
 
 Contact:
-- Name: ${data.contactName}
+- Name: ${escapeHtml(data.contactName)}
 - Email: ${data.contactEmail}
 - Phone: ${data.contactPhone}
 - Application ID: #${data.applicationId.slice(-8).toUpperCase()}

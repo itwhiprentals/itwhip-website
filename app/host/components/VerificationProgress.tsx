@@ -238,7 +238,7 @@ export default function VerificationProgress({
   useEffect(() => {
     const fetchCars = async () => {
       try {
-        const response = await fetch(`/api/host/cars?hostId=${hostId}`, {
+        const response = await fetch('/api/host/cars', {
           credentials: 'include'
         })
 

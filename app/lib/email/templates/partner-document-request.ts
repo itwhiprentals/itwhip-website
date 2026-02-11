@@ -1,6 +1,7 @@
 // app/lib/email/templates/partner-document-request.ts
 
 import { EmailTemplate } from '../types'
+import { escapeHtml } from '../sanitize'
 
 export interface PartnerDocumentIssue {
   documentType: string
@@ -194,7 +195,7 @@ export function getPartnerDocumentRequestTemplate(data: PartnerDocumentRequestDa
             <p style="font-size: 16px; margin-bottom: 16px;">Hi ${data.partnerName},</p>
 
             <p style="color: #4b5563; margin-bottom: 24px;">
-              ${data.companyName ? `Your company <strong>${data.companyName}</strong> is ` : 'Your account is '}
+              ${data.companyName ? `Your company <strong>${escapeHtml(data.companyName)}</strong> is ` : 'Your account is '}
               missing some required documents for our partner verification process.
               Please upload the following documents to complete your account setup and continue operations.
             </p>
@@ -270,7 +271,7 @@ Action Required: Document Upload Needed for Your ItWhip Partner Account
 
 Hi ${data.partnerName},
 
-${data.companyName ? `Your company ${data.companyName} is ` : 'Your account is '}missing some required documents for our partner verification process.
+${data.companyName ? `Your company ${escapeHtml(data.companyName)} is ` : 'Your account is '}missing some required documents for our partner verification process.
 
 ${data.deadline ? `PLEASE RESPOND WITHIN: ${data.deadline}` : ''}
 
