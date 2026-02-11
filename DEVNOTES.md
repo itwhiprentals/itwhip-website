@@ -97,7 +97,13 @@ Full 6-area lifecycle audit found 4 critical + 8 high + 14 medium + 10 low vulne
 - **M12:** Stripe ID redaction — `stripeCustomerId`, `stripePaymentMethodId`, `paymentIntentId` stripped from guest-facing booking GET responses. Only admins/hosts see Stripe internals.
 - **M3:** Disposable email blocking — wired existing 455-line `email-validator.ts` into all 3 signup routes (guest, host, partner). Blocks guerrillamail, mailinator, yopmail, tempmail, etc.
 
-**Phase C remaining:** CAPTCHA, upload quotas, per-user admin auth for fleet PATCH, missing email templates (payout, dispute, host cancellation), cancellation policy, M2 (block unverified email bookings), M14 (payout calculation consolidation).
+### Security Audit Phase C - DEPLOYED ✅ (Feb 10)
+- **M2:** Email verification gate at booking — unverified users get 403 with `EMAIL_NOT_VERIFIED` code + `/verify-email` link. Checks `User.emailVerified` after guest profile lookup.
+- **M7:** Host notification emails — new `host-booking-cancelled.ts` template sent to host when guest cancels (wired into cancel endpoint). New `payout-confirmation.ts` template sent to host when payout is processed (wired into payout endpoint). Both with unsubscribe check + fire-and-forget.
+- **M9:** Upload rate limiting — 50 uploads/day per authenticated user (host + partner routes), 10 uploads/hr per IP (public document upload). Shared Upstash Redis rate limiter in `app/lib/upload/rate-limiter.ts`.
+- **M14:** Investigated payout calculation "discrepancy" — confirmed two separate systems: guest payment distribution (`payment-service.ts`: 15% platform + 8.4% AZ tax + 1.6% insurance pool) vs host payout commission (`financialCalculator.ts`: fleet-size tiers). No conflict, clarified JSDoc.
+
+**Phase C remaining:** CAPTCHA, per-user admin auth for fleet PATCH, cancellation policy, dispute notification email.
 
 ---
 
