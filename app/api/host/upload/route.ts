@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { headers } from 'next/headers'
 import { v2 as cloudinary } from 'cloudinary'
+import { checkUploadRateLimit } from '@/app/lib/upload/rate-limiter'
 
 // Configure Cloudinary
 cloudinary.config({
@@ -158,7 +159,16 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('📤 Upload request from host:', host.id, host.email)
-    
+
+    // Rate limit: 50 uploads per day per host
+    const { allowed, remaining } = await checkUploadRateLimit(host.id)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Upload limit reached. Please try again tomorrow.' },
+        { status: 429, headers: { 'X-RateLimit-Remaining': '0' } }
+      )
+    }
+
     const formData = await request.formData()
     const type = formData.get('type') as string
     const carId = formData.get('carId') as string | null

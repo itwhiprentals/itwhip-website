@@ -6,6 +6,7 @@ import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
 import { v2 as cloudinary } from 'cloudinary'
+import { checkUploadRateLimit } from '@/app/lib/upload/rate-limiter'
 
 // Configure Cloudinary
 cloudinary.config({
@@ -90,6 +91,15 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('📤 Partner upload request from:', partner.id, partner.email)
+
+    // Rate limit: 50 uploads per day per partner
+    const { allowed } = await checkUploadRateLimit(partner.id)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Upload limit reached. Please try again tomorrow.' },
+        { status: 429, headers: { 'X-RateLimit-Remaining': '0' } }
+      )
+    }
 
     const formData = await request.formData()
     const type = formData.get('type') as string

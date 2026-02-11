@@ -526,6 +526,39 @@ export interface RefundConfirmationData extends BaseEmailData {
 }
 
 // ============================================================================
+// PAYOUT & HOST CANCELLATION EMAIL INTERFACES
+// ============================================================================
+
+// Payout confirmation - sent to host when payout is processed
+export interface PayoutConfirmationData {
+  hostName: string
+  hostEmail: string
+  payoutAmount: string
+  grossEarnings: string
+  platformFee: string
+  processingFee: string
+  bookingCount: number
+  payoutMethod: string
+  payoutId: string
+  estimatedArrival: string
+}
+
+// Host booking cancelled - sent to host when guest cancels their booking
+export interface HostBookingCancelledData {
+  hostName: string
+  hostEmail: string
+  guestName: string
+  bookingCode: string
+  carMake: string
+  carModel: string
+  startDate: string
+  endDate: string
+  totalAmount: string
+  cancellationReason?: string
+  cancelledBy: 'guest' | 'fleet' | 'system'
+}
+
+// ============================================================================
 // RESPONSE TYPES
 // ============================================================================
 

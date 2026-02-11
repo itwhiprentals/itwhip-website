@@ -182,6 +182,27 @@ export async function POST(request: NextRequest) {
     })
     const reviewerProfileId = guestProfile?.id || null
     const renterId = guestProfile?.userId || null
+
+    // ========== EMAIL VERIFICATION CHECK ==========
+    // Block bookings from users who haven't verified their email
+    if (renterId) {
+      const userRecord = await prisma.user.findUnique({
+        where: { id: renterId },
+        select: { emailVerified: true },
+      })
+      if (userRecord && userRecord.emailVerified === false) {
+        console.warn(`[book] Unverified email attempted booking: ${bookingData.guestEmail}`)
+        return NextResponse.json(
+          {
+            error: 'Please verify your email address before booking.',
+            code: 'EMAIL_NOT_VERIFIED',
+            verifyUrl: '/verify-email'
+          },
+          { status: 403 }
+        )
+      }
+    }
+    // ========== END EMAIL VERIFICATION CHECK ==========
     // ========== END LINK ==========
 
     // SECURE QUERY - Get car details WITHOUT source field

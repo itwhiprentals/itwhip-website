@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
+import { sendHostBookingCancelledEmail } from '@/app/lib/email/host-booking-cancelled-email'
 
 export async function POST(
   request: NextRequest,
@@ -28,7 +29,11 @@ export async function POST(
         totalAmount: true,
         startDate: true,
         bookingCode: true,
-        car: { select: { make: true, model: true } }
+        guestName: true,
+        endDate: true,
+        hostId: true,
+        car: { select: { make: true, model: true } },
+        host: { select: { name: true, email: true } }
       }
     })
 
@@ -109,6 +114,24 @@ export async function POST(
       } catch (stripeError) {
         console.error('[Cancel Booking] Failed to void payment:', stripeError)
       }
+    }
+
+    // Notify host about the cancellation (fire-and-forget)
+    if (booking.host?.email) {
+      const formatDate = (d: Date | null) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''
+      sendHostBookingCancelledEmail({
+        hostName: booking.host.name || 'Host',
+        hostEmail: booking.host.email,
+        guestName: booking.guestName || 'Guest',
+        bookingCode: booking.bookingCode,
+        carMake: booking.car?.make || 'Vehicle',
+        carModel: booking.car?.model || '',
+        startDate: formatDate(booking.startDate),
+        endDate: formatDate(booking.endDate),
+        totalAmount: Number(booking.totalAmount || 0).toFixed(2),
+        cancellationReason: reason,
+        cancelledBy: 'guest',
+      }).catch(() => {})
     }
 
     return NextResponse.json({

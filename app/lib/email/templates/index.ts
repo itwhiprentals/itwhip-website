@@ -55,6 +55,10 @@ export { getInvitationDeclinedTemplate } from './invitation-declined'
 // PARTNER DOCUMENT REQUEST TEMPLATE
 export { getPartnerDocumentRequestTemplate } from './partner-document-request'
 
+// PAYOUT & HOST CANCELLATION TEMPLATES
+export { getPayoutConfirmationTemplate } from './payout-confirmation'
+export { getHostBookingCancelledTemplate } from './host-booking-cancelled'
+
 // Re-export all types for convenience
 export type {
   // Base types
@@ -107,5 +111,9 @@ export type {
   ManagementInvitationData,
   CounterOfferData,
   InvitationAcceptedData,
-  InvitationDeclinedData
+  InvitationDeclinedData,
+
+  // Payout & Host Cancellation types
+  PayoutConfirmationData,
+  HostBookingCancelledData
 } from '../types'

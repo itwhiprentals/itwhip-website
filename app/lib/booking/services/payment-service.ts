@@ -276,8 +276,10 @@ export async function releaseSecurityDeposit(params: {
 }
 
 /**
- * Calculate host payout amount
- * Following Turo model: 75% host, 15% platform, ~8.4% tax, ~1.6% insurance pool
+ * Calculate guest payment breakdown
+ * Splits a trip amount into platform fee, Arizona tax, and insurance pool
+ * This is for guest-facing payment distribution, NOT host payout calculation.
+ * Host payouts use fleet-size-based commission tiers in financialCalculator.ts
  */
 export function calculateHostPayout(tripAmount: number): {
   hostPayout: number

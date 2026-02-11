@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { v2 as cloudinary } from 'cloudinary'
+import { checkUploadIpRateLimit } from '@/app/lib/upload/rate-limiter'
 
 // Configure Cloudinary
 cloudinary.config({
@@ -13,6 +14,17 @@ cloudinary.config({
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 10 uploads per hour per IP (public endpoint)
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+               request.headers.get('x-real-ip') || 'unknown'
+    const { allowed } = await checkUploadIpRateLimit(ip)
+    if (!allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Too many uploads. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
     const formData = await request.formData()
     const file = formData.get('file') as File
     const type = formData.get('type') as string // 'license' | 'selfie'

@@ -3,7 +3,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { headers } from 'next/headers'
-import { 
+import { sendPayoutConfirmationEmail } from '@/app/lib/email/payout-confirmation-email'
+import {
   PAYOUT_CONFIG,
   calculateHostEarnings,
   PLATFORM_COMMISSION,
@@ -258,6 +259,23 @@ export async function POST(request: NextRequest) {
     //     }
     //   })
     // }
+
+    // Send payout confirmation email to host (fire-and-forget)
+    if (host.email) {
+      const estimatedArrival = isInstant ? 'Within 30 minutes' : '2-3 business days'
+      sendPayoutConfirmationEmail({
+        hostName: host.name || 'Host',
+        hostEmail: host.email,
+        payoutAmount: amount,
+        grossEarnings: grossEarnings,
+        platformFee: platformFee,
+        processingFee: processingFee + instantFee,
+        bookingCount: bookingIds.length,
+        payoutMethod: payoutMethod === 'bank' ? 'Bank Account' : 'Debit Card',
+        payoutId: payout.id,
+        estimatedArrival,
+      }).catch(() => {})
+    }
 
     return NextResponse.json({
       success: true,
