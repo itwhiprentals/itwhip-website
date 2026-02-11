@@ -57,6 +57,19 @@ Hook (`app/hooks/useCheckout.ts`):
 
 ## Recent Fixes (February 2026)
 
+### Booking Flow Hardening Round 5 - DEPLOYED ✅ (Feb 10)
+**Race condition fix, orphaned payment hold cleanup, catalog filter**
+
+Full end-to-end audit of guest booking flow revealed 3 real issues (and debunked 3 false alarms):
+
+1. **CRITICAL: Double-booking race condition** — Availability check was outside `$transaction` in both `book/route.ts` (line 310 vs 678) and Choé `confirm/route.ts` (line 116 vs 169). Added availability re-check INSIDE serializable transactions. PostgreSQL guarantees no phantom reads.
+2. **HIGH: Orphaned PI hold on Choé 409** — When availability check failed in Choé checkout, auth hold stayed on customer's card 7-14 days. Now cancels PaymentIntent on conflict.
+3. **HIGH: Catalog missing host approval** — `/rentals` page only checked `isActive: true`, not `host.approvalStatus`. Search page had the check; catalog didn't. Added.
+
+**Debunked:** "No booking approved email" (exists in host-review route), "charge failure hidden" (StatusProgression already shows badge), "crypto issue" (native in Node 20).
+
+Files: `book/route.ts`, `checkout/confirm/route.ts`, `rentals/page.tsx`
+
 ### Guest Dashboard: Security + UX Round 4 - DEPLOYED ✅ (Feb 9)
 **Security fixes for unauthenticated endpoints + guest dashboard UX improvements**
 
