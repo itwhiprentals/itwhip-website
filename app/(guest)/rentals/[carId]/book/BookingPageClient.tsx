@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
 import { useRouter } from 'next/navigation'
 import {
   IoArrowBackOutline,
@@ -265,7 +266,8 @@ interface ModerationStatus {
 
 export default function BookingPageClient({ carId }: { carId: string }) {
   const router = useRouter()
-  
+  const { executeRecaptcha } = useGoogleReCaptcha()
+
   // ✅ FIXED: Use direct state instead of useCustomSession hook
   const [session, setSession] = useState<{ user: { id: string; email: string; name: string; role: string } } | null>(null)
   const [sessionStatus, setSessionStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading')
@@ -2000,6 +2002,11 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         }
       }
       
+      // Get reCAPTCHA token for booking
+      if (executeRecaptcha) {
+        try { bookingPayload.recaptchaToken = await executeRecaptcha('booking') } catch {}
+      }
+
       // Call booking API (credentials: 'include' sends cookies for self-booking prevention)
       const response = await fetch('/api/rentals/book', {
         method: 'POST',

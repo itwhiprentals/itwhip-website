@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
 import PasswordInput from './PasswordInput'
 
 interface GuardResponse {
@@ -21,6 +22,7 @@ interface EmailLoginExpandProps {
 }
 
 export default function EmailLoginExpand({ mode, hostMode = false, onSuccess, onGuard }: EmailLoginExpandProps) {
+  const { executeRecaptcha } = useGoogleReCaptcha()
   const [expanded, setExpanded] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -59,13 +61,19 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess, on
     setLoading(true)
 
     try {
+      // Get reCAPTCHA token for signup (not login)
+      let recaptchaToken: string | undefined
+      if (mode === 'signup' && executeRecaptcha) {
+        try { recaptchaToken = await executeRecaptcha('signup') } catch {}
+      }
+
       // Host mode uses dedicated host login endpoint for proper cookie handling
       const endpoint = mode === 'login'
         ? (hostMode ? '/api/host/login' : '/api/auth/login')
         : '/api/auth/signup'
       const body = mode === 'login'
         ? { email: formData.email, password: formData.password, roleHint: hostMode ? 'host' : 'guest' }
-        : { name: formData.name, email: formData.email, password: formData.password, roleHint: hostMode ? 'host' : 'guest' }
+        : { name: formData.name, email: formData.email, password: formData.password, roleHint: hostMode ? 'host' : 'guest', recaptchaToken }
 
       const res = await fetch(endpoint, {
         method: 'POST',

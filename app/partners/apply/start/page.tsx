@@ -5,6 +5,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -27,6 +28,7 @@ function PartnerSignupForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { data: session, status } = useSession()
+  const { executeRecaptcha } = useGoogleReCaptcha()
   const inviteToken = searchParams.get('token')
   const isOAuthUser = searchParams.get('oauth') === 'true' && session?.user
 
@@ -107,6 +109,11 @@ function PartnerSignupForm() {
       if (isOAuthUser) {
         requestBody.isOAuthUser = true
         requestBody.oauthUserId = (session?.user as any)?.id
+      }
+
+      // Get reCAPTCHA token
+      if (executeRecaptcha) {
+        try { requestBody.recaptchaToken = await executeRecaptcha('partner_signup') } catch {}
       }
 
       const response = await fetch('/api/partner/signup', {

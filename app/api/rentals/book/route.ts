@@ -7,6 +7,8 @@ import { RentalBookingStatus } from '@/app/lib/dal/types'
 import { calculateBookingPricing, getActualDeposit } from '@/app/(guest)/rentals/lib/booking-pricing'
 import { addHours } from 'date-fns'
 import { extractIpAddress } from '@/app/utils/ip-lookup'
+import { verifyAdminRequest } from '@/app/lib/admin/middleware'
+import { verifyRecaptchaToken } from '@/app/lib/recaptcha'
 import { sendBookingConfirmation, sendPendingReviewEmail, sendFraudAlertEmail, sendHostReviewEmail } from '@/app/lib/email/booking-emails'
 
 // Import new verification rules
@@ -116,6 +118,16 @@ export async function POST(request: NextRequest) {
   try {
     // Parse and validate request body
     const body = await request.json()
+
+    // Verify reCAPTCHA token (soft-fails if not configured)
+    const captcha = await verifyRecaptchaToken(body.recaptchaToken)
+    if (!captcha.success) {
+      return NextResponse.json(
+        { error: captcha.error || 'reCAPTCHA verification failed' },
+        { status: 403 }
+      )
+    }
+
     const validationResult = bookingSchema.safeParse(body)
 
     if (!validationResult.success) {
@@ -1643,16 +1655,16 @@ export async function GET(request: NextRequest) {
 // PATCH - Update booking status (kept for admin use) - WITH STRIPE CHARGING
 export async function PATCH(request: NextRequest) {
   try {
-    const { bookingId, action, data, adminToken } = await request.json()
-
-    // For now, require a simple admin token
-    // TODO: Implement proper admin authentication
-    if (!adminToken || adminToken !== process.env.ADMIN_TOKEN) {
+    // Verify admin JWT auth (cookie-based)
+    const adminAuth = await verifyAdminRequest(request)
+    if (!adminAuth.isValid) {
       return NextResponse.json(
-        { error: 'Admin authentication required' },
+        { error: adminAuth.error || 'Admin authentication required' },
         { status: 401 }
       )
     }
+
+    const { bookingId, action, data } = await request.json()
 
     const booking = await prisma.rentalBooking.findUnique({
       where: { id: bookingId },
@@ -1702,7 +1714,7 @@ export async function PATCH(request: NextRequest) {
               hostStatus: 'PENDING',
               hostNotifiedAt: new Date(),
               verificationStatus: 'APPROVED' as any,
-              reviewedBy: data?.reviewedBy || 'admin',
+              reviewedBy: adminAuth.payload?.email || adminAuth.payload?.sub || 'admin',
               reviewedAt: new Date(),
               licenseVerified: true,
               selfieVerified: true,
@@ -1729,7 +1741,7 @@ export async function PATCH(request: NextRequest) {
               entityType: 'RentalBooking',
               entityId: bookingId,
               metadata: {
-                reviewedBy: data?.reviewedBy || 'admin',
+                reviewedBy: adminAuth.payload?.email || adminAuth.payload?.sub || 'admin',
                 wasFlagged: booking.flaggedForReview,
                 riskScore: booking.riskScore,
                 note: 'Fleet approved — awaiting host approval'
@@ -1806,7 +1818,7 @@ export async function PATCH(request: NextRequest) {
               status: RentalBookingStatus.CANCELLED as any,
               verificationStatus: 'REJECTED' as any,
               verificationNotes: data?.reason,
-              reviewedBy: data?.reviewedBy || 'admin',
+              reviewedBy: adminAuth.payload?.email || adminAuth.payload?.sub || 'admin',
               reviewedAt: new Date(),
               cancelledAt: new Date(),
               cancelledBy: 'ADMIN' as any,
@@ -1830,7 +1842,7 @@ export async function PATCH(request: NextRequest) {
               entityId: bookingId,
               metadata: {
                 reason: data?.reason,
-                reviewedBy: data?.reviewedBy || 'admin',
+                reviewedBy: adminAuth.payload?.email || adminAuth.payload?.sub || 'admin',
                 riskScore: booking.riskScore
               },
               ipAddress: '127.0.0.1'

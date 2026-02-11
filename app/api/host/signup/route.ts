@@ -7,6 +7,7 @@ import { getVehicleSpecData } from '@/app/lib/utils/vehicleSpec'
 import { resolveIdentity, linkAllIdentifiers } from '@/app/lib/services/identityResolution'
 import { sanitizeValue } from '@/app/middleware/validation'
 import { validateEmail as validateEmailRisk } from '@/app/utils/email-validator'
+import { verifyRecaptchaToken } from '@/app/lib/recaptcha'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 
@@ -73,6 +74,15 @@ export async function POST(request: NextRequest) {
     }
 
     const rawBody = await request.json()
+
+    // Verify reCAPTCHA token (soft-fails if not configured)
+    const captcha = await verifyRecaptchaToken(rawBody.recaptchaToken)
+    if (!captcha.success) {
+      return NextResponse.json(
+        { error: captcha.error || 'reCAPTCHA verification failed' },
+        { status: 403 }
+      )
+    }
 
     // Sanitize user-provided string fields to prevent stored XSS
     const body = {

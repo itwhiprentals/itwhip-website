@@ -9,6 +9,7 @@ import { prisma } from '@/app/lib/database/prisma'
 import { resolveIdentity, linkAllIdentifiers, normalizeEmail, normalizePhone } from '@/app/lib/services/identityResolution'
 import { sanitizeValue } from '@/app/middleware/validation'
 import { validateEmail as validateEmailRisk } from '@/app/utils/email-validator'
+import { verifyRecaptchaToken } from '@/app/lib/recaptcha'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 
@@ -142,6 +143,15 @@ export async function POST(request: NextRequest) {
     // Parse request body
     const body = await request.json()
     const { password, roleHint } = body
+
+    // Verify reCAPTCHA token (soft-fails if not configured)
+    const captcha = await verifyRecaptchaToken(body.recaptchaToken)
+    if (!captcha.success) {
+      return NextResponse.json(
+        { error: captcha.error || 'reCAPTCHA verification failed' },
+        { status: 403 }
+      )
+    }
 
     // Sanitize user-provided string fields (XSS, SQL injection, etc.)
     const email = sanitizeValue(body.email, 'email') as string

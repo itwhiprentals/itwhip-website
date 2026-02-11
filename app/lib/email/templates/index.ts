@@ -59,6 +59,9 @@ export { getPartnerDocumentRequestTemplate } from './partner-document-request'
 export { getPayoutConfirmationTemplate } from './payout-confirmation'
 export { getHostBookingCancelledTemplate } from './host-booking-cancelled'
 
+// DISPUTE NOTIFICATION TEMPLATE
+export { getDisputeNotificationAdminTemplate } from './dispute-notification-admin'
+
 // Re-export all types for convenience
 export type {
   // Base types
@@ -115,5 +118,8 @@ export type {
 
   // Payout & Host Cancellation types
   PayoutConfirmationData,
-  HostBookingCancelledData
+  HostBookingCancelledData,
+
+  // Dispute notification type
+  DisputeNotificationAdminData
 } from '../types'

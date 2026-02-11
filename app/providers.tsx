@@ -3,9 +3,12 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SessionProvider } from 'next-auth/react'
+import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3'
 import { ReactNode, useState, createContext, useContext } from 'react'
 import { useUserLocation, type UserLocation } from '@/hooks/useUserLocation'
 import { AuthProvider } from '@/app/contexts/AuthContext'
+
+const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ''
 
 // ============================================================================
 // LOCATION CONTEXT
@@ -55,7 +58,7 @@ export function Providers({ children }: { children: ReactNode }) {
     },
   }))
 
-  return (
+  const content = (
     <SessionProvider>
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
@@ -65,5 +68,14 @@ export function Providers({ children }: { children: ReactNode }) {
         </QueryClientProvider>
       </AuthProvider>
     </SessionProvider>
+  )
+
+  // Only load reCAPTCHA when site key is configured
+  if (!RECAPTCHA_SITE_KEY) return content
+
+  return (
+    <GoogleReCaptchaProvider reCaptchaKey={RECAPTCHA_SITE_KEY}>
+      {content}
+    </GoogleReCaptchaProvider>
   )
 }

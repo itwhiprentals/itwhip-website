@@ -4,6 +4,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
 import Link from 'next/link'
 import PhoneLoginButton from '@/app/components/auth/PhoneLoginButton'
 import OAuthButtonsMinimal from '@/app/components/auth/OAuthButtonsMinimal'
@@ -43,6 +44,7 @@ function HostSignupContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { data: session, status } = useSession()
+  const { executeRecaptcha } = useGoogleReCaptcha()
   const isOAuthUser = searchParams.get('oauth') === 'true' && session?.user
 
   // Dark mode detection
@@ -356,6 +358,11 @@ function HostSignupContent() {
       if (isOAuthUser) {
         requestBody.isOAuthUser = true
         requestBody.oauthUserId = (session?.user as any)?.id
+      }
+
+      // Get reCAPTCHA token
+      if (executeRecaptcha) {
+        try { requestBody.recaptchaToken = await executeRecaptcha('host_signup') } catch {}
       }
 
       const response = await fetch('/api/host/signup', {

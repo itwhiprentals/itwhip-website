@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { sendHostBookingCancelledEmail } from '@/app/lib/email/host-booking-cancelled-email'
+import { calculateCancellationRefund, calculateRefundAmount } from '@/app/lib/booking/cancellation-policy'
 
 export async function POST(
   request: NextRequest,
@@ -79,15 +80,24 @@ export async function POST(
       }
     })
 
-    // Auto-create refund request if payment was captured
-    if (cancelledBooking.paymentStatus === 'PAID' && cancelledBooking.paymentIntentId) {
+    // Calculate refund based on cancellation policy (time-based tiers, MST)
+    const cancellation = calculateCancellationRefund(booking.startDate!)
+    const refundAmount = calculateRefundAmount(
+      Number(cancelledBooking.totalAmount || 0),
+      cancellation.refundPercentage
+    )
+
+    console.log(`[Cancel Booking] Policy: ${cancellation.label} (${cancellation.hoursUntilPickup.toFixed(1)}h before pickup). Refund: $${refundAmount}`)
+
+    // Auto-create refund request if payment was captured and refund is due
+    if (cancelledBooking.paymentStatus === 'PAID' && cancelledBooking.paymentIntentId && refundAmount > 0) {
       try {
         await prisma.refundRequest.create({
           data: {
             id: crypto.randomUUID(),
             bookingId: cancelledBooking.id,
-            amount: cancelledBooking.totalAmount,
-            reason: `Booking cancelled by guest: ${reason}`,
+            amount: refundAmount,
+            reason: `Booking cancelled by guest (${cancellation.label}): ${reason}`,
             requestedBy: booking.guestEmail || 'guest',
             requestedByType: 'GUEST',
             status: 'PENDING',
@@ -140,6 +150,12 @@ export async function POST(
         id: cancelledBooking.id,
         status: cancelledBooking.status,
         cancelledAt: cancelledBooking.cancelledAt
+      },
+      refund: {
+        amount: refundAmount,
+        percentage: cancellation.refundPercentage,
+        tier: cancellation.tier,
+        policy: cancellation.label
       }
     })
   } catch (error) {

@@ -558,6 +558,19 @@ export interface HostBookingCancelledData {
   cancelledBy: 'guest' | 'fleet' | 'system'
 }
 
+// Dispute notification - sent to admin when guest files a dispute
+export interface DisputeNotificationAdminData {
+  bookingCode: string
+  guestName: string
+  guestEmail: string
+  hostName: string
+  disputeType: string
+  description: string
+  priority: 'high' | 'medium' | 'low'
+  disputeId: string
+  actionUrl: string
+}
+
 // ============================================================================
 // RESPONSE TYPES
 // ============================================================================

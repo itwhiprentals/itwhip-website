@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { z } from 'zod'
+import { sendDisputeNotificationEmail } from '@/app/lib/email/dispute-notification-email'
 
 const disputeSchema = z.object({
   type: z.enum(['DAMAGE', 'BILLING', 'SERVICE', 'SAFETY', 'OTHER']).default('OTHER'),
@@ -171,10 +172,16 @@ export async function POST(
      } as any
    })
 
-   // Send notification emails
-   if (booking.host.email) {
-     console.log(`Notifying host ${booking.host.email} about dispute`)
-   }
+   // Send dispute notification email to admin (fire-and-forget)
+   sendDisputeNotificationEmail({
+     bookingCode: booking.bookingCode,
+     guestName: booking.guestEmail || 'Guest',
+     guestEmail: booking.guestEmail || '',
+     hostName: booking.host.name || 'Host',
+     disputeType: type,
+     description,
+     disputeId: dispute.id,
+   }).catch(() => {})
 
    return NextResponse.json({
      success: true,
