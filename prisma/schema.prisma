@@ -3677,6 +3677,10 @@ model PlatformSettings {
   // Insurance Platform Share
   insurancePlatformShare   Float    @default(0.30)   // Platform keeps 30% of insurance fees
 
+  // Deposit Auto-Release
+  depositAutoReleaseDays   Int      @default(3)      // Days after trip end to auto-release deposit
+  depositAutoReleaseEnabled Boolean @default(true)   // Whether auto-release is enabled
+
   @@map("platform_settings")
 }
 

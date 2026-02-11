@@ -503,6 +503,19 @@ export interface PartnerDocumentRequestData {
 }
 
 // ============================================================================
+// DEPOSIT / REFUND EMAIL INTERFACES
+// ============================================================================
+
+export interface DepositReleasedData extends BaseEmailData {
+  carMake: string
+  carModel: string
+  depositAmount: string
+  cardRefundAmount: string
+  walletReturnAmount: string
+  tripEndDate: string
+}
+
+// ============================================================================
 // RESPONSE TYPES
 // ============================================================================
 

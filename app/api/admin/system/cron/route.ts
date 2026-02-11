@@ -168,7 +168,32 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // 6. Update system metrics
+    // 6. Release security deposits for completed trips
+    try {
+      const depositResponse = await fetch(`${baseUrl}/api/cron/release-deposits`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${cronSecret}`
+        }
+      })
+      const depositResult = await depositResponse.json()
+      results.push({
+        task: 'release-deposits',
+        status: depositResult.success ? 'success' : 'failed',
+        released: depositResult.summary?.released || 0,
+        skipped: depositResult.summary?.skipped || 0,
+        failed: depositResult.summary?.failed || 0
+      })
+    } catch (error) {
+      results.push({
+        task: 'release-deposits',
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    }
+
+    // 7. Update system metrics
     try {
       const { prisma } = await import('@/app/lib/database/prisma')
       const now = new Date()

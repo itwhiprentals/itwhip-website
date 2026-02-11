@@ -842,6 +842,94 @@ export async function POST(
       console.error('❌ ESG event failed (non-critical):', esgError)
     }
 
+    // ========================================================================
+    // DEPOSIT AUTO-RELEASE — Clean trips with no charges get immediate release
+    // ========================================================================
+    if (!hasCharges && !damageReported && booking.depositAmount > 0 && booking.paymentIntentId) {
+      try {
+        const claimDeduction = booking.depositUsedForClaim || 0
+        const netDeposit = booking.depositAmount - claimDeduction
+
+        if (netDeposit > 0) {
+          const walletPortion = Math.min(booking.depositFromWallet || 0, netDeposit)
+          const cardPortion = netDeposit - walletPortion
+
+          // Release card portion via Stripe refund
+          if (cardPortion > 0) {
+            const { releaseSecurityDeposit } = await import('@/app/lib/booking/services/payment-service')
+            const refundResult = await releaseSecurityDeposit({
+              bookingId: booking.id,
+              depositAmount: Math.round(cardPortion * 100),
+            })
+            if (refundResult.success) {
+              console.log(`[Trip End] Deposit released for ${booking.bookingCode}: $${cardPortion.toFixed(2)} via Stripe`)
+            } else {
+              console.error(`[Trip End] Deposit release failed for ${booking.bookingCode}: ${refundResult.error}`)
+            }
+          }
+
+          // Return wallet portion to guest
+          if (walletPortion > 0) {
+            const guestProfile = await prisma.reviewerProfile.findFirst({
+              where: { email: booking.guestEmail.toLowerCase() },
+              select: { id: true, depositWalletBalance: true },
+            })
+            if (guestProfile) {
+              await prisma.$transaction([
+                prisma.reviewerProfile.update({
+                  where: { id: guestProfile.id },
+                  data: { depositWalletBalance: { increment: walletPortion } },
+                }),
+                prisma.depositTransaction.create({
+                  data: {
+                    id: crypto.randomUUID(),
+                    guestId: guestProfile.id,
+                    type: 'RELEASE',
+                    amount: walletPortion,
+                    balanceAfter: (guestProfile.depositWalletBalance || 0) + walletPortion,
+                    bookingId: booking.id,
+                    description: `Deposit released for booking ${booking.bookingCode}`,
+                  },
+                }),
+              ])
+              console.log(`[Trip End] Wallet deposit returned for ${booking.bookingCode}: $${walletPortion.toFixed(2)}`)
+            }
+          }
+
+          // Mark as refunded if only wallet (card path handled by releaseSecurityDeposit)
+          if (cardPortion <= 0 && walletPortion > 0) {
+            await prisma.rentalBooking.update({
+              where: { id: booking.id },
+              data: {
+                depositRefunded: netDeposit,
+                depositRefundedAt: new Date(),
+              },
+            })
+          }
+
+          console.log(`[Trip End] Deposit auto-released for clean trip ${booking.bookingCode}: $${netDeposit.toFixed(2)}`)
+
+          // Send deposit release email (fire-and-forget)
+          import('@/app/lib/email/deposit-release-email').then(({ sendDepositReleasedEmail }) => {
+            sendDepositReleasedEmail({
+              guestEmail: booking.guestEmail,
+              guestName: booking.guestName,
+              bookingCode: booking.bookingCode,
+              carMake: booking.car.make,
+              carModel: booking.car.model,
+              depositAmount: netDeposit,
+              cardRefundAmount: cardPortion,
+              walletReturnAmount: walletPortion,
+              tripEndDate: new Date(),
+            }).catch(() => {})
+          }).catch(() => {})
+        }
+      } catch (depositError) {
+        // Non-blocking: cron will catch it if immediate release fails
+        console.error(`[Trip End] Deposit auto-release failed for ${booking.bookingCode} (cron will retry):`, depositError)
+      }
+    }
+
     // Send notifications (outside transaction)
     try {
       if (booking.host.email) {
