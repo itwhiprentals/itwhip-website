@@ -349,6 +349,101 @@ export async function GET(
         vehicleProvider: vehicleInsurance?.provider || null,
         partnerProvider: partner.insurancePolicyNumber ? 'Partner Policy' : null,
         requiresGuestInsurance: !hasVehicleInsurance && !hasPartnerInsurance
+      },
+
+      // Guest history with this host (booking history + reviews)
+      guestHistory: null as unknown // populated below
+    }
+
+    // Fetch guest history if renter exists
+    if (booking.renterId) {
+      const [previousBookings, guestReviews] = await Promise.all([
+        // All bookings by this guest with this host (excluding current)
+        prisma.rentalBooking.findMany({
+          where: {
+            renterId: booking.renterId,
+            hostId: partner.id,
+            id: { not: bookingId }
+          },
+          select: {
+            id: true,
+            bookingCode: true,
+            status: true,
+            startDate: true,
+            endDate: true,
+            numberOfDays: true,
+            totalAmount: true,
+            createdAt: true,
+            car: {
+              select: {
+                make: true,
+                model: true,
+                year: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 20
+        }),
+        // Reviews left by this guest for this host
+        prisma.rentalReview.findMany({
+          where: {
+            renterId: booking.renterId,
+            hostId: partner.id,
+            isVisible: true
+          },
+          select: {
+            id: true,
+            rating: true,
+            title: true,
+            comment: true,
+            createdAt: true,
+            car: {
+              select: {
+                make: true,
+                model: true,
+                year: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' }
+        })
+      ])
+
+      const totalSpent = previousBookings
+        .filter(b => b.status === 'COMPLETED' || b.status === 'CONFIRMED')
+        .reduce((sum, b) => sum + Number(b.totalAmount), 0) +
+        (booking.status === 'COMPLETED' || booking.status === 'CONFIRMED' ? Number(booking.totalAmount) : 0)
+
+      response.guestHistory = {
+        totalBookings: previousBookings.length + 1, // include current
+        totalSpent,
+        bookings: previousBookings.map(b => ({
+          id: b.id,
+          bookingCode: b.bookingCode,
+          status: b.status,
+          startDate: b.startDate.toISOString(),
+          endDate: b.endDate.toISOString(),
+          numberOfDays: b.numberOfDays,
+          totalAmount: Number(b.totalAmount),
+          createdAt: b.createdAt.toISOString(),
+          vehicle: b.car ? `${b.car.year} ${b.car.make} ${b.car.model}` : 'Vehicle'
+        })),
+        reviews: guestReviews.map(r => ({
+          id: r.id,
+          rating: r.rating,
+          title: r.title,
+          comment: r.comment,
+          createdAt: r.createdAt.toISOString(),
+          vehicle: r.car ? `${r.car.year} ${r.car.make} ${r.car.model}` : 'Vehicle'
+        }))
+      }
+    } else {
+      response.guestHistory = {
+        totalBookings: 1,
+        totalSpent: Number(booking.totalAmount),
+        bookings: [],
+        reviews: []
       }
     }
 

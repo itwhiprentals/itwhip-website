@@ -149,6 +149,13 @@ interface Insurance {
   requiresGuestInsurance: boolean
 }
 
+interface GuestHistory {
+  totalBookings: number
+  totalSpent: number
+  bookings: { id: string }[]
+  reviews: { id: string }[]
+}
+
 export default function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: bookingId } = use(params)
 
@@ -159,6 +166,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   const [vehicle, setVehicle] = useState<Vehicle | null>(null)
   const [partner, setPartner] = useState<Partner | null>(null)
   const [insurance, setInsurance] = useState<Insurance | null>(null)
+  const [guestHistory, setGuestHistory] = useState<GuestHistory | null>(null)
 
   // Action states
   const [confirming, setConfirming] = useState(false)
@@ -197,6 +205,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
   useEffect(() => {
+    window.scrollTo(0, 0)
     fetchBookingDetails()
   }, [bookingId])
 
@@ -212,6 +221,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         setVehicle(data.vehicle)
         setPartner(data.partner)
         setInsurance(data.insurance)
+        setGuestHistory(data.guestHistory || null)
         // Fetch communication send counts
         try {
           const commRes = await fetch(`/api/partner/bookings/${bookingId}/communicate`)
@@ -981,6 +991,36 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 </div>
               )}
             </div>
+
+            {/* Guest History with Host */}
+            {guestHistory && renter && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <IoReceiptOutline className="w-5 h-5 text-gray-400" />
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Guest History</h3>
+                  </div>
+
+                  {/* Stats Row */}
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{guestHistory.totalBookings}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Total Bookings</p>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">${guestHistory.totalSpent.toFixed(2)}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Spent with You</p>
+                    </div>
+                  </div>
+
+                  {guestHistory.bookings.length > 0 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Returning guest — {guestHistory.bookings.length} previous {guestHistory.bookings.length === 1 ? 'booking' : 'bookings'}</p>
+                  ) : (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">This is their first booking with you</p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Rental Period */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">

@@ -9,24 +9,19 @@ import { useRouter } from 'next/navigation'
 import {
   IoArrowBackOutline,
   IoPersonOutline,
-  IoMailOutline,
-  IoCallOutline,
   IoLocationOutline,
   IoCalendarOutline,
-  IoWalletOutline,
   IoCarOutline,
   IoReceiptOutline,
-  IoTimeOutline,
   IoCheckmarkCircleOutline,
   IoCloseCircleOutline,
   IoHourglassOutline,
   IoWarningOutline,
-  IoCreateOutline,
   IoChevronForwardOutline,
   IoShieldCheckmarkOutline,
-  IoSendOutline
+  IoStar,
+  IoStarOutline
 } from 'react-icons/io5'
-import GuestProfileSheet from '@/app/reviews/components/GuestProfileSheet'
 
 interface CustomerStats {
   totalSpent: number
@@ -86,18 +81,57 @@ interface Charge {
   createdAt: string
 }
 
+interface Review {
+  id: string
+  rating: number
+  title: string | null
+  comment: string | null
+  vehicle: string
+  createdAt: string
+}
+
+interface ReviewerStats {
+  totalReviews: number
+  averageRating: number
+}
+
+interface ReviewerReview {
+  id: string
+  rating: number
+  title: string | null
+  comment: string | null
+  createdAt: string
+  tripStartDate: string | null
+  tripEndDate: string | null
+  hostResponse: string | null
+  car: {
+    displayName: string
+    photoUrl: string | null
+  } | null
+}
+
+interface ReviewerProfile {
+  name: string
+  profilePhotoUrl: string | null
+  location: string | null
+  memberSince: string | null
+  tripCount: number
+  isVerified: boolean
+  stats: ReviewerStats
+  recentReviews: ReviewerReview[]
+}
+
 export default function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
   const [charges, setCharges] = useState<Charge[]>([])
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [reviewerProfile, setReviewerProfile] = useState<ReviewerProfile | null>(null)
   const [loading, setLoading] = useState(true)
-  const [showGuestProfile, setShowGuestProfile] = useState(false)
   const [showChargeModal, setShowChargeModal] = useState(false)
   const [selectedBookingForCharge, setSelectedBookingForCharge] = useState<string | null>(null)
-  const [sendingVerification, setSendingVerification] = useState(false)
-  const [verificationMessage, setVerificationMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
   useEffect(() => {
     fetchCustomerData()
@@ -113,6 +147,18 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       if (data.success) {
         setCustomer(data.customer)
         setBookings(data.bookings)
+        setReviews(data.reviews || [])
+
+        // Fetch full reviewer profile from existing API
+        if (data.customer?.reviewerProfileId) {
+          try {
+            const reviewerRes = await fetch(`/api/rentals/reviewers/${data.customer.reviewerProfileId}`)
+            const reviewerData = await reviewerRes.json()
+            if (reviewerData.success) {
+              setReviewerProfile(reviewerData.data)
+            }
+          } catch { /* non-critical */ }
+        }
       }
     } catch (error) {
       console.error('Failed to fetch customer:', error)
@@ -130,47 +176,6 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       }
     } catch (error) {
       console.error('Failed to fetch charges:', error)
-    }
-  }
-
-  const sendVerificationEmail = async () => {
-    if (!customer) return
-
-    setSendingVerification(true)
-    setVerificationMessage(null)
-
-    try {
-      const response = await fetch('/api/partner/verify/send-link', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: customer.email,
-          name: customer.name
-        })
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        setVerificationMessage({
-          type: 'success',
-          text: 'Verification email sent successfully!'
-        })
-        // Refresh customer data to get updated status
-        fetchCustomerData()
-      } else {
-        setVerificationMessage({
-          type: 'error',
-          text: data.error || 'Failed to send verification email'
-        })
-      }
-    } catch (error) {
-      setVerificationMessage({
-        type: 'error',
-        text: 'Failed to send verification email'
-      })
-    } finally {
-      setSendingVerification(false)
     }
   }
 
@@ -283,77 +288,24 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
             <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Customer since {formatDate(customer.memberSince)}</p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {customer.reviewerProfileId && (
-            <button
-              onClick={() => setShowGuestProfile(true)}
-              className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium text-xs sm:text-sm transition-colors"
-            >
-              <IoPersonOutline className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="hidden sm:inline">View Profile</span>
-              <span className="sm:hidden">Profile</span>
-            </button>
-          )}
-          {customer.verification.status === 'verified' ? (
-            <span className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg font-medium text-xs sm:text-sm">
-              <IoShieldCheckmarkOutline className="w-4 h-4 sm:w-5 sm:h-5" />
-              Verified
-            </span>
-          ) : (
-            <button
-              onClick={sendVerificationEmail}
-              disabled={sendingVerification}
-              className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium text-xs sm:text-sm transition-colors"
-            >
-              {sendingVerification ? (
-                <>
-                  <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white" />
-                  <span className="hidden sm:inline">Sending...</span>
-                  <span className="sm:hidden">Send...</span>
-                </>
-              ) : (
-                <>
-                  <IoSendOutline className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="hidden sm:inline">Send Verification</span>
-                  <span className="sm:hidden">Verify</span>
-                </>
-              )}
-            </button>
-          )}
-        </div>
       </div>
 
-      {/* Verification Message */}
-      {verificationMessage && (
-        <div className={`mb-6 p-4 rounded-lg ${
-          verificationMessage.type === 'success'
-            ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'
-            : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
-        }`}>
-          <div className="flex items-center gap-2">
-            {verificationMessage.type === 'success'
-              ? <IoCheckmarkCircleOutline className="w-5 h-5" />
-              : <IoCloseCircleOutline className="w-5 h-5" />
-            }
-            <span className="text-sm font-medium">{verificationMessage.text}</span>
-          </div>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Customer Info */}
+        {/* Left Column - Customer Profile */}
         <div className="lg:col-span-1 space-y-6">
-          {/* Customer Card */}
+          {/* Profile Card */}
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-4 mb-4">
               {customer.photo ? (
-                <img
-                  src={customer.photo}
-                  alt={customer.name}
-                  className="w-20 h-20 rounded-full object-cover"
-                />
+                <div className="w-20 h-20 rounded-full border border-white shadow-sm overflow-hidden">
+                  <img
+                    src={customer.photo}
+                    alt={customer.name}
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                </div>
               ) : (
-                <div className="w-20 h-20 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                <div className="w-20 h-20 bg-gray-200 dark:bg-gray-600 rounded-full border border-white shadow-sm flex items-center justify-center">
                   <IoPersonOutline className="w-10 h-10 text-gray-500 dark:text-gray-400" />
                 </div>
               )}
@@ -365,54 +317,42 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                     {customer.location}
                   </p>
                 )}
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Member since {formatDate(customer.memberSince)}
+                </p>
               </div>
             </div>
 
-            {/* Contact Info */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 text-sm">
-                <IoMailOutline className="w-5 h-5 text-gray-400" />
-                <a href={`mailto:${customer.email}`} className="text-gray-700 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400">
-                  {customer.email}
-                </a>
-              </div>
-              {customer.phone && (
-                <div className="flex items-center gap-3 text-sm">
-                  <IoCallOutline className="w-5 h-5 text-gray-400" />
-                  <a href={`tel:${customer.phone}`} className="text-gray-700 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400">
-                    {customer.phone}
-                  </a>
-                </div>
+            {/* Badges */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {customer.verification.status === 'verified' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-full text-xs font-medium text-green-700 dark:text-green-400">
+                  <IoShieldCheckmarkOutline className="w-3.5 h-3.5" />
+                  Verified
+                </span>
               )}
-              {customer.address && (
-                <div className="flex items-start gap-3 text-sm">
-                  <IoLocationOutline className="w-5 h-5 text-gray-400 mt-0.5" />
-                  <span className="text-gray-700 dark:text-gray-300">{customer.address}</span>
-                </div>
+              {customer.stats.completedTrips >= 5 && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-full text-xs font-medium text-purple-700 dark:text-purple-400">
+                  <IoStar className="w-3.5 h-3.5" />
+                  Frequent Renter
+                </span>
+              )}
+              {customer.stats.activeBookings > 0 && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-full text-xs font-medium text-blue-700 dark:text-blue-400">
+                  <IoCarOutline className="w-3.5 h-3.5" />
+                  Active Rental
+                </span>
+              )}
+              {reviewerProfile && reviewerProfile.stats.averageRating >= 4.5 && reviewerProfile.stats.totalReviews >= 2 && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-full text-xs font-medium text-yellow-700 dark:text-yellow-400">
+                  <IoStar className="w-3.5 h-3.5" />
+                  Top Rated
+                </span>
               )}
             </div>
 
-            {/* Emergency Contact */}
-            {customer.emergencyContact && (
-              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Emergency Contact</h3>
-                <p className="text-sm text-gray-900 dark:text-white">{customer.emergencyContact.name}</p>
-                {customer.emergencyContact.relation && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{customer.emergencyContact.relation}</p>
-                )}
-                {customer.emergencyContact.phone && (
-                  <a href={`tel:${customer.emergencyContact.phone}`} className="text-sm text-orange-600 dark:text-orange-400 hover:underline">
-                    {customer.emergencyContact.phone}
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Stats Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">Overview</h3>
-            <div className="grid grid-cols-2 gap-4">
+            {/* Overview Stats */}
+            <div className="grid grid-cols-2 gap-3">
               <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{customer.stats.tripCount}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Total Bookings</p>
@@ -429,75 +369,6 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                 <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{customer.stats.activeBookings}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Active</p>
               </div>
-            </div>
-          </div>
-
-          {/* Verification Status Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">Identity Verification</h3>
-            <div className="space-y-4">
-              {customer.verification.status === 'verified' ? (
-                <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <IoShieldCheckmarkOutline className="w-8 h-8 text-green-600 dark:text-green-400" />
-                  <div>
-                    <p className="text-sm font-medium text-green-700 dark:text-green-400">Identity Verified</p>
-                    {customer.verification.verifiedFirstName && customer.verification.verifiedLastName && (
-                      <p className="text-xs text-green-600 dark:text-green-500">
-                        {customer.verification.verifiedFirstName} {customer.verification.verifiedLastName}
-                      </p>
-                    )}
-                    {customer.verification.verifiedAt && (
-                      <p className="text-xs text-green-600/70 dark:text-green-500/70">
-                        Verified on {formatDate(customer.verification.verifiedAt)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ) : customer.verification.status === 'pending' ? (
-                <div className="flex items-center gap-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                  <IoHourglassOutline className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
-                  <div>
-                    <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">Verification Pending</p>
-                    <p className="text-xs text-yellow-600 dark:text-yellow-500">Customer has started verification</p>
-                  </div>
-                </div>
-              ) : customer.verification.status === 'failed' ? (
-                <div className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                  <IoCloseCircleOutline className="w-8 h-8 text-red-600 dark:text-red-400" />
-                  <div>
-                    <p className="text-sm font-medium text-red-700 dark:text-red-400">Verification Failed</p>
-                    <p className="text-xs text-red-600 dark:text-red-500">Customer needs to re-verify</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <IoWarningOutline className="w-8 h-8 text-gray-400" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Not Verified</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Send verification to this customer</p>
-                  </div>
-                </div>
-              )}
-
-              {customer.verification.status !== 'verified' && (
-                <button
-                  onClick={sendVerificationEmail}
-                  disabled={sendingVerification}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium text-sm transition-colors"
-                >
-                  {sendingVerification ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <IoSendOutline className="w-4 h-4" />
-                      Send Verification Email
-                    </>
-                  )}
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -574,6 +445,102 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
             )}
           </div>
 
+          {/* Reviews left for your vehicles */}
+          {reviews.length > 0 && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="font-semibold text-gray-900 dark:text-white">Reviews for Your Vehicles ({reviews.length})</h3>
+              </div>
+              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                {reviews.map((review) => (
+                  <div key={review.id} className="p-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center">
+                        {[1, 2, 3, 4, 5].map(star => (
+                          star <= review.rating
+                            ? <IoStar key={star} className="w-4 h-4 text-yellow-400" />
+                            : <IoStarOutline key={star} className="w-4 h-4 text-gray-300 dark:text-gray-500" />
+                        ))}
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {formatDate(review.createdAt)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{review.vehicle}</p>
+                    {review.title && (
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{review.title}</p>
+                    )}
+                    {review.comment && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">{review.comment}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Full Platform Review History (from reviewer profile) */}
+          {reviewerProfile && reviewerProfile.recentReviews.length > 0 && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900 dark:text-white">Platform Review History</h3>
+                  <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                    <span>{reviewerProfile.stats.totalReviews} reviews</span>
+                    {reviewerProfile.stats.averageRating > 0 && (
+                      <span className="flex items-center gap-1">
+                        <IoStar className="w-3.5 h-3.5 text-yellow-400" />
+                        {reviewerProfile.stats.averageRating.toFixed(1)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                {reviewerProfile.recentReviews.map((review) => (
+                  <div key={review.id} className="p-4">
+                    <div className="flex items-start gap-3">
+                      {review.car?.photoUrl && (
+                        <div className="w-12 h-9 sm:w-16 sm:h-12 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
+                          <img src={review.car.photoUrl} alt="" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center">
+                            {[1, 2, 3, 4, 5].map(star => (
+                              star <= review.rating
+                                ? <IoStar key={star} className="w-3.5 h-3.5 text-yellow-400" />
+                                : <IoStarOutline key={star} className="w-3.5 h-3.5 text-gray-300 dark:text-gray-500" />
+                            ))}
+                          </div>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {formatDate(review.createdAt)}
+                          </span>
+                        </div>
+                        {review.car && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{review.car.displayName}</p>
+                        )}
+                        {review.title && (
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{review.title}</p>
+                        )}
+                        {review.comment && (
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">{review.comment}</p>
+                        )}
+                        {review.hostResponse && (
+                          <div className="mt-2 ml-3 pl-3 border-l-2 border-blue-300 dark:border-blue-600">
+                            <p className="text-xs font-medium text-blue-600 dark:text-blue-400">Host Response</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{review.hostResponse}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Charges */}
           {charges.length > 0 && (
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -610,24 +577,6 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           )}
         </div>
       </div>
-
-      {/* Guest Profile Sheet */}
-      {customer.reviewerProfileId && (
-        <GuestProfileSheet
-          isOpen={showGuestProfile}
-          onClose={() => setShowGuestProfile(false)}
-          guest={{
-            id: customer.reviewerProfileId,
-            name: customer.name,
-            profilePhotoUrl: customer.photo,
-            memberSince: null,
-            tripCount: null,
-            isVerified: null,
-            city: null,
-            state: null
-          }}
-        />
-      )}
 
       {/* Charge Modal */}
       {showChargeModal && selectedBookingForCharge && (

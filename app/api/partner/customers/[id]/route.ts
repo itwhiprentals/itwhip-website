@@ -80,18 +80,11 @@ export async function GET(
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
     }
 
-    // Get partner's vehicles
-    const vehicles = await prisma.rentalCar.findMany({
-      where: { hostId: partner.id },
-      select: { id: true }
-    })
-    const vehicleIds = vehicles.map(v => v.id)
-
-    // Get all bookings with this partner
+    // Get all bookings with this partner (use hostId directly — more reliable)
     const bookings = await prisma.rentalBooking.findMany({
       where: {
         renterId: customerId,
-        carId: { in: vehicleIds }
+        hostId: partner.id
       },
       include: {
         car: {
@@ -170,10 +163,44 @@ export async function GET(
       createdAt: b.createdAt.toISOString()
     }))
 
+    // Fetch reviews by this guest for this host
+    const reviews = await prisma.rentalReview.findMany({
+      where: {
+        renterId: customerId,
+        hostId: partner.id,
+        isVisible: true
+      },
+      select: {
+        id: true,
+        rating: true,
+        title: true,
+        comment: true,
+        createdAt: true,
+        car: {
+          select: {
+            make: true,
+            model: true,
+            year: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    const formattedReviews = reviews.map(r => ({
+      id: r.id,
+      rating: r.rating,
+      title: r.title,
+      comment: r.comment,
+      vehicle: r.car ? `${r.car.year} ${r.car.make} ${r.car.model}` : 'Vehicle',
+      createdAt: r.createdAt.toISOString()
+    }))
+
     return NextResponse.json({
       success: true,
       customer,
-      bookings: formattedBookings
+      bookings: formattedBookings,
+      reviews: formattedReviews
     })
 
   } catch (error) {
@@ -198,16 +225,10 @@ export async function PUT(
     const body = await request.json()
 
     // Verify customer has bookings with this partner
-    const vehicles = await prisma.rentalCar.findMany({
-      where: { hostId: partner.id },
-      select: { id: true }
-    })
-    const vehicleIds = vehicles.map(v => v.id)
-
     const hasBooking = await prisma.rentalBooking.findFirst({
       where: {
         renterId: customerId,
-        carId: { in: vehicleIds }
+        hostId: partner.id
       }
     })
 
