@@ -1859,7 +1859,36 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           throw new Error(confirmData.error || 'Payment confirmation failed')
         }
 
-        confirmedPaymentIntentId = confirmData.paymentIntentId
+        // Handle 3D Secure authentication if required
+        if (confirmData.requiresAction && confirmData.clientSecret) {
+          console.log('[Checkout] 3DS required — launching authentication challenge...')
+          const stripeInstance = await stripePromise
+          if (!stripeInstance) {
+            throw new Error('Payment system not available. Please refresh and try again.')
+          }
+
+          const { error: actionError, paymentIntent } = await stripeInstance.handleNextAction({
+            clientSecret: confirmData.clientSecret
+          })
+
+          if (actionError) {
+            console.error('[Checkout] 3DS authentication failed:', actionError.message)
+            throw new Error(actionError.message || 'Card verification failed. Please try again.')
+          }
+
+          if (paymentIntent?.status === 'succeeded') {
+            confirmedPaymentIntentId = paymentIntent.id
+            console.log('[Checkout] 3DS passed! PaymentIntent:', confirmedPaymentIntentId)
+          } else if (paymentIntent?.status === 'requires_payment_method') {
+            throw new Error('Card verification failed. Please try a different card.')
+          } else {
+            confirmedPaymentIntentId = paymentIntent?.id || confirmData.paymentIntentId
+            console.log('[Checkout] 3DS completed with status:', paymentIntent?.status)
+          }
+        } else {
+          confirmedPaymentIntentId = confirmData.paymentIntentId
+        }
+
         console.log('[Checkout] Saved payment method confirmed! PaymentIntent:', confirmedPaymentIntentId)
       } else {
         // Using new card via Payment Element

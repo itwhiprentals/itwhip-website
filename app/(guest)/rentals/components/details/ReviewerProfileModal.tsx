@@ -59,6 +59,9 @@ interface RecentTrip {
   car: {
     id: string
     displayName: string
+    year?: number
+    make?: string
+    model?: string
     photoUrl?: string
   } | null
 }

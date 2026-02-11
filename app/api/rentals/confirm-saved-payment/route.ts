@@ -73,11 +73,13 @@ export async function POST(request: NextRequest) {
 
     // Check if requires additional action (3D Secure, etc.)
     if (confirmedPaymentIntent.status === 'requires_action') {
+      console.log('[Confirm Saved Payment] 3DS required — returning clientSecret for client-side handling')
       return NextResponse.json({
-        success: false,
-        error: 'This card requires additional verification. Please use a different card.',
+        success: true,
         requiresAction: true,
-        clientSecret: confirmedPaymentIntent.client_secret
+        paymentIntentId: confirmedPaymentIntent.id,
+        clientSecret: confirmedPaymentIntent.client_secret,
+        status: confirmedPaymentIntent.status
       })
     }
 

@@ -79,6 +79,16 @@ export async function GET(
       )
     }
 
+    // Get linked user email for comprehensive booking matching
+    let guestEmail: string | null = profile.email || null
+    if (profile.userId) {
+      const linkedUser = await prisma.user.findUnique({
+        where: { id: profile.userId },
+        select: { email: true }
+      })
+      if (linkedUser?.email) guestEmail = linkedUser.email
+    }
+
     // Calculate reviewer statistics (only for active cars)
     const allReviews = await prisma.rentalReview.findMany({
       where: {
@@ -92,11 +102,13 @@ export async function GET(
     })
 
     // Fetch actual trips (bookings) — not reviews
+    // Match by reviewerProfileId, renterId, OR guestEmail (same pattern as customer detail API)
     const recentTrips = await prisma.rentalBooking.findMany({
       where: {
         OR: [
           { reviewerProfileId: profileId },
-          ...(profile.userId ? [{ renterId: profile.userId }] : [])
+          ...(profile.userId ? [{ renterId: profile.userId }] : []),
+          ...(guestEmail ? [{ guestEmail }] : [])
         ],
         status: { in: ['COMPLETED', 'ACTIVE', 'CONFIRMED'] }
       },
@@ -128,7 +140,8 @@ export async function GET(
       where: {
         OR: [
           { reviewerProfileId: profileId },
-          ...(profile.userId ? [{ renterId: profile.userId }] : [])
+          ...(profile.userId ? [{ renterId: profile.userId }] : []),
+          ...(guestEmail ? [{ guestEmail }] : [])
         ],
         status: { in: ['COMPLETED', 'ACTIVE', 'CONFIRMED'] }
       }
@@ -166,6 +179,9 @@ export async function GET(
         car: trip.car ? {
           id: trip.car.id,
           displayName: `${trip.car.year} ${trip.car.make} ${trip.car.model}`,
+          year: trip.car.year,
+          make: trip.car.make,
+          model: trip.car.model,
           photoUrl: trip.car.photos[0]?.url || null
         } : null
       })),
