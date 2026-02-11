@@ -38,9 +38,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if already confirmed
-    if (paymentIntent.status === 'succeeded') {
-      console.log('[Confirm Saved Payment] Payment already succeeded')
+    // Check if already confirmed (succeeded or authorized for manual capture)
+    if (paymentIntent.status === 'succeeded' || paymentIntent.status === 'requires_capture') {
+      console.log('[Confirm Saved Payment] Payment already confirmed, status:', paymentIntent.status)
       return NextResponse.json({
         success: true,
         paymentIntentId: paymentIntent.id,
@@ -83,7 +83,10 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    if (confirmedPaymentIntent.status !== 'succeeded' && confirmedPaymentIntent.status !== 'processing') {
+    // For manual capture (used in car rentals), requires_capture is a valid success state
+    if (confirmedPaymentIntent.status !== 'succeeded' &&
+        confirmedPaymentIntent.status !== 'processing' &&
+        confirmedPaymentIntent.status !== 'requires_capture') {
       return NextResponse.json({
         success: false,
         error: `Payment failed with status: ${confirmedPaymentIntent.status}`
