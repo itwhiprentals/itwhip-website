@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/app/lib/database/prisma'
 import { z } from 'zod'
 import { RentalBookingStatus } from '@/app/lib/dal/types'
-import { sendHostNotification } from '@/app/lib/email'
 import { calculateBookingPricing, getActualDeposit } from '@/app/(guest)/rentals/lib/booking-pricing'
 import { addHours } from 'date-fns'
 import { extractIpAddress } from '@/app/utils/ip-lookup'
@@ -1242,21 +1241,7 @@ export async function POST(request: NextRequest) {
       console.error('Error sending pending review email:', error)
     })
 
-    // Notify host about new booking (non-blocking)
-    if (car.host.email) {
-      sendHostNotification(car.host.email, {
-        hostName: car.host.name || 'Host',
-        bookingCode: booking.booking.bookingCode,
-        guestName: booking.booking.guestName,
-        carMake: booking.booking.car.make,
-        carModel: booking.booking.car.model,
-        startDate: booking.booking.startDate,
-        endDate: booking.booking.endDate,
-        totalAmount: booking.booking.totalAmount,
-      }).catch(error => {
-        console.error('Error sending host notification:', error)
-      })
-    }
+    // Host is NOT notified here — only after fleet approval (PATCH 'approve' → sendHostReviewEmail)
 
     // ALL bookings are pending review — return 202 Accepted
     const responseStatus = 202
@@ -1793,6 +1778,22 @@ export async function PATCH(request: NextRequest) {
 
           return updated
         })
+
+        // Release payment hold on fleet rejection
+        if (booking.paymentIntentId) {
+          try {
+            const stripe = (await import('stripe')).default
+            const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY!)
+            await stripeClient.paymentIntents.cancel(booking.paymentIntentId)
+            await prisma.rentalBooking.update({
+              where: { id: bookingId },
+              data: { paymentStatus: 'REFUNDED' }
+            })
+            console.log(`[Fleet Reject] Payment hold released for ${booking.bookingCode}`)
+          } catch (stripeError: any) {
+            console.error(`[Fleet Reject] Failed to release payment hold for ${booking.bookingCode}:`, stripeError.message)
+          }
+        }
         break
 
       case 'cancel':
@@ -1825,6 +1826,18 @@ export async function PATCH(request: NextRequest) {
             cancelledAt: true
           }
         })
+
+        // Release payment hold on cancellation
+        if (booking.paymentIntentId) {
+          try {
+            const stripe = (await import('stripe')).default
+            const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY!)
+            await stripeClient.paymentIntents.cancel(booking.paymentIntentId)
+            console.log(`[Fleet Cancel] Payment hold released for ${booking.bookingCode}`)
+          } catch (stripeError: any) {
+            console.error(`[Fleet Cancel] Failed to release payment hold for ${booking.bookingCode}:`, stripeError.message)
+          }
+        }
         break
 
       default:

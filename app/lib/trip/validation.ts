@@ -187,9 +187,17 @@ export function canStartTrip(
   
   // Check if trip already started
   if (booking.tripStartedAt) {
-    return { 
-      valid: false, 
-      error: 'Trip has already been started' 
+    return {
+      valid: false,
+      error: 'Trip has already been started'
+    }
+  }
+
+  // Check onboarding is complete (DL + insurance uploaded)
+  if (!booking.onboardingCompletedAt) {
+    return {
+      valid: false,
+      error: 'Please complete onboarding (upload driver\'s license and insurance) before starting your trip'
     }
   }
   

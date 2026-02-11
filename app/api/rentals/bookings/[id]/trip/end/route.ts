@@ -686,6 +686,23 @@ export async function POST(
       timeout: 30000,
     })
 
+    // Restore car availability now that trip is complete
+    try {
+      await prisma.rentalAvailability.deleteMany({
+        where: {
+          carId: booking.carId,
+          date: {
+            gte: new Date(booking.startDate),
+            lte: new Date(booking.endDate)
+          },
+          note: { contains: booking.bookingCode }
+        }
+      })
+      console.log(`[Trip End] Car availability restored for ${booking.car.make} ${booking.car.model} (${booking.bookingCode})`)
+    } catch (availError) {
+      console.error('[Trip End] Failed to restore car availability (non-blocking):', availError)
+    }
+
     // ========== 🆕 TRACK TRIP END ACTIVITY ==========
     // This populates the guest's activity timeline for the Status Tab
     // Wrapped in try-catch - won't break trip end if tracking fails
