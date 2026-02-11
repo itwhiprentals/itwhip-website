@@ -103,7 +103,13 @@ Full 6-area lifecycle audit found 4 critical + 8 high + 14 medium + 10 low vulne
 - **M9:** Upload rate limiting — 50 uploads/day per authenticated user (host + partner routes), 10 uploads/hr per IP (public document upload). Shared Upstash Redis rate limiter in `app/lib/upload/rate-limiter.ts`.
 - **M14:** Investigated payout calculation "discrepancy" — confirmed two separate systems: guest payment distribution (`payment-service.ts`: 15% platform + 8.4% AZ tax + 1.6% insurance pool) vs host payout commission (`financialCalculator.ts`: fleet-size tiers). No conflict, clarified JSDoc.
 
-**Phase C remaining:** CAPTCHA, per-user admin auth for fleet PATCH, cancellation policy, dispute notification email.
+### Security Audit Phase C Final - DEPLOYED ✅ (Feb 10)
+- **Admin Auth:** Replaced shared `ADMIN_TOKEN` with proper JWT auth (`verifyAdminRequest()`) in booking PATCH handler. Admin identity from JWT now recorded as `reviewedBy`.
+- **Cancellation Policy:** 4-tier time-based enforcement in cancel endpoint (MST timezone): 72+h=100%, 24-72h=75%, 12-24h=50%, <12h=0%. Policy tier/percentage included in cancel response. Skips refund request creation when percentage is 0%.
+- **Dispute Email:** New `dispute-notification-admin.ts` template with priority badge, sent to admin when guest files a dispute (was previously log-only).
+- **reCAPTCHA v3:** Invisible score-based CAPTCHA on guest signup, host signup, partner signup, and booking forms. Server-side verification in all 4 API routes + booking route. Soft-fails when `RECAPTCHA_SECRET_KEY` not configured (dev environments). Threshold: 0.5 score.
+
+**Env vars needed:** `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY` (get from Google reCAPTCHA console).
 
 ---
 
