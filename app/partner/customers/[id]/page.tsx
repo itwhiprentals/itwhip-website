@@ -12,7 +12,6 @@ import {
   IoLocationOutline,
   IoCalendarOutline,
   IoCarOutline,
-  IoReceiptOutline,
   IoCheckmarkCircleOutline,
   IoCloseCircleOutline,
   IoHourglassOutline,
@@ -24,10 +23,14 @@ import {
 } from 'react-icons/io5'
 
 interface CustomerStats {
-  totalSpent: number
-  tripCount: number
-  completedTrips: number
-  activeBookings: number
+  // With this host
+  spentWithHost: number
+  bookingsWithHost: number
+  completedWithHost: number
+  activeWithHost: number
+  // Platform-wide
+  totalPlatformBookings: number
+  totalPlatformSpent: number
 }
 
 interface CustomerVerification {
@@ -62,6 +65,9 @@ interface Customer {
 interface Booking {
   id: string
   vehicle: string
+  vehicleYear: number | null
+  vehicleMake: string | null
+  vehicleModel: string | null
   vehicleId: string
   vehiclePhoto: string | null
   startDate: string
@@ -69,6 +75,8 @@ interface Booking {
   status: string
   total: number
   createdAt: string
+  isWithYou: boolean
+  hostName: string | null
 }
 
 interface Charge {
@@ -130,8 +138,6 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   const [reviews, setReviews] = useState<Review[]>([])
   const [reviewerProfile, setReviewerProfile] = useState<ReviewerProfile | null>(null)
   const [loading, setLoading] = useState(true)
-  const [showChargeModal, setShowChargeModal] = useState(false)
-  const [selectedBookingForCharge, setSelectedBookingForCharge] = useState<string | null>(null)
 
   useEffect(() => {
     fetchCustomerData()
@@ -194,6 +200,30 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(amount)
+  }
+
+  const formatRelativeTime = (dateString: string) => {
+    const now = new Date()
+    const date = new Date(dateString)
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+    const diffWeeks = Math.floor(diffDays / 7)
+    const diffMonths = Math.floor(diffDays / 30)
+    const diffYears = Math.floor(diffDays / 365)
+
+    if (diffMins < 1) return 'just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays === 1) return '1 day ago'
+    if (diffDays < 7) return `${diffDays} days ago`
+    if (diffWeeks === 1) return '1 week ago'
+    if (diffWeeks < 5) return `${diffWeeks} weeks ago`
+    if (diffMonths === 1) return '1 month ago'
+    if (diffMonths < 12) return `${diffMonths} months ago`
+    if (diffYears === 1) return '1 year ago'
+    return `${diffYears} years ago`
   }
 
   const getStatusColor = (status: string) => {
@@ -331,13 +361,13 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                   Verified
                 </span>
               )}
-              {customer.stats.completedTrips >= 5 && (
+              {customer.stats.completedWithHost >= 5 && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-full text-xs font-medium text-purple-700 dark:text-purple-400">
                   <IoStar className="w-3.5 h-3.5" />
                   Frequent Renter
                 </span>
               )}
-              {customer.stats.activeBookings > 0 && (
+              {customer.stats.activeWithHost > 0 && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-full text-xs font-medium text-blue-700 dark:text-blue-400">
                   <IoCarOutline className="w-3.5 h-3.5" />
                   Active Rental
@@ -351,23 +381,18 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               )}
             </div>
 
-            {/* Overview Stats */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{customer.stats.tripCount}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Total Bookings</p>
-              </div>
-              <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(customer.stats.totalSpent)}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Total Spent</p>
-              </div>
-              <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{customer.stats.completedTrips}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
-              </div>
-              <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{customer.stats.activeBookings}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Active</p>
+            {/* With You Stats */}
+            <div>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">With You</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{customer.stats.bookingsWithHost}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Bookings</p>
+                </div>
+                <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{reviews.length}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Reviews</p>
+                </div>
               </div>
             </div>
           </div>
@@ -378,7 +403,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           {/* Bookings */}
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white">Booking History</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white">Booking History ({bookings.length})</h3>
             </div>
             {bookings.length === 0 ? (
               <div className="p-8 text-center">
@@ -388,58 +413,62 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {bookings.map((booking) => (
-                  <div key={booking.id} className="p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <div className="flex items-start gap-3">
-                      {/* Vehicle Photo */}
-                      <div className="w-12 h-9 sm:w-16 sm:h-12 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
-                        {booking.vehiclePhoto ? (
-                          <img src={booking.vehiclePhoto} alt={booking.vehicle} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <IoCarOutline className="w-4 h-4 sm:w-6 sm:h-6 text-gray-400" />
-                          </div>
+                  <Link
+                    key={booking.id}
+                    href={booking.vehicleId ? `/rentals/${booking.vehicleId}` : '#'}
+                    className={`flex items-center gap-3 p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer ${booking.isWithYou ? 'border-l-3 border-l-orange-400' : ''}`}
+                  >
+                    {/* Vehicle Photo */}
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
+                      {booking.vehiclePhoto ? (
+                        <img src={booking.vehiclePhoto} alt={booking.vehicle} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <IoCarOutline className="w-5 h-5 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Vehicle + Time */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                        {booking.vehicleYear} {booking.vehicleMake}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {booking.vehicleModel}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">
+                          {formatRelativeTime(booking.createdAt)}
+                        </span>
+                        {!booking.isWithYou && booking.hostName && (
+                          <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 truncate">
+                            · via {booking.hostName}
+                          </span>
                         )}
                       </div>
-
-                      {/* Booking Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start gap-2 mb-1 flex-wrap">
-                          <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {booking.vehicle}
-                          </span>
-                          <span className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${getStatusColor(booking.status)}`}>
-                            {getStatusIcon(booking.status)}
-                            <span className="hidden sm:inline">{booking.status.replace('_', ' ')}</span>
-                            <span className="sm:hidden">{booking.status.replace('_', ' ').split(' ')[0]}</span>
-                          </span>
-                        </div>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
-                          <span className="truncate">{formatDate(booking.startDate)} - {formatDate(booking.endDate)}</span>
-                          <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(booking.total)}</span>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                        <button
-                          onClick={() => {
-                            setSelectedBookingForCharge(booking.id)
-                            setShowChargeModal(true)
-                          }}
-                          className="p-1.5 sm:p-2 text-gray-500 hover:text-orange-600 dark:text-gray-400 dark:hover:text-orange-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                          title="Add Charge"
-                        >
-                          <IoReceiptOutline className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </button>
-                        <Link
-                          href={`/partner/bookings/${booking.id}`}
-                          className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                        >
-                          <IoChevronForwardOutline className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </Link>
-                      </div>
                     </div>
-                  </div>
+
+                    {/* Status + Amount */}
+                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${getStatusColor(booking.status)}`}>
+                          {getStatusIcon(booking.status)}
+                          {booking.status.replace('_', ' ')}
+                        </span>
+                        {booking.isWithYou && (
+                          <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400">
+                            Your Vehicle
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs font-medium text-gray-900 dark:text-white">
+                        {formatCurrency(booking.total)}
+                      </span>
+                    </div>
+
+                    <IoChevronForwardOutline className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  </Link>
                 ))}
               </div>
             )}
@@ -578,160 +607,6 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
         </div>
       </div>
 
-      {/* Charge Modal */}
-      {showChargeModal && selectedBookingForCharge && (
-        <ChargeModal
-          customerId={customer.id}
-          bookingId={selectedBookingForCharge}
-          onClose={() => {
-            setShowChargeModal(false)
-            setSelectedBookingForCharge(null)
-          }}
-          onSuccess={() => {
-            setShowChargeModal(false)
-            setSelectedBookingForCharge(null)
-            fetchCharges()
-          }}
-        />
-      )}
-    </div>
-  )
-}
-
-// Charge Modal Component
-function ChargeModal({
-  customerId,
-  bookingId,
-  onClose,
-  onSuccess
-}: {
-  customerId: string
-  bookingId: string
-  onClose: () => void
-  onSuccess: () => void
-}) {
-  const [reason, setReason] = useState<string>('damage')
-  const [amount, setAmount] = useState('')
-  const [description, setDescription] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!amount || parseFloat(amount) <= 0) {
-      setError('Please enter a valid amount')
-      return
-    }
-
-    setLoading(true)
-    setError('')
-
-    try {
-      const response = await fetch(`/api/partner/customers/${customerId}/charge`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bookingId,
-          reason,
-          amount: parseFloat(amount),
-          description
-        })
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        onSuccess()
-      } else {
-        setError(data.error || 'Failed to create charge')
-      }
-    } catch (err) {
-      setError('Failed to create charge')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add Charge</h3>
-        </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {error && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-600 dark:text-red-400">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Charge Type
-            </label>
-            <select
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            >
-              <option value="damage">Damage</option>
-              <option value="cleaning">Cleaning</option>
-              <option value="late_fee">Late Return Fee</option>
-              <option value="mileage">Mileage Overage</option>
-              <option value="fuel">Fuel</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Amount
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-                className="w-full pl-8 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Description (optional)
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              placeholder="Additional details..."
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
-            />
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium text-sm transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium text-sm transition-colors"
-            >
-              {loading ? 'Creating...' : 'Add Charge'}
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   )
 }

@@ -58,17 +58,10 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const filter = searchParams.get('filter') || 'all' // all, active, past
 
-    // Get all partner's vehicles
-    const vehicles = await prisma.rentalCar.findMany({
-      where: { hostId: partner.id },
-      select: { id: true }
-    })
-    const vehicleIds = vehicles.map((v: { id: string }) => v.id)
-
-    // Get all bookings for partner's vehicles with renter/guest data
+    // Get all bookings for this host with renter/guest data
     const bookings = await prisma.rentalBooking.findMany({
       where: {
-        carId: { in: vehicleIds }
+        hostId: partner.id
       },
       include: {
         renter: {

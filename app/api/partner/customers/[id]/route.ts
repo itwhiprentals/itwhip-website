@@ -80,40 +80,78 @@ export async function GET(
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
     }
 
-    // Get all bookings with this partner (use hostId directly — more reliable)
-    const bookings = await prisma.rentalBooking.findMany({
-      where: {
-        renterId: customerId,
-        hostId: partner.id
-      },
-      include: {
-        car: {
-          select: {
-            id: true,
-            make: true,
-            model: true,
-            year: true,
-            photos: {
-              select: {
-                url: true
-              },
-              orderBy: [{ isHero: 'desc' }, { order: 'asc' }],
-              take: 1
+    // Build OR condition for matching bookings by renterId or guestEmail
+    const guestMatchCondition = [
+      { renterId: customerId },
+      ...(user.email ? [{ guestEmail: user.email }] : [])
+    ]
+
+    // Fetch ALL bookings for this guest across the entire platform + bookings with this host
+    const [allBookings, reviews] = await Promise.all([
+      prisma.rentalBooking.findMany({
+        where: {
+          OR: guestMatchCondition
+        },
+        include: {
+          car: {
+            select: {
+              id: true,
+              make: true,
+              model: true,
+              year: true,
+              photos: {
+                select: { url: true },
+                orderBy: [{ isHero: 'desc' }, { order: 'asc' }],
+                take: 1
+              }
+            }
+          },
+          host: {
+            select: {
+              id: true,
+              name: true,
+              businessName: true
             }
           }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    })
+        },
+        orderBy: { createdAt: 'desc' }
+      }),
+      // Reviews by this guest for this host
+      prisma.rentalReview.findMany({
+        where: {
+          renterId: customerId,
+          hostId: partner.id,
+          isVisible: true
+        },
+        select: {
+          id: true,
+          rating: true,
+          title: true,
+          comment: true,
+          createdAt: true,
+          car: {
+            select: { make: true, model: true, year: true }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      })
+    ])
 
-    // Calculate stats
-    const totalSpent = bookings.reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0)
-    const completedTrips = bookings.filter(b => b.status === 'COMPLETED').length
+    // Split: bookings with this host vs all bookings
+    const hostBookings = allBookings.filter(b => b.hostId === partner.id)
     const now = new Date()
-    const activeBookings = bookings.filter(b =>
+
+    // Stats: with this host (including pending)
+    const spentWithHost = hostBookings.reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0)
+    const completedWithHost = hostBookings.filter(b => b.status === 'COMPLETED').length
+    const activeWithHost = hostBookings.filter(b =>
       (b.status === 'CONFIRMED' || b.status === 'ACTIVE') &&
       new Date(b.endDate) >= now
     )
+
+    // Stats: platform-wide
+    const totalPlatformBookings = allBookings.length
+    const totalPlatformSpent = allBookings.reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0)
 
     // Format customer data
     const customer = {
@@ -141,51 +179,36 @@ export async function GET(
         verifiedLastName: user.reviewerProfile?.stripeVerifiedLastName || null
       },
       stats: {
-        totalSpent,
-        tripCount: bookings.length,
-        completedTrips,
-        activeBookings: activeBookings.length
+        // With this host
+        spentWithHost,
+        bookingsWithHost: hostBookings.length,
+        completedWithHost,
+        activeWithHost: activeWithHost.length,
+        // Platform-wide
+        totalPlatformBookings,
+        totalPlatformSpent
       }
     }
 
-    // Format bookings
-    const formattedBookings = bookings.map(b => ({
+    // Format ALL bookings (full platform history)
+    const formattedBookings = allBookings.map(b => ({
       id: b.id,
       vehicle: b.car
         ? `${b.car.year} ${b.car.make} ${b.car.model}`
         : 'Unknown',
+      vehicleYear: b.car?.year || null,
+      vehicleMake: b.car?.make || null,
+      vehicleModel: b.car?.model || null,
       vehicleId: b.carId,
       vehiclePhoto: b.car?.photos?.[0]?.url || null,
       startDate: b.startDate.toISOString(),
       endDate: b.endDate.toISOString(),
       status: b.status,
       total: Number(b.totalAmount) || 0,
-      createdAt: b.createdAt.toISOString()
+      createdAt: b.createdAt.toISOString(),
+      isWithYou: b.hostId === partner.id,
+      hostName: b.host?.businessName || b.host?.name || null
     }))
-
-    // Fetch reviews by this guest for this host
-    const reviews = await prisma.rentalReview.findMany({
-      where: {
-        renterId: customerId,
-        hostId: partner.id,
-        isVisible: true
-      },
-      select: {
-        id: true,
-        rating: true,
-        title: true,
-        comment: true,
-        createdAt: true,
-        car: {
-          select: {
-            make: true,
-            model: true,
-            year: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    })
 
     const formattedReviews = reviews.map(r => ({
       id: r.id,

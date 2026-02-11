@@ -91,12 +91,55 @@ export async function GET(
       select: { rating: true }
     })
 
+    // Fetch actual trips (bookings) — not reviews
+    const recentTrips = await prisma.rentalBooking.findMany({
+      where: {
+        OR: [
+          { reviewerProfileId: profileId },
+          ...(profile.userId ? [{ renterId: profile.userId }] : [])
+        ],
+        status: { in: ['COMPLETED', 'ACTIVE', 'CONFIRMED'] }
+      },
+      select: {
+        id: true,
+        status: true,
+        startDate: true,
+        endDate: true,
+        createdAt: true,
+        car: {
+          select: {
+            id: true,
+            make: true,
+            model: true,
+            year: true,
+            photos: {
+              where: { isHero: true },
+              take: 1,
+              select: { url: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10
+    })
+
+    const tripCount = recentTrips.length > 10 ? recentTrips.length : await prisma.rentalBooking.count({
+      where: {
+        OR: [
+          { reviewerProfileId: profileId },
+          ...(profile.userId ? [{ renterId: profile.userId }] : [])
+        ],
+        status: { in: ['COMPLETED', 'ACTIVE', 'CONFIRMED'] }
+      }
+    })
+
     const stats = {
       totalReviews: allReviews.length,
       averageRating: allReviews.length > 0
         ? parseFloat((allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length).toFixed(1))
         : 0,
-      membershipDuration: profile.memberSince 
+      membershipDuration: profile.memberSince
         ? Math.floor((Date.now() - new Date(profile.memberSince).getTime()) / (1000 * 60 * 60 * 24 * 30)) // months
         : 0
     }
@@ -110,10 +153,22 @@ export async function GET(
       city: profile.city,
       state: profile.state,
       memberSince: profile.memberSince,
-      tripCount: stats.totalReviews,      // Use actual count
+      tripCount,                           // Actual booking count
       reviewCount: stats.totalReviews,    // Use actual count
       isVerified: profile.isVerified,
       stats,
+      recentTrips: recentTrips.map((trip: any) => ({
+        id: trip.id,
+        status: trip.status,
+        startDate: trip.startDate,
+        endDate: trip.endDate,
+        createdAt: trip.createdAt,
+        car: trip.car ? {
+          id: trip.car.id,
+          displayName: `${trip.car.year} ${trip.car.make} ${trip.car.model}`,
+          photoUrl: trip.car.photos[0]?.url || null
+        } : null
+      })),
       recentReviews: (profile.RentalReview || []).map((review: any) => ({
         id: review.id,
         rating: review.rating,

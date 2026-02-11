@@ -50,6 +50,19 @@ interface RecentReview {
   }
 }
 
+interface RecentTrip {
+  id: string
+  status: string
+  startDate: string
+  endDate: string
+  createdAt: string
+  car: {
+    id: string
+    displayName: string
+    photoUrl?: string
+  } | null
+}
+
 interface ReviewerProfileData {
   id: string
   name: string
@@ -66,6 +79,7 @@ interface ReviewerProfileData {
     averageRating: number
     membershipDuration: number
   }
+  recentTrips?: RecentTrip[]
   recentReviews?: RecentReview[]
 }
 
@@ -286,6 +300,37 @@ export default function ReviewerProfileModal({ reviewer, isOpen, onClose }: Revi
                 </div>
               </div>
               
+              {/* Cars Booked (Trips) */}
+              {profileData.recentTrips && profileData.recentTrips.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                    Cars Booked
+                  </h4>
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {profileData.recentTrips.map(trip => (
+                      <button
+                        key={trip.id}
+                        onClick={() => trip.car?.id ? handleCarClick(trip.car.id) : undefined}
+                        className="flex-shrink-0 w-24 text-center hover:opacity-80 transition-opacity"
+                      >
+                        <div className="w-24 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden mb-1">
+                          {trip.car?.photoUrl ? (
+                            <img src={trip.car.photoUrl} alt={trip.car.displayName} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <IoCarOutline className="w-5 h-5 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-gray-700 dark:text-gray-300 font-medium truncate">
+                          {trip.car?.displayName || 'Vehicle'}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Recent Reviews */}
               {profileData.recentReviews && profileData.recentReviews.length > 0 && (
                 <div>
