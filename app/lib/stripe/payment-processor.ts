@@ -396,11 +396,15 @@ export class PaymentProcessor {
    * Create a refund for a captured payment
    */
   static async refundPayment(
-    paymentIntentId: string, 
-    amount?: number, 
+    paymentIntentId: string,
+    amount?: number,
     reason?: string
   ): Promise<Stripe.Refund> {
     try {
+      // Idempotency key prevents duplicate refunds on network retries or double-clicks
+      const amountKey = amount ? formatAmountForStripe(amount) : 'full'
+      const idempotencyKey = `refund_${paymentIntentId}_${amountKey}_${reason || 'requested_by_customer'}`
+
       const refund = await stripe.refunds.create({
         payment_intent: paymentIntentId,
         amount: amount ? formatAmountForStripe(amount) : undefined, // Partial refund if amount specified
@@ -408,6 +412,8 @@ export class PaymentProcessor {
         metadata: {
           test_mode: isTestMode() ? 'true' : 'false'
         }
+      }, {
+        idempotencyKey
       })
       
       console.log('Refund created:', refund.id, 'Amount:', refund.amount)

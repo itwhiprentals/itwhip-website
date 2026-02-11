@@ -544,6 +544,16 @@ export async function POST(request: NextRequest) {
     }
     // ========== END DL VERIFICATION GATE ==========
 
+    // ========== MINIMUM AMOUNT GUARD ==========
+    if (pricing.total <= 0) {
+      console.warn(`[book] $0 booking attempt blocked: total=${pricing.total}, carId=${bookingData.carId}, guest=${bookingData.guestEmail}`)
+      return NextResponse.json(
+        { error: 'Booking total must be greater than $0. Please check the vehicle pricing.' },
+        { status: 400 }
+      )
+    }
+    // ========== END MINIMUM AMOUNT GUARD ==========
+
     // ========== VERIFICATION LOGIC USING BUSINESS RULES ==========
     const bookingInfo = {
       numberOfDays: pricing.days,

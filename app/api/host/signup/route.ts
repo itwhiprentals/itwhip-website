@@ -6,6 +6,7 @@ import { hash } from 'argon2'
 import { getVehicleSpecData } from '@/app/lib/utils/vehicleSpec'
 import { resolveIdentity, linkAllIdentifiers } from '@/app/lib/services/identityResolution'
 import { sanitizeValue } from '@/app/middleware/validation'
+import { validateEmail as validateEmailRisk } from '@/app/utils/email-validator'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 
@@ -159,6 +160,16 @@ export async function POST(request: NextRequest) {
     if (!emailRegex.test(email)) {
       return NextResponse.json(
         { error: 'Please enter a valid email address' },
+        { status: 400 }
+      )
+    }
+
+    // Check for disposable/high-risk email domains
+    const emailRisk = validateEmailRisk(email)
+    if (emailRisk.flags.includes('disposable_domain')) {
+      console.warn(`[Host Signup] Disposable email blocked: ${email} (domain: ${emailRisk.domain})`)
+      return NextResponse.json(
+        { error: 'Please use a permanent email address. Temporary or disposable email addresses are not accepted.' },
         { status: 400 }
       )
     }

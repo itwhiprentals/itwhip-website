@@ -318,11 +318,18 @@ export async function GET(
     }
 
     // Format the response to ensure clean data
+    // Strip Stripe IDs from guest-facing responses (only admins/hosts need them)
     const response = {
       ...booking,
       messageCount: booking._count.messages,
       disputeCount: booking._count.disputes,
-      _count: undefined  // Remove internal structure
+      _count: undefined,  // Remove internal structure
+      // Redact Stripe internals for guest users
+      ...(!user.isAdmin && !user.isHost ? {
+        paymentIntentId: undefined,
+        stripeCustomerId: undefined,
+        stripePaymentMethodId: undefined,
+      } : {})
     }
 
     return NextResponse.json(response)
