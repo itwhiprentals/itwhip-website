@@ -57,6 +57,28 @@ Hook (`app/hooks/useCheckout.ts`):
 
 ## Recent Fixes (February 2026)
 
+### Security Audit Round 7 - DEPLOYED ✅ (Feb 10)
+Full 6-area lifecycle audit found 4 critical + 8 high + 14 medium + 10 low vulnerabilities. Phase A fixes deployed:
+
+**Critical:**
+- C1: Removed 193 hardcoded JWT fallback secrets (`'your-secret-key'`, `'fallback-...'`) across 134 files + deleted `LEGACY_JWT_SECRET` from `verify-request.ts`
+- C2: Fixed IDOR in `host/cars/route.ts` — any host could view any other host's vehicles via `?hostId=`
+- C3: CAN-SPAM compliance — created `/unsubscribe` page + `/api/unsubscribe` API + `EmailPreference` DB table
+- C4: Added `escapeHtml()` to all 49 email templates — prevents XSS via user-provided names/fields
+
+**High:**
+- H1: Deprecated legacy `book/guest/route.ts` (bypassed ALL security: no DL, no fraud, no rate limit)
+- H3: Fixed password change session invalidation — was a placeholder, now deletes all sessions
+- H4: Fixed partner cookie inconsistency — `toggle-active` + `photos` now check both `partner_token` and `hostAccessToken`
+- H6: Fixed Stripe API version mismatch in `payment-service.ts` (`2024-06-20` → `2025-08-27.basil`)
+
+**Medium (promoted to Phase A):**
+- M1: DL verification gate now queries `DLVerificationLog` server-side instead of trusting client `aiVerification.passed`
+
+**Phase B/C remaining:** Email retry logic, validation middleware wiring, rate limiting on host/partner signup, CAPTCHA, upload quotas, deposit automation, missing email templates.
+
+---
+
 ### Booking Flow Alignment Round 6 - DEPLOYED ✅ (Feb 10)
 **Fix booking flow to match intended design: guest → fleet → host → onboard → trip**
 
