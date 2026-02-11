@@ -21,6 +21,7 @@ const confirmSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  let piIdForCleanup: string | undefined
   try {
     // Auth check
     const session = await getServerSession()
@@ -53,6 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { checkoutSessionId, paymentIntentId } = parsed.data
+    piIdForCleanup = paymentIntentId
 
     // Load checkout session
     const pending = await prisma.pendingCheckout.findUnique({
@@ -113,22 +115,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 })
     }
 
-    // Check date availability (no overlapping active bookings)
-    const overlapping = await prisma.rentalBooking.findFirst({
-      where: {
-        carId: pending.vehicleId,
-        status: { in: ['PENDING', 'CONFIRMED', 'ACTIVE'] },
-        startDate: { lt: pending.endDate },
-        endDate: { gt: pending.startDate },
-      },
-    })
-
-    if (overlapping) {
-      return NextResponse.json(
-        { error: 'These dates are no longer available. Another booking was placed.' },
-        { status: 409 },
-      )
-    }
+    // Availability is checked INSIDE the transaction below (serializable isolation)
+    // to prevent race conditions where two concurrent bookings pass the check
 
     // =========================================================================
     // CREATE BOOKING
@@ -165,8 +153,22 @@ export async function POST(request: NextRequest) {
       home: 'home',
     }
 
-    // Create booking + mark checkout completed atomically
+    // Create booking + mark checkout completed atomically (serializable to prevent double-booking)
     const booking = await prisma.$transaction(async (tx) => {
+      // Verify availability INSIDE transaction to prevent race condition
+      const conflict = await tx.rentalBooking.findFirst({
+        where: {
+          carId: pending.vehicleId,
+          status: { in: ['PENDING', 'CONFIRMED', 'ACTIVE'] },
+          startDate: { lt: endDate },
+          endDate: { gt: startDate },
+        },
+        select: { id: true }
+      })
+      if (conflict) {
+        throw new Error('AVAILABILITY_CONFLICT')
+      }
+
       const newBooking = await tx.rentalBooking.create({
         data: {
           id: bookingId,
@@ -214,7 +216,7 @@ export async function POST(request: NextRequest) {
       })
 
       return newBooking
-    })
+    }, { isolationLevel: 'Serializable' })
 
     // Extract payment method details for confirmation
     let paymentLast4 = '****'
@@ -271,7 +273,22 @@ export async function POST(request: NextRequest) {
       paymentLast4,
       paymentBrand,
     })
-  } catch (error) {
+  } catch (error: any) {
+    // Handle availability race condition — cancel PI hold so customer isn't stuck
+    if (error?.message === 'AVAILABILITY_CONFLICT') {
+      if (piIdForCleanup) {
+        try {
+          await stripe.paymentIntents.cancel(piIdForCleanup)
+        } catch (cancelError) {
+          console.error('[checkout/confirm] Failed to cancel PI after availability conflict:', cancelError)
+        }
+      }
+      return NextResponse.json(
+        { error: 'These dates are no longer available. Your payment hold has been released.' },
+        { status: 409 },
+      )
+    }
+
     console.error('[checkout/confirm] Error:', error)
 
     if (error instanceof Stripe.errors.StripeError) {

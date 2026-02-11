@@ -98,8 +98,11 @@ export default async function RentalsPage({
 
   // Build Prisma where clause from filters
   const whereClause: any = {
-    isActive: true
-    // Show both RENTAL and RIDESHARE vehicles
+    isActive: true,
+    // Only show cars from approved hosts (same filter as search page)
+    host: {
+      approvalStatus: 'APPROVED'
+    }
   }
 
   if (params?.type && params.type !== 'all') {

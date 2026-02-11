@@ -674,8 +674,23 @@ export async function POST(request: NextRequest) {
     // Generate booking code
     const bookingCode = generateBookingCode()
 
-    // Create the booking in a transaction
+    // Create the booking in a serializable transaction to prevent double-booking
     const booking = await prisma.$transaction(async (tx) => {
+      // Re-verify availability INSIDE transaction to prevent race condition
+      // (The check at line ~310 is a fast-path reject; this is the authoritative check)
+      const conflict = await tx.rentalBooking.findFirst({
+        where: {
+          carId: bookingData.carId,
+          status: { in: ['PENDING', 'CONFIRMED', 'ACTIVE'] },
+          startDate: { lte: bookingData.endDate },
+          endDate: { gte: bookingData.startDate },
+        },
+        select: { id: true }
+      })
+      if (conflict) {
+        throw new Error('AVAILABILITY_CONFLICT')
+      }
+
       // Create the booking with appropriate status
       const newBooking = await tx.rentalBooking.create({
         data: {
@@ -1204,7 +1219,7 @@ export async function POST(request: NextRequest) {
       })
 
       return { booking: newBooking, token: accessToken.token }
-    }) as any
+    }, { isolationLevel: 'Serializable' }) as any
 
     // ALL bookings are now pending review (three-tier approval: fleet → host → confirmed)
     // Send pending review email to guest — never instant confirmation
@@ -1306,9 +1321,17 @@ export async function POST(request: NextRequest) {
       }
     }, { status: responseStatus })
 
-  } catch (error) {
+  } catch (error: any) {
+    // Handle availability race condition (concurrent booking for same dates)
+    if (error?.message === 'AVAILABILITY_CONFLICT') {
+      return NextResponse.json(
+        { error: 'Car is no longer available for selected dates' },
+        { status: 409 }
+      )
+    }
+
     console.error('Booking creation error:', error)
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation error', details: (error as any).errors },
