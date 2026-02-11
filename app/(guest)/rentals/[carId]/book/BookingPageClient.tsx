@@ -1375,6 +1375,15 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             carId,
             startDate: savedBookingDetails.startDate,
             endDate: savedBookingDetails.endDate,
+            insurancePrice: savedBookingDetails.pricing.insurancePrice || 0,
+            deliveryFee: savedBookingDetails.pricing.deliveryFee || 0,
+            enhancements: {
+              refuelService: savedBookingDetails.pricing.breakdown?.refuelService || 0,
+              additionalDriver: savedBookingDetails.pricing.breakdown?.additionalDriver || 0,
+              extraMiles: savedBookingDetails.pricing.breakdown?.extraMiles || 0,
+              vipConcierge: savedBookingDetails.pricing.breakdown?.vipConcierge || 0
+            },
+            insuranceVerified: userProfile?.insuranceVerified || false,
             metadata: {
               carId,
               days: savedBookingDetails.pricing.days?.toString(),

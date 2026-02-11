@@ -114,7 +114,9 @@ export async function POST(
         cancelledBooking.paymentStatus === 'AUTHORIZED') {
       try {
         const stripe = (await import('stripe')).default
-        const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY!)
+        const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY!, {
+          apiVersion: '2025-08-27.basil' as any,
+        })
         await stripeClient.paymentIntents.cancel(cancelledBooking.paymentIntentId)
 
         await prisma.rentalBooking.update({

@@ -3,8 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import prisma from '@/app/lib/database/prisma'
-import { calculatePricing } from '@/app/(guest)/rentals/lib/pricing'
-import { getActualDeposit } from '@/app/(guest)/rentals/lib/booking-pricing'
+import { calculateBookingPricing, getActualDeposit } from '@/app/(guest)/rentals/lib/booking-pricing'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil' as Stripe.LatestApiVersion,
@@ -13,7 +12,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { amount, email, carId, startDate, endDate, metadata } = body
+    const { amount, email, carId, startDate, endDate, insurancePrice, deliveryFee, enhancements, insuranceVerified, metadata } = body
 
     // Amount is required and must be positive (in cents)
     if (!amount || amount <= 0) {
@@ -63,18 +62,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Recalculate pricing server-side
-    const pricing = calculatePricing({
+    // Calculate days the same way the client does
+    const days = Math.max(1, Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)))
+
+    // Recalculate pricing server-side using the SAME function as the client
+    // This includes insurance, delivery, and enhancements in the tax base (AZ law)
+    const pricing = calculateBookingPricing({
       dailyRate: car.dailyRate,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
-      weeklyDiscount: car.weeklyDiscount || undefined,
-      monthlyDiscount: car.monthlyDiscount || undefined,
-      deliveryFee: car.deliveryFee || 0,
+      days,
+      insurancePrice: insurancePrice || 0,
+      deliveryFee: deliveryFee ?? (car.deliveryFee || 0),
+      enhancements: enhancements || undefined,
       city: car.city || 'Phoenix',
     })
 
-    const depositAmount = getActualDeposit(car)
+    // Calculate deposit (50% off if guest has verified personal insurance)
+    let depositAmount = getActualDeposit(car)
+    if (insuranceVerified) {
+      depositAmount = depositAmount * 0.5
+    }
+
     const serverTotalCents = Math.round((pricing.total + depositAmount) * 100)
 
     // Stripe minimum is $0.50 (50 cents)
