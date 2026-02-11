@@ -40,8 +40,8 @@ export async function sendPayoutConfirmationEmail(params: {
     await sendEmail(
       params.hostEmail,
       template.subject,
-      template.text,
-      template.html
+      template.html,
+      template.text
     )
 
     console.log(`[Payout Email] Sent to ${params.hostEmail} for payout ${params.payoutId}`)

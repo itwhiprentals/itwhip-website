@@ -1856,7 +1856,7 @@ export async function PATCH(request: NextRequest) {
         if (booking.paymentIntentId) {
           try {
             const stripe = (await import('stripe')).default
-            const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY!)
+            const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-08-27.basil' as any })
             await stripeClient.paymentIntents.cancel(booking.paymentIntentId)
             await prisma.rentalBooking.update({
               where: { id: bookingId },
@@ -1904,7 +1904,7 @@ export async function PATCH(request: NextRequest) {
         if (booking.paymentIntentId) {
           try {
             const stripe = (await import('stripe')).default
-            const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY!)
+            const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-08-27.basil' as any })
             await stripeClient.paymentIntents.cancel(booking.paymentIntentId)
             console.log(`[Fleet Cancel] Payment hold released for ${booking.bookingCode}`)
           } catch (stripeError: any) {

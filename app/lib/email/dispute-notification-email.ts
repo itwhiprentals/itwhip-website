@@ -36,8 +36,8 @@ export async function sendDisputeNotificationEmail(params: {
     await sendEmail(
       adminEmail,
       template.subject,
-      template.text,
-      template.html
+      template.html,
+      template.text
     )
 
     console.log(`[Dispute Email] Sent admin notification for booking ${params.bookingCode}`)

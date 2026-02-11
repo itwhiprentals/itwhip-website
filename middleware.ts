@@ -636,6 +636,37 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // HANDLE PARTNER UI ROUTES (server-side protection)
+  if (pathname.startsWith('/partner/') && !pathname.startsWith('/partner/login') && !pathname.startsWith('/partner/signup')) {
+    const partnerToken = request.cookies.get('partner_token')?.value ||
+                        request.cookies.get('hostAccessToken')?.value
+
+    if (!partnerToken) {
+      return NextResponse.redirect(new URL('/partner/login', request.url))
+    }
+
+    try {
+      const { payload } = await verifyPlatformToken(partnerToken)
+      if (payload.role !== 'BUSINESS' || payload.isRentalHost !== true) {
+        throw new Error('Not a rental host')
+      }
+      const now = Math.floor(Date.now() / 1000)
+      if (payload.exp && payload.exp < now) {
+        throw new Error('Partner token expired')
+      }
+      const response = NextResponse.next()
+      response.headers.set('x-host-id', payload.hostId as string || '')
+      response.headers.set('x-user-id', payload.userId as string || '')
+      response.headers.set('x-host-email', payload.email as string)
+      return response
+    } catch (error) {
+      const response = NextResponse.redirect(new URL('/partner/login', request.url))
+      response.cookies.set('partner_token', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 0, path: '/' })
+      response.cookies.set('hostAccessToken', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 0, path: '/' })
+      return response
+    }
+  }
+
   // HANDLE GUEST/PLATFORM ROUTES
   const guestToken = request.cookies.get('accessToken')?.value
 

@@ -241,7 +241,7 @@ export async function releaseSecurityDeposit(params: {
       return { success: false, error: 'No charge found for booking' }
     }
 
-    // Create refund for the deposit amount
+    // Create refund for the deposit amount (with idempotency key to prevent duplicate refunds on retry)
     const refund = await stripe.refunds.create({
       payment_intent: booking.paymentIntentId || undefined,
       amount: params.depositAmount,
@@ -250,6 +250,8 @@ export async function releaseSecurityDeposit(params: {
         bookingId: params.bookingId,
         type: 'security_deposit_release',
       },
+    }, {
+      idempotencyKey: `release-deposit-${params.bookingId}`,
     })
 
     // Update booking with refund info

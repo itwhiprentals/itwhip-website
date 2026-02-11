@@ -1,6 +1,7 @@
 // app/api/user/change-password/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import db from '@/app/lib/db'
 import * as argon2 from 'argon2'
 
 // Rate limiting - 5 attempts per hour per user
@@ -59,14 +60,15 @@ async function getUserFromToken(req: NextRequest): Promise<string | null> {
   }
 }
 
-// SECURITY FIX: Actually invalidate all sessions by deleting refresh tokens
-// Previously was a placeholder that only updated `updatedAt` — attacker's session survived password change
-async function invalidateOtherSessions(userId: string, currentToken: string) {
+// SECURITY FIX: Unconditionally invalidate all sessions AND refresh tokens on password change
+// Previously was conditional (opt-in) and only deleted Session rows — attacker's refresh token survived
+async function invalidateAllSessions(userId: string) {
   try {
-    const result = await prisma.session.deleteMany({
+    const sessionResult = await prisma.session.deleteMany({
       where: { userId }
     })
-    console.log(`[Change Password] Invalidated ${result.count} sessions for user: ${userId}`)
+    await db.deleteUserRefreshTokens(userId)
+    console.log(`[Change Password] Invalidated ${sessionResult.count} sessions + all refresh tokens for user: ${userId}`)
   } catch (error) {
     console.error('[Change Password] Session invalidation failed:', error)
     // Don't throw - password change should still succeed
@@ -197,11 +199,8 @@ export async function POST(req: NextRequest) {
 
     console.log(`[Change Password] Password updated for user: ${userId}`)
 
-    // Invalidate other sessions if requested
-    if (logoutOtherDevices) {
-      const currentToken = req.cookies.get('accessToken')?.value || ''
-      await invalidateOtherSessions(userId, currentToken)
-    }
+    // SECURITY: Always invalidate all sessions + refresh tokens on password change
+    await invalidateAllSessions(userId)
 
     // Get user's IP and device info for email
     const ipAddress = req.headers.get('x-forwarded-for') || 
@@ -220,7 +219,7 @@ export async function POST(req: NextRequest) {
         user.name || 'User',
         ipAddress,
         deviceInfo,
-        logoutOtherDevices || false
+        true
       )
 
       const textContent = `
@@ -235,7 +234,8 @@ Your password was successfully changed on ${new Date().toLocaleString('en-US', {
 
 Device: ${deviceInfo}
 Location: ${ipAddress}
-${logoutOtherDevices ? '\nAll other devices have been signed out for security.' : ''}
+
+All other devices have been signed out for security.
 
 If you didn't make this change, please reset your password immediately:
 ${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'https://itwhip.com'}/auth/forgot-password
@@ -263,7 +263,7 @@ ${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'https://itw
       success: true,
       message: 'Password changed successfully',
       emailSent: true,
-      sessionsInvalidated: logoutOtherDevices || false
+      sessionsInvalidated: true
     })
 
   } catch (error) {

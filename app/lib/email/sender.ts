@@ -3,6 +3,7 @@
 import { EmailResponse } from './types'
 import { createTransport } from 'nodemailer'
 import type { Transporter } from 'nodemailer'
+import crypto from 'crypto'
 
 /**
  * SMTP Configuration and Email Sending
@@ -115,7 +116,7 @@ export async function sendEmail(
     headers?: Record<string, string>
   }
 ): Promise<EmailResponse> {
-  const requestId = opts?.requestId || 'no-request-id'
+  const requestId = opts?.requestId || `email-${crypto.randomUUID()}`
   
   // Log configuration check (safe - no secrets)
   logSmtpConfig(requestId)
