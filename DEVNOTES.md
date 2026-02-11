@@ -91,7 +91,13 @@ Full 6-area lifecycle audit found 4 critical + 8 high + 14 medium + 10 low vulne
 - **H2:** Input sanitization on auth/booking routes — exported `sanitizeValue()` from `validation.ts`, applied to signup (guest + host + partner) and booking routes to strip XSS/SQL injection/command injection patterns from user-provided name/email/phone/notes fields.
 - **M4:** Rate limiting on host/partner signup — 5/hr/IP via Upstash Redis sliding window, matching existing guest signup pattern.
 
-**Phase C remaining:** CAPTCHA, upload quotas, per-user admin auth for fleet PATCH, missing email templates (payout, dispute, host cancellation), cancellation policy.
+### Security Quick Wins Batch - DEPLOYED ✅ (Feb 10)
+- **M11:** $0 booking guard — rejects bookings where `pricing.total <= 0` before Stripe PaymentIntent creation.
+- **M13:** Stripe idempotency key on refunds — deterministic key (`refund_{piId}_{amount}_{reason}`) on `PaymentProcessor.refundPayment()` prevents duplicate refunds from retries/double-clicks.
+- **M12:** Stripe ID redaction — `stripeCustomerId`, `stripePaymentMethodId`, `paymentIntentId` stripped from guest-facing booking GET responses. Only admins/hosts see Stripe internals.
+- **M3:** Disposable email blocking — wired existing 455-line `email-validator.ts` into all 3 signup routes (guest, host, partner). Blocks guerrillamail, mailinator, yopmail, tempmail, etc.
+
+**Phase C remaining:** CAPTCHA, upload quotas, per-user admin auth for fleet PATCH, missing email templates (payout, dispute, host cancellation), cancellation policy, M2 (block unverified email bookings), M14 (payout calculation consolidation).
 
 ---
 
