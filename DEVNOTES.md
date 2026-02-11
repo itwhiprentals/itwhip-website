@@ -57,6 +57,25 @@ Hook (`app/hooks/useCheckout.ts`):
 
 ## Recent Fixes (February 2026)
 
+### Guest Dashboard: Security + UX Round 4 - DEPLOYED ✅ (Feb 9)
+**Security fixes for unauthenticated endpoints + guest dashboard UX improvements**
+
+**CRITICAL Security:**
+- **Dispute resolve route** (`/api/rentals/bookings/[id]/dispute/resolve`) — POST and GET had ZERO authentication (hardcoded `adminId = 'admin'`). Added `verifyAdminRequest()` to both handlers. Route is under `/api/rentals/` so middleware doesn't protect it.
+- **PATCH messages** (`/api/rentals/bookings/[id]/messages`) — Mark-as-read handler had no auth while GET/POST did. Added `verifyRequest()` + booking ownership check.
+
+**UX Fixes:**
+- **MessagesPanel integration** — Wired up existing MessagesPanel component in booking detail page with message loading, sending, file upload, and 10s polling
+- **Toast notifications** — Replaced all 4 remaining `alert()` calls with auto-dismissing toast notifications (document upload, approval, trip start/end)
+- **verificationStatus case fix** — Fixed 8 instances in bookings list where lowercase `'pending'` didn't match DB uppercase `'PENDING'`
+
+Files: `page.tsx` (booking detail), `page.tsx` (bookings list), `dispute/resolve/route.ts`, `messages/route.ts`
+
+### Guest Dashboard: Security + UX Rounds 1-3 - DEPLOYED ✅ (Feb 9)
+- **Round 1** (`57d833b`): Data integrity — reviewerProfileId, renterId, insurance tier, deposit calc, host notification
+- **Round 2** (`3e83bdb`): Security — IDOR auth fix across 8 guest endpoints, DL verification gate, suspended user check
+- **Round 3** (`3a937fd`): UX — Replace `confirm()` with modal dialog, stable device fingerprint, 3DS PaymentIntent validation
+
 ### Claude DL Verification Upgrade — State-Aware AI + Admin Dashboard - DEPLOYED ✅ (Feb 9)
 Fixed 3 real-world false-positives in Claude Vision driver's license verification:
 
