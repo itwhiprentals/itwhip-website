@@ -204,6 +204,15 @@ export async function GET(
         status: booking.status,
         paymentStatus: booking.paymentStatus,
 
+        // Fleet/Host approval system
+        fleetStatus: booking.fleetStatus || 'PENDING',
+        hostStatus: booking.hostStatus || null,
+        hostNotes: booking.hostNotes || null,
+        hostReviewedAt: booking.hostReviewedAt?.toISOString() || null,
+
+        // Booking source indicator
+        renterId: booking.renterId || null,
+
         // Dates
         startDate: booking.startDate.toISOString(),
         endDate: booking.endDate.toISOString(),

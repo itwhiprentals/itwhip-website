@@ -188,28 +188,29 @@ export default function EnhancedTrackingPage() {
 
   const handleBookingRouting = (data: BookingResponse) => {
     const { booking, accountExists } = data
-    
+
+    // If user is authenticated, skip account creation prompts entirely
+    if (isAuthenticated) {
+      setShowFullDetails(true)
+      setHasChosenPath(true)
+      return
+    }
+
     // For confirmed bookings that haven't started yet
     if (booking.status === 'CONFIRMED' && !booking.tripStartedAt) {
-      // If authenticated and account exists, redirect to dashboard
-      if (isAuthenticated && accountExists) {
-        router.push(`/rentals/dashboard/bookings/${booking.id}`)
-        return
-      }
-      
       // Otherwise, show account creation/login requirement
       setShowFullDetails(true)
       setHasChosenPath(true)
       return
     }
-    
+
     // For active or completed trips, show read-only status
     if (booking.tripStatus === 'ACTIVE' || booking.tripEndedAt) {
       setShowFullDetails(true)
       setHasChosenPath(true)
       return
     }
-    
+
     // For pending bookings, follow original flow
     if (!data.isFirstVisit) {
       setShowFullDetails(true)
@@ -335,8 +336,37 @@ export default function EnhancedTrackingPage() {
       <div className={`min-h-screen ${isFirstVisit ? 'bg-gradient-to-br from-blue-50 to-indigo-50' : 'bg-gray-50'} py-8`}>
         <div className="max-w-4xl mx-auto px-4">
           
+          {/* Authenticated User Welcome Banner */}
+          {isAuthenticated && booking && (
+            <div className="mb-6">
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-lg shadow p-4 flex items-center justify-between"
+              >
+                <div className="flex items-center">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                    <span className="text-blue-600 font-bold text-lg">
+                      {booking.guestName?.charAt(0)?.toUpperCase() || 'G'}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Welcome, {booking.guestName?.split(' ')[0] || 'Guest'}</p>
+                    <p className="text-sm text-gray-500">{booking.guestEmail}</p>
+                  </div>
+                </div>
+                <Link
+                  href="/dashboard"
+                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Go to Dashboard
+                </Link>
+              </motion.div>
+            </div>
+          )}
+
           {/* Special UI for Confirmed Bookings Requiring Account/Login */}
-          {(needsAccount || needsLogin) && (
+          {!isAuthenticated && (needsAccount || needsLogin) && (
             <div className="mb-8">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -448,8 +478,8 @@ export default function EnhancedTrackingPage() {
             />
           )}
 
-          {/* Account Creation Prompt for First Visit Pending Bookings */}
-          {isFirstVisit && booking.status === 'PENDING' && (
+          {/* Account Creation Prompt for First Visit Pending Bookings (only for unauthenticated users) */}
+          {!isAuthenticated && isFirstVisit && booking.status === 'PENDING' && (
             <div className="mb-8">
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Create Account Card */}

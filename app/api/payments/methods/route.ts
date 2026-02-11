@@ -36,17 +36,32 @@ export async function GET(request: NextRequest) {
     }
 
     // Get payment methods from Stripe
-    const paymentMethods = await stripe.paymentMethods.list({
-      customer: profile.stripeCustomerId,
-      type: 'card'
-    })
+    let paymentMethods;
+    let defaultPaymentMethodId: string | null = null;
 
-    // Get customer to check default payment method
-    const customer = await stripe.customers.retrieve(profile.stripeCustomerId)
-    const defaultPaymentMethodId =
-      typeof customer !== 'string' && !customer.deleted && customer.invoice_settings?.default_payment_method
-        ? customer.invoice_settings.default_payment_method
-        : null
+    try {
+      paymentMethods = await stripe.paymentMethods.list({
+        customer: profile.stripeCustomerId,
+        type: 'card'
+      })
+
+      // Get customer to check default payment method
+      const customer = await stripe.customers.retrieve(profile.stripeCustomerId)
+      defaultPaymentMethodId =
+        typeof customer !== 'string' && !customer.deleted && customer.invoice_settings?.default_payment_method
+          ? customer.invoice_settings.default_payment_method as string
+          : null
+    } catch (stripeError: any) {
+      // Customer doesn't exist in this Stripe mode (test vs live) — return empty
+      if (stripeError?.code === 'resource_missing') {
+        return NextResponse.json({
+          success: true,
+          paymentMethods: [],
+          defaultPaymentMethodId: null
+        })
+      }
+      throw stripeError
+    }
 
     // Format response
     const formattedMethods = paymentMethods.data.map(pm => ({
