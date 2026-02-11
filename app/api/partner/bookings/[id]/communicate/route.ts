@@ -171,7 +171,7 @@ export async function POST(
       },
       include: {
         car: true,
-        renter: { include: { user: true } }
+        renter: true
       }
     })
 
@@ -182,9 +182,10 @@ export async function POST(
     // Check rate limit: count previous sends of this type for this booking
     const previousSends = await prisma.activityLog.count({
       where: {
-        bookingId: bookingId,
+        entityType: 'booking',
+        entityId: bookingId,
         action: `host_communicate_${type}`,
-        performedBy: partner.id
+        hostId: partner.id
       }
     })
 
@@ -196,8 +197,8 @@ export async function POST(
     }
 
     // Get guest email
-    const guestEmail = booking.renter?.user?.email || booking.guestEmail
-    const guestName = booking.renter?.user?.name || booking.guestName || 'Guest'
+    const guestEmail = booking.renter?.email || booking.guestEmail
+    const guestName = booking.renter?.name || booking.guestName || 'Guest'
 
     if (!guestEmail) {
       return NextResponse.json({ error: 'Guest email not found' }, { status: 400 })
@@ -210,7 +211,7 @@ export async function POST(
 
     const template = getEmailTemplate(type as CommunicationType, {
       guestName,
-      hostName: partner.name || partner.companyName || 'Your host',
+      hostName: partner.name || partner.businessName || 'Your host',
       carDetails,
       pickupDate: new Date(booking.startDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
       pickupTime: booking.startTime || 'TBD',
@@ -229,15 +230,17 @@ export async function POST(
     // Log the send for rate limiting
     await prisma.activityLog.create({
       data: {
+        id: crypto.randomUUID(),
         action: `host_communicate_${type}`,
-        bookingId: bookingId,
-        performedBy: partner.id,
-        details: JSON.stringify({
+        entityType: 'booking',
+        entityId: bookingId,
+        hostId: partner.id,
+        metadata: {
           type,
           messageLength: message.trim().length,
           sentTo: guestEmail,
           sendCount: previousSends + 1
-        })
+        }
       }
     })
 
@@ -254,7 +257,7 @@ export async function POST(
 
 // GET: Check send counts for rate limit display
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -269,9 +272,10 @@ export async function GET(
     for (const type of VALID_TYPES) {
       counts[type] = await prisma.activityLog.count({
         where: {
-          bookingId,
+          entityType: 'booking',
+          entityId: bookingId,
           action: `host_communicate_${type}`,
-          performedBy: partner.id
+          hostId: partner.id
         }
       })
     }

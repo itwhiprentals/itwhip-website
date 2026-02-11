@@ -42,11 +42,10 @@ interface BookingDetails {
   id: string
   status: string
   paymentStatus: string
-  fleetStatus: string
-  hostStatus: string | null
+  isGuestDriven: boolean
+  hostApproval: string
   hostNotes: string | null
   hostReviewedAt: string | null
-  renterId: string | null
   startDate: string
   endDate: string
   startTime: string
@@ -295,7 +294,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       const data = await response.json()
 
       if (response.ok) {
-        setBooking(prev => prev ? { ...prev, status: 'CONFIRMED', hostStatus: 'APPROVED', paymentStatus: 'PAID' } : null)
+        setBooking(prev => prev ? { ...prev, status: 'CONFIRMED', hostApproval: 'APPROVED', paymentStatus: 'PAID' } : null)
         showToast('success', 'Booking approved — guest has been charged and notified')
       } else {
         showToast('error', data.error || 'Failed to approve booking')
@@ -320,7 +319,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       const data = await response.json()
 
       if (response.ok) {
-        setBooking(prev => prev ? { ...prev, hostStatus: 'REJECTED', hostNotes: rejectReason.trim() } : null)
+        setBooking(prev => prev ? { ...prev, hostApproval: 'REJECTED', hostNotes: rejectReason.trim() } : null)
         setShowRejectModal(false)
         setRejectReason('')
         showToast('success', 'Booking rejected — fleet has been notified')
@@ -519,7 +518,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
   // Guest-driven = ItWhip platform booking (renter exists in our database, fleet approved)
   // Manual = host created this booking themselves for their own customer
-  const isGuestDriven = !!(booking?.renterId && booking?.fleetStatus === 'APPROVED')
+  const isGuestDriven = booking?.isGuestDriven ?? false
 
   // Commission rate (Standard tier = 25%)
   const PLATFORM_COMMISSION_RATE = 0.25
@@ -610,7 +609,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
             {/* Quick Actions - Hidden on mobile, shown inline on desktop */}
             <div className="hidden sm:flex items-center gap-2">
-              {isGuestDriven && booking.fleetStatus === 'APPROVED' && booking.hostStatus === 'PENDING' ? (
+              {isGuestDriven && booking.hostApproval === 'PENDING' ? (
                 <>
                   <button
                     onClick={hostApproveBooking}
@@ -691,7 +690,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
           {/* Mobile Quick Actions - Full width buttons on mobile */}
           <div className="sm:hidden mt-3 flex gap-2">
-            {isGuestDriven && booking.fleetStatus === 'APPROVED' && booking.hostStatus === 'PENDING' ? (
+            {isGuestDriven && booking.hostApproval === 'PENDING' ? (
               <>
                 <button
                   onClick={hostApproveBooking}
@@ -752,7 +751,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       {/* Host Review / Approved / Rejected Banners — scrollable, not sticky */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Host Review Banner — when fleet approved and host needs to act */}
-        {booking.fleetStatus === 'APPROVED' && booking.hostStatus === 'PENDING' && (
+        {isGuestDriven && booking.hostApproval === 'PENDING' && (
           <div className="mt-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
             <div className="flex items-start gap-3">
               <IoAlertCircleOutline className="w-5 h-5 text-orange-500 dark:text-orange-400 flex-shrink-0 mt-0.5" />
@@ -769,7 +768,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         )}
 
         {/* Host Approved Banner */}
-        {booking.hostStatus === 'APPROVED' && (
+        {booking.hostApproval === 'APPROVED' && (
           <div className="mt-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg px-4 py-3 flex items-center gap-2">
             <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
             <span className="text-sm text-green-800 dark:text-green-200 font-medium">You approved this booking</span>
@@ -782,7 +781,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         )}
 
         {/* Host Rejected Banner */}
-        {booking.hostStatus === 'REJECTED' && (
+        {booking.hostApproval === 'REJECTED' && (
           <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg px-4 py-3">
             <div className="flex items-center gap-2">
               <IoCloseCircleOutline className="w-5 h-5 text-red-600 dark:text-red-400" />

@@ -204,14 +204,11 @@ export async function GET(
         status: booking.status,
         paymentStatus: booking.paymentStatus,
 
-        // Fleet/Host approval system
-        fleetStatus: booking.fleetStatus || 'PENDING',
-        hostStatus: booking.hostStatus || null,
-        hostNotes: booking.hostNotes || null,
+        // Computed flags (no raw internal fields exposed)
+        isGuestDriven: !!(booking.renterId && booking.fleetStatus === 'APPROVED'),
+        hostApproval: booking.hostStatus || 'PENDING',
         hostReviewedAt: booking.hostReviewedAt?.toISOString() || null,
-
-        // Booking source indicator
-        renterId: booking.renterId || null,
+        hostNotes: booking.hostNotes || null,
 
         // Dates
         startDate: booking.startDate.toISOString(),
