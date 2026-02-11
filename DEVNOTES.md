@@ -57,6 +57,18 @@ Hook (`app/hooks/useCheckout.ts`):
 
 ## Recent Fixes (February 2026)
 
+### Booking Flow Alignment Round 6 - DEPLOYED ✅ (Feb 10)
+**Fix booking flow to match intended design: guest → fleet → host → onboard → trip**
+
+Audit compared intended booking flow against actual implementation. Found 4 gaps:
+
+1. **CRITICAL: Premature host notification removed** — `sendHostNotification()` was called at booking creation (line 1245), notifying host before fleet approval. Removed. Host now only learns about bookings after fleet approves via `sendHostReviewEmail()`.
+2. **HIGH: Payment hold released on fleet rejection/cancellation** — PATCH `reject` and `cancel` cases never called `stripe.paymentIntents.cancel()`. Auth hold stayed on guest's card 7-29 days. Now releases immediately.
+3. **HIGH: Car availability restored after trip ends** — `RentalAvailability` blocked dates (created at host approval) were never removed after trip completion. Cars became permanently unrentable for past dates. Now cleaned up via `deleteMany` with bookingCode filter.
+4. **MEDIUM: Onboarding check before trip start** — `canStartTrip()` didn't verify `onboardingCompletedAt`. Guest could skip DL/insurance upload. Now requires onboarding completion (bypassed by TESTING_MODE).
+
+Files: `book/route.ts`, `trip/end/route.ts`, `trip/validation.ts`
+
 ### Booking Flow Hardening Round 5 - DEPLOYED ✅ (Feb 10)
 **Race condition fix, orphaned payment hold cleanup, catalog filter**
 
