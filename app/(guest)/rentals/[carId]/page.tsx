@@ -15,6 +15,7 @@ function isNextRedirectError(error: unknown): boolean {
 import CarDetailsClient from './CarDetailsClient'
 import { extractCarId, generateCarUrl, isOldUrlFormat } from '@/app/lib/utils/urls'
 import { getRelatedCars } from '@/app/lib/server/fetchSimilarCars'
+import { getCarForSSR } from '@/app/lib/server/fetchCarDetails'
 
 // Black theme color for car detail page - makes status bar blend with photo on mobile
 export const viewport: Viewport = {
@@ -33,19 +34,14 @@ export async function generateMetadata({
   const carId = extractCarId(urlSlug)
   
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'}/api/rentals/cars/${carId}`,
-      { cache: 'no-store' }
-    )
-    
-    if (!response.ok) {
+    const car = await getCarForSSR(carId)
+
+    if (!car) {
       return {
         title: 'Car Not Found - ItWhip Rentals',
         description: 'This car is no longer available.',
       }
     }
-    
-    const car = await response.json()
 
     // Get the hero image
     const imageUrl = car.photos?.[0]?.url || 'https://itwhip.com/og-default-car.jpg'
@@ -144,19 +140,15 @@ export default async function CarDetailsPage({
   // If using old URL format (raw ID), redirect to SEO-friendly URL
   if (isOldUrlFormat(urlSlug)) {
     try {
-      const redirectResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'}/api/rentals/cars/${carId}`,
-        { cache: 'no-store' }
-      )
+      const redirectCar = await getCarForSSR(carId)
 
-      if (redirectResponse.ok) {
-        const car = await redirectResponse.json()
+      if (redirectCar) {
         const seoUrl = generateCarUrl({
           id: carId,
-          make: car.make,
-          model: car.model,
-          year: car.year,
-          city: car.city
+          make: redirectCar.make,
+          model: redirectCar.model,
+          year: redirectCar.year,
+          city: redirectCar.city
         })
         // 308 permanent redirect to SEO-friendly URL
         redirect(seoUrl)
@@ -177,17 +169,12 @@ export default async function CarDetailsPage({
   let relatedCars: { similarCars: any[]; hostCars: any[] } = { similarCars: [], hostCars: [] }
 
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'}/api/rentals/cars/${carId}`,
-      { cache: 'no-store' }
-    )
+    car = await getCarForSSR(carId)
 
     // Return proper 404 for missing cars (fixes soft 404 SEO issue)
-    if (!response.ok) {
+    if (!car) {
       notFound()
     }
-
-    car = await response.json()
 
     if (car) {
       // Fetch related cars (similar cars + host cars) for SSR

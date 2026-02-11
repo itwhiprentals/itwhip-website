@@ -2,6 +2,7 @@
 import { Metadata } from 'next'
 import BookingPageClient from './BookingPageClient'
 import { extractCarId, generateCarUrl } from '@/app/lib/utils/urls'
+import { getCarForSSR } from '@/app/lib/server/fetchCarDetails'
 
 // Generate dynamic Open Graph metadata showing the car
 export async function generateMetadata({
@@ -15,19 +16,14 @@ export async function generateMetadata({
   const carId = extractCarId(urlSlug)
 
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'}/api/rentals/cars/${carId}`,
-      { cache: 'no-store' }
-    )
+    const car = await getCarForSSR(carId)
 
-    if (!response.ok) {
+    if (!car) {
       return {
         title: 'Book Your Rental - ItWhip',
         description: 'Complete your car rental booking.',
       }
     }
-
-    const car = await response.json()
 
     // Get the hero image
     const imageUrl = car.photos?.[0]?.url || 'https://itwhip.com/og-default-car.jpg'
