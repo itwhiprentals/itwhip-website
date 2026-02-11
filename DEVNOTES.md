@@ -75,7 +75,17 @@ Full 6-area lifecycle audit found 4 critical + 8 high + 14 medium + 10 low vulne
 **Medium (promoted to Phase A):**
 - M1: DL verification gate now queries `DLVerificationLog` server-side instead of trusting client `aiVerification.passed`
 
-**Phase B/C remaining:** Email retry logic, validation middleware wiring, rate limiting on host/partner signup, CAPTCHA, upload quotas, deposit automation, missing email templates.
+### H7: Automated Security Deposit Release - DEPLOYED ✅ (Feb 10)
+- New `/api/cron/release-deposits` endpoint — finds COMPLETED bookings past grace period, releases deposits
+- Wired into existing system cron hub (Vercel free tier = 1 cron job)
+- Immediate deposit release at trip end for clean trips (no charges, no damage)
+- Handles hybrid deposits: Stripe refund for card portion, wallet return for deposit wallet portion
+- Blocks auto-release when open claims or trip issues exist
+- Deposit release email notification to guests with breakdown
+- Configurable via `PlatformSettings.depositAutoReleaseDays` (default 3) and `depositAutoReleaseEnabled`
+- Activates the existing `releaseSecurityDeposit()` function (was dead code, now wired)
+
+**Phase B/C remaining:** Email retry logic, validation middleware wiring, rate limiting on host/partner signup, CAPTCHA, upload quotas, missing email templates.
 
 ---
 
