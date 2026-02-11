@@ -312,6 +312,38 @@ export async function PATCH(
 ) {
   try {
     const { id: bookingId } = await params
+
+    // Verify JWT auth
+    const user = await verifyRequest(request)
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    const isAdmin = user.role === 'ADMIN'
+
+    // Verify booking ownership
+    const booking = await prisma.rentalBooking.findUnique({
+      where: { id: bookingId },
+      select: {
+        id: true,
+        renterId: true,
+        guestEmail: true,
+        car: { select: { host: { select: { email: true } } } }
+      }
+    })
+
+    if (!booking) {
+      return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+    }
+
+    const isOwner = (user.id && booking.renterId === user.id) ||
+                    (user.email && booking.guestEmail === user.email)
+    const isHost = booking.car.host && user.email === booking.car.host.email
+
+    if (!isOwner && !isHost && !isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
+
     const { messageIds } = await request.json()
 
     if (!messageIds || !Array.isArray(messageIds)) {

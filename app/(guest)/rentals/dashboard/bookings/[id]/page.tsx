@@ -3,9 +3,10 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Booking } from './types'
+import { Booking, Message } from './types'
 import { BookingDetails } from './components/BookingDetails'
 import { BookingSidebar } from './components/BookingSidebar'
+import { MessagesPanel } from './components/MessagesPanel'
 import { PolicyFooter, CancellationDialog } from './components/BookingModals'
 import { ChevronLeft, XCircle, CheckCircle, Copy, Clock, MessageSquare } from './components/Icons'
 import StatusProgression from '../../../components/StatusProgression'
@@ -20,9 +21,10 @@ import RentalAgreementModal from '../../../components/modals/RentalAgreementModa
 import {
   getTimeUntilPickup, validateFileUpload
 } from './utils/helpers'
-import { 
-  BOOKING_POLLING_INTERVAL, 
-  FILE_UPLOAD_CONFIG 
+import {
+  BOOKING_POLLING_INTERVAL,
+  MESSAGE_POLLING_INTERVAL,
+  FILE_UPLOAD_CONFIG
 } from './constants'
 
 export default function BookingDetailsPage() {
@@ -42,6 +44,16 @@ export default function BookingDetailsPage() {
   const [showModifyModal, setShowModifyModal] = useState(false)
   const [hasPassword, setHasPassword] = useState<boolean | null>(null)
   const [previousStatus, setPreviousStatus] = useState<string | null>(null)
+
+  // Messages state
+  const [messages, setMessages] = useState<Message[]>([])
+  const [messagesLoading, setMessagesLoading] = useState(true)
+  const [messageSending, setMessageSending] = useState(false)
+  const [messageError, setMessageError] = useState<string | null>(null)
+  const [messageUploading, setMessageUploading] = useState(false)
+
+  // Toast notification state
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'info'} | null>(null)
 
   // ✅ FIXED: Load booking data - removed booking from dependencies
   const loadBooking = useCallback(async () => {
@@ -73,6 +85,87 @@ export default function BookingDetailsPage() {
     }
   }, [bookingId]) // ✅ Only bookingId in dependencies
 
+  // Load messages for this booking
+  const loadMessages = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/rentals/bookings/${bookingId}/messages`, {
+        credentials: 'include'
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setMessages(data.messages || [])
+      }
+    } catch (err) {
+      console.error('Failed to load messages:', err)
+    } finally {
+      setMessagesLoading(false)
+    }
+  }, [bookingId])
+
+  // Send a message
+  const sendMessage = useCallback(async (message: string) => {
+    setMessageSending(true)
+    setMessageError(null)
+    try {
+      const response = await fetch(`/api/rentals/bookings/${bookingId}/messages`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      })
+      if (response.ok) {
+        await loadMessages()
+      } else {
+        const data = await response.json()
+        setMessageError(data.error || 'Failed to send message')
+      }
+    } catch {
+      setMessageError('Failed to send message')
+    } finally {
+      setMessageSending(false)
+    }
+  }, [bookingId, loadMessages])
+
+  // Handle file upload in messages
+  const handleMessageFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setMessageUploading(true)
+    setMessageError(null)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const uploadResponse = await fetch(`/api/rentals/bookings/${bookingId}/upload`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      })
+
+      if (uploadResponse.ok) {
+        const data = await uploadResponse.json()
+        await fetch(`/api/rentals/bookings/${bookingId}/messages`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `Shared a file: ${file.name}`,
+            attachmentUrl: data.url,
+            attachmentName: file.name
+          })
+        })
+        await loadMessages()
+      } else {
+        setMessageError('Failed to upload file')
+      }
+    } catch {
+      setMessageError('Failed to upload file')
+    } finally {
+      setMessageUploading(false)
+    }
+  }, [bookingId, loadMessages])
+
   // Handle file upload
   const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -99,7 +192,7 @@ export default function BookingDetailsPage() {
 
       if (response.ok) {
         await loadBooking() // Reload to update verification status
-        alert('Document uploaded successfully!')
+        setToast({ message: 'Document uploaded successfully!', type: 'success' })
       } else {
         const error = await response.json()
         setError(error.error || 'Failed to upload file')
@@ -167,18 +260,28 @@ export default function BookingDetailsPage() {
 
   // Show approval notification
   const showApprovalNotification = () => {
-    alert('Great news! Your booking has been approved and confirmed!')
+    setToast({ message: 'Great news! Your booking has been approved and confirmed!', type: 'success' })
   }
 
   // Check for trip-related URL params
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     if (urlParams.get('tripStarted') === 'true') {
-      alert('Trip started successfully! Drive safely.')
+      setToast({ message: 'Trip started successfully! Drive safely.', type: 'success' })
+      window.history.replaceState({}, '', window.location.pathname)
     } else if (urlParams.get('tripEnded') === 'true') {
-      alert('Trip completed successfully! Thank you for choosing ItWhip.')
+      setToast({ message: 'Trip completed! Thank you for choosing ItWhip.', type: 'success' })
+      window.history.replaceState({}, '', window.location.pathname)
     }
   }, [])
+
+  // Auto-dismiss toast
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [toast])
 
   // Status change detection
   useEffect(() => {
@@ -209,14 +312,21 @@ export default function BookingDetailsPage() {
   // ✅ FIXED: Initial load and polling - only depend on bookingId
   useEffect(() => {
     loadBooking()
-    
+    loadMessages()
+
     // Poll for booking updates
     const bookingInterval = setInterval(() => {
       loadBooking()
     }, BOOKING_POLLING_INTERVAL)
-    
+
+    // Poll for new messages
+    const messageInterval = setInterval(() => {
+      loadMessages()
+    }, MESSAGE_POLLING_INTERVAL)
+
     return () => {
       clearInterval(bookingInterval)
+      clearInterval(messageInterval)
     }
   }, [bookingId]) // ✅ Only bookingId, loadBooking is stable now
 
@@ -255,6 +365,19 @@ export default function BookingDetailsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg animate-in slide-in-from-top-2 ${
+          toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-blue-600 text-white'
+        }`}>
+          <CheckCircle className="w-5 h-5 flex-shrink-0" />
+          <p className="text-sm font-medium">{toast.message}</p>
+          <button onClick={() => setToast(null)} className="ml-2 text-white/80 hover:text-white">
+            <XCircle className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-6">
         {/* Header */}
         <div className="mb-4 sm:mb-6">
@@ -377,9 +500,21 @@ export default function BookingDetailsPage() {
           <div className="lg:col-span-2 space-y-6">
             <BookingDetails
               booking={booking}
-              messages={[]}
+              messages={messages}
               onUploadClick={() => fileInputRef.current?.click()}
               uploadingFile={uploadingFile}
+            />
+
+            {/* Messages Panel */}
+            <MessagesPanel
+              bookingId={bookingId}
+              messages={messages}
+              loading={messagesLoading}
+              sending={messageSending}
+              error={messageError}
+              onSendMessage={sendMessage}
+              onFileUpload={handleMessageFileUpload}
+              uploadingFile={messageUploading}
             />
           </div>
 

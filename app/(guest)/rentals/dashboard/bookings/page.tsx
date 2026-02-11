@@ -64,7 +64,7 @@ export default function BookingsListPage() {
  }
 
  const getStatusColor = (status: string, verificationStatus?: string) => {
-   if (verificationStatus === 'pending') {
+   if (verificationStatus?.toUpperCase() === 'PENDING') {
      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
    }
    switch(status) {
@@ -84,7 +84,7 @@ export default function BookingsListPage() {
  }
 
  const getStatusIcon = (status: string, verificationStatus?: string) => {
-   if (verificationStatus === 'pending') {
+   if (verificationStatus?.toUpperCase() === 'PENDING') {
      return <IoWarningOutline className="w-5 h-5 text-yellow-600" />
    }
    switch(status) {
@@ -107,7 +107,7 @@ export default function BookingsListPage() {
      if (filter === 'upcoming' && !['PENDING', 'CONFIRMED'].includes(booking.status)) return false
      if (filter === 'active' && booking.status !== 'ACTIVE') return false
      if (filter === 'completed' && booking.status !== 'COMPLETED') return false
-     if (filter === 'needs-action' && booking.verificationStatus !== 'pending') return false
+     if (filter === 'needs-action' && booking.verificationStatus?.toUpperCase() !== 'PENDING') return false
    }
    
    // Filter by search term
@@ -124,7 +124,7 @@ export default function BookingsListPage() {
    return true
  })
 
- const needsActionCount = bookings.filter(b => b.verificationStatus === 'pending').length
+ const needsActionCount = bookings.filter(b => b.verificationStatus?.toUpperCase() === 'PENDING').length
 
  if (loading) {
    return (
@@ -281,7 +281,7 @@ export default function BookingsListPage() {
                      <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                        getStatusColor(booking.status, booking.verificationStatus)
                      }`}>
-                       {booking.verificationStatus === 'pending' ? 'Verify Now' : booking.status}
+                       {booking.verificationStatus?.toUpperCase() === 'PENDING' ? 'Verify Now' : booking.status}
                      </span>
                    </div>
                  </div>
@@ -298,7 +298,7 @@ export default function BookingsListPage() {
                    </p>
                  </div>
 
-                 {booking.verificationStatus === 'pending' && (
+                 {booking.verificationStatus?.toUpperCase() === 'PENDING' && (
                    <div className="mt-2 flex items-center text-xs text-yellow-600 dark:text-yellow-400">
                      <IoWarningOutline className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
                      <span className="truncate">Upload documents to confirm</span>
@@ -346,7 +346,7 @@ export default function BookingsListPage() {
                          </div>
                        </div>
 
-                       {booking.verificationStatus === 'pending' && (
+                       {booking.verificationStatus?.toUpperCase() === 'PENDING' && (
                          <div className="mt-3 flex items-center text-sm text-yellow-600 dark:text-yellow-400">
                            <IoWarningOutline className="w-4 h-4 mr-1" />
                            Verification required - Upload documents to confirm
@@ -370,7 +370,7 @@ export default function BookingsListPage() {
                        <span className={`ml-2 px-3 py-1 rounded-full text-sm font-medium ${
                          getStatusColor(booking.status, booking.verificationStatus)
                        }`}>
-                         {booking.verificationStatus === 'pending' ? 'Verify Now' : booking.status}
+                         {booking.verificationStatus?.toUpperCase() === 'PENDING' ? 'Verify Now' : booking.status}
                        </span>
                      </div>
                    </div>

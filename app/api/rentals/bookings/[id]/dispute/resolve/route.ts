@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { PaymentProcessor } from '@/app/lib/stripe/payment-processor'
+import { verifyAdminRequest } from '@/app/lib/admin/middleware'
 
 export async function POST(
  request: NextRequest,
@@ -19,8 +20,12 @@ export async function POST(
      actionTaken
    } = body
 
-   // TODO: Add admin authentication check
-   const adminId = 'admin' // Replace with actual admin ID from session
+   // Verify admin authentication
+   const adminAuth = await verifyAdminRequest(request)
+   if (!adminAuth.isValid) {
+     return NextResponse.json({ error: 'Admin authentication required' }, { status: 401 })
+   }
+   const adminId = (adminAuth.payload?.userId as string) || 'admin'
 
    // Fetch dispute with booking details
    const dispute = await prisma.rentalDispute.findFirst({
@@ -178,7 +183,11 @@ export async function GET(
    const { id: bookingId } = await params
    const disputeId = request.nextUrl.searchParams.get('disputeId')
 
-   // TODO: Add admin authentication check
+   // Verify admin authentication
+   const adminAuth = await verifyAdminRequest(request)
+   if (!adminAuth.isValid) {
+     return NextResponse.json({ error: 'Admin authentication required' }, { status: 401 })
+   }
 
    if (!disputeId) {
      // Get all disputes for the booking
