@@ -5,6 +5,20 @@ import { prisma } from '@/app/lib/database/prisma'
 import { hash } from 'argon2'
 import { getVehicleSpecData } from '@/app/lib/utils/vehicleSpec'
 import { resolveIdentity, linkAllIdentifiers } from '@/app/lib/services/identityResolution'
+import { sanitizeValue } from '@/app/middleware/validation'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
+
+// Rate limiter for host signup - prevent mass account creation
+const hostSignupRateLimit = new Ratelimit({
+  redis: new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  }),
+  limiter: Ratelimit.slidingWindow(5, '1 h'), // 5 signups per hour per IP
+  analytics: true,
+  prefix: 'ratelimit:host-signup',
+})
 
 // Helper to map NHTSA bodyClass to our carType
 function mapBodyClassToCarType(bodyClass: string | null): string | null {
@@ -33,8 +47,42 @@ function normalizeTransmission(transmission: string | null): string | null {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    
+    // Rate limiting - check FIRST before any processing
+    const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+                     request.headers.get('x-real-ip') ||
+                     'unknown'
+
+    const { success: rateLimitOk, remaining, reset } = await hostSignupRateLimit.limit(ipAddress)
+
+    if (!rateLimitOk) {
+      console.warn(`[HOST SIGNUP] Rate limit exceeded for IP: ${ipAddress}`)
+      return NextResponse.json(
+        {
+          error: 'Too many signup attempts. Please try again later.',
+          retryAfter: Math.ceil((reset - Date.now()) / 1000)
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.ceil((reset - Date.now()) / 1000)),
+            'X-RateLimit-Remaining': String(remaining),
+          }
+        }
+      )
+    }
+
+    const rawBody = await request.json()
+
+    // Sanitize user-provided string fields to prevent stored XSS
+    const body = {
+      ...rawBody,
+      name: sanitizeValue(rawBody.name, 'name'),
+      email: sanitizeValue(rawBody.email, 'email'),
+      phone: sanitizeValue(rawBody.phone, 'phone'),
+      address: sanitizeValue(rawBody.address, 'address'),
+      city: sanitizeValue(rawBody.city, 'city'),
+    }
+
     const {
       name,
       email,

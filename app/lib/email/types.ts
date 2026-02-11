@@ -515,6 +515,16 @@ export interface DepositReleasedData extends BaseEmailData {
   tripEndDate: string
 }
 
+export interface RefundConfirmationData extends BaseEmailData {
+  carMake: string
+  carModel: string
+  refundAmount: string
+  originalTotal: string
+  refundReason: string
+  refundType: 'full' | 'partial'
+  tripDates: string
+}
+
 // ============================================================================
 // RESPONSE TYPES
 // ============================================================================

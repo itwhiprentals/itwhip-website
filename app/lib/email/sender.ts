@@ -137,62 +137,87 @@ export async function sendEmail(
     }
   }
 
-  try {
-    const transport = getTransporter()
-    
-    console.log(`[${requestId}] Attempting to send email to: ${to}`)
-    
-    const mailOptions: any = {
-      from: SMTP_CONFIG.from,
-      to: to,
-      subject: subject,
-      replyTo: SMTP_CONFIG.replyTo,
-      html: html,
-      text: text
-    }
+  const transport = getTransporter()
 
-    // Only add headers if explicitly provided
-    if (opts?.headers && Object.keys(opts.headers).length > 0) {
-      mailOptions.headers = opts.headers
-    }
+  const mailOptions: any = {
+    from: SMTP_CONFIG.from,
+    to: to,
+    subject: subject,
+    replyTo: SMTP_CONFIG.replyTo,
+    html: html,
+    text: text
+  }
 
-    const result = await transport.sendMail(mailOptions)
-    
-    // Log success with messageId
-    console.log(`[${requestId}] Email sent successfully:`, {
-      to: to,
-      messageId: result.messageId,
-      response: result.response || 'no response',
-      accepted: result.accepted,
-      rejected: result.rejected
-    })
-    
-    return { 
-      success: true, 
-      messageId: result.messageId 
+  // Only add headers if explicitly provided
+  if (opts?.headers && Object.keys(opts.headers).length > 0) {
+    mailOptions.headers = opts.headers
+  }
+
+  // Retry with exponential backoff (3 attempts: 0ms, 1s, 4s)
+  const MAX_RETRIES = 3
+  let lastError: any = null
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      console.log(`[${requestId}] Sending email to ${to} (attempt ${attempt}/${MAX_RETRIES})`)
+
+      const result = await transport.sendMail(mailOptions)
+
+      console.log(`[${requestId}] Email sent successfully:`, {
+        to: to,
+        messageId: result.messageId,
+        response: result.response || 'no response',
+        accepted: result.accepted,
+        rejected: result.rejected,
+        attempt
+      })
+
+      return {
+        success: true,
+        messageId: result.messageId
+      }
+
+    } catch (error: any) {
+      lastError = error
+
+      const errorDetails: any = {
+        to: to,
+        attempt,
+        errorMessage: error.message || 'Unknown error',
+        code: error.code || 'no-code',
+        command: error.command || 'no-command',
+        responseCode: error.responseCode || 'no-response-code'
+      }
+
+      if (error.response) {
+        errorDetails.response = error.response.substring(0, 200)
+      }
+
+      // Don't retry on permanent failures (invalid recipient, auth errors)
+      const permanentCodes = ['EENVELOPE', 'EAUTH', 'EMESSAGE']
+      const permanentResponseCodes = [550, 551, 552, 553, 554]
+      if (permanentCodes.includes(error.code) || permanentResponseCodes.includes(error.responseCode)) {
+        console.error(`[${requestId}] Email send permanently failed (no retry):`, errorDetails)
+        break
+      }
+
+      if (attempt < MAX_RETRIES) {
+        const delayMs = Math.pow(2, attempt - 1) * 1000 // 1s, 2s
+        console.warn(`[${requestId}] Email send failed (retrying in ${delayMs}ms):`, errorDetails)
+        await new Promise(resolve => setTimeout(resolve, delayMs))
+        // Reset transporter on connection errors to get fresh connection
+        if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT' || error.code === 'ESOCKET') {
+          transporter = null
+        }
+      } else {
+        console.error(`[${requestId}] Email send failed after ${MAX_RETRIES} attempts:`, errorDetails)
+      }
     }
-    
-  } catch (error: any) {
-    // Log error details (safe - no secrets, only error codes/commands)
-    const errorDetails: any = {
-      to: to,
-      errorMessage: error.message || 'Unknown error',
-      code: error.code || 'no-code',
-      command: error.command || 'no-command',
-      responseCode: error.responseCode || 'no-response-code'
-    }
-    
-    // Include response if available (may contain useful error info)
-    if (error.response) {
-      errorDetails.response = error.response.substring(0, 200) // Limit length
-    }
-    
-    console.error(`[${requestId}] Email send failed:`, errorDetails)
-    
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to send email'
-    }
+  }
+
+  return {
+    success: false,
+    error: lastError instanceof Error ? lastError.message : 'Failed to send email after retries'
   }
 }
 

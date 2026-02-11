@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { PaymentProcessor } from '@/app/lib/stripe/payment-processor'
 import { stripe } from '@/app/lib/stripe/client'
+import { sendRefundConfirmationEmail } from '@/app/lib/email/refund-confirmation-email'
 
 export async function POST(
   request: NextRequest,
@@ -291,6 +292,23 @@ export async function POST(
             }
           }
         })
+
+        // Send refund confirmation email to guest (fire-and-forget)
+        const formatDate = (d: Date | null) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''
+        const tripDates = `${formatDate(booking.startDate)} - ${formatDate(booking.endDate)}`
+
+        sendRefundConfirmationEmail({
+          guestEmail: booking.guestEmail!,
+          guestName: booking.guestName,
+          bookingCode: booking.bookingCode,
+          carMake: booking.car?.make || 'Vehicle',
+          carModel: booking.car?.model || '',
+          refundAmount: amount,
+          originalTotal: totalPaid,
+          refundReason: reason,
+          refundType: amount >= totalPaid ? 'full' : 'partial',
+          tripDates,
+        }).catch(() => {})
 
       } catch (stripeError: any) {
         console.error('Auto-process refund failed:', stripeError)

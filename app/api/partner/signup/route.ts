@@ -7,15 +7,57 @@ import { prisma } from '@/app/lib/database/prisma'
 import { hash } from 'argon2'
 import { SignJWT } from 'jose'
 import { cookies } from 'next/headers'
+import { sanitizeValue } from '@/app/middleware/validation'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
 )
 
+// Rate limiter for partner signup - prevent mass account creation
+const partnerSignupRateLimit = new Ratelimit({
+  redis: new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  }),
+  limiter: Ratelimit.slidingWindow(5, '1 h'), // 5 signups per hour per IP
+  analytics: true,
+  prefix: 'ratelimit:partner-signup',
+})
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { name, email, password, inviteToken, isOAuthUser, oauthUserId } = body
+    // Rate limiting - check FIRST before any processing
+    const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+                     request.headers.get('x-real-ip') ||
+                     'unknown'
+
+    const { success: rateLimitOk, remaining, reset } = await partnerSignupRateLimit.limit(ipAddress)
+
+    if (!rateLimitOk) {
+      console.warn(`[PARTNER SIGNUP] Rate limit exceeded for IP: ${ipAddress}`)
+      return NextResponse.json(
+        {
+          error: 'Too many signup attempts. Please try again later.',
+          retryAfter: Math.ceil((reset - Date.now()) / 1000)
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.ceil((reset - Date.now()) / 1000)),
+            'X-RateLimit-Remaining': String(remaining),
+          }
+        }
+      )
+    }
+
+    const rawBody = await request.json()
+
+    // Sanitize user-provided string fields to prevent stored XSS
+    const name = sanitizeValue(rawBody.name, 'name') as string
+    const email = sanitizeValue(rawBody.email, 'email') as string
+    const { password, inviteToken, isOAuthUser, oauthUserId } = rawBody
 
     // Validation - password required for non-OAuth users
     if (!name || !email) {

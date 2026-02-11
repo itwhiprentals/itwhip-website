@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { stripe } from '@/app/lib/stripe/client'
 import { PaymentProcessor } from '@/app/lib/stripe/payment-processor'
+import { sendRefundConfirmationEmail } from '@/app/lib/email/refund-confirmation-email'
 import { nanoid } from 'nanoid'
 
 // Fleet access key
@@ -514,6 +515,29 @@ export async function POST(
               depositRefundedAt: new Date()
             }
           })
+
+          // Send refund confirmation email (fire-and-forget)
+          if (booking.guestEmail) {
+            const car = booking.carId ? await prisma.car.findUnique({
+              where: { id: booking.carId },
+              select: { make: true, model: true }
+            }) : null
+            const fmtDate = (d: Date | null) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''
+            const tripDates = `${fmtDate(booking.startDate)} - ${fmtDate(booking.endDate)}`
+
+            sendRefundConfirmationEmail({
+              guestEmail: booking.guestEmail,
+              guestName: booking.guestName,
+              bookingCode: booking.bookingCode,
+              carMake: car?.make || 'Vehicle',
+              carModel: car?.model || '',
+              refundAmount: amount,
+              originalTotal: Number(booking.totalAmount || 0),
+              refundReason: reason,
+              refundType: amount >= booking.totalAmount ? 'full' : 'partial',
+              tripDates,
+            }).catch(() => {})
+          }
 
           return NextResponse.json({
             success: true,

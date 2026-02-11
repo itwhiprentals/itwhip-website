@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/app/lib/database/prisma'
 import { z } from 'zod'
+import { sanitizeValue } from '@/app/middleware/validation'
 import { RentalBookingStatus } from '@/app/lib/dal/types'
 import { calculateBookingPricing, getActualDeposit } from '@/app/(guest)/rentals/lib/booking-pricing'
 import { addHours } from 'date-fns'
@@ -125,6 +126,14 @@ export async function POST(request: NextRequest) {
     }
 
     const bookingData = validationResult.data
+
+    // Sanitize user-provided string fields to prevent stored XSS
+    bookingData.guestName = sanitizeValue(bookingData.guestName, 'guestName')
+    bookingData.guestEmail = sanitizeValue(bookingData.guestEmail, 'guestEmail')
+    bookingData.guestPhone = sanitizeValue(bookingData.guestPhone, 'guestPhone')
+    if (bookingData.notes) bookingData.notes = sanitizeValue(bookingData.notes, 'notes')
+    if (bookingData.pickupLocation) bookingData.pickupLocation = sanitizeValue(bookingData.pickupLocation, 'pickupLocation')
+    if (bookingData.deliveryAddress) bookingData.deliveryAddress = sanitizeValue(bookingData.deliveryAddress, 'deliveryAddress')
 
     // ========== ACCOUNT HOLD CHECK ==========
     // Check if guest has an active account hold (e.g., from unresolved claim)

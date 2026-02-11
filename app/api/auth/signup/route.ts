@@ -7,6 +7,7 @@ import { nanoid } from 'nanoid'
 import db from '@/app/lib/db'
 import { prisma } from '@/app/lib/database/prisma'
 import { resolveIdentity, linkAllIdentifiers, normalizeEmail, normalizePhone } from '@/app/lib/services/identityResolution'
+import { sanitizeValue } from '@/app/middleware/validation'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 
@@ -139,7 +140,12 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json()
-    const { email, password, name, phone, roleHint } = body
+    const { password, roleHint } = body
+
+    // Sanitize user-provided string fields (XSS, SQL injection, etc.)
+    const email = sanitizeValue(body.email, 'email') as string
+    const name = sanitizeValue(body.name, 'name') as string | undefined
+    const phone = sanitizeValue(body.phone, 'phone') as string | undefined
 
     // Validate required fields
     if (!email || !password) {

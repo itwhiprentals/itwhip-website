@@ -175,7 +175,7 @@ const ENDPOINT_SCHEMAS: Record<string, {
 }
 
 // Dangerous input patterns
-const DANGEROUS_PATTERNS = {
+export const DANGEROUS_PATTERNS = {
   sqlInjection: [
     /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE)\b)/gi,
     /(--|\||;|\/\*|\*\/)/g,
@@ -201,9 +201,10 @@ const DANGEROUS_PATTERNS = {
 }
 
 /**
- * Sanitize a single value
+ * Sanitize a single value — strips SQL injection, XSS, command injection, path traversal patterns.
+ * Exported so route handlers can call it directly on user-provided fields.
  */
-function sanitizeValue(value: any, fieldName: string): any {
+export function sanitizeValue(value: any, fieldName: string): any {
   if (value === null || value === undefined) {
     return value
   }

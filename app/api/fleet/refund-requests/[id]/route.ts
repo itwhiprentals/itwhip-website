@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { PaymentProcessor } from '@/app/lib/stripe/payment-processor'
+import { sendRefundConfirmationEmail } from '@/app/lib/email/refund-confirmation-email'
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -312,6 +313,8 @@ export async function POST(
             guestName: true,
             guestEmail: true,
             totalAmount: true,
+            startDate: true,
+            endDate: true,
             hostId: true,
             paymentIntentId: true,
             host: {
@@ -322,6 +325,12 @@ export async function POST(
                 partnerCompanyName: true,
                 stripeConnectAccountId: true,
                 currentBalance: true
+              }
+            },
+            car: {
+              select: {
+                make: true,
+                model: true,
               }
             }
           }
@@ -481,6 +490,24 @@ export async function POST(
         }
       }
     })
+
+    // Send refund confirmation email to guest (fire-and-forget)
+    const totalPaid = Number(refundRequest.booking.totalAmount || 0)
+    const formatDate = (d: Date | null) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''
+    const tripDates = `${formatDate(refundRequest.booking.startDate)} - ${formatDate(refundRequest.booking.endDate)}`
+
+    sendRefundConfirmationEmail({
+      guestEmail: refundRequest.booking.guestEmail,
+      guestName: refundRequest.booking.guestName,
+      bookingCode: refundRequest.booking.bookingCode,
+      carMake: refundRequest.booking.car?.make || 'Vehicle',
+      carModel: refundRequest.booking.car?.model || '',
+      refundAmount,
+      originalTotal: totalPaid,
+      refundReason: refundRequest.reason,
+      refundType: refundAmount >= totalPaid ? 'full' : 'partial',
+      tripDates,
+    }).catch(() => {})
 
     return NextResponse.json({
       success: true,
