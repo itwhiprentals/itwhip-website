@@ -111,6 +111,17 @@ Full 6-area lifecycle audit found 4 critical + 8 high + 14 medium + 10 low vulne
 
 **Env vars needed:** `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY` (get from Google reCAPTCHA console).
 
+### Post-Verification Fixes - DEPLOYED ✅ (Feb 10)
+Full 67-check verification audit across 8 sections (55 PASS, 10 PARTIAL, 2 FAIL). Fixed all critical/high items:
+
+- **Email arg swap:** Fixed html/text parameter order in `dispute-notification-email.ts` and `payout-confirmation-email.ts` — admins/hosts were receiving plain-text rendered as HTML.
+- **Stripe API version:** Updated 3 fleet files from `2024-11-20.acacia` to `2025-08-27.basil`, added explicit `apiVersion` to 2 inline Stripe instances in book PATCH handler.
+- **Change-password auth hardening:** Session + refresh token invalidation now unconditional (was opt-in via `logoutOtherDevices` checkbox). Matches reset-password behavior.
+- **Partner middleware:** Added server-side `/partner/*` route protection in `middleware.ts` — verifies `partner_token` or `hostAccessToken` JWT before serving page. Previously client-side only.
+- **Partner cookie fallback:** Added `hostAccessToken` fallback to `insurance/route.ts` and `photos/[photoId]/route.ts` — hosts logged in via unified portal can now access these endpoints.
+- **Deposit refund idempotency:** Added `idempotencyKey: release-deposit-{bookingId}` to `releaseSecurityDeposit()` Stripe refund — prevents duplicate refunds if cron retries.
+- **Email requestId:** Replaced static `'no-request-id'` fallback with `crypto.randomUUID()` for better log traceability.
+
 ---
 
 ### Booking Flow Alignment Round 6 - DEPLOYED ✅ (Feb 10)
