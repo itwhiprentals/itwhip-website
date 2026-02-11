@@ -85,7 +85,13 @@ Full 6-area lifecycle audit found 4 critical + 8 high + 14 medium + 10 low vulne
 - Configurable via `PlatformSettings.depositAutoReleaseDays` (default 3) and `depositAutoReleaseEnabled`
 - Activates the existing `releaseSecurityDeposit()` function (was dead code, now wired)
 
-**Phase B/C remaining:** Email retry logic, validation middleware wiring, rate limiting on host/partner signup, CAPTCHA, upload quotas, missing email templates.
+### Security Audit Phase B - DEPLOYED ✅ (Feb 10)
+- **H5:** Email retry logic — 3x exponential backoff (1s, 2s delays) in `sender.ts`. Permanent failures (EENVELOPE, EAUTH, 550-554) skip retry. Connection errors reset transporter.
+- **H8:** Refund confirmation email — template + helper, wired into all 3 refund paths (fleet refund-requests process, booking auto-approve, guest banking manual refund). Fire-and-forget with unsubscribe check.
+- **H2:** Input sanitization on auth/booking routes — exported `sanitizeValue()` from `validation.ts`, applied to signup (guest + host + partner) and booking routes to strip XSS/SQL injection/command injection patterns from user-provided name/email/phone/notes fields.
+- **M4:** Rate limiting on host/partner signup — 5/hr/IP via Upstash Redis sliding window, matching existing guest signup pattern.
+
+**Phase C remaining:** CAPTCHA, upload quotas, per-user admin auth for fleet PATCH, missing email templates (payout, dispute, host cancellation), cancellation policy.
 
 ---
 
