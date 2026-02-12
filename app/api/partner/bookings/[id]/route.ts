@@ -205,7 +205,9 @@ export async function GET(
         paymentStatus: booking.paymentStatus,
 
         // Computed flags (no raw internal fields exposed)
-        isGuestDriven: !!(booking.renterId && booking.fleetStatus === 'APPROVED'),
+        // A booking is guest-driven (ItWhip platform) if it has a renter AND a Stripe payment intent
+        // This covers all fleet statuses (PENDING, APPROVED) — not just approved ones
+        isGuestDriven: !!(booking.renterId && booking.paymentIntentId),
         hostApproval: booking.hostStatus || 'PENDING',
         hostReviewedAt: booking.hostReviewedAt?.toISOString() || null,
         hostNotes: booking.hostNotes || null,

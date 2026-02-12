@@ -1889,30 +1889,34 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   Send Booking Details
                 </button>
               )}
-              {/* Send Pickup Instructions — functional with rate limit */}
-              <button
-                onClick={() => { setCommMessage(''); setShowCommModal('pickup_instructions') }}
-                disabled={(commSendCounts.pickup_instructions || 0) >= 2}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                <IoLocationOutline className="w-4 h-4" />
-                Send Pickup Instructions
-                {(commSendCounts.pickup_instructions || 0) > 0 && (
-                  <span className="text-xs text-gray-400">({commSendCounts.pickup_instructions}/2)</span>
-                )}
-              </button>
-              {/* Send Keys Instructions — functional with rate limit */}
-              <button
-                onClick={() => { setCommMessage(''); setShowCommModal('keys_instructions') }}
-                disabled={(commSendCounts.keys_instructions || 0) >= 2}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                <IoKeyOutline className="w-4 h-4" />
-                Send Keys Instructions
-                {(commSendCounts.keys_instructions || 0) > 0 && (
-                  <span className="text-xs text-gray-400">({commSendCounts.keys_instructions}/2)</span>
-                )}
-              </button>
+              {/* Send Pickup Instructions — only for ItWhip guest-driven bookings */}
+              {isGuestDriven && (
+                <button
+                  onClick={() => { setCommMessage(''); setShowCommModal('pickup_instructions') }}
+                  disabled={(commSendCounts.pickup_instructions || 0) >= 2}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <IoLocationOutline className="w-4 h-4" />
+                  Send Pickup Instructions
+                  {(commSendCounts.pickup_instructions || 0) > 0 && (
+                    <span className="text-xs text-gray-400">({commSendCounts.pickup_instructions}/2)</span>
+                  )}
+                </button>
+              )}
+              {/* Send Keys Instructions — only for ItWhip guest-driven bookings */}
+              {isGuestDriven && (
+                <button
+                  onClick={() => { setCommMessage(''); setShowCommModal('keys_instructions') }}
+                  disabled={(commSendCounts.keys_instructions || 0) >= 2}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <IoKeyOutline className="w-4 h-4" />
+                  Send Keys Instructions
+                  {(commSendCounts.keys_instructions || 0) > 0 && (
+                    <span className="text-xs text-gray-400">({commSendCounts.keys_instructions}/2)</span>
+                  )}
+                </button>
+              )}
             </div>
           </div>
 
