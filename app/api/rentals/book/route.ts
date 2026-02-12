@@ -1164,21 +1164,27 @@ export async function POST(request: NextRequest) {
       }
 
       // Update Stripe payment intent amount if credits/bonus reduced the charge
+      // Skip if PI is already confirmed (requires_capture) — amount can't be changed after confirmation
       const finalStripeAmount = Math.round((chargeAmount + depositFromCard) * 100)
       if (stripePaymentIntentId && finalStripeAmount < Math.round((pricing.total + depositAmount) * 100)) {
         try {
-          await stripe.paymentIntents.update(stripePaymentIntentId, {
-            amount: Math.max(finalStripeAmount, 100), // Min $1.00 (100 cents)
-            metadata: {
-              originalTotal: pricing.total.toString(),
-              creditsApplied: creditsApplied.toString(),
-              bonusApplied: bonusApplied.toString(),
-              chargeAmount: chargeAmount.toString(),
-              depositFromCard: depositFromCard.toString(),
-              depositFromWallet: depositFromWallet.toString()
-            }
-          })
-          console.log('✅ Updated Stripe PaymentIntent amount to:', chargeAmount + depositFromCard, '(rental:', chargeAmount, '+ deposit:', depositFromCard, ')')
+          const existingPI = await stripe.paymentIntents.retrieve(stripePaymentIntentId)
+          if (existingPI.status === 'requires_capture') {
+            console.log('ℹ️ PI already confirmed (requires_capture) — skipping amount update. Current amount:', existingPI.amount, 'cents')
+          } else {
+            await stripe.paymentIntents.update(stripePaymentIntentId, {
+              amount: Math.max(finalStripeAmount, 100), // Min $1.00 (100 cents)
+              metadata: {
+                originalTotal: pricing.total.toString(),
+                creditsApplied: creditsApplied.toString(),
+                bonusApplied: bonusApplied.toString(),
+                chargeAmount: chargeAmount.toString(),
+                depositFromCard: depositFromCard.toString(),
+                depositFromWallet: depositFromWallet.toString()
+              }
+            })
+            console.log('✅ Updated Stripe PaymentIntent amount to:', chargeAmount + depositFromCard, '(rental:', chargeAmount, '+ deposit:', depositFromCard, ')')
+          }
         } catch (stripeUpdateError) {
           console.error('⚠️ Failed to update Stripe amount (non-blocking):', stripeUpdateError)
         }
