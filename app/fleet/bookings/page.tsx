@@ -1,7 +1,7 @@
 // app/fleet/bookings/page.tsx
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { FleetBooking, BookingFilters, BookingStats } from './types'
 import {
   BookingsHeader,
@@ -59,7 +59,9 @@ export default function FleetBookingsPage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const loadBookings = useCallback(async () => {
+  const loadBookingsRef = useRef<() => Promise<void>>(undefined)
+
+  loadBookingsRef.current = async () => {
     try {
       setError(null)
       const params = new URLSearchParams({
@@ -78,16 +80,16 @@ export default function FleetBookingsPage() {
       if (response.ok) {
         const data = await response.json()
         setBookings(data.bookings || [])
-        setStats({
-          ...stats,
+        setStats(prev => ({
+          ...prev,
           ...data.stats,
           totalBookings: data.pagination.total
-        })
-        setPagination({
-          ...pagination,
+        }))
+        setPagination(prev => ({
+          ...prev,
           total: data.pagination.total,
           totalPages: data.pagination.totalPages
-        })
+        }))
       } else {
         setError('Failed to load bookings')
       }
@@ -98,15 +100,15 @@ export default function FleetBookingsPage() {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [activeTab, filters, pagination.page, pagination.limit])
+  }
 
   useEffect(() => {
-    loadBookings()
-  }, [loadBookings])
+    loadBookingsRef.current?.()
+  }, [activeTab, filters, pagination.page, pagination.limit])
 
   const handleRefresh = () => {
     setRefreshing(true)
-    loadBookings()
+    loadBookingsRef.current?.()
   }
 
   const handleTabChange = (tab: string) => {
@@ -197,7 +199,7 @@ export default function FleetBookingsPage() {
         })
       })
       if (response.ok) {
-        loadBookings()
+        loadBookingsRef.current?.()
         setShowApproveModal(false)
         setShowRejectModal(false)
         setShowDetailDrawer(false)
@@ -223,7 +225,7 @@ export default function FleetBookingsPage() {
         })
       })
       if (response.ok) {
-        loadBookings()
+        loadBookingsRef.current?.()
         setShowCancelModal(false)
         setShowDetailDrawer(false)
       }
@@ -247,7 +249,7 @@ export default function FleetBookingsPage() {
         })
       })
       if (response.ok) {
-        loadBookings()
+        loadBookingsRef.current?.()
         setShowModifyModal(false)
         setShowDetailDrawer(false)
       }
@@ -272,7 +274,7 @@ export default function FleetBookingsPage() {
         })
       })
       if (response.ok) {
-        loadBookings()
+        loadBookingsRef.current?.()
         setShowChangeCarModal(false)
         setShowDetailDrawer(false)
       }

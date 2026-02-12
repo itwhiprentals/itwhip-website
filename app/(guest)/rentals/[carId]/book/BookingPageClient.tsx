@@ -651,21 +651,8 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           if (dualRole.hasHostProfile && dualRole.hasGuestProfile && dualRole.currentRole === 'host') {
             console.log('[Booking] HOST with dual account - must switch to guest')
 
-            // Get the linked guest email for display
-            let linkedEmail = undefined
-            if (dualRole.linkedUserId) {
-              try {
-                // The guest profile is on a linked account
-                const userRes = await fetch(`/api/auth/check-dual-role`, { credentials: 'include' })
-                if (userRes.ok) {
-                  // We already have this info - just need to get the email
-                  // For now, we'll show "your Guest account" since we have confirmation they have one
-                  linkedEmail = dualRole.guestProfileIsLinked ? 'linked' : undefined
-                }
-              } catch (e) {
-                console.log('[Booking] Could not fetch linked guest email')
-              }
-            }
+            // Get the linked guest email for display (already available from dualRole response)
+            const linkedEmail = dualRole.linkedUserId && dualRole.guestProfileIsLinked ? 'linked' : undefined
 
             setHostGuard({
               show: true,
