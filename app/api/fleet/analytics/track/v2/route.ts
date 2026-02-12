@@ -154,9 +154,17 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Fire and forget - don't wait for DB write
-    prisma.pageView.create({ data: pageViewData }).catch((err) => {
-      console.error('[Analytics v2] Failed to record page view:', err)
+    // Fire and forget with 5s timeout - don't hold connections too long
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('pageView write timeout')), 5000)
+    )
+    Promise.race([
+      prisma.pageView.create({ data: pageViewData }),
+      timeoutPromise,
+    ]).catch((err) => {
+      if (err?.message !== 'pageView write timeout') {
+        console.error('[Analytics v2] Failed to record page view:', err)
+      }
     })
 
     // Return visitor identification result
