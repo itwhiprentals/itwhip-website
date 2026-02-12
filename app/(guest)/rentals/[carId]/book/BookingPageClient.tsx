@@ -3446,6 +3446,21 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                   }}
                 />
               </Elements>
+            ) : sessionStatus === 'unauthenticated' ? (
+              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <p className="text-sm text-amber-800 dark:text-amber-200 mb-3 font-medium">
+                  Sign in to load payment options
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-300 mb-3">
+                  Complete your identity verification above or sign in to your account to proceed with payment.
+                </p>
+                <button
+                  onClick={() => router.push(`/auth/login?returnTo=${encodeURIComponent(window.location.pathname)}`)}
+                  className="px-4 py-2 bg-amber-500 text-white text-sm rounded-lg hover:bg-amber-600 transition-colors font-medium"
+                >
+                  Sign In
+                </button>
+              </div>
             ) : (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-amber-500"></div>

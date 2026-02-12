@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import prisma from '@/app/lib/database/prisma'
 import { calculateBookingPricing, getActualDeposit, calculateAppliedBalances } from '@/app/(guest)/rentals/lib/booking-pricing'
+import { verifyRequest } from '@/app/lib/auth/verify-request'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil' as Stripe.LatestApiVersion,
@@ -11,6 +12,15 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication before creating PaymentIntent
+    const user = await verifyRequest(request)
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { amount, email, carId, startDate, endDate, insurancePrice, deliveryFee, enhancements, insuranceVerified, metadata } = body
 

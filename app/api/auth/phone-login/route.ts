@@ -18,8 +18,8 @@ import { checkSuspendedIdentifiers } from '@/app/lib/services/identityResolution
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
 )
-const REFRESH_TOKEN_SECRET = new TextEncoder().encode(
-  process.env.REFRESH_TOKEN_SECRET!
+const JWT_REFRESH_SECRET = new TextEncoder().encode(
+  process.env.JWT_REFRESH_SECRET!
 )
 
 // Generate JWT tokens
@@ -50,7 +50,7 @@ async function generateJWTTokens(userId: string, email: string, name: string | n
     .setIssuedAt(now)
     .setExpirationTime(now + 7 * 24 * 60 * 60) // 7 days
     .setIssuer('itwhip')
-    .sign(REFRESH_TOKEN_SECRET)
+    .sign(JWT_REFRESH_SECRET)
 
   return { accessToken, refreshToken }
 }
