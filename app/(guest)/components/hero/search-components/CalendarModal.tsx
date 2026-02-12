@@ -17,6 +17,7 @@ interface CalendarModalProps {
   minDate: string
   onDateSelect: (date: string) => void
   title: string
+  blockedDates?: string[]  // YYYY-MM-DD strings — shown as unavailable (grayed out, not selectable)
 }
 
 export default function CalendarModal({
@@ -25,8 +26,10 @@ export default function CalendarModal({
   currentDate,
   minDate,
   onDateSelect,
-  title
+  title,
+  blockedDates = []
 }: CalendarModalProps) {
+  const blockedSet = new Set(blockedDates)
   const [mounted, setMounted] = useState(false)
   const [viewMonth, setViewMonth] = useState(() => {
     // Parse the date correctly in local timezone
@@ -165,22 +168,27 @@ export default function CalendarModal({
               const dateStr = `${year}-${month}-${dayStr}`
               
               const isSelected = isSameDate(dateStr, currentDate)
-              const isDisabled = isBeforeDate(dateStr, minDate)
+              const isPast = isBeforeDate(dateStr, minDate)
+              const isBlocked = blockedSet.has(dateStr)
+              const isDisabled = isPast || isBlocked
               const isToday = isSameDate(dateStr, todayString)
-              
+
               return (
                 <button
                   key={day}
                   onClick={() => !isDisabled && handleDateSelect(day)}
                   disabled={isDisabled}
-                  className={`h-9 rounded-lg text-xs font-medium transition-colors
-                    ${isSelected 
-                      ? 'bg-black dark:bg-white text-white dark:text-black' 
-                      : isToday
-                        ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-                        : isDisabled
-                          ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  title={isBlocked ? 'Unavailable' : undefined}
+                  className={`h-9 rounded-lg text-xs font-medium transition-colors relative
+                    ${isSelected
+                      ? 'bg-black dark:bg-white text-white dark:text-black'
+                      : isBlocked
+                        ? 'text-red-300 dark:text-red-800 cursor-not-allowed line-through'
+                        : isToday
+                          ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                          : isPast
+                            ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                   type="button"
                 >

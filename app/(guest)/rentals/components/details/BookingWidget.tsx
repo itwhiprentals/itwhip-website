@@ -28,6 +28,10 @@ import {
 // Import shared booking pricing utility (ensures consistent calculations across all booking stages)
 import { calculateFromWidgetState, formatPrice, getActualDeposit, getCarClassAndDefaultDeposit } from '@/app/(guest)/rentals/lib/booking-pricing'
 
+// Import availability hook and date picker component
+import { useCarAvailability } from '@/app/hooks/useCarAvailability'
+import DateRangePicker from './DateRangePicker'
+
 interface BookingWidgetProps {
   car: any
   isBookable?: boolean
@@ -90,6 +94,9 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   const [dateError, setDateError] = useState<string | null>(null)
   const widgetRef = useRef<HTMLDivElement>(null)
 
+  // Fetch blocked dates for this car
+  const { blockedDates, loading: availabilityLoading, validateDateRange } = useCarAvailability(car?.id)
+
   // Rideshare detection - vehicleType is set when adding vehicles in partner dashboard
   // Fallback checks for legacy records: host type or partnerSlug
   const isRideshare = car?.vehicleType?.toUpperCase() === 'RIDESHARE'
@@ -131,17 +138,32 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   const minEndDate = getDatePlusDays(startDate, minDays)
 
   // Auto-adjust end date when start date changes or if end date is too soon
+  // Also validate selected dates against blocked dates
   useEffect(() => {
     const tripDays = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24))
     if (tripDays < minDays) {
-      // Automatically adjust end date to meet minimum
       const newEndDate = getDatePlusDays(startDate, minDays)
       setEndDate(newEndDate)
       setDateError(null)
-    } else {
-      setDateError(null)
+      return
     }
-  }, [startDate, endDate, minDays])
+
+    // Check if selected range overlaps with blocked dates
+    if (blockedDates.length > 0) {
+      const { available, conflictDates } = validateDateRange(startDate, endDate)
+      if (!available) {
+        const formatted = conflictDates.slice(0, 3).map(d => {
+          const [y, m, day] = d.split('-').map(Number)
+          return new Date(y, m - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        }).join(', ')
+        const extra = conflictDates.length > 3 ? ` +${conflictDates.length - 3} more` : ''
+        setDateError(`Unavailable: ${formatted}${extra}`)
+        return
+      }
+    }
+
+    setDateError(null)
+  }, [startDate, endDate, minDays, blockedDates, validateDateRange])
   const [startTime, setStartTime] = useState(pickupTimeFromUrl || '10:00')
   const [endTime, setEndTime] = useState(returnTimeFromUrl || '10:00')
   
@@ -450,71 +472,19 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
             Trip Dates
           </h3>
 
-          {/* Pickup Card */}
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
-            <div className="flex items-center gap-1.5 mb-2">
-              <div className="w-2 h-2 rounded-full bg-green-500"></div>
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-200">Pickup</span>
-            </div>
-            <div className="grid grid-cols-2 gap-6">
-              <input
-                type="date"
-                value={startDate}
-                min={today}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-2 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer"
-              />
-              <select
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="w-full px-2 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer"
-              >
-                {Array.from({ length: 24 }, (_, i) => {
-                  const hour = i.toString().padStart(2, '0')
-                  const ampm = i < 12 ? 'AM' : 'PM'
-                  const displayHour = i === 0 ? 12 : i > 12 ? i - 12 : i
-                  return (
-                    <option key={hour} value={`${hour}:00`}>
-                      {displayHour}:00 {ampm}
-                    </option>
-                  )
-                })}
-              </select>
-            </div>
-          </div>
-
-          {/* Return Card */}
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
-            <div className="flex items-center gap-1.5 mb-2">
-              <div className="w-2 h-2 rounded-full bg-red-500"></div>
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-200">Return</span>
-            </div>
-            <div className="grid grid-cols-2 gap-6">
-              <input
-                type="date"
-                value={endDate}
-                min={minEndDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-2 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer"
-              />
-              <select
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="w-full px-2 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer"
-              >
-                {Array.from({ length: 24 }, (_, i) => {
-                  const hour = i.toString().padStart(2, '0')
-                  const ampm = i < 12 ? 'AM' : 'PM'
-                  const displayHour = i === 0 ? 12 : i > 12 ? i - 12 : i
-                  return (
-                    <option key={hour} value={`${hour}:00`}>
-                      {displayHour}:00 {ampm}
-                    </option>
-                  )
-                })}
-              </select>
-            </div>
-          </div>
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            startTime={startTime}
+            endTime={endTime}
+            minDate={today}
+            minEndDate={minEndDate}
+            blockedDates={blockedDates}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+            onStartTimeChange={setStartTime}
+            onEndTimeChange={setEndTime}
+          />
 
           {/* Trip Summary */}
           {days > 0 && (

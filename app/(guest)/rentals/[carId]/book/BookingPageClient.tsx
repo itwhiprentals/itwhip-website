@@ -1314,6 +1314,24 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       if (!balancesLoaded) return
       if (!car) return
 
+      // Auth guard: don't create PI for unauthenticated users
+      if (sessionStatus !== 'authenticated') return
+
+      // Availability gate: fresh server-side check before creating PI
+      try {
+        const availRes = await fetch(
+          `/api/rentals/availability?carId=${carId}&startDate=${savedBookingDetails.startDate}&endDate=${savedBookingDetails.endDate}`
+        )
+        const availData = await availRes.json()
+        if (!availData.available) {
+          setBookingError('These dates are no longer available. Please go back and select different dates.')
+          return
+        }
+      } catch {
+        setBookingError('Unable to verify date availability. Please try again.')
+        return
+      }
+
       // Calculate the ACTUAL amount to charge (after credits/bonus + deposit)
       const carCity = (car as any)?.city || getCityFromAddress(car?.address || 'Phoenix, AZ')
       const pricing = calculateBookingPricing({
@@ -1400,7 +1418,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     }
 
     createPaymentIntent()
-  }, [savedBookingDetails, carId, clientSecret, driverEmail, guestEmail, userProfile, balancesLoaded, guestBalances, car])
+  }, [savedBookingDetails, carId, clientSecret, driverEmail, guestEmail, userProfile, balancesLoaded, guestBalances, car, sessionStatus])
 
   // ============================================
   // FILE UPLOAD HANDLER

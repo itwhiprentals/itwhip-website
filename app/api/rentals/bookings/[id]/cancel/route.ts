@@ -349,6 +349,8 @@ export async function POST(
       }).catch(() => {})
     }
 
+    console.log(`[Cancel ${booking.bookingCode}] SUMMARY: ${cancellation.label} | refund=$${distribution.cardRefund} | penalty=$${cancellation.penaltyAmount} | credits=$${distribution.creditsRestored} | deposit=$${depositFromWallet} | PI=${cancelledBooking.paymentIntentId || 'none'}`)
+
     return NextResponse.json({
       success: true,
       booking: {
