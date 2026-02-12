@@ -271,6 +271,36 @@ function requiresApproval(pathname: string, method: string = 'GET'): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // ========================================================================
+  // SECURITY: Block requests to sensitive dotfiles and known probe paths
+  // Scanners probe .env, .git/config, .DS_Store etc. — return hard 404
+  // ========================================================================
+  if (
+    pathname.startsWith('/.env') ||
+    pathname.startsWith('/.git') ||
+    pathname.startsWith('/.vscode') ||
+    pathname.startsWith('/.DS_Store') ||
+    (pathname.startsWith('/.well-known/') && !pathname.startsWith('/.well-known/apple-app-site-association')) ||
+    pathname.endsWith('.php') ||
+    pathname.startsWith('/wp-') ||
+    pathname === '/actuator/env' ||
+    pathname === '/server-status' ||
+    pathname === '/server' ||
+    pathname === '/telescope/requests' ||
+    pathname === '/config.json' ||
+    pathname === '/swagger.json' ||
+    pathname.startsWith('/swagger') ||
+    pathname.startsWith('/v2/api-docs') ||
+    pathname.startsWith('/v3/api-docs') ||
+    pathname === '/debug/default/view' ||
+    pathname === '/login.action' ||
+    pathname === '/exec' ||
+    pathname === '/nodesync' ||
+    pathname === '/v2/_catalog'
+  ) {
+    return new NextResponse(null, { status: 404 })
+  }
+
   // UNIFIED SIGNUP FLOW: Redirect old signup paths to unified entry point
   // Only redirect if they haven't already come from the unified flow (no 'type' param)
   if (pathname === '/host/signup' && !request.nextUrl.searchParams.has('type')) {
