@@ -360,6 +360,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // ========== DATE RANGE VALIDATION ==========
+    // Reject invalid date ranges BEFORE any Stripe operations to prevent orphaned PIs
+    if (bookingData.startDate >= bookingData.endDate) {
+      return NextResponse.json(
+        { error: 'End date must be after start date' },
+        { status: 400 }
+      )
+    }
+    // ========== END DATE RANGE VALIDATION ==========
+
     // Calculate pricing with city-specific tax rate using unified pricing function
     const driverAge = calculateDriverAge(bookingData.driverInfo.dateOfBirth)
     const numberOfDays = Math.max(1, Math.ceil(
@@ -1398,10 +1408,30 @@ export async function POST(request: NextRequest) {
     }, { status: responseStatus })
 
   } catch (error: any) {
+    // ========== ORPHAN PREVENTION: Cancel PI if booking creation failed ==========
+    // If payment was already confirmed (requires_capture or succeeded) but the booking
+    // failed to create, we must cancel/refund the PI to prevent orphaned holds.
+    const piToCancel = stripePaymentIntentId || bookingData?.paymentIntentId
+    if (piToCancel) {
+      try {
+        const orphanedPI = await stripe.paymentIntents.retrieve(piToCancel)
+        if (orphanedPI.status === 'requires_capture') {
+          await stripe.paymentIntents.cancel(piToCancel)
+          console.log(`[book] Voided orphaned PI ${piToCancel} after booking failure: ${error?.message}`)
+        } else if (orphanedPI.status === 'succeeded') {
+          await stripe.refunds.create({ payment_intent: piToCancel })
+          console.log(`[book] Refunded orphaned PI ${piToCancel} after booking failure: ${error?.message}`)
+        }
+      } catch (cancelErr) {
+        console.error(`[book] CRITICAL: Failed to cancel orphaned PI ${piToCancel}:`, cancelErr)
+      }
+    }
+    // ========== END ORPHAN PREVENTION ==========
+
     // Handle availability race condition (concurrent booking for same dates)
     if (error?.message === 'AVAILABILITY_CONFLICT') {
       return NextResponse.json(
-        { error: 'Car is no longer available for selected dates' },
+        { error: 'Car is no longer available for selected dates', paymentCancelled: !!piToCancel },
         { status: 409 }
       )
     }
@@ -1410,13 +1440,13 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: (error as any).errors },
+        { error: 'Validation error', details: (error as any).errors, paymentCancelled: !!piToCancel },
         { status: 400 }
       )
     }
 
     return NextResponse.json(
-      { error: 'Failed to create booking' },
+      { error: 'Failed to create booking', paymentCancelled: !!piToCancel },
       { status: 500 }
     )
   }
