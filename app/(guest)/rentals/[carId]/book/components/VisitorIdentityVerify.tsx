@@ -1217,14 +1217,13 @@ function ManualPendingCard() {
         <IoTimeOutline className="text-2xl text-white" />
       </div>
       <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-200">
-        Under Review
+        Selfie Under Review
       </h3>
       <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
-        Your verification is being reviewed by our team.
-        We&apos;ll notify you by email once approved.
+        Your selfie is under review. You can continue booking now — fill in your details and complete payment below.
       </p>
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-        You can continue browsing — we&apos;ll hold your spot.
+        We&apos;ll confirm your booking once verification is approved.
       </p>
     </div>
   )

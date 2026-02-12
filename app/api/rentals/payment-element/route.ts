@@ -10,19 +10,42 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil' as Stripe.LatestApiVersion,
 })
 
+// In-memory rate limiter: max 3 PI creations per email per hour (prevents abuse by unauthenticated guests)
+const piRateLimit = new Map<string, { count: number; resetAt: number }>()
+
 export async function POST(request: NextRequest) {
   try {
-    // Require authentication before creating PaymentIntent
+    // Try authentication — optional for unauthenticated guests who passed identity verification
     const user = await verifyRequest(request)
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
 
     const body = await request.json()
     const { amount, email, carId, startDate, endDate, insurancePrice, deliveryFee, enhancements, insuranceVerified, metadata } = body
+
+    // If not authenticated, require email and enforce rate limit
+    if (!user) {
+      if (!email || typeof email !== 'string' || !email.includes('@')) {
+        return NextResponse.json(
+          { error: 'Email is required for guest checkout' },
+          { status: 400 }
+        )
+      }
+
+      const normalizedEmail = email.toLowerCase().trim()
+      const now = Date.now()
+      const limit = piRateLimit.get(normalizedEmail)
+
+      if (limit && now < limit.resetAt) {
+        if (limit.count >= 3) {
+          return NextResponse.json(
+            { error: 'Too many payment attempts. Please try again later.' },
+            { status: 429 }
+          )
+        }
+        limit.count++
+      } else {
+        piRateLimit.set(normalizedEmail, { count: 1, resetAt: now + 60 * 60 * 1000 })
+      }
+    }
 
     // Amount is required and must be positive (in cents)
     if (!amount || amount <= 0) {

@@ -1052,7 +1052,8 @@ export default function BookingPageClient({ carId }: { carId: string }) {
 
     // ✅ Check if identity is verified (for non-logged-in users OR users without verification)
     // Phase 14: Also check AI verification for visitors (aiVerificationResult.passed)
-    const userIsVerified = userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified' || aiVerificationResult?.passed
+    // manualPending = selfie submitted for review, treat as provisionally verified
+    const userIsVerified = userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified' || aiVerificationResult?.passed || aiVerificationResult?.manualPending
     if (!userIsVerified && sessionStatus === 'unauthenticated') {
       return { allowed: false }  // No reason - user sees Verify Identity section
     }
@@ -1167,7 +1168,8 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   // Note: Booking insurance is REQUIRED (validated in checkBookingEligibility)
   // Personal insurance card upload is OPTIONAL (for deposit discount)
   // Phase 14: Also check AI verification for visitors (aiVerificationResult.passed)
-  const isIdentityVerified = userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified' || aiVerificationResult?.passed
+  // manualPending = selfie submitted for review, treat as provisionally verified
+  const isIdentityVerified = userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified' || aiVerificationResult?.passed || aiVerificationResult?.manualPending
   
   // Check if this is a $0 booking (credits/discounts cover full amount + deposit)
   // Stripe requires minimum $0.50, so anything below that is effectively free
@@ -1314,8 +1316,9 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       if (!balancesLoaded) return
       if (!car) return
 
-      // Auth guard: don't create PI for unauthenticated users
-      if (sessionStatus !== 'authenticated') return
+      // Identity guard: don't create PI until identity is verified
+      // (covers both authenticated users and unauthenticated visitors with manualPending/AI-passed)
+      if (!isIdentityVerified) return
 
       // Availability gate: fresh server-side check before creating PI
       try {
@@ -1418,7 +1421,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     }
 
     createPaymentIntent()
-  }, [savedBookingDetails, carId, clientSecret, driverEmail, guestEmail, userProfile, balancesLoaded, guestBalances, car, sessionStatus])
+  }, [savedBookingDetails, carId, clientSecret, driverEmail, guestEmail, userProfile, balancesLoaded, guestBalances, car, isIdentityVerified])
 
   // ============================================
   // FILE UPLOAD HANDLER
@@ -2891,11 +2894,15 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <IoShieldCheckmarkOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             Verify Your Identity
-            {(userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified' || aiVerificationResult?.passed) && (
+            {(userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified' || aiVerificationResult?.passed) ? (
               <span className="ml-2 text-sm text-green-600 dark:text-green-400 font-normal">
                 ✓ Verified
               </span>
-            )}
+            ) : aiVerificationResult?.manualPending ? (
+              <span className="ml-2 text-sm text-amber-600 dark:text-amber-400 font-normal">
+                Under Review
+              </span>
+            ) : null}
           </h2>
 
           {/* 🔐 NOT LOGGED IN - VERIFY FIRST, ACCOUNT LATER */}
@@ -3446,20 +3453,17 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                   }}
                 />
               </Elements>
-            ) : sessionStatus === 'unauthenticated' ? (
-              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                <p className="text-sm text-amber-800 dark:text-amber-200 mb-3 font-medium">
-                  Sign in to load payment options
+            ) : !isIdentityVerified ? (
+              <div className="p-4 bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-600 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <IoLockClosedOutline className="w-4 h-4 text-gray-400" />
+                  <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+                    Verify your identity to enable payment
+                  </p>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Complete the identity verification step above to unlock payment options.
                 </p>
-                <p className="text-xs text-amber-700 dark:text-amber-300 mb-3">
-                  Complete your identity verification above or sign in to your account to proceed with payment.
-                </p>
-                <button
-                  onClick={() => router.push(`/auth/login?returnTo=${encodeURIComponent(window.location.pathname)}`)}
-                  className="px-4 py-2 bg-amber-500 text-white text-sm rounded-lg hover:bg-amber-600 transition-colors font-medium"
-                >
-                  Sign In
-                </button>
               </div>
             ) : (
               <div className="flex items-center justify-center py-8">
