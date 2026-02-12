@@ -339,9 +339,10 @@ export interface AppliedBalancesResult {
  * Calculate how credits, bonus, and deposit wallet should be applied to a booking
  *
  * Rules:
- * 1. Bonus applies FIRST: max 25% of rental subtotal (base price before fees/insurance)
- * 2. Credits apply SECOND: 100% usable against remaining booking total
+ * 1. Credits override bonus: if credits exist, bonus is NOT used
+ * 2. Bonus only applies when credits = 0 (max 25% of rental subtotal)
  * 3. Deposit wallet: used for security deposit only, not for rental charges
+ * 4. Minimum $1.00 Stripe charge if everything is covered by balances
  *
  * @param pricing - The booking pricing result from calculateBookingPricing
  * @param depositAmount - The required security deposit amount
@@ -354,33 +355,33 @@ export function calculateAppliedBalances(
   balances: GuestBalances,
   maxBonusPercentage: number = 0.25
 ): AppliedBalancesResult {
-  // 1. Calculate max bonus allowed (25% of base rental price only, not total)
-  const maxBonusAllowed = Math.round(pricing.basePrice * maxBonusPercentage * 100) / 100
+  let creditsApplied = 0
+  let bonusApplied = 0
 
-  // Bonus applied: minimum of (available bonus, max allowed, booking total)
-  const bonusApplied = Math.min(
-    balances.bonusBalance,
-    maxBonusAllowed,
-    pricing.total
-  )
+  // Credits override bonus: if credits exist, skip bonus entirely
+  if (balances.creditBalance > 0) {
+    creditsApplied = Math.min(balances.creditBalance, pricing.total)
+    bonusApplied = 0
+  } else {
+    // No credits — use bonus (capped at 25% of base rental price)
+    const maxBonusAllowed = Math.round(pricing.basePrice * maxBonusPercentage * 100) / 100
+    bonusApplied = Math.min(balances.bonusBalance, maxBonusAllowed, pricing.total)
+    creditsApplied = 0
+  }
 
-  // 2. After bonus, calculate remaining amount for credits
-  const afterBonus = pricing.total - bonusApplied
-
-  // Credits applied: minimum of (available credits, remaining amount)
-  const creditsApplied = Math.min(
-    balances.creditBalance,
-    afterBonus
-  )
-
-  // 3. Final amount to pay via card
-  const amountToPay = Math.round((pricing.total - creditsApplied - bonusApplied) * 100) / 100
-
-  // 4. Handle security deposit from wallet vs card
+  // Handle security deposit from wallet vs card
   const depositFromWallet = Math.min(balances.depositWalletBalance, depositAmount)
   const depositFromCard = Math.round((depositAmount - depositFromWallet) * 100) / 100
 
-  // 5. Calculate totals and remaining balances
+  // Final amount to pay via card (rental portion)
+  let amountToPay = Math.round((pricing.total - creditsApplied - bonusApplied) * 100) / 100
+
+  // Enforce $1.00 minimum Stripe charge
+  if (amountToPay + depositFromCard < 1.00) {
+    amountToPay = Math.round((1.00 - depositFromCard) * 100) / 100
+    if (amountToPay < 0) amountToPay = 1.00
+  }
+
   const totalSavings = creditsApplied + bonusApplied
 
   return {

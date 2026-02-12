@@ -1024,24 +1024,32 @@ export async function POST(request: NextRequest) {
             // ========== VERIFICATION GATE ==========
             // Only apply credits/bonus if guest is verified
             if (isGuestVerified) {
-              // Calculate what can be applied
-              const maxBonusPercentage = 0.25 // 25% max of base price
+              // Credits override bonus: if credits exist, skip bonus entirely
+              if (balances.creditBalance > 0) {
+                // Credits take full priority — no bonus applied
+                creditsApplied = Math.min(balances.creditBalance, pricing.total)
+                bonusApplied = 0
+              } else {
+                // No credits — use bonus (capped at 25% of base rental price)
+                const maxBonusPercentage = 0.25
+                const basePrice = pricing.subtotal
+                const maxBonusAllowed = Math.round(basePrice * maxBonusPercentage * 100) / 100
+                bonusApplied = Math.min(balances.bonusBalance, maxBonusAllowed, pricing.total)
+                creditsApplied = 0
+              }
 
-              // 1. Calculate max bonus (25% of base rental price)
-              const basePrice = pricing.subtotal // Already the base rental price (after discounts)
-              const maxBonusAllowed = Math.round(basePrice * maxBonusPercentage * 100) / 100
-              bonusApplied = Math.min(balances.bonusBalance, maxBonusAllowed, pricing.total)
-
-              // 2. Credits apply to remaining (100% usable)
-              const afterBonus = pricing.total - bonusApplied
-              creditsApplied = Math.min(balances.creditBalance, afterBonus)
-
-              // 3. Final charge amount
+              // Final charge amount (rental portion)
               chargeAmount = Math.round((pricing.total - creditsApplied - bonusApplied) * 100) / 100
 
-              // 4. Deposit from wallet
+              // Deposit from wallet
               depositFromWallet = Math.min(balances.depositWalletBalance, depositAmount)
               depositFromCard = Math.round((depositAmount - depositFromWallet) * 100) / 100
+
+              // Enforce $1.00 minimum Stripe charge if credits/bonus reduced it to near-zero
+              if (chargeAmount + depositFromCard < 1.00) {
+                chargeAmount = Math.round((1.00 - depositFromCard) * 100) / 100
+                if (chargeAmount < 0) chargeAmount = 1.00
+              }
 
               console.log('💰 Financial breakdown (verified guest):', {
                 originalTotal: pricing.total,
@@ -1049,7 +1057,8 @@ export async function POST(request: NextRequest) {
                 bonusApplied,
                 chargeAmount,
                 depositFromWallet,
-                depositFromCard
+                depositFromCard,
+                stripeCharge: chargeAmount + depositFromCard
               })
             } else {
               // Guest not verified - credits are locked
@@ -1155,18 +1164,21 @@ export async function POST(request: NextRequest) {
       }
 
       // Update Stripe payment intent amount if credits/bonus reduced the charge
-      if (stripePaymentIntentId && chargeAmount < pricing.total) {
+      const finalStripeAmount = Math.round((chargeAmount + depositFromCard) * 100)
+      if (stripePaymentIntentId && finalStripeAmount < Math.round((pricing.total + depositAmount) * 100)) {
         try {
           await stripe.paymentIntents.update(stripePaymentIntentId, {
-            amount: Math.round(chargeAmount * 100), // Amount in cents
+            amount: Math.max(finalStripeAmount, 100), // Min $1.00 (100 cents)
             metadata: {
               originalTotal: pricing.total.toString(),
               creditsApplied: creditsApplied.toString(),
               bonusApplied: bonusApplied.toString(),
-              chargeAmount: chargeAmount.toString()
+              chargeAmount: chargeAmount.toString(),
+              depositFromCard: depositFromCard.toString(),
+              depositFromWallet: depositFromWallet.toString()
             }
           })
-          console.log('✅ Updated Stripe PaymentIntent amount to:', chargeAmount)
+          console.log('✅ Updated Stripe PaymentIntent amount to:', chargeAmount + depositFromCard, '(rental:', chargeAmount, '+ deposit:', depositFromCard, ')')
         } catch (stripeUpdateError) {
           console.error('⚠️ Failed to update Stripe amount (non-blocking):', stripeUpdateError)
         }
