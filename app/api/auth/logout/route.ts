@@ -7,6 +7,35 @@ const JWT_REFRESH_SECRET = new TextEncoder().encode(
   process.env.JWT_REFRESH_SECRET!
 )
 
+// Clear ALL auth cookies including NextAuth session cookies
+// NextAuth cookies persist after custom logout and cause stale session
+// interference on the next OAuth sign-in (extra DB call can fail/conflict)
+function clearAllAuthCookies(response: NextResponse) {
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  // Custom app cookies
+  response.cookies.set('accessToken', '', { httpOnly: true, secure: isProduction, sameSite: 'lax', maxAge: 0, path: '/' })
+  response.cookies.set('refreshToken', '', { httpOnly: true, secure: isProduction, sameSite: 'lax', maxAge: 0, path: '/' })
+  response.cookies.set('access_token', '', { maxAge: 0, path: '/' })
+  response.cookies.set('refresh_token', '', { maxAge: 0, path: '/' })
+  response.cookies.set('session', '', { maxAge: 0, path: '/' })
+  response.cookies.set('current_mode', '', { httpOnly: false, secure: isProduction, sameSite: 'lax', maxAge: 0, path: '/' })
+
+  // NextAuth cookies — MUST clear these to prevent stale session on next OAuth sign-in
+  response.cookies.set('next-auth.session-token', '', { maxAge: 0, path: '/' })
+  response.cookies.set('next-auth.callback-url', '', { maxAge: 0, path: '/' })
+  response.cookies.set('next-auth.csrf-token', '', { maxAge: 0, path: '/' })
+  // Production uses __Secure- prefix
+  response.cookies.set('__Secure-next-auth.session-token', '', { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 0, path: '/' })
+  response.cookies.set('__Secure-next-auth.callback-url', '', { secure: true, maxAge: 0, path: '/' })
+  response.cookies.set('__Secure-next-auth.csrf-token', '', { secure: true, maxAge: 0, path: '/' })
+  // NextAuth may chunk large JWTs into numbered cookies
+  for (let i = 0; i < 5; i++) {
+    response.cookies.set(`next-auth.session-token.${i}`, '', { maxAge: 0, path: '/' })
+    response.cookies.set(`__Secure-next-auth.session-token.${i}`, '', { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 0, path: '/' })
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Get refresh token from cookie - using camelCase to match login
@@ -37,49 +66,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
 
-    // Clear auth cookies - FIXED: Using camelCase to match login cookies
-    response.cookies.set('accessToken', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 0, // Immediately expire
-      path: '/'
-    })
-
-    response.cookies.set('refreshToken', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 0, // Immediately expire
-      path: '/'
-    })
-
-    // Also clear any old cookie formats that might exist
-    response.cookies.set('access_token', '', {
-      maxAge: 0,
-      path: '/'
-    })
-
-    response.cookies.set('refresh_token', '', {
-      maxAge: 0,
-      path: '/'
-    })
-
-    // Clear any session cookie if it exists
-    response.cookies.set('session', '', {
-      maxAge: 0,
-      path: '/'
-    })
-
-    // Clear current_mode cookie (role indicator)
-    response.cookies.set('current_mode', '', {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 0,
-      path: '/'
-    })
-
+    clearAllAuthCookies(response)
     console.log('User logged out successfully, all cookies cleared')
     return response
 
@@ -95,42 +82,7 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
 
-    // Clear all possible cookie variations even on error
-    response.cookies.set('accessToken', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 0,
-      path: '/'
-    })
-
-    response.cookies.set('refreshToken', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 0,
-      path: '/'
-    })
-
-    response.cookies.set('access_token', '', {
-      maxAge: 0,
-      path: '/'
-    })
-
-    response.cookies.set('refresh_token', '', {
-      maxAge: 0,
-      path: '/'
-    })
-
-    // Clear current_mode cookie on error too
-    response.cookies.set('current_mode', '', {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 0,
-      path: '/'
-    })
-
+    clearAllAuthCookies(response)
     return response
   }
 }
@@ -140,43 +92,7 @@ export async function GET(request: NextRequest) {
   // Redirect to login page after logout
   const response = NextResponse.redirect(new URL('/auth/login', request.url))
   
-  // Clear all auth cookies
-  response.cookies.set('accessToken', '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 0,
-    path: '/'
-  })
-
-  response.cookies.set('refreshToken', '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 0,
-    path: '/'
-  })
-
-  // Clear old format cookies too
-  response.cookies.set('access_token', '', {
-    maxAge: 0,
-    path: '/'
-  })
-
-  response.cookies.set('refresh_token', '', {
-    maxAge: 0,
-    path: '/'
-  })
-
-  // Clear current_mode cookie (role indicator)
-  response.cookies.set('current_mode', '', {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 0,
-    path: '/'
-  })
-
+  clearAllAuthCookies(response)
   console.log('User logged out via GET request')
   return response
 }

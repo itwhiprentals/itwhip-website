@@ -194,6 +194,8 @@ async function buildAuthOptions(): Promise<NextAuthOptions> {
 
               return `/auth/verify-link?token=${pendingToken}`
             }
+
+            console.log(`[NextAuth] signIn OK: ${user.email} via ${account.provider} (account linked, dbUser=${dbUser.id})`)
           } catch (error) {
             console.error('[NextAuth] Error checking provider link:', error)
           }
@@ -324,7 +326,7 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-      allowDangerousEmailAccountLinking: true, // Allow linking OAuth to existing email accounts
+      allowDangerousEmailAccountLinking: false, // SECURITY: Must match buildAuthOptions — require verification before linking
       authorization: {
         params: {
           prompt: 'consent',
@@ -381,6 +383,8 @@ export const authOptions: NextAuthOptions = {
 
             return `/auth/verify-link?token=${pendingToken}`
           }
+
+          console.log(`[NextAuth] signIn OK: ${user.email} via ${account.provider} (account linked, dbUser=${dbUser.id})`)
         } catch (error) {
           console.error('[NextAuth] Error checking provider link:', error)
         }
