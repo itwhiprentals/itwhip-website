@@ -157,6 +157,9 @@ export async function GET(
             partnerSupportPhone: true,
             partnerBadges: true,
             yearEstablished: true,
+            // Business host fields for profile swap
+            isBusinessHost: true,
+            businessApprovalStatus: true,
             // Deposit settings for booking pricing
             requireDeposit: true,
             depositAmount: true,

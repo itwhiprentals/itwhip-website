@@ -150,6 +150,12 @@ function InternalLayoutContent({
                     Partners
                   </Link>
                   <Link
+                    href="/fleet/business"
+                    className="px-2.5 py-1.5 rounded-md text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors whitespace-nowrap font-medium"
+                  >
+                    Business
+                  </Link>
+                  <Link
                     href="/fleet/refunds"
                     className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
                   >
@@ -281,6 +287,13 @@ function InternalLayoutContent({
                     className="px-3 py-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     Partners
+                  </Link>
+                  <Link
+                    href="/fleet/business"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2 rounded-md text-sm text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 font-medium"
+                  >
+                    Business
                   </Link>
                   <Link
                     href="/fleet/refunds"

@@ -110,6 +110,8 @@ interface RentalCarWithDetails {
     partnerBadges?: any
     yearEstablished?: number
     location?: string
+    isBusinessHost?: boolean
+    businessApprovalStatus?: string
   }
   reviews?: any[]
   currentMileage?: number
@@ -499,8 +501,9 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
   const vehicleClass = getVehicleClass(car.make, car.model, (car.carType || car.type || null) as any)
   const fuelTypeBadge = formatFuelTypeBadge(car.fuelType || null)
 
-  // Rideshare detection - check vehicleType OR if host is a fleet partner
-  const isFleetPartner = car.host?.hostType === 'FLEET_PARTNER' || car.host?.hostType === 'PARTNER'
+  // Rideshare detection - check vehicleType OR if host is a fleet partner OR approved business host
+  const isApprovedBusinessHost = car.host?.isBusinessHost === true && car.host?.businessApprovalStatus === 'APPROVED' && !!car.host?.partnerSlug
+  const isFleetPartner = car.host?.hostType === 'FLEET_PARTNER' || car.host?.hostType === 'PARTNER' || isApprovedBusinessHost
   const isRideshare = car.vehicleType?.toUpperCase() === 'RIDESHARE' || isFleetPartner
   const isPartner = isFleetPartner
 
@@ -970,9 +973,9 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
               )}
             </div>
 
-            {/* Host/Partner Profile - Show partner branding for rideshare fleet vehicles */}
+            {/* Host/Partner Profile - Show partner branding for fleet vehicles and approved business hosts */}
             {car.host && (
-              car.host.hostType === 'FLEET_PARTNER' || car.host.hostType === 'PARTNER' ? (
+              isFleetPartner ? (
                 <PartnerProfile partner={car.host} />
               ) : (
                 <HostProfile host={car.host} />

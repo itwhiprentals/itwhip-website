@@ -55,6 +55,46 @@ Hook (`app/hooks/useCheckout.ts`):
 
 ---
 
+### Business Host Landing Page System - Phase 1 Complete ✅ (Feb 11)
+**Business-only landing page gating with email/phone verification for hosts**
+
+Schema:
+- Added `isBusinessHost`, `businessApprovalStatus`, `businessSubmittedAt`, `businessApprovedAt`, `businessApprovedBy`, `businessRejectedReason`, `taxId` to RentalHost
+- Migration: `add_business_host_fields`
+
+Company Tab (`app/partner/settings/components/CompanyTab.tsx`):
+- Business Host toggle requiring Company Name + EIN (Tax ID) to activate
+- Approval status badge (NONE/PENDING/APPROVED/REJECTED) next to toggle
+- EIN field required when business host is enabled
+
+Account Tab (`app/partner/settings/components/AccountTab.tsx`):
+- Email verification badge + "Verify Email" button → sends JWT verification email
+- Phone verification badge + "Verify Phone" button → Firebase SMS flow with `roleHint=host`
+
+Email Verification APIs:
+- `POST /api/partner/email/send-verification` — generates JWT token, sends HTML verification email
+- `GET /api/partner/email/verify?token=...` — verifies JWT, sets `emailVerified: true` on RentalHost
+
+Phone Verification Fix (`app/auth/verify-phone/page.tsx` + `app/api/auth/verify-phone/route.ts`):
+- Page now sends `roleHint` to API in JSON body
+- API syncs `phoneVerified: true` to RentalHost when `roleHint=host`
+
+Landing Page Gating (`app/partner/landing/page.tsx`):
+- Non-business hosts see 2-minute popup modal, then grayed-out preview of editor
+- Business hosts see approval status banners: Submit for Review / Under Review (read-only) / Rejected (with reason) / Approved
+- `submitForApproval` action validates: business enabled, valid slug, company name, 1+ vehicle
+
+Dashboard QuickActions (`app/partner/dashboard/components/QuickActions.tsx`):
+- "Edit Landing" gated on `isBusinessHost` — shows lock icon when disabled
+
+Settings API (`app/api/partner/settings/route.ts`):
+- Returns/saves `emailVerified`, `phoneVerified`, `isBusinessHost`, `businessApprovalStatus`, `taxId`
+
+Slug Reset:
+- Cleared all existing partner slugs (3 hosts) — no one has submitted business info yet
+
+---
+
 ## Recent Fixes (February 2026)
 
 ### Security Audit Round 7 - DEPLOYED ✅ (Feb 10)

@@ -24,7 +24,8 @@ import {
   IoHandRightOutline,
   IoPersonAddOutline,
   IoMailOutline,
-  IoIdCardOutline
+  IoIdCardOutline,
+  IoStorefrontOutline
 } from 'react-icons/io5'
 import { Car, CarStatus } from './types'
 import { StatCard, StatusBadge, EmptyState, LoadingSpinner, SectionHeader } from './components'
@@ -41,6 +42,7 @@ export default function FleetDashboard() {
   const [filter, setFilter] = useState<string>('all')
   const [unreadCount, setUnreadCount] = useState(0)
   const [pendingApplications, setPendingApplications] = useState(0)
+  const [pendingBusinessApprovals, setPendingBusinessApprovals] = useState(0)
 
   // Get API key from URL
   const apiKey = searchParams.get('key') || 'phoenix-fleet-2847'
@@ -49,6 +51,7 @@ export default function FleetDashboard() {
     fetchCars()
     fetchUnreadMessages()
     fetchPendingApplications()
+    fetchPendingBusinessApprovals()
   }, [])
 
   // Separate effect for client-side only window operations
@@ -93,6 +96,18 @@ export default function FleetDashboard() {
       }
     } catch (error) {
       console.error('Failed to fetch pending applications:', error)
+    }
+  }
+
+  const fetchPendingBusinessApprovals = async () => {
+    try {
+      const response = await fetch(`/api/fleet/business-approvals?status=PENDING&key=${apiKey}`)
+      const data = await response.json()
+      if (data.success) {
+        setPendingBusinessApprovals(data.pendingCount || 0)
+      }
+    } catch (error) {
+      console.error('Failed to fetch pending business approvals:', error)
     }
   }
 
@@ -248,6 +263,20 @@ export default function FleetDashboard() {
             {pendingApplications > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse shadow-lg">
                 {pendingApplications > 99 ? '99+' : pendingApplications}
+              </span>
+            )}
+          </Link>
+
+          {/* Business Approvals */}
+          <Link
+            href={`/fleet/business?key=${apiKey}`}
+            className="relative px-4 py-3 bg-gradient-to-br from-violet-500 to-indigo-600 text-white rounded-lg hover:from-violet-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+          >
+            <IoStorefrontOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">Business</span>
+            {pendingBusinessApprovals > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse shadow-lg">
+                {pendingBusinessApprovals > 99 ? '99+' : pendingBusinessApprovals}
               </span>
             )}
           </Link>
