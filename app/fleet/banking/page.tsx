@@ -98,13 +98,24 @@ export default function PlatformBankingPage() {
               Financial overview across all hosts and guests
             </p>
           </div>
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
-          >
-            <IoRefreshOutline className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/fleet/banking/audit?key=phoenix-fleet-2847"
+              className="px-3 py-1.5 text-sm font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg transition-colors"
+            >
+              <span className="flex items-center gap-1.5">
+                <IoReceiptOutline className="w-4 h-4" />
+                Audit Trail
+              </span>
+            </Link>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+            >
+              <IoRefreshOutline className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
         </div>
 
         {/* ALL-TIME PLATFORM TOTALS */}
