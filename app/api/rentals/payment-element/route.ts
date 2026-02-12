@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import prisma from '@/app/lib/database/prisma'
-import { calculateBookingPricing, getActualDeposit } from '@/app/(guest)/rentals/lib/booking-pricing'
+import { calculateBookingPricing, getActualDeposit, calculateAppliedBalances } from '@/app/(guest)/rentals/lib/booking-pricing'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil' as Stripe.LatestApiVersion,
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       depositAmount = depositAmount * 0.5
     }
 
-    const serverTotalCents = Math.round((pricing.total + depositAmount) * 100)
+    const serverRawTotalCents = Math.round((pricing.total + depositAmount) * 100)
 
     // Stripe minimum is $0.50 (50 cents)
     if (amount < 50) {
@@ -92,18 +92,46 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Lower bound: client amount must be at least 50% of server total (credits can reduce but not eliminate)
-    if (serverTotalCents > 0 && amount < serverTotalCents * 0.5) {
-      console.warn(`[Payment Element] Amount suspiciously low: client=${amount}c, server=${serverTotalCents}c, carId=${carId}`)
+    // Fetch guest balances to compute expected adjusted amount (credits, bonus, deposit wallet)
+    let serverAdjustedCents = serverRawTotalCents
+    if (email) {
+      try {
+        const guestProfile = await prisma.reviewerProfile.findFirst({
+          where: { email },
+          select: { creditBalance: true, bonusBalance: true, depositWalletBalance: true }
+        })
+        if (guestProfile) {
+          const applied = calculateAppliedBalances(
+            pricing,
+            depositAmount,
+            {
+              creditBalance: guestProfile.creditBalance || 0,
+              bonusBalance: guestProfile.bonusBalance || 0,
+              depositWalletBalance: guestProfile.depositWalletBalance || 0
+            },
+            0.25
+          )
+          serverAdjustedCents = Math.round((applied.amountToPay + applied.depositFromCard) * 100)
+        }
+      } catch (e) {
+        // If balance fetch fails, fall back to raw total for validation
+        console.warn('[Payment Element] Could not fetch guest balances, using raw total for validation')
+      }
+    }
+
+    // Lower bound: client amount must be at least 80% of server-adjusted amount
+    // (adjusted = after credits, bonus, deposit wallet applied)
+    if (serverAdjustedCents > 0 && amount < serverAdjustedCents * 0.8) {
+      console.warn(`[Payment Element] Amount too low: client=${amount}c, serverAdjusted=${serverAdjustedCents}c, serverRaw=${serverRawTotalCents}c, carId=${carId}`)
       return NextResponse.json(
         { error: 'Payment amount is below the minimum for this booking. Please refresh and try again.' },
         { status: 400 }
       )
     }
 
-    // Upper bound: client amount should never exceed server total (credits can only reduce, not increase)
-    if (amount > serverTotalCents * 1.05) {
-      console.warn(`[Payment Element] Amount mismatch: client=${amount}c, server=${serverTotalCents}c, carId=${carId}`)
+    // Upper bound: client amount should never exceed raw server total (credits can only reduce, not increase)
+    if (amount > serverRawTotalCents * 1.05) {
+      console.warn(`[Payment Element] Amount too high: client=${amount}c, serverRaw=${serverRawTotalCents}c, carId=${carId}`)
       return NextResponse.json(
         { error: 'Payment amount exceeds expected total. Please refresh and try again.' },
         { status: 400 }
@@ -115,7 +143,7 @@ export async function POST(request: NextRequest) {
       type: 'car_rental_booking',
       guestEmail: email || 'unknown',
       carId,
-      serverTotal: serverTotalCents.toString(),
+      serverTotal: serverRawTotalCents.toString(),
       days: days.toString(),
       subtotal: pricing.basePrice.toFixed(2),
       serviceFee: pricing.serviceFee.toFixed(2),
