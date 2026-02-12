@@ -190,6 +190,63 @@ export async function GET(
       }))
     }
 
+    // Fetch Stripe payment intents for audit trail
+    let stripePaymentIntents: any[] = []
+    if (guest.stripeCustomerId) {
+      try {
+        const paymentIntents = await stripe.paymentIntents.list({
+          customer: guest.stripeCustomerId,
+          limit: 25,
+          expand: ['data.latest_charge']
+        })
+
+        stripePaymentIntents = paymentIntents.data.map(pi => {
+          const charge = pi.latest_charge && typeof pi.latest_charge === 'object' ? pi.latest_charge : null
+          const riskScore = (charge as any)?.outcome?.risk_score || null
+          const riskLevel = (charge as any)?.outcome?.risk_level || null
+          const radarRule = (charge as any)?.outcome?.rule || null
+
+          return {
+            id: pi.id,
+            amount: pi.amount / 100,
+            currency: pi.currency,
+            status: pi.status,
+            captureMethod: pi.capture_method,
+            created: new Date(pi.created * 1000).toISOString(),
+            canceledAt: pi.canceled_at ? new Date(pi.canceled_at * 1000).toISOString() : null,
+            cancellationReason: pi.cancellation_reason,
+            description: pi.description,
+            // Card info from the payment method
+            paymentMethod: pi.payment_method && typeof pi.payment_method === 'object' ? {
+              id: pi.payment_method.id,
+              brand: (pi.payment_method as any).card?.brand || null,
+              last4: (pi.payment_method as any).card?.last4 || null
+            } : pi.payment_method ? { id: pi.payment_method } : null,
+            // Risk / Radar evaluation
+            risk: riskScore !== null ? {
+              score: riskScore,
+              level: riskLevel,
+              rule: radarRule?.id || null,
+              action: radarRule?.action || null
+            } : null,
+            // Booking metadata from the payment intent
+            metadata: pi.metadata || {},
+            // Status display helpers
+            statusLabel: pi.status === 'requires_capture' ? 'Authorized (Uncaptured)'
+              : pi.status === 'requires_action' ? 'Requires 3DS'
+              : pi.status === 'requires_payment_method' ? 'Payment Failed'
+              : pi.status === 'canceled' ? 'Canceled'
+              : pi.status === 'succeeded' ? 'Captured'
+              : pi.status === 'processing' ? 'Processing'
+              : pi.status,
+            isActionable: pi.status === 'requires_capture' // Can be captured or canceled
+          }
+        })
+      } catch (stripeError) {
+        console.error('Error fetching Stripe payment intents:', stripeError)
+      }
+    }
+
     // Build response
     const response = {
       guest: {
@@ -246,8 +303,16 @@ export async function GET(
           amount: t.amount,
           description: t.reason || `${t.action} ${t.type.toLowerCase()}`,
           date: t.createdAt
+        })),
+        ...stripePaymentIntents.slice(0, 10).map((pi: any) => ({
+          type: `payment_${pi.status}`,
+          amount: pi.amount,
+          description: `${pi.statusLabel} — $${pi.amount.toFixed(2)}${pi.metadata?.carId ? ` (${pi.metadata.insurance || 'rental'})` : ''}`,
+          date: pi.created,
+          paymentIntentId: pi.id,
+          risk: pi.risk
         }))
-      ].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10),
+      ].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 15),
       charges: {
         pending: pendingCharges,
         disputed: disputedCharges,
@@ -264,7 +329,27 @@ export async function GET(
         startDate: b.startDate,
         endDate: b.endDate,
         paymentMethodId: b.stripePaymentMethodId
-      }))
+      })),
+      // Stripe Payment Intents audit trail
+      audit: {
+        paymentIntents: stripePaymentIntents,
+        summary: {
+          total: stripePaymentIntents.length,
+          authorized: stripePaymentIntents.filter(pi => pi.status === 'requires_capture').length,
+          captured: stripePaymentIntents.filter(pi => pi.status === 'succeeded').length,
+          canceled: stripePaymentIntents.filter(pi => pi.status === 'canceled').length,
+          failed: stripePaymentIntents.filter(pi => ['requires_action', 'requires_payment_method'].includes(pi.status)).length,
+          totalAuthorized: stripePaymentIntents
+            .filter(pi => pi.status === 'requires_capture')
+            .reduce((sum: number, pi: any) => sum + pi.amount, 0),
+          totalCaptured: stripePaymentIntents
+            .filter(pi => pi.status === 'succeeded')
+            .reduce((sum: number, pi: any) => sum + pi.amount, 0),
+          totalCanceled: stripePaymentIntents
+            .filter(pi => pi.status === 'canceled')
+            .reduce((sum: number, pi: any) => sum + pi.amount, 0)
+        }
+      }
     }
 
     return NextResponse.json({ success: true, ...response })
