@@ -280,6 +280,15 @@ export async function GET(request: NextRequest) {
       response.cookies.delete('oauth_mode')
       response.cookies.delete('oauth_return_to')
 
+      // Set current_mode cookie so Header/check-dual-role knows which role to display
+      response.cookies.set('current_mode', isHost ? 'host' : 'guest', {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60,
+        path: '/'
+      })
+
       // Clear cross-role cookies to prevent dual-role confusion
       // When guest/host logs in via OAuth, clear partner cookies
       response.cookies.set('partner_token', '', {
@@ -490,6 +499,13 @@ export async function GET(request: NextRequest) {
             maxAge: 7 * 24 * 60 * 60, // 7 days
             path: '/'
           })
+          response.cookies.set('current_mode', 'host', {
+            httpOnly: false,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60,
+            path: '/'
+          })
           // Clear guest cookies to prevent dual-role confusion
           response.cookies.set('accessToken', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 0, path: '/' })
           response.cookies.set('refreshToken', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 0, path: '/' })
@@ -514,6 +530,13 @@ export async function GET(request: NextRequest) {
           const response = NextResponse.redirect(new URL('/partner/dashboard', request.url))
           response.cookies.set('partner_token', partnerTokens.accessToken, {
             httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60,
+            path: '/'
+          })
+          response.cookies.set('current_mode', 'host', {
+            httpOnly: false,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
             maxAge: 7 * 24 * 60 * 60,

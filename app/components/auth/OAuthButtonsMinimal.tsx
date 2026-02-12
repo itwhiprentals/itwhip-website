@@ -14,10 +14,21 @@ export default function OAuthButtonsMinimal({ roleHint, mode = 'login' }: OAuthB
   // This prevents OAuthAccountNotLinked errors when a previous session cookie
   // references a different user than the one signing in with OAuth.
   const clearSessionAndSignIn = async (provider: 'google' | 'apple') => {
+    // Set OAuth cookies FIRST so oauth-redirect knows which role to use
+    // These must be set before signOut (which may clear cookies) and re-set after
+    const cookieOptions = 'path=/; max-age=600; SameSite=Lax'
+    document.cookie = `oauth_role_hint=${roleHint}; ${cookieOptions}`
+    document.cookie = `oauth_mode=${mode}; ${cookieOptions}`
+
     const session = await getSession()
     if (session) {
       await signOut({ redirect: false })
     }
+
+    // Re-set cookies after signOut (signOut may clear cookies)
+    document.cookie = `oauth_role_hint=${roleHint}; ${cookieOptions}`
+    document.cookie = `oauth_mode=${mode}; ${cookieOptions}`
+
     signIn(provider, { callbackUrl })
   }
 
