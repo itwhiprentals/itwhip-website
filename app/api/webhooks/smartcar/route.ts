@@ -7,8 +7,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { createHmac, timingSafeEqual } from 'crypto'
 
-const SMARTCAR_MANAGEMENT_TOKEN = process.env.SMARTCAR_MANAGEMENT_TOKEN || ''
-const SMARTCAR_WEBHOOK_SECRET = process.env.SMARTCAR_WEBHOOK_SECRET || ''
+const SMARTCAR_MANAGEMENT_TOKEN = (process.env.SMARTCAR_MANAGEMENT_TOKEN || '').trim()
+const SMARTCAR_WEBHOOK_SECRET = (process.env.SMARTCAR_WEBHOOK_SECRET || '').trim()
 
 // Hash challenge for VERIFY handshake
 function hashChallenge(amt: string, challenge: string): string {
