@@ -32,15 +32,8 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit
 
-    // Build where clause - only partner bookings
-    const where: any = {
-      host: {
-        OR: [
-          { hostType: 'FLEET_PARTNER' },
-          { hostType: 'PARTNER' }
-        ]
-      }
-    }
+    // Build where clause - all bookings across the platform
+    const where: any = {}
 
     // Search filter
     if (search) {
@@ -105,6 +98,8 @@ export async function GET(request: NextRequest) {
         host: {
           select: {
             id: true,
+            name: true,
+            hostType: true,
             partnerCompanyName: true,
             partnerSlug: true,
             currentCommissionRate: true
@@ -140,10 +135,11 @@ export async function GET(request: NextRequest) {
         name: `${b.car.year} ${b.car.make} ${b.car.model}`,
         photo: b.car.photos?.[0]?.url || null
       } : null,
-      // Partner
+      // Host
       partner: b.host ? {
         id: b.host.id,
-        name: b.host.partnerCompanyName,
+        name: b.host.partnerCompanyName || b.host.name,
+        hostType: b.host.hostType,
         slug: b.host.partnerSlug,
         commissionRate: b.host.currentCommissionRate
       } : null,
@@ -164,14 +160,7 @@ export async function GET(request: NextRequest) {
     }))
 
     // Get stats - use hostId filter if provided
-    const statsWhere: any = {
-      host: {
-        OR: [
-          { hostType: 'FLEET_PARTNER' },
-          { hostType: 'PARTNER' }
-        ]
-      }
-    }
+    const statsWhere: any = {}
     if (partnerId) {
       statsWhere.hostId = partnerId
     }
@@ -190,16 +179,9 @@ export async function GET(request: NextRequest) {
       revenue: s._sum.totalAmount || 0
     }]))
 
-    // Get unique partners count
+    // Get unique hosts count
     const uniquePartners = await prisma.rentalBooking.findMany({
-      where: {
-        host: {
-          OR: [
-            { hostType: 'FLEET_PARTNER' },
-            { hostType: 'PARTNER' }
-          ]
-        }
-      },
+      where: {},
       select: {
         hostId: true
       },
