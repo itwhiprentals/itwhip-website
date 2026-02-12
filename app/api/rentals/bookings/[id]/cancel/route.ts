@@ -2,10 +2,15 @@
 // Guest-facing cancellation endpoint
 
 import { NextRequest, NextResponse } from 'next/server'
+import Stripe from 'stripe'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { sendHostBookingCancelledEmail } from '@/app/lib/email/host-booking-cancelled-email'
 import { calculateCancellationRefund, calculateRefundAmount } from '@/app/lib/booking/cancellation-policy'
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2025-08-27.basil' as Stripe.LatestApiVersion,
+})
 
 export async function POST(
   request: NextRequest,
@@ -33,6 +38,9 @@ export async function POST(
         guestName: true,
         endDate: true,
         hostId: true,
+        creditsApplied: true,
+        bonusApplied: true,
+        depositFromWallet: true,
         car: { select: { make: true, model: true } },
         host: { select: { name: true, email: true } }
       }
@@ -89,42 +97,174 @@ export async function POST(
 
     console.log(`[Cancel Booking] Policy: ${cancellation.label} (${cancellation.hoursUntilPickup.toFixed(1)}h before pickup). Refund: $${refundAmount}`)
 
-    // Auto-create refund request if payment was captured and refund is due
-    if (cancelledBooking.paymentStatus === 'PAID' && cancelledBooking.paymentIntentId && refundAmount > 0) {
+    // Handle Stripe payment based on ACTUAL PI status (not just DB paymentStatus)
+    if (cancelledBooking.paymentIntentId) {
       try {
+        const pi = await stripe.paymentIntents.retrieve(cancelledBooking.paymentIntentId)
+        console.log(`[Cancel Booking] Stripe PI status: ${pi.status}, amount: ${pi.amount}c, captured: ${pi.latest_charge ? 'yes' : 'no'}`)
+
+        if (pi.status === 'requires_capture') {
+          // Auth hold only — void it (releases hold immediately, no charge)
+          await stripe.paymentIntents.cancel(cancelledBooking.paymentIntentId, {
+            cancellation_reason: 'requested_by_customer',
+          })
+          await prisma.rentalBooking.update({
+            where: { id: bookingId },
+            data: { paymentStatus: 'REFUNDED' }
+          })
+          console.log('[Cancel Booking] Voided authorization hold')
+
+        } else if (pi.status === 'succeeded') {
+          // Payment was captured — issue a refund
+          const refundCents = Math.round(refundAmount * 100)
+          if (refundCents > 0) {
+            const refund = await stripe.refunds.create({
+              payment_intent: cancelledBooking.paymentIntentId,
+              amount: Math.min(refundCents, pi.amount), // Don't refund more than captured
+              reason: 'requested_by_customer',
+              metadata: {
+                bookingId: cancelledBooking.id,
+                type: 'cancellation_refund',
+                policy: cancellation.label,
+              },
+            })
+            console.log(`[Cancel Booking] Refunded $${(refund.amount / 100).toFixed(2)} (${refund.id})`)
+          } else {
+            console.log('[Cancel Booking] No refund due per cancellation policy')
+          }
+
+          // Also create a RefundRequest record for tracking
+          await prisma.refundRequest.create({
+            data: {
+              id: crypto.randomUUID(),
+              bookingId: cancelledBooking.id,
+              amount: refundAmount,
+              reason: `Booking cancelled by guest (${cancellation.label}): ${reason}`,
+              requestedBy: booking.guestEmail || 'guest',
+              requestedByType: 'GUEST',
+              status: refundCents > 0 ? 'COMPLETED' : 'PENDING',
+              updatedAt: new Date()
+            }
+          }).catch(e => console.error('[Cancel Booking] Failed to create refund record:', e))
+
+          await prisma.rentalBooking.update({
+            where: { id: bookingId },
+            data: { paymentStatus: 'REFUNDED' }
+          })
+
+        } else if (pi.status === 'requires_payment_method' || pi.status === 'requires_confirmation' || pi.status === 'requires_action') {
+          // PI not yet confirmed — safe to cancel
+          await stripe.paymentIntents.cancel(cancelledBooking.paymentIntentId, {
+            cancellation_reason: 'requested_by_customer',
+          })
+          await prisma.rentalBooking.update({
+            where: { id: bookingId },
+            data: { paymentStatus: 'CANCELLED' as any }
+          })
+          console.log(`[Cancel Booking] Cancelled PI in ${pi.status} state`)
+
+        } else if (pi.status === 'canceled') {
+          console.log('[Cancel Booking] PI already cancelled, no Stripe action needed')
+          await prisma.rentalBooking.update({
+            where: { id: bookingId },
+            data: { paymentStatus: 'REFUNDED' }
+          })
+
+        } else {
+          console.warn(`[Cancel Booking] Unexpected PI status: ${pi.status}`)
+        }
+      } catch (stripeError) {
+        console.error('[Cancel Booking] Stripe error:', stripeError)
+        // Still create a refund request so admin can process manually
         await prisma.refundRequest.create({
           data: {
             id: crypto.randomUUID(),
             bookingId: cancelledBooking.id,
             amount: refundAmount,
-            reason: `Booking cancelled by guest (${cancellation.label}): ${reason}`,
+            reason: `Booking cancelled by guest (${cancellation.label}): ${reason}. Stripe auto-refund failed — manual processing needed.`,
             requestedBy: booking.guestEmail || 'guest',
             requestedByType: 'GUEST',
             status: 'PENDING',
             updatedAt: new Date()
           }
-        })
-      } catch (refundError) {
-        console.error('[Cancel Booking] Failed to create refund request:', refundError)
+        }).catch(e => console.error('[Cancel Booking] Failed to create refund request:', e))
       }
     }
 
-    // If payment was only authorized (not captured), void it
-    if (cancelledBooking.paymentIntentId &&
-        cancelledBooking.paymentStatus === 'AUTHORIZED') {
+    // Restore credits, bonus, and deposit wallet balances
+    const guestEmail = booking.guestEmail
+    if (guestEmail) {
       try {
-        const stripe = (await import('stripe')).default
-        const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY!, {
-          apiVersion: '2025-08-27.basil' as any,
+        const guestProfile = await prisma.reviewerProfile.findFirst({
+          where: { email: guestEmail },
+          select: { id: true, creditBalance: true, bonusBalance: true, depositWalletBalance: true }
         })
-        await stripeClient.paymentIntents.cancel(cancelledBooking.paymentIntentId)
 
-        await prisma.rentalBooking.update({
-          where: { id: bookingId },
-          data: { paymentStatus: 'REFUNDED' }
-        })
-      } catch (stripeError) {
-        console.error('[Cancel Booking] Failed to void payment:', stripeError)
+        if (guestProfile) {
+          // Restore credits
+          if (booking.creditsApplied > 0) {
+            await prisma.reviewerProfile.update({
+              where: { id: guestProfile.id },
+              data: { creditBalance: { increment: booking.creditsApplied } }
+            })
+            await prisma.creditBonusTransaction.create({
+              data: {
+                id: crypto.randomUUID(),
+                guestId: guestProfile.id,
+                amount: booking.creditsApplied,
+                type: 'CREDIT',
+                action: 'ADD',
+                balanceAfter: guestProfile.creditBalance + booking.creditsApplied,
+                reason: `Restored from cancelled booking ${booking.bookingCode}`,
+                bookingId: booking.id
+              }
+            })
+            console.log(`[Cancel Booking] Restored $${booking.creditsApplied} credits`)
+          }
+
+          // Restore bonus
+          if (booking.bonusApplied > 0) {
+            await prisma.reviewerProfile.update({
+              where: { id: guestProfile.id },
+              data: { bonusBalance: { increment: booking.bonusApplied } }
+            })
+            await prisma.creditBonusTransaction.create({
+              data: {
+                id: crypto.randomUUID(),
+                guestId: guestProfile.id,
+                amount: booking.bonusApplied,
+                type: 'BONUS',
+                action: 'ADD',
+                balanceAfter: guestProfile.bonusBalance + booking.bonusApplied,
+                reason: `Restored from cancelled booking ${booking.bookingCode}`,
+                bookingId: booking.id
+              }
+            })
+            console.log(`[Cancel Booking] Restored $${booking.bonusApplied} bonus`)
+          }
+
+          // Restore deposit wallet
+          if (booking.depositFromWallet > 0) {
+            await prisma.reviewerProfile.update({
+              where: { id: guestProfile.id },
+              data: { depositWalletBalance: { increment: booking.depositFromWallet } }
+            })
+            await prisma.depositTransaction.create({
+              data: {
+                id: crypto.randomUUID(),
+                guestId: guestProfile.id,
+                amount: booking.depositFromWallet,
+                type: 'RELEASE',
+                balanceAfter: (guestProfile.depositWalletBalance || 0) + booking.depositFromWallet,
+                bookingId: booking.id,
+                description: `Deposit released from cancelled booking ${booking.bookingCode}`
+              }
+            })
+            console.log(`[Cancel Booking] Restored $${booking.depositFromWallet} to deposit wallet`)
+          }
+        }
+      } catch (balanceError) {
+        console.error('[Cancel Booking] Failed to restore balances (non-blocking):', balanceError)
       }
     }
 
@@ -158,6 +298,11 @@ export async function POST(
         percentage: cancellation.refundPercentage,
         tier: cancellation.tier,
         policy: cancellation.label
+      },
+      balancesRestored: {
+        credits: booking.creditsApplied || 0,
+        bonus: booking.bonusApplied || 0,
+        depositWallet: booking.depositFromWallet || 0
       }
     })
   } catch (error) {
