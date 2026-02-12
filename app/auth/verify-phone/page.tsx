@@ -274,6 +274,7 @@ function VerifyPhoneContent() {
         body: JSON.stringify({
           idToken,
           phone: formatPhoneE164(phone),
+          roleHint,
         })
       })
 

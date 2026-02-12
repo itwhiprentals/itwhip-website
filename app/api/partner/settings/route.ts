@@ -71,8 +71,8 @@ export async function GET(request: NextRequest) {
         lastName: partner.user?.name?.split(' ').slice(1).join(' ') || '',
         phone: partner.phone || '',
         companyName: partner.partnerCompanyName || '',
-        businessType: 'fleet',
-        taxId: '',
+        businessType: partner.businessType || '',
+        taxId: partner.taxId || '',
         address: (partner as any).address || '',
         city: partner.city || '',
         state: partner.state || '',
@@ -88,6 +88,12 @@ export async function GET(request: NextRequest) {
         bookingAlerts: true,
         payoutAlerts: true,
         marketingEmails: false,
+        // Verification
+        emailVerified: partner.emailVerified,
+        phoneVerified: partner.phoneVerified,
+        // Business host
+        isBusinessHost: partner.isBusinessHost,
+        businessApprovalStatus: partner.businessApprovalStatus,
         // GDPR fields
         userStatus: partner.user?.status || 'ACTIVE',
         deletionScheduledFor: partner.user?.deletionScheduledFor || null
@@ -119,6 +125,34 @@ export async function PUT(request: NextRequest) {
     if (body.city !== undefined) updateData.city = body.city
     if (body.state !== undefined) updateData.state = body.state
     if (body.zipCode !== undefined) updateData.zipCode = body.zipCode
+
+    // Business host toggle
+    if (body.isBusinessHost !== undefined) {
+      if (body.isBusinessHost) {
+        // Fetch current partner to validate EIN + company name
+        const partner = await prisma.rentalHost.findUnique({
+          where: { id: hostId },
+          select: { partnerCompanyName: true, businessName: true }
+        })
+        const companyName = body.companyName || partner?.partnerCompanyName || partner?.businessName
+        if (!companyName) {
+          return NextResponse.json({ error: 'Company name is required to enable business host' }, { status: 400 })
+        }
+        const einRegex = /^\d{2}-?\d{7}$/
+        if (!body.taxId || !einRegex.test(body.taxId.replace(/\s/g, ''))) {
+          return NextResponse.json({ error: 'Valid EIN (Tax ID) is required to enable business host' }, { status: 400 })
+        }
+      }
+      updateData.isBusinessHost = body.isBusinessHost
+    }
+
+    // Tax ID (EIN)
+    if (body.taxId !== undefined) {
+      updateData.taxId = body.taxId
+      updateData.taxIdProvided = !!body.taxId
+    }
+    // Business type
+    if (body.businessType !== undefined) updateData.businessType = body.businessType
 
     // Deposit settings
     if (body.requireDeposit !== undefined) updateData.requireDeposit = body.requireDeposit

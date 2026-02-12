@@ -2202,6 +2202,7 @@ model RentalHost {
   stripePayoutsEnabled          Boolean                @default(false)
   stripeTosAcceptanceDate       DateTime?
   stripeTosAcceptanceIp         String?
+  taxId                         String?
   taxIdType                     String?
   totalPayoutAmount             Float?                 @default(0)
   totalPayoutCount              Int?                   @default(0)
@@ -2368,6 +2369,16 @@ model RentalHost {
   recruitedVia                  String? // FB_MARKETPLACE, TURO, REFERRAL, etc.
   recruitedAt                   DateTime?
   agreementTemplateCustom       Json?
+
+  // ═══════════════════════════════════════════════════════════════
+  // BUSINESS HOST / LANDING PAGE APPROVAL
+  // ═══════════════════════════════════════════════════════════════
+  isBusinessHost              Boolean   @default(false)
+  businessApprovalStatus      String    @default("NONE")  // NONE, PENDING, APPROVED, REJECTED
+  businessSubmittedAt         DateTime?
+  businessApprovedAt          DateTime?
+  businessApprovedBy          String?
+  businessRejectedReason      String?
 
   // ═══════════════════════════════════════════════════════════════
   // RECRUITED HOST ONBOARDING (request-based flow)

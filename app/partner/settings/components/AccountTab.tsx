@@ -2,7 +2,8 @@
 'use client'
 
 import { useState } from 'react'
-import { IoSaveOutline, IoAlertCircleOutline } from 'react-icons/io5'
+import { useRouter } from 'next/navigation'
+import { IoSaveOutline, IoAlertCircleOutline, IoCheckmarkCircleOutline, IoMailOutline, IoCallOutline } from 'react-icons/io5'
 
 interface AccountTabProps {
   settings: {
@@ -10,6 +11,8 @@ interface AccountTabProps {
     lastName: string
     email: string
     phone: string
+    emailVerified: boolean
+    phoneVerified: boolean
   }
   setSettings: (updater: (prev: any) => any) => void
   onSave: (section: string) => Promise<void>
@@ -32,7 +35,7 @@ const validateEmail = (email: string): string | undefined => {
 }
 
 const validatePhone = (phone: string): string | undefined => {
-  if (!phone.trim()) return undefined // Phone is optional
+  if (!phone.trim()) return undefined
   const phoneRegex = /^[\d\s\-\+\(\)]{10,}$/
   if (!phoneRegex.test(phone)) return 'Please enter a valid phone number'
   return undefined
@@ -45,8 +48,11 @@ const validateName = (name: string, fieldName: string): string | undefined => {
 }
 
 export function AccountTab({ settings, setSettings, onSave, isSaving }: AccountTabProps) {
+  const router = useRouter()
   const [errors, setErrors] = useState<ValidationErrors>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const [emailVerifySending, setEmailVerifySending] = useState(false)
+  const [emailVerifyMessage, setEmailVerifyMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const validateField = (field: keyof ValidationErrors, value: string) => {
     let error: string | undefined
@@ -76,7 +82,7 @@ export function AccountTab({ settings, setSettings, onSave, isSaving }: AccountT
   }
 
   const handleChange = (field: keyof ValidationErrors, value: string) => {
-    setSettings(prev => ({ ...prev, [field]: value }))
+    setSettings((prev: any) => ({ ...prev, [field]: value }))
     if (touched[field]) {
       validateField(field, value)
     }
@@ -98,6 +104,30 @@ export function AccountTab({ settings, setSettings, onSave, isSaving }: AccountT
     if (validateAll()) {
       await onSave('account')
     }
+  }
+
+  const handleSendEmailVerification = async () => {
+    setEmailVerifySending(true)
+    setEmailVerifyMessage(null)
+    try {
+      const res = await fetch('/api/partner/email/send-verification', { method: 'POST' })
+      const data = await res.json()
+      if (data.success) {
+        setEmailVerifyMessage({ type: 'success', text: `Verification email sent to ${settings.email}` })
+      } else {
+        setEmailVerifyMessage({ type: 'error', text: data.error || 'Failed to send verification email' })
+      }
+    } catch {
+      setEmailVerifyMessage({ type: 'error', text: 'Failed to send verification email' })
+    } finally {
+      setEmailVerifySending(false)
+    }
+  }
+
+  const handleVerifyPhone = () => {
+    const phone = settings.phone?.replace(/[^\d+]/g, '') || ''
+    const formatted = phone.startsWith('+') ? phone : `+1${phone}`
+    router.push(`/auth/verify-phone?phone=${encodeURIComponent(formatted)}&returnTo=${encodeURIComponent('/partner/settings?tab=account')}&roleHint=host`)
   }
 
   const renderError = (field: keyof ValidationErrors) => {
@@ -155,6 +185,7 @@ export function AccountTab({ settings, setSettings, onSave, isSaving }: AccountT
           {renderError('lastName')}
         </div>
 
+        {/* Email with verification */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Email Address <span className="text-red-500">*</span>
@@ -168,8 +199,30 @@ export function AccountTab({ settings, setSettings, onSave, isSaving }: AccountT
             placeholder="john@example.com"
           />
           {renderError('email')}
+          <div className="mt-2 flex items-center gap-2">
+            {settings.emailVerified ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                <IoCheckmarkCircleOutline className="w-3 h-3" /> Verified
+              </span>
+            ) : (
+              <button
+                onClick={handleSendEmailVerification}
+                disabled={emailVerifySending}
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
+              >
+                <IoMailOutline className="w-3 h-3" />
+                {emailVerifySending ? 'Sending...' : 'Verify Email'}
+              </button>
+            )}
+          </div>
+          {emailVerifyMessage && (
+            <p className={`mt-1 text-xs ${emailVerifyMessage.type === 'success' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {emailVerifyMessage.text}
+            </p>
+          )}
         </div>
 
+        {/* Phone with verification */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Phone Number
@@ -183,6 +236,23 @@ export function AccountTab({ settings, setSettings, onSave, isSaving }: AccountT
             placeholder="(555) 123-4567"
           />
           {renderError('phone')}
+          <div className="mt-2 flex items-center gap-2">
+            {settings.phoneVerified ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                <IoCheckmarkCircleOutline className="w-3 h-3" /> Verified
+              </span>
+            ) : settings.phone ? (
+              <button
+                onClick={handleVerifyPhone}
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
+              >
+                <IoCallOutline className="w-3 h-3" />
+                Verify Phone
+              </button>
+            ) : (
+              <span className="text-xs text-gray-400 dark:text-gray-500">Add phone to verify</span>
+            )}
+          </div>
         </div>
       </div>
 

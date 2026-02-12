@@ -8,7 +8,7 @@ import { verifyPhoneToken } from '@/app/lib/firebase/admin'
 
 export async function POST(request: NextRequest) {
   try {
-    const { idToken, phone } = await request.json()
+    const { idToken, phone, roleHint } = await request.json()
 
     if (!idToken) {
       return NextResponse.json(
@@ -76,6 +76,28 @@ export async function POST(request: NextRequest) {
     } catch (syncError) {
       console.error('[Phone Verify] Failed to sync phoneVerified to ReviewerProfile:', syncError)
       // Don't fail the request if profile sync fails
+    }
+
+    // Sync phoneVerified to RentalHost if this is a host verification
+    if (roleHint === 'host') {
+      try {
+        await prisma.rentalHost.updateMany({
+          where: {
+            OR: [
+              { userId: user.id },
+              { email: user.email }
+            ]
+          },
+          data: {
+            phoneVerified: true,
+            phone: verifiedPhone,
+            phoneVerifiedAt: new Date(),
+          }
+        })
+        console.log(`[Phone Verify] Synced phoneVerified to RentalHost for user: ${user.id}`)
+      } catch (syncError) {
+        console.error('[Phone Verify] Failed to sync phoneVerified to RentalHost:', syncError)
+      }
     }
 
     return NextResponse.json({

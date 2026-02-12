@@ -50,6 +50,14 @@ interface PartnerSettings {
   payoutAlerts: boolean
   marketingEmails: boolean
 
+  // Verification
+  emailVerified: boolean
+  phoneVerified: boolean
+
+  // Business host
+  isBusinessHost: boolean
+  businessApprovalStatus: string
+
   // GDPR
   userStatus?: 'ACTIVE' | 'PENDING_DELETION' | 'DELETED' | 'SUSPENDED'
   deletionScheduledFor?: string | null
@@ -78,6 +86,10 @@ export default function PartnerSettingsPage() {
     bookingAlerts: true,
     payoutAlerts: true,
     marketingEmails: false,
+    emailVerified: false,
+    phoneVerified: false,
+    isBusinessHost: false,
+    businessApprovalStatus: 'NONE',
     userStatus: 'ACTIVE',
     deletionScheduledFor: null
   })
@@ -123,7 +135,7 @@ export default function PartnerSettingsPage() {
       const res = await fetch('/api/partner/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ section, data: settings })
+        body: JSON.stringify(settings)
       })
 
       const data = await res.json()

@@ -85,6 +85,10 @@ export async function GET(request: NextRequest) {
     // Fall back to profilePhoto if partnerLogo is not set (unified portal support)
     return NextResponse.json({
       success: true,
+      // Business host gating fields
+      isBusinessHost: partner.isBusinessHost ?? false,
+      businessApprovalStatus: partner.businessApprovalStatus || 'NONE',
+      businessRejectedReason: partner.businessRejectedReason || null,
       data: {
         slug: partner.partnerSlug || '',
         companyName: partner.partnerCompanyName || '',
@@ -155,6 +159,49 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
+
+    // Handle submitForApproval action
+    if (body.action === 'submitForApproval') {
+      // Validate required fields
+      if (!partner.isBusinessHost) {
+        return NextResponse.json(
+          { error: 'Business host must be enabled in Settings → Company before submitting.' },
+          { status: 400 }
+        )
+      }
+      if (!partner.partnerSlug || partner.partnerSlug === 'your-company-slug') {
+        return NextResponse.json(
+          { error: 'A valid URL slug is required before submitting for approval.' },
+          { status: 400 }
+        )
+      }
+      if (!partner.partnerCompanyName && !partner.businessName) {
+        return NextResponse.json(
+          { error: 'Company name is required before submitting for approval.' },
+          { status: 400 }
+        )
+      }
+
+      const carCount = await prisma.rentalCar.count({
+        where: { hostId: partner.id, isActive: true }
+      })
+      if (carCount === 0) {
+        return NextResponse.json(
+          { error: 'At least one active vehicle is required before submitting for approval.' },
+          { status: 400 }
+        )
+      }
+
+      await prisma.rentalHost.update({
+        where: { id: partner.id },
+        data: {
+          businessApprovalStatus: 'PENDING',
+          businessSubmittedAt: new Date()
+        }
+      })
+
+      return NextResponse.json({ success: true, businessApprovalStatus: 'PENDING' })
+    }
 
     // Build policies object (only include if provided)
     const policiesData = body.policies ? {

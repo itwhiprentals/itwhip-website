@@ -3,6 +3,7 @@
 
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   IoAddCircleOutline,
@@ -11,7 +12,8 @@ import {
   IoSettingsOutline,
   IoPricetagOutline,
   IoAnalyticsOutline,
-  IoIdCardOutline
+  IoIdCardOutline,
+  IoLockClosedOutline
 } from 'react-icons/io5'
 
 const actions = [
@@ -51,13 +53,6 @@ const actions = [
     color: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
   },
   {
-    name: 'Edit Landing',
-    description: 'Update your page',
-    href: '/partner/landing',
-    icon: IoDocumentTextOutline,
-    color: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400'
-  },
-  {
     name: 'Settings',
     description: 'Account & payout',
     href: '/partner/settings',
@@ -67,6 +62,19 @@ const actions = [
 ]
 
 export default function QuickActions() {
+  const [isBusinessHost, setIsBusinessHost] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    fetch('/api/partner/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setIsBusinessHost(data.settings.isBusinessHost || false)
+        }
+      })
+      .catch(() => setIsBusinessHost(false))
+  }, [])
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
       {actions.map((action) => {
@@ -89,6 +97,31 @@ export default function QuickActions() {
           </Link>
         )
       })}
+
+      {/* Landing Page — gated on isBusinessHost */}
+      {isBusinessHost ? (
+        <Link
+          href="/partner/landing"
+          className="flex flex-col items-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+        >
+          <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+            <IoDocumentTextOutline className="w-5 h-5" />
+          </div>
+          <span className="text-sm font-medium text-gray-900 dark:text-white text-center">Edit Landing</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 text-center">Update your page</span>
+        </Link>
+      ) : (
+        <div
+          className="flex flex-col items-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg opacity-50 cursor-not-allowed relative"
+          title="Enable Business Host in Settings → Company to access your landing page"
+        >
+          <div className="w-10 h-10 rounded-full bg-gray-200 text-gray-400 dark:bg-gray-600 dark:text-gray-500 flex items-center justify-center mb-2">
+            <IoLockClosedOutline className="w-5 h-5" />
+          </div>
+          <span className="text-sm font-medium text-gray-400 dark:text-gray-500 text-center">Edit Landing</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500 text-center">Business only</span>
+        </div>
+      )}
     </div>
   )
 }
