@@ -40,7 +40,7 @@ const jsonLd = {
         name: 'What is ItWhip\'s cancellation policy?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'ItWhip offers a tiered cancellation policy: 72+ hours before pickup = 100% refund, 24-72 hours = 75% refund, 12-24 hours = 50% refund, less than 12 hours = no refund.'
+          text: 'ItWhip offers a day-based cancellation policy: Cancel 24+ hours before pickup for a full refund. Late cancellations (under 24 hours) incur a penalty of 1 day\'s average cost for trips 3+ days, or half a day for shorter trips. Security deposits are always released in full.'
         }
       },
       {
@@ -104,7 +104,7 @@ export default function CancellationPolicyContent() {
                 We understand plans change. Our flexible cancellation policy is designed to be fair for both guests and hosts.
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-500 mt-3">
-                Last Updated: January 15, 2025
+                Last Updated: February 11, 2026
               </p>
             </div>
           </div>
@@ -118,28 +118,21 @@ export default function CancellationPolicyContent() {
                 <IoTimeOutline className="w-5 h-5 mr-2" />
                 Quick Summary: Guest Cancellation Refunds
               </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 text-center">
-                  <div className="text-2xl sm:text-3xl font-bold text-green-600">100%</div>
-                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">72+ hours</div>
-                  <div className="text-[10px] sm:text-xs text-gray-500">before pickup</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-5 text-center border-2 border-green-200 dark:border-green-800">
+                  <div className="text-2xl sm:text-3xl font-bold text-green-600">Full Refund</div>
+                  <div className="text-sm sm:text-base text-gray-700 dark:text-gray-300 font-medium mt-1">24+ hours before pickup</div>
+                  <div className="text-xs text-gray-500 mt-1">No penalty. Deposit always released.</div>
                 </div>
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 text-center">
-                  <div className="text-2xl sm:text-3xl font-bold text-yellow-600">75%</div>
-                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">24-72 hours</div>
-                  <div className="text-[10px] sm:text-xs text-gray-500">before pickup</div>
-                </div>
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 text-center">
-                  <div className="text-2xl sm:text-3xl font-bold text-orange-600">50%</div>
-                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">12-24 hours</div>
-                  <div className="text-[10px] sm:text-xs text-gray-500">before pickup</div>
-                </div>
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 text-center">
-                  <div className="text-2xl sm:text-3xl font-bold text-red-600">0%</div>
-                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">&lt;12 hours</div>
-                  <div className="text-[10px] sm:text-xs text-gray-500">before pickup</div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-5 text-center border-2 border-amber-200 dark:border-amber-800">
+                  <div className="text-2xl sm:text-3xl font-bold text-amber-600">1-Day Penalty</div>
+                  <div className="text-sm sm:text-base text-gray-700 dark:text-gray-300 font-medium mt-1">Less than 24 hours</div>
+                  <div className="text-xs text-gray-500 mt-1">Trips 1-2 days: half-day. Trips 3+ days: 1 day.</div>
                 </div>
               </div>
+              <p className="text-xs text-center text-gray-500 dark:text-gray-500 mt-3">
+                Security deposit is always released in full on any cancellation. Penalty = average daily cost of trip.
+              </p>
             </div>
           </div>
         </section>
@@ -157,63 +150,40 @@ export default function CancellationPolicyContent() {
                 As a guest, you can cancel your booking at any time. The refund amount depends on how far in advance you cancel relative to your scheduled pickup time.
               </p>
 
-              {/* 72+ Hours */}
+              {/* 24+ Hours — Free Cancellation */}
               <div className="border-l-4 border-green-500 pl-4 mb-6">
                 <h3 className="font-semibold text-gray-900 dark:text-white flex items-center">
                   <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500 mr-2" />
-                  72+ Hours Before Pickup — 100% Refund
+                  24+ Hours Before Pickup — Free Cancellation
                 </h3>
                 <ul className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                  <li>• Full refund of rental cost</li>
+                  <li>• 100% refund of rental cost</li>
                   <li>• Full service fee refund if canceling 7+ days before pickup</li>
-                  <li>• Security deposit authorization released (never charged)</li>
+                  <li>• Security deposit released immediately</li>
+                  <li>• Credits and bonus balances fully restored</li>
                   <li>• No impact on your rental history or future booking privileges</li>
                   <li>• Protection plan coverage continues until original pickup time</li>
                 </ul>
               </div>
 
-              {/* 24-72 Hours */}
-              <div className="border-l-4 border-yellow-500 pl-4 mb-6">
+              {/* Less than 24 Hours — Late Cancellation */}
+              <div className="border-l-4 border-amber-500 pl-4 mb-6">
                 <h3 className="font-semibold text-gray-900 dark:text-white flex items-center">
-                  <IoAlertCircleOutline className="w-5 h-5 text-yellow-500 mr-2" />
-                  24-72 Hours Before Pickup — 75% Refund
+                  <IoAlertCircleOutline className="w-5 h-5 text-amber-500 mr-2" />
+                  Less Than 24 Hours Before Pickup — Late Cancellation
                 </h3>
                 <ul className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                  <li>• 75% refund of rental cost</li>
-                  <li>• Service fee non-refundable</li>
+                  <li>• <strong>Trips 3+ days:</strong> Penalty = 1 day&apos;s average cost</li>
+                  <li>• <strong>Trips 1-2 days:</strong> Penalty = 50% of 1 day&apos;s average cost</li>
+                  <li>• Security deposit always released in full</li>
+                  <li>• Deposit wallet funds always returned</li>
+                  <li>• Penalty split proportionally across payment sources (card, credits, bonus)</li>
                   <li>• Protection plan remains active until pickup time</li>
                   <li>• Host may offer reschedule option at their discretion</li>
-                  <li>• Priority rebooking assistance available through support</li>
                 </ul>
-              </div>
-
-              {/* 12-24 Hours */}
-              <div className="border-l-4 border-orange-500 pl-4 mb-6">
-                <h3 className="font-semibold text-gray-900 dark:text-white flex items-center">
-                  <IoAlertCircleOutline className="w-5 h-5 text-orange-500 mr-2" />
-                  12-24 Hours Before Pickup — 50% Refund
-                </h3>
-                <ul className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                  <li>• 50% refund of rental cost</li>
-                  <li>• Service fee and protection plan non-refundable</li>
-                  <li>• May request host consideration for documented emergency</li>
-                  <li>• Support team can mediate special circumstances</li>
-                </ul>
-              </div>
-
-              {/* Less than 12 Hours */}
-              <div className="border-l-4 border-red-500 pl-4 mb-6">
-                <h3 className="font-semibold text-gray-900 dark:text-white flex items-center">
-                  <IoCloseCircleOutline className="w-5 h-5 text-red-500 mr-2" />
-                  Less Than 12 Hours Before Pickup — No Refund
-                </h3>
-                <ul className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                  <li>• No refund of rental cost</li>
-                  <li>• All fees non-refundable</li>
-                  <li>• May affect future instant booking privileges</li>
-                  <li>• Exceptions only for documented emergencies with protection plan coverage</li>
-                  <li>• Host receives full payout minus platform fee</li>
-                </ul>
+                <div className="mt-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 text-xs text-amber-800 dark:text-amber-300">
+                  <strong>Example:</strong> A 5-day trip at $100/day ($500 total) cancelled 12 hours before pickup — penalty is $100 (1 day). You get $400 back plus your full deposit.
+                </div>
               </div>
 
               {/* No-Show */}
@@ -363,7 +333,7 @@ export default function CancellationPolicyContent() {
                     <li>• Refunds go to original payment method only</li>
                     <li>• Bank processing times may vary by institution</li>
                     <li>• Arizona Transaction Privilege Tax refunded per state law</li>
-                    <li>• Security deposits are never charged if cancelled before pickup</li>
+                    <li>• Security deposits are always released in full on any cancellation</li>
                     <li>• Partial refunds may be issued for documented issues</li>
                   </ul>
                 </div>

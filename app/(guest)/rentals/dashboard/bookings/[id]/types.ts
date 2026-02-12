@@ -108,6 +108,9 @@ export interface Booking {
     serviceFeeRefund: number
     totalRefund: number
     refundPercentage: number
+    penaltyAmount: number
+    penaltyDays: number
+    depositRefunded: boolean
     label: string
   }
   

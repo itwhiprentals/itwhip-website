@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: 'Cancellation & Refund Policy | ItWhip Car Rentals',
-    description: 'Flexible cancellation policies for car rentals in Phoenix. Cancel up to 72 hours before for a full refund.',
+    description: 'Flexible cancellation policies for car rentals in Phoenix. Cancel 24+ hours before for a full refund. Security deposit always released.',
     type: 'website',
     url: 'https://itwhip.com/cancellation-policy',
   },

@@ -149,11 +149,11 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking }) => {
                   <ul className="text-xs text-gray-600 space-y-1 mb-3">
                     <li className="flex items-start">
                       <span className="text-gray-400 mr-1">•</span>
-                      <span>Full refund 48hrs+ before</span>
+                      <span>Full refund 24hrs+ before</span>
                     </li>
                     <li className="flex items-start">
                       <span className="text-gray-400 mr-1">•</span>
-                      <span>50% refund 24-48hrs before</span>
+                      <span>Deposit always released</span>
                     </li>
                   </ul>
                   <span className="text-xs font-medium text-gray-500 inline-flex items-center">

@@ -3,11 +3,11 @@
 export const CANCELLATION_POLICIES = {
     STANDARD: {
       name: 'Standard',
-      description: 'Flexible cancellation based on timing',
+      description: 'Day-based cancellation — deposit always released',
+      freeWindowHours: 24,
       tiers: [
-        { hours: 48, refund: 1.0, label: 'Full refund' },
-        { hours: 24, refund: 0.5, label: '50% refund' },
-        { hours: 0, refund: 0, label: 'No refund' }
+        { hours: 24, refund: 1.0, label: 'Full refund', penalty: 'None' },
+        { hours: 0, refund: null, label: 'Late cancellation', penalty: '1 day avg cost (50% for short trips)' }
       ]
     }
   }

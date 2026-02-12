@@ -1,12 +1,13 @@
 // app/api/rentals/bookings/[id]/cancel/route.ts
 // Guest-facing cancellation endpoint
+// Uses Turo-style day-based penalties with proportional credit/bonus handling
 
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { sendHostBookingCancelledEmail } from '@/app/lib/email/host-booking-cancelled-email'
-import { calculateCancellationRefund, calculateRefundAmount } from '@/app/lib/booking/cancellation-policy'
+import { calculateCancellationRefund, calculatePenaltyDistribution } from '@/app/lib/booking/cancellation-policy'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil' as Stripe.LatestApiVersion,
@@ -33,14 +34,19 @@ export async function POST(
         paymentStatus: true,
         paymentIntentId: true,
         totalAmount: true,
+        numberOfDays: true,
+        dailyRate: true,
         startDate: true,
+        endDate: true,
         bookingCode: true,
         guestName: true,
-        endDate: true,
         hostId: true,
         creditsApplied: true,
         bonusApplied: true,
+        chargeAmount: true,
         depositFromWallet: true,
+        depositFromCard: true,
+        securityDeposit: true,
         car: { select: { make: true, model: true } },
         host: { select: { name: true, email: true } }
       }
@@ -88,58 +94,107 @@ export async function POST(
       }
     })
 
-    // Calculate refund based on cancellation policy (time-based tiers, MST)
-    const cancellation = calculateCancellationRefund(booking.startDate!)
-    const refundAmount = calculateRefundAmount(
-      Number(cancelledBooking.totalAmount || 0),
-      cancellation.refundPercentage
+    // Calculate day-based penalty
+    const tripCost = Number(booking.totalAmount || 0)
+    const days = booking.numberOfDays || Math.max(1, Math.ceil(
+      ((booking.endDate?.getTime() || 0) - (booking.startDate?.getTime() || 0)) / (1000 * 60 * 60 * 24)
+    ))
+    const cancellation = calculateCancellationRefund(booking.startDate!, tripCost, days)
+
+    // Calculate proportional penalty distribution across payment sources
+    const creditsApplied = Number(booking.creditsApplied || 0)
+    const bonusApplied = Number(booking.bonusApplied || 0)
+    const chargeAmount = Number(booking.chargeAmount || 0)
+    const depositFromCard = Number(booking.depositFromCard || 0)
+    const depositFromWallet = Number(booking.depositFromWallet || 0)
+    const securityDeposit = Number(booking.securityDeposit || 0)
+
+    const distribution = calculatePenaltyDistribution(
+      cancellation.penaltyAmount,
+      tripCost,
+      creditsApplied,
+      bonusApplied,
+      chargeAmount
     )
 
-    console.log(`[Cancel Booking] Policy: ${cancellation.label} (${cancellation.hoursUntilPickup.toFixed(1)}h before pickup). Refund: $${refundAmount}`)
+    console.log(`[Cancel Booking] Policy: ${cancellation.label} (${cancellation.hoursUntilPickup.toFixed(1)}h before pickup)`)
+    console.log(`[Cancel Booking] Trip: $${tripCost} over ${days} days. Avg daily: $${cancellation.averageDailyCost.toFixed(2)}`)
+    console.log(`[Cancel Booking] Penalty: $${cancellation.penaltyAmount} (${cancellation.penaltyDays} days)`)
+    console.log(`[Cancel Booking] Penalty split → card: $${distribution.penaltyFromCard}, credits: $${distribution.penaltyFromCredits}, bonus: $${distribution.penaltyFromBonus}`)
+    console.log(`[Cancel Booking] Restoring → credits: $${distribution.creditsRestored}, bonus: $${distribution.bonusRestored}, card refund: $${distribution.cardRefund}`)
+    console.log(`[Cancel Booking] Deposit: $${securityDeposit} (wallet: $${depositFromWallet}, card: $${depositFromCard}) — ALWAYS released`)
 
     // Handle Stripe payment based on ACTUAL PI status (not just DB paymentStatus)
+    // Card refund = trip refund portion + deposit from card (deposit always released)
+    const totalCardRefund = distribution.cardRefund + depositFromCard
     if (cancelledBooking.paymentIntentId) {
       try {
         const pi = await stripe.paymentIntents.retrieve(cancelledBooking.paymentIntentId)
-        console.log(`[Cancel Booking] Stripe PI status: ${pi.status}, amount: ${pi.amount}c, captured: ${pi.latest_charge ? 'yes' : 'no'}`)
+        console.log(`[Cancel Booking] Stripe PI status: ${pi.status}, amount: ${pi.amount}c`)
 
         if (pi.status === 'requires_capture') {
-          // Auth hold only — void it (releases hold immediately, no charge)
-          await stripe.paymentIntents.cancel(cancelledBooking.paymentIntentId, {
-            cancellation_reason: 'requested_by_customer',
-          })
+          // Auth hold only
+          if (cancellation.tier === 'free') {
+            // Free cancellation — void the entire hold
+            await stripe.paymentIntents.cancel(cancelledBooking.paymentIntentId, {
+              cancellation_reason: 'requested_by_customer',
+            })
+            console.log('[Cancel Booking] Voided entire authorization hold (free cancellation)')
+          } else {
+            // Late cancellation with penalty — capture only the penalty amount, release the rest
+            const penaltyFromCardCents = Math.round(distribution.penaltyFromCard * 100)
+            if (penaltyFromCardCents > 0 && penaltyFromCardCents < pi.amount) {
+              // Capture just the penalty portion
+              await stripe.paymentIntents.capture(cancelledBooking.paymentIntentId, {
+                amount_to_capture: penaltyFromCardCents,
+              })
+              console.log(`[Cancel Booking] Captured $${distribution.penaltyFromCard.toFixed(2)} penalty (released remainder of $${((pi.amount - penaltyFromCardCents) / 100).toFixed(2)})`)
+            } else if (penaltyFromCardCents <= 0) {
+              // No card penalty (all penalty absorbed by credits/bonus) — void entirely
+              await stripe.paymentIntents.cancel(cancelledBooking.paymentIntentId, {
+                cancellation_reason: 'requested_by_customer',
+              })
+              console.log('[Cancel Booking] Voided authorization hold (penalty absorbed by credits/bonus)')
+            } else {
+              // Edge case: penalty >= card hold — capture full amount
+              await stripe.paymentIntents.capture(cancelledBooking.paymentIntentId)
+              console.log('[Cancel Booking] Captured full authorization (penalty >= card amount)')
+            }
+          }
           await prisma.rentalBooking.update({
             where: { id: bookingId },
-            data: { paymentStatus: 'REFUNDED' }
+            data: { paymentStatus: cancellation.tier === 'free' ? 'REFUNDED' : 'PAID' }
           })
-          console.log('[Cancel Booking] Voided authorization hold')
 
         } else if (pi.status === 'succeeded') {
-          // Payment was captured — issue a refund
-          const refundCents = Math.round(refundAmount * 100)
+          // Payment was already captured — issue a refund for (card refund + deposit)
+          const refundCents = Math.round(totalCardRefund * 100)
           if (refundCents > 0) {
             const refund = await stripe.refunds.create({
               payment_intent: cancelledBooking.paymentIntentId,
-              amount: Math.min(refundCents, pi.amount), // Don't refund more than captured
+              amount: Math.min(refundCents, pi.amount),
               reason: 'requested_by_customer',
               metadata: {
                 bookingId: cancelledBooking.id,
                 type: 'cancellation_refund',
                 policy: cancellation.label,
+                tripRefund: distribution.cardRefund.toFixed(2),
+                depositRefund: depositFromCard.toFixed(2),
+                penalty: distribution.penaltyFromCard.toFixed(2),
               },
             })
-            console.log(`[Cancel Booking] Refunded $${(refund.amount / 100).toFixed(2)} (${refund.id})`)
+            console.log(`[Cancel Booking] Refunded $${(refund.amount / 100).toFixed(2)} (trip: $${distribution.cardRefund.toFixed(2)} + deposit: $${depositFromCard.toFixed(2)})`)
           } else {
-            console.log('[Cancel Booking] No refund due per cancellation policy')
+            console.log('[Cancel Booking] No card refund due (penalty absorbed entire card charge)')
           }
 
-          // Also create a RefundRequest record for tracking
+          // Create RefundRequest record for tracking
           await prisma.refundRequest.create({
             data: {
               id: crypto.randomUUID(),
               bookingId: cancelledBooking.id,
-              amount: refundAmount,
-              reason: `Booking cancelled by guest (${cancellation.label}): ${reason}`,
+              amount: totalCardRefund,
+              reason: `Booking cancelled by guest (${cancellation.label}): ${reason}. Penalty: $${cancellation.penaltyAmount.toFixed(2)}`,
               requestedBy: booking.guestEmail || 'guest',
               requestedByType: 'GUEST',
               status: refundCents > 0 ? 'COMPLETED' : 'PENDING',
@@ -180,8 +235,8 @@ export async function POST(
           data: {
             id: crypto.randomUUID(),
             bookingId: cancelledBooking.id,
-            amount: refundAmount,
-            reason: `Booking cancelled by guest (${cancellation.label}): ${reason}. Stripe auto-refund failed — manual processing needed.`,
+            amount: totalCardRefund,
+            reason: `Booking cancelled by guest (${cancellation.label}): ${reason}. Stripe auto-refund failed — manual processing needed. Penalty: $${cancellation.penaltyAmount.toFixed(2)}`,
             requestedBy: booking.guestEmail || 'guest',
             requestedByType: 'GUEST',
             status: 'PENDING',
@@ -191,7 +246,7 @@ export async function POST(
       }
     }
 
-    // Restore credits, bonus, and deposit wallet balances
+    // Restore credits, bonus, and deposit wallet balances (minus proportional penalty)
     const guestEmail = booking.guestEmail
     if (guestEmail) {
       try {
@@ -201,66 +256,74 @@ export async function POST(
         })
 
         if (guestProfile) {
-          // Restore credits
-          if (booking.creditsApplied > 0) {
+          // Restore credits (minus penalty portion)
+          if (distribution.creditsRestored > 0) {
             await prisma.reviewerProfile.update({
               where: { id: guestProfile.id },
-              data: { creditBalance: { increment: booking.creditsApplied } }
+              data: { creditBalance: { increment: distribution.creditsRestored } }
             })
             await prisma.creditBonusTransaction.create({
               data: {
                 id: crypto.randomUUID(),
                 guestId: guestProfile.id,
-                amount: booking.creditsApplied,
+                amount: distribution.creditsRestored,
                 type: 'CREDIT',
                 action: 'ADD',
-                balanceAfter: guestProfile.creditBalance + booking.creditsApplied,
-                reason: `Restored from cancelled booking ${booking.bookingCode}`,
+                balanceAfter: guestProfile.creditBalance + distribution.creditsRestored,
+                reason: distribution.penaltyFromCredits > 0
+                  ? `Restored from cancelled booking ${booking.bookingCode} (minus $${distribution.penaltyFromCredits.toFixed(2)} cancellation penalty)`
+                  : `Restored from cancelled booking ${booking.bookingCode}`,
                 bookingId: booking.id
               }
             })
-            console.log(`[Cancel Booking] Restored $${booking.creditsApplied} credits`)
+            console.log(`[Cancel Booking] Restored $${distribution.creditsRestored.toFixed(2)} credits (penalty absorbed: $${distribution.penaltyFromCredits.toFixed(2)})`)
+          } else if (creditsApplied > 0) {
+            console.log(`[Cancel Booking] Credits not restored — full $${creditsApplied.toFixed(2)} absorbed by cancellation penalty`)
           }
 
-          // Restore bonus
-          if (booking.bonusApplied > 0) {
+          // Restore bonus (minus penalty portion)
+          if (distribution.bonusRestored > 0) {
             await prisma.reviewerProfile.update({
               where: { id: guestProfile.id },
-              data: { bonusBalance: { increment: booking.bonusApplied } }
+              data: { bonusBalance: { increment: distribution.bonusRestored } }
             })
             await prisma.creditBonusTransaction.create({
               data: {
                 id: crypto.randomUUID(),
                 guestId: guestProfile.id,
-                amount: booking.bonusApplied,
+                amount: distribution.bonusRestored,
                 type: 'BONUS',
                 action: 'ADD',
-                balanceAfter: guestProfile.bonusBalance + booking.bonusApplied,
-                reason: `Restored from cancelled booking ${booking.bookingCode}`,
+                balanceAfter: guestProfile.bonusBalance + distribution.bonusRestored,
+                reason: distribution.penaltyFromBonus > 0
+                  ? `Restored from cancelled booking ${booking.bookingCode} (minus $${distribution.penaltyFromBonus.toFixed(2)} cancellation penalty)`
+                  : `Restored from cancelled booking ${booking.bookingCode}`,
                 bookingId: booking.id
               }
             })
-            console.log(`[Cancel Booking] Restored $${booking.bonusApplied} bonus`)
+            console.log(`[Cancel Booking] Restored $${distribution.bonusRestored.toFixed(2)} bonus (penalty absorbed: $${distribution.penaltyFromBonus.toFixed(2)})`)
+          } else if (bonusApplied > 0) {
+            console.log(`[Cancel Booking] Bonus not restored — full $${bonusApplied.toFixed(2)} absorbed by cancellation penalty`)
           }
 
-          // Restore deposit wallet
-          if (booking.depositFromWallet > 0) {
+          // Deposit wallet: ALWAYS fully restored (deposit is separate from trip cost)
+          if (depositFromWallet > 0) {
             await prisma.reviewerProfile.update({
               where: { id: guestProfile.id },
-              data: { depositWalletBalance: { increment: booking.depositFromWallet } }
+              data: { depositWalletBalance: { increment: depositFromWallet } }
             })
             await prisma.depositTransaction.create({
               data: {
                 id: crypto.randomUUID(),
                 guestId: guestProfile.id,
-                amount: booking.depositFromWallet,
+                amount: depositFromWallet,
                 type: 'RELEASE',
-                balanceAfter: (guestProfile.depositWalletBalance || 0) + booking.depositFromWallet,
+                balanceAfter: (guestProfile.depositWalletBalance || 0) + depositFromWallet,
                 bookingId: booking.id,
                 description: `Deposit released from cancelled booking ${booking.bookingCode}`
               }
             })
-            console.log(`[Cancel Booking] Restored $${booking.depositFromWallet} to deposit wallet`)
+            console.log(`[Cancel Booking] Restored $${depositFromWallet} to deposit wallet (always released)`)
           }
         }
       } catch (balanceError) {
@@ -293,16 +356,30 @@ export async function POST(
         status: cancelledBooking.status,
         cancelledAt: cancelledBooking.cancelledAt
       },
-      refund: {
-        amount: refundAmount,
-        percentage: cancellation.refundPercentage,
+      cancellation: {
         tier: cancellation.tier,
-        policy: cancellation.label
+        policy: cancellation.label,
+        penaltyAmount: cancellation.penaltyAmount,
+        penaltyDays: cancellation.penaltyDays,
+        averageDailyCost: cancellation.averageDailyCost,
+        tripRefund: cancellation.refundAmount,
+        depositRefunded: true,
+      },
+      refund: {
+        cardRefund: distribution.cardRefund,
+        depositFromCardRefund: depositFromCard,
+        totalCardRefund,
+        penalty: {
+          total: cancellation.penaltyAmount,
+          fromCard: distribution.penaltyFromCard,
+          fromCredits: distribution.penaltyFromCredits,
+          fromBonus: distribution.penaltyFromBonus,
+        }
       },
       balancesRestored: {
-        credits: booking.creditsApplied || 0,
-        bonus: booking.bonusApplied || 0,
-        depositWallet: booking.depositFromWallet || 0
+        credits: distribution.creditsRestored,
+        bonus: distribution.bonusRestored,
+        depositWallet: depositFromWallet
       }
     })
   } catch (error) {

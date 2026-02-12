@@ -48,18 +48,41 @@ export const getTimeUntilPickup = (booking: Booking | null): string | null => {
 
 export const calculateRefund = (booking: Booking): RefundCalculation => {
   const hoursUntilTrip = getHoursUntilPickup(booking.startDate)
-  const policy = CANCELLATION_POLICIES.STANDARD
-  const applicableTier = policy.tiers.find(tier => hoursUntilTrip >= tier.hours)
-  
-  const baseRefund = booking.totalAmount * (applicableTier?.refund || 0)
+  const tripDays = booking.numberOfDays || calculateTripDays(booking.startDate, booking.endDate)
+  const safeDays = Math.max(1, tripDays)
+  const averageDailyCost = booking.totalAmount / safeDays
   const serviceFeeRefund = hoursUntilTrip >= 168 ? booking.serviceFee : 0
-  
+
+  // 24+ hours: free cancellation
+  if (hoursUntilTrip >= 24) {
+    return {
+      refundAmount: booking.totalAmount,
+      serviceFeeRefund,
+      totalRefund: booking.totalAmount + serviceFeeRefund,
+      refundPercentage: 1.0,
+      penaltyAmount: 0,
+      penaltyDays: 0,
+      depositRefunded: true,
+      label: 'Full refund'
+    }
+  }
+
+  // <24 hours: day-based penalty
+  const penaltyDays = safeDays > 2 ? 1 : 0.5
+  const penaltyAmount = Math.round(averageDailyCost * penaltyDays * 100) / 100
+  const refundAmount = Math.max(0, Math.round((booking.totalAmount - penaltyAmount) * 100) / 100)
+
   return {
-    refundAmount: baseRefund,
-    serviceFeeRefund,
-    totalRefund: baseRefund + serviceFeeRefund,
-    refundPercentage: applicableTier?.refund || 0,
-    label: applicableTier?.label || 'No refund'
+    refundAmount,
+    serviceFeeRefund: 0,
+    totalRefund: refundAmount,
+    refundPercentage: booking.totalAmount > 0 ? refundAmount / booking.totalAmount : 0,
+    penaltyAmount,
+    penaltyDays,
+    depositRefunded: true,
+    label: safeDays > 2
+      ? `1-day penalty ($${penaltyAmount.toFixed(2)})`
+      : `Half-day penalty ($${penaltyAmount.toFixed(2)})`
   }
 }
 
