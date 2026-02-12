@@ -11,13 +11,9 @@ import {
   IoRefreshOutline,
   IoShieldCheckmarkOutline,
   IoCardOutline,
-  IoWarningOutline,
-  IoCheckmarkCircleOutline,
-  IoCloseCircleOutline,
-  IoTimeOutline,
-  IoFlashOutline,
   IoChevronForwardOutline,
 } from 'react-icons/io5'
+import { IntentRow, IntentCard } from './components'
 
 interface PaymentIntent {
   id: string
@@ -75,6 +71,7 @@ export default function BankingAuditPage() {
   const [hasMore, setHasMore] = useState(false)
   const [lastId, setLastId] = useState<string | null>(null)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchIntents()
@@ -303,6 +300,7 @@ export default function BankingAuditPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                    <th className="w-8 px-2 py-3"></th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Intent ID</th>
                     <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">Amount</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -314,35 +312,7 @@ export default function BankingAuditPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {intents.map(pi => (
-                    <tr key={pi.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                      <td className="px-4 py-3">
-                        <span className="font-mono text-xs text-gray-700 dark:text-gray-300" title={pi.id}>
-                          {pi.id.slice(0, 20)}...
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="font-semibold text-gray-900 dark:text-white">
-                          {formatCurrency(pi.amount)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        {statusBadge(pi.status, pi.statusLabel)}
-                      </td>
-                      <td className="px-4 py-3">
-                        {cardBadge(pi.paymentMethod)}
-                      </td>
-                      <td className="px-4 py-3">
-                        {riskBadge(pi.risk)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs text-gray-600 dark:text-gray-400 truncate block max-w-[200px]" title={pi.description || ''}>
-                          {pi.description || pi.metadata?.bookingId || '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="text-xs text-gray-500">{formatDate(pi.created)}</span>
-                      </td>
-                    </tr>
+                    <IntentRow key={pi.id} pi={pi} expanded={expandedId === pi.id} onToggle={() => setExpandedId(expandedId === pi.id ? null : pi.id)} statusBadge={statusBadge} cardBadge={cardBadge} riskBadge={riskBadge} />
                   ))}
                 </tbody>
               </table>
@@ -352,29 +322,7 @@ export default function BankingAuditPage() {
           {/* Mobile Cards */}
           <div className="lg:hidden space-y-3">
             {intents.map(pi => (
-              <div key={pi.id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <span className="font-semibold text-gray-900 dark:text-white text-lg">
-                      {formatCurrency(pi.amount)}
-                    </span>
-                    <div className="mt-1">{statusBadge(pi.status, pi.statusLabel)}</div>
-                  </div>
-                  <span className="text-xs text-gray-500">{formatDate(pi.created)}</span>
-                </div>
-                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-gray-500">
-                  <span className="font-mono" title={pi.id}>{pi.id.slice(0, 24)}...</span>
-                </div>
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-                  {cardBadge(pi.paymentMethod)}
-                  {riskBadge(pi.risk)}
-                </div>
-                {(pi.description || pi.metadata?.bookingId) && (
-                  <div className="mt-2 text-xs text-gray-500 truncate">
-                    {pi.description || `Booking: ${pi.metadata.bookingId}`}
-                  </div>
-                )}
-              </div>
+              <IntentCard key={pi.id} pi={pi} expanded={expandedId === pi.id} onToggle={() => setExpandedId(expandedId === pi.id ? null : pi.id)} statusBadge={statusBadge} cardBadge={cardBadge} riskBadge={riskBadge} />
             ))}
           </div>
 
