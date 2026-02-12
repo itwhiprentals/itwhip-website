@@ -3540,6 +3540,14 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                     </div>
                   )}
 
+                  {/* ✅ Deposit from wallet (if any) */}
+                  {appliedBalances.depositFromWallet > 0 && (
+                    <div className="flex justify-between text-blue-600 dark:text-blue-400">
+                      <span className="font-medium">Deposit from Wallet</span>
+                      <span className="font-medium">-${formatPrice(appliedBalances.depositFromWallet)}</span>
+                    </div>
+                  )}
+
                   {/* Totals Section */}
                   <div className="pt-4 mt-4 border-t dark:border-gray-700">
                     {/* Trip Total - strikethrough if savings applied */}
@@ -3566,40 +3574,62 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                       </div>
                     )}
 
-                {/* Security Deposit - Show strikethrough when waived, normal red box when required */}
+                {/* Security Deposit - Show wallet coverage, card hold, or waived */}
                 <div className="flex justify-end mt-2 mb-3">
                   {adjustedDeposit > 0 ? (
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-500 rounded-lg">
-                      <span className="text-sm font-medium text-white">
-                        + ${adjustedDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} deposit
-                      </span>
-                      {userProfile?.insuranceVerified && (
-                        <span className="text-xs text-green-200 font-medium">
-                          50% off!
+                    appliedBalances.depositFromCard > 0 ? (
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-500 rounded-lg">
+                        <span className="text-sm font-medium text-white">
+                          + ${formatPrice(appliedBalances.depositFromCard)} deposit
                         </span>
-                      )}
-                      {/* (Hold) with tooltip inline */}
-                      <div className="relative inline-flex items-center gap-0.5">
-                        <span className="text-xs text-white/80 font-medium">(Hold)</span>
-                        <button
-                          type="button"
-                          onMouseEnter={() => setShowDepositTooltip(true)}
-                          onMouseLeave={() => setShowDepositTooltip(false)}
-                          onClick={() => setShowDepositTooltip(!showDepositTooltip)}
-                          className="text-white/70 hover:text-white -mt-0.5"
-                          aria-label="Learn about security deposit"
-                        >
-                          <IoHelpCircleOutline className="w-3.5 h-3.5" />
-                        </button>
-
-                        {showDepositTooltip && (
-                          <div className="absolute z-50 right-0 bottom-full mb-1 whitespace-nowrap px-2 py-1 bg-white dark:bg-gray-800 rounded shadow-lg border border-gray-200 dark:border-gray-600">
-                            <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">Temporary hold, not a charge.<br/>Released 3-5 days after trip.</p>
-                            <div className="absolute right-2 top-full w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-gray-200 dark:border-t-gray-600"></div>
-                          </div>
+                        {userProfile?.insuranceVerified && (
+                          <span className="text-xs text-green-200 font-medium">
+                            50% off!
+                          </span>
                         )}
+                        {appliedBalances.depositFromWallet > 0 && (
+                          <span className="text-xs text-green-200 font-medium">
+                            ${formatPrice(appliedBalances.depositFromWallet)} from wallet
+                          </span>
+                        )}
+                        {/* (Hold) with tooltip inline */}
+                        <div className="relative inline-flex items-center gap-0.5">
+                          <span className="text-xs text-white/80 font-medium">(Hold)</span>
+                          <button
+                            type="button"
+                            onMouseEnter={() => setShowDepositTooltip(true)}
+                            onMouseLeave={() => setShowDepositTooltip(false)}
+                            onClick={() => setShowDepositTooltip(!showDepositTooltip)}
+                            className="text-white/70 hover:text-white -mt-0.5"
+                            aria-label="Learn about security deposit"
+                          >
+                            <IoHelpCircleOutline className="w-3.5 h-3.5" />
+                          </button>
+
+                          {showDepositTooltip && (
+                            <div className="absolute z-50 right-0 bottom-full mb-1 whitespace-nowrap px-2 py-1 bg-white dark:bg-gray-800 rounded shadow-lg border border-gray-200 dark:border-gray-600">
+                              <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">Temporary hold, not a charge.<br/>Released 3-5 days after trip.</p>
+                              <div className="absolute right-2 top-full w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-gray-200 dark:border-t-gray-600"></div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      /* Deposit fully covered by wallet */
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-lg">
+                        {userProfile?.insuranceVerified && (
+                          <span className="text-sm font-medium line-through text-gray-400 dark:text-gray-500">
+                            ${formatPrice(adjustedDeposit * 2)}
+                          </span>
+                        )}
+                        <span className="text-sm font-medium line-through text-gray-400 dark:text-gray-500">
+                          ${formatPrice(adjustedDeposit)}
+                        </span>
+                        <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                          Deposit covered by wallet
+                        </span>
+                      </div>
+                    )
                   ) : rateBasedDeposit > 0 ? (
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-lg">
                       <span className="text-sm font-medium line-through text-gray-400 dark:text-gray-500">
@@ -3612,13 +3642,12 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                   ) : null}
                 </div>
 
-                    {/* Grand Total (Trip + Deposit) - NO arrow for this row */}
-                    {/* Use amountToPay (after credits) + deposit for the actual total due */}
+                    {/* Grand Total (Trip + Deposit from card only) */}
                     <div className="flex justify-between items-baseline pt-3 border-t dark:border-gray-700">
                       <span className="text-base font-semibold text-gray-900 dark:text-white">Total Due Today</span>
                       <div className="text-right">
                         <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                          ${formatPrice(appliedBalances.amountToPay + adjustedDeposit)}
+                          ${formatPrice(appliedBalances.amountToPay + appliedBalances.depositFromCard)}
                         </span>
                       </div>
                     </div>
@@ -3751,8 +3780,8 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                 guestBalances,
                 0.25 // 25% max bonus
               )
-              // Use amountToPay (after credits) + deposit for the actual total
-              const grandTotal = stickyAppliedBalances.amountToPay + adjustedDeposit
+              // Use amountToPay (after credits) + deposit FROM CARD for the actual total
+              const grandTotal = stickyAppliedBalances.amountToPay + stickyAppliedBalances.depositFromCard
 
               return (
                 <div className="min-w-0 flex-1">
@@ -3762,12 +3791,12 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                     </span>
                     <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">total</span>
                   </div>
-                  {/* Show deposit info - strikethrough when waived */}
-                  {adjustedDeposit > 0 ? (
+                  {/* Show deposit info based on wallet coverage */}
+                  {adjustedDeposit > 0 && stickyAppliedBalances.depositFromCard > 0 ? (
                     <>
                       <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
                         <span className="hidden sm:inline">${formatPrice(stickyAppliedBalances.amountToPay)} + </span>
-                        <span className="text-red-600 dark:text-red-400">${formatPrice(adjustedDeposit)} deposit</span>
+                        <span className="text-red-600 dark:text-red-400">${formatPrice(stickyAppliedBalances.depositFromCard)} deposit</span>
                         <span className="text-gray-400 dark:text-gray-500 ml-1">(refundable)</span>
                       </p>
                       {userProfile?.insuranceVerified && (
@@ -3776,6 +3805,10 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                         </p>
                       )}
                     </>
+                  ) : adjustedDeposit > 0 && stickyAppliedBalances.depositFromCard === 0 ? (
+                    <p className="text-[10px] sm:text-xs text-green-600 dark:text-green-400 font-medium">
+                      Deposit covered by wallet
+                    </p>
                   ) : rateBasedDeposit > 0 ? (
                     <p className="text-[10px] sm:text-xs flex items-center gap-1">
                       <span className="hidden sm:inline text-gray-500 dark:text-gray-400">${formatPrice(stickyAppliedBalances.amountToPay)} + </span>
