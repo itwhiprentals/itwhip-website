@@ -20,8 +20,8 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
 )
 
-const REFRESH_TOKEN_SECRET = new TextEncoder().encode(
-  process.env.REFRESH_TOKEN_SECRET!
+const JWT_REFRESH_SECRET = new TextEncoder().encode(
+  process.env.JWT_REFRESH_SECRET!
 )
 
 async function verifyPassword(password: string, hash: string): Promise<boolean> {
@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
       .setIssuedAt(now)
       .setExpirationTime(now + 7 * 24 * 60 * 60)
       .setIssuer('itwhip')
-      .sign(REFRESH_TOKEN_SECRET)
+      .sign(JWT_REFRESH_SECRET)
 
     const response = NextResponse.json({
       success: true,

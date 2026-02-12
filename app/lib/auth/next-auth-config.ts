@@ -156,36 +156,31 @@ async function buildAuthOptions(): Promise<NextAuthOptions> {
         }
 
         // ========================================================================
-        // SECURITY GUARD: Prevent OAuth account linking to different user
+        // SECURITY GUARD: Require verification before linking NEW provider
+        // Note: user.id from NextAuth signIn callback is the OAuth provider's
+        // profile ID (not the DB user ID) when the account isn't linked yet.
+        // We must look up by email to find the actual database user.
         // ========================================================================
-        if (account && user.id && !user.id.startsWith('pending_')) {
+        if (account && user.email) {
           try {
             const dbUser = await prisma.user.findUnique({
-              where: { id: user.id },
-              select: { email: true }
+              where: { email: user.email },
+              select: { id: true, email: true }
             })
 
-            if (dbUser && dbUser.email !== user.email) {
-              console.error('[NextAuth] SECURITY BLOCK: OAuth email mismatch!', {
-                oauthEmail: user.email,
-                dbEmail: dbUser.email,
-                userId: user.id,
-                provider: account.provider
-              })
-              return '/auth/login?error=account-mismatch'
+            if (!dbUser) {
+              // No DB user with this email — new user, let normal flow handle creation
+              return true
             }
 
-            // ==================================================================
-            // RULE 2: Require verification before linking NEW provider
-            // ==================================================================
             const existingAccount = await prisma.account.findFirst({
-              where: { userId: user.id, provider: account.provider }
+              where: { userId: dbUser.id, provider: account.provider }
             })
 
             if (!existingAccount) {
-              console.log(`[NextAuth] Provider ${account.provider} not linked to user ${user.id} — requiring verification`)
+              console.log(`[NextAuth] Provider ${account.provider} not linked to user ${dbUser.id} — requiring verification`)
               const pendingToken = await new SignJWT({
-                userId: user.id,
+                userId: dbUser.id,
                 provider: account.provider,
                 providerAccountId: account.providerAccountId,
                 access_token: account.access_token,
@@ -353,32 +348,26 @@ export const authOptions: NextAuthOptions = {
         return '/auth/login?error=hidden-email'
       }
 
-      if (account && user.id && !user.id.startsWith('pending_')) {
+      // Look up by email (user.id may be OAuth provider's profile ID, not DB ID)
+      if (account && user.email) {
         try {
           const dbUser = await prisma.user.findUnique({
-            where: { id: user.id },
-            select: { email: true }
+            where: { email: user.email },
+            select: { id: true, email: true }
           })
 
-          if (dbUser && dbUser.email !== user.email) {
-            console.error('[NextAuth] SECURITY BLOCK: OAuth email mismatch!', {
-              oauthEmail: user.email,
-              dbEmail: dbUser.email,
-              userId: user.id,
-              provider: account.provider
-            })
-            return '/auth/login?error=account-mismatch'
+          if (!dbUser) {
+            return true
           }
 
-          // RULE 2: Require verification before linking NEW provider
           const existingAccount = await prisma.account.findFirst({
-            where: { userId: user.id, provider: account.provider }
+            where: { userId: dbUser.id, provider: account.provider }
           })
 
           if (!existingAccount) {
-            console.log(`[NextAuth] Provider ${account.provider} not linked to user ${user.id} — requiring verification`)
+            console.log(`[NextAuth] Provider ${account.provider} not linked to user ${dbUser.id} — requiring verification`)
             const pendingToken = await new SignJWT({
-              userId: user.id,
+              userId: dbUser.id,
               provider: account.provider,
               providerAccountId: account.providerAccountId,
               access_token: account.access_token,

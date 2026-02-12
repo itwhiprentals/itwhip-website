@@ -175,6 +175,7 @@ const publicRoutes = [
   '/auth/reset-password',
   '/auth/confirm-link',  // Account linking confirmation page
   '/auth/verify-phone',  // Phone verification page (Firebase)
+  '/auth/verify-link',   // OAuth provider linking verification page
   '/api/host/signup',
   '/api/host/login',
   '/api/host/verify',
