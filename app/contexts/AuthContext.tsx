@@ -74,29 +74,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log(`[AuthContext] Refreshing auth state... (v${thisVersion})`)
 
     try {
-      // Skip dual-role check entirely for anonymous visitors (no auth cookies)
-      const hasCookies = typeof document !== 'undefined' && (
-        document.cookie.includes('accessToken') ||
-        document.cookie.includes('hostAccessToken') ||
-        document.cookie.includes('partner_token')
-      )
-
-      if (!hasCookies) {
-        console.log('[AuthContext] No auth cookies, skipping dual-role check')
-        if (thisVersion === refreshVersionRef.current) {
-          initialCheckDoneRef.current = true
-          setState({
-            isLoggedIn: false,
-            user: null,
-            currentRole: null,
-            hasBothProfiles: false,
-            isLoading: false,
-            isSwitchingRole: false
-          })
-        }
-        return
-      }
-
       // Check dual-role status first - this tells us which tokens exist
       const dualRoleRes = await fetch('/api/auth/check-dual-role', {
         credentials: 'include'

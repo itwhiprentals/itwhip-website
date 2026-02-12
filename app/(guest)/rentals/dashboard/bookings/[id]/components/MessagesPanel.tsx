@@ -127,15 +127,15 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+    <div className="bg-gray-100 rounded-lg border border-gray-300 p-4 sm:p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
         <span className="text-xs text-gray-500">
           {messages.length} message{messages.length !== 1 ? 's' : ''}
         </span>
       </div>
-      
-      <div className="border border-gray-200 rounded-lg bg-gray-50 h-[400px] lg:h-[450px] overflow-y-auto">
+
+      <div className="border border-gray-200 rounded-lg bg-white h-[400px] lg:h-[450px] overflow-y-auto">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-400 p-4">
             <svg className="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

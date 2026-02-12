@@ -277,7 +277,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   const [savedBookingDetails, setSavedBookingDetails] = useState<SavedBookingDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [bookingSuccess, setBookingSuccess] = useState<{ bookingCode: string; accessToken?: string; status?: string } | null>(null)
+  const [bookingSuccess, setBookingSuccess] = useState<{ bookingCode: string; accessToken?: string; status?: string; id?: string } | null>(null)
   const [bookingError, setBookingError] = useState<string | null>(null)
 
   // User profile states
@@ -2052,11 +2052,12 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           bookingCode: data.booking.bookingCode,
           accessToken: data.booking.accessToken,
           status: data.status || 'pending_review',
+          id: data.booking.id,
         })
         // Auto-redirect after a short delay so guest can see confirmation
         setTimeout(() => {
-          if (data.booking.accessToken) {
-            router.push(`/rentals/track/${data.booking.accessToken}`)
+          if (data.booking.id) {
+            router.push(`/rentals/dashboard/bookings/${data.booking.id}?new=1`)
           } else {
             router.push('/rentals/dashboard/bookings')
           }
@@ -3695,8 +3696,8 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             </p>
             <button
               onClick={() => {
-                if (bookingSuccess.accessToken) {
-                  router.push(`/rentals/track/${bookingSuccess.accessToken}`)
+                if (bookingSuccess.id) {
+                  router.push(`/rentals/dashboard/bookings/${bookingSuccess.id}?new=1`)
                 } else {
                   router.push('/rentals/dashboard/bookings')
                 }

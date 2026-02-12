@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import confetti from 'canvas-confetti'
 import { useParams, useRouter } from 'next/navigation'
 import { Booking, Message } from './types'
 import { BookingDetails } from './components/BookingDetails'
@@ -18,6 +19,7 @@ import { BookingOnboarding } from './components/BookingOnboarding'
 import { ModifyBookingSheet } from './components/ModifyBookingSheet'
 import { SecureAccountBanner } from './components/SecureAccountBanner'
 import RentalAgreementModal from '../../../components/modals/RentalAgreementModal'
+import { getVehicleClass, formatFuelTypeBadge } from '@/app/lib/utils/vehicleClassification'
 import {
   getTimeUntilPickup, validateFileUpload
 } from './utils/helpers'
@@ -266,7 +268,17 @@ export default function BookingDetailsPage() {
   // Check for trip-related URL params
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
-    if (urlParams.get('tripStarted') === 'true') {
+    if (urlParams.get('new') === '1') {
+      // New booking — fire confetti celebration
+      setToast({ message: 'Booking submitted! We\'re reviewing your details now.', type: 'success' })
+      setTimeout(() => {
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } })
+        setTimeout(() => {
+          confetti({ particleCount: 50, spread: 100, origin: { y: 0.5 } })
+        }, 300)
+      }, 500)
+      window.history.replaceState({}, '', window.location.pathname)
+    } else if (urlParams.get('tripStarted') === 'true') {
       setToast({ message: 'Trip started successfully! Drive safely.', type: 'success' })
       window.history.replaceState({}, '', window.location.pathname)
     } else if (urlParams.get('tripEnded') === 'true') {
@@ -312,23 +324,28 @@ export default function BookingDetailsPage() {
   // ✅ FIXED: Initial load and polling - only depend on bookingId
   useEffect(() => {
     loadBooking()
-    loadMessages()
 
     // Poll for booking updates
     const bookingInterval = setInterval(() => {
       loadBooking()
     }, BOOKING_POLLING_INTERVAL)
 
-    // Poll for new messages
+    return () => {
+      clearInterval(bookingInterval)
+    }
+  }, [bookingId]) // ✅ Only bookingId, loadBooking is stable now
+
+  // Load and poll messages only when booking is confirmed (not PENDING/CANCELLED)
+  useEffect(() => {
+    if (!booking || booking.status === 'PENDING' || booking.status === 'CANCELLED') return
+
+    loadMessages()
     const messageInterval = setInterval(() => {
       loadMessages()
     }, MESSAGE_POLLING_INTERVAL)
 
-    return () => {
-      clearInterval(bookingInterval)
-      clearInterval(messageInterval)
-    }
-  }, [bookingId]) // ✅ Only bookingId, loadBooking is stable now
+    return () => clearInterval(messageInterval)
+  }, [bookingId, booking?.status])
 
   // Loading state
   if (loading) {
@@ -380,7 +397,7 @@ export default function BookingDetailsPage() {
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-6">
         {/* Header */}
-        <div className="mb-4 sm:mb-6">
+        <div className="mb-4 sm:mb-6 mt-4 sm:mt-2">
           <button
             onClick={() => router.push('/dashboard')}
             className="text-gray-600 hover:text-gray-900 mb-3 flex items-center text-sm sm:text-base transition-colors"
@@ -390,36 +407,57 @@ export default function BookingDetailsPage() {
             <span className="sm:hidden">Back</span>
           </button>
           
-          <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4">
-              <div className="flex-1">
+          <div className="space-y-3 pl-6">
+            <div>
+              <div className="flex items-center gap-2 flex-wrap mb-1">
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
-                  {booking.car.year} {booking.car.make} {booking.car.model}
+                  {booking.car.year} {booking.car.make}
                 </h1>
-                <div className="flex flex-wrap items-center gap-2 mt-2">
-                  <span className="text-xs sm:text-sm text-gray-600">Booking</span>
-                  <div className="flex items-center gap-1.5">
-                    <code className="font-mono text-xs sm:text-sm bg-gray-100 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
-                      {booking.bookingCode}
-                    </code>
-                    <button
-                      onClick={copyBookingCode}
-                      className="text-gray-400 hover:text-gray-600 transition-colors p-0.5"
-                      title="Copy booking code"
-                    >
-                      {copiedCode ? <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600" /> : <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                    </button>
-                  </div>
+                <div className="flex items-center gap-1.5 ml-auto">
+                  {(() => {
+                    const vc = getVehicleClass(booking.car.make, booking.car.model, (booking.car.type || null) as any)
+                    return vc ? <span className="text-xs font-medium px-2 py-1 rounded-lg border border-gray-300 text-gray-700">{vc}</span> : null
+                  })()}
+                  {(() => {
+                    const ft = formatFuelTypeBadge((booking.car as any).fuelType || null)
+                    return ft ? <span className="text-xs font-medium px-2 py-1 rounded-lg border border-gray-300 text-gray-700">{ft}</span> : null
+                  })()}
+                  {booking.car.transmission && (
+                    <span className="text-xs font-medium px-2 py-1 rounded-lg border border-gray-300 text-gray-700 capitalize">
+                      {booking.car.transmission.toLowerCase()}
+                    </span>
+                  )}
+                  {booking.car.seats && (
+                    <span className="text-xs font-medium px-2 py-1 rounded-lg border border-gray-300 text-gray-700">
+                      {booking.car.seats} seats
+                    </span>
+                  )}
                 </div>
               </div>
-              {timeUntilPickup && booking.status === 'CONFIRMED' && (
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-xs sm:text-sm text-gray-600 bg-gray-100 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full inline-flex items-center">
+              <p className="text-sm sm:text-base text-gray-500 font-medium">
+                {booking.car.model}
+              </p>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <span className="text-xs sm:text-sm text-gray-600">Booking</span>
+                <div className="flex items-center gap-1.5">
+                  <code className="font-mono text-xs sm:text-sm bg-gray-100 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
+                    {booking.bookingCode}
+                  </code>
+                  <button
+                    onClick={copyBookingCode}
+                    className="text-gray-400 hover:text-gray-600 transition-colors p-0.5"
+                    title="Copy booking code"
+                  >
+                    {copiedCode ? <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600" /> : <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                  </button>
+                </div>
+                {timeUntilPickup && booking.status === 'CONFIRMED' && (
+                  <span className="text-xs sm:text-sm text-gray-600 bg-gray-100 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full inline-flex items-center ml-auto">
                     <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" />
                     {timeUntilPickup}
                   </span>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -463,8 +501,8 @@ export default function BookingDetailsPage() {
           </div>
         )}
 
-        {/* Booking Onboarding (grayed out when PENDING, active when CONFIRMED) */}
-        {(booking.status === 'PENDING' || (booking.status === 'CONFIRMED' && !booking.onboardingCompletedAt)) && (
+        {/* Booking Onboarding - only after host approves (CONFIRMED) */}
+        {booking.status === 'CONFIRMED' && !booking.onboardingCompletedAt && (
           <div className="mt-6">
             <BookingOnboarding booking={booking} onDocumentUploaded={loadBooking} />
           </div>
@@ -505,17 +543,19 @@ export default function BookingDetailsPage() {
               uploadingFile={uploadingFile}
             />
 
-            {/* Messages Panel */}
-            <MessagesPanel
-              bookingId={bookingId}
-              messages={messages}
-              loading={messagesLoading}
-              sending={messageSending}
-              error={messageError}
-              onSendMessage={sendMessage}
-              onFileUpload={handleMessageFileUpload}
-              uploadingFile={messageUploading}
-            />
+            {/* Messages Panel - only available after booking is confirmed (host approved) */}
+            {booking.status !== 'PENDING' && booking.status !== 'CANCELLED' && (
+              <MessagesPanel
+                bookingId={bookingId}
+                messages={messages}
+                loading={messagesLoading}
+                sending={messageSending}
+                error={messageError}
+                onSendMessage={sendMessage}
+                onFileUpload={handleMessageFileUpload}
+                uploadingFile={messageUploading}
+              />
+            )}
           </div>
 
           {/* Right Column - Sidebar */}

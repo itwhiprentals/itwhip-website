@@ -68,7 +68,7 @@ export default function StatusProgression({
       name: 'Booked', 
       complete: isBooked,
       active: !isVerified && !isCancelled,
-      description: documentsSubmittedAt ? 'Documents submitted' : 'Awaiting documents'
+      description: documentsSubmittedAt ? 'Docs submitted' : 'Awaiting docs'
     },
     { 
       name: 'Verified', 
@@ -134,8 +134,8 @@ export default function StatusProgression({
       </div>
       
       {/* Progress Bar */}
-      <div className="relative">
-        <div className="absolute top-3.5 sm:top-5 left-0 right-0 h-0.5 bg-gray-200">
+      <div className="relative -mx-4 sm:-mx-5">
+        <div className="absolute top-3.5 sm:top-5 left-[10%] right-[10%] h-0.5 bg-gray-200">
           <motion.div
             className="h-full bg-green-500"
             initial={{ width: '0%' }}
@@ -149,8 +149,8 @@ export default function StatusProgression({
           />
         </div>
 
-        {/* Steps */}
-        <div className="relative flex justify-between">
+        {/* Steps - grid: half-width first/last columns for equal 25% circle spacing */}
+        <div className="relative grid grid-cols-5">
           {steps.map((step, index) => (
             <div key={step.name} className="flex flex-col items-center min-w-0">
               <motion.div
@@ -181,7 +181,7 @@ export default function StatusProgression({
                 }`}>
                   {step.name}
                 </p>
-                <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 max-w-[60px] sm:max-w-[100px] truncate sm:whitespace-normal">
+                <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 leading-tight">
                   {step.description}
                 </p>
               </div>

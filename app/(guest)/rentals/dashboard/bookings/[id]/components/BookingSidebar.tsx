@@ -196,11 +196,12 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
 
         {/* Messages */}
         <div className="mt-4 pt-4 border-t border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Messages</h3>
           {booking.status === 'PENDING' ? (
-            <div className="w-full flex flex-col items-center gap-1.5 px-3 py-3 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed">
-              <MessageSquare className="w-5 h-5" />
-              <span className="text-xs font-medium">Message Host</span>
-              <span className="text-[10px]">Available after confirmation</span>
+            <div className="bg-gray-200 rounded-lg border border-gray-300 py-5 text-center">
+              <MessageSquare className="w-6 h-6 text-gray-400 mx-auto mb-1.5" />
+              <p className="text-xs font-semibold text-gray-700">Message Host</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">Available after confirmation</p>
             </div>
           ) : (
             <a
