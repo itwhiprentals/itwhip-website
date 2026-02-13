@@ -188,10 +188,10 @@ export default function FleetDashboard() {
           {/* Messages */}
           <Link
             href={`/fleet/messages?key=${apiKey}`}
-            className="relative px-4 py-3 bg-gradient-to-br from-blue-500 to-cyan-600 text-white rounded-lg hover:from-blue-600 hover:to-cyan-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="relative min-h-[76px] px-3 py-3 bg-gradient-to-br from-blue-500 to-cyan-600 text-white rounded-lg hover:from-blue-600 hover:to-cyan-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoChatbubblesOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Messages</span>
+            <span className="text-xs font-medium text-center leading-tight">Messages</span>
             {unreadCount > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse shadow-lg">
                 {unreadCount > 99 ? '99+' : unreadCount}
@@ -202,64 +202,64 @@ export default function FleetDashboard() {
           {/* Hosts */}
           <Link
             href={`/fleet/hosts?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoPersonOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Hosts</span>
+            <span className="text-xs font-medium text-center leading-tight">Hosts</span>
           </Link>
 
           {/* Guests */}
           <Link
             href={`/fleet/guests?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoPeopleOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Guests</span>
+            <span className="text-xs font-medium text-center leading-tight">Guests</span>
           </Link>
 
           {/* Insurance */}
           <Link
             href={`/fleet/insurance?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoShieldCheckmarkOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Insurance</span>
+            <span className="text-xs font-medium text-center leading-tight">Insurance</span>
           </Link>
 
           {/* Claims */}
           <Link
             href={`/fleet/claims?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoDocumentTextOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Claims</span>
+            <span className="text-xs font-medium text-center leading-tight">Claims</span>
           </Link>
 
           {/* Appeals */}
           <Link
             href={`/fleet/appeals?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-rose-500 to-rose-600 text-white rounded-lg hover:from-rose-600 hover:to-rose-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-rose-500 to-rose-600 text-white rounded-lg hover:from-rose-600 hover:to-rose-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoMegaphoneOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Appeals</span>
+            <span className="text-xs font-medium text-center leading-tight">Appeals</span>
           </Link>
 
           {/* Bookings */}
           <Link
             href={`/fleet/bookings?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoCalendarOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Bookings</span>
+            <span className="text-xs font-medium text-center leading-tight">Bookings</span>
           </Link>
 
           {/* Partners */}
           <Link
             href={`/fleet/partners?key=${apiKey}`}
-            className="relative px-4 py-3 bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="relative min-h-[76px] px-3 py-3 bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoBriefcaseOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Partners</span>
+            <span className="text-xs font-medium text-center leading-tight">Partners</span>
             {pendingApplications > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse shadow-lg">
                 {pendingApplications > 99 ? '99+' : pendingApplications}
@@ -270,10 +270,10 @@ export default function FleetDashboard() {
           {/* Business Approvals */}
           <Link
             href={`/fleet/business?key=${apiKey}`}
-            className="relative px-4 py-3 bg-gradient-to-br from-violet-500 to-indigo-600 text-white rounded-lg hover:from-violet-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="relative min-h-[76px] px-3 py-3 bg-gradient-to-br from-violet-500 to-indigo-600 text-white rounded-lg hover:from-violet-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoStorefrontOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Business</span>
+            <span className="text-xs font-medium text-center leading-tight">Business</span>
             {pendingBusinessApprovals > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse shadow-lg">
                 {pendingBusinessApprovals > 99 ? '99+' : pendingBusinessApprovals}
@@ -284,70 +284,70 @@ export default function FleetDashboard() {
           {/* Banking */}
           <Link
             href={`/fleet/banking?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoWalletOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Banking</span>
+            <span className="text-xs font-medium text-center leading-tight">Banking</span>
           </Link>
 
           {/* Refunds */}
           <Link
             href={`/fleet/refunds?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-pink-500 to-pink-600 text-white rounded-lg hover:from-pink-600 hover:to-pink-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-pink-500 to-pink-600 text-white rounded-lg hover:from-pink-600 hover:to-pink-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoReturnDownBackOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Refunds</span>
+            <span className="text-xs font-medium text-center leading-tight">Refunds</span>
           </Link>
 
           {/* Bonuses */}
           <Link
             href={`/fleet/bonuses?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoGiftOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Bonuses</span>
+            <span className="text-xs font-medium text-center leading-tight">Bonuses</span>
           </Link>
 
           {/* Requests */}
           <Link
             href={`/fleet/requests?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoHandRightOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Requests</span>
+            <span className="text-xs font-medium text-center leading-tight">Requests</span>
           </Link>
 
           {/* Host Prospects */}
           <Link
             href={`/fleet/prospects?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoPersonAddOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Host Leads</span>
+            <span className="text-xs font-medium text-center leading-tight">Host Leads</span>
           </Link>
 
           {/* Guest Invites */}
           <Link
             href={`/fleet/guest-prospects?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-lg hover:from-pink-600 hover:to-rose-600 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-lg hover:from-pink-600 hover:to-rose-600 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoGiftOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Guest Invites</span>
+            <span className="text-xs font-medium text-center leading-tight">Guest Invites</span>
           </Link>
 
           {/* Emails */}
           <Link
             href={`/fleet/emails?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-violet-500 to-purple-600 text-white rounded-lg hover:from-violet-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-violet-500 to-purple-600 text-white rounded-lg hover:from-violet-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoMailOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Emails</span>
+            <span className="text-xs font-medium text-center leading-tight">Emails</span>
           </Link>
 
           {/* Choé AI */}
           <Link
             href={`/fleet/choe?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group overflow-visible"
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group overflow-visible"
           >
             <Image
               src="/images/choe-logo.png"
@@ -356,34 +356,34 @@ export default function FleetDashboard() {
               height={72}
               className="group-hover:scale-110 transition-transform -my-6"
             />
-            <span className="text-sm font-medium">Choé AI</span>
+            <span className="text-xs font-medium text-center leading-tight">Choé AI</span>
           </Link>
 
           {/* E-Sign */}
           <Link
             href={`/fleet/esign?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoDocumentTextOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">E-Sign</span>
+            <span className="text-xs font-medium text-center leading-tight">E-Sign</span>
           </Link>
 
           {/* ID Verification */}
           <Link
             href={`/fleet/verifications?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-teal-500 to-cyan-600 text-white rounded-lg hover:from-teal-600 hover:to-cyan-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-teal-500 to-cyan-600 text-white rounded-lg hover:from-teal-600 hover:to-cyan-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoIdCardOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">ID Check</span>
+            <span className="text-xs font-medium text-center leading-tight">ID Check</span>
           </Link>
 
           {/* Settings */}
           <Link
             href={`/fleet/settings?key=${apiKey}`}
-            className="px-4 py-3 bg-gradient-to-br from-gray-500 to-gray-600 text-white rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center gap-2 group"
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-gray-500 to-gray-600 text-white rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
           >
             <IoSettingsOutline className="text-2xl group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Settings</span>
+            <span className="text-xs font-medium text-center leading-tight">Settings</span>
           </Link>
         </div>
       </div>
