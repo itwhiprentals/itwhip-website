@@ -187,14 +187,14 @@ export async function GET() {
       const cars = data.results || data.cars || data || []
 
       cars.forEach((car: any) => {
-        if (car.id && car.make && car.model && car.year && car.images?.length > 0) {
+        if (car.id && car.make && car.model && car.year && car.photos?.length > 0) {
           const slug = `${car.year}-${car.make}-${car.model}-${car.city || 'phoenix'}`
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '')
 
-          const carImages: CarImage[] = car.images.slice(0, 5).map((img: string, idx: number) => ({
-            loc: img,
+          const carImages: CarImage[] = car.photos.slice(0, 5).map((photo: any, idx: number) => ({
+            loc: typeof photo === 'string' ? photo : photo.url,
             title: idx === 0
               ? `${car.year} ${car.make} ${car.model} for Rent in ${car.city || 'Phoenix'}`
               : `${car.year} ${car.make} ${car.model} - Photo ${idx + 1}`,
