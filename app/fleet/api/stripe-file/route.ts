@@ -1,14 +1,8 @@
 // app/fleet/api/stripe-file/route.ts
 // Proxies Stripe Identity verification photos for fleet admin viewing
-// Uses FileLinks per Stripe docs: https://docs.stripe.com/identity/access-verification-results
+// Uses direct authenticated download from Stripe Files API
 // Requires a restricted API key with Identity + Files permissions
 import { NextRequest, NextResponse } from 'next/server'
-import Stripe from 'stripe'
-
-// Separate Stripe instance using restricted key (has Identity photo access)
-const stripeIdentity = new Stripe(process.env.STRIPE_IDENTITY_RESTRICTED_KEY!, {
-  apiVersion: '2025-08-27.basil' as any,
-})
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,22 +16,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid file ID' }, { status: 400 })
     }
 
-    // Create a short-lived FileLink (max 30s for identity files per Stripe docs)
-    const fileLink = await stripeIdentity.fileLinks.create({
-      file: fileId,
-      expires_at: Math.floor(Date.now() / 1000) + 30,
-    })
-
-    if (!fileLink.url) {
-      console.error(`[Stripe File Proxy] FileLink created but has no URL for ${fileId}`)
-      return NextResponse.json({ error: 'File not available' }, { status: 404 })
+    const stripeKey = process.env.STRIPE_IDENTITY_RESTRICTED_KEY
+    if (!stripeKey) {
+      console.error('[Stripe File Proxy] STRIPE_IDENTITY_RESTRICTED_KEY not configured')
+      return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 })
     }
 
-    // Fetch the file content via the temporary FileLink URL (unauthenticated)
-    const response = await fetch(fileLink.url)
+    // Download file directly from Stripe Files API with authenticated request
+    const response = await fetch(`https://files.stripe.com/v1/files/${fileId}/contents`, {
+      headers: {
+        'Authorization': `Bearer ${stripeKey}`,
+      },
+    })
 
     if (!response.ok) {
-      console.error(`[Stripe File Proxy] Failed to fetch file ${fileId} via FileLink: ${response.status}`)
+      const errorText = await response.text().catch(() => '')
+      console.error(`[Stripe File Proxy] Stripe files API returned ${response.status} for ${fileId}: ${errorText.slice(0, 200)}`)
+
+      if (response.status === 403) {
+        return NextResponse.json({ error: 'Photo not accessible', code: 'PHOTO_EXPIRED' }, { status: 410 })
+      }
       return NextResponse.json({ error: 'Failed to fetch file' }, { status: 502 })
     }
 
@@ -52,11 +50,6 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error: any) {
-    // Detect the 48-hour limitation error from "Access recent" restricted key
-    if (error.message?.includes('48 hours ago') || error.message?.includes('IP restrictions')) {
-      console.warn(`[Stripe File Proxy] Photo expired (>48h): ${fileId}`)
-      return NextResponse.json({ error: 'Photo expired', code: 'PHOTO_EXPIRED' }, { status: 410 })
-    }
     console.error('[Stripe File Proxy] Error:', error.message)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
