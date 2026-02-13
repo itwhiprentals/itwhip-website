@@ -13,6 +13,8 @@ import {
   IoLocationOutline,
   IoChevronDownOutline,
   IoChevronUpOutline,
+  IoImageOutline,
+  IoClose,
 } from 'react-icons/io5'
 import type { StripeGuestProfile } from '../types'
 
@@ -22,8 +24,12 @@ interface StripeGuestsListProps {
   totalProfiles: number
 }
 
+const FLEET_KEY = 'phoenix-fleet-2847'
+const stripeFileUrl = (fileId: string) => `/fleet/api/stripe-file?key=${FLEET_KEY}&id=${fileId}`
+
 export default function StripeGuestsList({ guests, totalVerified, totalProfiles }: StripeGuestsListProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   if (guests.length === 0) {
     return (
@@ -36,6 +42,16 @@ export default function StripeGuestsList({ guests, totalVerified, totalProfiles 
 
   return (
     <div className="space-y-2">
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setLightboxUrl(null)}>
+          <button className="absolute top-4 right-4 text-white" onClick={() => setLightboxUrl(null)}>
+            <IoClose className="w-8 h-8" />
+          </button>
+          <img src={lightboxUrl} alt="Document" className="max-w-full max-h-[90vh] object-contain rounded-lg" />
+        </div>
+      )}
+
       {/* Summary bar */}
       <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 mb-3">
         <span className="flex items-center gap-1">
@@ -115,7 +131,7 @@ export default function StripeGuestsList({ guests, totalVerified, totalProfiles 
             {expanded && (
               <div className="border-t border-gray-200 dark:border-gray-700 p-4 space-y-3">
                 {isVerified ? (
-                  <VerifiedDetails guest={g} />
+                  <VerifiedDetails guest={g} onViewPhoto={setLightboxUrl} />
                 ) : (
                   <div className="text-sm text-gray-500 dark:text-gray-400">
                     <p>Stripe Identity status: <strong>{g.stripe.status || 'unknown'}</strong></p>
@@ -159,7 +175,7 @@ function NotExtracted() {
 }
 
 // ─── Verified Details Grid ───────────────────────────────────────────────
-function VerifiedDetails({ guest }: { guest: StripeGuestProfile }) {
+function VerifiedDetails({ guest, onViewPhoto }: { guest: StripeGuestProfile; onViewPhoto: (url: string) => void }) {
   const s = guest.stripe
 
   const formatDate = (d: string | null) => {
@@ -167,10 +183,23 @@ function VerifiedDetails({ guest }: { guest: StripeGuestProfile }) {
     return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
-  const isExpired = s.verifiedIdExpiry ? new Date(s.verifiedIdExpiry) < new Date() : false
+  // Use Stripe-extracted data with fallback to profile fields
+  const dob = s.verifiedDob || guest.dateOfBirth
+  const dlNumber = s.verifiedIdNumber || guest.driverLicenseNumber
+  const dlExpiry = s.verifiedIdExpiry || guest.driverLicenseExpiry
+  const isExpired = dlExpiry ? new Date(dlExpiry) < new Date() : false
 
   return (
     <div className="space-y-3">
+      {/* ID Photos */}
+      {(s.docFrontFileId || s.docBackFileId || s.selfieFileId) && (
+        <div className="grid grid-cols-3 gap-2">
+          <StripePhotoThumb label="ID Front" fileId={s.docFrontFileId} onView={onViewPhoto} />
+          <StripePhotoThumb label="ID Back" fileId={s.docBackFileId} onView={onViewPhoto} />
+          <StripePhotoThumb label="Selfie" fileId={s.selfieFileId} onView={onViewPhoto} />
+        </div>
+      )}
+
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
         <DetailCell
           icon={<IoPersonOutline className="text-blue-500" />}
@@ -180,22 +209,37 @@ function VerifiedDetails({ guest }: { guest: StripeGuestProfile }) {
         <DetailCell
           icon={<IoCalendarOutline className="text-blue-500" />}
           label="Date of Birth"
-          value={formatDate(s.verifiedDob) || <NotExtracted />}
+          value={
+            dob ? (
+              <span>
+                {formatDate(dob)}
+                {!s.verifiedDob && guest.dateOfBirth && <SourceBadge label="Profile" />}
+              </span>
+            ) : <NotExtracted />
+          }
         />
         <DetailCell
           icon={<IoCardOutline className="text-blue-500" />}
           label="DL Number"
-          value={s.verifiedIdNumber || <NotExtracted />}
-          mono={!!s.verifiedIdNumber}
+          value={
+            dlNumber ? (
+              <span>
+                {dlNumber}
+                {!s.verifiedIdNumber && guest.driverLicenseNumber && <SourceBadge label="Profile" />}
+              </span>
+            ) : <NotExtracted />
+          }
+          mono={!!dlNumber}
         />
         <DetailCell
           icon={<IoTimeOutline className={isExpired ? 'text-red-500' : 'text-blue-500'} />}
           label="DL Expiry"
           value={
-            s.verifiedIdExpiry ? (
+            dlExpiry ? (
               <span className={isExpired ? 'text-red-600 font-medium' : ''}>
-                {formatDate(s.verifiedIdExpiry)}
+                {formatDate(dlExpiry)}
                 {isExpired && ' (Expired)'}
+                {!s.verifiedIdExpiry && guest.driverLicenseExpiry && <SourceBadge label="Profile" />}
               </span>
             ) : <NotExtracted />
           }
@@ -228,12 +272,46 @@ function VerifiedDetails({ guest }: { guest: StripeGuestProfile }) {
           />
         )}
       </div>
-      {/* Info note about Stripe extraction limits */}
-      {(!s.verifiedDob || !s.verifiedIdNumber || !s.verifiedIdExpiry) && (
-        <p className="text-xs text-gray-400 dark:text-gray-500 italic">
-          Some fields weren&apos;t extracted by Stripe for this verification. Future verifications will request full document data. Claude AI verification can fill in missing fields from the DL image.
-        </p>
-      )}
+    </div>
+  )
+}
+
+// ─── Source Badge (shows when data comes from profile, not Stripe) ───────
+function SourceBadge({ label }: { label: string }) {
+  return (
+    <span className="ml-1 px-1 py-0.5 text-[10px] rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+      {label}
+    </span>
+  )
+}
+
+// ─── Stripe Photo Thumbnail ──────────────────────────────────────────────
+function StripePhotoThumb({ label, fileId, onView }: { label: string; fileId: string | null; onView: (url: string) => void }) {
+  if (!fileId) {
+    return (
+      <div className="flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg p-3 text-center">
+        <IoImageOutline className="w-6 h-6 text-gray-400 mb-1" />
+        <span className="text-[10px] text-gray-400">{label}</span>
+        <span className="text-[10px] text-gray-400">N/A</span>
+      </div>
+    )
+  }
+
+  const url = stripeFileUrl(fileId)
+  return (
+    <div
+      className="relative group cursor-pointer rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700"
+      onClick={() => onView(url)}
+    >
+      <img
+        src={url}
+        alt={label}
+        className="w-full h-24 object-cover"
+        loading="lazy"
+      />
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-end">
+        <span className="text-[10px] text-white bg-black/50 w-full text-center py-0.5">{label}</span>
+      </div>
     </div>
   )
 }

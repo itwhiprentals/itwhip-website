@@ -84,9 +84,16 @@ export interface StripeGuestProfile {
     verifiedIdNumber: string | null
     verifiedIdExpiry: string | null
     verifiedAddress: string | null
+    docFrontFileId: string | null
+    docBackFileId: string | null
+    selfieFileId: string | null
     documentType: string | null
     issuingCountry: string | null
   }
+  // Fallback fields from profile (when Stripe didn't extract)
+  dateOfBirth: string | null
+  driverLicenseNumber: string | null
+  driverLicenseExpiry: string | null
   documentsVerified: boolean
   fullyVerified: boolean
 }
