@@ -287,12 +287,24 @@ function SourceBadge({ label }: { label: string }) {
 
 // ─── Stripe Photo Thumbnail ──────────────────────────────────────────────
 function StripePhotoThumb({ label, fileId, onView }: { label: string; fileId: string | null; onView: (url: string) => void }) {
+  const [errored, setErrored] = useState(false)
+
   if (!fileId) {
     return (
       <div className="flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg p-3 text-center">
         <IoImageOutline className="w-6 h-6 text-gray-400 mb-1" />
         <span className="text-[10px] text-gray-400">{label}</span>
         <span className="text-[10px] text-gray-400">N/A</span>
+      </div>
+    )
+  }
+
+  if (errored) {
+    return (
+      <div className="flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg p-3 text-center">
+        <IoTimeOutline className="w-6 h-6 text-amber-400 mb-1" />
+        <span className="text-[10px] text-gray-400">{label}</span>
+        <span className="text-[10px] text-amber-500">Expired</span>
       </div>
     )
   }
@@ -308,6 +320,7 @@ function StripePhotoThumb({ label, fileId, onView }: { label: string; fileId: st
         alt={label}
         className="w-full h-24 object-cover"
         loading="lazy"
+        onError={() => setErrored(true)}
       />
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-end">
         <span className="text-[10px] text-white bg-black/50 w-full text-center py-0.5">{label}</span>

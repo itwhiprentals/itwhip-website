@@ -207,12 +207,24 @@ function StripePhoto({ label, fileId, icon, onView }: {
   icon: React.ReactNode
   onView: (url: string) => void
 }) {
+  const [errored, setErrored] = useState(false)
+
   if (!fileId) {
     return (
       <div className="bg-blue-100/50 dark:bg-blue-900/30 rounded-lg p-2 text-center">
         <div className="w-5 h-5 mx-auto text-blue-300 dark:text-blue-700 mb-0.5">{icon}</div>
         <p className="text-xs text-blue-300 dark:text-blue-700">{label}</p>
         <p className="text-xs text-blue-200 dark:text-blue-800">N/A</p>
+      </div>
+    )
+  }
+
+  if (errored) {
+    return (
+      <div className="bg-blue-100/50 dark:bg-blue-900/30 rounded-lg p-2 text-center">
+        <div className="w-5 h-5 mx-auto text-amber-400 mb-0.5">{icon}</div>
+        <p className="text-xs text-blue-600 dark:text-blue-400">{label}</p>
+        <p className="text-xs text-amber-500">Expired</p>
       </div>
     )
   }
@@ -224,7 +236,7 @@ function StripePhoto({ label, fileId, icon, onView }: {
       className="relative group bg-blue-100/50 dark:bg-blue-900/30 rounded-lg overflow-hidden cursor-pointer"
       onClick={() => onView(url)}
     >
-      <img src={url} alt={label} className="w-full h-20 object-cover" />
+      <img src={url} alt={label} className="w-full h-20 object-cover" onError={() => setErrored(true)} />
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
         <IoEyeOutline className="text-white opacity-0 group-hover:opacity-100 text-xl transition-opacity" />
       </div>
