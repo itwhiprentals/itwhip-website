@@ -299,7 +299,7 @@ export async function POST(
 
         sendRefundConfirmationEmail({
           guestEmail: booking.guestEmail!,
-          guestName: booking.guestName,
+          guestName: booking.guestName || '',
           bookingCode: booking.bookingCode,
           carMake: booking.car?.make || 'Vehicle',
           carModel: booking.car?.model || '',

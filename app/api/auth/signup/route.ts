@@ -286,8 +286,8 @@ export async function POST(request: NextRequest) {
     const newUser = await db.createUser({
       email: email.toLowerCase(),
       passwordHash,
-      name: name || null,
-      phone: phone || null,
+      name: name || undefined,
+      phone: phone || undefined,
       role: 'CLAIMED' // Guest users start as CLAIMED
     })
 

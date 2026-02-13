@@ -497,8 +497,8 @@ export async function POST(
     const tripDates = `${formatDate(refundRequest.booking.startDate)} - ${formatDate(refundRequest.booking.endDate)}`
 
     sendRefundConfirmationEmail({
-      guestEmail: refundRequest.booking.guestEmail,
-      guestName: refundRequest.booking.guestName,
+      guestEmail: refundRequest.booking.guestEmail || '',
+      guestName: refundRequest.booking.guestName || '',
       bookingCode: refundRequest.booking.bookingCode,
       carMake: refundRequest.booking.car?.make || 'Vehicle',
       carModel: refundRequest.booking.car?.model || '',

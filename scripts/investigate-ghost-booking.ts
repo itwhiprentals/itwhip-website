@@ -187,13 +187,13 @@ async function investigate() {
     const secEvents = await prisma.securityEvent.findMany({
       where: {
         OR: [
-          { metadata: { path: ['email'], equals: GUEST_EMAIL } },
-          { metadata: { path: ['guestEmail'], equals: GUEST_EMAIL } },
+          { message: { contains: GUEST_EMAIL } },
+          { details: { contains: GUEST_EMAIL } },
         ],
-        createdAt: { gte: FEB_7_START, lt: FEB_7_END }
+        timestamp: { gte: FEB_7_START, lt: FEB_7_END }
       },
       take: 20,
-      orderBy: { createdAt: 'desc' }
+      orderBy: { timestamp: 'desc' }
     })
     result('Security events on Feb 7', secEvents)
   } catch {

@@ -2050,7 +2050,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       
       // Get reCAPTCHA token for booking
       if (executeRecaptcha) {
-        try { bookingPayload.recaptchaToken = await executeRecaptcha('booking') } catch {}
+        try { (bookingPayload as any).recaptchaToken = await executeRecaptcha('booking') } catch {}
       }
 
       // Call booking API (credentials: 'include' sends cookies for self-booking prevention)

@@ -98,19 +98,19 @@ export async function POST(
 
     // Set the specific charge field based on type
     switch (chargeType) {
-      case 'MILEAGE':
+      case 'mileage_overage':
         chargeData.mileageCharge = amount
         break
-      case 'FUEL':
+      case 'fuel':
         chargeData.fuelCharge = amount
         break
-      case 'LATE_FEE':
+      case 'late_fee':
         chargeData.lateCharge = amount
         break
-      case 'DAMAGE':
+      case 'damage':
         chargeData.damageCharge = amount
         break
-      case 'CLEANING':
+      case 'cleaning':
         chargeData.cleaningCharge = amount
         break
       default:

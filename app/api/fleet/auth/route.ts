@@ -18,7 +18,7 @@ function generateSessionToken(): string {
 }
 
 // Verify a session token (simplified - just check if it exists and was issued by us)
-export function verifySessionToken(token: string): boolean {
+function verifySessionToken(token: string): boolean {
   // Token should be a valid hex string of the right length
   return typeof token === 'string' && /^[a-f0-9]{64}$/.test(token)
 }

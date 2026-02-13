@@ -603,7 +603,7 @@ export async function POST(
 
           // Send refund confirmation email (fire-and-forget)
           if (booking.guestEmail) {
-            const car = booking.carId ? await prisma.car.findUnique({
+            const car = booking.carId ? await prisma.rentalCar.findUnique({
               where: { id: booking.carId },
               select: { make: true, model: true }
             }) : null
@@ -612,7 +612,7 @@ export async function POST(
 
             sendRefundConfirmationEmail({
               guestEmail: booking.guestEmail,
-              guestName: booking.guestName,
+              guestName: booking.guestName || '',
               bookingCode: booking.bookingCode,
               carMake: car?.make || 'Vehicle',
               carModel: car?.model || '',

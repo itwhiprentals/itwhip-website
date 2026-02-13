@@ -22,7 +22,7 @@ interface BookingCardProps {
 
 export function BookingCard({ booking, onSelect, onAction }: BookingCardProps) {
   const isHighRisk = (booking.riskScore || 0) >= 60
-  const needsVerification = booking.verificationStatus === 'PENDING' || booking.verificationStatus === 'SUBMITTED'
+  const needsVerification = booking.verificationStatus === 'PENDING' || booking.verificationStatus === 'IN_REVIEW'
   const needsFleetApproval = booking.status === 'PENDING' && booking.paymentStatus === 'AUTHORIZED'
 
   return (

@@ -115,6 +115,8 @@ const bookingSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  let stripePaymentIntentId: string | null = null
+  let bookingData: any = null
   try {
     // Parse and validate request body
     const body = await request.json()
@@ -137,7 +139,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const bookingData = validationResult.data
+    bookingData = validationResult.data
 
     // Sanitize user-provided string fields to prevent stored XSS
     bookingData.guestName = sanitizeValue(bookingData.guestName, 'guestName')
@@ -621,7 +623,7 @@ export async function POST(request: NextRequest) {
 
     // ========== STRIPE TEST PAYMENT SETUP ==========
     let stripeCustomerId: string | null = null
-    let stripePaymentIntentId: string | null = null
+    stripePaymentIntentId = null
     let stripePaymentMethodId: string | null = null
     let paymentAlreadyConfirmed = false
 

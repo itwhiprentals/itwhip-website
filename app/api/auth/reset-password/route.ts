@@ -59,7 +59,6 @@ export async function POST(req: NextRequest) {
       timeCost: 3,
       parallelism: 4,
       hashLength: 32,
-      saltLength: 16
     })
 
     // Update user password and invalidate token

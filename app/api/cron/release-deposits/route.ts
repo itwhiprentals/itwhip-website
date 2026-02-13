@@ -7,8 +7,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { releaseSecurityDeposit } from '@/app/lib/booking/services/payment-service'
 import { sendDepositReleasedEmail } from '@/app/lib/email/deposit-release-email'
+import { ClaimStatus } from '@prisma/client'
 
-const OPEN_CLAIM_STATUSES = [
+const OPEN_CLAIM_STATUSES: ClaimStatus[] = [
   'PENDING',
   'UNDER_REVIEW',
   'GUEST_RESPONSE_PENDING',
@@ -188,7 +189,7 @@ export async function POST(request: NextRequest) {
         if (walletPortion > 0) {
           // Find guest profile by email (deposit wallet is on ReviewerProfile)
           const guestProfile = await prisma.reviewerProfile.findFirst({
-            where: { email: booking.guestEmail.toLowerCase() },
+            where: { email: booking.guestEmail!.toLowerCase() },
             select: { id: true, depositWalletBalance: true },
           })
 
@@ -235,8 +236,8 @@ export async function POST(request: NextRequest) {
 
         // Send deposit release notification email
         sendDepositReleasedEmail({
-          guestEmail: booking.guestEmail,
-          guestName: booking.guestName,
+          guestEmail: booking.guestEmail || '',
+          guestName: booking.guestName || '',
           bookingCode: booking.bookingCode,
           carMake: booking.car?.make || 'Vehicle',
           carModel: booking.car?.model || '',
