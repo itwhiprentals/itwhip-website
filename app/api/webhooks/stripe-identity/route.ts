@@ -157,6 +157,9 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
     address?: string
     issuingCountry?: string
     documentType?: string
+    docFrontFileId?: string
+    docBackFileId?: string
+    selfieFileId?: string
   } = {}
 
   if (session.last_verification_report) {
@@ -188,6 +191,18 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
 
         console.log(`[Stripe Identity] Extracted from report: firstName=${verifiedData.firstName}, lastName=${verifiedData.lastName}, dob=${verifiedData.dob}, idNumber=${verifiedData.idNumber ? '***' : 'none'}, idExpiry=${verifiedData.idExpiry}, issuedDate=${verifiedData.issuedDate}, address=${verifiedData.address ? 'yes' : 'none'}`)
       }
+
+      // Extract photo file IDs
+      const reportAny = report as any
+      if (reportAny.document?.files) {
+        const files = reportAny.document.files as string[]
+        verifiedData.docFrontFileId = files[0] || undefined
+        verifiedData.docBackFileId = files[1] || undefined
+      }
+      if (reportAny.selfie?.selfie) {
+        verifiedData.selfieFileId = reportAny.selfie.selfie
+      }
+      console.log(`[Stripe Identity] Photo file IDs: front=${verifiedData.docFrontFileId || 'none'}, back=${verifiedData.docBackFileId || 'none'}, selfie=${verifiedData.selfieFileId || 'none'}`)
     } catch (err) {
       console.error('[Stripe Identity] Error retrieving verification report:', err)
     }
@@ -220,9 +235,14 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
       documentVerifiedAt: new Date(),
       documentVerifiedBy: 'stripe-identity',
       fullyVerified: true,
+      isVerified: true,
       // Update driver license info for FNOL
       driverLicenseNumber: verifiedData.idNumber,
-      driverLicenseExpiry: verifiedData.idExpiry
+      driverLicenseExpiry: verifiedData.idExpiry,
+      // Store Stripe Identity photo file IDs
+      stripeDocFrontFileId: verifiedData.docFrontFileId || null,
+      stripeDocBackFileId: verifiedData.docBackFileId || null,
+      stripeSelfieFileId: verifiedData.selfieFileId || null,
     } as any
   })
 

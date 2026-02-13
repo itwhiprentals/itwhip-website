@@ -89,6 +89,9 @@ export async function GET(_request: NextRequest) {
             dob?: Date
             idNumber?: string
             idExpiry?: Date
+            docFrontFileId?: string
+            docBackFileId?: string
+            selfieFileId?: string
           } = {}
 
           if (session.last_verification_report) {
@@ -107,6 +110,16 @@ export async function GET(_request: NextRequest) {
                     ? new Date(doc.expiration_date.year!, doc.expiration_date.month! - 1, doc.expiration_date.day!)
                     : undefined
                 }
+              }
+              // Extract photo file IDs
+              const reportAny = report as any
+              if (reportAny.document?.files) {
+                const files = reportAny.document.files as string[]
+                verifiedData.docFrontFileId = files[0] || undefined
+                verifiedData.docBackFileId = files[1] || undefined
+              }
+              if (reportAny.selfie?.selfie) {
+                verifiedData.selfieFileId = reportAny.selfie.selfie
               }
             } catch (err) {
               console.error('[Identity Check] Error retrieving verification report:', err)
@@ -129,8 +142,12 @@ export async function GET(_request: NextRequest) {
               documentVerifiedAt: new Date(),
               documentVerifiedBy: 'stripe-identity',
               fullyVerified: true,
+              isVerified: true,
               driverLicenseNumber: verifiedData.idNumber,
-              driverLicenseExpiry: verifiedData.idExpiry
+              driverLicenseExpiry: verifiedData.idExpiry,
+              stripeDocFrontFileId: verifiedData.docFrontFileId || null,
+              stripeDocBackFileId: verifiedData.docBackFileId || null,
+              stripeSelfieFileId: verifiedData.selfieFileId || null,
             }
           })
         } else if (session.status === 'requires_input') {

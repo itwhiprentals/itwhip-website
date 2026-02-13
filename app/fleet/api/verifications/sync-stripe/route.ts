@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
             documentVerifiedAt: new Date(),
             documentVerifiedBy: 'stripe-identity',
             fullyVerified: true,
+            isVerified: true,
           }
           const fieldsUpdated: string[] = ['status→verified']
 
@@ -110,6 +111,18 @@ export async function POST(request: NextRequest) {
                 }
 
                 console.log(`[Stripe Sync] ${profile.name}: extracted [${fieldsUpdated.join(', ')}]`)
+              }
+
+              // Extract photo file IDs
+              const reportAny = report as any
+              if (reportAny.document?.files) {
+                const files = reportAny.document.files as string[]
+                if (files[0]) { updates.stripeDocFrontFileId = files[0]; fieldsUpdated.push('docFront') }
+                if (files[1]) { updates.stripeDocBackFileId = files[1]; fieldsUpdated.push('docBack') }
+              }
+              if (reportAny.selfie?.selfie) {
+                updates.stripeSelfieFileId = reportAny.selfie.selfie
+                fieldsUpdated.push('selfie')
               }
             } catch (err: any) {
               console.error(`[Stripe Sync] Error retrieving report for ${profile.name}:`, err.message)

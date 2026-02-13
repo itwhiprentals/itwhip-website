@@ -11,6 +11,9 @@ export interface StripeData {
   verifiedIdNumber: string | null  // masked: ***1234
   verifiedIdExpiry: string | null
   verifiedAddress: string | null
+  docFrontFileId: string | null
+  docBackFileId: string | null
+  selfieFileId: string | null
   profileName: string | null
   profileEmail: string | null
   fullyVerified: boolean | null

@@ -116,7 +116,7 @@ export default function VerificationCard({
                 <DocPreview label="DL Front" url={v.licensePhotoUrl} onView={setLightboxUrl} />
                 <DocPreview label="DL Back" url={v.licenseBackPhotoUrl} onView={setLightboxUrl} />
                 <DocPreview label="Insurance" url={v.insurancePhotoUrl} onView={setLightboxUrl} />
-                <DocPreview label="Selfie" url={null} onView={setLightboxUrl} />
+                <DocPreview label="Selfie" url={v.stripe?.selfieFileId ? `/fleet/api/stripe-file?key=phoenix-fleet-2847&id=${v.stripe.selfieFileId}` : null} onView={setLightboxUrl} />
               </div>
             </div>
 
