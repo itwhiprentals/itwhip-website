@@ -67,7 +67,23 @@ interface Guest {
   stripeIdentityStatus: string | null
   stripeIdentitySessionId: string | null
   stripeIdentityVerifiedAt: string | null
+  stripeVerifiedFirstName: string | null
+  stripeVerifiedLastName: string | null
+  stripeVerifiedDob: string | null
+  stripeVerifiedIdNumber: string | null
+  stripeVerifiedIdExpiry: string | null
+  stripeVerifiedAddress: string | null
+  stripeDocFrontFileId: string | null
+  stripeDocBackFileId: string | null
+  stripeSelfieFileId: string | null
+  // Profile fallbacks
+  dateOfBirth: string | null
+  driverLicenseNumber: string | null
+  driverLicenseExpiry: string | null
 }
+
+const FLEET_KEY = 'phoenix-fleet-2847'
+const stripeFileUrl = (fileId: string) => `/fleet/api/stripe-file?key=${FLEET_KEY}&id=${fileId}`
 
 export default function GuestDocumentsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
@@ -360,7 +376,7 @@ export default function GuestDocumentsPage({ params }: { params: Promise<{ id: s
     {
       type: 'driversLicense',
       label: "Driver's License",
-      url: guest.driversLicenseUrl || null,
+      url: guest.driversLicenseUrl || (guest.stripeDocFrontFileId ? stripeFileUrl(guest.stripeDocFrontFileId) : null),
       verified: guest.documentsVerified || false,
       verifiedAt: guest.documentVerifiedAt || null,
       verifiedBy: guest.documentVerifiedBy || null,
@@ -371,7 +387,7 @@ export default function GuestDocumentsPage({ params }: { params: Promise<{ id: s
     {
       type: 'selfie',
       label: 'Verification Selfie',
-      url: guest.selfieUrl || null,
+      url: guest.selfieUrl || (guest.stripeSelfieFileId ? stripeFileUrl(guest.stripeSelfieFileId) : null),
       verified: guest.documentsVerified || false,
       verifiedAt: guest.documentVerifiedAt || null,
       verifiedBy: guest.documentVerifiedBy || null,
@@ -549,6 +565,11 @@ export default function GuestDocumentsPage({ params }: { params: Promise<{ id: s
               </div>
             </div>
           </div>
+        )}
+
+        {/* Stripe Identity Verified Data — Photos + DL Info */}
+        {guest.stripeIdentityStatus === 'verified' && (
+          <StripeIdentityData guest={guest} onViewPhoto={setSelectedDocument} />
         )}
 
         {/* Show when NO Stripe Identity session exists */}
@@ -1034,6 +1055,122 @@ export default function GuestDocumentsPage({ params }: { params: Promise<{ id: s
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Stripe Identity Verified Data Section ──────────────────────────────
+function StripeIdentityData({ guest, onViewPhoto }: { guest: Guest; onViewPhoto: (url: string) => void }) {
+  const [photoErrors, setPhotoErrors] = useState<Record<string, boolean>>({})
+
+  const verifiedName = [guest.stripeVerifiedFirstName, guest.stripeVerifiedLastName].filter(Boolean).join(' ')
+  const dob = guest.stripeVerifiedDob || guest.dateOfBirth
+  const dlNumber = guest.stripeVerifiedIdNumber || guest.driverLicenseNumber
+  const dlExpiry = guest.stripeVerifiedIdExpiry || guest.driverLicenseExpiry
+  const isExpired = dlExpiry ? new Date(dlExpiry) < new Date() : false
+
+  const hasPhotos = guest.stripeDocFrontFileId || guest.stripeDocBackFileId || guest.stripeSelfieFileId
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return null
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    } catch { return null }
+  }
+
+  return (
+    <div className="mb-6 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg p-4">
+      <h3 className="font-semibold text-blue-900 dark:text-blue-100 text-sm sm:text-base flex items-center gap-2 mb-3">
+        <IoFingerPrintOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        Stripe Identity — Verified Data
+      </h3>
+
+      {/* ID Photos — only render photos that actually exist */}
+      {hasPhotos && (
+        <div className={`grid gap-3 mb-4 ${
+          [guest.stripeDocFrontFileId, guest.stripeDocBackFileId, guest.stripeSelfieFileId].filter(Boolean).length === 1
+            ? 'grid-cols-1 max-w-xs'
+            : [guest.stripeDocFrontFileId, guest.stripeDocBackFileId, guest.stripeSelfieFileId].filter(Boolean).length === 2
+            ? 'grid-cols-2'
+            : 'grid-cols-3'
+        }`}>
+          {[
+            { label: 'ID Front', fileId: guest.stripeDocFrontFileId },
+            { label: 'ID Back', fileId: guest.stripeDocBackFileId },
+            { label: 'Selfie', fileId: guest.stripeSelfieFileId },
+          ].filter(({ fileId }) => fileId && !photoErrors[fileId!]).map(({ label, fileId }) => {
+            const url = stripeFileUrl(fileId!)
+            return (
+              <div
+                key={label}
+                className="relative group bg-blue-100/50 dark:bg-blue-900/30 rounded-lg overflow-hidden cursor-pointer"
+                onClick={() => onViewPhoto(url)}
+              >
+                <img
+                  src={url}
+                  alt={label}
+                  className="w-full h-28 object-cover"
+                  onError={() => setPhotoErrors(prev => ({ ...prev, [fileId!]: true }))}
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                  <IoEyeOutline className="text-white opacity-0 group-hover:opacity-100 text-xl transition-opacity" />
+                </div>
+                <p className="text-xs text-center py-1 text-blue-600 dark:text-blue-400">{label}</p>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Verified Data Grid — only show fields that have values */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+        {verifiedName && (
+          <div>
+            <p className="text-blue-600/70 dark:text-blue-400/70">Verified Name</p>
+            <p className="font-medium text-blue-900 dark:text-blue-100">{verifiedName}</p>
+          </div>
+        )}
+        {dob && (
+          <div>
+            <p className="text-blue-600/70 dark:text-blue-400/70">Date of Birth</p>
+            <p className="font-medium text-blue-900 dark:text-blue-100">
+              {formatDate(dob)}
+              {!guest.stripeVerifiedDob && guest.dateOfBirth && (
+                <span className="ml-1 px-1 py-0.5 text-[10px] rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Profile</span>
+              )}
+            </p>
+          </div>
+        )}
+        {dlNumber && (
+          <div>
+            <p className="text-blue-600/70 dark:text-blue-400/70">DL Number</p>
+            <p className="font-medium text-blue-900 dark:text-blue-100 font-mono">
+              {dlNumber}
+              {!guest.stripeVerifiedIdNumber && guest.driverLicenseNumber && (
+                <span className="ml-1 px-1 py-0.5 text-[10px] rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-sans">Profile</span>
+              )}
+            </p>
+          </div>
+        )}
+        {dlExpiry && (
+          <div>
+            <p className="text-blue-600/70 dark:text-blue-400/70">DL Expiry</p>
+            <p className={`font-medium ${isExpired ? 'text-red-600 dark:text-red-400' : 'text-blue-900 dark:text-blue-100'}`}>
+              {formatDate(dlExpiry)}
+              {isExpired && ' (Expired)'}
+              {!guest.stripeVerifiedIdExpiry && guest.driverLicenseExpiry && (
+                <span className="ml-1 px-1 py-0.5 text-[10px] rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Profile</span>
+              )}
+            </p>
+          </div>
+        )}
+        {guest.stripeVerifiedAddress && (
+          <div className="col-span-2">
+            <p className="text-blue-600/70 dark:text-blue-400/70">Verified Address</p>
+            <p className="font-medium text-blue-900 dark:text-blue-100">{guest.stripeVerifiedAddress}</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

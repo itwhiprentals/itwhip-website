@@ -285,6 +285,19 @@ export async function GET(
       stripeIdentityStatus: guest.stripeIdentityStatus,
       stripeIdentitySessionId: guest.stripeIdentitySessionId,
       stripeIdentityVerifiedAt: guest.stripeIdentityVerifiedAt,
+      stripeVerifiedFirstName: guest.stripeVerifiedFirstName,
+      stripeVerifiedLastName: guest.stripeVerifiedLastName,
+      stripeVerifiedDob: guest.stripeVerifiedDob,
+      stripeVerifiedIdNumber: guest.stripeVerifiedIdNumber,
+      stripeVerifiedIdExpiry: guest.stripeVerifiedIdExpiry,
+      stripeVerifiedAddress: guest.stripeVerifiedAddress,
+      stripeDocFrontFileId: guest.stripeDocFrontFileId,
+      stripeDocBackFileId: guest.stripeDocBackFileId,
+      stripeSelfieFileId: guest.stripeSelfieFileId,
+      // Profile fallback fields
+      dateOfBirth: guest.dateOfBirth,
+      driverLicenseNumber: guest.driverLicenseNumber,
+      driverLicenseExpiry: guest.driverLicenseExpiry,
       
       // Stats
       stats: {
