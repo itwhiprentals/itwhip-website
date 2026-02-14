@@ -2,8 +2,10 @@
 
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
+import NextLink from 'next/link'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import {
   IoLogoFacebook,
   IoLogoTwitter,
@@ -12,47 +14,46 @@ import {
   IoLogoApple,
   IoLogoGooglePlaystore
 } from 'react-icons/io5'
+import LanguageSwitcher from './LanguageSwitcher'
 
 export default function Footer() {
   const currentYear = new Date().getFullYear()
-  
+  const t = useTranslations('Footer')
 
   return (
     <footer className="bg-gray-100 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1 md:py-5">
-        <div className="grid grid-cols-2 md:grid-cols-8 gap-2 md:gap-4 mb-8">
-          {/* Company Info */}
-          <div className="col-span-2 md:col-span-1">
-            {/* Logo and Branding */}
-            <div className="flex flex-col items-start mb-4">
-              <div className="relative ml-3 mt-1 w-7 h-7 rounded-full overflow-hidden bg-white dark:bg-gray-800">
-                {/* Light mode logo */}
-                <Image
-                  src="/logo.png"
-                  alt="ItWhip"
-                  fill
-                  className="object-contain dark:hidden"
-                  style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
-                />
-                {/* Dark mode logo */}
-                <Image
-                  src="/logo-white.png"
-                  alt="ItWhip"
-                  fill
-                  className="object-contain hidden dark:block"
-                  style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
-                />
-              </div>
-              <span className="text-[8px] text-gray-700 dark:text-gray-300 tracking-widest uppercase font-medium mt-0.5">
-                ITWHIP RIDES
-              </span>
-              <p className="text-[10px] text-gray-600 dark:text-gray-400 mt-1 -ml-0.5">
-                Peer-to-Peer Car Sharing & Rideshare
-              </p>
+        {/* Top Row: Logo + Language Switcher */}
+        <div className="flex items-start justify-between mb-4 md:mb-6">
+          {/* Logo and Branding */}
+          <div className="flex flex-col items-start">
+            <div className="relative ml-3 mt-1 w-7 h-7 rounded-full overflow-hidden bg-white dark:bg-gray-800">
+              {/* Light mode logo */}
+              <Image
+                src="/logo.png"
+                alt="ItWhip"
+                fill
+                className="object-contain dark:hidden"
+                style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
+              />
+              {/* Dark mode logo */}
+              <Image
+                src="/logo-white.png"
+                alt="ItWhip"
+                fill
+                className="object-contain hidden dark:block"
+                style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
+              />
             </div>
+            <span className="text-[8px] text-gray-700 dark:text-gray-300 tracking-widest uppercase font-medium mt-0.5">
+              ITWHIP RIDES
+            </span>
+            <p className="text-[10px] text-gray-600 dark:text-gray-400 mt-1 -ml-0.5">
+              {t('peerToPeer')}
+            </p>
             {/* Social Links */}
-            <div className="flex space-x-3">
+            <div className="flex space-x-3 mt-3">
               <a
                 href="https://www.facebook.com/people/Itwhipcom/61573990760395/"
                 target="_blank"
@@ -92,45 +93,53 @@ export default function Footer() {
             </div>
           </div>
 
+          {/* Language Switcher — right corner, aligned with logo */}
+          <div className="mt-1">
+            <LanguageSwitcher variant="footer" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-7 gap-2 md:gap-4 mb-8">
+
           {/* For Guests */}
           <div className="md:col-span-1">
             <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2 underline underline-offset-4 decoration-gray-900 dark:decoration-white">
-              For Guests
+              {t('forGuests')}
             </h4>
             <ul className="space-y-1.5">
               <li>
                 <Link href="/help/guest-account" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Guest Account
+                  {t('guestAccount')}
                 </Link>
               </li>
               <li>
                 <Link href="/rentals/budget" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Budget Cars
+                  {t('budgetCars')}
                 </Link>
               </li>
               <li>
                 <Link href="/rentals/daily" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Daily Rentals
+                  {t('dailyRentals')}
                 </Link>
               </li>
               <li>
                 <Link href="/rentals/long-term" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Long-Term Rentals
+                  {t('longTermRentals')}
                 </Link>
               </li>
               <li>
                 <Link href="/trip-planner" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Trip Planner
+                  {t('tripPlanner')}
                 </Link>
               </li>
               <li>
                 <Link href="/reviews" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Reviews
+                  {t('reviews')}
                 </Link>
               </li>
               <li>
                 <Link href="/auth/login" className="text-xs md:text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium transition-colors">
-                  Guest Portal →
+                  {t('guestPortal')}
                 </Link>
               </li>
             </ul>
@@ -139,48 +148,48 @@ export default function Footer() {
           {/* For Hosts */}
           <div className="md:col-span-1">
             <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2 underline underline-offset-4 decoration-gray-900 dark:decoration-white">
-              For Hosts
+              {t('forHosts')}
             </h4>
             <ul className="space-y-1.5">
               <li>
                 <Link href="/help/host-account" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Host Account
+                  {t('hostAccount')}
                 </Link>
               </li>
               <li>
                 <Link href="/list-your-car" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  List Your Car
+                  {t('listYourCar')}
                 </Link>
               </li>
               <li>
                 <Link href="/switch-from-turo" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Switch from Turo
+                  {t('switchFromTuro')}
                 </Link>
               </li>
               <li>
                 <Link href="/host-university" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Host University
+                  {t('hostUniversity')}
                 </Link>
               </li>
               <li>
                 <Link href="/host/fleet-owners" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Fleet Owners
+                  {t('fleetOwners')}
                 </Link>
               </li>
               <li>
                 <Link href="/host/payouts" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Payouts & Earnings
+                  {t('payoutsEarnings')}
                 </Link>
               </li>
               <li>
                 <Link href="/insurance-guide" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Insurance Guide
+                  {t('insuranceGuide')}
                 </Link>
               </li>
               <li>
-                <Link href="/host/login" className="text-xs md:text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium transition-colors">
-                  Host Portal →
-                </Link>
+                <NextLink href="/host/login" className="text-xs md:text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium transition-colors">
+                  {t('hostPortal')}
+                </NextLink>
               </li>
             </ul>
           </div>
@@ -188,32 +197,32 @@ export default function Footer() {
           {/* Support */}
           <div className="md:col-span-1">
             <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2 underline underline-offset-4 decoration-gray-900 dark:decoration-white">
-              Support
+              {t('support')}
             </h4>
             <ul className="space-y-1.5">
               <li>
                 <Link href="/support" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Help Center
+                  {t('helpCenter')}
                 </Link>
               </li>
               <li>
                 <Link href="/support/insurance" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Insurance Support
+                  {t('insuranceSupport')}
                 </Link>
               </li>
               <li>
                 <Link href="/cancellation-policy" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Cancellation Policy
+                  {t('cancellationPolicy')}
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Contact Us
+                  {t('contactUs')}
                 </Link>
               </li>
               <li>
                 <Link href="/coverage" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Coverage Areas
+                  {t('coverageAreas')}
                 </Link>
               </li>
             </ul>
@@ -222,42 +231,42 @@ export default function Footer() {
           {/* Company */}
           <div className="md:col-span-1">
             <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2 underline underline-offset-4 decoration-gray-900 dark:decoration-white">
-              Company
+              {t('companySection')}
             </h4>
             <ul className="space-y-1.5">
               <li>
                 <Link href="/how-it-works" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  How It Works
+                  {t('howItWorks')}
                 </Link>
               </li>
               <li>
                 <Link href="/about" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  About Us
+                  {t('aboutUs')}
                 </Link>
               </li>
               <li>
                 <Link href="/help/identity-verification" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Identity Verification
+                  {t('identityVerification')}
                 </Link>
               </li>
               <li>
                 <Link href="/press" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Press
+                  {t('press')}
                 </Link>
               </li>
               <li>
                 <Link href="/careers" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Careers
+                  {t('careers')}
                 </Link>
               </li>
               <li>
                 <Link href="/blog" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Blog
+                  {t('blog')}
                 </Link>
               </li>
               <li>
                 <Link href="/corporate" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Corporate Rentals
+                  {t('corporateRentals')}
                 </Link>
               </li>
             </ul>
@@ -266,42 +275,42 @@ export default function Footer() {
           {/* Technology */}
           <div className="md:col-span-1">
             <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2 underline underline-offset-4 decoration-gray-900 dark:decoration-white">
-              Technology
+              {t('technology')}
             </h4>
             <ul className="space-y-1.5">
               <li>
                 <Link href="/tracking" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Fleet Tracking
+                  {t('fleetTracking')}
                 </Link>
               </li>
               <li>
                 <Link href="/mileage-forensics" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Mileage Forensics™
+                  {t('mileageForensics')}
                 </Link>
               </li>
               <li>
                 <Link href="/esg-dashboard" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  ESG Dashboard
+                  {t('esgDashboard')}
                 </Link>
               </li>
               <li>
                 <Link href="/developers" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Developer APIs
+                  {t('developerApis')}
                 </Link>
               </li>
               <li>
                 <Link href="/sdk" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Instant Ride SDK™
+                  {t('instantRideSdk')}
                 </Link>
               </li>
               <li>
                 <Link href="/integrations" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Integrations
+                  {t('integrations')}
                 </Link>
               </li>
               <li>
                 <Link href="/help/choe" className="text-xs md:text-sm text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 font-medium transition-colors">
-                  Choé AI →
+                  {t('choeAi')}
                 </Link>
               </li>
             </ul>
@@ -310,33 +319,33 @@ export default function Footer() {
           {/* Partners */}
           <div className="md:col-span-1">
             <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2 underline underline-offset-4 decoration-gray-900 dark:decoration-white">
-              Partners
+              {t('partners')}
             </h4>
             <ul className="space-y-1.5">
               <li>
                 <Link href="/partners/apply" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Become a Partner
+                  {t('becomePartner')}
                 </Link>
               </li>
               <li>
                 <Link href="/rideshare" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Rideshare Rentals
+                  {t('rideshareRentals')}
                 </Link>
               </li>
               <li>
                 <Link href="/partners/commission" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Commission Tiers
+                  {t('commissionTiers')}
                 </Link>
               </li>
               <li>
                 <Link href="/partners/resources" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Partner Resources
+                  {t('partnerResources')}
                 </Link>
               </li>
               <li>
-                <Link href="/partner/login" className="text-xs md:text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium transition-colors">
-                  Partners Portal →
-                </Link>
+                <NextLink href="/partner/login" className="text-xs md:text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium transition-colors">
+                  {t('partnersPortal')}
+                </NextLink>
               </li>
             </ul>
           </div>
@@ -344,32 +353,32 @@ export default function Footer() {
           {/* Legal */}
           <div className="md:col-span-1">
             <h4 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2 underline underline-offset-4 decoration-gray-900 dark:decoration-white">
-              Legal
+              {t('legal')}
             </h4>
             <ul className="space-y-1.5">
               <li>
                 <Link href="/terms" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Terms of Service
+                  {t('termsOfService')}
                 </Link>
               </li>
               <li>
                 <Link href="/platform-agreement" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Platform Agreement
+                  {t('platformAgreement')}
                 </Link>
               </li>
               <li>
                 <Link href="/privacy" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Privacy Policy
+                  {t('privacyPolicy')}
                 </Link>
               </li>
               <li>
                 <Link href="/accessibility" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Accessibility
+                  {t('accessibility')}
                 </Link>
               </li>
               <li>
                 <Link href="/investors" className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Investors
+                  {t('investors')}
                 </Link>
               </li>
             </ul>
@@ -379,7 +388,7 @@ export default function Footer() {
         {/* Popular Cities - SEO internal linking */}
         <div className="border-t border-gray-200 dark:border-gray-800 pt-6 pb-2">
           <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1 text-xs text-gray-600 dark:text-gray-400">
-            <span className="font-medium text-gray-700 dark:text-gray-300 mr-1">Popular Cities:</span>
+            <span className="font-medium text-gray-700 dark:text-gray-300 mr-1">{t('popularCities')}</span>
             <Link href="/rentals/cities/phoenix" className="hover:text-gray-900 dark:hover:text-white transition-colors">Phoenix</Link>
             <span className="text-gray-400">·</span>
             <Link href="/rentals/cities/scottsdale" className="hover:text-gray-900 dark:hover:text-white transition-colors">Scottsdale</Link>
@@ -403,9 +412,9 @@ export default function Footer() {
           <div className="flex flex-col items-center text-center">
             <div className="mb-4">
               <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
-                Download the ItWhip App
+                {t('downloadApp')}
               </h4>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Available on iOS, Android coming soon</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">{t('availableOn')}</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <a
@@ -417,12 +426,12 @@ export default function Footer() {
                 <div className="flex items-center space-x-3">
                   <IoLogoApple className="w-7 h-7" />
                   <div className="text-left">
-                    <div className="text-[10px] uppercase tracking-wider opacity-90 leading-tight">Download on the</div>
-                    <div className="text-sm font-bold -mt-0.5">App Store</div>
+                    <div className="text-[10px] uppercase tracking-wider opacity-90 leading-tight">{t('downloadOnThe')}</div>
+                    <div className="text-sm font-bold -mt-0.5">{t('appStore')}</div>
                   </div>
                 </div>
                 <div className="absolute bottom-1 right-2">
-                  <span className="text-[9px] bg-blue-600 px-1.5 py-0.5 rounded text-white font-medium">BETA</span>
+                  <span className="text-[9px] bg-blue-600 px-1.5 py-0.5 rounded text-white font-medium">{t('beta')}</span>
                 </div>
               </a>
 
@@ -433,48 +442,48 @@ export default function Footer() {
                 <div className="flex items-center space-x-3">
                   <IoLogoGooglePlaystore className="w-7 h-7" />
                   <div className="text-left">
-                    <div className="text-[10px] uppercase tracking-wider opacity-90 leading-tight">Get it on</div>
-                    <div className="text-sm font-bold -mt-0.5">Google Play</div>
+                    <div className="text-[10px] uppercase tracking-wider opacity-90 leading-tight">{t('getItOn')}</div>
+                    <div className="text-sm font-bold -mt-0.5">{t('googlePlay')}</div>
                   </div>
                 </div>
                 <div className="absolute top-1 right-2">
-                  <span className="text-[9px] bg-orange-800 px-1.5 py-0.5 rounded text-white font-medium">SOON</span>
+                  <span className="text-[9px] bg-orange-800 px-1.5 py-0.5 rounded text-white font-medium">{t('soon')}</span>
                 </div>
               </a>
             </div>
           </div>
         </div>
-        
+
         {/* Bottom Bar */}
         <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0">
             {/* Copyright and Links */}
             <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
               <p className="text-xs text-gray-600 dark:text-gray-500">
-                © {currentYear} ItWhip Rides, Inc. All rights reserved.
+                {t('copyright', { year: currentYear })}
               </p>
               <div className="flex space-x-4 text-xs text-gray-600 dark:text-gray-500">
                 <Link href="/terms" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-                  Terms
+                  {t('terms')}
                 </Link>
                 <Link href="/privacy" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-                  Privacy
+                  {t('privacy')}
                 </Link>
                 <Link href="/accessibility" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-                  Accessibility
+                  {t('accessibility')}
                 </Link>
                 <Link href="/status" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                  Status
+                  {t('status')}
                 </Link>
               </div>
             </div>
-            
+
             {/* Location */}
             <div className="flex items-center space-x-2 text-xs text-gray-600 dark:text-gray-500">
-              <span>Phoenix, Arizona</span>
+              <span>{t('phoenixArizona')}</span>
               <span>•</span>
-              <span>United States</span>
+              <span>{t('unitedStates')}</span>
             </div>
           </div>
         </div>

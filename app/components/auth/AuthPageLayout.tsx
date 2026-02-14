@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 
 interface AuthPageLayoutProps {
   children: React.ReactNode
@@ -16,6 +17,7 @@ export default function AuthPageLayout({
   title = 'Welcome to ItWhip',
   subtitle
 }: AuthPageLayoutProps) {
+  const t = useTranslations('Auth')
   const [isDark, setIsDark] = useState(false)
 
   // Detect system dark mode and set theme-color + body background
@@ -60,7 +62,7 @@ export default function AuthPageLayout({
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          <span className="text-sm">Back</span>
+          <span className="text-sm">{t('back')}</span>
         </Link>
       </div>
 
@@ -79,10 +81,10 @@ export default function AuthPageLayout({
                 style={{ width: '60px', height: '60px', borderRadius: '50%' }}
               />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{title === 'Welcome to ItWhip' ? t('welcomeToItWhip') : title}</h1>
             {hostMode && (
               <span className="inline-block mt-2 px-3 py-1 bg-green-500/20 border border-green-500/50 rounded-full text-xs font-medium text-green-600 dark:text-green-400">
-                Host Portal
+                {t('hostPortal')}
               </span>
             )}
             {subtitle && (
@@ -97,17 +99,17 @@ export default function AuthPageLayout({
 
           {/* Terms Footer */}
           <p className="mt-8 text-center text-xs text-gray-500">
-            By continuing, you agree to our{' '}
+            {t('byAgreeing')}{' '}
             <Link href="/terms" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white underline">
-              Terms of Service
+              {t('termsOfService')}
             </Link>
             ,{' '}
             <Link href="/privacy" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white underline">
-              Privacy Policy
+              {t('privacyPolicy')}
             </Link>
-            , and{' '}
+            , {t('and')}{' '}
             <Link href="/platform-agreement" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white underline">
-              Platform Agreement
+              {t('platformAgreement')}
             </Link>
           </p>
         </div>

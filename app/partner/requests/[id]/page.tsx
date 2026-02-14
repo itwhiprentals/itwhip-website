@@ -4,6 +4,8 @@
 
 'use client'
 
+import { useLocale } from 'next-intl'
+
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -113,6 +115,9 @@ export default function RequestDetailPage() {
   const router = useRouter()
   // Note: requestId from params not used - we fetch via /api/partner/onboarding which uses auth context
   void params?.id
+
+  const locale = useLocale()
+
 
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<RequestData | null>(null)
@@ -269,7 +274,7 @@ export default function RequestDetailPage() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return 'TBD'
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    return new Date(dateStr).toLocaleDateString(locale, {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
@@ -278,7 +283,7 @@ export default function RequestDetailPage() {
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
@@ -1176,13 +1181,13 @@ export default function RequestDetailPage() {
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Pickup Date</p>
                     <p className="font-semibold text-gray-900 dark:text-white">
-                      {data.request.startDate ? new Date(data.request.startDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}
+                      {data.request.startDate ? new Date(data.request.startDate).toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Return Date</p>
                     <p className="font-semibold text-gray-900 dark:text-white">
-                      {data.request.endDate ? new Date(data.request.endDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}
+                      {data.request.endDate ? new Date(data.request.endDate).toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}
                     </p>
                   </div>
                 </div>

@@ -6,8 +6,8 @@ import { RentalBookingStatus } from '@/app/lib/dal/types'
 import { PaymentStatus, CancelledBy, VerificationStatus, FraudSeverity } from '@prisma/client'
 // @ts-expect-error - sendVerificationPendingEmail exists in email/index.ts but TSC may not resolve it
 import { sendHostNotification, sendVerificationPendingEmail, sendVerificationApprovedEmail } from '@/app/lib/email'
-import { calculatePricing } from '@/app/(guest)/rentals/lib/pricing'
-import { checkAvailability } from '@/app/(guest)/rentals/lib/rental-utils'
+import { calculatePricing } from '@/app/[locale]/(guest)/rentals/lib/pricing'
+import { checkAvailability } from '@/app/[locale]/(guest)/rentals/lib/rental-utils'
 import { addHours } from 'date-fns'
 import { extractIpAddress } from '@/app/utils/ip-lookup'
 

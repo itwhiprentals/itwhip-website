@@ -1,6 +1,7 @@
 // app/partner/settings/components/PrivacyTab.tsx
 'use client'
 
+import { useTranslations, useLocale } from 'next-intl'
 import {
   IoDownloadOutline,
   IoWarningOutline,
@@ -28,9 +29,13 @@ export function PrivacyTab({
   isCancellingDeletion,
   exportError
 }: PrivacyTabProps) {
+  const t = useTranslations('PartnerSettings')
+
+  const locale = useLocale()
+
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Data & Privacy</h2>
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('dataAndPrivacyTitle')}</h2>
 
       {/* Download My Data */}
       <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
@@ -40,9 +45,9 @@ export function PrivacyTab({
               <IoDownloadOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="font-medium text-gray-900 dark:text-white">Download My Data</p>
+              <p className="font-medium text-gray-900 dark:text-white">{t('downloadMyData')}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Get a copy of your partner profile, fleet data, bookings, and earnings
+                {t('downloadMyDataDesc')}
               </p>
             </div>
           </div>
@@ -54,12 +59,12 @@ export function PrivacyTab({
             {isExporting ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                <span>Exporting...</span>
+                <span>{t('exporting')}</span>
               </>
             ) : (
               <>
                 <IoDownloadOutline className="w-4 h-4" />
-                <span>Download</span>
+                <span>{t('download')}</span>
               </>
             )}
           </button>
@@ -76,19 +81,19 @@ export function PrivacyTab({
             <IoWarningOutline className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
               <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1">
-                Account Scheduled for Deletion
+                {t('accountScheduledDeletion')}
               </h4>
               <p className="text-sm text-amber-700 dark:text-amber-400 mb-3">
-                Your account will be permanently deleted on{' '}
+                {t('accountDeletedOn')}{' '}
                 <strong>
                   {deletionScheduledFor
-                    ? new Date(deletionScheduledFor).toLocaleDateString('en-US', {
+                    ? new Date(deletionScheduledFor).toLocaleDateString(locale, {
                         weekday: 'long',
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'
                       })
-                    : '30 days from request'}
+                    : t('thirtyDaysFromRequest')}
                 </strong>
               </p>
               <button
@@ -99,10 +104,10 @@ export function PrivacyTab({
                 {isCancellingDeletion ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                    <span>Cancelling...</span>
+                    <span>{t('cancelling')}</span>
                   </>
                 ) : (
-                  <span>Cancel Deletion</span>
+                  <span>{t('cancelDeletion')}</span>
                 )}
               </button>
             </div>
@@ -116,17 +121,17 @@ export function PrivacyTab({
           <div className="flex items-center gap-1.5 mb-3">
             <IoWarningOutline className="w-4 h-4 text-red-500" />
             <h3 className="text-sm font-semibold text-red-600 dark:text-red-400">
-              Danger Zone
+              {t('dangerZone')}
             </h3>
           </div>
           <div className="p-4 border border-red-200 dark:border-red-900/50 rounded-lg bg-red-50/50 dark:bg-red-900/10">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-                  Delete Account
+                  {t('deleteAccountLabel')}
                 </h4>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Permanently delete your partner account, fleet listings, and all associated data. This action cannot be undone after the 30-day grace period.
+                  {t('deleteAccountDesc')}
                 </p>
               </div>
               <button
@@ -134,7 +139,7 @@ export function PrivacyTab({
                 className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex-shrink-0 flex items-center gap-2"
               >
                 <IoTrashOutline className="w-4 h-4" />
-                <span>Delete</span>
+                <span>{t('deleteButton')}</span>
               </button>
             </div>
           </div>

@@ -19,6 +19,7 @@ import {
   IoTimeOutline
 } from 'react-icons/io5'
 import { ManagedVehicleSummary } from '@/app/types/fleet-management'
+import { useTranslations, useLocale } from 'next-intl'
 
 interface ManagedCarsSectionProps {
   limit?: number
@@ -32,6 +33,9 @@ export default function ManagedCarsSection({
   const [vehicles, setVehicles] = useState<ManagedVehicleSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const t = useTranslations('PartnerDashboard')
+
+  const locale = useLocale()
 
   const fetchManagedVehicles = useCallback(async () => {
     try {
@@ -66,7 +70,7 @@ export default function ManagedCarsSection({
           vehicleId: v.id,
           vehicleName: `${v.year} ${v.make} ${v.model}`,
           vehiclePhoto: v.photo || undefined,
-          ownerName: 'Self-owned', // Will be updated when VehicleManagement is integrated
+          ownerName: t('mcSelfOwned'), // Will be updated when VehicleManagement is integrated
           ownerId: '',
           status: v.status === 'available' ? 'ACTIVE' : v.status === 'booked' ? 'ACTIVE' : 'PAUSED',
           ownerCommissionPercent: 70,
@@ -81,18 +85,18 @@ export default function ManagedCarsSection({
       }
     } catch (err) {
       console.error('Error fetching managed vehicles:', err)
-      setError('Failed to load vehicles')
+      setError(t('mcFailedToLoad'))
     } finally {
       setLoading(false)
     }
-  }, [limit])
+  }, [limit, t])
 
   useEffect(() => {
     fetchManagedVehicles()
   }, [fetchManagedVehicles])
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
@@ -106,21 +110,21 @@ export default function ManagedCarsSection({
         return (
           <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 rounded text-xs font-medium">
             <IoCheckmarkCircleOutline className="w-3 h-3" />
-            Active
+            {t('mcActive')}
           </span>
         )
       case 'PAUSED':
         return (
           <span className="flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400 rounded text-xs font-medium">
             <IoPauseCircleOutline className="w-3 h-3" />
-            Paused
+            {t('mcPaused')}
           </span>
         )
       case 'PENDING':
         return (
           <span className="flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400 rounded text-xs font-medium">
             <IoTimeOutline className="w-3 h-3" />
-            Pending
+            {t('mcPending')}
           </span>
         )
       default:
@@ -163,7 +167,7 @@ export default function ManagedCarsSection({
             className="text-purple-600 hover:text-purple-700 text-sm flex items-center gap-1 mx-auto"
           >
             <IoRefreshOutline className="w-4 h-4" />
-            Retry
+            {t('mcRetry')}
           </button>
         </div>
       </div>
@@ -175,13 +179,13 @@ export default function ManagedCarsSection({
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
           <IoCarOutline className="w-5 h-5 text-purple-600" />
-          Managed Vehicles
+          {t('mcManagedVehicles')}
         </h2>
         {vehicles.length > 0 && (
           <button
             onClick={fetchManagedVehicles}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            title="Refresh"
+            title={t('mcRefresh')}
           >
             <IoRefreshOutline className="w-5 h-5" />
           </button>
@@ -194,10 +198,10 @@ export default function ManagedCarsSection({
             <IoCarOutline className="w-10 h-10 text-purple-400" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            No managed vehicles yet
+            {t('mcNoVehicles')}
           </h3>
           <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">
-            Start by inviting car owners to list their vehicles with you, or add your own vehicles.
+            {t('mcNoVehiclesDesc')}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
@@ -205,13 +209,13 @@ export default function ManagedCarsSection({
               className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
             >
               <IoAddCircleOutline className="w-5 h-5" />
-              Invite Car Owners
+              {t('mcInviteOwners')}
             </Link>
             <Link
               href="/host/cars/add"
               className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
             >
-              Add Your Own Vehicle
+              {t('mcAddOwnVehicle')}
             </Link>
           </div>
         </div>
@@ -266,13 +270,13 @@ export default function ManagedCarsSection({
                     </div>
                     <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
                       <IoCalendarOutline className="w-4 h-4" />
-                      <span>{vehicle.totalTrips} trips</span>
+                      <span>{t('mcTrips', { count: vehicle.totalTrips })}</span>
                     </div>
                   </div>
 
                   {/* Commission Split */}
                   <div className="mt-2 text-xs text-gray-400 dark:text-gray-500">
-                    Your share: {vehicle.managerCommissionPercent}%
+                    {t('mcYourShare', { percent: vehicle.managerCommissionPercent })}
                   </div>
                 </div>
               </Link>
@@ -286,7 +290,7 @@ export default function ManagedCarsSection({
                 href="/partner/fleet"
                 className="text-sm text-purple-600 hover:text-purple-700 dark:text-purple-400 flex items-center justify-center gap-1"
               >
-                View all managed vehicles
+                {t('mcViewAll')}
                 <IoChevronForwardOutline className="w-4 h-4" />
               </Link>
             </div>

@@ -2,7 +2,8 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import {
   IoCashOutline,
   IoCalendarOutline,
@@ -21,9 +22,11 @@ interface EventDisplay {
 }
 
 export default function ArizonaEventsSection() {
+  const t = useTranslations('Home')
   const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
 
+  // Event data — kept in English as these are proper event names
   const events: EventDisplay[] = [
     {
       month: 'JAN',
@@ -186,13 +189,13 @@ export default function ArizonaEventsSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-6">
           <span className="text-amber-700 dark:text-amber-400 text-xs font-semibold uppercase tracking-wider">
-            Dynamic Pricing
+            {t('eventsLabel')}
           </span>
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-2 mb-3">
-            Arizona Events Calendar
+            {t('eventsHeading')}
           </h2>
           <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-            Maximize earnings during peak events. Our dynamic pricing adjusts automatically for major Arizona events.
+            {t('eventsDescription')}
           </p>
         </div>
 
@@ -231,12 +234,12 @@ export default function ArizonaEventsSection() {
         {/* CTA Line */}
         <div className="text-center mt-8">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            <span className="font-semibold text-amber-700 dark:text-amber-400">Summer:</span> 20% auto-discount applied. Premium vehicles for every event.{' '}
+            <span className="font-semibold text-amber-700 dark:text-amber-400">{t('eventsSummer')}</span> {t('eventsSummerCta')}{' '}
             <Link
               href="/coverage"
               className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-medium hover:underline"
             >
-              View coverage areas
+              {t('eventsViewCoverage')}
               <IoArrowForwardOutline className="w-4 h-4" />
             </Link>
           </p>

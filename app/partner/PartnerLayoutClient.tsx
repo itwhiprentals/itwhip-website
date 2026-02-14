@@ -1,0 +1,446 @@
+// app/partner/PartnerLayoutClient.tsx
+// Partner Dashboard Layout - Enterprise-grade sidebar navigation
+// Cloned from /app/admin/ structure, customized for B2B partners
+
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import Link from 'next/link'
+import Image from 'next/image'
+import { AuthProvider } from '@/app/contexts/AuthContext'
+import RoleSwitcher from '@/app/components/RoleSwitcher'
+import PortalLanguageSwitcher from './components/PortalLanguageSwitcher'
+import {
+  IoGridOutline,
+  IoCarOutline,
+  IoCalendarOutline,
+  IoWalletOutline,
+  IoAnalyticsOutline,
+  IoGlobeOutline,
+  IoPricetagOutline,
+  IoSettingsOutline,
+  IoLogOutOutline,
+  IoMenuOutline,
+  IoCloseOutline,
+  IoChevronDownOutline,
+  IoBusinessOutline,
+  IoMoonOutline,
+  IoSunnyOutline,
+  IoPersonOutline,
+  IoNotificationsOutline,
+  IoPeopleOutline,
+  IoBuildOutline,
+  IoShieldCheckmarkOutline,
+  IoShieldOutline,
+  IoStarOutline,
+  IoChatbubblesOutline,
+  IoAddCircleOutline,
+  IoLocationOutline
+} from 'react-icons/io5'
+
+// Role types matching the session API
+type UserRole = 'fleet_partner' | 'hybrid' | 'fleet_manager' | 'vehicle_owner' | 'individual'
+
+interface PartnerData {
+  id: string
+  name: string
+  email: string
+  profilePhoto?: string
+  partnerCompanyName?: string
+  partnerLogo?: string
+  partnerSlug?: string
+  hostManagerSlug?: string
+  hostManagerName?: string
+  hostManagerLogo?: string
+  currentCommissionRate: number
+  partnerFleetSize: number
+  partnerTotalBookings: number
+  partnerTotalRevenue: number
+  // Role information
+  role: UserRole
+  hostType: string
+  isHostManager: boolean
+  managesOwnCars: boolean
+  isVehicleOwner: boolean
+  vehicleCount: number
+  activeVehicleCount: number
+  managedVehicleCount: number
+  displayName: string
+  publicSlug?: string
+  // Publishing status
+  isLandingPagePublished: boolean
+}
+
+interface NavItem {
+  nameKey: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  indent?: boolean
+  roles: UserRole[] | 'all'  // 'all' means visible to everyone
+}
+
+// Navigation items with role-based visibility (nameKey maps to PartnerNav namespace)
+const navigationItems: NavItem[] = [
+  { nameKey: 'dashboard', href: '/partner/dashboard', icon: IoGridOutline, roles: 'all' },
+  { nameKey: 'fleet', href: '/partner/fleet', icon: IoCarOutline, roles: ['individual', 'hybrid', 'fleet_partner'] },
+  { nameKey: 'managedVehicles', href: '/partner/managed', icon: IoCarOutline, roles: ['fleet_manager', 'hybrid'] },
+  { nameKey: 'bookings', href: '/partner/bookings', icon: IoCalendarOutline, roles: 'all' },
+  { nameKey: 'newBooking', href: '/partner/bookings/new', icon: IoAddCircleOutline, indent: true, roles: ['individual', 'hybrid', 'fleet_partner', 'fleet_manager'] },
+  { nameKey: 'customers', href: '/partner/customers', icon: IoPeopleOutline, roles: ['individual', 'hybrid', 'fleet_partner', 'fleet_manager'] },
+  { nameKey: 'calendar', href: '/partner/calendar', icon: IoCalendarOutline, roles: ['individual', 'hybrid', 'fleet_partner', 'fleet_manager'] },
+  { nameKey: 'reviews', href: '/partner/reviews', icon: IoStarOutline, roles: ['individual', 'hybrid', 'fleet_partner', 'fleet_manager'] },
+  { nameKey: 'messages', href: '/partner/messages', icon: IoChatbubblesOutline, roles: ['individual', 'hybrid', 'fleet_partner', 'fleet_manager'] },
+  { nameKey: 'maintenance', href: '/partner/maintenance', icon: IoBuildOutline, roles: ['individual', 'hybrid', 'fleet_partner', 'fleet_manager'] },
+  { nameKey: 'claims', href: '/partner/claims', icon: IoShieldCheckmarkOutline, roles: 'all' },
+  { nameKey: 'insurance', href: '/partner/insurance', icon: IoShieldOutline, roles: ['individual', 'hybrid', 'fleet_partner'] },
+  { nameKey: 'tracking', href: '/partner/tracking', icon: IoLocationOutline, roles: ['individual', 'hybrid', 'fleet_partner', 'fleet_manager'] },
+  { nameKey: 'revenue', href: '/partner/revenue', icon: IoWalletOutline, roles: 'all' },
+  { nameKey: 'analytics', href: '/partner/analytics', icon: IoAnalyticsOutline, roles: ['individual', 'hybrid', 'fleet_partner'] },
+  { nameKey: 'landingPage', href: '/partner/landing', icon: IoGlobeOutline, roles: ['individual', 'hybrid', 'fleet_partner'] },
+  { nameKey: 'discounts', href: '/partner/discounts', icon: IoPricetagOutline, roles: ['individual', 'hybrid', 'fleet_partner'] },
+  { nameKey: 'settings', href: '/partner/settings', icon: IoSettingsOutline, roles: 'all' },
+]
+
+// Filter navigation based on user role
+function getVisibleNavItems(role: UserRole): NavItem[] {
+  return navigationItems.filter(item =>
+    item.roles === 'all' || item.roles.includes(role)
+  )
+}
+
+export default function PartnerLayoutClient({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const t = useTranslations('PartnerNav')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [darkMode, setDarkMode] = useState(false)
+  const [partner, setPartner] = useState<PartnerData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+
+  // Skip auth check on public partner pages
+  const isPublicPage = pathname === '/partner/login' || pathname === '/partner/reset-password' || pathname === '/partner/forgot-password'
+
+  useEffect(() => {
+    if (!isPublicPage) {
+      checkSession()
+    } else {
+      setLoading(false)
+    }
+  }, [pathname])
+
+  useEffect(() => {
+    // Check for dark mode preference
+    const isDark = localStorage.getItem('partner-dark-mode') === 'true' ||
+      (!localStorage.getItem('partner-dark-mode') && window.matchMedia('(prefers-color-scheme: dark)').matches)
+    setDarkMode(isDark)
+    if (isDark) {
+      document.documentElement.classList.add('dark')
+    }
+  }, [])
+
+  const toggleDarkMode = () => {
+    const newMode = !darkMode
+    setDarkMode(newMode)
+    localStorage.setItem('partner-dark-mode', String(newMode))
+    if (newMode) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }
+
+  const checkSession = async () => {
+    try {
+      const response = await fetch('/api/partner/session', {
+        method: 'GET',
+        credentials: 'include'
+      })
+
+      if (!response.ok) {
+        router.push('/partner/login')
+        return
+      }
+
+      const data = await response.json()
+      if (data.authenticated && data.partner) {
+        setPartner(data.partner)
+      } else {
+        router.push('/partner/login')
+      }
+    } catch (error) {
+      console.error('Session check error:', error)
+      router.push('/partner/login')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/partner/logout', {
+        method: 'POST',
+        credentials: 'include'
+      })
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      router.push('/partner/login')
+    }
+  }
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">{t('loadingPartnerPortal')}</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Public pages (login, reset-password) - no layout wrapper
+  if (isPublicPage) {
+    return <>{children}</>
+  }
+
+  const getTierInfo = (rate: number) => {
+    if (rate <= 0.10) return { label: t('tierDiamond'), color: 'bg-purple-500' }
+    if (rate <= 0.15) return { label: t('tierPlatinum'), color: 'bg-blue-500' }
+    if (rate <= 0.20) return { label: t('tierGold'), color: 'bg-yellow-500' }
+    return { label: t('tierStandard'), color: 'bg-gray-500' }
+  }
+
+  const getRoleLabel = (role: UserRole) => {
+    switch (role) {
+      case 'fleet_partner': return t('roleFleetPartner')
+      case 'hybrid': return t('roleHostManager')
+      case 'fleet_manager': return t('roleFleetManager')
+      case 'vehicle_owner': return t('roleVehicleOwner')
+      case 'individual': return t('roleHost')
+      default: return t('rolePartner')
+    }
+  }
+
+  const tier = partner ? getTierInfo(partner.currentCommissionRate) : { label: t('tierStandard'), color: 'bg-gray-500' }
+  const roleLabel = partner ? getRoleLabel(partner.role) : t('rolePartner')
+
+  return (
+    <AuthProvider>
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0 flex flex-col ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Sidebar Header */}
+        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            {(partner?.partnerLogo || partner?.hostManagerLogo || partner?.profilePhoto) ? (
+              <div className="relative w-10 h-10 rounded-full overflow-hidden bg-white">
+                <Image
+                  src={partner.partnerLogo || partner.hostManagerLogo || partner.profilePhoto || ''}
+                  alt=""
+                  fill
+                  className="object-contain"
+                  style={{ transform: 'scale(1.15) translateY(0.5px)', transformOrigin: 'center center' }}
+                />
+              </div>
+            ) : (
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
+                <IoBusinessOutline className="w-5 h-5 text-white" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                {partner?.displayName || partner?.name || 'Dashboard'}
+              </p>
+              <div className="flex items-center gap-1.5">
+                <span className={`w-2 h-2 rounded-full ${tier.color}`} />
+                <span className="text-xs text-gray-500 dark:text-gray-400">{roleLabel}</span>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            <IoCloseOutline className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Navigation - Role-based filtering */}
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          {getVisibleNavItems(partner?.role || 'individual').map((item) => {
+            const isActive = pathname === item.href || (pathname.startsWith(item.href + '/') && !item.indent)
+            const isExactMatch = pathname === item.href
+            return (
+              <Link
+                key={item.nameKey}
+                href={item.href}
+                onClick={() => setSidebarOpen(false)}
+                className={`flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  item.indent ? 'pl-10 pr-3' : 'px-3'
+                } ${
+                  isExactMatch || (isActive && !item.indent)
+                    ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+              >
+                <item.icon className={`w-5 h-5 ${isExactMatch || (isActive && !item.indent) ? 'text-orange-600 dark:text-orange-400' : ''} ${item.indent ? 'w-4 h-4' : ''}`} />
+                {t(item.nameKey)}
+              </Link>
+            )
+          })}
+        </nav>
+
+        {/* Sidebar Footer */}
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+          {/* Quick Stats - Role-aware */}
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            {(partner?.role === 'fleet_manager' || partner?.role === 'hybrid') ? (
+              <>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 text-center">
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{partner?.vehicleCount || 0}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('myVehicles')}</p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 text-center">
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{partner?.managedVehicleCount || 0}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('managed')}</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 text-center">
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{partner?.vehicleCount || partner?.partnerFleetSize || 0}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('vehicles')}</p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 text-center">
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{partner?.partnerTotalBookings || 0}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('bookings')}</p>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Dark Mode Toggle */}
+          <button
+            onClick={toggleDarkMode}
+            className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              {darkMode ? <IoMoonOutline className="w-5 h-5" /> : <IoSunnyOutline className="w-5 h-5" />}
+              {darkMode ? t('darkMode') : t('lightMode')}
+            </span>
+            <div className={`w-10 h-5 rounded-full transition-colors ${darkMode ? 'bg-orange-600' : 'bg-gray-300'}`}>
+              <div className={`w-4 h-4 rounded-full bg-white transform transition-transform mt-0.5 ${darkMode ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </div>
+          </button>
+
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 w-full mt-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <IoLogOutOutline className="w-5 h-5" />
+            {t('logout')}
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <div className="lg:pl-72">
+        {/* Top Header */}
+        <header className="sticky top-0 z-30 h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between h-full px-4 sm:px-6">
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              <IoMenuOutline className="w-6 h-6" />
+            </button>
+
+            {/* Breadcrumb / Page Title */}
+            <div className="hidden lg:flex items-center">
+              <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {(() => { const found = getVisibleNavItems(partner?.role || 'individual').find(item => pathname === item.href || pathname.startsWith(item.href + '/')); return found ? t(found.nameKey) : t('dashboard'); })()}
+              </h1>
+            </div>
+
+            {/* Right side */}
+            <div className="flex items-center gap-3">
+              {/* Public Profile Link - Shows status based on publishing state */}
+              {partner?.publicSlug && (
+                partner.isLandingPagePublished ? (
+                  // Published - clickable link
+                  <a
+                    href={`/rideshare/${partner.publicSlug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg text-sm font-medium hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                  >
+                    <IoGlobeOutline className="w-4 h-4" />
+                    <span>/rideshare/{partner.publicSlug}</span>
+                    <span className="text-xs bg-green-100 dark:bg-green-900/40 px-1.5 py-0.5 rounded">{t('live')}</span>
+                  </a>
+                ) : (
+                  // Not published - disabled with tooltip
+                  <Link
+                    href="/partner/landing"
+                    className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    title={t('publishTooltip')}
+                  >
+                    <IoGlobeOutline className="w-4 h-4" />
+                    <span>/rideshare/{partner.publicSlug}</span>
+                    <span className="text-xs bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 px-1.5 py-0.5 rounded">{t('draft')}</span>
+                  </Link>
+                )
+              )}
+
+              {/* Language Switcher */}
+              <PortalLanguageSwitcher />
+
+              {/* Notifications */}
+              <Link
+                href="/partner/notifications"
+                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 relative"
+              >
+                <IoNotificationsOutline className="w-6 h-6" />
+              </Link>
+
+              {/* Role Switcher - includes avatar, replaces profile menu */}
+              <RoleSwitcher
+                profilePhoto={partner?.profilePhoto}
+                userName={partner?.name}
+              />
+            </div>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="min-h-[calc(100vh-4rem)]">
+          {children}
+        </main>
+      </div>
+    </div>
+    </AuthProvider>
+  )
+}

@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -31,11 +32,13 @@ import {
 } from './components'
 
 export default function PartnerLandingPage() {
+  const t = useTranslations('PartnerLanding')
   const searchParams = useSearchParams()
   const [data, setData] = useState<LandingPageData>(DEFAULT_LANDING_DATA)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
+  const [saveMessageType, setSaveMessageType] = useState<'success' | 'error'>('success')
   const [activeTab, setActiveTab] = useState<TabType>('content')
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false)
   const [isBusinessHost, setIsBusinessHost] = useState<boolean | null>(null)
@@ -96,14 +99,17 @@ export default function PartnerLandingPage() {
       const result = await res.json()
       if (result.success) {
         setBusinessApprovalStatus('PENDING')
-        setSaveMessage('Landing page submitted for review successfully!')
+        setSaveMessageType('success')
+        setSaveMessage(t('submittedForReview'))
         setTimeout(() => setSaveMessage(null), 5000)
       } else {
-        setSaveMessage(result.error || 'Failed to submit for approval')
+        setSaveMessageType('error')
+        setSaveMessage(result.error || t('failedToSubmit'))
         setTimeout(() => setSaveMessage(null), 5000)
       }
     } catch {
-      setSaveMessage('Failed to submit for approval')
+      setSaveMessageType('error')
+      setSaveMessage(t('failedToSubmit'))
       setTimeout(() => setSaveMessage(null), 5000)
     } finally {
       setIsSubmitting(false)
@@ -125,13 +131,16 @@ export default function PartnerLandingPage() {
       const result = await res.json()
 
       if (result.success) {
-        setSaveMessage(`${tabName} saved successfully!`)
+        setSaveMessageType('success')
+        setSaveMessage(t('tabSavedSuccess', { tabName }))
         setTimeout(() => setSaveMessage(null), 3000)
       } else {
-        setSaveMessage(result.error || 'Failed to save changes')
+        setSaveMessageType('error')
+        setSaveMessage(result.error || t('failedToSave'))
       }
     } catch {
-      setSaveMessage('Failed to save changes')
+      setSaveMessageType('error')
+      setSaveMessage(t('failedToSave'))
     } finally {
       setIsSaving(false)
     }
@@ -198,11 +207,13 @@ export default function PartnerLandingPage() {
         // Open preview in new tab with token
         window.open(result.previewUrl, '_blank')
       } else {
-        setSaveMessage(result.error || 'Failed to generate preview')
+        setSaveMessageType('error')
+        setSaveMessage(result.error || t('failedToGeneratePreview'))
         setTimeout(() => setSaveMessage(null), 3000)
       }
     } catch {
-      setSaveMessage('Failed to generate preview')
+      setSaveMessageType('error')
+      setSaveMessage(t('failedToGeneratePreview'))
       setTimeout(() => setSaveMessage(null), 3000)
     } finally {
       setIsGeneratingPreview(false)
@@ -229,22 +240,22 @@ export default function PartnerLandingPage() {
             <div className="w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mx-auto mb-4">
               <IoBusinessOutline className="w-8 h-8 text-orange-600 dark:text-orange-400" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Business Feature</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('businessFeature')}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              The landing page is a business-only feature. Enable Business Host in your Company settings to access the landing page editor.
+              {t('businessGateDescription')}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
                 href="/partner/settings?tab=company"
                 className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors"
               >
-                Go to Company Settings
+                {t('goToCompanySettings')}
               </Link>
               <button
                 onClick={() => setShowBusinessGatePopup(false)}
                 className="inline-flex items-center justify-center px-5 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                Preview Editor
+                {t('previewEditor')}
               </button>
             </div>
           </div>
@@ -257,9 +268,9 @@ export default function PartnerLandingPage() {
             <div className="flex items-start gap-3">
               <IoBusinessOutline className="w-5 h-5 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-orange-800 dark:text-orange-300">Preview Mode</p>
+                <p className="text-sm font-medium text-orange-800 dark:text-orange-300">{t('previewMode')}</p>
                 <p className="text-xs text-orange-600 dark:text-orange-400 mt-0.5">
-                  You are viewing the landing page editor in preview mode. Enable Business Host in Settings to unlock editing.
+                  {t('previewModeDescription')}
                 </p>
               </div>
             </div>
@@ -267,7 +278,7 @@ export default function PartnerLandingPage() {
               href="/partner/settings?tab=company"
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors flex-shrink-0"
             >
-              Enable Business Host
+              {t('enableBusinessHost')}
             </Link>
           </div>
         </div>
@@ -280,9 +291,9 @@ export default function PartnerLandingPage() {
             <div className="flex items-start gap-3">
               <IoInformationCircleOutline className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-blue-800 dark:text-blue-300">Ready to go live?</p>
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-300">{t('readyToGoLive')}</p>
                 <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
-                  Set up your landing page content, then submit for review. Once approved, your page will be published.
+                  {t('readyToGoLiveDescription')}
                 </p>
               </div>
             </div>
@@ -296,7 +307,7 @@ export default function PartnerLandingPage() {
               ) : (
                 <IoSendOutline className="w-4 h-4" />
               )}
-              {isSubmitting ? 'Submitting...' : 'Submit for Review'}
+              {isSubmitting ? t('submitting') : t('submitForReview')}
             </button>
           </div>
         </div>
@@ -307,9 +318,9 @@ export default function PartnerLandingPage() {
           <div className="flex items-start gap-3">
             <IoTimeOutline className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-sm font-medium text-amber-800 dark:text-amber-300">Under Review</p>
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-300">{t('underReview')}</p>
               <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
-                Your business landing page is being reviewed by our team. Editing is temporarily disabled until the review is complete.
+                {t('underReviewDescription')}
               </p>
             </div>
           </div>
@@ -322,14 +333,14 @@ export default function PartnerLandingPage() {
             <div className="flex items-start gap-3">
               <IoAlertCircleOutline className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-red-800 dark:text-red-300">Review Not Approved</p>
+                <p className="text-sm font-medium text-red-800 dark:text-red-300">{t('reviewNotApproved')}</p>
                 {businessRejectedReason && (
                   <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
-                    Reason: {businessRejectedReason}
+                    {t('reason', { reason: businessRejectedReason })}
                   </p>
                 )}
                 <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                  Please address the feedback and resubmit your landing page.
+                  {t('resubmitFeedback')}
                 </p>
               </div>
             </div>
@@ -343,7 +354,7 @@ export default function PartnerLandingPage() {
               ) : (
                 <IoSendOutline className="w-4 h-4" />
               )}
-              {isSubmitting ? 'Submitting...' : 'Resubmit for Review'}
+              {isSubmitting ? t('submitting') : t('resubmitForReview')}
             </button>
           </div>
         </div>
@@ -354,9 +365,9 @@ export default function PartnerLandingPage() {
           <div className="flex items-start gap-3">
             <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-sm font-medium text-green-800 dark:text-green-300">Approved</p>
+              <p className="text-sm font-medium text-green-800 dark:text-green-300">{t('approved')}</p>
               <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
-                Your business landing page is approved and live. You can continue editing your content.
+                {t('approvedDescription')}
               </p>
             </div>
           </div>
@@ -366,9 +377,9 @@ export default function PartnerLandingPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Landing Page</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{t('landingPage')}</h1>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5 sm:mt-1">
-            Customize your public-facing partner page
+            {t('customizeDescription')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -383,8 +394,8 @@ export default function PartnerLandingPage() {
               ) : (
                 <IoEyeOutline className="w-4 h-4 sm:w-5 sm:h-5" />
               )}
-              <span className="hidden sm:inline">{isGeneratingPreview ? 'Loading...' : 'Preview Page'}</span>
-              <span className="sm:hidden">{isGeneratingPreview ? '...' : 'Preview'}</span>
+              <span className="hidden sm:inline">{isGeneratingPreview ? t('loadingPreview') : t('previewPage')}</span>
+              <span className="sm:hidden">{isGeneratingPreview ? '...' : t('preview')}</span>
             </button>
           )}
         </div>
@@ -393,7 +404,7 @@ export default function PartnerLandingPage() {
       {/* Save Message */}
       {saveMessage && (
         <div className={`p-4 rounded-lg ${
-          saveMessage.includes('success')
+          saveMessageType === 'success'
             ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'
             : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
         }`}>
@@ -407,13 +418,13 @@ export default function PartnerLandingPage() {
           <IoLinkOutline className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Your Landing Page URL</p>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{t('yourLandingPageUrl')}</p>
               {/* Tooltip for publishing requirements */}
               <div className="relative group">
                 <IoInformationCircleOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-help" />
                 <div className="absolute left-0 top-6 z-50 hidden group-hover:block w-64 sm:w-72">
                   <div className="bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg p-3 shadow-lg">
-                    <p className="font-medium mb-2">Publishing Requirements:</p>
+                    <p className="font-medium mb-2">{t('publishingRequirements')}</p>
                     <ul className="space-y-1">
                       <li className="flex items-center gap-2">
                         {data.publishingRequirements?.hasApproval ? (
@@ -421,7 +432,7 @@ export default function PartnerLandingPage() {
                         ) : (
                           <IoCloseCircleOutline className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
                         )}
-                        <span>Account approved</span>
+                        <span>{t('accountApproved')}</span>
                       </li>
                       <li className="flex items-center gap-2">
                         {data.publishingRequirements?.hasValidSlug ? (
@@ -429,7 +440,7 @@ export default function PartnerLandingPage() {
                         ) : (
                           <IoCloseCircleOutline className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
                         )}
-                        <span>Valid URL slug set</span>
+                        <span>{t('validUrlSlug')}</span>
                       </li>
                       <li className="flex items-center gap-2">
                         {data.publishingRequirements?.hasVehicles ? (
@@ -437,7 +448,7 @@ export default function PartnerLandingPage() {
                         ) : (
                           <IoCloseCircleOutline className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
                         )}
-                        <span>At least 1 active vehicle ({data.publishingRequirements?.vehicleCount || 0} active)</span>
+                        <span>{t('activeVehicles', { count: data.publishingRequirements?.vehicleCount || 0 })}</span>
                       </li>
                       <li className="flex items-center gap-2">
                         {data.publishingRequirements?.hasService ? (
@@ -445,12 +456,12 @@ export default function PartnerLandingPage() {
                         ) : (
                           <IoCloseCircleOutline className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
                         )}
-                        <span>Rideshare or Rentals enabled</span>
+                        <span>{t('rideshareOrRentals')}</span>
                       </li>
                     </ul>
                     {!data.isPublished && (
                       <p className="mt-2 pt-2 border-t border-gray-700 dark:border-gray-600 text-gray-300">
-                        Complete all requirements to publish your page.
+                        {t('completeRequirements')}
                       </p>
                     )}
                     <div className="absolute left-3 -top-1 w-2 h-2 bg-gray-900 dark:bg-gray-700 rotate-45"></div>
@@ -459,17 +470,17 @@ export default function PartnerLandingPage() {
               </div>
             </div>
             <p className="text-sm sm:text-lg font-medium text-gray-900 dark:text-white truncate">
-              itwhip.com/rideshare/{data.slug || 'your-company-slug'}
+              itwhip.com/rideshare/{data.slug || t('defaultSlug')}
             </p>
           </div>
           {data.isPublished ? (
             <span className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 flex-shrink-0">
               <IoCheckmarkCircleOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              Published
+              {t('published')}
             </span>
           ) : (
             <span className="inline-flex px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 flex-shrink-0">
-              Draft
+              {t('draft')}
             </span>
           )}
         </div>

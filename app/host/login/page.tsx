@@ -3,6 +3,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import AuthPageLayout from '@/app/components/auth/AuthPageLayout'
 import PhoneLoginButton from '@/app/components/auth/PhoneLoginButton'
@@ -28,6 +29,7 @@ interface GuardResponse {
 function HostLoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const t = useTranslations('Auth')
   const [error, setError] = useState('')
   const [guard, setGuard] = useState<GuardResponse | null>(null)
   const [guardEmail, setGuardEmail] = useState('')
@@ -42,31 +44,31 @@ function HostLoginContent() {
     const errorParam = searchParams.get('error')
 
     if (errorParam === 'no_account') {
-      setError('No host account found with this email. Please sign up first.')
+      setError(t('noHostAccount'))
     } else if (errorParam === 'hidden-email') {
-      setError('For car rentals, we need your real email address. Please sign in with Apple again and select "Share My Email".')
+      setError(t('appleShareEmail'))
     } else if (status === 'pending') {
       setStatusMessage({
         type: 'pending',
-        message: 'Your application is being reviewed. We\'ll notify you within 24-48 hours once approved.'
+        message: t('applicationPending')
       })
     } else if (status === 'rejected') {
       setStatusMessage({
         type: 'rejected',
-        message: 'Your host application was rejected. Please contact support for details.'
+        message: t('applicationRejected')
       })
     } else if (status === 'suspended') {
       setStatusMessage({
         type: 'suspended',
-        message: 'Your account has been suspended. Please contact support.'
+        message: t('accountSuspended')
       })
     }
-  }, [searchParams])
+  }, [searchParams, t])
 
   // Guard Screen
   if (guard) {
     return (
-      <AuthPageLayout hostMode title="Account Notice">
+      <AuthPageLayout hostMode title={t('accountNotice')}>
         <div className="text-center">
           <div className="flex justify-center mb-6">
             <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center">
@@ -84,7 +86,7 @@ function HostLoginContent() {
               </div>
               <div className="text-left">
                 <p className="text-white font-medium">{guardEmail}</p>
-                <p className="text-gray-400 text-sm">Guest Account</p>
+                <p className="text-gray-400 text-sm">{t('guestAccountLabel')}</p>
               </div>
             </div>
           </div>
@@ -111,7 +113,7 @@ function HostLoginContent() {
               }}
               className="w-full py-2 text-sm text-gray-400 hover:text-white transition-colors"
             >
-              Use a Different Account
+              {t('useDifferentAccount')}
             </button>
           </div>
         </div>
@@ -122,7 +124,7 @@ function HostLoginContent() {
   return (
     <AuthPageLayout
       hostMode
-      subtitle="Sign in to manage your vehicles and earnings"
+      subtitle={t('hostLoginSubtitle')}
     >
       {/* Status Messages */}
       {statusMessage.type && (
@@ -172,16 +174,16 @@ function HostLoginContent() {
       {/* Forgot Password Link */}
       <div className="text-center">
         <Link href="/host/forgot-password" className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-          Forgot your password?
+          {t('forgotPassword')}
         </Link>
       </div>
 
       {/* Signup Link */}
       <div className="pt-4 text-center">
         <p className="text-gray-600 dark:text-gray-400 text-sm">
-          Don't have a host account?{' '}
+          {t('noHostAccountQuestion')}{' '}
           <Link href="/host/signup" className="text-green-600 dark:text-green-400 hover:underline font-medium">
-            Apply to become a host
+            {t('applyToHost')}
           </Link>
         </p>
       </div>
@@ -192,7 +194,7 @@ function HostLoginContent() {
           href="/auth/login"
           className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-black hover:bg-gray-900 text-white font-medium rounded-lg transition-colors border border-gray-700 text-sm"
         >
-          Looking to rent a car? Sign in as Guest →
+          {t('lookingToRent')}
         </Link>
       </div>
     </AuthPageLayout>

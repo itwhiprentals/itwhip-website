@@ -3,6 +3,8 @@
 
 'use client'
 
+import { useLocale } from 'next-intl'
+
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
@@ -76,6 +78,8 @@ export default function OnboardingWizard({
   onComplete,
   onBack
 }: OnboardingWizardProps) {
+  const locale = useLocale()
+
   const [currentStep, setCurrentStep] = useState<Step>('photos')
   const [uploading, setUploading] = useState(false)
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([])
@@ -112,7 +116,7 @@ export default function OnboardingWizard({
 
   const formatShortDate = (dateStr: string | null) => {
     if (!dateStr) return 'TBD'
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    return new Date(dateStr).toLocaleDateString(locale, { month: 'short', day: 'numeric' })
   }
 
   const handlePhotoUpload = async (files: FileList | null) => {

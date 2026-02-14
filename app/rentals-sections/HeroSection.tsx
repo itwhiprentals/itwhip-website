@@ -1,13 +1,16 @@
 'use client'
 
 import Image from 'next/image'
-import RentalSearchWidget from '@/app/(guest)/components/hero/RentalSearchWidget'
+import { useTranslations } from 'next-intl'
+import RentalSearchWidget from '@/app/[locale]/(guest)/components/hero/RentalSearchWidget'
 
 interface HeroSectionProps {
   userCity?: string
 }
 
 export default function HeroSection({ userCity = 'Arizona' }: HeroSectionProps) {
+  const t = useTranslations('Home')
+
   return (
     <section className="relative w-full min-h-[45vh] md:min-h-[40vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       {/* Background Image with Overlay */}
@@ -30,12 +33,12 @@ export default function HeroSection({ userCity = 'Arizona' }: HeroSectionProps) 
         <div className="text-center mb-4 sm:mb-5">
           {/* Main Headline - P2P Focused */}
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-medium text-white mb-1 sm:mb-1.5 leading-tight">
-            Rent Cars From {userCity} Owners
+            {t('heroHeadline', { city: userCity })}
           </h1>
-          
+
           {/* Subheadline - P2P Value Props */}
           <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
-            • Fully insured • Hosts earn up to 90% •
+            {t('heroSubheadline')}
           </p>
         </div>
 

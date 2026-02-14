@@ -15,6 +15,7 @@ import {
   IoCameraOutline,
   IoCarOutline
 } from 'react-icons/io5'
+import { useTranslations, useLocale } from 'next-intl'
 
 interface UserInfoCardProps {
   user: {
@@ -33,47 +34,50 @@ interface UserInfoCardProps {
   onPhotoChange?: (file: File) => void
 }
 
-function formatDate(dateString: string | null): string {
-  if (!dateString) return 'Unknown'
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  })
-}
-
-function formatRelativeTime(dateString: string | null): string {
-  if (!dateString) return 'Unknown'
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-
-  if (diffMins < 1) return 'Just now'
-  if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`
-  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`
-  if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`
-  return formatDate(dateString)
-}
-
-function getHostTypeLabel(hostType: string | null): string {
-  switch (hostType) {
-    case 'FLEET_PARTNER':
-      return 'Fleet Partner'
-    case 'HOST_MANAGER':
-      return 'Fleet Manager'
-    case 'VEHICLE_OWNER':
-      return 'Vehicle Owner'
-    default:
-      return 'Host'
-  }
-}
-
 export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoCardProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const t = useTranslations('PartnerDashboard')
+
+  const locale = useLocale()
+
+  function formatDate(dateString: string | null): string {
+    if (!dateString) return 'Unknown'
+    const date = new Date(dateString)
+    return date.toLocaleDateString(locale, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
+  }
+
+  function formatRelativeTime(dateString: string | null): string {
+    if (!dateString) return 'Unknown'
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`
+    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`
+    if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`
+    return formatDate(dateString)
+  }
+
+  function getHostTypeLabel(hostType: string | null): string {
+    switch (hostType) {
+      case 'FLEET_PARTNER':
+        return t('uiFleetPartner')
+      case 'HOST_MANAGER':
+        return t('uiFleetManager')
+      case 'VEHICLE_OWNER':
+        return t('uiVehicleOwner')
+      default:
+        return t('uiHost')
+    }
+  }
 
   const handlePhotoClick = () => {
     if (onPhotoChange) {
@@ -119,7 +123,7 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
     return null
   }
 
-  const displayName = user.companyName || user.name || 'Fleet Manager'
+  const displayName = user.companyName || user.name || t('uiFleetManager')
   const isActive = user.isActive !== false // Default to active if not specified
   const isExternalRecruit = user.isExternalRecruit || false
   const hasCars = user.hasCars !== false // Default to true if not specified
@@ -186,7 +190,7 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
             </span>
             {isExternalRecruit && (
               <span className="px-1.5 py-0.5 text-[10px] font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded">
-                External
+                {t('uiExternal')}
               </span>
             )}
           </div>
@@ -200,14 +204,14 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
             <div className="flex items-center gap-1">
               <IoCalendarOutline className="w-3.5 h-3.5" />
               {isExternalRecruit ? (
-                <span className="text-amber-600 dark:text-amber-400 font-medium">NOT Joined</span>
+                <span className="text-amber-600 dark:text-amber-400 font-medium">{t('uiNotJoined')}</span>
               ) : (
-                <span>Joined {formatDate(user.memberSince)}</span>
+                <span>{t('uiJoined', { date: formatDate(user.memberSince) })}</span>
               )}
             </div>
             <div className="flex items-center gap-1">
               <IoTimeOutline className="w-3.5 h-3.5" />
-              <span>Last login {formatRelativeTime(user.lastLogin)}</span>
+              <span>{t('uiLastLogin', { time: formatRelativeTime(user.lastLogin) })}</span>
             </div>
           </div>
         </div>
@@ -217,17 +221,17 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
           {isExternalRecruit && !hasCars ? (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
               <IoCarOutline className="w-3.5 h-3.5" />
-              Not Active Car
+              {t('uiNotActiveCar')}
             </span>
           ) : isActive ? (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
               <IoCheckmarkCircle className="w-3.5 h-3.5" />
-              Active
+              {t('uiActive')}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
               <IoBanOutline className="w-3.5 h-3.5" />
-              Suspended
+              {t('uiSuspended')}
             </span>
           )}
         </div>

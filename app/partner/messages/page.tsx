@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import Image from 'next/image'
 import {
   IoChatbubblesOutline,
@@ -57,6 +58,7 @@ interface Stats {
 }
 
 export default function PartnerMessagesPage() {
+  const t = useTranslations('PartnerMessages')
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [stats, setStats] = useState<Stats>({ total: 0, unread: 0, urgent: 0, totalMessages: 0 })
   const [loading, setLoading] = useState(true)
@@ -174,10 +176,10 @@ export default function PartnerMessagesPage() {
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
 
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
+    if (diffMins < 1) return t('justNow')
+    if (diffMins < 60) return t('minutesAgo', { count: diffMins })
+    if (diffHours < 24) return t('hoursAgo', { count: diffHours })
+    if (diffDays < 7) return t('daysAgo', { count: diffDays })
     return date.toLocaleDateString()
   }
 
@@ -217,10 +219,10 @@ export default function PartnerMessagesPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <IoChatbubblesOutline className="w-7 h-7" />
-              Messages
+              {t('title')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              {stats.total} conversations · {stats.unread} unread
+              {t('conversationStats', { total: stats.total, unread: stats.unread })}
             </p>
           </div>
 
@@ -229,7 +231,7 @@ export default function PartnerMessagesPage() {
             className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
             <IoRefreshOutline className="w-5 h-5" />
-            Refresh
+            {t('refresh')}
           </button>
         </div>
       </div>
@@ -247,7 +249,7 @@ export default function PartnerMessagesPage() {
               <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search conversations..."
+                placeholder={t('searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -257,9 +259,9 @@ export default function PartnerMessagesPage() {
             {/* Filter Tabs */}
             <div className="flex gap-2">
               {[
-                { key: 'all', label: 'All' },
-                { key: 'unread', label: `Unread (${stats.unread})` },
-                { key: 'urgent', label: `Urgent (${stats.urgent})` }
+                { key: 'all', label: t('filterAll') },
+                { key: 'unread', label: t('filterUnread', { count: stats.unread }) },
+                { key: 'urgent', label: t('filterUrgent', { count: stats.urgent }) }
               ].map(({ key, label }) => (
                 <button
                   key={key}
@@ -282,7 +284,7 @@ export default function PartnerMessagesPage() {
               <div className="p-8 text-center">
                 <IoChatbubblesOutline className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
                 <p className="text-gray-500 dark:text-gray-400">
-                  {filter === 'all' ? 'No conversations yet' : `No ${filter} messages`}
+                  {filter === 'all' ? t('noConversations') : t('noFilteredMessages', { filter })}
                 </p>
               </div>
             ) : (
@@ -352,7 +354,7 @@ export default function PartnerMessagesPage() {
                             : 'text-gray-500 dark:text-gray-400'
                         }`}>
                           {conversation.messages[conversation.messages.length - 1].senderType === 'host' && (
-                            <span className="text-gray-400 dark:text-gray-500">You: </span>
+                            <span className="text-gray-400 dark:text-gray-500">{t('youPrefix')}</span>
                           )}
                           {conversation.messages[conversation.messages.length - 1].message}
                         </p>
@@ -443,7 +445,7 @@ export default function PartnerMessagesPage() {
                             {msg.isUrgent && !isHost && (
                               <div className="flex items-center gap-1 text-red-500 text-xs mb-1">
                                 <IoAlertCircleOutline className="w-3 h-3" />
-                                Urgent
+                                {t('urgent')}
                               </div>
                             )}
                             <p className="whitespace-pre-wrap break-words">{msg.message}</p>
@@ -456,7 +458,7 @@ export default function PartnerMessagesPage() {
                                   isHost ? 'text-orange-100' : 'text-orange-600 dark:text-orange-400'
                                 }`}
                               >
-                                {msg.attachmentName || 'View Attachment'}
+                                {msg.attachmentName || t('viewAttachment')}
                               </a>
                             )}
                           </div>
@@ -482,7 +484,7 @@ export default function PartnerMessagesPage() {
                 <div className="flex gap-3">
                   <input
                     type="text"
-                    placeholder="Type a message..."
+                    placeholder={t('typeMessage')}
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => {
@@ -508,7 +510,7 @@ export default function PartnerMessagesPage() {
               <div className="text-center">
                 <IoChatbubblesOutline className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                 <p className="text-gray-500 dark:text-gray-400 text-lg">
-                  Select a conversation to view messages
+                  {t('selectConversation')}
                 </p>
               </div>
             </div>

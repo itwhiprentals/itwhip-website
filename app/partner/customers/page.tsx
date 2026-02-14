@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   IoPersonOutline,
   IoSearchOutline,
@@ -42,6 +43,9 @@ interface Stats {
 }
 
 export default function CustomersPage() {
+  const t = useTranslations('PartnerCustomers')
+
+  const locale = useLocale()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [stats, setStats] = useState<Stats>({ total: 0, active: 0, repeatCustomers: 0 })
   const [loading, setLoading] = useState(true)
@@ -80,20 +84,20 @@ export default function CustomersPage() {
   }
 
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Never'
+    if (!dateString) return t('never')
     const date = new Date(dateString)
     const now = new Date()
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
 
-    if (diffDays === 0) return 'Today'
-    if (diffDays === 1) return 'Yesterday'
-    if (diffDays < 7) return `${diffDays} days ago`
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    if (diffDays === 0) return t('today')
+    if (diffDays === 1) return t('yesterday')
+    if (diffDays < 7) return t('daysAgo', { count: diffDays })
+    if (diffDays < 30) return t('weeksAgo', { count: Math.floor(diffDays / 7) })
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
@@ -106,9 +110,9 @@ export default function CustomersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Customers</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('customersTitle')}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            View your customers and their booking history
+            {t('customersSubtitle')}
           </p>
         </div>
         <button
@@ -116,7 +120,7 @@ export default function CustomersPage() {
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium text-sm transition-colors"
         >
           <IoAddOutline className="w-5 h-5" />
-          Add Customer
+          {t('addCustomer')}
         </button>
       </div>
 
@@ -129,7 +133,7 @@ export default function CustomersPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Total Customers</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('totalCustomers')}</p>
             </div>
           </div>
         </div>
@@ -140,7 +144,7 @@ export default function CustomersPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.active}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Active Rentals</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('activeRentals')}</p>
             </div>
           </div>
         </div>
@@ -151,7 +155,7 @@ export default function CustomersPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.repeatCustomers}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Repeat Customers</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('repeatCustomers')}</p>
             </div>
           </div>
         </div>
@@ -166,7 +170,7 @@ export default function CustomersPage() {
               <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by name, email, or phone..."
+                placeholder={t('searchPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -176,19 +180,22 @@ export default function CustomersPage() {
 
           {/* Filter Tabs */}
           <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-            {(['all', 'active', 'past'] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  filter === f
-                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                {f.charAt(0).toUpperCase() + f.slice(1)}
-              </button>
-            ))}
+            {(['all', 'active', 'past'] as const).map((f) => {
+              const labelMap = { all: t('filterAll'), active: t('filterActive'), past: t('filterPast') }
+              return (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    filter === f
+                      ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  {labelMap[f]}
+                </button>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -198,16 +205,16 @@ export default function CustomersPage() {
         {loading ? (
           <div className="p-8 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">Loading customers...</p>
+            <p className="text-gray-500 dark:text-gray-400">{t('loadingCustomers')}</p>
           </div>
         ) : customers.length === 0 ? (
           <div className="p-8 text-center">
             <IoPeopleOutline className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              No customers found
+              {t('noCustomersFound')}
             </h3>
             <p className="text-gray-500 dark:text-gray-400">
-              {search ? 'Try adjusting your search criteria' : 'Customers will appear here after their first booking'}
+              {search ? t('tryAdjustSearch') : t('customersWillAppear')}
             </p>
           </div>
         ) : (
@@ -241,7 +248,7 @@ export default function CustomersPage() {
                     </h3>
                     {customer.status === 'active' && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                        Active
+                        {t('statusActive')}
                       </span>
                     )}
                   </div>
@@ -269,19 +276,19 @@ export default function CustomersPage() {
                 <div className="hidden sm:flex items-center gap-6 text-sm">
                   <div className="text-center">
                     <p className="font-semibold text-gray-900 dark:text-white">{customer.bookingCount}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Bookings</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('bookings')}</p>
                   </div>
                   <div className="text-center">
                     <p className="font-semibold text-gray-900 dark:text-white">
                       {formatCurrency(customer.totalSpent)}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Total Spent</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('totalSpent')}</p>
                   </div>
                   <div className="text-center min-w-[80px]">
                     <p className="font-semibold text-gray-900 dark:text-white">
                       {formatDate(customer.lastBooking)}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Last Booking</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('lastBooking')}</p>
                   </div>
                 </div>
 
@@ -315,6 +322,7 @@ function AddCustomerModal({
   onClose: () => void
   onSuccess: () => void
 }) {
+  const t = useTranslations('PartnerCustomers')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
@@ -328,7 +336,7 @@ function AddCustomerModal({
     e.preventDefault()
 
     if (!firstName.trim() || !email.trim()) {
-      setError('First name and email are required')
+      setError(t('nameEmailRequired'))
       return
     }
 
@@ -352,7 +360,7 @@ function AddCustomerModal({
       const data = await response.json()
 
       if (!response.ok || !data.success) {
-        setError(data.error || 'Failed to create customer')
+        setError(data.error || t('failedToCreate'))
         setLoading(false)
         return
       }
@@ -371,12 +379,12 @@ function AddCustomerModal({
         const verifyData = await verifyResponse.json()
 
         if (verifyData.success) {
-          setSuccess('Customer created and verification email sent!')
+          setSuccess(t('customerCreatedVerified'))
         } else {
-          setSuccess('Customer created, but verification email failed to send.')
+          setSuccess(t('customerCreatedNoVerify'))
         }
       } else {
-        setSuccess('Customer created successfully!')
+        setSuccess(t('customerCreated'))
       }
 
       // Wait a moment to show success message, then close
@@ -385,7 +393,7 @@ function AddCustomerModal({
       }, 1500)
 
     } catch (err) {
-      setError('Failed to create customer')
+      setError(t('failedToCreate'))
     } finally {
       setLoading(false)
     }
@@ -395,7 +403,7 @@ function AddCustomerModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add New Customer</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('addNewCustomer')}</h3>
           <button
             onClick={onClose}
             className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
@@ -419,7 +427,7 @@ function AddCustomerModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                First Name *
+                {t('firstName')} *
               </label>
               <input
                 type="text"
@@ -431,7 +439,7 @@ function AddCustomerModal({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Last Name
+                {t('lastName')}
               </label>
               <input
                 type="text"
@@ -445,7 +453,7 @@ function AddCustomerModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Email *
+              {t('email')} *
             </label>
             <input
               type="email"
@@ -458,7 +466,7 @@ function AddCustomerModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Phone
+              {t('phone')}
             </label>
             <input
               type="tel"
@@ -481,10 +489,10 @@ function AddCustomerModal({
             <label htmlFor="sendVerification" className="flex-1">
               <span className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
                 <IoSendOutline className="w-4 h-4" />
-                Send Verification Email
+                {t('sendVerificationEmail')}
               </span>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Customer will receive a link to verify their identity
+                {t('verificationDesc')}
               </p>
             </label>
           </div>
@@ -496,7 +504,7 @@ function AddCustomerModal({
               disabled={loading}
               className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
@@ -506,12 +514,12 @@ function AddCustomerModal({
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                  Creating...
+                  {t('creating')}
                 </>
               ) : (
                 <>
                   <IoAddOutline className="w-4 h-4" />
-                  Add Customer
+                  {t('addCustomer')}
                 </>
               )}
             </button>

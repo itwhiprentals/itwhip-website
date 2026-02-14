@@ -1,21 +1,10 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { IoSend, IoRefresh } from 'react-icons/io5'
 import { useAuthOptional } from '@/app/contexts/AuthContext'
-
-// Rotating placeholder examples showing what Choé can do
-const placeholderExamples = [
-  'SUV in Phoenix under $50/day...',
-  'No deposit cars in Scottsdale...',
-  'Tesla for next weekend...',
-  'Cheap car for 4 days, $300 budget...',
-  'Convertible for a date night...',
-  'Something spacious for 6 people...',
-  'Luxury car in Tempe...',
-  'Car with airport delivery...',
-]
+import { useTranslations } from 'next-intl'
 
 interface ChatInputProps {
   onSend: (message: string) => void
@@ -36,6 +25,12 @@ export default function ChatInput({
   const [placeholderIndex, setPlaceholderIndex] = useState(0)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const auth = useAuthOptional()
+  const t = useTranslations('ChoeAI')
+
+  const placeholderExamples = [
+    t('placeholder0'), t('placeholder1'), t('placeholder2'), t('placeholder3'),
+    t('placeholder4'), t('placeholder5'), t('placeholder6'), t('placeholder7'),
+  ]
 
   // Rotate placeholder text every 2 seconds
   useEffect(() => {
@@ -43,7 +38,7 @@ export default function ChatInput({
       setPlaceholderIndex((prev) => (prev + 1) % placeholderExamples.length)
     }, 2000)
     return () => clearInterval(interval)
-  }, [])
+  }, [placeholderExamples.length])
 
   // Auto-resize textarea as content changes
   const autoResize = useCallback(() => {
@@ -119,7 +114,7 @@ export default function ChatInput({
                 ? 'text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
                 : 'text-gray-300/40 dark:text-gray-600/40 cursor-default'
             }`}
-            title="Start over"
+            title={t('startOver')}
           >
             <IoRefresh size={18} />
           </button>
@@ -140,12 +135,12 @@ export default function ChatInput({
         <div className="flex items-center justify-center gap-3 px-3 py-1.5">
           <span className="flex items-center gap-1 text-[9px] text-gray-400/70 dark:text-gray-500/60">
             <span className={`w-1.5 h-1.5 rounded-full ${isLoggedIn ? 'bg-green-400' : 'bg-gray-300/50 dark:bg-gray-600/50'}`} />
-            {isLoggedIn ? (userName || 'Logged In') : 'Not Logged In'}
+            {isLoggedIn ? (userName || t('loggedIn')) : t('notLoggedIn')}
           </span>
           <span className="text-[9px] text-gray-300/40 dark:text-gray-600/40">|</span>
           <span className="flex items-center gap-1 text-[9px] text-gray-400/70 dark:text-gray-500/60">
             <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-            ItWhip Platform
+            {t('platform')}
           </span>
         </div>
       </div>
@@ -153,8 +148,8 @@ export default function ChatInput({
       {/* Disclaimer — OUTSIDE the box */}
       <div className="text-center pb-0.5">
         <p className="text-[9px] text-gray-400 dark:text-gray-500">
-          Choé can make mistakes. Verify booking details before confirming.{' '}
-          <Link href="/help/choe" className="underline hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Learn more</Link>
+          {t('disclaimer')}{' '}
+          <Link href="/help/choe" className="underline hover:text-gray-600 dark:hover:text-gray-300 transition-colors">{t('learnMore')}</Link>
         </p>
       </div>
     </div>

@@ -1,17 +1,18 @@
 // app/lib/data/use-cases.ts
 // Use case data for rental scenario pages
+// Translatable strings use keys resolved via useTranslations('UseCases') at render time
 
 export interface UseCaseData {
   slug: string
-  title: string
-  h1: string
+  titleKey: string
+  h1Key: string
   metaTitle: string
   metaDescription: string
-  heroSubtitle: string
-  content: string
-  benefits: string[]
-  priceRange: string
-  durationSuggestion: string
+  heroSubtitleKey: string
+  contentKey: string
+  benefitKeys: string[]
+  priceRangeKey: string
+  durationSuggestionKey: string
   idealCarTypes: string[]
   filters: {
     minDays?: number
@@ -20,569 +21,416 @@ export interface UseCaseData {
     features?: string[]
     priceMax?: number
   }
-  faqs: Array<{ question: string; answer: string }>
-  tips: string[]
+  faqKeys: Array<{ questionKey: string; answerKey: string }>
+  tipKeys: string[]
 }
 
 export const USE_CASE_DATA: Record<string, UseCaseData> = {
   'long-term': {
     slug: 'long-term',
-    title: 'Long-Term Car Rentals',
-    h1: 'Long-Term Car Rentals in Phoenix | Weekly & Monthly',
+    titleKey: 'longTerm.title',
+    h1Key: 'longTerm.h1',
     metaTitle: 'Long-Term Car Rentals Phoenix | Weekly & Monthly | ItWhip',
     metaDescription: 'Save up to 30% on long-term car rentals in Phoenix. Weekly and monthly rates from local owners. SUVs, sedans, luxury cars. No contracts, flexible terms.',
-    heroSubtitle: 'Need a car for a week, month, or longer? Save big with our long-term rental rates.',
-    content: 'Whether you\'re relocating to Phoenix, here for an extended work assignment, or just need wheels for a few weeks, long-term rentals offer the best value. Our hosts offer significant discounts for weekly and monthly bookings - typically 10-20% off daily rates for weekly, and 20-30% off for monthly rentals.',
-    benefits: [
-      'Save 20-30% with monthly rates',
-      'No long-term contracts required',
-      'Flexible pickup and return',
-      'Insurance included on all rentals',
-      'Wide variety of vehicles available',
-      'Free delivery to your location'
+    heroSubtitleKey: 'longTerm.heroSubtitle',
+    contentKey: 'longTerm.content',
+    benefitKeys: [
+      'longTerm.benefit1',
+      'longTerm.benefit2',
+      'longTerm.benefit3',
+      'longTerm.benefit4',
+      'longTerm.benefit5',
+      'longTerm.benefit6'
     ],
-    priceRange: '$45-150/day (with discounts)',
-    durationSuggestion: '7-30+ days',
+    priceRangeKey: 'longTerm.priceRange',
+    durationSuggestionKey: 'longTerm.durationSuggestion',
     idealCarTypes: ['SEDAN', 'SUV', 'ELECTRIC'],
     filters: {
       minDays: 7,
       carTypes: ['SEDAN', 'SUV', 'ELECTRIC']
     },
-    faqs: [
-      {
-        question: 'How much can I save with a long-term rental?',
-        answer: 'Most hosts offer 10-20% off for weekly rentals (7+ days) and 20-30% off for monthly rentals (30+ days). The exact discount is shown on each listing. For shorter needs, check out our <a href="/rentals/daily">daily rentals</a> or <a href="/rentals/weekend">weekend rentals</a>.'
-      },
-      {
-        question: 'Is there a maximum rental duration?',
-        answer: 'Most hosts allow rentals up to 30 days, and many are happy to extend beyond that. Just message the host to arrange longer rentals. <a href="/rentals/snowbird">Snowbird seasonal rentals</a> are perfect for multi-month stays.'
-      },
-      {
-        question: 'Can I extend my long-term rental?',
-        answer: 'Yes! Contact your host through the app to request an extension. Subject to availability, most extensions are approved within hours. Visit our <a href="/support">support page</a> if you need help with extensions.'
-      },
-      {
-        question: 'What\'s included in a long-term rental?',
-        answer: 'All rentals include $1M liability insurance. Most include a daily mileage allowance (typically 150-250 miles/day). Additional miles and protection plans are optional. Learn more about our <a href="/insurance">insurance coverage</a>.'
-      },
-      {
-        question: 'Do I need to sign a contract?',
-        answer: 'No long-term contracts! Your rental agreement covers your booking period. Extend or end early with flexible policies. For <a href="/rentals/corporate-travel">corporate accounts</a>, we offer additional flexibility for business needs.'
-      }
+    faqKeys: [
+      { questionKey: 'longTerm.faq1Question', answerKey: 'longTerm.faq1Answer' },
+      { questionKey: 'longTerm.faq2Question', answerKey: 'longTerm.faq2Answer' },
+      { questionKey: 'longTerm.faq3Question', answerKey: 'longTerm.faq3Answer' },
+      { questionKey: 'longTerm.faq4Question', answerKey: 'longTerm.faq4Answer' },
+      { questionKey: 'longTerm.faq5Question', answerKey: 'longTerm.faq5Answer' }
     ],
-    tips: [
-      'Book 7+ days to unlock weekly discounts',
-      'Message hosts about monthly rates',
-      'Consider sedans for best fuel efficiency',
-      'Check mileage limits for extended trips'
+    tipKeys: [
+      'longTerm.tip1',
+      'longTerm.tip2',
+      'longTerm.tip3',
+      'longTerm.tip4'
     ]
   },
 
   'weekend': {
     slug: 'weekend',
-    title: 'Weekend Car Rentals',
-    h1: 'Weekend Car Rentals in Phoenix | Friday-Sunday Specials',
+    titleKey: 'weekend.title',
+    h1Key: 'weekend.h1',
     metaTitle: 'Weekend Car Rentals Phoenix | Fri-Sun Deals | ItWhip',
     metaDescription: 'Weekend car rentals in Phoenix from $49/day. Perfect for getaways to Sedona, Grand Canyon, or Scottsdale nightlife. Sports cars, convertibles, SUVs available.',
-    heroSubtitle: 'Escape for the weekend in style. Pick up Friday, return Sunday.',
-    content: 'Phoenix weekends are made for adventure. Head to Sedona\'s red rocks, explore the Grand Canyon, hit the Scottsdale clubs, or just cruise the desert highways. Our weekend rentals give you the freedom to make the most of your days off - whether you want a convertible to feel the Arizona sun or an SUV for a camping trip.',
-    benefits: [
-      'Special weekend-only pricing',
-      'Wide selection of fun vehicles',
-      'Convertibles perfect for AZ weather',
-      'SUVs for outdoor adventures',
-      'Sports cars for special nights out',
-      'Pick up Friday, return Sunday'
+    heroSubtitleKey: 'weekend.heroSubtitle',
+    contentKey: 'weekend.content',
+    benefitKeys: [
+      'weekend.benefit1',
+      'weekend.benefit2',
+      'weekend.benefit3',
+      'weekend.benefit4',
+      'weekend.benefit5',
+      'weekend.benefit6'
     ],
-    priceRange: '$49-299/day',
-    durationSuggestion: '2-3 days',
+    priceRangeKey: 'weekend.priceRange',
+    durationSuggestionKey: 'weekend.durationSuggestion',
     idealCarTypes: ['CONVERTIBLE', 'SPORTS', 'SUV'],
     filters: {
       maxDays: 3,
       carTypes: ['CONVERTIBLE', 'SPORTS', 'SUV']
     },
-    faqs: [
-      {
-        question: 'What\'s a typical weekend rental cost?',
-        answer: 'Weekend rentals start around $49/day for sedans, $79/day for SUVs, and $150+/day for sports cars and convertibles. Many hosts offer special weekend rates. <a href="/rentals/search">Browse all available cars</a> to compare prices.'
-      },
-      {
-        question: 'Can I pick up on Friday evening?',
-        answer: 'Yes! Many hosts offer flexible pickup times including evening pickups. Coordinate with your host through the app for the best time. For even shorter trips, check our <a href="/rentals/hourly">hourly rentals</a>.'
-      },
-      {
-        question: 'What about late Sunday returns?',
-        answer: 'Return times are flexible. Most hosts are accommodating with Sunday evening returns. Just confirm the time when you book. Need the car longer? Consider a <a href="/rentals/long-term">weekly rental</a> for better rates.'
-      },
-      {
-        question: 'What cars are best for a Sedona trip?',
-        answer: 'SUVs and crossovers are ideal for Sedona\'s terrain and any off-road exploration. Convertibles are great for scenic drives if you\'re sticking to paved roads. Planning a longer adventure? See our <a href="/rentals/road-trip">road trip rentals</a>.'
-      }
+    faqKeys: [
+      { questionKey: 'weekend.faq1Question', answerKey: 'weekend.faq1Answer' },
+      { questionKey: 'weekend.faq2Question', answerKey: 'weekend.faq2Answer' },
+      { questionKey: 'weekend.faq3Question', answerKey: 'weekend.faq3Answer' },
+      { questionKey: 'weekend.faq4Question', answerKey: 'weekend.faq4Answer' }
     ],
-    tips: [
-      'Book convertibles early - they go fast on weekends',
-      'Check if host offers airport pickup for flying visitors',
-      'Consider an SUV for Grand Canyon trips',
-      'Message hosts about flexible return times'
+    tipKeys: [
+      'weekend.tip1',
+      'weekend.tip2',
+      'weekend.tip3',
+      'weekend.tip4'
     ]
   },
 
   'airport-delivery': {
     slug: 'airport-delivery',
-    title: 'Airport Delivery Car Rentals',
-    h1: 'Airport Delivery Car Rentals | PHX, AZA, SDL',
+    titleKey: 'airportDelivery.title',
+    h1Key: 'airportDelivery.h1',
     metaTitle: 'Airport Car Delivery Phoenix | PHX Pickup | ItWhip',
     metaDescription: 'Skip the rental counter. Get your car delivered curbside at Phoenix Sky Harbor, Mesa Gateway, or Scottsdale Airport. Free delivery available.',
-    heroSubtitle: 'Land, text your host, and get your car delivered curbside. No shuttles, no lines.',
-    content: 'Forget the rental car shuttle and endless counter lines. With ItWhip\'s airport delivery, your host brings the car directly to you at the terminal. Just text when you land, and meet your host curbside in the arrivals area. It\'s the fastest, most convenient way to get moving after your flight.',
-    benefits: [
-      'Curbside delivery at arrivals',
-      'No shuttle buses or long walks',
-      'Skip the rental counter lines',
-      'Free delivery from many hosts',
-      'Works at PHX, AZA, and SDL',
-      'Text coordination with your host'
+    heroSubtitleKey: 'airportDelivery.heroSubtitle',
+    contentKey: 'airportDelivery.content',
+    benefitKeys: [
+      'airportDelivery.benefit1',
+      'airportDelivery.benefit2',
+      'airportDelivery.benefit3',
+      'airportDelivery.benefit4',
+      'airportDelivery.benefit5',
+      'airportDelivery.benefit6'
     ],
-    priceRange: '$0-50 delivery fee',
-    durationSuggestion: 'Any duration',
+    priceRangeKey: 'airportDelivery.priceRange',
+    durationSuggestionKey: 'airportDelivery.durationSuggestion',
     idealCarTypes: ['SEDAN', 'SUV', 'LUXURY'],
     filters: {
       features: ['airportPickup']
     },
-    faqs: [
-      {
-        question: 'How does airport pickup work?',
-        answer: 'When you land, text your host through the ItWhip app. They\'ll meet you curbside at arrivals - usually within 10-15 minutes. Quick vehicle walkthrough, sign digitally, and you\'re on your way. Learn more in our <a href="/how-it-works">how it works guide</a>.'
-      },
-      {
-        question: 'Is airport delivery free?',
-        answer: 'Many hosts offer free airport delivery. Others charge $15-50 depending on the airport and time. The fee is clearly shown on each listing. <a href="/rentals/search">Browse cars with airport delivery</a>.'
-      },
-      {
-        question: 'What if my flight is delayed?',
-        answer: 'Just message your host through the app. They\'ll adjust to your actual arrival time. Communication is key - hosts are very understanding about flight delays. Need help? Visit our <a href="/support">support page</a>.'
-      },
-      {
-        question: 'Which Phoenix airports are covered?',
-        answer: 'Most hosts with airport delivery serve <a href="/rentals/airports/phoenix-sky-harbor-phx">Phoenix Sky Harbor (PHX)</a>. Many also cover <a href="/rentals/airports/phoenix-mesa-gateway-aza">Mesa Gateway (AZA)</a> and <a href="/rentals/airports/scottsdale-sdl">Scottsdale Airport (SDL)</a> for private aviation.'
-      },
-      {
-        question: 'Can I return the car at the airport?',
-        answer: 'Yes! Most hosts with airport pickup also offer airport return. Coordinate the drop-off location and time with your host before your flight. Prefer hotel drop-off? Check <a href="/rentals/hotel-delivery">hotel delivery options</a>.'
-      }
+    faqKeys: [
+      { questionKey: 'airportDelivery.faq1Question', answerKey: 'airportDelivery.faq1Answer' },
+      { questionKey: 'airportDelivery.faq2Question', answerKey: 'airportDelivery.faq2Answer' },
+      { questionKey: 'airportDelivery.faq3Question', answerKey: 'airportDelivery.faq3Answer' },
+      { questionKey: 'airportDelivery.faq4Question', answerKey: 'airportDelivery.faq4Answer' },
+      { questionKey: 'airportDelivery.faq5Question', answerKey: 'airportDelivery.faq5Answer' }
     ],
-    tips: [
-      'Text your host when you land',
-      'Meet at arrivals, not departures',
-      'Have your license ready for quick handoff',
-      'Check delivery fee before booking'
+    tipKeys: [
+      'airportDelivery.tip1',
+      'airportDelivery.tip2',
+      'airportDelivery.tip3',
+      'airportDelivery.tip4'
     ]
   },
 
   'road-trip': {
     slug: 'road-trip',
-    title: 'Road Trip Car Rentals',
-    h1: 'Road Trip Car Rentals from Phoenix | Unlimited Miles',
+    titleKey: 'roadTrip.title',
+    h1Key: 'roadTrip.h1',
     metaTitle: 'Road Trip Car Rentals Phoenix | High Mileage | ItWhip',
     metaDescription: 'Road trip car rentals in Phoenix with high mileage limits. SUVs, sedans, and comfortable vehicles for Grand Canyon, Vegas, LA, and beyond.',
-    heroSubtitle: 'Hit the open road. Rent vehicles built for adventure with generous mileage.',
-    content: 'Phoenix is the perfect starting point for epic road trips. Grand Canyon is 4 hours north, Vegas is 5 hours northwest, San Diego and LA are within a day\'s drive. Our road trip rentals offer generous mileage allowances and comfortable vehicles perfect for highway cruising. Many hosts offer unlimited mileage for the ultimate road trip freedom.',
-    benefits: [
-      'High mileage limits (200-300 miles/day)',
-      'Some hosts offer unlimited mileage',
-      'Comfortable highway cruisers',
-      'SUVs for gear and passengers',
-      'Fuel-efficient options available',
-      'Roadside assistance included'
+    heroSubtitleKey: 'roadTrip.heroSubtitle',
+    contentKey: 'roadTrip.content',
+    benefitKeys: [
+      'roadTrip.benefit1',
+      'roadTrip.benefit2',
+      'roadTrip.benefit3',
+      'roadTrip.benefit4',
+      'roadTrip.benefit5',
+      'roadTrip.benefit6'
     ],
-    priceRange: '$55-150/day',
-    durationSuggestion: '3-7 days',
+    priceRangeKey: 'roadTrip.priceRange',
+    durationSuggestionKey: 'roadTrip.durationSuggestion',
     idealCarTypes: ['SUV', 'SEDAN', 'ELECTRIC'],
     filters: {
       minDays: 3,
       carTypes: ['SUV', 'SEDAN']
     },
-    faqs: [
-      {
-        question: 'What\'s the typical mileage limit?',
-        answer: 'Most rentals include 150-250 miles per day. Many hosts offer higher limits for road trips, and some offer unlimited mileage. Check each listing for details. For shorter trips, see our <a href="/rentals/daily">daily rentals</a>.'
-      },
-      {
-        question: 'What happens if I go over the mileage limit?',
-        answer: 'Extra miles are charged at the rate shown on the listing - typically $0.25-0.75 per mile. Some hosts offer mileage packages for road trips. For unlimited mileage options, consider <a href="/rentals/long-term">long-term rentals</a>.'
-      },
-      {
-        question: 'Can I take the car out of Arizona?',
-        answer: 'Most hosts allow travel to neighboring states (CA, NV, UT, NM). Check the listing rules or message the host to confirm. Some restrict Mexico travel. Visit our <a href="/support">support page</a> for more details.'
-      },
-      {
-        question: 'What\'s the best car for a Grand Canyon trip?',
-        answer: 'SUVs are popular for their comfort and cargo space. If you\'re visiting in summer, make sure you have reliable A/C. 4WD isn\'t needed for the main routes. <a href="/rentals/search?type=SUV">Browse SUVs</a> for your trip.'
-      },
-      {
-        question: 'Should I get an electric car for a road trip?',
-        answer: 'Teslas are great for in-state trips with Supercharger coverage. For trips to remote areas, a gas vehicle offers more flexibility. Explore our <a href="/rentals/makes/tesla">Tesla rentals</a> or <a href="/rentals/search">all available cars</a>.'
-      }
+    faqKeys: [
+      { questionKey: 'roadTrip.faq1Question', answerKey: 'roadTrip.faq1Answer' },
+      { questionKey: 'roadTrip.faq2Question', answerKey: 'roadTrip.faq2Answer' },
+      { questionKey: 'roadTrip.faq3Question', answerKey: 'roadTrip.faq3Answer' },
+      { questionKey: 'roadTrip.faq4Question', answerKey: 'roadTrip.faq4Answer' },
+      { questionKey: 'roadTrip.faq5Question', answerKey: 'roadTrip.faq5Answer' }
     ],
-    tips: [
-      'Check mileage limits before booking',
-      'Message host about multi-state travel',
-      'Consider SUV for comfort on long drives',
-      'Book a few days early for best selection'
+    tipKeys: [
+      'roadTrip.tip1',
+      'roadTrip.tip2',
+      'roadTrip.tip3',
+      'roadTrip.tip4'
     ]
   },
 
   'business': {
     slug: 'business',
-    title: 'Business Travel Car Rentals',
-    h1: 'Business Travel Car Rentals in Phoenix | Professional Vehicles',
+    titleKey: 'business.title',
+    h1Key: 'business.h1',
     metaTitle: 'Business Car Rentals Phoenix | Corporate Travel | ItWhip',
     metaDescription: 'Professional car rentals for business travel in Phoenix. Luxury sedans, SUVs for client meetings. Expense-friendly receipts, corporate accounts available.',
-    heroSubtitle: 'Make the right impression. Professional vehicles for corporate travel.',
-    content: 'First impressions matter in business. Whether you\'re meeting clients in Scottsdale, presenting at a Phoenix conference, or commuting to the office for a few weeks, we have the professional vehicles to match your image. Our luxury sedans and premium SUVs offer the comfort and style expected in business settings.',
-    benefits: [
-      'Professional luxury vehicles',
-      'Detailed receipts for expenses',
-      'Corporate accounts available',
-      'Airport delivery for executives',
-      'Clean, well-maintained cars',
-      'Flexible booking terms'
+    heroSubtitleKey: 'business.heroSubtitle',
+    contentKey: 'business.content',
+    benefitKeys: [
+      'business.benefit1',
+      'business.benefit2',
+      'business.benefit3',
+      'business.benefit4',
+      'business.benefit5',
+      'business.benefit6'
     ],
-    priceRange: '$75-250/day',
-    durationSuggestion: '1-14 days',
+    priceRangeKey: 'business.priceRange',
+    durationSuggestionKey: 'business.durationSuggestion',
     idealCarTypes: ['LUXURY', 'SEDAN', 'SUV'],
     filters: {
       carTypes: ['LUXURY', 'SEDAN']
     },
-    faqs: [
-      {
-        question: 'Can I get an invoice for expense reports?',
-        answer: 'Yes! All bookings include detailed receipts showing dates, vehicle, and total cost. You can also download invoices from your account at any time. Learn more on our <a href="/corporate">corporate page</a>.'
-      },
-      {
-        question: 'Do you offer corporate accounts?',
-        answer: 'Yes, we offer corporate accounts for businesses with recurring travel needs. <a href="/corporate">Apply for a corporate account</a> for volume discounts and centralized billing.'
-      },
-      {
-        question: 'What cars are best for client meetings?',
-        answer: 'For the best impression, consider a <a href="/rentals/makes/mercedes-benz">Mercedes-Benz</a>, <a href="/rentals/makes/bmw">BMW</a>, or Audi sedan. For groups, a luxury SUV like a BMW X5 or Mercedes GLS works well.'
-      },
-      {
-        question: 'Is same-day booking available?',
-        answer: 'Many hosts offer instant booking and same-day availability. <a href="/rentals/search">Browse available cars</a> and filter by "Instant Book" for vehicles you can reserve immediately.'
-      }
+    faqKeys: [
+      { questionKey: 'business.faq1Question', answerKey: 'business.faq1Answer' },
+      { questionKey: 'business.faq2Question', answerKey: 'business.faq2Answer' },
+      { questionKey: 'business.faq3Question', answerKey: 'business.faq3Answer' },
+      { questionKey: 'business.faq4Question', answerKey: 'business.faq4Answer' }
     ],
-    tips: [
-      'Book luxury sedans for client-facing meetings',
-      'Request airport delivery for seamless travel',
-      'Download receipts from your account',
-      'Consider weekly rates for extended assignments'
+    tipKeys: [
+      'business.tip1',
+      'business.tip2',
+      'business.tip3',
+      'business.tip4'
     ]
   },
 
   'snowbird': {
     slug: 'snowbird',
-    title: 'Snowbird Car Rentals',
-    h1: 'Snowbird Car Rentals in Phoenix | Seasonal Winter Rentals',
+    titleKey: 'snowbird.title',
+    h1Key: 'snowbird.h1',
     metaTitle: 'Snowbird Car Rentals Phoenix | Winter Season | ItWhip',
     metaDescription: 'Seasonal car rentals for snowbirds in Phoenix. Monthly rates, long-term discounts. Perfect for winter visitors escaping the cold. Golf, shopping, warm weather.',
-    heroSubtitle: 'Welcome to the Valley of the Sun. Your winter escape deserves great wheels.',
-    content: 'Escape the cold and enjoy Arizona\'s perfect winter weather. Whether you\'re here for a month or the whole season, our snowbird rentals give you the freedom to explore without shipping your car. Golf courses, hiking trails, shopping, and sunshine - it\'s all waiting for you. Our hosts offer special monthly rates perfect for seasonal visitors.',
-    benefits: [
-      'Deep monthly discounts (20-30% off)',
-      'Multi-month availability',
-      'No need to ship your car',
-      'Golf-friendly vehicles (SUVs for clubs)',
-      'Explore all of Arizona',
-      'Flexible start/end dates'
+    heroSubtitleKey: 'snowbird.heroSubtitle',
+    contentKey: 'snowbird.content',
+    benefitKeys: [
+      'snowbird.benefit1',
+      'snowbird.benefit2',
+      'snowbird.benefit3',
+      'snowbird.benefit4',
+      'snowbird.benefit5',
+      'snowbird.benefit6'
     ],
-    priceRange: '$1,200-3,500/month',
-    durationSuggestion: '30-120 days',
+    priceRangeKey: 'snowbird.priceRange',
+    durationSuggestionKey: 'snowbird.durationSuggestion',
     idealCarTypes: ['SEDAN', 'SUV', 'CONVERTIBLE'],
     filters: {
       minDays: 30,
       carTypes: ['SEDAN', 'SUV', 'CONVERTIBLE']
     },
-    faqs: [
-      {
-        question: 'What\'s the typical monthly rate?',
-        answer: 'Monthly rates typically range from $1,200-2,500 for sedans and SUVs, with luxury vehicles higher. This is often 50-60% less than <a href="/rentals/daily">daily rates</a>. <a href="/rentals/search">Browse available cars</a> to compare.'
-      },
-      {
-        question: 'Can I rent for the entire winter season?',
-        answer: 'Yes! Many hosts welcome season-long rentals (3-4 months). Message hosts directly to arrange multi-month bookings at the best rates. Also see our <a href="/rentals/long-term">long-term rentals</a> for more options.'
-      },
-      {
-        question: 'Is there enough mileage for snowbird activities?',
-        answer: 'Most rentals include 150-250 miles/day, which is plenty for local errands, golf, and day trips. For extensive travel, ask about unlimited mileage options or check our <a href="/rentals/road-trip">road trip rentals</a>.'
-      },
-      {
-        question: 'What about insurance for long stays?',
-        answer: 'All rentals include $1M liability coverage. For stays over 30 days, we recommend adding your own insurance as primary for potential savings. Learn more about our <a href="/insurance">insurance coverage</a>.'
-      },
-      {
-        question: 'Can I have the car delivered to my winter home?',
-        answer: 'Yes! Many hosts deliver to homes, condos, and resorts throughout the Phoenix metro area. See our <a href="/rentals/hotel-delivery">hotel delivery</a> options for resort guests. Delivery fees vary by location.'
-      }
+    faqKeys: [
+      { questionKey: 'snowbird.faq1Question', answerKey: 'snowbird.faq1Answer' },
+      { questionKey: 'snowbird.faq2Question', answerKey: 'snowbird.faq2Answer' },
+      { questionKey: 'snowbird.faq3Question', answerKey: 'snowbird.faq3Answer' },
+      { questionKey: 'snowbird.faq4Question', answerKey: 'snowbird.faq4Answer' },
+      { questionKey: 'snowbird.faq5Question', answerKey: 'snowbird.faq5Answer' }
     ],
-    tips: [
-      'Book early - winter is peak season',
-      'Ask hosts about multi-month discounts',
-      'Consider a convertible for perfect weather',
-      'Get an SUV if you golf regularly'
+    tipKeys: [
+      'snowbird.tip1',
+      'snowbird.tip2',
+      'snowbird.tip3',
+      'snowbird.tip4'
     ]
   },
 
   'spring-training': {
     slug: 'spring-training',
-    title: 'Spring Training Car Rentals',
-    h1: 'Spring Training Car Rentals | Cactus League Phoenix',
+    titleKey: 'springTraining.title',
+    h1Key: 'springTraining.h1',
     metaTitle: 'Spring Training Car Rentals Phoenix | Cactus League | ItWhip',
     metaDescription: 'Car rentals for Cactus League Spring Training in Phoenix. Visit all 10 stadiums across the Valley. SUVs, convertibles, family vehicles available.',
-    heroSubtitle: 'Catch every game. Rent a car to visit all 10 Cactus League stadiums.',
-    content: 'Spring Training brings 15 MLB teams and millions of fans to the Phoenix metro area. With 10 stadiums spread across the Valley - from Peoria to Scottsdale to Goodyear - you need wheels to catch all the action. Our Spring Training rentals give you the freedom to hop between games, explore Arizona\'s baseball culture, and enjoy the perfect February-March weather.',
-    benefits: [
-      'Visit all 10 Cactus League stadiums',
-      'Convertibles for perfect spring weather',
-      'SUVs for groups of fans',
-      'Airport delivery for out-of-towners',
-      'Flexible multi-day rentals',
-      'Navigate the Valley with ease'
+    heroSubtitleKey: 'springTraining.heroSubtitle',
+    contentKey: 'springTraining.content',
+    benefitKeys: [
+      'springTraining.benefit1',
+      'springTraining.benefit2',
+      'springTraining.benefit3',
+      'springTraining.benefit4',
+      'springTraining.benefit5',
+      'springTraining.benefit6'
     ],
-    priceRange: '$55-199/day',
-    durationSuggestion: '3-14 days',
+    priceRangeKey: 'springTraining.priceRange',
+    durationSuggestionKey: 'springTraining.durationSuggestion',
     idealCarTypes: ['SUV', 'CONVERTIBLE', 'SEDAN'],
     filters: {
       carTypes: ['SUV', 'CONVERTIBLE', 'SEDAN']
     },
-    faqs: [
-      {
-        question: 'When is Spring Training in Arizona?',
-        answer: 'Cactus League games run from late February through late March. The busiest weeks are typically mid-March when all teams are in full swing. Check our <a href="/rentals/search">car availability</a> early for the best selection.'
-      },
-      {
-        question: 'How far apart are the stadiums?',
-        answer: 'Stadiums are spread across the Valley - from Goodyear in the west to Scottsdale and Mesa in the east. Expect 30-60 minute drives between most venues. See our <a href="/rentals/cities">city guides</a> to plan your routes.'
-      },
-      {
-        question: 'Should I book early for Spring Training?',
-        answer: 'Absolutely! Spring Training is one of the busiest times in Phoenix. Book your car at least 2-3 weeks in advance for the best selection. <a href="/rentals/search">Browse available cars now</a>.'
-      },
-      {
-        question: 'What\'s the best vehicle for stadium hopping?',
-        answer: 'An SUV or crossover works great for groups - <a href="/rentals/search?type=SUV">browse SUVs</a>. For couples, a convertible is perfect for enjoying the spring weather between games. See <a href="/rentals/weekend">weekend rental options</a>.'
-      },
-      {
-        question: 'Can I tailgate at the stadiums?',
-        answer: 'Tailgating policies vary by stadium. Most allow it in some capacity. An SUV or truck gives you space for coolers and gear. Need a pickup? <a href="/rentals/search?type=TRUCK">Browse trucks</a> available for rent.'
-      }
+    faqKeys: [
+      { questionKey: 'springTraining.faq1Question', answerKey: 'springTraining.faq1Answer' },
+      { questionKey: 'springTraining.faq2Question', answerKey: 'springTraining.faq2Answer' },
+      { questionKey: 'springTraining.faq3Question', answerKey: 'springTraining.faq3Answer' },
+      { questionKey: 'springTraining.faq4Question', answerKey: 'springTraining.faq4Answer' },
+      { questionKey: 'springTraining.faq5Question', answerKey: 'springTraining.faq5Answer' }
     ],
-    tips: [
-      'Book 2-3 weeks ahead during Spring Training',
-      'Get a convertible for the perfect weather',
-      'SUVs are great for groups of fans',
-      'Check stadium parking before each game'
+    tipKeys: [
+      'springTraining.tip1',
+      'springTraining.tip2',
+      'springTraining.tip3',
+      'springTraining.tip4'
     ]
   },
 
   'hourly': {
     slug: 'hourly',
-    title: 'Hourly Car Rentals',
-    h1: 'Hourly Car Rentals in Phoenix | By-the-Hour Pricing',
+    titleKey: 'hourly.title',
+    h1Key: 'hourly.h1',
     metaTitle: 'Hourly Car Rentals Phoenix | Pay Per Hour | ItWhip',
     metaDescription: 'Rent a car by the hour in Phoenix. Perfect for quick errands, appointments, or short trips. No full-day commitment required. Starting from $15/hour.',
-    heroSubtitle: 'Need a car for just a few hours? Pay only for the time you use.',
-    content: 'Not every trip needs a full day rental. Whether you\'re running errands, attending an appointment, picking someone up from the airport, or just need wheels for a quick task, our hourly rentals give you flexibility without paying for a full day. Book for 2, 4, or 6 hours - whatever fits your schedule.',
-    benefits: [
-      'Pay only for hours you need',
-      'Minimum 2-hour rental',
-      'Perfect for quick errands',
-      'Airport pickups and dropoffs',
-      'Last-minute availability',
-      'No full-day commitment'
+    heroSubtitleKey: 'hourly.heroSubtitle',
+    contentKey: 'hourly.content',
+    benefitKeys: [
+      'hourly.benefit1',
+      'hourly.benefit2',
+      'hourly.benefit3',
+      'hourly.benefit4',
+      'hourly.benefit5',
+      'hourly.benefit6'
     ],
-    priceRange: '$15-45/hour',
-    durationSuggestion: '2-6 hours',
+    priceRangeKey: 'hourly.priceRange',
+    durationSuggestionKey: 'hourly.durationSuggestion',
     idealCarTypes: ['SEDAN', 'SUV', 'ELECTRIC'],
     filters: {
       maxDays: 1,
       carTypes: ['SEDAN', 'SUV']
     },
-    faqs: [
-      {
-        question: 'What\'s the minimum rental time?',
-        answer: 'Most hosts require a minimum of 2 hours for hourly rentals. Some allow single-hour bookings for quick errands. Need more time? Check our <a href="/rentals/daily">daily rentals</a>.'
-      },
-      {
-        question: 'How does hourly pricing work?',
-        answer: 'Hourly rates are typically 15-20% of the daily rate per hour. Book for your estimated time, and if you return early, you still pay for booked hours. Compare with <a href="/rentals/daily">daily rates</a> for longer needs.'
-      },
-      {
-        question: 'What if I need the car longer than planned?',
-        answer: 'Message your host through the app to extend. If the car is available, most hosts are happy to accommodate. Additional hours are charged at the hourly rate. Need help? Visit <a href="/support">support</a>.'
-      },
-      {
-        question: 'Is mileage included in hourly rentals?',
-        answer: 'Yes, hourly rentals typically include a proportional mileage allowance (e.g., 30-50 miles for a 4-hour rental). For higher mileage needs, consider <a href="/rentals/road-trip">road trip rentals</a>.'
-      }
+    faqKeys: [
+      { questionKey: 'hourly.faq1Question', answerKey: 'hourly.faq1Answer' },
+      { questionKey: 'hourly.faq2Question', answerKey: 'hourly.faq2Answer' },
+      { questionKey: 'hourly.faq3Question', answerKey: 'hourly.faq3Answer' },
+      { questionKey: 'hourly.faq4Question', answerKey: 'hourly.faq4Answer' }
     ],
-    tips: [
-      'Book a 30-minute buffer for unexpected delays',
-      'Check if host offers hourly rates on their listing',
-      'Perfect for airport pickups and dropoffs',
-      'Message host to confirm hourly availability'
+    tipKeys: [
+      'hourly.tip1',
+      'hourly.tip2',
+      'hourly.tip3',
+      'hourly.tip4'
     ]
   },
 
   'daily': {
     slug: 'daily',
-    title: 'Daily Car Rentals',
-    h1: 'Daily Car Rentals in Phoenix | 24-Hour Rentals',
+    titleKey: 'daily.title',
+    h1Key: 'daily.h1',
     metaTitle: 'Daily Car Rentals Phoenix | 24-Hour Rentals | ItWhip',
     metaDescription: 'Rent a car for the day in Phoenix. Sedans from $35/day, SUVs from $55/day. Flexible pickup times, no hidden fees. All cars include insurance.',
-    heroSubtitle: 'Full day freedom. Pick up in the morning, return that evening.',
-    content: 'Sometimes you just need a car for the day. Whether you\'re exploring Phoenix, running multiple errands, or your car is in the shop, our daily rentals offer complete flexibility. Choose from sedans, SUVs, trucks, and luxury vehicles. Every rental includes insurance and 24-hour roadside assistance.',
-    benefits: [
-      'Full 24-hour rental period',
-      'Wide variety of vehicles',
-      'Insurance included',
-      'No hidden fees',
-      'Flexible pickup times',
-      '24-hour roadside assistance'
+    heroSubtitleKey: 'daily.heroSubtitle',
+    contentKey: 'daily.content',
+    benefitKeys: [
+      'daily.benefit1',
+      'daily.benefit2',
+      'daily.benefit3',
+      'daily.benefit4',
+      'daily.benefit5',
+      'daily.benefit6'
     ],
-    priceRange: '$35-299/day',
-    durationSuggestion: '1 day',
+    priceRangeKey: 'daily.priceRange',
+    durationSuggestionKey: 'daily.durationSuggestion',
     idealCarTypes: ['SEDAN', 'SUV', 'TRUCK', 'LUXURY'],
     filters: {
       carTypes: ['SEDAN', 'SUV', 'TRUCK']
     },
-    faqs: [
-      {
-        question: 'How long is a daily rental?',
-        answer: 'A daily rental is 24 hours from your pickup time. Pick up at 10am, return by 10am the next day to avoid additional charges. Need multiple days? Check our <a href="/rentals/weekend">weekend</a> or <a href="/rentals/long-term">long-term rentals</a>.'
-      },
-      {
-        question: 'What if I only need the car for 12 hours?',
-        answer: 'You can return early, but daily rentals are charged the full day rate. For shorter needs, check out our <a href="/rentals/hourly">hourly rentals</a> instead.'
-      },
-      {
-        question: 'Can I extend a daily rental?',
-        answer: 'Yes! Message your host before your rental ends to request an extension. Subject to availability, additional days are charged at the daily rate. <a href="/support">Contact support</a> if you need help.'
-      },
-      {
-        question: 'What\'s included in the daily rate?',
-        answer: 'All daily rentals include $1M liability insurance, typically 150-250 miles, and 24/7 roadside assistance. Fuel is not included. Learn more about our <a href="/insurance">insurance coverage</a>.'
-      }
+    faqKeys: [
+      { questionKey: 'daily.faq1Question', answerKey: 'daily.faq1Answer' },
+      { questionKey: 'daily.faq2Question', answerKey: 'daily.faq2Answer' },
+      { questionKey: 'daily.faq3Question', answerKey: 'daily.faq3Answer' },
+      { questionKey: 'daily.faq4Question', answerKey: 'daily.faq4Answer' }
     ],
-    tips: [
-      'Return on time to avoid late fees',
-      'Check mileage limits for day trips',
-      'Book instant book cars for same-day pickup',
-      'Compare daily vs. hourly for short trips'
+    tipKeys: [
+      'daily.tip1',
+      'daily.tip2',
+      'daily.tip3',
+      'daily.tip4'
     ]
   },
 
   'corporate-travel': {
     slug: 'corporate-travel',
-    title: 'Corporate Travel Rentals',
-    h1: 'Corporate Travel Car Rentals | Phoenix Business Rentals',
+    titleKey: 'corporateTravel.title',
+    h1Key: 'corporateTravel.h1',
     metaTitle: 'Corporate Car Rentals Phoenix | Business Travel | ItWhip',
     metaDescription: 'Corporate car rentals in Phoenix for business travelers. Premium vehicles, expense receipts, volume discounts. Serving Fortune 500 companies.',
-    heroSubtitle: 'Streamlined corporate travel. Premium vehicles, simplified billing.',
-    content: 'ItWhip serves businesses of all sizes - from startups to Fortune 500 companies. Our corporate travel program offers volume discounts, centralized billing, detailed expense reports, and a curated fleet of professional vehicles. Your team gets the right car every time, and your accounting team gets clean expense documentation.',
-    benefits: [
-      'Volume discounts for companies',
-      'Centralized billing available',
-      'Detailed expense reports',
-      'Premium vehicle selection',
-      'Dedicated account manager',
-      'Priority customer support'
+    heroSubtitleKey: 'corporateTravel.heroSubtitle',
+    contentKey: 'corporateTravel.content',
+    benefitKeys: [
+      'corporateTravel.benefit1',
+      'corporateTravel.benefit2',
+      'corporateTravel.benefit3',
+      'corporateTravel.benefit4',
+      'corporateTravel.benefit5',
+      'corporateTravel.benefit6'
     ],
-    priceRange: '$65-350/day',
-    durationSuggestion: '1-30 days',
+    priceRangeKey: 'corporateTravel.priceRange',
+    durationSuggestionKey: 'corporateTravel.durationSuggestion',
     idealCarTypes: ['LUXURY', 'SEDAN', 'SUV'],
     filters: {
       carTypes: ['LUXURY', 'SEDAN', 'SUV']
     },
-    faqs: [
-      {
-        question: 'How do corporate accounts work?',
-        answer: 'Apply for a corporate account and we\'ll set up centralized billing, volume discounts, and a dedicated account manager. All employee bookings go to one monthly invoice. <a href="/corporate">Learn more about corporate accounts</a>.'
-      },
-      {
-        question: 'What discounts are available for businesses?',
-        answer: 'Volume discounts range from 5-20% depending on booking frequency. We also offer special rates for <a href="/rentals/long-term">long-term assignments</a> and executive travel. <a href="/corporate">Apply for corporate pricing</a>.'
-      },
-      {
-        question: 'Can employees book directly?',
-        answer: 'Yes! Employees can book through their corporate account with approved payment methods. Managers can set booking policies and spending limits. <a href="/rentals/search">Browse available vehicles</a> to get started.'
-      },
-      {
-        question: 'What expense documentation is provided?',
-        answer: 'Every booking generates a detailed receipt with dates, vehicle, driver, and itemized charges. Downloadable invoices are available for accounting. See our <a href="/corporate">corporate features</a>.'
-      },
-      {
-        question: 'Do you serve large companies?',
-        answer: 'Yes, we work with companies of all sizes including Fortune 500 corporations with recurring Phoenix travel needs. <a href="/corporate">Contact us for enterprise solutions</a>.'
-      }
+    faqKeys: [
+      { questionKey: 'corporateTravel.faq1Question', answerKey: 'corporateTravel.faq1Answer' },
+      { questionKey: 'corporateTravel.faq2Question', answerKey: 'corporateTravel.faq2Answer' },
+      { questionKey: 'corporateTravel.faq3Question', answerKey: 'corporateTravel.faq3Answer' },
+      { questionKey: 'corporateTravel.faq4Question', answerKey: 'corporateTravel.faq4Answer' },
+      { questionKey: 'corporateTravel.faq5Question', answerKey: 'corporateTravel.faq5Answer' }
     ],
-    tips: [
-      'Apply for corporate account for volume discounts',
-      'Set up centralized billing for easier expense tracking',
-      'Book luxury vehicles for executive travel',
-      'Use same-day booking for last-minute trips'
+    tipKeys: [
+      'corporateTravel.tip1',
+      'corporateTravel.tip2',
+      'corporateTravel.tip3',
+      'corporateTravel.tip4'
     ]
   },
 
   'hotel-delivery': {
     slug: 'hotel-delivery',
-    title: 'Hotel Delivery Car Rentals',
-    h1: 'Hotel Delivery Car Rentals | Phoenix & Scottsdale',
+    titleKey: 'hotelDelivery.title',
+    h1Key: 'hotelDelivery.h1',
     metaTitle: 'Hotel Car Delivery Phoenix | Scottsdale Hotels | ItWhip',
     metaDescription: 'Get your rental car delivered to your Phoenix or Scottsdale hotel. Free delivery available. Skip the rental counter and start your vacation immediately.',
-    heroSubtitle: 'Your car, delivered to your hotel lobby. Start exploring immediately.',
-    content: 'Why waste vacation time at a rental counter? With hotel delivery, your host brings the car directly to your Phoenix or Scottsdale hotel. Meet in the lobby or valet area, do a quick walkthrough, and you\'re on your way. Perfect for resort guests, conference attendees, or anyone who wants maximum convenience.',
-    benefits: [
-      'Delivery to any Phoenix metro hotel',
-      'Meet your host at the lobby',
-      'No rental counter lines',
-      'Free delivery from many hosts',
-      'Return at hotel too',
-      'Concierge-style service'
+    heroSubtitleKey: 'hotelDelivery.heroSubtitle',
+    contentKey: 'hotelDelivery.content',
+    benefitKeys: [
+      'hotelDelivery.benefit1',
+      'hotelDelivery.benefit2',
+      'hotelDelivery.benefit3',
+      'hotelDelivery.benefit4',
+      'hotelDelivery.benefit5',
+      'hotelDelivery.benefit6'
     ],
-    priceRange: '$0-35 delivery fee',
-    durationSuggestion: 'Any duration',
+    priceRangeKey: 'hotelDelivery.priceRange',
+    durationSuggestionKey: 'hotelDelivery.durationSuggestion',
     idealCarTypes: ['SEDAN', 'SUV', 'LUXURY', 'CONVERTIBLE'],
     filters: {
       features: ['delivery']
     },
-    faqs: [
-      {
-        question: 'Which hotels do you deliver to?',
-        answer: 'We deliver to hotels throughout the Phoenix metro area including <a href="/rentals/cities/scottsdale">Scottsdale</a> resorts, <a href="/rentals/cities/phoenix">downtown Phoenix</a> hotels, and properties in <a href="/rentals/cities/tempe">Tempe</a>, <a href="/rentals/cities/mesa">Mesa</a>, and <a href="/rentals/cities/chandler">Chandler</a>.'
-      },
-      {
-        question: 'Is hotel delivery free?',
-        answer: 'Many hosts offer free delivery within a certain radius. Others charge $15-35 for hotel delivery. The fee is clearly shown on each listing. <a href="/rentals/search">Browse cars with delivery</a>.'
-      },
-      {
-        question: 'Where do I meet the host?',
-        answer: 'Typically you\'ll meet in the hotel lobby or valet/parking area. Coordinate with your host through the app for the exact meeting spot. See <a href="/how-it-works">how it works</a> for more details.'
-      },
-      {
-        question: 'Can I return the car to my hotel?',
-        answer: 'Yes! Most hosts with hotel delivery also offer hotel pickup at the end of your rental. Arrange the return time and location with your host. For airport returns, see <a href="/rentals/airport-delivery">airport delivery</a>.'
-      },
-      {
-        question: 'What if I\'m staying at an Airbnb or vacation rental?',
-        answer: 'No problem! Hosts can deliver to vacation rentals, Airbnbs, and private residences throughout the Phoenix area. <a href="/rentals/search">Find cars available for delivery</a> to your location.'
-      }
+    faqKeys: [
+      { questionKey: 'hotelDelivery.faq1Question', answerKey: 'hotelDelivery.faq1Answer' },
+      { questionKey: 'hotelDelivery.faq2Question', answerKey: 'hotelDelivery.faq2Answer' },
+      { questionKey: 'hotelDelivery.faq3Question', answerKey: 'hotelDelivery.faq3Answer' },
+      { questionKey: 'hotelDelivery.faq4Question', answerKey: 'hotelDelivery.faq4Answer' },
+      { questionKey: 'hotelDelivery.faq5Question', answerKey: 'hotelDelivery.faq5Answer' }
     ],
-    tips: [
-      'Book delivery for your check-in day',
-      'Meet in the lobby for easy handoff',
-      'Confirm delivery time with host',
-      'Check if return pickup is available'
+    tipKeys: [
+      'hotelDelivery.tip1',
+      'hotelDelivery.tip2',
+      'hotelDelivery.tip3',
+      'hotelDelivery.tip4'
     ]
   }
 }

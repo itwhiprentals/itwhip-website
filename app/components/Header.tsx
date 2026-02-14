@@ -2,9 +2,11 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
+import NextLink from 'next/link'
 import Image from 'next/image'
 import { usePathname, useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import {
   IoChevronDownOutline,
   IoCarOutline,
@@ -15,53 +17,23 @@ import {
   IoPersonOutline
 } from 'react-icons/io5'
 import MobileMenu from './MobileMenu'
-import ProfileModal from '../(guest)/dashboard/modals/ProfileModal'
+import LanguageSwitcher from './LanguageSwitcher'
+import ProfileModal from '@/app/[locale]/(guest)/dashboard/modals/ProfileModal'
 import HeaderActions from './header/HeaderActions'
 import { useAuth } from '@/app/contexts/AuthContext'
+import { routing } from '@/i18n/routing'
 
-// Desktop Navigation Items
-const navItems = [
-  {
-    label: 'Browse',
-    items: [
-      { label: 'All Cars', href: '/' },
-      { label: 'Luxury', href: '/rentals/search?category=luxury' },
-      { label: 'SUVs', href: '/rentals/search?category=suv' },
-      { label: 'Economy', href: '/rentals/search?category=economy' }
-    ]
-  },
-  {
-    label: 'Host',
-    items: [
-      { label: 'List Your Car', href: '/host/signup', highlight: true },
-      { label: 'Switch from Turo', href: '/switch-from-turo' },
-      { label: 'Dashboard', href: '/host/dashboard' },
-      { label: 'My Cars', href: '/host/cars' },
-      { label: 'Bookings', href: '/host/bookings' },
-      { label: 'Earnings', href: '/host/earnings' }
-    ]
-  },
-  {
-    label: 'Business',
-    items: [
-      { label: 'Corporate Rentals', href: '/corporate' },
-      { label: 'Hotel Partners', href: '/hotel-solutions' },
-      { label: 'API Access', href: '/developers' },
-      { label: 'GDS Integration', href: '/gds', badge: 'NEW' }
-    ]
-  },
-  {
-    label: 'Company',
-    items: [
-      { label: 'About', href: '/about' },
-      { label: 'How It Works', href: '/how-it-works' },
-      { label: 'Reviews', href: '/reviews' },
-      { label: 'Blog', href: '/blog' },
-      { label: 'Help Center', href: '/help' },
-      { label: 'Contact', href: '/contact' }
-    ]
-  }
-]
+// Strip locale prefix from pathname (e.g., /es/about → /about)
+// Safe to use in both i18n and non-i18n contexts (routing is a static config)
+const nonDefaultLocales = routing.locales.filter(l => l !== routing.defaultLocale)
+const localeRegex = nonDefaultLocales.length > 0
+  ? new RegExp(`^/(${nonDefaultLocales.join('|')})(/|$)`)
+  : null
+
+function stripLocalePrefix(pathname: string): string {
+  if (!localeRegex) return pathname
+  return pathname.replace(localeRegex, '/').replace(/\/$/, '') || '/'
+}
 
 interface User {
   id: string
@@ -80,8 +52,54 @@ interface HeaderProps {
 }
 
 function HeaderInner(_props: HeaderProps = {}) {
-  const pathname = usePathname()
+  const rawPathname = usePathname()
+  const pathname = rawPathname ? stripLocalePrefix(rawPathname) : null
   const searchParams = useSearchParams()
+  const t = useTranslations('Header')
+
+  // Desktop Navigation Items — translated
+  const navItems = [
+    {
+      label: t('browse'),
+      items: [
+        { label: t('allCars'), href: '/' },
+        { label: t('luxury'), href: '/rentals/search?category=luxury' },
+        { label: t('suvs'), href: '/rentals/search?category=suv' },
+        { label: t('economy'), href: '/rentals/search?category=economy' }
+      ]
+    },
+    {
+      label: t('host'),
+      items: [
+        { label: t('listYourCar'), href: '/host/signup', highlight: true, portal: true },
+        { label: t('switchFromTuro'), href: '/switch-from-turo' },
+        { label: t('dashboard'), href: '/host/dashboard', portal: true },
+        { label: t('myCars'), href: '/host/cars', portal: true },
+        { label: t('bookings'), href: '/host/bookings', portal: true },
+        { label: t('earnings'), href: '/host/earnings', portal: true }
+      ]
+    },
+    {
+      label: t('business'),
+      items: [
+        { label: t('corporateRentals'), href: '/corporate' },
+        { label: t('hotelPartners'), href: '/hotel-solutions' },
+        { label: t('apiAccess'), href: '/developers' },
+        { label: t('gdsIntegration'), href: '/gds', badge: t('new') }
+      ]
+    },
+    {
+      label: t('company'),
+      items: [
+        { label: t('about'), href: '/about' },
+        { label: t('howItWorks'), href: '/how-it-works' },
+        { label: t('reviews'), href: '/reviews' },
+        { label: t('blog'), href: '/blog' },
+        { label: t('helpCenter'), href: '/help' },
+        { label: t('contact'), href: '/contact' }
+      ]
+    }
+  ]
 
   // ========== GUARD SCREEN DETECTION ==========
   // When guard screen is active, don't show logged-in header
@@ -128,20 +146,24 @@ function HeaderInner(_props: HeaderProps = {}) {
   // Check if we're on specific pages
   const isHostPage = pathname?.startsWith('/host/')
   const isAdminPage = pathname?.startsWith('/admin/')
+  const isFleetPage = pathname?.startsWith('/fleet/')
+  const isPartnerPage = pathname?.startsWith('/partner/')
   const isChoePage = pathname?.startsWith('/help/choe') || pathname === '/choe'
   const isChoeStandalone = pathname === '/choe'
+
+  // Show language switcher only on guest-facing pages (not portals)
+  const isPortalPage = isHostPage || isAdminPage || isFleetPage || isPartnerPage
+  const showLanguageSwitcher = !isPortalPage
 
   // Override isLoggedIn display when guard screen is active
   // User should appear logged out until they choose an action on the guard screen
   const showAsLoggedIn = isLoggedIn && !isGuardActive && !isSignupMode
 
-  // ✅ FIXED: Determine user type - only by actual role, not by page location
-  // User must have role === 'BUSINESS' to be considered a host (have actual host profile)
+  // Determine user type - only by actual role, not by page location
   const isAdmin = user?.role === 'ADMIN'
   const isHost = user?.role === 'BUSINESS'
   const isGuest = showAsLoggedIn && !isAdmin && !isHost
 
-  // ✅ DEBUG: Log user detection (can remove later)
   useEffect(() => {
     if (user) {
       console.log('🔍 Header User Detection:', {
@@ -175,11 +197,6 @@ function HeaderInner(_props: HeaderProps = {}) {
     }
   }
 
-  // ========== AUTH STATE IS NOW MANAGED BY AuthContext ==========
-  // The AuthContext handles all auth checking automatically
-  // It refreshes on mount, on window focus, and after role switches
-  // This removes the need for the old checkAuth() function
-
   const handleLogout = async () => {
     if (isLoggingOut) return
 
@@ -198,10 +215,6 @@ function HeaderInner(_props: HeaderProps = {}) {
       redirectUrl = '/host/login'
     }
 
-    // ========== MUST WAIT FOR LOGOUT API ==========
-    // httpOnly cookies can ONLY be cleared by the Set-Cookie headers in the API response
-    // If we redirect before the response is received, cookies remain and user stays logged in
-    // The UI already shows "Signing Out..." via isLoggingOut state
     try {
       if (isAdmin) {
         await fetch('/api/admin/auth/logout', {
@@ -221,11 +234,9 @@ function HeaderInner(_props: HeaderProps = {}) {
         })
       }
     } catch (error) {
-      // Even if API fails, proceed with redirect
       console.error('Logout API error:', error)
     }
 
-    // Now redirect after cookies are cleared by the API response
     window.location.href = redirectUrl
   }
 
@@ -250,15 +261,22 @@ function HeaderInner(_props: HeaderProps = {}) {
 
   // Host-specific navigation items for mobile
   const hostNavItems = isHost && isHostPage ? [
-    { name: 'Dashboard', href: '/host/dashboard', icon: IoHomeOutline },
-    { name: 'My Cars', href: '/host/cars', icon: IoCarOutline },
-    { name: 'Bookings', href: '/host/bookings', icon: IoCalendarOutline },
-    { name: 'Earnings', href: '/host/earnings', icon: IoWalletOutline },
+    { name: t('dashboard'), href: '/host/dashboard', icon: IoHomeOutline },
+    { name: t('myCars'), href: '/host/cars', icon: IoCarOutline },
+    { name: t('bookings'), href: '/host/bookings', icon: IoCalendarOutline },
+    { name: t('earnings'), href: '/host/earnings', icon: IoWalletOutline },
     { name: 'Profile', href: '/host/profile', icon: IoPersonOutline },
   ] : []
 
   // Get profile photo - prioritize profilePhoto over avatar
   const profilePhotoUrl = user?.profilePhoto || user?.avatar
+
+  // Logo link: portal pages use NextLink (no locale prefix), guest pages use i18n Link
+  const logoHref = isAdmin ? '/admin/dashboard' :
+    isHost && isHostPage ? '/host/dashboard' :
+    isChoePage ? '/help/choe' :
+    isGuest ? '/dashboard' : '/'
+  const LogoLink = isPortalPage ? NextLink : Link
 
   return (
     <>
@@ -269,15 +287,9 @@ function HeaderInner(_props: HeaderProps = {}) {
           <div className="flex justify-between items-center h-16">
             {/* Left side - Logo and Nav */}
             <div className="flex items-center ml-4 sm:ml-0">
-              {/* Logo */}
-              <Link
-                href={
-                  isAdmin ? '/admin/dashboard' :
-                  isHost && isHostPage ? '/host/dashboard' :
-                  isChoePage ? '/help/choe' :
-                  isGuest ? '/dashboard' :
-                  '/'
-                }
+              {/* Logo — use NextLink for portal destinations, i18n Link for guest */}
+              <LogoLink
+                href={logoHref}
                 className="flex items-center mr-4 group"
               >
                 {isChoePage ? (
@@ -317,11 +329,11 @@ function HeaderInner(_props: HeaderProps = {}) {
                       />
                     </div>
                     <span className="text-[8px] text-gray-700 dark:text-gray-300 tracking-widest uppercase font-medium mt-0.5">
-                      {isAdmin ? 'ADMIN PORTAL' : (isHost && isHostPage) ? 'HOST PORTAL' : 'ITWHIP RIDES'}
+                      {isAdmin ? t('adminPortal') : (isHost && isHostPage) ? t('hostPortal') : t('itwhipRides')}
                     </span>
                   </div>
                 )}
-              </Link>
+              </LogoLink>
 
               {/* Desktop Navigation - Show for non-admin, non-host, non-choe-standalone pages */}
               {!isAdminPage && !isHostPage && !isChoeStandalone && (
@@ -335,59 +347,62 @@ function HeaderInner(_props: HeaderProps = {}) {
                         className="flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900"
                       >
                         <span>{item.label}</span>
-                        <IoChevronDownOutline 
+                        <IoChevronDownOutline
                           className={`w-3.5 h-3.5 transition-transform ${
                             activeDropdown === item.label ? 'rotate-180' : ''
-                          }`} 
+                          }`}
                         />
                       </button>
 
                       {/* Dropdown Menu */}
                       {activeDropdown === item.label && (
                         <div className="absolute top-full left-0 mt-2 w-64 rounded-xl shadow-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 py-2 overflow-hidden">
-                          {item.items.map((subItem) => (
-                            <Link
-                              key={subItem.label}
-                              href={subItem.href}
-                              className={`block px-4 py-2.5 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                                'highlight' in subItem && subItem.highlight 
-                                  ? 'text-blue-600 dark:text-blue-400 font-medium' 
-                                  : 'text-gray-700 dark:text-gray-300'
-                              }`}
-                              onClick={() => setActiveDropdown(null)}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span>{subItem.label}</span>
-                                {'badge' in subItem && subItem.badge && (
-                                  <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full">
-                                    {subItem.badge}
-                                  </span>
-                                )}
-                              </div>
-                            </Link>
-                          ))}
+                          {item.items.map((subItem) => {
+                            const LinkComponent = ('portal' in subItem && subItem.portal) ? NextLink : Link
+                            return (
+                              <LinkComponent
+                                key={subItem.label}
+                                href={subItem.href}
+                                className={`block px-4 py-2.5 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                                  'highlight' in subItem && subItem.highlight
+                                    ? 'text-blue-600 dark:text-blue-400 font-medium'
+                                    : 'text-gray-700 dark:text-gray-300'
+                                }`}
+                                onClick={() => setActiveDropdown(null)}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span>{subItem.label}</span>
+                                  {'badge' in subItem && subItem.badge && (
+                                    <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full">
+                                      {subItem.badge}
+                                    </span>
+                                  )}
+                                </div>
+                              </LinkComponent>
+                            )
+                          })}
                         </div>
                       )}
                     </div>
                   ))}
                 </nav>
               )}
-              
+
               {/* Simple Host Navigation - when on host pages */}
               {isHostPage && isHost && (
                 <nav className="hidden lg:flex items-center space-x-1 ml-4">
-                  <Link href="/host/dashboard" className="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900">
-                    Dashboard
-                  </Link>
-                  <Link href="/host/cars" className="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900">
-                    My Cars
-                  </Link>
-                  <Link href="/host/bookings" className="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900">
-                    Bookings
-                  </Link>
-                  <Link href="/host/earnings" className="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900">
-                    Earnings
-                  </Link>
+                  <NextLink href="/host/dashboard" className="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900">
+                    {t('dashboard')}
+                  </NextLink>
+                  <NextLink href="/host/cars" className="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900">
+                    {t('myCars')}
+                  </NextLink>
+                  <NextLink href="/host/bookings" className="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900">
+                    {t('bookings')}
+                  </NextLink>
+                  <NextLink href="/host/earnings" className="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900">
+                    {t('earnings')}
+                  </NextLink>
                 </nav>
               )}
 
@@ -396,13 +411,13 @@ function HeaderInner(_props: HeaderProps = {}) {
                 <div className="hidden lg:flex items-center space-x-2 ml-4">
                   <div className="flex items-center space-x-2 px-3 py-1.5 bg-red-100 dark:bg-red-900/20 rounded-lg">
                     <IoShieldCheckmarkOutline className="w-4 h-4 text-red-600 dark:text-red-400" />
-                    <span className="text-sm font-medium text-red-600 dark:text-red-400">Admin Mode</span>
+                    <span className="text-sm font-medium text-red-600 dark:text-red-400">{t('adminMode')}</span>
                   </div>
                 </div>
               )}
 
             </div>
-            
+
             {/* Right side - Actions Component */}
             <HeaderActions
               isDarkMode={isDarkMode}
@@ -420,6 +435,7 @@ function HeaderInner(_props: HeaderProps = {}) {
               userName={user?.name}
               isMobileMenuOpen={isMobileMenuOpen}
               onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              languageSwitcher={showLanguageSwitcher ? <LanguageSwitcher /> : undefined}
             />
           </div>
         </div>
@@ -467,7 +483,12 @@ export default function Header(props: HeaderProps = {}) {
         </div>
       </nav>
     }>
-      <HeaderInner {...props} />
+      <HeaderInner
+        isMobileMenuOpen={props.isMobileMenuOpen}
+        setIsMobileMenuOpen={props.setIsMobileMenuOpen}
+        handleGetAppClick={props.handleGetAppClick}
+        handleSearchClick={props.handleSearchClick}
+      />
     </Suspense>
   )
 }

@@ -14,7 +14,7 @@ import type {
   AddOnOption,
 } from '@/app/lib/ai-booking/types'
 import { CheckoutStep } from '@/app/lib/ai-booking/types'
-import { getTaxRate } from '@/app/(guest)/rentals/lib/arizona-taxes'
+import { getTaxRate } from '@/app/[locale]/(guest)/rentals/lib/arizona-taxes'
 
 // =============================================================================
 // INITIAL STATE

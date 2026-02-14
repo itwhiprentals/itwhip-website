@@ -20,6 +20,7 @@ import {
   IoAddCircleOutline
 } from 'react-icons/io5'
 import { InvitationDetails } from '@/app/types/fleet-management'
+import { useTranslations, useLocale } from 'next-intl'
 
 interface InvitationsListProps {
   initialTab?: 'sent' | 'received'
@@ -36,6 +37,9 @@ export default function InvitationsList({
   const [invitations, setInvitations] = useState<InvitationDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const t = useTranslations('PartnerDashboard')
+
+  const locale = useLocale()
 
   const fetchInvitations = useCallback(async (type: 'sent' | 'received') => {
     try {
@@ -56,11 +60,11 @@ export default function InvitationsList({
       }
     } catch (err) {
       console.error('Error fetching invitations:', err)
-      setError('Failed to load invitations')
+      setError(t('ilFailedToLoad'))
     } finally {
       setLoading(false)
     }
-  }, [limit])
+  }, [limit, t])
 
   useEffect(() => {
     fetchInvitations(activeTab)
@@ -110,10 +114,10 @@ export default function InvitationsList({
     const diff = now.getTime() - date.getTime()
     const days = Math.floor(diff / (1000 * 60 * 60 * 24))
 
-    if (days === 0) return 'Today'
-    if (days === 1) return 'Yesterday'
-    if (days < 7) return `${days} days ago`
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    if (days === 0) return t('ilToday')
+    if (days === 1) return t('ilYesterday')
+    if (days < 7) return t('ilDaysAgo', { days })
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' })
   }
 
   const isExpiringSoon = (expiresAt: string) => {
@@ -136,7 +140,7 @@ export default function InvitationsList({
           }`}
         >
           <IoSendOutline className="w-4 h-4" />
-          Sent
+          {t('ilSent')}
         </button>
         <button
           onClick={() => handleTabChange('received')}
@@ -147,7 +151,7 @@ export default function InvitationsList({
           }`}
         >
           <IoMailOutline className="w-4 h-4" />
-          Received
+          {t('ilReceived')}
         </button>
       </div>
 
@@ -173,7 +177,7 @@ export default function InvitationsList({
               className="text-purple-600 hover:text-purple-700 text-sm flex items-center gap-1 mx-auto"
             >
               <IoRefreshOutline className="w-4 h-4" />
-              Retry
+              {t('ilRetry')}
             </button>
           </div>
         ) : invitations.length === 0 ? (
@@ -186,12 +190,12 @@ export default function InvitationsList({
               )}
             </div>
             <h3 className="text-gray-900 dark:text-white font-medium mb-1">
-              No {activeTab} invitations
+              {activeTab === 'sent' ? t('ilNoSentInvitations') : t('ilNoReceivedInvitations')}
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               {activeTab === 'sent'
-                ? 'Start inviting car owners to grow your fleet'
-                : 'Invitations from vehicle owners will appear here'}
+                ? t('ilStartInviting')
+                : t('ilInvitationsFromOwners')}
             </p>
             {activeTab === 'sent' && (
               <Link
@@ -199,7 +203,7 @@ export default function InvitationsList({
                 className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
               >
                 <IoAddCircleOutline className="w-4 h-4" />
-                Invite Car Owner
+                {t('ilInviteCarOwner')}
               </Link>
             )}
           </div>
@@ -261,7 +265,7 @@ export default function InvitationsList({
 
                     {/* Type and Commission */}
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                      {invitation.type === 'MANAGER_INVITES_OWNER' ? 'Owner invite' : 'Manager invite'}
+                      {invitation.type === 'MANAGER_INVITES_OWNER' ? t('ilOwnerInvite') : t('ilManagerInvite')}
                       {' • '}
                       {invitation.proposedManagerPercent}% manager / {invitation.proposedOwnerPercent}% owner
                     </p>
@@ -273,7 +277,7 @@ export default function InvitationsList({
                         <span>
                           {invitation.vehicles.length === 1
                             ? `${invitation.vehicles[0].year} ${invitation.vehicles[0].make} ${invitation.vehicles[0].model}`
-                            : `${invitation.vehicles.length} vehicles`}
+                            : t('ilVehicles', { count: invitation.vehicles.length })}
                         </span>
                       </div>
                     )}
@@ -283,7 +287,7 @@ export default function InvitationsList({
                       <span className="text-gray-400">{formatDate(invitation.createdAt)}</span>
                       {invitation.status === 'PENDING' && isExpiringSoon(invitation.expiresAt) && (
                         <span className="text-orange-600 dark:text-orange-400 font-medium">
-                          Expires soon
+                          {t('ilExpiresSoon')}
                         </span>
                       )}
                     </div>
@@ -304,7 +308,7 @@ export default function InvitationsList({
               href={`/host/fleet/invitations?tab=${activeTab}`}
               className="text-sm text-purple-600 hover:text-purple-700 dark:text-purple-400 flex items-center justify-center gap-1"
             >
-              View all {activeTab} invitations
+              {activeTab === 'sent' ? t('ilViewAllSent') : t('ilViewAllReceived')}
               <IoChevronForwardOutline className="w-4 h-4" />
             </Link>
           </div>

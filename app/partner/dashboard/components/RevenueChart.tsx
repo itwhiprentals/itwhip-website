@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 
 interface MonthlyRevenue {
   month: string
@@ -13,6 +14,7 @@ interface MonthlyRevenue {
 }
 
 export default function RevenueChart() {
+  const t = useTranslations('PartnerDashboard')
   const [data, setData] = useState<MonthlyRevenue[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'net' | 'gross'>('net')
@@ -69,7 +71,7 @@ export default function RevenueChart() {
   if (loading) {
     return (
       <div className="h-64 flex items-center justify-center">
-        <div className="animate-pulse text-gray-400">Loading chart...</div>
+        <div className="animate-pulse text-gray-400">{t('rcLoadingChart')}</div>
       </div>
     )
   }
@@ -77,7 +79,7 @@ export default function RevenueChart() {
   if (data.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center">
-        <p className="text-gray-500 dark:text-gray-400">No revenue data available</p>
+        <p className="text-gray-500 dark:text-gray-400">{t('rcNoRevenue')}</p>
       </div>
     )
   }
@@ -94,7 +96,7 @@ export default function RevenueChart() {
               : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
           }`}
         >
-          Net Revenue
+          {t('rcNetRevenue')}
         </button>
         <button
           onClick={() => setViewMode('gross')}
@@ -104,7 +106,7 @@ export default function RevenueChart() {
               : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
           }`}
         >
-          Gross Revenue
+          {t('rcGrossRevenue')}
         </button>
       </div>
 
@@ -155,13 +157,13 @@ export default function RevenueChart() {
         <div className="flex items-center gap-2">
           <div className={`w-3 h-3 rounded ${viewMode === 'net' ? 'bg-green-500' : 'bg-blue-500'}`} />
           <span className="text-gray-600 dark:text-gray-400">
-            {viewMode === 'net' ? 'Net Revenue' : 'Gross Revenue'}
+            {viewMode === 'net' ? t('rcNetRevenue') : t('rcGrossRevenue')}
           </span>
         </div>
         {viewMode === 'gross' && (
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded bg-orange-500" />
-            <span className="text-gray-600 dark:text-gray-400">Commission</span>
+            <span className="text-gray-600 dark:text-gray-400">{t('rcCommission')}</span>
           </div>
         )}
       </div>

@@ -2,6 +2,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { IoSaveOutline, IoAlertCircleOutline, IoBusinessOutline, IoCheckmarkCircleOutline, IoTimeOutline, IoCloseCircleOutline } from 'react-icons/io5'
 
 interface CompanyTabProps {
@@ -31,70 +32,71 @@ interface ValidationErrors {
   zipCode?: string
 }
 
-// Validation helpers
-const validateRequired = (value: string, fieldName: string): string | undefined => {
-  if (!value.trim()) return `${fieldName} is required`
-  return undefined
-}
-
-const validateTaxId = (taxId: string, isBusinessHost: boolean): string | undefined => {
-  if (!taxId.trim()) {
-    return isBusinessHost ? 'EIN is required for business hosts' : undefined
-  }
-  const einRegex = /^\d{2}-?\d{7}$/
-  if (!einRegex.test(taxId.replace(/\s/g, ''))) return 'Please enter a valid EIN (XX-XXXXXXX)'
-  return undefined
-}
-
-const validateZipCode = (zipCode: string): string | undefined => {
-  if (!zipCode.trim()) return undefined
-  const zipRegex = /^\d{5}(-\d{4})?$/
-  if (!zipRegex.test(zipCode)) return 'Please enter a valid ZIP code'
-  return undefined
-}
-
-const validateState = (state: string): string | undefined => {
-  if (!state.trim()) return undefined
-  if (state.trim().length !== 2) return 'Please use 2-letter state code (e.g., AZ)'
-  return undefined
-}
-
-const approvalStatusBadge = (status: string) => {
-  switch (status) {
-    case 'APPROVED':
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-          <IoCheckmarkCircleOutline className="w-3 h-3" /> Approved
-        </span>
-      )
-    case 'PENDING':
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-          <IoTimeOutline className="w-3 h-3" /> Pending Review
-        </span>
-      )
-    case 'REJECTED':
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-          <IoCloseCircleOutline className="w-3 h-3" /> Rejected
-        </span>
-      )
-    default:
-      return null
-  }
-}
-
 export function CompanyTab({ settings, setSettings, onSave, isSaving }: CompanyTabProps) {
+  const t = useTranslations('PartnerSettings')
   const [errors, setErrors] = useState<ValidationErrors>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [toggleError, setToggleError] = useState('')
+
+  // Validation helpers (inlined to use t())
+  const validateRequired = (value: string, fieldName: string): string | undefined => {
+    if (!value.trim()) return t('valFieldRequired', { field: fieldName })
+    return undefined
+  }
+
+  const validateTaxId = (taxId: string, isBusinessHost: boolean): string | undefined => {
+    if (!taxId.trim()) {
+      return isBusinessHost ? t('valEinRequired') : undefined
+    }
+    const einRegex = /^\d{2}-?\d{7}$/
+    if (!einRegex.test(taxId.replace(/\s/g, ''))) return t('valEinInvalid')
+    return undefined
+  }
+
+  const validateZipCode = (zipCode: string): string | undefined => {
+    if (!zipCode.trim()) return undefined
+    const zipRegex = /^\d{5}(-\d{4})?$/
+    if (!zipRegex.test(zipCode)) return t('valZipInvalid')
+    return undefined
+  }
+
+  const validateState = (state: string): string | undefined => {
+    if (!state.trim()) return undefined
+    if (state.trim().length !== 2) return t('valStateCode')
+    return undefined
+  }
+
+  const approvalStatusBadge = (status: string) => {
+    switch (status) {
+      case 'APPROVED':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+            <IoCheckmarkCircleOutline className="w-3 h-3" /> {t('approved')}
+          </span>
+        )
+      case 'PENDING':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+            <IoTimeOutline className="w-3 h-3" /> {t('pendingReview')}
+          </span>
+        )
+      case 'REJECTED':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+            <IoCloseCircleOutline className="w-3 h-3" /> {t('rejected')}
+          </span>
+        )
+      default:
+        return null
+    }
+  }
 
   const validateField = (field: keyof ValidationErrors, value: string) => {
     let error: string | undefined
 
     switch (field) {
       case 'companyName':
-        error = validateRequired(value, 'Company name')
+        error = validateRequired(value, t('companyName'))
         break
       case 'taxId':
         error = validateTaxId(value, settings.isBusinessHost)
@@ -130,12 +132,12 @@ export function CompanyTab({ settings, setSettings, onSave, isSaving }: CompanyT
     if (newValue) {
       // Validate requirements before enabling
       if (!settings.companyName.trim()) {
-        setToggleError('Company name is required to enable business features')
+        setToggleError(t('valCompanyRequiredToggle'))
         return
       }
       const einRegex = /^\d{2}-?\d{7}$/
       if (!settings.taxId.trim() || !einRegex.test(settings.taxId.replace(/\s/g, ''))) {
-        setToggleError('A valid EIN (Tax ID) is required to enable business features')
+        setToggleError(t('valEinRequiredToggle'))
         return
       }
     }
@@ -145,7 +147,7 @@ export function CompanyTab({ settings, setSettings, onSave, isSaving }: CompanyT
 
   const validateAll = (): boolean => {
     const newErrors: ValidationErrors = {
-      companyName: validateRequired(settings.companyName, 'Company name'),
+      companyName: validateRequired(settings.companyName, t('companyName')),
       taxId: validateTaxId(settings.taxId, settings.isBusinessHost),
       zipCode: validateZipCode(settings.zipCode),
       state: validateState(settings.state)
@@ -200,11 +202,11 @@ export function CompanyTab({ settings, setSettings, onSave, isSaving }: CompanyT
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Business / Company Host</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t('businessCompanyHost')}</h3>
                 {approvalStatusBadge(settings.businessApprovalStatus)}
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Operate your vehicles under your commercial/business license
+                {t('operateUnderLicense')}
               </p>
             </div>
           </div>
@@ -224,7 +226,7 @@ export function CompanyTab({ settings, setSettings, onSave, isSaving }: CompanyT
         </div>
         {settings.isBusinessHost && (
           <p className="text-xs text-orange-700 dark:text-orange-300 mt-3 pl-[52px]">
-            This enables the business landing page feature. Your landing page will need to be submitted and approved before it goes live.
+            {t('businessLandingPageNote')}
           </p>
         )}
         {toggleError && (
@@ -235,12 +237,12 @@ export function CompanyTab({ settings, setSettings, onSave, isSaving }: CompanyT
         )}
       </div>
 
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Company Information</h2>
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('companyInformation')}</h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Company Name <span className="text-red-500">*</span>
+            {t('companyName')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -255,24 +257,24 @@ export function CompanyTab({ settings, setSettings, onSave, isSaving }: CompanyT
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Business Type
+            {t('businessType')}
           </label>
           <select
             value={settings.businessType}
             onChange={(e) => handleChange('businessType', e.target.value)}
             className={getInputClassName('businessType')}
           >
-            <option value="">Select type</option>
-            <option value="llc">LLC</option>
-            <option value="corporation">Corporation</option>
-            <option value="sole_proprietor">Sole Proprietor</option>
-            <option value="partnership">Partnership</option>
+            <option value="">{t('selectType')}</option>
+            <option value="llc">{t('llc')}</option>
+            <option value="corporation">{t('corporation')}</option>
+            <option value="sole_proprietor">{t('soleProprietor')}</option>
+            <option value="partnership">{t('partnership')}</option>
           </select>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Tax ID (EIN) {settings.isBusinessHost && <span className="text-red-500">*</span>}
+            {t('taxIdEin')} {settings.isBusinessHost && <span className="text-red-500">*</span>}
           </label>
           <input
             type="text"
@@ -287,7 +289,7 @@ export function CompanyTab({ settings, setSettings, onSave, isSaving }: CompanyT
 
         <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Business Address
+            {t('businessAddress')}
           </label>
           <input
             type="text"
@@ -300,7 +302,7 @@ export function CompanyTab({ settings, setSettings, onSave, isSaving }: CompanyT
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            City
+            {t('city')}
           </label>
           <input
             type="text"
@@ -314,7 +316,7 @@ export function CompanyTab({ settings, setSettings, onSave, isSaving }: CompanyT
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              State
+              {t('state')}
             </label>
             <input
               type="text"
@@ -329,7 +331,7 @@ export function CompanyTab({ settings, setSettings, onSave, isSaving }: CompanyT
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              ZIP Code
+              {t('zipCode')}
             </label>
             <input
               type="text"
@@ -351,7 +353,7 @@ export function CompanyTab({ settings, setSettings, onSave, isSaving }: CompanyT
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg transition-colors"
         >
           <IoSaveOutline className="w-5 h-5" />
-          {isSaving ? 'Saving...' : 'Save Changes'}
+          {isSaving ? t('saving') : t('saveChanges')}
         </button>
       </div>
     </div>

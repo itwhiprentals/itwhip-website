@@ -3177,6 +3177,7 @@ model User {
   Hotel                    Hotel?                    @relation(fields: [hotelId], references: [id])
   UserNotificationSettings UserNotificationSettings?
   identityLinks            IdentityLink[]
+  locale                   String                    @default("en") // User's preferred language: en, es, fr
 
   @@index([email])
   @@index([hotelId])

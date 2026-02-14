@@ -19,7 +19,7 @@ import {
   IoCheckmarkCircle
 } from 'react-icons/io5'
 import { RentalCarWithDetails } from '@/types/rental'
-import { formatCurrency } from '@/app/(guest)/rentals/lib/rental-utils'
+import { formatCurrency } from '@/app/[locale]/(guest)/rentals/lib/rental-utils'
 import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 import { formatRating, isNewListing, formatTransmission, formatFuelType } from '@/app/lib/utils/formatCarSpecs'
 

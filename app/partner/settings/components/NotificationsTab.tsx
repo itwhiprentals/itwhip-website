@@ -1,6 +1,7 @@
 // app/partner/settings/components/NotificationsTab.tsx
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { IoSaveOutline } from 'react-icons/io5'
 
 interface NotificationsTabProps {
@@ -16,15 +17,17 @@ interface NotificationsTabProps {
 }
 
 export function NotificationsTab({ settings, setSettings, onSave, isSaving }: NotificationsTabProps) {
+  const t = useTranslations('PartnerSettings')
+
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Notification Preferences</h2>
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('notificationPreferences')}</h2>
 
       <div className="space-y-4">
         <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer">
           <div>
-            <p className="font-medium text-gray-900 dark:text-white">Email Notifications</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Receive important updates via email</p>
+            <p className="font-medium text-gray-900 dark:text-white">{t('emailNotificationsLabel')}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('emailNotificationsDesc')}</p>
           </div>
           <input
             type="checkbox"
@@ -36,8 +39,8 @@ export function NotificationsTab({ settings, setSettings, onSave, isSaving }: No
 
         <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer">
           <div>
-            <p className="font-medium text-gray-900 dark:text-white">Booking Alerts</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Get notified about new bookings and updates</p>
+            <p className="font-medium text-gray-900 dark:text-white">{t('bookingAlertsLabel')}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('bookingAlertsDesc')}</p>
           </div>
           <input
             type="checkbox"
@@ -49,8 +52,8 @@ export function NotificationsTab({ settings, setSettings, onSave, isSaving }: No
 
         <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer">
           <div>
-            <p className="font-medium text-gray-900 dark:text-white">Payout Alerts</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Get notified when payouts are processed</p>
+            <p className="font-medium text-gray-900 dark:text-white">{t('payoutAlertsLabel')}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('payoutAlertsDesc')}</p>
           </div>
           <input
             type="checkbox"
@@ -62,8 +65,8 @@ export function NotificationsTab({ settings, setSettings, onSave, isSaving }: No
 
         <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer">
           <div>
-            <p className="font-medium text-gray-900 dark:text-white">Marketing Emails</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Receive tips, promotions, and platform updates</p>
+            <p className="font-medium text-gray-900 dark:text-white">{t('marketingEmailsLabel')}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('marketingEmailsDesc')}</p>
           </div>
           <input
             type="checkbox"
@@ -81,7 +84,7 @@ export function NotificationsTab({ settings, setSettings, onSave, isSaving }: No
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg transition-colors"
         >
           <IoSaveOutline className="w-5 h-5" />
-          {isSaving ? 'Saving...' : 'Save Preferences'}
+          {isSaving ? t('saving') : t('savePreferences')}
         </button>
       </div>
     </div>

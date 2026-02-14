@@ -4,6 +4,40 @@
 
 export const revalidate = 3600 // 1 hour
 
+// Supported non-default locales (English is the default at root path)
+const ALT_LOCALES = ['es', 'fr']
+
+/** Add hreflang alternates to a sitemap entry and generate locale variants */
+function withAlternates(entry) {
+  const url = new URL(entry.url)
+  const path = url.pathname
+
+  return [
+    // English (default) entry with alternates
+    {
+      ...entry,
+      alternates: {
+        languages: Object.fromEntries(
+          ALT_LOCALES.map(locale => [locale, `${url.origin}/${locale}${path}`])
+        ),
+      },
+    },
+    // Spanish & French entries
+    ...ALT_LOCALES.map(locale => ({
+      ...entry,
+      url: `${url.origin}/${locale}${path}`,
+      alternates: {
+        languages: {
+          en: entry.url,
+          ...Object.fromEntries(
+            ALT_LOCALES.filter(l => l !== locale).map(l => [l, `${url.origin}/${l}${path}`])
+          ),
+        },
+      },
+    })),
+  ]
+}
+
 export default async function sitemap() {
   const baseUrl = 'https://itwhip.com'
   
@@ -781,9 +815,9 @@ export default async function sitemap() {
   }
 
   // ============================================
-  // COMBINE ALL PAGES
+  // COMBINE ALL PAGES & ADD MULTILINGUAL ALTERNATES
   // ============================================
-  return [
+  const allPages = [
     ...corePages,
     ...legalPages,
     ...hostPages,
@@ -803,4 +837,7 @@ export default async function sitemap() {
     ...driverPages,    // Driver/Guest acquisition pages
     ...carPages,
   ]
+
+  // Generate en + es + fr entries with hreflang cross-references
+  return allPages.flatMap(withAlternates)
 }

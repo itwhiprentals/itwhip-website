@@ -3,6 +3,8 @@
 
 'use client'
 
+import { useLocale } from 'next-intl'
+
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -134,6 +136,9 @@ export default function ClaimDetailPage() {
   const params = useParams()
   const claimId = params?.id as string
 
+  const locale = useLocale()
+
+
   const [claim, setClaim] = useState<ClaimDetail | null>(null)
   const [booking, setBooking] = useState<Booking | null>(null)
   const [vehicle, setVehicle] = useState<Vehicle | null>(null)
@@ -170,7 +175,7 @@ export default function ClaimDetailPage() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -178,7 +183,7 @@ export default function ClaimDetailPage() {
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'USD'
     }).format(amount)

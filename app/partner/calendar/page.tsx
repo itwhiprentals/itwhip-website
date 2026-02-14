@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
@@ -53,6 +54,9 @@ interface Availability {
 }
 
 export default function PartnerCalendarPage() {
+  const t = useTranslations('PartnerCalendar')
+
+  const locale = useLocale()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
@@ -181,7 +185,7 @@ export default function PartnerCalendarPage() {
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
@@ -190,7 +194,7 @@ export default function PartnerCalendarPage() {
   }
 
   const days = generateCalendarDays()
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const weekDays = [t('weekdaysSun'), t('weekdaysMon'), t('weekdaysTue'), t('weekdaysWed'), t('weekdaysThu'), t('weekdaysFri'), t('weekdaysSat')]
 
   if (loading) {
     return (
@@ -210,10 +214,10 @@ export default function PartnerCalendarPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <IoCalendarOutline className="w-7 h-7" />
-            Availability Calendar
+            {t('title')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage vehicle bookings and blocked dates
+            {t('subtitle')}
           </p>
         </div>
 
@@ -224,7 +228,7 @@ export default function PartnerCalendarPage() {
             onChange={(e) => setSelectedVehicle(e.target.value || null)}
             className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
           >
-            <option value="">All Vehicles</option>
+            <option value="">{t('allVehicles')}</option>
             {vehicles.map(v => (
               <option key={v.id} value={v.id}>{v.name}</option>
             ))}
@@ -236,7 +240,7 @@ export default function PartnerCalendarPage() {
             className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
           >
             <IoLockClosedOutline className="w-5 h-5" />
-            Block Dates
+            {t('blockDates')}
           </button>
         </div>
       </div>
@@ -280,7 +284,7 @@ export default function PartnerCalendarPage() {
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">Utilization</span>
+                <span className="text-gray-500 dark:text-gray-400">{t('utilization')}</span>
                 <span className="font-medium text-gray-900 dark:text-white">{a.utilizationRate}%</span>
               </div>
               <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -290,8 +294,8 @@ export default function PartnerCalendarPage() {
                 />
               </div>
               <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                <span>{a.bookedDays} booked</span>
-                <span>{a.availableDays} available</span>
+                <span>{t('booked', { count: a.bookedDays })}</span>
+                <span>{t('available', { count: a.availableDays })}</span>
               </div>
             </div>
           </div>
@@ -310,7 +314,7 @@ export default function PartnerCalendarPage() {
               <IoChevronBackOutline className="w-5 h-5" />
             </button>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white min-w-[180px] text-center">
-              {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              {currentDate.toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
             </h2>
             <button
               onClick={() => navigateMonth('next')}
@@ -323,7 +327,7 @@ export default function PartnerCalendarPage() {
             onClick={goToToday}
             className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
-            Today
+            {t('today')}
           </button>
         </div>
 
@@ -383,7 +387,7 @@ export default function PartnerCalendarPage() {
                   ))}
                   {dayEvents.length > 3 && (
                     <p className="text-xs text-gray-500 dark:text-gray-400 px-1">
-                      +{dayEvents.length - 3} more
+                      {t('moreEvents', { count: dayEvents.length - 3 })}
                     </p>
                   )}
                 </div>
@@ -397,19 +401,19 @@ export default function PartnerCalendarPage() {
       <div className="flex flex-wrap items-center gap-4 text-sm">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-[#22c55e]" />
-          <span className="text-gray-600 dark:text-gray-400">Confirmed</span>
+          <span className="text-gray-600 dark:text-gray-400">{t('confirmed')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-[#f59e0b]" />
-          <span className="text-gray-600 dark:text-gray-400">Pending</span>
+          <span className="text-gray-600 dark:text-gray-400">{t('pending')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-[#3b82f6]" />
-          <span className="text-gray-600 dark:text-gray-400">In Progress</span>
+          <span className="text-gray-600 dark:text-gray-400">{t('inProgress')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-[#94a3b8]" />
-          <span className="text-gray-600 dark:text-gray-400">Blocked</span>
+          <span className="text-gray-600 dark:text-gray-400">{t('blocked')}</span>
         </div>
       </div>
 
@@ -421,7 +425,7 @@ export default function PartnerCalendarPage() {
             <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md">
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
                 <h3 className="font-semibold text-gray-900 dark:text-white">
-                  {selectedEvent.type === 'booking' ? 'Booking Details' : 'Blocked Dates'}
+                  {selectedEvent.type === 'booking' ? t('bookingDetails') : t('blockedDates')}
                 </h3>
                 <button
                   onClick={() => setSelectedEvent(null)}
@@ -448,7 +452,7 @@ export default function PartnerCalendarPage() {
                       <div className="flex items-center gap-3">
                         <IoPersonOutline className="w-5 h-5 text-gray-400" />
                         <div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Guest</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{t('guest')}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{selectedEvent.title}</p>
                         </div>
                       </div>
@@ -456,7 +460,7 @@ export default function PartnerCalendarPage() {
                       <div className="flex items-center gap-3">
                         <IoCarOutline className="w-5 h-5 text-gray-400" />
                         <div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Vehicle</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{t('vehicle')}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{selectedEvent.vehicleName}</p>
                         </div>
                       </div>
@@ -466,7 +470,7 @@ export default function PartnerCalendarPage() {
                   <div className="flex items-center gap-3">
                     <IoCalendarOutline className="w-5 h-5 text-gray-400" />
                     <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Dates</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{t('dates')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">
                         {new Date(selectedEvent.start).toLocaleDateString()} - {new Date(selectedEvent.end).toLocaleDateString()}
                       </p>
@@ -477,7 +481,7 @@ export default function PartnerCalendarPage() {
                     <div className="flex items-center gap-3">
                       <IoCheckmarkCircleOutline className="w-5 h-5 text-gray-400" />
                       <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Total</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{t('total')}</p>
                         <p className="font-medium text-gray-900 dark:text-white">
                           {formatCurrency(selectedEvent.totalAmount)}
                         </p>
@@ -491,7 +495,7 @@ export default function PartnerCalendarPage() {
                     href={`/partner/bookings?id=${selectedEvent.id}`}
                     className="block w-full text-center py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
                   >
-                    View Booking
+                    {t('viewBooking')}
                   </Link>
                 )}
               </div>
@@ -507,7 +511,7 @@ export default function PartnerCalendarPage() {
           <div className="relative min-h-screen flex items-center justify-center p-4">
             <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md">
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="font-semibold text-gray-900 dark:text-white">Block Dates</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white">{t('blockDatesTitle')}</h3>
                 <button
                   onClick={() => setShowBlockModal(false)}
                   className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -519,14 +523,14 @@ export default function PartnerCalendarPage() {
               <div className="p-4 space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Vehicle
+                    {t('vehicle')}
                   </label>
                   <select
                     value={blockData.vehicleId}
                     onChange={(e) => setBlockData(prev => ({ ...prev, vehicleId: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
                   >
-                    <option value="">Select a vehicle</option>
+                    <option value="">{t('selectVehicle')}</option>
                     {vehicles.map(v => (
                       <option key={v.id} value={v.id}>{v.name}</option>
                     ))}
@@ -536,7 +540,7 @@ export default function PartnerCalendarPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Start Date
+                      {t('startDate')}
                     </label>
                     <input
                       type="date"
@@ -547,7 +551,7 @@ export default function PartnerCalendarPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      End Date
+                      {t('endDate')}
                     </label>
                     <input
                       type="date"
@@ -560,13 +564,13 @@ export default function PartnerCalendarPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Reason (optional)
+                    {t('reasonOptional')}
                   </label>
                   <input
                     type="text"
                     value={blockData.reason}
                     onChange={(e) => setBlockData(prev => ({ ...prev, reason: e.target.value }))}
-                    placeholder="e.g., Maintenance, Personal use"
+                    placeholder={t('reasonPlaceholder')}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
                   />
                 </div>
@@ -576,7 +580,7 @@ export default function PartnerCalendarPage() {
                   disabled={!blockData.vehicleId || !blockData.startDate || !blockData.endDate || blocking}
                   className="w-full py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {blocking ? 'Blocking...' : 'Block Dates'}
+                  {blocking ? t('blocking') : t('blockDates')}
                 </button>
               </div>
             </div>

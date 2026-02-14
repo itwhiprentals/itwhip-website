@@ -30,6 +30,13 @@ export {
   getActiveMarketsContext,
 } from './location-context';
 
+/** Map locale code to a full language name for prompt instructions */
+const LOCALE_LANGUAGE: Record<string, string> = {
+  en: 'English',
+  es: 'Spanish',
+  fr: 'French',
+};
+
 /**
  * Parameters for building the system prompt
  */
@@ -40,6 +47,7 @@ export interface PromptContext {
   vehicles?: VehicleSummary[];
   weather?: WeatherContext;
   location?: string | null;
+  locale?: string;
 }
 
 /**
@@ -47,11 +55,18 @@ export interface PromptContext {
  * Combines all sections based on current context
  */
 export function buildSystemPrompt(params: PromptContext): string {
-  const { session, isLoggedIn, isVerified, vehicles, weather, location } = params;
+  const { session, isLoggedIn, isVerified, vehicles, weather, location, locale } = params;
+
+  const language = LOCALE_LANGUAGE[locale ?? 'en'] ?? 'English';
+  const languageInstruction = locale && locale !== 'en'
+    ? `LANGUAGE: You MUST respond to the user in ${language}. All your conversational text, questions, descriptions, and labels should be in ${language}. However, car names (make/model), city names, and JSON field names stay in English.`
+    : '';
 
   return [
     // 1. Identity & role
     IDENTITY,
+    // 1b. Language instruction (if non-English)
+    languageInstruction,
     // 2. Context data at top (per long context tips - put data above instructions)
     SERVICE_AREA_CONTEXT,
     buildLocationContext(location ?? session.location),

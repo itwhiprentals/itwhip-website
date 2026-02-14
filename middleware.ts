@@ -2,6 +2,13 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
+import createMiddleware from 'next-intl/middleware'
+import { routing } from '@/i18n/routing'
+
+// ============================================================================
+// I18N MIDDLEWARE — handles locale detection, redirects, and rewrites
+// ============================================================================
+const handleI18nRouting = createMiddleware(routing)
 
 // ============================================================================
 // SECURITY HEADERS HELPER
@@ -207,7 +214,7 @@ async function verifyGuestToken(token: string) {
       continue
     }
   }
-  
+
   throw new Error('Guest token verification failed')
 }
 
@@ -215,14 +222,14 @@ async function verifyGuestToken(token: string) {
 async function verifyPlatformToken(token: string) {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET)
-    
+
     const role = payload.role as string
     const isRentalHost = payload.isRentalHost === true
-    
+
     if (!['DRIVER', 'HOTEL'].includes(role) && !(role === 'BUSINESS' && isRentalHost)) {
       throw new Error('Not a platform user')
     }
-    
+
     return { payload, success: true }
   } catch (error) {
     throw new Error('Platform token verification failed')
@@ -233,11 +240,11 @@ async function verifyPlatformToken(token: string) {
 async function verifyAdminToken(token: string) {
   try {
     const { payload } = await jwtVerify(token, ADMIN_JWT_SECRET)
-    
+
     if (payload.type !== 'admin' || payload.role !== 'ADMIN') {
       throw new Error('Invalid admin token')
     }
-    
+
     return { payload, success: true }
   } catch (error) {
     throw new Error('Admin token verification failed')
@@ -249,24 +256,40 @@ function canHostAccessRoute(pathname: string, approvalStatus: string): boolean {
   if (['SUSPENDED', 'REJECTED', 'BLACKLISTED'].includes(approvalStatus)) {
     return pathname === '/host/dashboard' || pathname === '/host/profile'
   }
-  
+
   return HOST_ACCESSIBLE_ROUTES.some(route => pathname.startsWith(route))
 }
 
 // Check if operation requires approval
 function requiresApproval(pathname: string, method: string = 'GET'): boolean {
   if (method === 'GET') return false
-  
+
   if (APPROVED_ONLY_ROUTES.includes(pathname)) {
     return true
   }
-  
+
   return APPROVED_ONLY_ROUTES.some(route => {
     const routePattern = route.replace(/\[id\]/g, '[^/]+')
     const regex = new RegExp(`^${routePattern}$`)
     return regex.test(pathname)
   })
 }
+
+// ============================================================================
+// I18N HELPERS — locale detection and URL localization
+// ============================================================================
+
+// Check if a path belongs to a non-i18n portal (admin, fleet, partner, host, API)
+function isNonI18nRoute(p: string): boolean {
+  return p.startsWith('/api/') || p.startsWith('/admin/') || p.startsWith('/partner/') ||
+    p.startsWith('/fleet/') || p.startsWith('/host/')
+}
+
+// Build locale regex dynamically from routing config — adding Portuguese later needs zero changes
+const nonDefaultLocales = routing.locales.filter(l => l !== routing.defaultLocale)
+const localeRegex = nonDefaultLocales.length > 0
+  ? new RegExp(`^/(${nonDefaultLocales.join('|')})(/|$)`)
+  : null
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -301,15 +324,67 @@ export async function middleware(request: NextRequest) {
     return new NextResponse(null, { status: 404 })
   }
 
+  // ========================================================================
+  // I18N: Locale detection and route classification
+  // ========================================================================
+  const localeMatch = localeRegex ? pathname.match(localeRegex) : null
+  const detectedLocale = localeMatch ? localeMatch[1] : routing.defaultLocale
+  const strippedPathname = localeMatch
+    ? (pathname.replace(localeRegex!, '/').replace(/\/$/, '') || '/')
+    : pathname
+
+  // Classify the route for i18n handling
+  const hasExtension = /\.\w+$/.test(pathname)
+  let skipI18n: boolean
+  let authPathname: string // Locale-stripped path used for all route matching below
+
+  if (isNonI18nRoute(pathname)) {
+    // Raw pathname is a portal/API route — no i18n
+    skipI18n = true
+    authPathname = pathname
+  } else if (localeMatch && isNonI18nRoute(strippedPathname)) {
+    // Locale prefix on a non-i18n route (e.g., /es/admin/) — strip and redirect
+    return NextResponse.redirect(new URL(strippedPathname + request.nextUrl.search, request.url))
+  } else if (hasExtension) {
+    // Static file (robots.txt, sitemap.xml, etc.) — skip i18n
+    skipI18n = true
+    authPathname = strippedPathname
+  } else {
+    // Guest-facing route — apply i18n
+    skipI18n = false
+    authPathname = strippedPathname
+  }
+
+  // Run next-intl middleware for guest-facing routes
+  let intlResponse: NextResponse | null = null
+  if (!skipI18n) {
+    intlResponse = handleI18nRouting(request)
+    // If next-intl returns a redirect (e.g., /en/about → /about with as-needed), return immediately
+    if (intlResponse.status >= 300 && intlResponse.status < 400) {
+      return intlResponse
+    }
+  }
+
+  // Helper: prefix a path with the detected locale (for guest-facing redirect URLs)
+  // English (default) gets no prefix, Spanish → /es/..., French → /fr/...
+  const localizeUrl = (path: string) => {
+    if (detectedLocale === routing.defaultLocale) return path
+    return `/${detectedLocale}${path}`
+  }
+
+  // ========================================================================
+  // AUTH LOGIC — uses authPathname for route matching, localizeUrl for redirects
+  // ========================================================================
+
   // UNIFIED SIGNUP FLOW: Redirect old signup paths to unified entry point
   // Only redirect if they haven't already come from the unified flow (no 'type' param)
-  if (pathname === '/host/signup' && !request.nextUrl.searchParams.has('type')) {
+  if (authPathname === '/host/signup' && !request.nextUrl.searchParams.has('type')) {
     return NextResponse.redirect(new URL('/get-started/business', request.url))
   }
 
   // Redirect /partners/apply/* to unified flow
-  if (pathname.startsWith('/partners/apply')) {
-    return NextResponse.redirect(new URL('/get-started/business', request.url))
+  if (authPathname.startsWith('/partners/apply')) {
+    return NextResponse.redirect(new URL(localizeUrl('/get-started/business'), request.url))
   }
 
   // 🔒 FLEET PROTECTION - Protect both API and UI routes (secret admin area)
@@ -378,17 +453,18 @@ export async function middleware(request: NextRequest) {
   }
 
   // FIRST: Check if it's an explicitly public route
-  if (publicRoutes.some(route => pathname.startsWith(route))) {
+  if (publicRoutes.some(route => authPathname.startsWith(route))) {
+    if (intlResponse) return intlResponse
     return NextResponse.next()
   }
 
   // HANDLE HOST LOGIN ROUTE
-  if (hostAuthRoutes.some(route => pathname.startsWith(route))) {
+  if (hostAuthRoutes.some(route => authPathname.startsWith(route))) {
     // Check all auth cookies - OAuth sets partner_token
     const platformToken = request.cookies.get('hostAccessToken')?.value ||
                          request.cookies.get('partner_token')?.value ||
                          request.cookies.get('accessToken')?.value
-    
+
     if (platformToken) {
       try {
         const { payload } = await verifyPlatformToken(platformToken)
@@ -404,17 +480,17 @@ export async function middleware(request: NextRequest) {
 
   // UNIFIED PORTAL: Redirect all /host/* routes to /partner/* equivalent
   // This deprecates the old host dashboard and sends users to the unified portal
-  if (pathname.startsWith('/host/') &&
-      !pathname.startsWith('/host/signup') &&
-      !pathname.startsWith('/host/login') &&
-      !pathname.startsWith('/host/forgot-password') &&
-      !pathname.startsWith('/host/reset-password') &&
+  if (authPathname.startsWith('/host/') &&
+      !authPathname.startsWith('/host/signup') &&
+      !authPathname.startsWith('/host/login') &&
+      !authPathname.startsWith('/host/forgot-password') &&
+      !authPathname.startsWith('/host/reset-password') &&
       // Keep public landing pages accessible
-      !pathname.startsWith('/host/fleet-owners') &&
-      !pathname.startsWith('/host/tax-benefits') &&
-      !pathname.startsWith('/host/payouts') &&
-      !pathname.startsWith('/host/insurance-options') &&
-      !pathname.startsWith('/host/requirements')) {
+      !authPathname.startsWith('/host/fleet-owners') &&
+      !authPathname.startsWith('/host/tax-benefits') &&
+      !authPathname.startsWith('/host/payouts') &&
+      !authPathname.startsWith('/host/insurance-options') &&
+      !authPathname.startsWith('/host/requirements')) {
 
     const hostToken = request.cookies.get('hostAccessToken')?.value ||
                      request.cookies.get('partner_token')?.value ||
@@ -424,7 +500,7 @@ export async function middleware(request: NextRequest) {
       // Not logged in - redirect to login with return URL pointing to partner portal
       const loginUrl = new URL('/host/login', request.url)
       // Map the returnUrl to partner equivalent
-      const partnerPath = HOST_TO_PARTNER_REDIRECTS[pathname] || '/partner/dashboard'
+      const partnerPath = HOST_TO_PARTNER_REDIRECTS[authPathname] || '/partner/dashboard'
       loginUrl.searchParams.set('returnUrl', partnerPath)
       return NextResponse.redirect(loginUrl)
     }
@@ -454,14 +530,14 @@ export async function middleware(request: NextRequest) {
 
       // UNIFIED PORTAL: Redirect to partner portal equivalent
       // Check for exact match first
-      let partnerPath = HOST_TO_PARTNER_REDIRECTS[pathname]
+      let partnerPath = HOST_TO_PARTNER_REDIRECTS[authPathname]
 
       // If no exact match, find closest prefix match
       if (!partnerPath) {
         for (const [hostRoute, partnerRoute] of Object.entries(HOST_TO_PARTNER_REDIRECTS)) {
-          if (pathname.startsWith(hostRoute)) {
+          if (authPathname.startsWith(hostRoute)) {
             // Replace the host prefix with partner prefix, keeping the rest of the path
-            partnerPath = pathname.replace(hostRoute, partnerRoute)
+            partnerPath = authPathname.replace(hostRoute, partnerRoute)
             break
           }
         }
@@ -522,27 +598,27 @@ export async function middleware(request: NextRequest) {
         { status: 401 }
       )
     }
-    
+
     try {
       const { payload } = await verifyPlatformToken(hostToken)
-      
+
       const isRentalHost = payload.isRentalHost === true
       if (payload.role !== 'BUSINESS' || !isRentalHost) {
         throw new Error('Not a rental host')
       }
-      
+
       const now = Math.floor(Date.now() / 1000)
       if (payload.exp && payload.exp < now) {
         throw new Error('Host token expired')
       }
-      
+
       const approvalStatus = payload.approvalStatus as string || 'PENDING'
       const isApproved = approvalStatus === 'APPROVED'
       const method = request.method
-      
+
       if (!isApproved && requiresApproval(pathname, method)) {
         return NextResponse.json(
-          { 
+          {
             error: 'Account approval required',
             message: 'Only approved hosts can perform this action. Contact support if you need assistance.',
             approvalStatus,
@@ -551,7 +627,7 @@ export async function middleware(request: NextRequest) {
           { status: 403 }
         )
       }
-      
+
       const response = NextResponse.next()
       response.headers.set('x-host-id', payload.hostId as string || '')
       response.headers.set('x-user-id', payload.userId as string || '')
@@ -559,7 +635,7 @@ export async function middleware(request: NextRequest) {
       response.headers.set('x-host-approved', isApproved ? 'true' : 'false')
       response.headers.set('x-approval-status', approvalStatus)
       return response
-      
+
     } catch (error) {
       return NextResponse.json(
         { error: 'Invalid host token' },
@@ -577,7 +653,7 @@ export async function middleware(request: NextRequest) {
         console.warn('[Security] CRON_SECRET not set - cron access denied')
         return NextResponse.json({ error: 'Cron access not configured' }, { status: 403 })
       }
-      
+
       if (authHeader === `Bearer ${cronSecret}`) {
         const response = NextResponse.next()
         response.headers.set('x-cron-access', 'true')
@@ -585,28 +661,28 @@ export async function middleware(request: NextRequest) {
         return response
       }
     }
-    
+
     const adminToken = request.cookies.get('adminAccessToken')?.value
-    
+
     if (!adminToken) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 401 }
       )
     }
-    
+
     try {
       const { payload } = await verifyAdminToken(adminToken)
       const now = Math.floor(Date.now() / 1000)
       if (payload.exp && payload.exp < now) {
         throw new Error('Admin token expired')
       }
-      
+
       const response = NextResponse.next()
       response.headers.set('x-admin-id', payload.userId as string)
       response.headers.set('x-admin-email', payload.email as string)
       return response
-      
+
     } catch (error) {
       return NextResponse.json(
         { error: 'Invalid admin token' },
@@ -618,36 +694,36 @@ export async function middleware(request: NextRequest) {
   // HANDLE ADMIN ROUTES
   if (pathname.startsWith('/admin/') && !pathname.startsWith('/admin/auth/')) {
     const adminToken = request.cookies.get('adminAccessToken')?.value
-    
+
     if (!adminToken) {
       const loginUrl = new URL('/admin/auth/login', request.url)
       loginUrl.searchParams.set('returnUrl', pathname)
       return NextResponse.redirect(loginUrl)
     }
-    
+
     try {
       const { payload } = await verifyAdminToken(adminToken)
-      
+
       const now = Math.floor(Date.now() / 1000)
       if (payload.exp && payload.exp < now) {
         throw new Error('Admin token expired')
       }
-      
+
       const response = NextResponse.next()
       response.headers.set('x-admin-id', payload.userId as string)
       response.headers.set('x-admin-email', payload.email as string)
       response.headers.set('x-admin-role', 'ADMIN')
       response.headers.set('x-auth-type', 'admin')
-      
+
       response.headers.set('X-Frame-Options', 'DENY')
       response.headers.set('X-Content-Type-Options', 'nosniff')
       response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
-      
+
       return response
-      
+
     } catch (error) {
       console.error('Admin JWT verification failed:', error)
-      
+
       const response = NextResponse.redirect(new URL('/admin/auth/login', request.url))
       response.cookies.set('adminAccessToken', '', {
         httpOnly: true,
@@ -698,10 +774,12 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // HANDLE GUEST/PLATFORM ROUTES
+  // ========================================================================
+  // GUEST / PLATFORM ROUTES (i18n-aware)
+  // ========================================================================
   const guestToken = request.cookies.get('accessToken')?.value
 
-  if (authRoutes.some(route => pathname.startsWith(route))) {
+  if (authRoutes.some(route => authPathname.startsWith(route))) {
     // Check if this is account linking flow or switching accounts - allow access even if logged in
     const isLinking = request.nextUrl.searchParams.get('linking') === 'true'
     const isSwitching = request.nextUrl.searchParams.get('switching') === 'true'
@@ -713,9 +791,9 @@ export async function middleware(request: NextRequest) {
 
         switch (userRole) {
           case 'DRIVER':
-            return NextResponse.redirect(new URL('/driver/dashboard', request.url))
+            return NextResponse.redirect(new URL(localizeUrl('/driver/dashboard'), request.url))
           case 'HOTEL':
-            return NextResponse.redirect(new URL('/hotel/dashboard', request.url))
+            return NextResponse.redirect(new URL(localizeUrl('/hotel/dashboard'), request.url))
           case 'HOST':
             return NextResponse.redirect(new URL('/host/dashboard', request.url))
           case 'ADMIN':
@@ -725,16 +803,17 @@ export async function middleware(request: NextRequest) {
           case 'BUSINESS':
           case 'ENTERPRISE':
           default:
-            return NextResponse.redirect(new URL('/dashboard', request.url))
+            return NextResponse.redirect(new URL(localizeUrl('/dashboard'), request.url))
         }
       } catch {
         // Token is invalid, let them access login/signup
       }
     }
+    if (intlResponse) return intlResponse
     return NextResponse.next()
   }
 
-  if (adminAuthRoutes.some(route => pathname.startsWith(route))) {
+  if (adminAuthRoutes.some(route => authPathname.startsWith(route))) {
     const adminToken = request.cookies.get('adminAccessToken')?.value
     if (adminToken) {
       try {
@@ -748,22 +827,23 @@ export async function middleware(request: NextRequest) {
   }
 
   const needsProtection = Object.keys(protectedRoutes).some(route =>
-    pathname.startsWith(route) && !pathname.startsWith('/admin/') && !pathname.startsWith('/host/')
+    authPathname.startsWith(route) && !authPathname.startsWith('/admin/') && !authPathname.startsWith('/host/')
   )
 
   if (!needsProtection) {
+    if (intlResponse) return addSecurityHeaders(intlResponse)
     return addSecurityHeaders(NextResponse.next())
   }
 
   if (!guestToken) {
-    const loginUrl = new URL('/auth/login', request.url)
+    const loginUrl = new URL(localizeUrl('/auth/login'), request.url)
     loginUrl.searchParams.set('from', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
   try {
     const { payload, secretType } = await verifyGuestToken(guestToken)
-    
+
     const now = Math.floor(Date.now() / 1000)
     if (payload.exp && payload.exp < now) {
       throw new Error('Token expired')
@@ -773,21 +853,21 @@ export async function middleware(request: NextRequest) {
 
     let allowedRoles: string[] = []
     for (const [route, roles] of Object.entries(protectedRoutes)) {
-      if (pathname.startsWith(route)) {
+      if (authPathname.startsWith(route)) {
         allowedRoles = roles
         break
       }
     }
 
     if (!allowedRoles.includes(userRole)) {
-      // Determine the correct dashboard for this role
-      let targetDashboard = '/dashboard'
+      // Determine the correct dashboard for this role (locale-aware for guest routes)
+      let targetDashboard = localizeUrl('/dashboard')
       switch (userRole) {
         case 'DRIVER':
-          targetDashboard = '/driver/dashboard'
+          targetDashboard = localizeUrl('/driver/dashboard')
           break
         case 'HOTEL':
-          targetDashboard = '/hotel/dashboard'
+          targetDashboard = localizeUrl('/hotel/dashboard')
           break
         case 'HOST':
           targetDashboard = '/host/dashboard'
@@ -800,10 +880,10 @@ export async function middleware(request: NextRequest) {
       // CRITICAL: Prevent infinite redirect loop
       // If we're already at the target dashboard, allow access instead of redirecting again
       if (pathname === targetDashboard || pathname.startsWith(targetDashboard + '/')) {
-        console.log(`[Middleware] Role ${userRole} not in allowed list for ${pathname}, but already at target - allowing access`)
+        console.log(`[Middleware] Role ${userRole} not in allowed list for ${authPathname}, but already at target - allowing access`)
         // Fall through to allow access
       } else {
-        console.log(`[Middleware] Role ${userRole} not in allowed list for ${pathname}, redirecting to ${targetDashboard}`)
+        console.log(`[Middleware] Role ${userRole} not in allowed list for ${authPathname}, redirecting to ${targetDashboard}`)
         return NextResponse.redirect(new URL(targetDashboard, request.url))
       }
     }
@@ -813,7 +893,7 @@ export async function middleware(request: NextRequest) {
     // Guest suspension checks are handled in the API route handlers instead.
     // See: app/api/rentals/book/route.ts, app/api/bookings/*/route.ts
 
-    const response = NextResponse.next()
+    const response = intlResponse || NextResponse.next()
     response.headers.set('x-user-id', payload.userId as string)
     response.headers.set('x-user-email', payload.email as string)
     response.headers.set('x-user-role', userRole)
@@ -824,8 +904,8 @@ export async function middleware(request: NextRequest) {
 
   } catch (error) {
     console.error('Guest JWT verification failed:', error)
-    
-    const response = NextResponse.redirect(new URL('/auth/login', request.url))
+
+    const response = NextResponse.redirect(new URL(localizeUrl('/auth/login'), request.url))
     response.cookies.set('accessToken', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

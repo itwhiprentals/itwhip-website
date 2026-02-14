@@ -3,6 +3,7 @@
 
 'use client'
 
+import { useTranslations } from 'next-intl'
 import {
   IoSaveOutline,
   IoGlobeOutline,
@@ -23,15 +24,17 @@ interface SocialTabProps {
 }
 
 export default function SocialTab({ data, onChange, onSave, isSaving }: SocialTabProps) {
+  const t = useTranslations('PartnerLanding')
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 space-y-6">
       {/* Contact Info */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Contact Information</h3>
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">{t('contactInformation')}</h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Support Email
+              {t('supportEmail')}
             </label>
             <input
               type="email"
@@ -43,7 +46,7 @@ export default function SocialTab({ data, onChange, onSave, isSaving }: SocialTa
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Support Phone
+              {t('supportPhone')}
             </label>
             <input
               type="tel"
@@ -58,7 +61,7 @@ export default function SocialTab({ data, onChange, onSave, isSaving }: SocialTa
 
       {/* Social Media Links */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Social Media & Website</h3>
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">{t('socialMediaWebsite')}</h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
@@ -149,7 +152,7 @@ export default function SocialTab({ data, onChange, onSave, isSaving }: SocialTa
 
       {/* Visibility Settings */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Visibility Settings</h3>
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">{t('visibilitySettings')}</h3>
         <div className="space-y-3">
           <label className="flex items-center gap-3">
             <input
@@ -158,7 +161,7 @@ export default function SocialTab({ data, onChange, onSave, isSaving }: SocialTa
               onChange={(e) => onChange({ showEmail: e.target.checked })}
               className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300">Show email on landing page</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">{t('showEmailOnPage')}</span>
           </label>
           <label className="flex items-center gap-3">
             <input
@@ -167,7 +170,7 @@ export default function SocialTab({ data, onChange, onSave, isSaving }: SocialTa
               onChange={(e) => onChange({ showPhone: e.target.checked })}
               className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300">Show phone number on landing page</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">{t('showPhoneOnPage')}</span>
           </label>
           <label className="flex items-center gap-3">
             <input
@@ -176,7 +179,7 @@ export default function SocialTab({ data, onChange, onSave, isSaving }: SocialTa
               onChange={(e) => onChange({ showWebsite: e.target.checked })}
               className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300">Show website link on landing page</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">{t('showWebsiteOnPage')}</span>
           </label>
         </div>
       </div>
@@ -189,7 +192,7 @@ export default function SocialTab({ data, onChange, onSave, isSaving }: SocialTa
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white text-sm font-medium rounded-lg transition-colors"
         >
           <IoSaveOutline className="w-4 h-4" />
-          {isSaving ? 'Saving...' : 'Save Contact & Social'}
+          {isSaving ? t('saving') : t('saveContactSocial')}
         </button>
       </div>
     </div>

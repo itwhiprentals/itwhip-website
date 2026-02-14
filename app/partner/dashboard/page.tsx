@@ -5,6 +5,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import {
   IoCarOutline,
@@ -132,6 +133,9 @@ interface VehicleOwnerStats {
 }
 
 export default function PartnerDashboardPage() {
+  const t = useTranslations('PartnerDashboard')
+
+  const locale = useLocale()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [recentBookings, setRecentBookings] = useState<RecentBooking[]>([])
   const [vehicleStatus, setVehicleStatus] = useState<VehicleStatus[]>([])
@@ -272,7 +276,7 @@ export default function PartnerDashboardPage() {
       }
     } catch (err) {
       console.error('Vehicle owner data fetch error:', err)
-      setError('Failed to load dashboard data')
+      setError(t('failedToLoadDashboard'))
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -301,7 +305,7 @@ export default function PartnerDashboardPage() {
       }
     } catch (err) {
       console.error('Dashboard fetch error:', err)
-      setError('Failed to load dashboard data')
+      setError(t('failedToLoadDashboard'))
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -309,7 +313,7 @@ export default function PartnerDashboardPage() {
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
@@ -329,7 +333,7 @@ export default function PartnerDashboardPage() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading dashboard...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('loadingDashboard')}</p>
           </div>
         </div>
       </div>
@@ -342,14 +346,14 @@ export default function PartnerDashboardPage() {
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
           <IoAlertCircleOutline className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
-            Error Loading Dashboard
+            {t('errorLoadingDashboard')}
           </h3>
           <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
           <button
             onClick={fetchDashboardData}
             className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
           >
-            Try Again
+            {t('tryAgain')}
           </button>
         </div>
       </div>
@@ -367,15 +371,15 @@ export default function PartnerDashboardPage() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Welcome back{hostName ? `, ${hostName}` : ''}!
+                {t('welcomeBack')}{hostName ? `, ${hostName}` : ''}!
               </h1>
               <span className="px-2 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 text-xs font-medium rounded-full flex items-center gap-1">
                 <IoBriefcaseOutline className="w-3 h-3" />
-                Fleet Manager
+                {t('fleetManager')}
               </span>
             </div>
             <p className="text-gray-500 dark:text-gray-400 mt-1">
-              Manage vehicles and grow your fleet
+              {t('manageVehiclesGrow')}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -384,7 +388,7 @@ export default function PartnerDashboardPage() {
               className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors text-sm"
             >
               <IoSettingsOutline className="w-4 h-4" />
-              <span className="hidden sm:inline">My Account</span>
+              <span className="hidden sm:inline">{t('myAccount')}</span>
             </Link>
             <button
               onClick={fetchDashboardData}
@@ -399,25 +403,25 @@ export default function PartnerDashboardPage() {
         {/* Quick Stats Row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Managed Vehicles</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('managedVehiclesLabel')}</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
               {stats?.fleetSize || 0}
             </p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Active Bookings</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('activeBookings')}</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
               {stats?.activeBookings || 0}
             </p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-            <p className="text-xs text-gray-500 dark:text-gray-400">This Month</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('thisMonth')}</p>
             <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
               {formatCurrency(stats?.thisMonthRevenue || 0)}
             </p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Rating</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('rating')}</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
               {stats?.avgRating?.toFixed(1) || '—'}
             </p>
@@ -440,7 +444,7 @@ export default function PartnerDashboardPage() {
 
           {/* Quick Actions for Fleet Managers */}
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('quickActions')}</h2>
             <div className="space-y-3">
               <Link
                 href="/host/fleet/invite-owner"
@@ -450,8 +454,8 @@ export default function PartnerDashboardPage() {
                   <IoAddCircleOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <p className="font-medium text-purple-900 dark:text-purple-100">Invite Car Owner</p>
-                  <p className="text-xs text-purple-700 dark:text-purple-300">Grow your managed fleet</p>
+                  <p className="font-medium text-purple-900 dark:text-purple-100">{t('inviteCarOwner')}</p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300">{t('growManagedFleet')}</p>
                 </div>
               </Link>
               <Link
@@ -462,8 +466,8 @@ export default function PartnerDashboardPage() {
                   <IoCarOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Add Own Vehicle</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">List your own car</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{t('addOwnVehicle')}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('listYourOwnCar')}</p>
                 </div>
               </Link>
               <Link
@@ -474,8 +478,8 @@ export default function PartnerDashboardPage() {
                   <IoSettingsOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Account Settings</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Profile, bank, documents</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{t('accountSettings')}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('profileBankDocuments')}</p>
                 </div>
               </Link>
             </div>
@@ -491,13 +495,13 @@ export default function PartnerDashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <IoCalendarOutline className="w-5 h-5 text-orange-600" />
-                Recent Bookings
+                {t('recentBookings')}
               </h2>
               <Link
                 href="/partner/bookings"
                 className="text-sm text-purple-600 hover:text-purple-700 dark:text-purple-400 flex items-center gap-1"
               >
-                View All
+                {t('viewAll')}
                 <IoArrowForwardOutline className="w-4 h-4" />
               </Link>
             </div>
@@ -516,14 +520,14 @@ export default function PartnerDashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My Investments</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('myInvestments')}</h1>
               <span className="px-2 py-1 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 text-xs font-medium rounded-full flex items-center gap-1">
                 <IoKeyOutline className="w-3 h-3" />
-                Vehicle Owner
+                {t('vehicleOwner')}
               </span>
             </div>
             <p className="text-gray-500 dark:text-gray-400 mt-1">
-              Track your passive income from managed vehicles
+              {t('trackPassiveIncome')}
             </p>
           </div>
           <button
@@ -532,7 +536,7 @@ export default function PartnerDashboardPage() {
             className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
             <IoRefreshOutline className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh</span>
+            <span className="hidden sm:inline">{t('refresh')}</span>
           </button>
         </div>
 
@@ -542,12 +546,12 @@ export default function PartnerDashboardPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">My Vehicles</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('myVehiclesLabel')}</p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
                   {vehicleOwnerStats?.totalVehicles || managedVehicles.length}
                 </p>
                 <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                  {vehicleOwnerStats?.activeVehicles || managedVehicles.filter(v => v.managementStatus === 'ACTIVE').length} actively managed
+                  {t('activelyManaged', { count: vehicleOwnerStats?.activeVehicles || managedVehicles.filter(v => v.managementStatus === 'ACTIVE').length })}
                 </p>
               </div>
               <div className="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
@@ -560,12 +564,12 @@ export default function PartnerDashboardPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Total Earnings</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('totalEarnings')}</p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
                   {formatCurrency(vehicleOwnerStats?.totalEarnings || 0)}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Your owner's share
+                  {t('yourOwnersShare')}
                 </p>
               </div>
               <div className="p-3 bg-green-50 dark:bg-green-900/30 rounded-lg">
@@ -578,12 +582,12 @@ export default function PartnerDashboardPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">This Month</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('thisMonth')}</p>
                 <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-1">
                   {formatCurrency(vehicleOwnerStats?.thisMonthEarnings || 0)}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Earned so far
+                  {t('earnedSoFar')}
                 </p>
               </div>
               <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
@@ -596,12 +600,12 @@ export default function PartnerDashboardPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Pending</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('pending')}</p>
                 <p className="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-1">
                   {formatCurrency(vehicleOwnerStats?.pendingEarnings || 0)}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  In progress bookings
+                  {t('inProgressBookings')}
                 </p>
               </div>
               <div className="p-3 bg-orange-50 dark:bg-orange-900/30 rounded-lg">
@@ -620,10 +624,10 @@ export default function PartnerDashboardPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
-                  Your average owner share is <span className="font-bold">{(vehicleOwnerStats.averageCommission * 0.9).toFixed(0)}%</span> of revenue
+                  {t('avgOwnerShare', { percent: (vehicleOwnerStats.averageCommission * 0.9).toFixed(0) })}
                 </p>
                 <p className="text-xs text-indigo-700 dark:text-indigo-300">
-                  Platform takes 10%, remaining {vehicleOwnerStats.averageCommission}% is your share after manager's cut
+                  {t('platformTakes', { percent: vehicleOwnerStats.averageCommission })}
                 </p>
               </div>
             </div>
@@ -635,7 +639,7 @@ export default function PartnerDashboardPage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <IoCarOutline className="w-5 h-5 text-indigo-600" />
-              My Vehicles
+              {t('myVehiclesLabel')}
             </h2>
           </div>
 
@@ -643,17 +647,17 @@ export default function PartnerDashboardPage() {
             <div className="text-center py-12">
               <IoCarOutline className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                No managed vehicles yet
+                {t('noManagedVehiclesYet')}
               </h3>
               <p className="text-gray-500 dark:text-gray-400 mb-6">
-                When you invite a fleet manager to manage your vehicles, they'll appear here.
+                {t('noManagedVehiclesDesc')}
               </p>
               <Link
                 href="/host/cars"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
               >
                 <IoAddCircleOutline className="w-5 h-5" />
-                Add a Vehicle
+                {t('addAVehicle')}
               </Link>
             </div>
           ) : (
@@ -713,7 +717,7 @@ export default function PartnerDashboardPage() {
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Managed by</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{t('managedBy')}</p>
                         <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                           {vehicle.manager.fleetName || vehicle.manager.name}
                         </p>
@@ -723,13 +727,13 @@ export default function PartnerDashboardPage() {
                     {/* Earnings */}
                     <div className="mt-3 grid grid-cols-2 gap-2 text-center">
                       <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">This Month</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{t('thisMonth')}</p>
                         <p className="font-bold text-green-600 dark:text-green-400">
                           {formatCurrency(vehicle.thisMonthEarnings)}
                         </p>
                       </div>
                       <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Your Share</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{t('yourShare')}</p>
                         <p className="font-bold text-indigo-600 dark:text-indigo-400">
                           {(vehicle.ownerCommissionPercent * 0.9).toFixed(0)}%
                         </p>
@@ -747,17 +751,17 @@ export default function PartnerDashboardPage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <IoCalendarOutline className="w-5 h-5 text-orange-600" />
-              Recent Bookings
+              {t('recentBookings')}
             </h2>
             <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-              View Only
+              {t('viewOnly')}
             </span>
           </div>
 
           {recentBookings.length === 0 ? (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               <IoCalendarOutline className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>No recent bookings for your vehicles</p>
+              <p>{t('noRecentBookings')}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -802,23 +806,23 @@ export default function PartnerDashboardPage() {
         {/* Help Section */}
         <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-lg p-6 border border-gray-200 dark:border-gray-600">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-            Need help managing your investments?
+            {t('needHelpTitle')}
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            As a vehicle owner, your manager handles day-to-day operations. If you have questions about your earnings or want to change your management agreement, contact your manager or our support team.
+            {t('needHelpDesc')}
           </p>
           <div className="flex gap-3">
             <Link
               href="/host/earnings"
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
-              View Full Earnings
+              {t('viewFullEarnings')}
             </Link>
             <Link
               href="/contact"
               className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
-              Contact Support
+              {t('contactSupport')}
             </Link>
           </div>
         </div>
@@ -832,15 +836,15 @@ export default function PartnerDashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-            Dashboard
+            {t('dashboardTitle')}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Welcome back{userInfo?.name ? `, ${userInfo.name.split(' ')[0]}` : ''}! Here&apos;s your fleet overview.
+            {t('welcomeBackFleet', { name: userInfo?.name ? `, ${userInfo.name.split(' ')[0]}` : '' })}
           </p>
         </div>
         <div className="hidden sm:flex items-center gap-2">
           <span className="text-xs text-gray-400 dark:text-gray-500">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+            {new Date().toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' })}
           </span>
         </div>
       </div>
@@ -884,12 +888,12 @@ export default function PartnerDashboardPage() {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Fleet Size</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('fleetSize')}</p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
                 {stats?.fleetSize || 0}
               </p>
               <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                {stats?.activeVehicles || 0} active
+                {stats?.activeVehicles || 0} {t('active')}
               </p>
             </div>
             <div className="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
@@ -905,12 +909,12 @@ export default function PartnerDashboardPage() {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Total Bookings</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('totalBookings')}</p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
                 {stats?.totalBookings || 0}
               </p>
               <p className="text-sm text-orange-600 dark:text-orange-400 mt-1">
-                {stats?.activeBookings || 0} active now
+                {t('activeNow', { count: stats?.activeBookings || 0 })}
               </p>
             </div>
             <div className="p-3 bg-orange-50 dark:bg-orange-900/30 rounded-lg">
@@ -926,7 +930,7 @@ export default function PartnerDashboardPage() {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Net Revenue</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('netRevenue')}</p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
                 {formatCurrency(stats?.netRevenue || 0)}
               </p>
@@ -942,7 +946,7 @@ export default function PartnerDashboardPage() {
                     <span className="text-sm text-red-600">{revenueChange.toFixed(1)}%</span>
                   </>
                 )}
-                <span className="text-xs text-gray-500">vs last month</span>
+                <span className="text-xs text-gray-500">{t('vsLastMonth')}</span>
               </div>
             </div>
             <div className="p-3 bg-green-50 dark:bg-green-900/30 rounded-lg">
@@ -955,12 +959,12 @@ export default function PartnerDashboardPage() {
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Average Rating</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('averageRating')}</p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
                 {stats?.avgRating?.toFixed(1) || '—'}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {stats?.totalReviews || 0} reviews
+                {t('reviewsCount', { count: stats?.totalReviews || 0 })}
               </p>
             </div>
             <div className="p-3 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg">
@@ -973,25 +977,25 @@ export default function PartnerDashboardPage() {
       {/* Secondary Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <p className="text-xs text-gray-500 dark:text-gray-400">Utilization Rate</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t('utilizationRate')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
             {stats?.utilizationRate?.toFixed(0) || 0}%
           </p>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <p className="text-xs text-gray-500 dark:text-gray-400">This Month</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t('thisMonth')}</p>
           <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
             {formatCurrency(stats?.thisMonthRevenue || 0)}
           </p>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <p className="text-xs text-gray-500 dark:text-gray-400">Completed This Month</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t('completedThisMonth')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
             {stats?.completedThisMonth || 0}
           </p>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <p className="text-xs text-gray-500 dark:text-gray-400">Commission Rate</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t('commissionRate')}</p>
           <p className="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-1">
             {((stats?.currentCommissionRate || 0.25) * 100).toFixed(0)}%
           </p>
@@ -1021,12 +1025,12 @@ export default function PartnerDashboardPage() {
         {/* Revenue Chart */}
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Revenue Overview</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('revenueOverview')}</h2>
             <Link
               href="/partner/revenue"
               className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 flex items-center gap-1"
             >
-              View Details
+              {t('viewDetails')}
               <IoArrowForwardOutline className="w-4 h-4" />
             </Link>
           </div>
@@ -1036,12 +1040,12 @@ export default function PartnerDashboardPage() {
         {/* Fleet Overview */}
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Fleet Status</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('fleetStatus')}</h2>
             <Link
               href="/partner/fleet"
               className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 flex items-center gap-1"
             >
-              Manage Fleet
+              {t('manageFleet')}
               <IoArrowForwardOutline className="w-4 h-4" />
             </Link>
           </div>
@@ -1052,12 +1056,12 @@ export default function PartnerDashboardPage() {
       {/* Recent Bookings */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Bookings</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('recentBookings')}</h2>
           <Link
             href="/partner/bookings"
             className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 flex items-center gap-1"
           >
-            View All
+            {t('viewAll')}
             <IoArrowForwardOutline className="w-4 h-4" />
           </Link>
         </div>

@@ -2,10 +2,12 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
+import NextLink from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { 
+import { useTranslations } from 'next-intl'
+import {
   IoCloseOutline,
   IoChevronDownOutline,
   IoBusinessOutline,
@@ -63,93 +65,6 @@ interface MobileMenuProps {
   hostNavItems?: HostNavItem[]
 }
 
-const navigationSections: {
-  id: string
-  label: string
-  icon: React.ComponentType<{ className?: string }>
-  badge?: { text: string; color: string }
-  items: {
-    href: string
-    label: string
-    icon: React.ComponentType<{ className?: string }>
-    highlight?: boolean
-    badge?: { text: string; color: string }
-  }[]
-}[] = [
-  {
-    id: 'browse',
-    label: 'Browse Cars',
-    icon: IoCarOutline,
-    items: [
-      { href: '/', label: 'All Cars', icon: IoCarOutline },
-      { href: '/rentals/search?category=luxury', label: 'Luxury', icon: IoDiamondOutline },
-      { href: '/rentals/search?category=suv', label: 'SUVs', icon: IoCarSportOutline },
-      { href: '/rentals/search?category=economy', label: 'Economy', icon: IoPricetagOutline },
-      { href: '/rentals/search?category=electric', label: 'Electric', icon: IoFlashOutline },
-      { href: '/rentals/search?view=map', label: 'Map View', icon: IoMapOutline }
-    ]
-  },
-  {
-    id: 'rentals',
-    label: 'Rental Options',
-    icon: IoCalendarOutline,
-    items: [
-      { href: '/rentals/daily', label: 'Daily Rentals', icon: IoCalendarOutline },
-      { href: '/rentals/long-term', label: 'Long-Term Rentals', icon: IoDocumentTextOutline },
-      { href: '/rentals/weekend', label: 'Weekend Rentals', icon: IoCarSportOutline },
-      { href: '/reviews', label: 'Reviews', icon: IoStarOutline },
-      { href: '/insurance-guide', label: 'Insurance Guide', icon: IoShieldCheckmarkOutline }
-    ]
-  },
-  {
-    id: 'host',
-    label: 'For Hosts',
-    icon: IoKeyOutline,
-    badge: { text: 'EARN', color: 'from-green-500 to-emerald-500' },
-    items: [
-      { href: '/list-your-car', label: 'List Your Car', icon: IoSparklesOutline, highlight: true },
-      { href: '/host/fleet-owners', label: 'Fleet Owners', icon: IoCarOutline },
-      { href: '/host/payouts', label: 'Payouts & Earnings', icon: IoWalletOutline },
-      { href: '/host/insurance-options', label: 'Insurance Options', icon: IoShieldCheckmarkOutline },
-      { href: '/host-requirements', label: 'Host Requirements', icon: IoDocumentTextOutline },
-      { href: '/host/tax-benefits', label: 'Tax Benefits', icon: IoCalculatorOutline }
-    ]
-  },
-  {
-    id: 'support',
-    label: 'Support',
-    icon: IoHelpCircleOutline,
-    items: [
-      { href: '/support', label: 'Help Center', icon: IoHelpCircleOutline },
-      { href: '/support/insurance', label: 'Insurance Support', icon: IoShieldCheckmarkOutline },
-      { href: '/how-it-works', label: 'How It Works', icon: IoHelpCircleOutline },
-      { href: '/cancellation-policy', label: 'Cancellation Policy', icon: IoDocumentTextOutline },
-      { href: '/contact', label: 'Contact Us', icon: IoMailOutline }
-    ]
-  },
-  {
-    id: 'company',
-    label: 'Company',
-    icon: IoBusinessOutline,
-    items: [
-      { href: '/about', label: 'About Us', icon: IoBusinessOutline },
-      { href: '/corporate', label: 'Corporate Rentals', icon: IoBusinessOutline },
-      { href: '/developers', label: 'Developers', icon: IoCodeSlashOutline },
-      { href: '/blog', label: 'Blog', icon: IoDocumentTextOutline }
-    ]
-  }
-]
-
-// Guest Navigation Items
-const guestNavItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: IoHomeOutline },
-  { name: 'My Trips', href: '/rentals/dashboard/bookings', icon: IoCalendarOutline },
-  { name: 'Messages', href: '/messages', icon: IoChatbubbleOutline },
-  { name: 'Profile', href: '/profile', icon: IoPersonOutline },
-  { name: 'Payment Methods', href: '/profile?tab=payment', icon: IoCardOutline },
-  { name: 'Reviews', href: '/profile?tab=reviews', icon: IoStarOutline },
-]
-
 export default function MobileMenu({
   isOpen,
   onClose,
@@ -161,6 +76,9 @@ export default function MobileMenu({
   hostNavItems = []
 }: MobileMenuProps) {
   const pathname = usePathname()
+  const t = useTranslations('MobileMenu')
+  const tHeader = useTranslations('Header')
+  const tCommon = useTranslations('Common')
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
   const [profileImageError, setProfileImageError] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -170,17 +88,105 @@ export default function MobileMenu({
   const isAdmin = user?.role === 'ADMIN'
   const isGuest = isLoggedIn && user && !isAdmin && !isHost
 
+  // Navigation sections — translated
+  const navigationSections: {
+    id: string
+    label: string
+    icon: React.ComponentType<{ className?: string }>
+    badge?: { text: string; color: string }
+    items: {
+      href: string
+      label: string
+      icon: React.ComponentType<{ className?: string }>
+      highlight?: boolean
+      badge?: { text: string; color: string }
+    }[]
+  }[] = [
+    {
+      id: 'browse',
+      label: t('browseCars'),
+      icon: IoCarOutline,
+      items: [
+        { href: '/', label: tHeader('allCars'), icon: IoCarOutline },
+        { href: '/rentals/search?category=luxury', label: tHeader('luxury'), icon: IoDiamondOutline },
+        { href: '/rentals/search?category=suv', label: tHeader('suvs'), icon: IoCarSportOutline },
+        { href: '/rentals/search?category=economy', label: tHeader('economy'), icon: IoPricetagOutline },
+        { href: '/rentals/search?category=electric', label: t('electric'), icon: IoFlashOutline },
+        { href: '/rentals/search?view=map', label: t('mapView'), icon: IoMapOutline }
+      ]
+    },
+    {
+      id: 'rentals',
+      label: t('rentalOptions'),
+      icon: IoCalendarOutline,
+      items: [
+        { href: '/rentals/daily', label: tHeader('bookings').replace('Bookings', 'Daily Rentals') || 'Daily Rentals', icon: IoCalendarOutline },
+        { href: '/rentals/long-term', label: 'Long-Term Rentals', icon: IoDocumentTextOutline },
+        { href: '/rentals/weekend', label: t('weekendRentals'), icon: IoCarSportOutline },
+        { href: '/reviews', label: tHeader('reviews'), icon: IoStarOutline },
+        { href: '/insurance-guide', label: t('insuranceOptions'), icon: IoShieldCheckmarkOutline }
+      ]
+    },
+    {
+      id: 'host',
+      label: t('forHosts'),
+      icon: IoKeyOutline,
+      badge: { text: t('earn'), color: 'from-green-500 to-emerald-500' },
+      items: [
+        { href: '/list-your-car', label: tHeader('listYourCar'), icon: IoSparklesOutline, highlight: true },
+        { href: '/host/fleet-owners', label: 'Fleet Owners', icon: IoCarOutline },
+        { href: '/host/payouts', label: 'Payouts & Earnings', icon: IoWalletOutline },
+        { href: '/host/insurance-options', label: t('insuranceOptions'), icon: IoShieldCheckmarkOutline },
+        { href: '/host-requirements', label: t('hostRequirements'), icon: IoDocumentTextOutline },
+        { href: '/host/tax-benefits', label: t('taxBenefits'), icon: IoCalculatorOutline }
+      ]
+    },
+    {
+      id: 'support',
+      label: 'Support',
+      icon: IoHelpCircleOutline,
+      items: [
+        { href: '/support', label: tHeader('helpCenter'), icon: IoHelpCircleOutline },
+        { href: '/support/insurance', label: 'Insurance Support', icon: IoShieldCheckmarkOutline },
+        { href: '/how-it-works', label: tHeader('howItWorks'), icon: IoHelpCircleOutline },
+        { href: '/cancellation-policy', label: 'Cancellation Policy', icon: IoDocumentTextOutline },
+        { href: '/contact', label: tHeader('contact'), icon: IoMailOutline }
+      ]
+    },
+    {
+      id: 'company',
+      label: tHeader('company'),
+      icon: IoBusinessOutline,
+      items: [
+        { href: '/about', label: tHeader('about'), icon: IoBusinessOutline },
+        { href: '/corporate', label: tHeader('corporateRentals'), icon: IoBusinessOutline },
+        { href: '/developers', label: t('developers'), icon: IoCodeSlashOutline },
+        { href: '/blog', label: tHeader('blog'), icon: IoDocumentTextOutline }
+      ]
+    }
+  ]
+
+  // Guest Navigation Items
+  const guestNavItems = [
+    { name: tHeader('dashboard'), href: '/dashboard', icon: IoHomeOutline },
+    { name: t('myTrips'), href: '/rentals/dashboard/bookings', icon: IoCalendarOutline },
+    { name: t('messages'), href: '/messages', icon: IoChatbubbleOutline },
+    { name: t('profile'), href: '/profile', icon: IoPersonOutline },
+    { name: t('paymentMethods'), href: '/profile?tab=payment', icon: IoCardOutline },
+    { name: tHeader('reviews'), href: '/profile?tab=reviews', icon: IoStarOutline },
+  ]
+
   // Reset profile image error when user changes
   useEffect(() => {
     setProfileImageError(false)
   }, [user?.profilePhoto])
-  
+
   // Check if we're on guest pages
-  const isGuestPage = pathname?.startsWith('/dashboard') || 
-                      pathname?.startsWith('/profile') || 
+  const isGuestPage = pathname?.startsWith('/dashboard') ||
+                      pathname?.startsWith('/profile') ||
                       pathname?.startsWith('/messages') ||
                       pathname?.startsWith('/rentals/dashboard')
-  
+
   useEffect(() => {
     if (isOpen) {
       previousFocusRef.current = document.activeElement as HTMLElement
@@ -188,7 +194,7 @@ export default function MobileMenu({
       document.body.style.position = 'fixed'
       document.body.style.top = `-${scrollY}px`
       document.body.style.width = '100%'
-      
+
       setTimeout(() => {
         const closeBtn = menuRef.current?.querySelector('[aria-label="Close menu"]') as HTMLElement
         closeBtn?.focus()
@@ -201,7 +207,7 @@ export default function MobileMenu({
       window.scrollTo(0, parseInt(scrollY || '0') * -1)
       previousFocusRef.current?.focus()
     }
-    
+
     return () => {
       document.body.style.position = ''
       document.body.style.top = ''
@@ -215,7 +221,7 @@ export default function MobileMenu({
         onClose()
       }
     }
-    
+
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
   }, [isOpen, onClose])
@@ -241,19 +247,19 @@ export default function MobileMenu({
   if (!isOpen) return null
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 lg:hidden"
       role="dialog"
       aria-modal="true"
       aria-label="Mobile navigation menu"
     >
-      <div 
+      <div
         className="absolute inset-0 bg-black/70 backdrop-blur-md animate-fadeIn"
         onClick={onClose}
         aria-hidden="true"
       />
-      
-      <div 
+
+      <div
         ref={menuRef}
         className={`
           absolute right-0 top-0 h-full w-80 max-w-[85vw]
@@ -287,10 +293,10 @@ export default function MobileMenu({
             </div>
             <div className="flex flex-col">
               <span className="text-[10px] text-gray-500 dark:text-gray-400 tracking-widest uppercase font-medium">
-                {isAdmin ? 'ADMIN PORTAL' :
-                 isHost && isHostPage ? 'HOST PORTAL' :
-                 isGuest && isGuestPage ? 'GUEST PORTAL' :
-                 'ITWHIP RIDES'}
+                {isAdmin ? tHeader('adminPortal') :
+                 isHost && isHostPage ? tHeader('hostPortal') :
+                 isGuest && isGuestPage ? tHeader('guestPortal') :
+                 tHeader('itwhipRides')}
               </span>
             </div>
           </div>
@@ -331,38 +337,39 @@ export default function MobileMenu({
                     {user.name ? user.name[0].toUpperCase() : 'U'}
                   </div>
                 )}
-                
+
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 dark:text-white truncate">
-                    {user.name || 'User'}
+                    {user.name || tCommon('user')}
                   </p>
                   <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
                     {user.email}
                   </p>
                   {isAdmin && (
                     <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                      Administrator
+                      {t('administrator')}
                     </span>
                   )}
                   {isHost && (
                     <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
-                      Host
+                      {t('hostBadge')}
                     </span>
                   )}
                   {isGuest && (
                     <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                      Guest
+                      {t('guestBadge')}
                     </span>
                   )}
                 </div>
               </div>
-              
+
               {/* Quick Actions Grid - Different for Each User Type */}
               <div className={`grid gap-2 ${isHost ? 'grid-cols-3' : 'grid-cols-2'}`}>
                 {isHost ? (
                   // HOST QUICK ACTIONS - Use /partner/ routes directly (not deprecated /host/ routes)
+                  // Portal routes use NextLink (no locale prefix)
                   <>
-                    <Link
+                    <NextLink
                       href="/partner/dashboard"
                       onClick={handleNavClick}
                       className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
@@ -370,9 +377,9 @@ export default function MobileMenu({
                         focus:outline-none focus:ring-2 focus:ring-purple-500"
                     >
                       <IoHomeOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
-                      <span className="text-xs text-gray-700 dark:text-gray-300">Dashboard</span>
-                    </Link>
-                    <Link
+                      <span className="text-xs text-gray-700 dark:text-gray-300">{tHeader('dashboard')}</span>
+                    </NextLink>
+                    <NextLink
                       href="/partner/fleet"
                       onClick={handleNavClick}
                       className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
@@ -380,9 +387,9 @@ export default function MobileMenu({
                         focus:outline-none focus:ring-2 focus:ring-purple-500"
                     >
                       <IoCarOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
-                      <span className="text-xs text-gray-700 dark:text-gray-300">My Cars</span>
-                    </Link>
-                    <Link
+                      <span className="text-xs text-gray-700 dark:text-gray-300">{tHeader('myCars')}</span>
+                    </NextLink>
+                    <NextLink
                       href="/partner/messages"
                       onClick={handleNavClick}
                       className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
@@ -390,9 +397,9 @@ export default function MobileMenu({
                         focus:outline-none focus:ring-2 focus:ring-purple-500"
                     >
                       <IoChatbubbleOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
-                      <span className="text-xs text-gray-700 dark:text-gray-300">Messages</span>
-                    </Link>
-                    <Link
+                      <span className="text-xs text-gray-700 dark:text-gray-300">{t('messages')}</span>
+                    </NextLink>
+                    <NextLink
                       href="/partner/bookings"
                       onClick={handleNavClick}
                       className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
@@ -400,9 +407,9 @@ export default function MobileMenu({
                         focus:outline-none focus:ring-2 focus:ring-purple-500"
                     >
                       <IoCalendarOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
-                      <span className="text-xs text-gray-700 dark:text-gray-300">Bookings</span>
-                    </Link>
-                    <Link
+                      <span className="text-xs text-gray-700 dark:text-gray-300">{tHeader('bookings')}</span>
+                    </NextLink>
+                    <NextLink
                       href="/partner/revenue"
                       onClick={handleNavClick}
                       className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
@@ -410,9 +417,9 @@ export default function MobileMenu({
                         focus:outline-none focus:ring-2 focus:ring-purple-500"
                     >
                       <IoWalletOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
-                      <span className="text-xs text-gray-700 dark:text-gray-300">Revenue</span>
-                    </Link>
-                    <Link
+                      <span className="text-xs text-gray-700 dark:text-gray-300">{t('revenue')}</span>
+                    </NextLink>
+                    <NextLink
                       href="/partner/settings"
                       onClick={handleNavClick}
                       className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
@@ -420,8 +427,8 @@ export default function MobileMenu({
                         focus:outline-none focus:ring-2 focus:ring-purple-500"
                     >
                       <IoSettingsOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
-                      <span className="text-xs text-gray-700 dark:text-gray-300">Settings</span>
-                    </Link>
+                      <span className="text-xs text-gray-700 dark:text-gray-300">{t('settings')}</span>
+                    </NextLink>
                   </>
                 ) : isGuest ? (
                   // GUEST QUICK ACTIONS
@@ -429,87 +436,87 @@ export default function MobileMenu({
                     <Link
                       href="/dashboard"
                       onClick={handleNavClick}
-                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
                         rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
                         focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
                       <IoHomeOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
-                      <span className="text-xs text-gray-700 dark:text-gray-300">Dashboard</span>
+                      <span className="text-xs text-gray-700 dark:text-gray-300">{tHeader('dashboard')}</span>
                     </Link>
                     <Link
                       href="/rentals/dashboard/bookings"
                       onClick={handleNavClick}
-                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
                         rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
                         focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
                       <IoCalendarOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
-                      <span className="text-xs text-gray-700 dark:text-gray-300">My Bookings</span>
+                      <span className="text-xs text-gray-700 dark:text-gray-300">{t('myBookings')}</span>
                     </Link>
                     <Link
                       href="/messages"
                       onClick={handleNavClick}
-                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
                         rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
                         focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
                       <IoChatbubbleOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
-                      <span className="text-xs text-gray-700 dark:text-gray-300">Messages</span>
+                      <span className="text-xs text-gray-700 dark:text-gray-300">{t('messages')}</span>
                     </Link>
                     <Link
                       href="/profile"
                       onClick={handleNavClick}
-                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
                         rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
                         focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
                       <IoPersonOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
-                      <span className="text-xs text-gray-700 dark:text-gray-300">Profile</span>
+                      <span className="text-xs text-gray-700 dark:text-gray-300">{t('profile')}</span>
                     </Link>
                   </>
                 ) : isAdmin ? (
-                  // ADMIN QUICK ACTIONS
+                  // ADMIN QUICK ACTIONS — portal routes use NextLink (no locale prefix)
                   <>
-                    <Link
+                    <NextLink
                       href="/admin/dashboard"
                       onClick={handleNavClick}
-                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
                         rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
                         focus:outline-none focus:ring-2 focus:ring-red-500"
                     >
                       <IoGridOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
-                      <span className="text-xs text-gray-700 dark:text-gray-300">Dashboard</span>
-                    </Link>
-                    <Link
+                      <span className="text-xs text-gray-700 dark:text-gray-300">{tHeader('dashboard')}</span>
+                    </NextLink>
+                    <NextLink
                       href="/admin/hosts"
                       onClick={handleNavClick}
-                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
                         rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
                         focus:outline-none focus:ring-2 focus:ring-red-500"
                     >
                       <IoCarOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
-                      <span className="text-xs text-gray-700 dark:text-gray-300">Hosts</span>
-                    </Link>
-                    <Link
+                      <span className="text-xs text-gray-700 dark:text-gray-300">{t('hosts')}</span>
+                    </NextLink>
+                    <NextLink
                       href="/admin/profile"
                       onClick={handleNavClick}
-                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
                         rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
                         focus:outline-none focus:ring-2 focus:ring-red-500"
                     >
                       <IoPersonOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
-                      <span className="text-xs text-gray-700 dark:text-gray-300">Profile</span>
-                    </Link>
-                    <Link
+                      <span className="text-xs text-gray-700 dark:text-gray-300">{t('profile')}</span>
+                    </NextLink>
+                    <NextLink
                       href="/admin/settings"
                       onClick={handleNavClick}
-                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900 
+                      className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-900
                         rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105
                         focus:outline-none focus:ring-2 focus:ring-red-500"
                     >
                       <IoSettingsOutline className="w-5 h-5 text-gray-700 dark:text-gray-300 mb-1" />
-                      <span className="text-xs text-gray-700 dark:text-gray-300">Settings</span>
-                    </Link>
+                      <span className="text-xs text-gray-700 dark:text-gray-300">{t('settings')}</span>
+                    </NextLink>
                   </>
                 ) : null}
               </div>
@@ -519,12 +526,12 @@ export default function MobileMenu({
           {/* Host Navigation Section */}
           {isHost && isHostPage && hostNavItems.length > 0 && (
             <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">Host Navigation</h3>
+              <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">{t('hostNavigation')}</h3>
               <div className="space-y-1">
                 {hostNavItems.map((item) => {
                   const Icon = item.icon
                   return (
-                    <Link
+                    <NextLink
                       key={item.href}
                       href={item.href}
                       onClick={handleNavClick}
@@ -537,7 +544,7 @@ export default function MobileMenu({
                     >
                       <Icon className="w-5 h-5" />
                       <span>{item.name}</span>
-                    </Link>
+                    </NextLink>
                   )
                 })}
               </div>
@@ -547,7 +554,7 @@ export default function MobileMenu({
           {/* Guest Navigation Section */}
           {isGuest && isGuestPage && (
             <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">Guest Navigation</h3>
+              <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">{t('guestNavigation')}</h3>
               <div className="space-y-1">
                 {guestNavItems.map((item) => {
                   const Icon = item.icon
@@ -575,9 +582,9 @@ export default function MobileMenu({
           {/* Navigation Sections - Site Navigation (Always visible) */}
           <nav className="px-4 py-2" aria-label="Main navigation">
             {(isHost || isGuest || isAdmin) && (
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Site Navigation</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{t('siteNavigation')}</p>
             )}
-            
+
             <div className="border-b border-gray-100 dark:border-gray-900">
               <Link
                 href="/"
@@ -585,21 +592,21 @@ export default function MobileMenu({
                 className={`
                   w-full flex items-center space-x-3 py-3 transition-colors
                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-lg
-                  ${isActiveLink('/') 
-                    ? 'text-blue-600 dark:text-blue-400' 
+                  ${isActiveLink('/')
+                    ? 'text-blue-600 dark:text-blue-400'
                     : 'hover:text-blue-600 dark:hover:text-blue-400'}
                 `}
                 aria-current={isActiveLink('/') ? 'page' : undefined}
               >
                 <div className={`transition-colors ${
-                  isActiveLink('/') 
-                    ? 'text-blue-600 dark:text-blue-400' 
+                  isActiveLink('/')
+                    ? 'text-blue-600 dark:text-blue-400'
                     : 'text-gray-500 dark:text-gray-400'
                 }`}>
                   <IoHomeOutline className="w-5 h-5" aria-hidden="true" />
                 </div>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  Home
+                  {t('home')}
                 </span>
               </Link>
             </div>
@@ -607,12 +614,12 @@ export default function MobileMenu({
             {navigationSections.map((section) => {
               const Icon = section.icon
               const isExpanded = expandedSection === section.id
-              
+
               return (
                 <div key={section.id} className="border-b border-gray-100 dark:border-gray-900">
                   <button
                     onClick={() => toggleSection(section.id)}
-                    className="w-full flex items-center justify-between py-3 
+                    className="w-full flex items-center justify-between py-3
                       hover:text-blue-600 dark:hover:text-blue-400 transition-colors
                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-lg"
                     aria-expanded={isExpanded}
@@ -627,14 +634,14 @@ export default function MobileMenu({
                       </span>
                       {section.badge && (
                         <span className={`
-                          text-xs bg-gradient-to-r ${section.badge.color} 
+                          text-xs bg-gradient-to-r ${section.badge.color}
                           text-white px-2 py-0.5 rounded-full font-medium shadow-sm
                         `}>
                           {section.badge.text}
                         </span>
                       )}
                     </div>
-                    <IoChevronDownOutline 
+                    <IoChevronDownOutline
                       className={`
                         w-5 h-5 text-gray-400 transition-transform duration-200
                         ${isExpanded ? 'rotate-180' : ''}
@@ -642,7 +649,7 @@ export default function MobileMenu({
                       aria-hidden="true"
                     />
                   </button>
-                  
+
                   <div
                     id={`${section.id}-menu`}
                     className={`
@@ -653,7 +660,7 @@ export default function MobileMenu({
                     <div className="pb-3 pl-12 space-y-1">
                       {section.items.map((item) => {
                         const ItemIcon = item.icon
-                        
+
                         return (
                           <Link
                             key={item.href}
@@ -662,8 +669,8 @@ export default function MobileMenu({
                             className={`
                               flex items-center gap-2 py-2 text-sm transition-colors
                               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-lg px-2
-                              ${item.highlight 
-                                ? 'text-blue-600 dark:text-blue-400 font-medium' 
+                              ${item.highlight
+                                ? 'text-blue-600 dark:text-blue-400 font-medium'
                                 : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'}
                             `}
                           >
@@ -672,7 +679,7 @@ export default function MobileMenu({
                               <span>{item.label}</span>
                               {item.badge && (
                                 <span className={`
-                                  text-xs bg-gradient-to-r ${item.badge.color} 
+                                  text-xs bg-gradient-to-r ${item.badge.color}
                                   text-white px-2 py-0.5 rounded-full
                                 `}>
                                   {item.badge.text}
@@ -701,7 +708,7 @@ export default function MobileMenu({
                 aria-label="Sign out"
               >
                 <IoLogOutOutline className="w-5 h-5" aria-hidden="true" />
-                <span>Sign Out</span>
+                <span>{tCommon('signOut')}</span>
               </button>
             </div>
           )}

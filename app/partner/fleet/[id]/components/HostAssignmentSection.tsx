@@ -3,6 +3,8 @@
 
 'use client'
 
+import { useLocale } from 'next-intl'
+
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import {
@@ -72,6 +74,8 @@ export default function HostAssignmentSection({
   vehicleId,
   onInviteHost
 }: HostAssignmentSectionProps) {
+  const locale = useLocale()
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isSelfManaged, setIsSelfManaged] = useState(true)
@@ -139,7 +143,7 @@ export default function HostAssignmentSection({
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric'

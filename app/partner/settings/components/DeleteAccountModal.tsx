@@ -1,7 +1,8 @@
 // app/partner/settings/components/DeleteAccountModal.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   IoTrashOutline,
   IoCloseOutline,
@@ -16,15 +17,6 @@ import {
   IoEyeOffOutline
 } from 'react-icons/io5'
 
-const DELETION_REASONS = [
-  { value: 'no_longer_need', label: 'No longer need the service' },
-  { value: 'privacy_concerns', label: 'Privacy concerns' },
-  { value: 'found_alternative', label: 'Found a better alternative' },
-  { value: 'too_expensive', label: 'Service is too expensive' },
-  { value: 'poor_experience', label: 'Had a poor experience' },
-  { value: 'other', label: 'Other reason' }
-]
-
 interface DeleteAccountModalProps {
   isOpen: boolean
   email: string
@@ -33,6 +25,9 @@ interface DeleteAccountModalProps {
 }
 
 export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteAccountModalProps) {
+  const t = useTranslations('PartnerSettings')
+
+  const locale = useLocale()
   const [step, setStep] = useState<'confirm' | 'password' | 'success'>('confirm')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -41,6 +36,15 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
   const [error, setError] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
   const [deletionDate, setDeletionDate] = useState<string | null>(null)
+
+  const DELETION_REASONS = useMemo(() => [
+    { value: 'no_longer_need', label: t('reasonNoLongerNeed') },
+    { value: 'privacy_concerns', label: t('reasonPrivacy') },
+    { value: 'found_alternative', label: t('reasonAlternative') },
+    { value: 'too_expensive', label: t('reasonTooExpensive') },
+    { value: 'poor_experience', label: t('reasonPoorExperience') },
+    { value: 'other', label: t('reasonOther') }
+  ], [t])
 
   const resetModal = () => {
     setStep('confirm')
@@ -55,7 +59,7 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
 
   const handleDelete = async () => {
     if (!password) {
-      setError('Please enter your password')
+      setError(t('valEnterPassword'))
       return
     }
 
@@ -70,7 +74,7 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
         setDeletionDate(result.deletionDate || null)
         setStep('success')
       } else {
-        setError(result.error || 'Failed to delete account')
+        setError(result.error || t('failedToDeleteAccount'))
       }
     } catch (err: any) {
       setError(err.message)
@@ -91,7 +95,7 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
               <IoTrashOutline className="w-5 h-5 text-red-600 dark:text-red-400" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Delete Account
+              {t('deleteAccountTitle')}
             </h3>
           </div>
           <button
@@ -112,10 +116,10 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
                   <IoWarningOutline className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                   <div>
                     <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1">
-                      30-Day Grace Period
+                      {t('thirtyDayGracePeriod')}
                     </h4>
                     <p className="text-sm text-amber-700 dark:text-amber-400">
-                      Your account will be scheduled for deletion in 30 days. You can cancel this request at any time during the grace period by logging back in.
+                      {t('gracePeriodDesc')}
                     </p>
                   </div>
                 </div>
@@ -124,24 +128,24 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
               {/* What Will Be Deleted */}
               <div>
                 <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                  What will be deleted:
+                  {t('whatWillBeDeleted')}
                 </h4>
                 <div className="space-y-2">
                   <div className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <IoPersonOutline className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Your partner profile and company information</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{t('deleteProfileCompany')}</span>
                   </div>
                   <div className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <IoCarOutline className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Your fleet listings and vehicle data</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{t('deleteFleetListings')}</span>
                   </div>
                   <div className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <IoCardOutline className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Payout history and banking information</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{t('deletePayoutHistory')}</span>
                   </div>
                   <div className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <IoDocumentTextOutline className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Booking history and analytics</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{t('deleteBookingHistory')}</span>
                   </div>
                 </div>
               </div>
@@ -149,7 +153,7 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
               {/* Reason Selection */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                  Why are you leaving? *
+                  {t('whyLeaving')}
                 </label>
                 <select
                   value={reason}
@@ -159,7 +163,7 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
                   }}
                   className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500"
                 >
-                  <option value="">Select a reason...</option>
+                  <option value="">{t('selectReason')}</option>
                   {DELETION_REASONS.map((r) => (
                     <option key={r.value} value={r.value}>
                       {r.label}
@@ -170,7 +174,7 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
                   <textarea
                     value={otherReason}
                     onChange={(e) => setOtherReason(e.target.value)}
-                    placeholder="Please tell us more..."
+                    placeholder={t('tellUsMore')}
                     className="w-full mt-2 px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 resize-none"
                     rows={3}
                   />
@@ -196,10 +200,10 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
                   <IoWarningOutline className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                   <div>
                     <h4 className="text-sm font-semibold text-red-800 dark:text-red-300 mb-1">
-                      Confirm Account Deletion
+                      {t('confirmAccountDeletion')}
                     </h4>
                     <p className="text-sm text-red-700 dark:text-red-400">
-                      Enter your password to confirm. A confirmation email will be sent to <span className="font-medium">{email}</span>.
+                      {t('enterPasswordConfirm', { email })}
                     </p>
                   </div>
                 </div>
@@ -207,7 +211,7 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Enter your password to confirm *
+                  {t('enterPasswordLabel')}
                 </label>
                 <div className="relative">
                   <input
@@ -218,7 +222,7 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
                       setError('')
                     }}
                     className="w-full px-3 py-2.5 pr-10 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500"
-                    placeholder="Enter your password"
+                    placeholder={t('enterYourPassword')}
                     autoComplete="current-password"
                   />
                   <button
@@ -253,22 +257,22 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
                 <IoTimeOutline className="w-8 h-8 text-amber-600 dark:text-amber-400" />
               </div>
               <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Deletion Scheduled
+                {t('deletionScheduled')}
               </h4>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Your account is scheduled for deletion on:
+                {t('accountScheduledForDeletion')}
               </p>
               <p className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-4">
-                {deletionDate ? new Date(deletionDate).toLocaleDateString('en-US', {
+                {deletionDate ? new Date(deletionDate).toLocaleDateString(locale, {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric'
-                }) : '30 days from now'}
+                }) : t('thirtyDaysFromNow')}
               </p>
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-left">
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  <strong>Changed your mind?</strong> Simply log in anytime before the deletion date to cancel this request. A confirmation email has been sent to your email address.
+                  <strong>{t('changedYourMind')}</strong> {t('changedMindDesc')}
                 </p>
               </div>
             </div>
@@ -283,12 +287,12 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
                 onClick={resetModal}
                 className="flex-1 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
               >
-                Cancel
+                {t('cancelButton')}
               </button>
               <button
                 onClick={() => {
                   if (!reason) {
-                    setError('Please select a reason for leaving')
+                    setError(t('valSelectReason'))
                     return
                   }
                   setError('')
@@ -296,7 +300,7 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
                 }}
                 className="flex-1 px-4 py-2.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
               >
-                Continue
+                {t('continueButton')}
               </button>
             </>
           )}
@@ -311,7 +315,7 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
                 }}
                 className="flex-1 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
               >
-                Back
+                {t('backButton')}
               </button>
               <button
                 onClick={handleDelete}
@@ -321,12 +325,12 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
                 {isDeleting ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                    <span>Processing...</span>
+                    <span>{t('processing')}</span>
                   </>
                 ) : (
                   <>
                     <IoTrashOutline className="w-4 h-4" />
-                    <span>Delete My Account</span>
+                    <span>{t('deleteMyAccount')}</span>
                   </>
                 )}
               </button>
@@ -338,7 +342,7 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
               onClick={resetModal}
               className="w-full px-4 py-2.5 text-sm bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-lg transition-colors font-medium"
             >
-              Close
+              {t('closeButton')}
             </button>
           )}
         </div>

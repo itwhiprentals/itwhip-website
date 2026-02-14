@@ -4,6 +4,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   IoCheckmarkCircleOutline,
   IoTimeOutline,
@@ -28,37 +29,40 @@ interface RecentBookingsProps {
 }
 
 export default function RecentBookings({ bookings }: RecentBookingsProps) {
+  const t = useTranslations('PartnerDashboard')
+
+  const locale = useLocale()
   const getStatusConfig = (status: string) => {
     switch (status) {
       case 'confirmed':
         return {
           icon: IoCheckmarkCircleOutline,
           color: 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30',
-          label: 'Confirmed'
+          label: t('rbConfirmed')
         }
       case 'pending':
         return {
           icon: IoTimeOutline,
           color: 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30',
-          label: 'Pending'
+          label: t('rbPending')
         }
       case 'active':
         return {
           icon: IoCarOutline,
           color: 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30',
-          label: 'Active'
+          label: t('rbActive')
         }
       case 'completed':
         return {
           icon: IoCheckmarkCircleOutline,
           color: 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700',
-          label: 'Completed'
+          label: t('rbCompleted')
         }
       case 'cancelled':
         return {
           icon: IoCloseCircleOutline,
           color: 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30',
-          label: 'Cancelled'
+          label: t('rbCancelled')
         }
       default:
         return {
@@ -71,16 +75,16 @@ export default function RecentBookings({ bookings }: RecentBookingsProps) {
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' })
   }
 
   if (bookings.length === 0) {
     return (
       <div className="text-center py-8">
         <IoCalendarOutline className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-500 dark:text-gray-400">No bookings yet</p>
+        <p className="text-gray-500 dark:text-gray-400">{t('rbNoBookingsYet')}</p>
         <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-          Bookings will appear here once guests start reserving your vehicles
+          {t('rbBookingsWillAppear')}
         </p>
       </div>
     )
@@ -130,7 +134,7 @@ export default function RecentBookings({ bookings }: RecentBookingsProps) {
           href="/partner/bookings"
           className="block text-center py-2 text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"
         >
-          View all {bookings.length} bookings
+          {t('rbViewAllBookings', { count: bookings.length })}
         </Link>
       )}
     </div>

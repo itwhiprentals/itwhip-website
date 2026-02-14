@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   IoArrowBackOutline,
   IoSearchOutline,
@@ -108,6 +109,9 @@ export default function NewBookingPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedCustomerId = searchParams.get('customerId')
+  const t = useTranslations('PartnerBookingNew')
+
+  const locale = useLocale()
 
   const [currentStep, setCurrentStep] = useState<Step>('customer')
   const [loading, setLoading] = useState(false)
@@ -346,7 +350,7 @@ export default function NewBookingPage() {
 
   const createNewCustomer = async () => {
     if (!newCustomer.firstName || !newCustomer.email) {
-      setError('First name and email are required')
+      setError(t('firstNameEmailRequired'))
       return
     }
 
@@ -374,10 +378,10 @@ export default function NewBookingPage() {
         // Go to verify step instead of skipping it
         setCurrentStep('verify')
       } else {
-        setError(data.error || 'Failed to create customer')
+        setError(data.error || t('failedCreateCustomer'))
       }
     } catch (err) {
-      setError('Failed to create customer')
+      setError(t('failedCreateCustomer'))
     } finally {
       setLoading(false)
     }
@@ -401,7 +405,7 @@ export default function NewBookingPage() {
       setAvailability(data)
     } catch (error) {
       console.error('Availability check failed:', error)
-      setAvailability({ available: false, reason: 'Failed to check availability' })
+      setAvailability({ available: false, reason: t('failedCheckAvailability') })
     } finally {
       setCheckingAvailability(false)
     }
@@ -506,7 +510,7 @@ export default function NewBookingPage() {
 
   const createBooking = async () => {
     if (!selectedCustomer || !selectedVehicle || !startDate || !endDate) {
-      setError('Please complete all required fields')
+      setError(t('completeAllFields'))
       return
     }
 
@@ -529,7 +533,7 @@ export default function NewBookingPage() {
         if (data.success) {
           router.push(`/partner/bookings?confirmed=${data.booking.id}`)
         } else {
-          setError(data.error || 'Failed to confirm booking')
+          setError(data.error || t('failedConfirmBooking'))
         }
       } else {
         // Create new booking directly
@@ -558,18 +562,18 @@ export default function NewBookingPage() {
         if (data.success) {
           router.push(`/partner/bookings?created=${data.booking.id}`)
         } else {
-          setError(data.error || 'Failed to create booking')
+          setError(data.error || t('failedCreateBooking'))
         }
       }
     } catch (err) {
-      setError('Failed to create booking')
+      setError(t('failedCreateBooking'))
     } finally {
       setLoading(false)
     }
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0
@@ -612,10 +616,10 @@ export default function NewBookingPage() {
           stripeIdentityStatus: 'pending'
         } : null)
       } else {
-        setVerificationError(data.error || 'Failed to send verification')
+        setVerificationError(data.error || t('failedSendVerification'))
       }
     } catch (err) {
-      setVerificationError('Failed to send verification email')
+      setVerificationError(t('failedSendVerificationEmail'))
     } finally {
       setSendingVerification(false)
     }
@@ -624,7 +628,7 @@ export default function NewBookingPage() {
   // Send booking review to customer for verification
   const sendBookingReview = async () => {
     if (!selectedCustomer || !selectedVehicle || !startDate || !endDate) {
-      setError('Please complete all required fields')
+      setError(t('completeAllFields'))
       return
     }
 
@@ -664,10 +668,10 @@ export default function NewBookingPage() {
         setReviewSent(true)
         setPreBookingId(data.booking.id)
       } else {
-        setError(data.error || 'Failed to send booking review')
+        setError(data.error || t('failedSendReview'))
       }
     } catch (err) {
-      setError('Failed to send booking review')
+      setError(t('failedSendReview'))
     } finally {
       setSendingReview(false)
     }
@@ -678,11 +682,11 @@ export default function NewBookingPage() {
   const isCustomerPendingVerification = selectedCustomer?.stripeIdentityStatus === 'pending'
 
   const steps = [
-    { id: 1, key: 'customer' as Step, title: 'Customer' },
-    { id: 2, key: 'verify' as Step, title: 'Verify' },
-    { id: 3, key: 'vehicle' as Step, title: 'Vehicle' },
-    { id: 4, key: 'dates' as Step, title: 'Dates' },
-    { id: 5, key: 'confirm' as Step, title: 'Confirm' }
+    { id: 1, key: 'customer' as Step, title: t('stepCustomer') },
+    { id: 2, key: 'verify' as Step, title: t('stepVerify') },
+    { id: 3, key: 'vehicle' as Step, title: t('stepVehicle') },
+    { id: 4, key: 'dates' as Step, title: t('stepDates') },
+    { id: 5, key: 'confirm' as Step, title: t('stepConfirm') }
   ]
 
   const stepIndex = steps.findIndex(s => s.key === currentStep)
@@ -699,8 +703,8 @@ export default function NewBookingPage() {
           <IoArrowBackOutline className="w-5 h-5" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create Booking</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Manually book a vehicle for a customer</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('pageTitle')}</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('pageSubtitle')}</p>
         </div>
       </div>
 
@@ -765,9 +769,9 @@ export default function NewBookingPage() {
         {/* Step 1: Customer Selection */}
         {currentStep === 'customer' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Select Customer</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('selectCustomerTitle')}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Search for an existing customer or create a new one. They&apos;ll receive a Stripe invoice for payment.
+              {t('selectCustomerDescription')}
             </p>
 
             {selectedCustomer ? (
@@ -799,7 +803,7 @@ export default function NewBookingPage() {
                   <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search by name, email, or phone..."
+                    placeholder={t('searchCustomerPlaceholder')}
                     value={customerSearch}
                     onChange={(e) => {
                       setCustomerSearch(e.target.value)
@@ -835,7 +839,7 @@ export default function NewBookingPage() {
                         </div>
                         {customer.isPreviousCustomer && (
                           <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-1 rounded-full">
-                            Previous Customer
+                            {t('previousCustomer')}
                           </span>
                         )}
                       </button>
@@ -850,51 +854,51 @@ export default function NewBookingPage() {
                     className="w-full flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-orange-500 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
                   >
                     <IoAddOutline className="w-5 h-5" />
-                    Create New Customer
+                    {t('createNewCustomer')}
                   </button>
                 ) : (
                   <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4">
-                    <h3 className="font-medium text-gray-900 dark:text-white">New Customer</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-white">{t('newCustomerTitle')}</h3>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name *</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('firstNameLabel')}</label>
                         <input
                           type="text"
                           value={newCustomer.firstName}
                           onChange={(e) => setNewCustomer(prev => ({ ...prev, firstName: e.target.value }))}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                          placeholder="First name"
+                          placeholder={t('firstNamePlaceholder')}
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('lastNameLabel')}</label>
                         <input
                           type="text"
                           value={newCustomer.lastName}
                           onChange={(e) => setNewCustomer(prev => ({ ...prev, lastName: e.target.value }))}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                          placeholder="Last name"
+                          placeholder={t('lastNamePlaceholder')}
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email *</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('emailLabel')}</label>
                       <input
                         type="email"
                         value={newCustomer.email}
                         onChange={(e) => setNewCustomer(prev => ({ ...prev, email: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                        placeholder="email@example.com"
+                        placeholder={t('emailPlaceholder')}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('phoneLabel')}</label>
                       <input
                         type="tel"
                         value={newCustomer.phone}
                         onChange={handlePhoneChange}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                        placeholder="(555) 123-4567"
+                        placeholder={t('phonePlaceholder')}
                       />
                     </div>
                     <div className="flex gap-3">
@@ -902,14 +906,14 @@ export default function NewBookingPage() {
                         onClick={() => setShowNewCustomerForm(false)}
                         className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                       >
-                        Cancel
+                        {t('cancel')}
                       </button>
                       <button
                         onClick={createNewCustomer}
                         disabled={loading}
                         className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium"
                       >
-                        {loading ? 'Creating...' : 'Create & Select'}
+                        {loading ? t('creating') : t('createAndSelect')}
                       </button>
                     </div>
                   </div>
@@ -922,7 +926,7 @@ export default function NewBookingPage() {
                 onClick={() => setCurrentStep('verify')}
                 className="w-full mt-4 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium flex items-center justify-center gap-2"
               >
-                Continue to Verification
+                {t('continueToVerification')}
                 <IoChevronForwardOutline className="w-5 h-5" />
               </button>
             )}
@@ -932,9 +936,9 @@ export default function NewBookingPage() {
         {/* Step 2: Identity Verification */}
         {currentStep === 'verify' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Identity Verification</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('identityVerificationTitle')}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Stripe Identity verifies your guest&apos;s government ID matches their name for added security. This protects both you and your vehicle.
+              {t('identityVerificationDescription')}
             </p>
 
             {/* Customer Info */}
@@ -961,11 +965,11 @@ export default function NewBookingPage() {
                 <div className="flex items-center gap-3">
                   <IoCheckmarkCircleOutline className="w-8 h-8 text-green-500" />
                   <div>
-                    <p className="font-semibold text-green-700 dark:text-green-400">Identity Verified</p>
+                    <p className="font-semibold text-green-700 dark:text-green-400">{t('identityVerified')}</p>
                     <p className="text-sm text-green-600 dark:text-green-500">
                       {selectedCustomer?.stripeVerifiedFirstName} {selectedCustomer?.stripeVerifiedLastName}
                       {selectedCustomer?.stripeIdentityVerifiedAt && (
-                        <> • Verified on {new Date(selectedCustomer.stripeIdentityVerifiedAt).toLocaleDateString()}</>
+                        <> • {t('verifiedOn', { date: new Date(selectedCustomer.stripeIdentityVerifiedAt).toLocaleDateString() })}</>
                       )}
                     </p>
                   </div>
@@ -976,9 +980,9 @@ export default function NewBookingPage() {
                 <div className="flex items-center gap-3">
                   <IoTimeOutline className="w-8 h-8 text-yellow-500" />
                   <div>
-                    <p className="font-semibold text-yellow-700 dark:text-yellow-400">Verification Pending</p>
+                    <p className="font-semibold text-yellow-700 dark:text-yellow-400">{t('verificationPending')}</p>
                     <p className="text-sm text-yellow-600 dark:text-yellow-500">
-                      Verification email sent. Waiting for customer to complete identity verification.
+                      {t('verificationPendingDescription')}
                     </p>
                   </div>
                 </div>
@@ -989,9 +993,9 @@ export default function NewBookingPage() {
                   <div className="flex items-start gap-3">
                     <IoShieldCheckmarkOutline className="w-6 h-6 text-blue-500 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium text-blue-700 dark:text-blue-400">Verify Customer Identity</p>
+                      <p className="font-medium text-blue-700 dark:text-blue-400">{t('verifyCustomerIdentity')}</p>
                       <p className="text-sm text-blue-600 dark:text-blue-500 mt-1">
-                        Send a secure verification link to the customer. They'll verify their identity using a government ID and selfie via Stripe Identity.
+                        {t('verifyCustomerIdentityDescription')}
                       </p>
                     </div>
                   </div>
@@ -1012,18 +1016,18 @@ export default function NewBookingPage() {
                   {sendingVerification ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-                      Sending Verification...
+                      {t('sendingVerification')}
                     </>
                   ) : (
                     <>
                       <IoMailOutline className="w-5 h-5" />
-                      Send Verification Email
+                      {t('sendVerificationEmail')}
                     </>
                   )}
                 </button>
 
                 <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-                  or
+                  {t('or')}
                 </div>
 
                 {/* In-Person Verification Option */}
@@ -1031,9 +1035,9 @@ export default function NewBookingPage() {
                   <div className="flex items-start gap-3">
                     <IoPersonOutline className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
-                      <p className="font-medium text-gray-700 dark:text-gray-300">In-Person Verification</p>
+                      <p className="font-medium text-gray-700 dark:text-gray-300">{t('inPersonVerification')}</p>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        Customer can verify at your location using their phone or your device.
+                        {t('inPersonVerificationDescription')}
                       </p>
                     </div>
                   </div>
@@ -1052,9 +1056,9 @@ export default function NewBookingPage() {
                   className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
                 />
                 <label htmlFor="skipVerification" className="text-sm text-gray-600 dark:text-gray-300">
-                  <span className="font-medium">Skip verification for now</span>
+                  <span className="font-medium">{t('skipVerificationLabel')}</span>
                   <span className="block text-xs text-gray-500 dark:text-gray-400">
-                    You can verify the customer later. Note: Unverified customers may have restrictions.
+                    {t('skipVerificationNote')}
                   </span>
                 </label>
               </div>
@@ -1065,14 +1069,14 @@ export default function NewBookingPage() {
                 onClick={() => setCurrentStep('customer')}
                 className="px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium"
               >
-                Back
+                {t('back')}
               </button>
               <button
                 onClick={() => setCurrentStep('vehicle')}
                 disabled={!isCustomerVerified && !skipVerification && !verificationSent}
                 className="flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white rounded-lg font-medium flex items-center justify-center gap-2"
               >
-                {isCustomerVerified ? 'Continue to Vehicle' : 'Continue (Skip Verification)'}
+                {isCustomerVerified ? t('continueToVehicle') : t('continueSkipVerification')}
                 <IoChevronForwardOutline className="w-5 h-5" />
               </button>
             </div>
@@ -1082,9 +1086,9 @@ export default function NewBookingPage() {
         {/* Step 3: Vehicle Selection */}
         {currentStep === 'vehicle' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Select Vehicle</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('selectVehicleTitle')}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Choose from your approved fleet vehicles. Need to add a vehicle? <Link href="/partner/fleet/add" className="text-orange-600 dark:text-orange-400 hover:underline">Add a new vehicle</Link> first - it must be approved before it can be booked.
+              {t('selectVehicleDescription')} <Link href="/partner/fleet/add" className="text-orange-600 dark:text-orange-400 hover:underline">{t('addNewVehicleLink')}</Link> {t('selectVehicleDescriptionSuffix')}
             </p>
 
             {/* Filter */}
@@ -1099,7 +1103,7 @@ export default function NewBookingPage() {
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
-                  {f.charAt(0).toUpperCase() + f.slice(1)}
+                  {f === 'all' ? t('filterAll') : f === 'rideshare' ? t('filterRideshare') : t('filterRental')}
                 </button>
               ))}
             </div>
@@ -1131,9 +1135,9 @@ export default function NewBookingPage() {
                         {vehicle.year} {vehicle.make} {vehicle.model}
                       </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {formatCurrency(vehicle.dailyRate)}/day
+                        {formatCurrency(vehicle.dailyRate)}/{t('day')}
                         {vehicle.vehicleType === 'RIDESHARE' && vehicle.weeklyRate && (
-                          <> • {formatCurrency(vehicle.weeklyRate)}/week</>
+                          <> • {formatCurrency(vehicle.weeklyRate)}/{t('week')}</>
                         )}
                       </p>
                       <div className="flex gap-2 mt-1">
@@ -1145,7 +1149,7 @@ export default function NewBookingPage() {
                           {vehicle.vehicleType}
                         </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          Min {vehicle.minTripDuration} days
+                          {t('minDays', { count: vehicle.minTripDuration })}
                         </span>
                       </div>
                     </div>
@@ -1159,7 +1163,7 @@ export default function NewBookingPage() {
 
             {filteredVehicles.length === 0 && (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                No available vehicles found
+                {t('noVehiclesFound')}
               </div>
             )}
 
@@ -1168,14 +1172,14 @@ export default function NewBookingPage() {
                 onClick={() => setCurrentStep('verify')}
                 className="px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium"
               >
-                Back
+                {t('back')}
               </button>
               <button
                 onClick={() => setCurrentStep('dates')}
                 disabled={!selectedVehicle}
                 className="flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white rounded-lg font-medium flex items-center justify-center gap-2"
               >
-                Continue to Dates
+                {t('continueToDates')}
                 <IoChevronForwardOutline className="w-5 h-5" />
               </button>
             </div>
@@ -1185,9 +1189,9 @@ export default function NewBookingPage() {
         {/* Step 4: Date Selection */}
         {currentStep === 'dates' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Select Dates</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('selectDatesTitle')}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Choose rental dates and pickup/dropoff details. We&apos;ll check availability and calculate the total automatically.
+              {t('selectDatesDescription')}
             </p>
 
             {/* Selected Vehicle Display */}
@@ -1210,14 +1214,14 @@ export default function NewBookingPage() {
                   </p>
                   <div className="flex items-center flex-wrap gap-2 mt-1">
                     <span className="text-sm font-medium text-orange-600 dark:text-orange-400">
-                      ${selectedVehicle.dailyRate}/day
+                      ${selectedVehicle.dailyRate}/{t('day')}
                     </span>
                     <span className="text-xs px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300">
-                      {selectedVehicle.carType || 'Standard'}
+                      {selectedVehicle.carType || t('standard')}
                     </span>
                     {selectedVehicle.currentMileage && (
                       <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {selectedVehicle.currentMileage.toLocaleString()} mi
+                        {selectedVehicle.currentMileage.toLocaleString()} {t('milesAbbr')}
                       </span>
                     )}
                     <span className={`text-xs px-1.5 py-0.5 rounded ${
@@ -1225,7 +1229,7 @@ export default function NewBookingPage() {
                         ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
                         : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                     }`}>
-                      {selectedVehicle.vehicleType === 'RIDESHARE' ? 'Rideshare' : 'Rental'}
+                      {selectedVehicle.vehicleType === 'RIDESHARE' ? t('rideshare') : t('rental')}
                     </span>
                   </div>
                 </div>
@@ -1233,7 +1237,7 @@ export default function NewBookingPage() {
                   onClick={() => setCurrentStep('vehicle')}
                   className="text-xs text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"
                 >
-                  Change
+                  {t('change')}
                 </button>
               </div>
             )}
@@ -1244,10 +1248,12 @@ export default function NewBookingPage() {
                 <IoAlertCircleOutline className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-blue-700 dark:text-blue-400">
-                    {selectedVehicle.vehicleType === 'RIDESHARE' ? 'Rideshare Vehicle' : 'Vehicle'} - Minimum {selectedVehicle.minTripDuration} Day Rental
+                    {selectedVehicle.vehicleType === 'RIDESHARE'
+                      ? t('rideshareMinDaysTitle', { days: selectedVehicle.minTripDuration })
+                      : t('vehicleMinDaysTitle', { days: selectedVehicle.minTripDuration })}
                   </p>
                   <p className="text-xs text-blue-600 dark:text-blue-500 mt-0.5">
-                    This vehicle requires a minimum rental period of {selectedVehicle.minTripDuration} days.
+                    {t('minDaysDescription', { days: selectedVehicle.minTripDuration })}
                   </p>
                 </div>
               </div>
@@ -1255,7 +1261,7 @@ export default function NewBookingPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('startDateLabel')}</label>
                 <input
                   type="date"
                   value={startDate}
@@ -1265,7 +1271,7 @@ export default function NewBookingPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('endDateLabel')}</label>
                 <input
                   type="date"
                   value={endDate}
@@ -1282,7 +1288,7 @@ export default function NewBookingPage() {
                 {checkingAvailability ? (
                   <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-center">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Checking availability...</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('checkingAvailability')}</p>
                   </div>
                 ) : availability ? (
                   <div className={`p-4 rounded-lg ${
@@ -1295,7 +1301,7 @@ export default function NewBookingPage() {
                         <>
                           <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
                           <span className="font-medium text-green-700 dark:text-green-400">
-                            Available - {availability.tripDays} days
+                            {t('availableDays', { days: availability.tripDays })}
                           </span>
                         </>
                       ) : (
@@ -1309,7 +1315,7 @@ export default function NewBookingPage() {
                     </div>
                     {availability.nextAvailable && (
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                        Next available: {new Date(availability.nextAvailable).toLocaleDateString()}
+                        {t('nextAvailable', { date: new Date(availability.nextAvailable).toLocaleDateString() })}
                       </p>
                     )}
                   </div>
@@ -1319,12 +1325,12 @@ export default function NewBookingPage() {
 
             {/* Pickup Options */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pickup Type</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('pickupTypeLabel')}</label>
               <div className="grid grid-cols-3 gap-2">
                 {([
-                  { key: 'partner', label: 'Partner Location', icon: IoBusinessOutline, fee: DELIVERY_FEES.partner },
-                  { key: 'delivery', label: 'Delivery', icon: IoLocationOutline, fee: DELIVERY_FEES.delivery },
-                  { key: 'airport', label: 'Airport', icon: IoAirplaneOutline, fee: DELIVERY_FEES.airport }
+                  { key: 'partner', label: t('pickupPartnerLocation'), icon: IoBusinessOutline, fee: DELIVERY_FEES.partner },
+                  { key: 'delivery', label: t('pickupDelivery'), icon: IoLocationOutline, fee: DELIVERY_FEES.delivery },
+                  { key: 'airport', label: t('pickupAirport'), icon: IoAirplaneOutline, fee: DELIVERY_FEES.airport }
                 ] as const).map((option) => (
                   <button
                     key={option.key}
@@ -1357,14 +1363,14 @@ export default function NewBookingPage() {
                 <div className="flex items-start gap-2">
                   <IoBusinessOutline className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Pickup at Partner Location</p>
+                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300">{t('pickupAtPartnerLocation')}</p>
                     {partnerAddress && partnerAddress.address ? (
                       <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
                         {partnerAddress.address}, {partnerAddress.city}, {partnerAddress.state} {partnerAddress.zipCode}
                       </p>
                     ) : (
                       <p className="text-xs text-blue-500 dark:text-blue-500 mt-1">
-                        Business address will be used for pickup
+                        {t('businessAddressUsedForPickup')}
                       </p>
                     )}
                   </div>
@@ -1376,19 +1382,19 @@ export default function NewBookingPage() {
             {pickupType === 'delivery' && (
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Delivery Address
+                  {t('deliveryAddressLabel')}
                 </label>
                 <AddressAutocomplete
                   value={pickupLocation}
                   onAddressSelect={(address: AddressResult) => {
                     setPickupLocation(address.fullAddress)
                   }}
-                  placeholder="Search for delivery address..."
+                  placeholder={t('deliveryAddressPlaceholder')}
                   className="w-full"
                 />
                 <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                   <IoLocationOutline className="w-3 h-3" />
-                  Delivery fee: ${DELIVERY_FEES.delivery}
+                  {t('deliveryFeeAmount', { amount: DELIVERY_FEES.delivery })}
                 </p>
               </div>
             )}
@@ -1397,7 +1403,7 @@ export default function NewBookingPage() {
             {pickupType === 'airport' && (
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Select Arizona Airport
+                  {t('selectAirportLabel')}
                 </label>
                 <select
                   value={selectedAirport}
@@ -1410,7 +1416,7 @@ export default function NewBookingPage() {
                   }}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
                 >
-                  <option value="">Select an airport...</option>
+                  <option value="">{t('selectAirportPlaceholder')}</option>
                   {ARIZONA_AIRPORTS.map((airport) => (
                     <option key={airport.code} value={airport.code}>
                       {airport.name} ({airport.code})
@@ -1419,7 +1425,7 @@ export default function NewBookingPage() {
                 </select>
                 <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                   <IoAirplaneOutline className="w-3 h-3" />
-                  Airport pickup fee: ${DELIVERY_FEES.airport}
+                  {t('airportFeeAmount', { amount: DELIVERY_FEES.airport })}
                 </p>
               </div>
             )}
@@ -1429,7 +1435,7 @@ export default function NewBookingPage() {
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                   <IoShieldOutline className="w-4 h-4" />
-                  Insurance Status
+                  {t('insuranceStatusLabel')}
                 </label>
                 {(() => {
                   const hasVehicleInsurance = selectedVehicle.insuranceEligible && selectedVehicle.insuranceInfo?.useForRentals
@@ -1442,9 +1448,9 @@ export default function NewBookingPage() {
                       <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-start gap-2">
                         <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium text-green-700 dark:text-green-300">Vehicle Insurance</p>
+                          <p className="text-sm font-medium text-green-700 dark:text-green-300">{t('vehicleInsuranceLabel')}</p>
                           <p className="text-xs text-green-600 dark:text-green-400">
-                            Covered by {selectedVehicle.insuranceInfo?.provider || 'vehicle policy'}
+                            {t('coveredBy', { provider: selectedVehicle.insuranceInfo?.provider || t('vehiclePolicy') })}
                           </p>
                         </div>
                       </div>
@@ -1454,9 +1460,9 @@ export default function NewBookingPage() {
                       <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg flex items-start gap-2">
                         <IoCheckmarkCircleOutline className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium text-purple-700 dark:text-purple-300">Partner Insurance</p>
+                          <p className="text-sm font-medium text-purple-700 dark:text-purple-300">{t('partnerInsuranceLabel')}</p>
                           <p className="text-xs text-purple-600 dark:text-purple-400">
-                            Covered by your business insurance{partnerInsurance?.insuranceProvider ? ` (${partnerInsurance.insuranceProvider})` : ''}
+                            {t('coveredByBusinessInsurance', { provider: partnerInsurance?.insuranceProvider ? ` (${partnerInsurance.insuranceProvider})` : '' })}
                           </p>
                         </div>
                       </div>
@@ -1467,9 +1473,9 @@ export default function NewBookingPage() {
                         <div className="flex items-start gap-2 mb-3">
                           <IoWarningOutline className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                           <div>
-                            <p className="text-sm font-medium text-amber-700 dark:text-amber-300">Guest Must Provide Insurance</p>
+                            <p className="text-sm font-medium text-amber-700 dark:text-amber-300">{t('guestMustProvideInsurance')}</p>
                             <p className="text-xs text-amber-600 dark:text-amber-400">
-                              This vehicle has no coverage. Customer must bring their own insurance at pickup.
+                              {t('noCoverageDescription')}
                             </p>
                           </div>
                         </div>
@@ -1479,21 +1485,21 @@ export default function NewBookingPage() {
                           {/* Option 1: Add guest insurance info now */}
                           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
                             <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Add guest insurance info (optional):
+                              {t('addGuestInsuranceOptional')}
                             </p>
                             <div className="grid grid-cols-2 gap-2">
                               <input
                                 type="text"
                                 value={guestInsurance.provider}
                                 onChange={(e) => setGuestInsurance(prev => ({ ...prev, provider: e.target.value }))}
-                                placeholder="Insurance Provider"
+                                placeholder={t('insuranceProviderPlaceholder')}
                                 className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               />
                               <input
                                 type="text"
                                 value={guestInsurance.policyNumber}
                                 onChange={(e) => setGuestInsurance(prev => ({ ...prev, policyNumber: e.target.value }))}
-                                placeholder="Policy Number"
+                                placeholder={t('policyNumberPlaceholder')}
                                 className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               />
                             </div>
@@ -1508,7 +1514,7 @@ export default function NewBookingPage() {
                               className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500"
                             />
                             <span className="text-sm text-gray-700 dark:text-gray-300">
-                              Guest/Customer/Driver will bring valid insurance at pickup
+                              {t('guestWillBringInsurance')}
                             </span>
                           </label>
                         </div>
@@ -1520,12 +1526,12 @@ export default function NewBookingPage() {
             )}
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes (optional)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('notesLabel')}</label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
-                placeholder="Special instructions or notes..."
+                placeholder={t('notesPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 resize-none"
               />
             </div>
@@ -1535,14 +1541,14 @@ export default function NewBookingPage() {
                 onClick={() => setCurrentStep('vehicle')}
                 className="px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium"
               >
-                Back
+                {t('back')}
               </button>
               <button
                 onClick={() => setCurrentStep('confirm')}
                 disabled={!availability?.available}
                 className="flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white rounded-lg font-medium flex items-center justify-center gap-2"
               >
-                Review Booking
+                {t('reviewBooking')}
                 <IoChevronForwardOutline className="w-5 h-5" />
               </button>
             </div>
@@ -1552,9 +1558,9 @@ export default function NewBookingPage() {
         {/* Step 5: Confirmation */}
         {currentStep === 'confirm' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Review & Confirm</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('reviewConfirmTitle')}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Review the booking details. Once confirmed, your guest will receive a Stripe invoice for payment.
+              {t('reviewConfirmDescription')}
             </p>
 
             {/* Prominent Selected Vehicle Display */}
@@ -1578,14 +1584,14 @@ export default function NewBookingPage() {
                     </p>
                     <div className="flex items-center flex-wrap gap-2 mt-1">
                       <span className="text-orange-600 dark:text-orange-400 font-semibold">
-                        ${selectedVehicle.dailyRate}/day
+                        ${selectedVehicle.dailyRate}/{t('day')}
                       </span>
                       <span className="text-xs px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium">
-                        {selectedVehicle.carType || 'Standard'}
+                        {selectedVehicle.carType || t('standard')}
                       </span>
                       {selectedVehicle.currentMileage && (
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {selectedVehicle.currentMileage.toLocaleString()} mi
+                          {selectedVehicle.currentMileage.toLocaleString()} {t('milesAbbr')}
                         </span>
                       )}
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
@@ -1593,7 +1599,7 @@ export default function NewBookingPage() {
                           ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
                           : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
                       }`}>
-                        {selectedVehicle.vehicleType === 'RIDESHARE' ? 'Rideshare' : 'Rental'}
+                        {selectedVehicle.vehicleType === 'RIDESHARE' ? t('rideshare') : t('rental')}
                       </span>
                     </div>
                   </div>
@@ -1608,7 +1614,7 @@ export default function NewBookingPage() {
                 <div className="flex items-center gap-3">
                   <IoPersonOutline className="w-5 h-5 text-gray-400" />
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Customer</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('customerLabel')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{selectedCustomer?.name}</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">{selectedCustomer?.email}</p>
                   </div>
@@ -1618,7 +1624,7 @@ export default function NewBookingPage() {
                     onClick={() => setCurrentStep('customer')}
                     className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
                   >
-                    Edit
+                    {t('edit')}
                   </button>
                 )}
               </div>
@@ -1628,7 +1634,7 @@ export default function NewBookingPage() {
                 <div className="flex items-center gap-3">
                   <IoCarOutline className="w-5 h-5 text-gray-400" />
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Vehicle</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('vehicleLabel')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">
                       {selectedVehicle?.year} {selectedVehicle?.make} {selectedVehicle?.model}
                     </p>
@@ -1639,7 +1645,7 @@ export default function NewBookingPage() {
                     onClick={() => setCurrentStep('vehicle')}
                     className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
                   >
-                    Edit
+                    {t('edit')}
                   </button>
                 )}
               </div>
@@ -1649,11 +1655,11 @@ export default function NewBookingPage() {
                 <div className="flex items-center gap-3">
                   <IoCalendarOutline className="w-5 h-5 text-gray-400" />
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Rental Period</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('rentalPeriodLabel')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">
                       {new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()}
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{availability?.tripDays} days</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('daysCount', { count: availability?.tripDays || 0 })}</p>
                   </div>
                 </div>
                 {!reviewSent && (
@@ -1661,7 +1667,7 @@ export default function NewBookingPage() {
                     onClick={() => setCurrentStep('dates')}
                     className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
                   >
-                    Edit
+                    {t('edit')}
                   </button>
                 )}
               </div>
@@ -1678,18 +1684,18 @@ export default function NewBookingPage() {
                   )}
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {pickupType === 'airport' ? 'Airport Pickup' : pickupType === 'delivery' ? 'Delivery' : 'Partner Location'}
+                      {pickupType === 'airport' ? t('airportPickupLabel') : pickupType === 'delivery' ? t('deliveryLabel') : t('partnerLocationLabel')}
                     </p>
                     <p className="font-medium text-gray-900 dark:text-white">
                       {pickupType === 'partner'
                         ? (partnerAddress?.address
                             ? `${partnerAddress.address}, ${partnerAddress.city}, ${partnerAddress.state}`
-                            : 'Business location')
-                        : pickupLocation || 'Not specified'}
+                            : t('businessLocation'))
+                        : pickupLocation || t('notSpecified')}
                     </p>
                     {DELIVERY_FEES[pickupType] > 0 && (
                       <p className="text-xs text-orange-600 dark:text-orange-400 mt-0.5">
-                        +${DELIVERY_FEES[pickupType]} {pickupType === 'airport' ? 'airport fee' : 'delivery fee'}
+                        +${DELIVERY_FEES[pickupType]} {pickupType === 'airport' ? t('airportFee') : t('deliveryFee')}
                       </p>
                     )}
                   </div>
@@ -1699,7 +1705,7 @@ export default function NewBookingPage() {
                     onClick={() => setCurrentStep('dates')}
                     className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
                   >
-                    Edit
+                    {t('edit')}
                   </button>
                 )}
               </div>
@@ -1730,7 +1736,7 @@ export default function NewBookingPage() {
                       })()
                     }`} />
                     <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Insurance Coverage</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{t('insuranceCoverageLabel')}</p>
                       <p className={`font-medium ${
                         (() => {
                           const hasVehicleIns = selectedVehicle.insuranceEligible && selectedVehicle.insuranceInfo?.useForRentals
@@ -1747,9 +1753,9 @@ export default function NewBookingPage() {
                           const hasPartnerIns = partnerInsurance?.hasInsurance &&
                             partnerInsurance?.coversDuringRentals &&
                             partnerInsurance.rentalCoveredVehicleIds?.includes(selectedVehicle.id)
-                          if (hasVehicleIns) return `Vehicle: ${selectedVehicle.insuranceInfo?.provider || 'Own Policy'}`
-                          if (hasPartnerIns) return `Partner: ${partnerInsurance?.insuranceProvider || 'Business Policy'}`
-                          return 'Guest Must Provide'
+                          if (hasVehicleIns) return t('insuranceVehicleSource', { provider: selectedVehicle.insuranceInfo?.provider || t('ownPolicy') })
+                          if (hasPartnerIns) return t('insurancePartnerSource', { provider: partnerInsurance?.insuranceProvider || t('businessPolicy') })
+                          return t('guestMustProvide')
                         })()}
                       </p>
                     </div>
@@ -1762,7 +1768,7 @@ export default function NewBookingPage() {
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                 <IoShieldOutline className="w-5 h-5" />
-                Insurance Coverage
+                {t('insuranceCoverageTitle')}
               </label>
 
               {/* No Coverage Warning Banner */}
@@ -1777,9 +1783,9 @@ export default function NewBookingPage() {
                     <div className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-start gap-2">
                       <IoWarningOutline className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-amber-700 dark:text-amber-300">No Insurance Coverage on This Vehicle</p>
+                        <p className="text-sm font-medium text-amber-700 dark:text-amber-300">{t('noCoverageWarningTitle')}</p>
                         <p className="text-xs text-amber-600 dark:text-amber-400">
-                          Guest must bring their own valid insurance at pickup. Select how to proceed below.
+                          {t('noCoverageWarningDescription')}
                         </p>
                       </div>
                     </div>
@@ -1805,10 +1811,10 @@ export default function NewBookingPage() {
                       }`}>
                         {insuranceOption === 'vehicle' && <div className="w-2 h-2 rounded-full bg-blue-500" />}
                       </div>
-                      <span className="font-medium">Vehicle Insurance</span>
+                      <span className="font-medium">{t('vehicleInsuranceOption')}</span>
                     </div>
                     <p className="text-xs opacity-75 ml-6 mt-1">
-                      Covered by {selectedVehicle.insuranceInfo.provider || 'vehicle policy'}
+                      {t('coveredBy', { provider: selectedVehicle.insuranceInfo.provider || t('vehiclePolicy') })}
                     </p>
                   </button>
                 )}
@@ -1832,10 +1838,10 @@ export default function NewBookingPage() {
                       }`}>
                         {insuranceOption === 'partner' && <div className="w-2 h-2 rounded-full bg-purple-500" />}
                       </div>
-                      <span className="font-medium">Partner Insurance</span>
+                      <span className="font-medium">{t('partnerInsuranceOption')}</span>
                     </div>
                     <p className="text-xs opacity-75 ml-6 mt-1">
-                      Covered by your business insurance{partnerInsurance.insuranceProvider ? ` (${partnerInsurance.insuranceProvider})` : ''}
+                      {t('coveredByBusinessInsurance', { provider: partnerInsurance.insuranceProvider ? ` (${partnerInsurance.insuranceProvider})` : '' })}
                     </p>
                   </button>
                 )}
@@ -1855,10 +1861,10 @@ export default function NewBookingPage() {
                     }`}>
                       {insuranceOption === 'guest' && <div className="w-2 h-2 rounded-full bg-green-500" />}
                     </div>
-                    <span className="font-medium">Guest Provides Insurance</span>
+                    <span className="font-medium">{t('guestProvidesInsuranceOption')}</span>
                   </div>
                   <p className="text-xs opacity-75 ml-6 mt-1">
-                    Customer will use their own insurance policy
+                    {t('guestProvidesInsuranceDescription')}
                   </p>
                 </button>
 
@@ -1877,10 +1883,10 @@ export default function NewBookingPage() {
                     }`}>
                       {insuranceOption === 'none' && <div className="w-2 h-2 rounded-full bg-amber-500" />}
                     </div>
-                    <span className="font-medium">No Insurance</span>
+                    <span className="font-medium">{t('noInsuranceOption')}</span>
                   </div>
                   <p className="text-xs opacity-75 ml-6 mt-1">
-                    Proceed without insurance (not recommended)
+                    {t('noInsuranceDescription')}
                   </p>
                 </button>
               </div>
@@ -1889,7 +1895,7 @@ export default function NewBookingPage() {
                 <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-start gap-2">
                   <IoWarningOutline className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                   <p className="text-xs text-amber-700 dark:text-amber-400">
-                    Proceeding without insurance is not recommended. You may be liable for any damages or accidents.
+                    {t('noInsuranceWarning')}
                   </p>
                 </div>
               )}
@@ -1897,7 +1903,7 @@ export default function NewBookingPage() {
 
             {/* Payment Type */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Payment</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('paymentLabel')}</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => setPaymentType('offline')}
@@ -1907,8 +1913,8 @@ export default function NewBookingPage() {
                       : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300'
                   }`}
                 >
-                  <p className="font-medium">Offline Payment</p>
-                  <p className="text-xs opacity-75">Cash or external payment</p>
+                  <p className="font-medium">{t('offlinePayment')}</p>
+                  <p className="text-xs opacity-75">{t('offlinePaymentDescription')}</p>
                 </button>
                 <button
                   onClick={() => setPaymentType('collect_later')}
@@ -1918,15 +1924,15 @@ export default function NewBookingPage() {
                       : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300'
                   }`}
                 >
-                  <p className="font-medium">Collect Later</p>
-                  <p className="text-xs opacity-75">Charge customer later</p>
+                  <p className="font-medium">{t('collectLater')}</p>
+                  <p className="text-xs opacity-75">{t('collectLaterDescription')}</p>
                 </button>
               </div>
             </div>
 
             {/* Price Breakdown */}
             <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg mb-6 border border-gray-200 dark:border-gray-600">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Price Breakdown</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{t('priceBreakdownTitle')}</h3>
               {(() => {
                 const breakdown = calculatePriceBreakdown()
                 return (
@@ -1934,7 +1940,7 @@ export default function NewBookingPage() {
                     {/* Rental */}
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">
-                        {formatCurrency(breakdown.dailyRate)} × {breakdown.days} {breakdown.days === 1 ? 'day' : 'days'}
+                        {formatCurrency(breakdown.dailyRate)} x {breakdown.days} {breakdown.days === 1 ? t('dayUnit') : t('daysUnit')}
                       </span>
                       <span className="text-gray-900 dark:text-white">{formatCurrency(breakdown.rentalSubtotal)}</span>
                     </div>
@@ -1943,7 +1949,7 @@ export default function NewBookingPage() {
                     {breakdown.deliveryFee > 0 && (
                       <div className="flex justify-between">
                         <span className="text-gray-600 dark:text-gray-400">
-                          {pickupType === 'airport' ? 'Airport pickup fee' : 'Delivery fee'}
+                          {pickupType === 'airport' ? t('airportPickupFee') : t('deliveryFeeLabel')}
                         </span>
                         <span className="text-gray-900 dark:text-white">{formatCurrency(breakdown.deliveryFee)}</span>
                       </div>
@@ -1951,7 +1957,7 @@ export default function NewBookingPage() {
 
                     {/* Service Fee */}
                     <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Service fee (10%)</span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('serviceFee')}</span>
                       <span className="text-gray-900 dark:text-white">{formatCurrency(breakdown.serviceFee)}</span>
                     </div>
 
@@ -1960,36 +1966,36 @@ export default function NewBookingPage() {
 
                     {/* Taxes Header */}
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-500 dark:text-gray-500 text-xs font-medium uppercase">Taxes & Fees</span>
+                      <span className="text-gray-500 dark:text-gray-500 text-xs font-medium uppercase">{t('taxesAndFees')}</span>
                     </div>
 
                     {/* State Tax */}
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-500 dark:text-gray-400">Arizona State Tax (5.6%)</span>
+                      <span className="text-gray-500 dark:text-gray-400">{t('arizonaStateTax')}</span>
                       <span className="text-gray-700 dark:text-gray-300">{formatCurrency(breakdown.stateTax)}</span>
                     </div>
 
                     {/* County Tax */}
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-500 dark:text-gray-400">Maricopa County Tax (0.7%)</span>
+                      <span className="text-gray-500 dark:text-gray-400">{t('maricopaCountyTax')}</span>
                       <span className="text-gray-700 dark:text-gray-300">{formatCurrency(breakdown.countyTax)}</span>
                     </div>
 
                     {/* City Tax */}
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-500 dark:text-gray-400">Phoenix City Tax (2.3%)</span>
+                      <span className="text-gray-500 dark:text-gray-400">{t('phoenixCityTax')}</span>
                       <span className="text-gray-700 dark:text-gray-300">{formatCurrency(breakdown.cityTax)}</span>
                     </div>
 
                     {/* Rental Tax */}
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-500 dark:text-gray-400">Rental Surcharge (5%)</span>
+                      <span className="text-gray-500 dark:text-gray-400">{t('rentalSurcharge')}</span>
                       <span className="text-gray-700 dark:text-gray-300">{formatCurrency(breakdown.rentalTax)}</span>
                     </div>
 
                     {/* Total Taxes */}
                     <div className="flex justify-between pt-1">
-                      <span className="text-gray-600 dark:text-gray-400">Total Taxes</span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('totalTaxes')}</span>
                       <span className="text-gray-900 dark:text-white">{formatCurrency(breakdown.totalTaxes)}</span>
                     </div>
 
@@ -1998,7 +2004,7 @@ export default function NewBookingPage() {
 
                     {/* Grand Total */}
                     <div className="flex justify-between items-center pt-1">
-                      <span className="font-bold text-gray-900 dark:text-white text-base">Total</span>
+                      <span className="font-bold text-gray-900 dark:text-white text-base">{t('total')}</span>
                       <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                         {formatCurrency(breakdown.total)}
                       </span>
@@ -2012,7 +2018,7 @@ export default function NewBookingPage() {
             <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg mb-6 border border-green-200 dark:border-green-800">
               <h3 className="font-semibold text-green-800 dark:text-green-300 mb-3 flex items-center gap-2">
                 <IoWalletOutline className="w-5 h-5" />
-                Your Estimated Payout
+                {t('estimatedPayoutTitle')}
               </h3>
               {(() => {
                 const breakdown = calculatePriceBreakdown()
@@ -2029,16 +2035,16 @@ export default function NewBookingPage() {
                         tierName === 'Gold' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300' :
                         'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
                       }`}>
-                        {tierName} Tier
+                        {t('tierLabel', { tier: tierName })}
                       </span>
                       <span className="text-gray-500 dark:text-gray-400">
-                        {partnerTier?.fleetSize || 0} vehicles • {commissionPercent}% platform fee
+                        {t('tierDetails', { vehicles: partnerTier?.fleetSize || 0, percent: commissionPercent })}
                       </span>
                     </div>
 
                     {/* Rental earnings */}
                     <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Rental earnings</span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('rentalEarnings')}</span>
                       <span className="text-gray-900 dark:text-white">{formatCurrency(breakdown.rentalSubtotal)}</span>
                     </div>
 
@@ -2046,7 +2052,7 @@ export default function NewBookingPage() {
                     {breakdown.deliveryFee > 0 && (
                       <div className="flex justify-between">
                         <span className="text-gray-600 dark:text-gray-400">
-                          {pickupType === 'airport' ? 'Airport fee (you keep)' : 'Delivery fee (you keep)'}
+                          {pickupType === 'airport' ? t('airportFeeYouKeep') : t('deliveryFeeYouKeep')}
                         </span>
                         <span className="text-green-600 dark:text-green-400">+{formatCurrency(breakdown.deliveryFee)}</span>
                       </div>
@@ -2054,7 +2060,7 @@ export default function NewBookingPage() {
 
                     {/* Platform commission */}
                     <div className="flex justify-between text-red-600 dark:text-red-400">
-                      <span>Platform fee ({commissionPercent}%)</span>
+                      <span>{t('platformFee', { percent: commissionPercent })}</span>
                       <span>-{formatCurrency(breakdown.platformCommission)}</span>
                     </div>
 
@@ -2063,7 +2069,7 @@ export default function NewBookingPage() {
 
                     {/* Your payout */}
                     <div className="flex justify-between items-center">
-                      <span className="font-bold text-green-800 dark:text-green-300">Your Payout</span>
+                      <span className="font-bold text-green-800 dark:text-green-300">{t('yourPayout')}</span>
                       <span className="text-xl font-bold text-green-600 dark:text-green-400">
                         {formatCurrency(breakdown.partnerPayout)}
                       </span>
@@ -2072,11 +2078,11 @@ export default function NewBookingPage() {
                     {/* Platform earnings note */}
                     <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-700 text-xs text-gray-500 dark:text-gray-400">
                       <div className="flex justify-between">
-                        <span>Platform keeps (service fee + commission)</span>
+                        <span>{t('platformKeeps')}</span>
                         <span>{formatCurrency(breakdown.serviceFee + breakdown.platformCommission)}</span>
                       </div>
                       <p className="mt-1 text-gray-400 dark:text-gray-500">
-                        * This amount will be deducted from your next payout regardless of payment method
+                        {t('payoutDeductionNote')}
                       </p>
                     </div>
                   </div>
@@ -2090,17 +2096,17 @@ export default function NewBookingPage() {
                 <div className="flex items-start gap-3">
                   <IoCheckmarkCircleOutline className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <h4 className="font-medium text-green-800 dark:text-green-300">Review Sent Successfully</h4>
+                    <h4 className="font-medium text-green-800 dark:text-green-300">{t('reviewSentTitle')}</h4>
                     <p className="text-sm text-green-700 dark:text-green-400 mt-1">
-                      Booking details have been sent to {selectedCustomer?.email}. Pre-booking reference: <span className="font-mono font-semibold">{preBookingId?.slice(0, 8).toUpperCase()}</span>
+                      {t('reviewSentDescription', { email: selectedCustomer?.email || '' })} <span className="font-mono font-semibold">{preBookingId?.slice(0, 8).toUpperCase()}</span>
                     </p>
                     <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-700">
-                      <p className="text-sm font-medium text-green-800 dark:text-green-300 mb-2">What happens next?</p>
+                      <p className="text-sm font-medium text-green-800 dark:text-green-300 mb-2">{t('whatHappensNext')}</p>
                       <ul className="text-xs text-green-700 dark:text-green-400 space-y-1">
-                        <li>• Customer reviews the booking details via email</li>
-                        <li>• They contact you to confirm or request changes</li>
-                        <li>• You can confirm the booking anytime using the button below</li>
-                        <li>• The pre-booking is saved and visible in your Bookings page</li>
+                        <li>• {t('nextStep1')}</li>
+                        <li>• {t('nextStep2')}</li>
+                        <li>• {t('nextStep3')}</li>
+                        <li>• {t('nextStep4')}</li>
                       </ul>
                     </div>
                   </div>
@@ -2119,12 +2125,12 @@ export default function NewBookingPage() {
                   {sendingReview ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-                      Sending Review...
+                      {t('sendingReview')}
                     </>
                   ) : (
                     <>
                       <IoMailOutline className="w-5 h-5" />
-                      Send to Customer for Review
+                      {t('sendToCustomerForReview')}
                     </>
                   )}
                 </button>
@@ -2134,7 +2140,7 @@ export default function NewBookingPage() {
               {!reviewSent && (
                 <div className="flex items-center gap-3">
                   <div className="flex-1 border-t border-gray-200 dark:border-gray-700" />
-                  <span className="text-sm text-gray-500 dark:text-gray-400">or</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{t('or')}</span>
                   <div className="flex-1 border-t border-gray-200 dark:border-gray-700" />
                 </div>
               )}
@@ -2151,12 +2157,12 @@ export default function NewBookingPage() {
                     {loading ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-                        Confirming...
+                        {t('confirming')}
                       </>
                     ) : (
                       <>
                         <IoCheckmarkOutline className="w-5 h-5" />
-                        Confirm Booking Now
+                        {t('confirmBookingNow')}
                       </>
                     )}
                   </button>
@@ -2167,7 +2173,7 @@ export default function NewBookingPage() {
                       href="/partner/bookings"
                       className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium text-center"
                     >
-                      View All Bookings
+                      {t('viewAllBookings')}
                     </Link>
                     <button
                       onClick={() => {
@@ -2189,12 +2195,12 @@ export default function NewBookingPage() {
                       className="flex-1 px-4 py-3 border border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 font-medium flex items-center justify-center gap-2"
                     >
                       <IoAddOutline className="w-5 h-5" />
-                      New Booking
+                      {t('newBooking')}
                     </button>
                   </div>
 
                   <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                    The pre-booking is already saved. Confirm when the customer is ready.
+                    {t('preBookingSavedNote')}
                   </p>
                 </div>
               ) : (
@@ -2205,7 +2211,7 @@ export default function NewBookingPage() {
                       onClick={() => setCurrentStep('dates')}
                       className="px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium"
                     >
-                      Back
+                      {t('back')}
                     </button>
                     <button
                       onClick={createBooking}
@@ -2215,12 +2221,12 @@ export default function NewBookingPage() {
                       {loading ? (
                         <>
                           <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-                          Creating...
+                          {t('creatingBooking')}
                         </>
                       ) : (
                         <>
                           <IoCheckmarkOutline className="w-5 h-5" />
-                          Create Booking Directly
+                          {t('createBookingDirectly')}
                         </>
                       )}
                     </button>
@@ -2228,7 +2234,7 @@ export default function NewBookingPage() {
 
                   {/* Help text */}
                   <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                    Send for review lets the customer verify details before you finalize the booking
+                    {t('sendForReviewHelpText')}
                   </p>
                 </>
               )}
@@ -2243,11 +2249,11 @@ export default function NewBookingPage() {
           <div className="flex items-start gap-2">
             <IoInformationCircleOutline className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
             <div className="text-xs text-blue-800 dark:text-blue-200">
-              <p className="font-medium mb-0.5">How Self-Booking Works</p>
+              <p className="font-medium mb-0.5">{t('howSelfBookingWorksTitle')}</p>
               <ul className="space-y-0.5 text-blue-700 dark:text-blue-300">
-                <li>• <strong>Payment:</strong> We use Stripe to send invoices directly to your guest. You control your own payments.</li>
-                <li>• <strong>Verification:</strong> Stripe Identity verifies your guest&apos;s name matches their ID for security.</li>
-                <li>• <strong>Vehicles:</strong> Only approved vehicles from your fleet can be booked.</li>
+                <li>• <strong>{t('infoPaymentLabel')}</strong> {t('infoPaymentDescription')}</li>
+                <li>• <strong>{t('infoVerificationLabel')}</strong> {t('infoVerificationDescription')}</li>
+                <li>• <strong>{t('infoVehiclesLabel')}</strong> {t('infoVehiclesDescription')}</li>
               </ul>
             </div>
           </div>

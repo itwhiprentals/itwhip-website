@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { IoShieldCheckmark, IoWarning, IoTrendingUp, IoCheckmarkCircle, IoAlertCircle } from 'react-icons/io5'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 
 interface LiveMetrics {
   attacksBlocked: number

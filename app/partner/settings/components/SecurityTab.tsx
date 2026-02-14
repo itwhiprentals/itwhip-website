@@ -2,6 +2,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   IoShieldCheckmarkOutline,
   IoEyeOutline,
@@ -23,15 +24,8 @@ interface ValidationErrors {
   confirmPassword?: string
 }
 
-// Password strength requirements
-const PASSWORD_REQUIREMENTS = [
-  { id: 'length', label: 'At least 8 characters', test: (p: string) => p.length >= 8 },
-  { id: 'uppercase', label: 'One uppercase letter', test: (p: string) => /[A-Z]/.test(p) },
-  { id: 'lowercase', label: 'One lowercase letter', test: (p: string) => /[a-z]/.test(p) },
-  { id: 'number', label: 'One number', test: (p: string) => /\d/.test(p) }
-]
-
 export function SecurityTab({ onPasswordChange, isSaving, saveMessage, setSaveMessage }: SecurityTabProps) {
+  const t = useTranslations('PartnerSettings')
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -43,23 +37,31 @@ export function SecurityTab({ onPasswordChange, isSaving, saveMessage, setSaveMe
   const [errors, setErrors] = useState<ValidationErrors>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
 
+  // Password strength requirements (inside component to access t())
+  const PASSWORD_REQUIREMENTS = [
+    { id: 'length', label: t('reqLength'), test: (p: string) => p.length >= 8 },
+    { id: 'uppercase', label: t('reqUppercase'), test: (p: string) => /[A-Z]/.test(p) },
+    { id: 'lowercase', label: t('reqLowercase'), test: (p: string) => /[a-z]/.test(p) },
+    { id: 'number', label: t('reqNumber'), test: (p: string) => /\d/.test(p) }
+  ]
+
   const validateField = (field: keyof ValidationErrors, value: string) => {
     let error: string | undefined
 
     switch (field) {
       case 'currentPassword':
-        if (!value) error = 'Current password is required'
+        if (!value) error = t('valCurrentRequired')
         break
       case 'newPassword':
-        if (!value) error = 'New password is required'
-        else if (value.length < 8) error = 'Password must be at least 8 characters'
-        else if (!/[A-Z]/.test(value)) error = 'Password must contain an uppercase letter'
-        else if (!/[a-z]/.test(value)) error = 'Password must contain a lowercase letter'
-        else if (!/\d/.test(value)) error = 'Password must contain a number'
+        if (!value) error = t('valNewRequired')
+        else if (value.length < 8) error = t('valPasswordLength')
+        else if (!/[A-Z]/.test(value)) error = t('valPasswordUppercase')
+        else if (!/[a-z]/.test(value)) error = t('valPasswordLowercase')
+        else if (!/\d/.test(value)) error = t('valPasswordNumber')
         break
       case 'confirmPassword':
-        if (!value) error = 'Please confirm your password'
-        else if (value !== passwordData.newPassword) error = 'Passwords do not match'
+        if (!value) error = t('valConfirmRequired')
+        else if (value !== passwordData.newPassword) error = t('valPasswordsMismatch')
         break
     }
 
@@ -88,22 +90,22 @@ export function SecurityTab({ onPasswordChange, isSaving, saveMessage, setSaveMe
     const newErrors: ValidationErrors = {}
 
     if (!passwordData.currentPassword) {
-      newErrors.currentPassword = 'Current password is required'
+      newErrors.currentPassword = t('valCurrentRequired')
     }
 
     if (!passwordData.newPassword) {
-      newErrors.newPassword = 'New password is required'
+      newErrors.newPassword = t('valNewRequired')
     } else {
       const failedReqs = PASSWORD_REQUIREMENTS.filter(r => !r.test(passwordData.newPassword))
       if (failedReqs.length > 0) {
-        newErrors.newPassword = `Password must have: ${failedReqs.map(r => r.label.toLowerCase()).join(', ')}`
+        newErrors.newPassword = t('valPasswordMustHave', { requirements: failedReqs.map(r => r.label.toLowerCase()).join(', ') })
       }
     }
 
     if (!passwordData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password'
+      newErrors.confirmPassword = t('valConfirmRequired')
     } else if (passwordData.confirmPassword !== passwordData.newPassword) {
-      newErrors.confirmPassword = 'Passwords do not match'
+      newErrors.confirmPassword = t('valPasswordsMismatch')
     }
 
     setErrors(newErrors)
@@ -142,12 +144,12 @@ export function SecurityTab({ onPasswordChange, isSaving, saveMessage, setSaveMe
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Change Password</h2>
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('changePassword')}</h2>
 
       <div className="max-w-md space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Current Password <span className="text-red-500">*</span>
+            {t('currentPassword')} <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <input
@@ -156,7 +158,7 @@ export function SecurityTab({ onPasswordChange, isSaving, saveMessage, setSaveMe
               onChange={(e) => handleChange('currentPassword', e.target.value)}
               onBlur={() => handleBlur('currentPassword')}
               className={getInputClassName('currentPassword')}
-              placeholder="Enter current password"
+              placeholder={t('enterCurrentPassword')}
             />
             <button
               type="button"
@@ -171,7 +173,7 @@ export function SecurityTab({ onPasswordChange, isSaving, saveMessage, setSaveMe
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            New Password <span className="text-red-500">*</span>
+            {t('newPassword')} <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <input
@@ -180,7 +182,7 @@ export function SecurityTab({ onPasswordChange, isSaving, saveMessage, setSaveMe
               onChange={(e) => handleChange('newPassword', e.target.value)}
               onBlur={() => handleBlur('newPassword')}
               className={getInputClassName('newPassword')}
-              placeholder="Enter new password"
+              placeholder={t('enterNewPassword')}
             />
             <button
               type="button"
@@ -195,7 +197,7 @@ export function SecurityTab({ onPasswordChange, isSaving, saveMessage, setSaveMe
           {/* Password strength indicator */}
           {passwordData.newPassword && (
             <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Password requirements:</p>
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{t('passwordRequirements')}</p>
               <div className="space-y-1">
                 {PASSWORD_REQUIREMENTS.map(req => {
                   const passed = req.test(passwordData.newPassword)
@@ -219,7 +221,7 @@ export function SecurityTab({ onPasswordChange, isSaving, saveMessage, setSaveMe
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Confirm New Password <span className="text-red-500">*</span>
+            {t('confirmNewPassword')} <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <input
@@ -228,7 +230,7 @@ export function SecurityTab({ onPasswordChange, isSaving, saveMessage, setSaveMe
               onChange={(e) => handleChange('confirmPassword', e.target.value)}
               onBlur={() => handleBlur('confirmPassword')}
               className={getInputClassName('confirmPassword')}
-              placeholder="Confirm new password"
+              placeholder={t('confirmNewPasswordPlaceholder')}
             />
             <button
               type="button"
@@ -249,7 +251,7 @@ export function SecurityTab({ onPasswordChange, isSaving, saveMessage, setSaveMe
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg transition-colors"
         >
           <IoShieldCheckmarkOutline className="w-5 h-5" />
-          {isSaving ? 'Changing...' : 'Change Password'}
+          {isSaving ? t('changingPassword') : t('changePasswordButton')}
         </button>
       </div>
     </div>

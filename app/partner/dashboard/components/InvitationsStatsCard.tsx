@@ -13,6 +13,7 @@ import {
   IoSwapHorizontalOutline,
   IoRefreshOutline
 } from 'react-icons/io5'
+import { useTranslations } from 'next-intl'
 
 interface InvitationStats {
   sent: {
@@ -41,6 +42,7 @@ export default function InvitationsStatsCard({ onViewInvitations }: InvitationsS
   const [stats, setStats] = useState<InvitationStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const t = useTranslations('PartnerDashboard')
 
   const fetchStats = async () => {
     try {
@@ -60,7 +62,7 @@ export default function InvitationsStatsCard({ onViewInvitations }: InvitationsS
       }
     } catch (err) {
       console.error('Error fetching invitation stats:', err)
-      setError('Failed to load stats')
+      setError(t('isFailedToLoad'))
     } finally {
       setLoading(false)
     }
@@ -94,7 +96,7 @@ export default function InvitationsStatsCard({ onViewInvitations }: InvitationsS
             className="text-purple-600 hover:text-purple-700 text-sm flex items-center gap-1 mx-auto"
           >
             <IoRefreshOutline className="w-4 h-4" />
-            Retry
+            {t('isRetry')}
           </button>
         </div>
       </div>
@@ -109,12 +111,12 @@ export default function InvitationsStatsCard({ onViewInvitations }: InvitationsS
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
           <IoMailOutline className="w-5 h-5 text-purple-600" />
-          Invitations
+          {t('isInvitations')}
         </h2>
         <button
           onClick={fetchStats}
           className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-          title="Refresh"
+          title={t('isRefresh')}
         >
           <IoRefreshOutline className="w-5 h-5" />
         </button>
@@ -129,26 +131,26 @@ export default function InvitationsStatsCard({ onViewInvitations }: InvitationsS
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <IoSendOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-              <span className="font-medium text-purple-900 dark:text-purple-100">Sent</span>
+              <span className="font-medium text-purple-900 dark:text-purple-100">{t('isSent')}</span>
             </div>
             <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">{sentStats.total}</span>
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
               <IoTimeOutline className="w-3 h-3" />
-              <span>{sentStats.pending} pending</span>
+              <span>{t('isPending', { count: sentStats.pending })}</span>
             </div>
             <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
               <IoCheckmarkCircleOutline className="w-3 h-3" />
-              <span>{sentStats.accepted} accepted</span>
+              <span>{t('isAccepted', { count: sentStats.accepted })}</span>
             </div>
             <div className="flex items-center gap-1 text-red-600 dark:text-red-400">
               <IoCloseCircleOutline className="w-3 h-3" />
-              <span>{sentStats.declined} declined</span>
+              <span>{t('isDeclined', { count: sentStats.declined })}</span>
             </div>
             <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
               <IoSwapHorizontalOutline className="w-3 h-3" />
-              <span>{sentStats.counterOffered} negotiating</span>
+              <span>{t('isNegotiating', { count: sentStats.counterOffered })}</span>
             </div>
           </div>
         </div>
@@ -161,26 +163,26 @@ export default function InvitationsStatsCard({ onViewInvitations }: InvitationsS
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <IoMailOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <span className="font-medium text-blue-900 dark:text-blue-100">Received</span>
+              <span className="font-medium text-blue-900 dark:text-blue-100">{t('isReceived')}</span>
             </div>
             <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{receivedStats.total}</span>
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
               <IoTimeOutline className="w-3 h-3" />
-              <span>{receivedStats.pending} pending</span>
+              <span>{t('isPending', { count: receivedStats.pending })}</span>
             </div>
             <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
               <IoCheckmarkCircleOutline className="w-3 h-3" />
-              <span>{receivedStats.accepted} accepted</span>
+              <span>{t('isAccepted', { count: receivedStats.accepted })}</span>
             </div>
             <div className="flex items-center gap-1 text-red-600 dark:text-red-400">
               <IoCloseCircleOutline className="w-3 h-3" />
-              <span>{receivedStats.declined} declined</span>
+              <span>{t('isDeclined', { count: receivedStats.declined })}</span>
             </div>
             <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
               <IoSwapHorizontalOutline className="w-3 h-3" />
-              <span>{receivedStats.counterOffered} negotiating</span>
+              <span>{t('isNegotiating', { count: receivedStats.counterOffered })}</span>
             </div>
           </div>
         </div>
@@ -192,13 +194,13 @@ export default function InvitationsStatsCard({ onViewInvitations }: InvitationsS
           <p className="text-sm text-yellow-800 dark:text-yellow-200">
             {receivedStats.pending > 0 && (
               <span className="font-medium">
-                {receivedStats.pending} invitation{receivedStats.pending > 1 ? 's' : ''} awaiting your response
+                {t('isAwaitingResponse', { count: receivedStats.pending })}
               </span>
             )}
             {receivedStats.pending > 0 && sentStats.pending > 0 && ' • '}
             {sentStats.pending > 0 && (
               <span>
-                {sentStats.pending} sent invitation{sentStats.pending > 1 ? 's' : ''} pending
+                {t('isSentPending', { count: sentStats.pending })}
               </span>
             )}
           </p>

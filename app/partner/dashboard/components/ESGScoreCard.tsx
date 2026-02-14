@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import {
   IoLeafOutline,
   IoShieldCheckmarkOutline,
@@ -59,6 +60,7 @@ export default function ESGScoreCard() {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<ESGData | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const t = useTranslations('PartnerDashboard')
 
   useEffect(() => {
     fetchESGData()
@@ -110,7 +112,7 @@ export default function ESGScoreCard() {
           <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
             <IoLeafOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">ESG Score</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('esgTitle')}</h3>
         </div>
         <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
@@ -126,12 +128,12 @@ export default function ESGScoreCard() {
           <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
             <IoLeafOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">ESG Score</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('esgTitle')}</h3>
         </div>
         <div className="text-center py-6 text-gray-500 dark:text-gray-400">
           <IoLeafOutline className="w-10 h-10 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
-          <p>ESG data not available yet.</p>
-          <p className="text-sm mt-1">Complete trips to build your ESG profile.</p>
+          <p>{t('esgNoData')}</p>
+          <p className="text-sm mt-1">{t('esgCompleteTrips')}</p>
         </div>
       </div>
     )
@@ -157,8 +159,8 @@ export default function ESGScoreCard() {
               <IoLeafOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">ESG Score</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Environmental, Social, Governance</p>
+              <h3 className="font-semibold text-gray-900 dark:text-white">{t('esgTitle')}</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('esgSubtitle')}</p>
             </div>
           </div>
           <button
@@ -188,9 +190,9 @@ export default function ESGScoreCard() {
                 {profile.grade}
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {profile.compositeScore >= 80 ? 'Excellent' :
-                 profile.compositeScore >= 60 ? 'Good' :
-                 profile.compositeScore >= 40 ? 'Fair' : 'Needs Improvement'}
+                {profile.compositeScore >= 80 ? t('esgExcellent') :
+                 profile.compositeScore >= 60 ? t('esgGood') :
+                 profile.compositeScore >= 40 ? t('esgFair') : t('esgNeedsImprovement')}
               </p>
             </div>
           </div>
@@ -198,7 +200,7 @@ export default function ESGScoreCard() {
             href="/partner/analytics?tab=esg"
             className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
           >
-            Details
+            {t('esgDetails')}
             <IoChevronForwardOutline className="w-3 h-3" />
           </Link>
         </div>
@@ -206,11 +208,11 @@ export default function ESGScoreCard() {
         {/* Score Categories */}
         <div className="grid grid-cols-5 gap-1.5 mb-4">
           {[
-            { key: 'safety', label: 'Safety', data: profile.scores.safety },
-            { key: 'emissions', label: 'Emissions', data: profile.scores.emissions },
-            { key: 'maintenance', label: 'Maint.', data: profile.scores.maintenance },
-            { key: 'compliance', label: 'Comply', data: profile.scores.compliance },
-            { key: 'drivingImpact', label: 'Impact', data: profile.scores.drivingImpact }
+            { key: 'safety', label: t('esgSafety'), data: profile.scores.safety },
+            { key: 'emissions', label: t('esgEmissions'), data: profile.scores.emissions },
+            { key: 'maintenance', label: t('esgMaintenance'), data: profile.scores.maintenance },
+            { key: 'compliance', label: t('esgCompliance'), data: profile.scores.compliance },
+            { key: 'drivingImpact', label: t('esgImpact'), data: profile.scores.drivingImpact }
           ].map(({ key, label, data: scoreData }) => {
             const Icon = categoryIcons[key as keyof typeof categoryIcons]
             return (
@@ -230,16 +232,16 @@ export default function ESGScoreCard() {
           <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-2.5">
             <div className="flex items-center gap-1.5 mb-0.5">
               <IoLeafOutline className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-              <span className="text-[10px] text-green-700 dark:text-green-400">CO2 Saved</span>
+              <span className="text-[10px] text-green-700 dark:text-green-400">{t('esgCO2Saved')}</span>
             </div>
             <div className="text-sm font-bold text-green-700 dark:text-green-400">
-              {(profile.environmental.co2SavedKg / 1000).toFixed(1)} tons
+              {t('esgTons', { value: (profile.environmental.co2SavedKg / 1000).toFixed(1) })}
             </div>
           </div>
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2.5">
             <div className="flex items-center gap-1.5 mb-0.5">
               <IoFlashOutline className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              <span className="text-[10px] text-blue-700 dark:text-blue-400">EV Trips</span>
+              <span className="text-[10px] text-blue-700 dark:text-blue-400">{t('esgEvTrips')}</span>
             </div>
             <div className="text-sm font-bold text-blue-700 dark:text-blue-400">
               {profile.environmental.evTripPercentage.toFixed(0)}%
@@ -252,7 +254,7 @@ export default function ESGScoreCard() {
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-3 mb-4 border border-green-200 dark:border-green-800">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-green-800 dark:text-green-400">Carbon Offset</p>
+                <p className="text-xs font-medium text-green-800 dark:text-green-400">{t('esgCarbonOffset')}</p>
                 <p className="text-[10px] text-green-600 dark:text-green-500">
                   {profile.carbonOffset.totalCO2Tons.toFixed(1)} tons ~${profile.carbonOffset.estimatedCost.toFixed(0)}
                 </p>
@@ -261,7 +263,7 @@ export default function ESGScoreCard() {
                 disabled
                 className="px-2 py-1 bg-green-600 text-white text-xs rounded-lg opacity-60 cursor-not-allowed"
               >
-                Soon
+                {t('esgSoon')}
               </button>
             </div>
           </div>
@@ -271,7 +273,7 @@ export default function ESGScoreCard() {
         {badges.length > 0 && (
           <div className="border-t border-gray-100 dark:border-gray-700 pt-3 mb-3">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300">Badges</h4>
+              <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('esgBadges')}</h4>
               <IoRibbonOutline className="w-3.5 h-3.5 text-yellow-500" />
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -302,18 +304,18 @@ export default function ESGScoreCard() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
               <IoCarSportOutline className="w-3.5 h-3.5" />
-              <span>{profile.fleet.totalVehicles} vehicles</span>
+              <span>{t('esgVehicles', { count: profile.fleet.totalVehicles })}</span>
             </div>
             <div className="flex items-center gap-1">
               <IoFlashOutline className="w-3.5 h-3.5 text-green-500" />
-              <span>{profile.fleet.evVehicleCount} EV</span>
+              <span>{t('esgEV', { count: profile.fleet.evVehicleCount })}</span>
             </div>
           </div>
           <div>
             <span className="text-green-600 dark:text-green-400 font-medium">
               {profile.operations.incidentFreeRate.toFixed(0)}%
             </span>
-            <span className="text-gray-500 dark:text-gray-400"> safe</span>
+            <span className="text-gray-500 dark:text-gray-400"> {t('esgSafe')}</span>
           </div>
         </div>
       </div>

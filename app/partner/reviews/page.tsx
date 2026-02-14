@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   IoStarOutline,
   IoStar,
@@ -74,6 +75,9 @@ interface Vehicle {
 }
 
 export default function ReviewsPage() {
+  const t = useTranslations('PartnerReviews')
+
+  const locale = useLocale()
   const [reviews, setReviews] = useState<Review[]>([])
   const [stats, setStats] = useState<Stats>({
     total: 0,
@@ -156,7 +160,7 @@ export default function ReviewsPage() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -184,9 +188,9 @@ export default function ReviewsPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Customer Reviews</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('title')}</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          View and respond to reviews from your customers
+          {t('subtitle')}
         </p>
       </div>
 
@@ -199,7 +203,7 @@ export default function ReviewsPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.avgRating}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Avg Rating</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('avgRating')}</p>
             </div>
           </div>
         </div>
@@ -210,7 +214,7 @@ export default function ReviewsPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Total Reviews</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('totalReviews')}</p>
             </div>
           </div>
         </div>
@@ -221,7 +225,7 @@ export default function ReviewsPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.pendingResponses}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Awaiting Response</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('awaitingResponse')}</p>
             </div>
           </div>
         </div>
@@ -232,7 +236,7 @@ export default function ReviewsPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.responseRate}%</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Response Rate</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('responseRate')}</p>
             </div>
           </div>
         </div>
@@ -242,7 +246,7 @@ export default function ReviewsPage() {
         {/* Sidebar - Rating Distribution */}
         <div className="lg:col-span-1">
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sticky top-20">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Rating Distribution</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('ratingDistribution')}</h3>
             <div className="space-y-2">
               {stats.distribution.map((item) => (
                 <button
@@ -272,25 +276,25 @@ export default function ReviewsPage() {
             {/* Filters */}
             <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Response Status</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{t('responseStatus')}</label>
                 <select
                   value={filter}
                   onChange={(e) => setFilter(e.target.value as any)}
                   className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
-                  <option value="all">All Reviews</option>
-                  <option value="pending">Awaiting Response</option>
-                  <option value="responded">Responded</option>
+                  <option value="all">{t('allReviews')}</option>
+                  <option value="pending">{t('awaitingResponseFilter')}</option>
+                  <option value="responded">{t('responded')}</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Vehicle</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{t('vehicleLabel')}</label>
                 <select
                   value={vehicleFilter}
                   onChange={(e) => setVehicleFilter(e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
-                  <option value="">All Vehicles</option>
+                  <option value="">{t('allVehicles')}</option>
                   {vehicles.map((v) => (
                     <option key={v.id} value={v.id}>{v.name}</option>
                   ))}
@@ -306,18 +310,18 @@ export default function ReviewsPage() {
             {loading ? (
               <div className="p-8 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4" />
-                <p className="text-gray-500 dark:text-gray-400">Loading reviews...</p>
+                <p className="text-gray-500 dark:text-gray-400">{t('loadingReviews')}</p>
               </div>
             ) : reviews.length === 0 ? (
               <div className="p-8 text-center">
                 <IoHappyOutline className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  No reviews yet
+                  {t('noReviewsYet')}
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400">
                   {filter !== 'all'
-                    ? 'No reviews match the selected filters'
-                    : 'Reviews will appear here as customers complete their rentals'}
+                    ? t('noReviewsFiltered')
+                    : t('noReviewsDefault')}
                 </p>
               </div>
             ) : (
@@ -360,7 +364,7 @@ export default function ReviewsPage() {
                         <div className="flex items-center gap-3 mb-2">
                           {renderStars(review.rating)}
                           <span className="text-sm text-gray-500 dark:text-gray-400">
-                            for {review.vehicleName}
+                            {t('forVehicle', { vehicleName: review.vehicleName })}
                           </span>
                         </div>
 
@@ -382,7 +386,7 @@ export default function ReviewsPage() {
                             onClick={() => setExpandedReview(expandedReview === review.id ? null : review.id)}
                             className="flex items-center gap-1 text-xs text-orange-600 dark:text-orange-400 hover:underline"
                           >
-                            View detailed ratings
+                            {t('viewDetailedRatings')}
                             {expandedReview === review.id ? (
                               <IoChevronUpOutline className="w-3 h-3" />
                             ) : (
@@ -394,11 +398,11 @@ export default function ReviewsPage() {
                         {expandedReview === review.id && (
                           <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                             {[
-                              { label: 'Cleanliness', value: review.cleanliness },
-                              { label: 'Accuracy', value: review.accuracy },
-                              { label: 'Communication', value: review.communication },
-                              { label: 'Convenience', value: review.convenience },
-                              { label: 'Value', value: review.value }
+                              { label: t('cleanliness'), value: review.cleanliness },
+                              { label: t('accuracy'), value: review.accuracy },
+                              { label: t('communication'), value: review.communication },
+                              { label: t('convenience'), value: review.convenience },
+                              { label: t('value'), value: review.value }
                             ].map((item) => item.value && (
                               <div key={item.label} className="text-center">
                                 <p className="text-xs text-gray-500 dark:text-gray-400">{item.label}</p>
@@ -417,7 +421,7 @@ export default function ReviewsPage() {
                             <div className="flex items-center gap-1.5 mb-1">
                               <IoChatbubbleOutline className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                               <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                                Your Response
+                                {t('yourResponse')}
                               </span>
                               {review.hostRespondedAt && (
                                 <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -434,7 +438,7 @@ export default function ReviewsPage() {
                             <textarea
                               value={responseText}
                               onChange={(e) => setResponseText(e.target.value)}
-                              placeholder="Write your response..."
+                              placeholder={t('writeResponsePlaceholder')}
                               rows={3}
                               maxLength={2000}
                               className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 resize-none"
@@ -451,7 +455,7 @@ export default function ReviewsPage() {
                                   }}
                                   className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg"
                                 >
-                                  Cancel
+                                  {t('cancel')}
                                 </button>
                                 <button
                                   onClick={() => handleRespond(review.id)}
@@ -459,11 +463,11 @@ export default function ReviewsPage() {
                                   className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg text-sm font-medium"
                                 >
                                   {submitting ? (
-                                    'Posting...'
+                                    t('posting')
                                   ) : (
                                     <>
                                       <IoSendOutline className="w-4 h-4" />
-                                      Post Response
+                                      {t('postResponse')}
                                     </>
                                   )}
                                 </button>
@@ -476,7 +480,7 @@ export default function ReviewsPage() {
                             className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors"
                           >
                             <IoChatbubbleOutline className="w-4 h-4" />
-                            Respond to Review
+                            {t('respondToReview')}
                           </button>
                         )}
                       </div>

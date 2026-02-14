@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import {
   IoArrowBackOutline,
@@ -158,6 +159,9 @@ interface GuestHistory {
 
 export default function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: bookingId } = use(params)
+  const t = useTranslations('PartnerBookings')
+
+  const locale = useLocale()
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -231,10 +235,10 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
           }
         } catch { /* non-critical */ }
       } else {
-        setError(data.error || 'Failed to load booking')
+        setError(data.error || t('bdErrorLoadBooking'))
       }
     } catch (err) {
-      setError('Failed to load booking details')
+      setError(t('bdErrorLoadDetails'))
     } finally {
       setLoading(false)
     }
@@ -255,19 +259,19 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
       if (data.success) {
         setBooking(prev => prev ? { ...prev, status: 'CONFIRMED' } : null)
-        showToast('success', 'Booking confirmed successfully')
+        showToast('success', t('bdBookingConfirmedSuccess'))
       } else {
-        showToast('error', data.error || 'Failed to confirm booking')
+        showToast('error', data.error || t('bdFailedConfirmBooking'))
       }
     } catch {
-      showToast('error', 'Failed to confirm booking')
+      showToast('error', t('bdFailedConfirmBooking'))
     } finally {
       setConfirming(false)
     }
   }
 
   const cancelBooking = async () => {
-    if (!booking || !confirm('Are you sure you want to cancel this booking?')) return
+    if (!booking || !confirm(t('bdConfirmCancelBooking'))) return
 
     setCancelling(true)
     try {
@@ -279,12 +283,12 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
       if (data.success) {
         setBooking(prev => prev ? { ...prev, status: 'CANCELLED' } : null)
-        showToast('success', 'Booking cancelled')
+        showToast('success', t('bdBookingCancelled'))
       } else {
-        showToast('error', data.error || 'Failed to cancel booking')
+        showToast('error', data.error || t('bdFailedCancelBooking'))
       }
     } catch {
-      showToast('error', 'Failed to cancel booking')
+      showToast('error', t('bdFailedCancelBooking'))
     } finally {
       setCancelling(false)
     }
@@ -292,7 +296,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
   // Host approve/reject handlers
   const hostApproveBooking = async () => {
-    if (!booking || !confirm('Are you sure you want to approve this booking? The guest will be charged.')) return
+    if (!booking || !confirm(t('bdConfirmApproveBooking'))) return
 
     setHostApproving(true)
     try {
@@ -305,12 +309,12 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
       if (response.ok) {
         setBooking(prev => prev ? { ...prev, status: 'CONFIRMED', hostApproval: 'APPROVED', paymentStatus: 'PAID' } : null)
-        showToast('success', 'Booking approved — guest has been charged and notified')
+        showToast('success', t('bdBookingApprovedSuccess'))
       } else {
-        showToast('error', data.error || 'Failed to approve booking')
+        showToast('error', data.error || t('bdFailedApproveBooking'))
       }
     } catch {
-      showToast('error', 'Failed to approve booking')
+      showToast('error', t('bdFailedApproveBooking'))
     } finally {
       setHostApproving(false)
     }
@@ -332,12 +336,12 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         setBooking(prev => prev ? { ...prev, hostApproval: 'REJECTED', hostNotes: rejectReason.trim() } : null)
         setShowRejectModal(false)
         setRejectReason('')
-        showToast('success', 'Booking rejected — fleet has been notified')
+        showToast('success', t('bdBookingRejectedSuccess'))
       } else {
-        showToast('error', data.error || 'Failed to reject booking')
+        showToast('error', data.error || t('bdFailedRejectBooking'))
       }
     } catch {
-      showToast('error', 'Failed to reject booking')
+      showToast('error', t('bdFailedRejectBooking'))
     } finally {
       setHostRejecting(false)
     }
@@ -363,16 +367,16 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       const data = await response.json()
 
       if (data.success) {
-        showToast('success', 'Verification link sent to customer')
+        showToast('success', t('bdVerificationLinkSent'))
       } else if (data.status === 'already_verified') {
-        showToast('success', 'Customer is already verified')
+        showToast('success', t('bdCustomerAlreadyVerified'))
         // Refresh to show updated verification status
         fetchBookingDetails()
       } else {
-        showToast('error', data.error || 'Failed to send verification')
+        showToast('error', data.error || t('bdFailedSendVerification'))
       }
     } catch {
-      showToast('error', 'Failed to send verification link')
+      showToast('error', t('bdFailedSendVerificationLink'))
     } finally {
       setSendingVerification(false)
     }
@@ -392,17 +396,17 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       const data = await response.json()
 
       if (data.success) {
-        showToast('success', data.message || 'Agreement sent successfully')
+        showToast('success', data.message || t('bdAgreementSentSuccess'))
         // Refresh booking details to show updated status
         fetchBookingDetails()
       } else if (data.status === 'already_signed') {
-        showToast('success', 'Agreement already signed')
+        showToast('success', t('bdAgreementAlreadySigned'))
         fetchBookingDetails()
       } else {
-        showToast('error', data.error || 'Failed to send agreement')
+        showToast('error', data.error || t('bdFailedSendAgreement'))
       }
     } catch {
-      showToast('error', 'Failed to send agreement')
+      showToast('error', t('bdFailedSendAgreement'))
     } finally {
       setSendingAgreement(false)
     }
@@ -435,10 +439,10 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         setShowCommModal(null)
         setCommMessage('')
       } else {
-        showToast('error', data.error || 'Failed to send')
+        showToast('error', data.error || t('bdFailedSend'))
       }
     } catch {
-      showToast('error', 'Failed to send communication')
+      showToast('error', t('bdFailedSendCommunication'))
     } finally {
       setSendingComm(false)
     }
@@ -446,11 +450,11 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
-    showToast('success', 'Copied to clipboard')
+    showToast('success', t('bdCopiedToClipboard'))
   }
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    return new Date(dateStr).toLocaleDateString(locale, {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
@@ -459,7 +463,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2
@@ -515,12 +519,12 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
       if (data.success) {
         setBooking(prev => prev ? { ...prev, paymentStatus: 'PAID' } : null)
-        showToast('success', 'Payment marked as received')
+        showToast('success', t('bdPaymentMarkedReceived'))
       } else {
-        showToast('error', data.error || 'Failed to update payment status')
+        showToast('error', data.error || t('bdFailedUpdatePayment'))
       }
     } catch {
-      showToast('error', 'Failed to update payment status')
+      showToast('error', t('bdFailedUpdatePayment'))
     } finally {
       setMarkingPaid(false)
     }
@@ -549,14 +553,14 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
             <IoAlertCircleOutline className="w-12 h-12 text-red-500 mx-auto mb-3" />
             <h2 className="text-lg font-semibold text-red-700 dark:text-red-400 mb-2">
-              {error || 'Booking not found'}
+              {error || t('bdBookingNotFound')}
             </h2>
             <Link
               href="/partner/bookings"
               className="inline-flex items-center gap-2 text-red-600 hover:text-red-700 dark:text-red-400"
             >
               <IoArrowBackOutline className="w-4 h-4" />
-              Back to Bookings
+              {t('bdBackToBookings')}
             </Link>
           </div>
         </div>
@@ -597,7 +601,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               <div className="min-w-0">
                 <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                   <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
-                    Booking Details
+                    {t('bdBookingDetails')}
                   </h1>
                   <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap ${getStatusColor(booking.status)}`}>
                     {booking.status}
@@ -631,14 +635,14 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                     ) : (
                       <IoCheckmarkOutline className="w-4 h-4" />
                     )}
-                    Approve Booking
+                    {t('bdApproveBooking')}
                   </button>
                   <button
                     onClick={() => setShowRejectModal(true)}
                     className="px-4 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
                   >
                     <IoCloseOutline className="w-4 h-4" />
-                    Reject
+                    {t('bdReject')}
                   </button>
                 </>
               ) : (
@@ -654,7 +658,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                       ) : (
                         <IoCheckmarkOutline className="w-4 h-4" />
                       )}
-                      Confirm Booking
+                      {t('bdConfirmBooking')}
                     </button>
                   )}
                   {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && !isGuestDriven && (
@@ -668,7 +672,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                       ) : (
                         <IoCloseOutline className="w-4 h-4" />
                       )}
-                      Cancel
+                      {t('bdCancel')}
                     </button>
                   )}
                 </>
@@ -681,7 +685,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
             <div className="mt-2 sm:mt-3 flex items-center gap-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
               <IoTimeOutline className="w-4 h-4 flex-shrink-0" />
               <span className="text-xs sm:text-sm">
-                <strong>Reservation expires:</strong>{' '}
+                <strong>{t('bdReservationExpires')}:</strong>{' '}
                 {(() => {
                   const createdAt = new Date(booking.createdAt)
                   const expiresAt = new Date(createdAt.getTime() + 24 * 60 * 60 * 1000) // 24 hours
@@ -690,9 +694,9 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   const minutesLeft = Math.max(0, Math.floor(((expiresAt.getTime() - now.getTime()) % (1000 * 60 * 60)) / (1000 * 60)))
 
                   if (hoursLeft <= 0 && minutesLeft <= 0) {
-                    return <span className="text-red-600 dark:text-red-400">Expired - confirm or it will be auto-cancelled</span>
+                    return <span className="text-red-600 dark:text-red-400">{t('bdExpiredConfirmOrCancel')}</span>
                   }
-                  return `${hoursLeft}h ${minutesLeft}m remaining to confirm`
+                  return t('bdTimeRemainingToConfirm', { hours: hoursLeft, minutes: minutesLeft })
                 })()}
               </span>
             </div>
@@ -712,14 +716,14 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   ) : (
                     <IoCheckmarkOutline className="w-4 h-4" />
                   )}
-                  Approve
+                  {t('bdApprove')}
                 </button>
                 <button
                   onClick={() => setShowRejectModal(true)}
                   className="px-3 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center justify-center gap-2 text-sm"
                 >
                   <IoCloseOutline className="w-4 h-4" />
-                  Reject
+                  {t('bdReject')}
                 </button>
               </>
             ) : (
@@ -735,7 +739,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                     ) : (
                       <IoCheckmarkOutline className="w-4 h-4" />
                     )}
-                    Confirm
+                    {t('bdConfirm')}
                   </button>
                 )}
                 {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && !isGuestDriven && (
@@ -749,7 +753,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                     ) : (
                       <IoCloseOutline className="w-4 h-4" />
                     )}
-                    Cancel
+                    {t('bdCancel')}
                   </button>
                 )}
               </>
@@ -767,10 +771,10 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               <IoAlertCircleOutline className="w-5 h-5 text-orange-500 dark:text-orange-400 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  Your Approval Required
+                  {t('bdYourApprovalRequired')}
                 </p>
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  ItWhip has approved this booking. Please review and approve or reject. The guest&apos;s payment is being held and they are waiting for your confirmation.
+                  {t('bdApprovalRequiredDesc')}
                 </p>
               </div>
             </div>
@@ -781,7 +785,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         {booking.hostApproval === 'APPROVED' && (
           <div className="mt-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg px-4 py-3 flex items-center gap-2">
             <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
-            <span className="text-sm text-green-800 dark:text-green-200 font-medium">You approved this booking</span>
+            <span className="text-sm text-green-800 dark:text-green-200 font-medium">{t('bdYouApprovedBooking')}</span>
             {booking.hostReviewedAt && (
               <span className="text-xs text-green-600 dark:text-green-400 ml-auto">
                 {new Date(booking.hostReviewedAt).toLocaleDateString()}
@@ -795,7 +799,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
           <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg px-4 py-3">
             <div className="flex items-center gap-2">
               <IoCloseCircleOutline className="w-5 h-5 text-red-600 dark:text-red-400" />
-              <span className="text-sm text-red-800 dark:text-red-200 font-medium">You rejected this booking</span>
+              <span className="text-sm text-red-800 dark:text-red-200 font-medium">{t('bdYouRejectedBooking')}</span>
               {booking.hostReviewedAt && (
                 <span className="text-xs text-red-600 dark:text-red-400 ml-auto">
                   {new Date(booking.hostReviewedAt).toLocaleDateString()}
@@ -803,7 +807,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               )}
             </div>
             {booking.hostNotes && (
-              <p className="text-xs text-red-700 dark:text-red-300 mt-2 ml-7">Reason: {booking.hostNotes}</p>
+              <p className="text-xs text-red-700 dark:text-red-300 mt-2 ml-7">{t('bdReason')}: {booking.hostNotes}</p>
             )}
           </div>
         )}
@@ -855,18 +859,18 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                         )}
                         {vehicle.color && <span>{vehicle.color}</span>}
                         {vehicle.currentMileage && (
-                          <span>{vehicle.currentMileage.toLocaleString()} mi</span>
+                          <span>{vehicle.currentMileage.toLocaleString()} {t('bdMi')}</span>
                         )}
                       </div>
                       <div className="mt-2 flex items-center gap-4">
                         <span className="text-orange-600 dark:text-orange-400 font-semibold">
-                          {formatCurrency(vehicle.dailyRate)}/day
+                          {formatCurrency(vehicle.dailyRate)}/{t('bdDay')}
                         </span>
                         <Link
                           href={`/partner/fleet/${vehicle.id}`}
                           className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
                         >
-                          View Vehicle →
+                          {t('bdViewVehicle')} →
                         </Link>
                       </div>
                     </div>
@@ -912,12 +916,12 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                           </>
                         ) : (
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                            Contact via ItWhip platform messaging
+                            {t('bdContactViaPlatform')}
                           </p>
                         )}
                         {renter.memberSince && (
                           <p className="text-xs text-gray-400 mt-1">
-                            Member since {new Date(renter.memberSince).toLocaleDateString()}
+                            {t('bdMemberSince')} {new Date(renter.memberSince).toLocaleDateString()}
                           </p>
                         )}
                       </div>
@@ -926,7 +930,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                       href={`/partner/customers/${renter.id}`}
                       className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
                     >
-                      View Profile →
+                      {t('bdViewProfile')} →
                     </Link>
                   </div>
 
@@ -940,12 +944,12 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-full text-xs font-medium text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
                         >
                           <IoShieldCheckmarkOutline className="w-3.5 h-3.5" />
-                          Verified
+                          {t('bdVerified')}
                         </button>
                         {activeTooltip === 'verified' && (
                           <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-20">
-                            <p className="font-semibold mb-1">Identity Verified</p>
-                            <p>This guest&apos;s identity has been verified by the ItWhip platform through government-issued ID and AI-powered document verification.</p>
+                            <p className="font-semibold mb-1">{t('bdIdentityVerified')}</p>
+                            <p>{t('bdIdentityVerifiedDesc')}</p>
                             <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
                           </div>
                         )}
@@ -958,12 +962,12 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-full text-xs font-medium text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                         >
                           <IoShieldOutline className="w-3.5 h-3.5" />
-                          Insured
+                          {t('bdInsured')}
                         </button>
                         {activeTooltip === 'insured' && (
                           <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-20">
-                            <p className="font-semibold mb-1">Insurance Coverage</p>
-                            <p>This booking includes insurance coverage selected by the guest during checkout. The ItWhip platform handles all insurance claims and liability.</p>
+                            <p className="font-semibold mb-1">{t('bdInsuranceCoverage')}</p>
+                            <p>{t('bdInsuranceCoverageDesc')}</p>
                             <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
                           </div>
                         )}
@@ -976,12 +980,12 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-full text-xs font-medium text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
                         >
                           <IoWalletOutline className="w-3.5 h-3.5" />
-                          Payment: Hold
+                          {t('bdPaymentHold')}
                         </button>
                         {activeTooltip === 'payment' && (
                           <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-20">
-                            <p className="font-semibold mb-1">Payment on Hold</p>
-                            <p>The guest&apos;s payment is authorized and held by Stripe. The customer is charged when you approve this booking. If rejected, the hold is released automatically.</p>
+                            <p className="font-semibold mb-1">{t('bdPaymentOnHold')}</p>
+                            <p>{t('bdPaymentOnHoldDesc')}</p>
                             <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
                           </div>
                         )}
@@ -998,25 +1002,25 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 <div className="p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <IoReceiptOutline className="w-5 h-5 text-gray-400" />
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Guest History</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdGuestHistory')}</h3>
                   </div>
 
                   {/* Stats Row */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
                       <p className="text-2xl font-bold text-gray-900 dark:text-white">{guestHistory.totalBookings}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Total Bookings</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('bdTotalBookings')}</p>
                     </div>
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
                       <p className="text-2xl font-bold text-green-600 dark:text-green-400">${guestHistory.totalSpent.toFixed(2)}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Spent with You</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('bdSpentWithYou')}</p>
                     </div>
                   </div>
 
                   {guestHistory.bookings.length > 0 ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Returning guest — {guestHistory.bookings.length} previous {guestHistory.bookings.length === 1 ? 'booking' : 'bookings'}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('bdReturningGuest', { count: guestHistory.bookings.length })}</p>
                   ) : (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">This is their first booking with you</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('bdFirstBookingWithYou')}</p>
                   )}
                 </div>
               </div>
@@ -1026,26 +1030,26 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center gap-2 mb-4">
                 <IoCalendarOutline className="w-5 h-5 text-gray-400" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">Rental Period</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdRentalPeriod')}</h3>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Pickup</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('bdPickup')}</p>
                   <p className="font-medium text-gray-900 dark:text-white">
                     {formatDate(booking.startDate)}
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    at {booking.startTime}
+                    {t('bdAt')} {booking.startTime}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Return</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('bdReturn')}</p>
                   <p className="font-medium text-gray-900 dark:text-white">
                     {formatDate(booking.endDate)}
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    at {booking.endTime}
+                    {t('bdAt')} {booking.endTime}
                   </p>
                 </div>
               </div>
@@ -1056,16 +1060,16 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                     <IoLocationOutline className="w-5 h-5 text-gray-400" />
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {booking.pickupType === 'PARTNER_LOCATION' ? 'Partner Location' :
-                         booking.pickupType === 'AIRPORT' ? 'Airport Pickup' : 'Delivery'}
+                        {booking.pickupType === 'PARTNER_LOCATION' ? t('bdPartnerLocation') :
+                         booking.pickupType === 'AIRPORT' ? t('bdAirportPickup') : t('bdDelivery')}
                       </p>
                       <p className="font-medium text-gray-900 dark:text-white">
-                        {booking.pickupLocation || 'Business location'}
+                        {booking.pickupLocation || t('bdBusinessLocation')}
                       </p>
                     </div>
                   </div>
                   <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    {booking.numberOfDays} {booking.numberOfDays === 1 ? 'day' : 'days'}
+                    {t('bdDaysCount', { count: booking.numberOfDays })}
                   </span>
                 </div>
               </div>
@@ -1080,14 +1084,14 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 >
                   <div className="flex items-center gap-2">
                     <IoShieldOutline className="w-5 h-5 text-gray-400" />
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Guest Verification</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdGuestVerification')}</h3>
                     {renter.verification.identity.status === 'verified' ? (
                       <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                        Verified
+                        {t('bdVerified')}
                       </span>
                     ) : (
                       <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
-                        Pending
+                        {t('bdPending')}
                       </span>
                     )}
                   </div>
@@ -1109,7 +1113,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                         : 'bg-gray-50 dark:bg-gray-700/50'
                     }`}>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-gray-900 dark:text-white">Identity Verification</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{t('bdIdentityVerification')}</span>
                         <span className={`flex items-center gap-1 ${getVerificationStatusColor(renter.verification.identity.status)}`}>
                           {renter.verification.identity.status === 'verified' ? (
                             <IoCheckmarkCircleOutline className="w-5 h-5" />
@@ -1118,19 +1122,19 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                           ) : (
                             <IoCloseCircleOutline className="w-5 h-5" />
                           )}
-                          {renter.verification.identity.status === 'verified' ? 'Verified' :
-                           renter.verification.identity.status === 'pending' ? 'Pending' :
-                           renter.verification.identity.status === 'failed' ? 'Failed' : 'Not Started'}
+                          {renter.verification.identity.status === 'verified' ? t('bdVerified') :
+                           renter.verification.identity.status === 'pending' ? t('bdPending') :
+                           renter.verification.identity.status === 'failed' ? t('bdFailed') : t('bdNotStarted')}
                         </span>
                       </div>
 
                       {renter.verification.identity.status === 'verified' && (
                         <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                           {renter.verification.identity.verifiedName && (
-                            <p>Name: {renter.verification.identity.verifiedName}</p>
+                            <p>{t('bdName')}: {renter.verification.identity.verifiedName}</p>
                           )}
                           {renter.verification.identity.verifiedAt && (
-                            <p>Verified: {new Date(renter.verification.identity.verifiedAt).toLocaleDateString()}</p>
+                            <p>{t('bdVerified')}: {new Date(renter.verification.identity.verifiedAt).toLocaleDateString()}</p>
                           )}
                         </div>
                       )}
@@ -1146,7 +1150,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                           ) : (
                             <IoSendOutline className="w-4 h-4" />
                           )}
-                          Send Verification Link
+                          {t('bdSendVerificationLink')}
                         </button>
                       )}
                     </div>
@@ -1159,7 +1163,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                           : 'bg-gray-50 dark:bg-gray-700/50'
                       }`}>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</span>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bdEmail')}</span>
                           {renter.verification.email.verified ? (
                             <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
                           ) : (
@@ -1173,7 +1177,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                           : 'bg-gray-50 dark:bg-gray-700/50'
                       }`}>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone</span>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bdPhone')}</span>
                           {renter.verification.phone.verified ? (
                             <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
                           ) : (
@@ -1196,18 +1200,18 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               >
                 <div className="flex items-center gap-2">
                   <IoDocumentTextOutline className="w-5 h-5 text-gray-400" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Rental Agreement</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdRentalAgreement')}</h3>
                   {booking.agreementStatus === 'signed' ? (
                     <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                      Signed
+                      {t('bdSigned')}
                     </span>
                   ) : booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' ? (
                     <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                      {booking.agreementStatus === 'viewed' ? 'Viewed' : 'Sent'}
+                      {booking.agreementStatus === 'viewed' ? t('bdViewed') : t('bdSent')}
                     </span>
                   ) : (
                     <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                      Not Sent
+                      {t('bdNotSent')}
                     </span>
                   )}
                 </div>
@@ -1226,9 +1230,9 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                       <div className="flex items-center gap-3">
                         <IoCheckmarkCircleOutline className="w-6 h-6 text-green-600 dark:text-green-400" />
                         <div>
-                          <p className="font-medium text-green-700 dark:text-green-300">Agreement Signed</p>
+                          <p className="font-medium text-green-700 dark:text-green-300">{t('bdAgreementSigned')}</p>
                           <p className="text-sm text-green-600 dark:text-green-400">
-                            Signed by {booking.signerName} on {booking.agreementSignedAt ? new Date(booking.agreementSignedAt).toLocaleDateString() : 'N/A'}
+                            {t('bdSignedByOn', { name: booking.signerName, date: booking.agreementSignedAt ? new Date(booking.agreementSignedAt).toLocaleDateString() : 'N/A' })}
                           </p>
                         </div>
                       </div>
@@ -1241,10 +1245,10 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                         <IoTimeOutline className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                         <div>
                           <p className="font-medium text-blue-700 dark:text-blue-300">
-                            {booking.agreementStatus === 'viewed' ? 'Customer is Reviewing' : 'Awaiting Signature'}
+                            {booking.agreementStatus === 'viewed' ? t('bdCustomerReviewing') : t('bdAwaitingSignature')}
                           </p>
                           <p className="text-sm text-blue-600 dark:text-blue-400">
-                            Sent on {booking.agreementSentAt ? new Date(booking.agreementSentAt).toLocaleDateString() : 'N/A'}
+                            {t('bdSentOn', { date: booking.agreementSentAt ? new Date(booking.agreementSentAt).toLocaleDateString() : 'N/A' })}
                           </p>
                         </div>
                       </div>
@@ -1254,61 +1258,61 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   {/* Agreement Preview */}
                   <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-4 bg-gray-50 dark:bg-gray-900/50">
                     <div className="text-center mb-6">
-                      <h4 className="text-lg font-bold text-gray-900 dark:text-white">Vehicle Rental Agreement</h4>
-                      <p className="text-sm text-gray-500">Booking: {booking.id.slice(0, 8).toUpperCase()}</p>
+                      <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('bdVehicleRentalAgreement')}</h4>
+                      <p className="text-sm text-gray-500">{t('bdBooking')}: {booking.id.slice(0, 8).toUpperCase()}</p>
                     </div>
 
                     <div className="space-y-4 text-sm">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <p className="text-gray-500 dark:text-gray-400">Renter (Guest)</p>
+                          <p className="text-gray-500 dark:text-gray-400">{t('bdRenterGuest')}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{renter?.name || booking.guestName}</p>
                         </div>
                         <div>
-                          <p className="text-gray-500 dark:text-gray-400">Vehicle Owner (Partner)</p>
+                          <p className="text-gray-500 dark:text-gray-400">{t('bdVehicleOwnerPartner')}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{partner?.companyName || partner?.name}</p>
                         </div>
                       </div>
 
                       <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                        <p className="text-gray-500 dark:text-gray-400 mb-2">Vehicle</p>
+                        <p className="text-gray-500 dark:text-gray-400 mb-2">{t('bdVehicle')}</p>
                         <p className="font-medium text-gray-900 dark:text-white">
                           {vehicle?.year} {vehicle?.make} {vehicle?.model}
                         </p>
                         <p className="text-gray-600 dark:text-gray-400">
-                          {vehicle?.carType} ({vehicle?.seats} seats)
+                          {vehicle?.carType} ({vehicle?.seats} {t('bdSeats')})
                         </p>
                       </div>
 
                       <div className="border-t border-gray-200 dark:border-gray-700 pt-4 grid grid-cols-2 gap-4">
                         <div>
-                          <p className="text-gray-500 dark:text-gray-400">Pickup</p>
+                          <p className="text-gray-500 dark:text-gray-400">{t('bdPickup')}</p>
                           <p className="font-medium text-gray-900 dark:text-white">
-                            {formatDate(booking.startDate)} at {booking.startTime}
+                            {formatDate(booking.startDate)} {t('bdAt')} {booking.startTime}
                           </p>
                         </div>
                         <div>
-                          <p className="text-gray-500 dark:text-gray-400">Return</p>
+                          <p className="text-gray-500 dark:text-gray-400">{t('bdReturn')}</p>
                           <p className="font-medium text-gray-900 dark:text-white">
-                            {formatDate(booking.endDate)} at {booking.endTime}
+                            {formatDate(booking.endDate)} {t('bdAt')} {booking.endTime}
                           </p>
                         </div>
                       </div>
 
                       <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Pickup Location</p>
+                        <p className="text-gray-500 dark:text-gray-400 mb-1">{t('bdPickupLocation')}</p>
                         <p className="font-medium text-gray-900 dark:text-white">{booking.pickupLocation}</p>
                       </div>
 
                       <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Total Days</p>
+                        <p className="text-gray-500 dark:text-gray-400 mb-1">{t('bdTotalDays')}</p>
                         <p className="font-medium text-gray-900 dark:text-white">{booking.numberOfDays}</p>
                       </div>
                     </div>
 
                     <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500">
-                      <p><strong>Governing Law:</strong> State of Arizona</p>
-                      <p><strong>Venue:</strong> Maricopa County Superior Court</p>
+                      <p><strong>{t('bdGoverningLaw')}:</strong> {t('bdStateOfArizona')}</p>
+                      <p><strong>{t('bdVenue')}:</strong> {t('bdMaricopaCounty')}</p>
                     </div>
                   </div>
 
@@ -1322,7 +1326,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                         className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2"
                       >
                         <IoDownloadOutline className="w-4 h-4" />
-                        Download Signed Agreement
+                        {t('bdDownloadSignedAgreement')}
                       </a>
                     ) : (
                       <>
@@ -1331,7 +1335,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                           className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
                         >
                           <IoPrintOutline className="w-4 h-4" />
-                          Print Preview
+                          {t('bdPrintPreview')}
                         </button>
                         <button
                           onClick={sendAgreement}
@@ -1344,8 +1348,8 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                             <IoSendOutline className="w-4 h-4" />
                           )}
                           {booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed'
-                            ? 'Resend Agreement'
-                            : 'Send for Signature'}
+                            ? t('bdResendAgreement')
+                            : t('bdSendForSignature')}
                         </button>
                       </>
                     )}
@@ -1363,7 +1367,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               >
                 <div className="flex items-center gap-2">
                   <IoReceiptOutline className="w-5 h-5 text-gray-400" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Trip Charges</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdTripCharges')}</h3>
                   {booking.tripCharges.length > 0 && (
                     <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
                       {booking.tripCharges.length}
@@ -1408,7 +1412,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                     </div>
                   ) : (
                     <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                      No additional charges
+                      {t('bdNoAdditionalCharges')}
                     </p>
                   )}
 
@@ -1417,7 +1421,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                     className="mt-4 w-full px-4 py-2 border border-orange-300 dark:border-orange-600 text-orange-600 dark:text-orange-400 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 flex items-center justify-center gap-2"
                   >
                     <IoAddOutline className="w-4 h-4" />
-                    Add Charge
+                    {t('bdAddCharge')}
                   </button>
                 </div>
               )}
@@ -1426,7 +1430,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
             {/* Notes Section */}
             {booking.notes && (
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Notes</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{t('bdNotes')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
                   {booking.notes}
                 </p>
@@ -1445,7 +1449,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 <div className="flex items-center gap-2">
                   <IoWalletOutline className="w-5 h-5 text-gray-400" />
                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                    {isGuestDriven ? 'Earnings' : 'Pricing'}
+                    {isGuestDriven ? t('bdEarnings') : t('bdPricing')}
                   </h3>
                 </div>
                 {expandedSections.pricing ? (
@@ -1462,44 +1466,44 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                       {/* Guest-Driven: What the guest paid (full breakdown) */}
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600 dark:text-gray-400">
-                          Rental ({formatCurrency(booking.dailyRate)} × {booking.numberOfDays} days)
+                          {t('bdRentalRate', { rate: formatCurrency(booking.dailyRate), days: booking.numberOfDays })}
                         </span>
                         <span className="text-gray-900 dark:text-white">{formatCurrency(booking.subtotal)}</span>
                       </div>
                       {booking.deliveryFee > 0 && (
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">Delivery</span>
+                          <span className="text-gray-600 dark:text-gray-400">{t('bdDelivery')}</span>
                           <span className="text-gray-900 dark:text-white">{formatCurrency(booking.deliveryFee)}</span>
                         </div>
                       )}
 
                       {/* Your earnings */}
                       <div className="border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Your earnings</p>
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('bdYourEarnings')}</p>
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">Rental</span>
+                          <span className="text-gray-600 dark:text-gray-400">{t('bdRental')}</span>
                           <span className="text-gray-900 dark:text-white">{formatCurrency(booking.subtotal)}</span>
                         </div>
                         {booking.deliveryFee > 0 && (
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-600 dark:text-gray-400">Delivery</span>
+                            <span className="text-gray-600 dark:text-gray-400">{t('bdDelivery')}</span>
                             <span className="text-gray-900 dark:text-white">{formatCurrency(booking.deliveryFee)}</span>
                           </div>
                         )}
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">Platform fee (25%)</span>
+                          <span className="text-gray-600 dark:text-gray-400">{t('bdPlatformFee')}</span>
                           <span className="text-red-600 dark:text-red-400">
                             -{formatCurrency(booking.subtotal * PLATFORM_COMMISSION_RATE)}
                           </span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">Processing fee</span>
+                          <span className="text-gray-600 dark:text-gray-400">{t('bdProcessingFee')}</span>
                           <span className="text-red-600 dark:text-red-400">
                             -{formatCurrency(PROCESSING_FEE)}
                           </span>
                         </div>
                         <div className="border-t border-gray-200 dark:border-gray-700 pt-2 flex justify-between font-semibold">
-                          <span className="text-gray-900 dark:text-white">You receive</span>
+                          <span className="text-gray-900 dark:text-white">{t('bdYouReceive')}</span>
                           <span className="text-lg text-green-600 dark:text-green-400">
                             {formatCurrency(booking.subtotal + booking.deliveryFee - (booking.subtotal * PLATFORM_COMMISSION_RATE) - PROCESSING_FEE)}
                           </span>
@@ -1509,7 +1513,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                       {booking.securityDeposit > 0 && (
                         <div className="flex items-start gap-2 pt-2 text-xs text-gray-500 dark:text-gray-400">
                           <IoShieldCheckmarkOutline className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                          <span>{formatCurrency(booking.securityDeposit)} deposit held on guest&apos;s card — returned after trip.</span>
+                          <span>{t('bdDepositHeldOnCard', { amount: formatCurrency(booking.securityDeposit) })}</span>
                         </div>
                       )}
 
@@ -1519,30 +1523,30 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                       {/* Manual: Show full pricing */}
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600 dark:text-gray-400">
-                          {formatCurrency(booking.dailyRate)} × {booking.numberOfDays} days
+                          {t('bdRateTimesDays', { rate: formatCurrency(booking.dailyRate), days: booking.numberOfDays })}
                         </span>
                         <span className="text-gray-900 dark:text-white">{formatCurrency(booking.subtotal)}</span>
                       </div>
 
                       {booking.deliveryFee > 0 && (
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">Delivery fee</span>
+                          <span className="text-gray-600 dark:text-gray-400">{t('bdDeliveryFee')}</span>
                           <span className="text-gray-900 dark:text-white">{formatCurrency(booking.deliveryFee)}</span>
                         </div>
                       )}
 
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">Service fee</span>
+                        <span className="text-gray-600 dark:text-gray-400">{t('bdServiceFee')}</span>
                         <span className="text-gray-900 dark:text-white">{formatCurrency(booking.serviceFee)}</span>
                       </div>
 
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">Taxes</span>
+                        <span className="text-gray-600 dark:text-gray-400">{t('bdTaxes')}</span>
                         <span className="text-gray-900 dark:text-white">{formatCurrency(booking.taxes)}</span>
                       </div>
 
                       <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between font-semibold">
-                        <span className="text-gray-900 dark:text-white">Total</span>
+                        <span className="text-gray-900 dark:text-white">{t('bdTotal')}</span>
                         <span className="text-lg text-orange-600 dark:text-orange-400">
                           {formatCurrency(booking.totalAmount)}
                         </span>
@@ -1550,7 +1554,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
                       {booking.securityDeposit > 0 && (
                         <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
-                          <span>Security deposit</span>
+                          <span>{t('bdSecurityDeposit')}</span>
                           <span>{formatCurrency(booking.securityDeposit)}</span>
                         </div>
                       )}
@@ -1561,7 +1565,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                             ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                             : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
                         }`}>
-                          Payment: {booking.paymentStatus}
+                          {t('bdPaymentColon')} {booking.paymentStatus}
                         </span>
                       </div>
                     </>
@@ -1588,7 +1592,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                       ? 'text-amber-700 dark:text-amber-300'
                       : 'text-green-700 dark:text-green-300'
                   }`}>
-                    Insurance
+                    {t('bdInsurance')}
                   </h4>
                 </div>
                 <p className={`text-sm ${
@@ -1597,17 +1601,17 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                     : 'text-green-600 dark:text-green-400'
                 }`}>
                   {insurance.hasVehicleInsurance
-                    ? `Vehicle: ${insurance.vehicleProvider || 'Own Policy'}`
+                    ? t('bdInsuranceVehicle', { provider: insurance.vehicleProvider || t('bdOwnPolicy') })
                     : insurance.hasPartnerInsurance
-                    ? `Partner: ${insurance.partnerProvider || 'Business Policy'}`
-                    : 'Guest must provide insurance'}
+                    ? t('bdInsurancePartner', { provider: insurance.partnerProvider || t('bdBusinessPolicy') })
+                    : t('bdGuestMustProvideInsurance')}
                 </p>
               </div>
             )}
 
             {/* Quick Actions */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('bdQuickActions')}</h3>
               <div className="space-y-2">
                 {/* Edit Booking — only for manual PENDING bookings */}
                 {booking.status === 'PENDING' && !isGuestDriven && (
@@ -1616,7 +1620,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
                   >
                     <IoCreateOutline className="w-4 h-4" />
-                    Edit Booking
+                    {t('bdEditBooking')}
                   </button>
                 )}
 
@@ -1624,8 +1628,8 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 {isGuestDriven && booking.status === 'PENDING' && (
                   <div className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 rounded-lg flex items-center gap-2 cursor-not-allowed">
                     <IoCreateOutline className="w-4 h-4" />
-                    Edit Booking
-                    <span className="ml-auto text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">Locked</span>
+                    {t('bdEditBooking')}
+                    <span className="ml-auto text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">{t('bdLocked')}</span>
                   </div>
                 )}
 
@@ -1637,19 +1641,19 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                       className="w-full px-4 py-2 border border-blue-300 dark:border-blue-600 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-2"
                     >
                       <IoRefreshOutline className="w-4 h-4" />
-                      Extend Rental
+                      {t('bdExtendRental')}
                     </button>
                     <button
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
                     >
                       <IoCalendarOutline className="w-4 h-4" />
-                      Modify Dates
+                      {t('bdModifyDates')}
                     </button>
                     <button
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
                     >
                       <IoPersonOutline className="w-4 h-4" />
-                      Change Customer
+                      {t('bdChangeCustomer')}
                     </button>
                   </>
                 )}
@@ -1659,7 +1663,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
                 >
                   <IoSwapHorizontalOutline className="w-4 h-4" />
-                  Change Vehicle
+                  {t('bdChangeVehicle')}
                 </button>
 
                 {/* Add Charge — always available */}
@@ -1668,7 +1672,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
                 >
                   <IoWalletOutline className="w-4 h-4" />
-                  Add Charge / Add-On
+                  {t('bdAddChargeAddon')}
                 </button>
 
                 {/* New Booking — only for manual bookings */}
@@ -1678,7 +1682,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                     className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg flex items-center justify-center gap-2"
                   >
                     <IoAddOutline className="w-4 h-4" />
-                    New Booking
+                    {t('bdNewBooking')}
                   </Link>
                 )}
               </div>
@@ -1691,7 +1695,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <IoAlertCircleOutline className="w-5 h-5 text-orange-500" />
-            What&apos;s Needed for This Booking
+            {t('bdWhatsNeeded')}
           </h3>
 
           {isGuestDriven ? (
@@ -1700,18 +1704,18 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               {/* Platform Handled */}
               <div className="p-4 rounded-lg border bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Verification</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bdVerification')}</span>
                   <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
                 </div>
-                <p className="text-xs text-green-600 dark:text-green-400">Handled by ItWhip</p>
+                <p className="text-xs text-green-600 dark:text-green-400">{t('bdHandledByItWhip')}</p>
               </div>
 
               <div className="p-4 rounded-lg border bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Insurance</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bdInsurance')}</span>
                   <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
                 </div>
-                <p className="text-xs text-green-600 dark:text-green-400">Handled by ItWhip</p>
+                <p className="text-xs text-green-600 dark:text-green-400">{t('bdHandledByItWhip')}</p>
               </div>
 
               {/* Payment */}
@@ -1721,7 +1725,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   : 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
               }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Payment</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bdPayment')}</span>
                   {booking.paymentStatus === 'PAID' || booking.paymentStatus === 'AUTHORIZED' ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
                   ) : (
@@ -1729,8 +1733,8 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   )}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {booking.paymentStatus === 'PAID' ? 'Payment captured' :
-                   booking.paymentStatus === 'AUTHORIZED' ? 'Payment held — pending your approval' :
+                  {booking.paymentStatus === 'PAID' ? t('bdPaymentCaptured') :
+                   booking.paymentStatus === 'AUTHORIZED' ? t('bdPaymentHeldPendingApproval') :
                    booking.paymentStatus}
                 </p>
               </div>
@@ -1745,7 +1749,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   : 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
               }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">ID Verification</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bdIdVerification')}</span>
                   {renter?.verification.identity.status === 'verified' ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
                   ) : (
@@ -1759,7 +1763,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                     className="w-full mt-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg flex items-center justify-center gap-1"
                   >
                     <IoSendOutline className="w-3 h-3" />
-                    {sendingVerification ? 'Sending...' : 'Quick Send'}
+                    {sendingVerification ? t('bdSending') : t('bdQuickSend')}
                   </button>
                 )}
               </div>
@@ -1771,7 +1775,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   : 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
               }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Insurance</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bdInsurance')}</span>
                   {!insurance?.requiresGuestInsurance ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
                   ) : (
@@ -1779,13 +1783,13 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   )}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {insurance?.hasVehicleInsurance ? 'Vehicle covered' :
-                   insurance?.hasPartnerInsurance ? 'Partner policy' : 'Guest needs insurance'}
+                  {insurance?.hasVehicleInsurance ? t('bdVehicleCovered') :
+                   insurance?.hasPartnerInsurance ? t('bdPartnerPolicy') : t('bdGuestNeedsInsurance')}
                 </p>
                 {insurance?.requiresGuestInsurance && (
                   <button className="w-full mt-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg flex items-center justify-center gap-1">
                     <IoSendOutline className="w-3 h-3" />
-                    Request Insurance
+                    {t('bdRequestInsurance')}
                   </button>
                 )}
               </div>
@@ -1797,7 +1801,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   : 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
               }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Payment</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bdPayment')}</span>
                   {booking.paymentStatus === 'PAID' ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
                   ) : (
@@ -1805,8 +1809,8 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   )}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {booking.paymentStatus === 'PAID' ? 'Payment received' :
-                   booking.paymentStatus === 'PENDING' ? 'Awaiting payment' : booking.paymentStatus}
+                  {booking.paymentStatus === 'PAID' ? t('bdPaymentReceived') :
+                   booking.paymentStatus === 'PENDING' ? t('bdAwaitingPayment') : booking.paymentStatus}
                 </p>
                 {booking.paymentStatus !== 'PAID' && (
                   <button
@@ -1819,7 +1823,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                     ) : (
                       <IoWalletOutline className="w-3 h-3" />
                     )}
-                    {markingPaid ? 'Updating...' : 'Mark as Paid'}
+                    {markingPaid ? t('bdUpdating') : t('bdMarkAsPaid')}
                   </button>
                 )}
               </div>
@@ -1831,7 +1835,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   : 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
               }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Agreement</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bdAgreement')}</span>
                   {booking.agreementStatus === 'signed' ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
                   ) : (
@@ -1839,9 +1843,9 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   )}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {booking.agreementStatus === 'signed' ? `Signed by ${booking.signerName}` :
-                   booking.agreementStatus === 'viewed' ? 'Customer reviewing' :
-                   booking.agreementStatus === 'sent' ? 'Awaiting signature' : 'Not sent yet'}
+                  {booking.agreementStatus === 'signed' ? t('bdSignedBy', { name: booking.signerName }) :
+                   booking.agreementStatus === 'viewed' ? t('bdCustomerReviewing') :
+                   booking.agreementStatus === 'sent' ? t('bdAwaitingSignature') : t('bdNotSentYet')}
                 </p>
                 {booking.agreementStatus !== 'signed' && (
                   <button
@@ -1854,7 +1858,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                     ) : (
                       <IoSendOutline className="w-3 h-3" />
                     )}
-                    {booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' ? 'Resend' : 'Send for Signature'}
+                    {booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' ? t('bdResend') : t('bdSendForSignature')}
                   </button>
                 )}
               </div>
@@ -1863,7 +1867,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
           {/* Quick Communication */}
           <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Quick Communication</h4>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{t('bdQuickCommunication')}</h4>
             <div className="flex flex-wrap gap-2">
               {/* Agreement button — only for manual bookings */}
               {!isGuestDriven && (
@@ -1878,15 +1882,15 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                     <IoDocumentTextOutline className="w-4 h-4" />
                   )}
                   {booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' || booking.agreementStatus === 'signed'
-                    ? 'Resend Agreement'
-                    : 'Send Agreement'}
+                    ? t('bdResendAgreement')
+                    : t('bdSendAgreement')}
                 </button>
               )}
               {/* Booking Details — manual only */}
               {!isGuestDriven && (
                 <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2">
                   <IoDocumentTextOutline className="w-4 h-4" />
-                  Send Booking Details
+                  {t('bdSendBookingDetails')}
                 </button>
               )}
               {/* Send Pickup Instructions — only for ItWhip guest-driven bookings */}
@@ -1897,7 +1901,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <IoLocationOutline className="w-4 h-4" />
-                  Send Pickup Instructions
+                  {t('bdSendPickupInstructions')}
                   {(commSendCounts.pickup_instructions || 0) > 0 && (
                     <span className="text-xs text-gray-400">({commSendCounts.pickup_instructions}/2)</span>
                   )}
@@ -1911,7 +1915,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <IoKeyOutline className="w-4 h-4" />
-                  Send Keys Instructions
+                  {t('bdSendKeysInstructions')}
                   {(commSendCounts.keys_instructions || 0) > 0 && (
                     <span className="text-xs text-gray-400">({commSendCounts.keys_instructions}/2)</span>
                   )}
@@ -1928,7 +1932,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md mx-4 p-6 shadow-xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add Charge</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('bdAddCharge')}</h3>
               <button
                 onClick={() => setShowChargeModal(false)}
                 className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
@@ -1952,38 +1956,38 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   })
                   const data = await response.json()
                   if (data.success) {
-                    showToast('success', 'Charge added successfully')
+                    showToast('success', t('bdChargeAddedSuccess'))
                     setShowChargeModal(false)
                     fetchBookingDetails()
                   } else {
-                    showToast('error', data.error || 'Failed to add charge')
+                    showToast('error', data.error || t('bdFailedAddCharge'))
                   }
                 } catch {
-                  showToast('error', 'Failed to add charge')
+                  showToast('error', t('bdFailedAddCharge'))
                 }
               }}
               className="space-y-4"
             >
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Charge Type
+                  {t('bdChargeType')}
                 </label>
                 <select
                   name="chargeType"
                   required
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
-                  <option value="DAMAGE">Damage</option>
-                  <option value="CLEANING">Cleaning</option>
-                  <option value="LATE_FEE">Late Fee</option>
-                  <option value="MILEAGE">Mileage Overage</option>
-                  <option value="FUEL">Fuel</option>
-                  <option value="OTHER">Other</option>
+                  <option value="DAMAGE">{t('bdDamage')}</option>
+                  <option value="CLEANING">{t('bdCleaning')}</option>
+                  <option value="LATE_FEE">{t('bdLateFee')}</option>
+                  <option value="MILEAGE">{t('bdMileageOverage')}</option>
+                  <option value="FUEL">{t('bdFuel')}</option>
+                  <option value="OTHER">{t('bdOther')}</option>
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Amount
+                  {t('bdAmount')}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-2 text-gray-500">$</span>
@@ -2000,12 +2004,12 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Description
+                  {t('bdDescription')}
                 </label>
                 <textarea
                   name="description"
                   rows={3}
-                  placeholder="Describe the charge..."
+                  placeholder={t('bdDescribeCharge')}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
@@ -2015,13 +2019,13 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   onClick={() => setShowChargeModal(false)}
                   className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  Cancel
+                  {t('bdCancel')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium"
                 >
-                  Add Charge
+                  {t('bdAddCharge')}
                 </button>
               </div>
             </form>
@@ -2034,7 +2038,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md mx-4 p-6 shadow-xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Extend Rental</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('bdExtendRental')}</h3>
               <button
                 onClick={() => setShowExtendModal(false)}
                 className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
@@ -2043,7 +2047,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               </button>
             </div>
             <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400">Current End Date</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('bdCurrentEndDate')}</p>
               <p className="font-medium text-gray-900 dark:text-white">
                 {formatDate(booking.endDate)} at {booking.endTime}
               </p>
@@ -2062,21 +2066,21 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   })
                   const data = await response.json()
                   if (data.success) {
-                    showToast('success', 'Rental extended successfully')
+                    showToast('success', t('bdRentalExtendedSuccess'))
                     setShowExtendModal(false)
                     fetchBookingDetails()
                   } else {
-                    showToast('error', data.error || 'Failed to extend rental')
+                    showToast('error', data.error || t('bdFailedExtendRental'))
                   }
                 } catch {
-                  showToast('error', 'Failed to extend rental')
+                  showToast('error', t('bdFailedExtendRental'))
                 }
               }}
               className="space-y-4"
             >
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  New End Date
+                  {t('bdNewEndDate')}
                 </label>
                 <input
                   type="date"
@@ -2088,7 +2092,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               </div>
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  Additional cost will be calculated at {formatCurrency(booking.dailyRate)}/day
+                  {t('bdAdditionalCostCalculated', { rate: formatCurrency(booking.dailyRate) })}
                 </p>
               </div>
               <div className="flex gap-3 pt-2">
@@ -2097,13 +2101,13 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   onClick={() => setShowExtendModal(false)}
                   className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  Cancel
+                  {t('bdCancel')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
                 >
-                  Extend Rental
+                  {t('bdExtendRental')}
                 </button>
               </div>
             </form>
@@ -2118,7 +2122,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {showCommModal === 'pickup_instructions' ? 'Send Pickup Instructions' : 'Send Keys Instructions'}
+                  {showCommModal === 'pickup_instructions' ? t('bdSendPickupInstructions') : t('bdSendKeysInstructions')}
                 </h3>
                 <button
                   onClick={() => setShowCommModal(null)}
@@ -2128,21 +2132,21 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 </button>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                This will be sent to the guest via email through the ItWhip platform. Your email and phone are never shared.
+                {t('bdCommModalDisclaimer')}
               </p>
             </div>
             <div className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {showCommModal === 'pickup_instructions'
-                  ? 'Where should the guest go and what should they know?'
-                  : 'How does the guest access the vehicle and keys?'}
+                  ? t('bdPickupInstructionsLabel')
+                  : t('bdKeysInstructionsLabel')}
               </label>
               <textarea
                 value={commMessage}
                 onChange={(e) => setCommMessage(e.target.value)}
                 placeholder={showCommModal === 'pickup_instructions'
-                  ? 'e.g., Meet at the parking garage Level 2, Spot A-15. Look for the white Toyota Camry. I\'ll be there 10 minutes before pickup time.'
-                  : 'e.g., The key is in a lockbox on the driver side door handle. Code: 1234. The car is parked at 123 Main St, Spot #5.'}
+                  ? t('bdPickupPlaceholder')
+                  : t('bdKeysPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 rows={5}
                 maxLength={2000}
@@ -2150,7 +2154,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               <div className="flex justify-between mt-1">
                 <span className="text-xs text-gray-400">{commMessage.length}/2000</span>
                 <span className="text-xs text-gray-400">
-                  {2 - (commSendCounts[showCommModal] || 0)} send{2 - (commSendCounts[showCommModal] || 0) !== 1 ? 's' : ''} remaining
+                  {t('bdSendsRemaining', { count: 2 - (commSendCounts[showCommModal] || 0) })}
                 </span>
               </div>
             </div>
@@ -2159,7 +2163,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 onClick={() => setShowCommModal(null)}
                 className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                Cancel
+                {t('bdCancel')}
               </button>
               <button
                 onClick={sendCommunication}
@@ -2171,7 +2175,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 ) : (
                   <IoSendOutline className="w-4 h-4" />
                 )}
-                Send to Guest
+                {t('bdSendToGuest')}
               </button>
             </div>
           </div>
@@ -2182,19 +2186,19 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       {showRejectModal && booking && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Reject Booking</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('bdRejectBooking')}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              The guest will <strong>not</strong> be notified directly. Our fleet team will handle next steps (reassign or cancel).
+              {t('bdRejectBookingDesc')}
             </p>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Reason for rejection <span className="text-red-500">*</span>
+                {t('bdReasonForRejection')} <span className="text-red-500">*</span>
               </label>
               <textarea
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
                 rows={3}
-                placeholder="e.g., Vehicle unavailable due to maintenance, scheduling conflict..."
+                placeholder={t('bdRejectReasonPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 text-sm"
               />
             </div>
@@ -2203,7 +2207,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 onClick={() => { setShowRejectModal(false); setRejectReason('') }}
                 className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm"
               >
-                Cancel
+                {t('bdCancel')}
               </button>
               <button
                 onClick={hostRejectBooking}
@@ -2215,7 +2219,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 ) : (
                   <IoCloseOutline className="w-4 h-4" />
                 )}
-                Reject Booking
+                {t('bdRejectBooking')}
               </button>
             </div>
           </div>
@@ -2227,7 +2231,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-lg mx-4 p-6 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Edit Booking</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('bdEditBooking')}</h3>
               <button
                 onClick={() => setShowEditModal(false)}
                 className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
@@ -2256,14 +2260,14 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   })
                   const data = await response.json()
                   if (data.success) {
-                    showToast('success', 'Booking updated successfully')
+                    showToast('success', t('bdBookingUpdatedSuccess'))
                     setShowEditModal(false)
                     fetchBookingDetails()
                   } else {
-                    showToast('error', data.error || 'Failed to update booking')
+                    showToast('error', data.error || t('bdFailedUpdateBooking'))
                   }
                 } catch {
-                  showToast('error', 'Failed to update booking')
+                  showToast('error', t('bdFailedUpdateBooking'))
                 }
               }}
               className="space-y-4"
@@ -2271,7 +2275,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Start Date
+                    {t('bdStartDate')}
                   </label>
                   <input
                     type="date"
@@ -2282,7 +2286,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    End Date
+                    {t('bdEndDate')}
                   </label>
                   <input
                     type="date"
@@ -2295,7 +2299,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Pickup Time
+                    {t('bdPickupTime')}
                   </label>
                   <input
                     type="time"
@@ -2306,7 +2310,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Return Time
+                    {t('bdReturnTime')}
                   </label>
                   <input
                     type="time"
@@ -2318,25 +2322,25 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Pickup Location
+                  {t('bdPickupLocation')}
                 </label>
                 <input
                   type="text"
                   name="pickupLocation"
                   defaultValue={booking.pickupLocation || ''}
-                  placeholder="Enter pickup location"
+                  placeholder={t('bdEnterPickupLocation')}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Notes
+                  {t('bdNotes')}
                 </label>
                 <textarea
                   name="notes"
                   rows={3}
                   defaultValue={booking.notes || ''}
-                  placeholder="Additional notes..."
+                  placeholder={t('bdAdditionalNotes')}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
@@ -2346,13 +2350,13 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   onClick={() => setShowEditModal(false)}
                   className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  Cancel
+                  {t('bdCancel')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium"
                 >
-                  Save Changes
+                  {t('bdSaveChanges')}
                 </button>
               </div>
             </form>

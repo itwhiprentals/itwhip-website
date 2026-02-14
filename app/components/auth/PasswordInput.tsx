@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { IoEyeOutline, IoEyeOffOutline } from 'react-icons/io5'
 
 interface PasswordInputProps {
@@ -19,11 +20,12 @@ export default function PasswordInput({
   name,
   value,
   onChange,
-  placeholder = '••••••••',
+  placeholder,
   label,
   autoFocus = false,
   required = false
 }: PasswordInputProps) {
+  const t = useTranslations('Auth')
   const [showPassword, setShowPassword] = useState(false)
 
   return (
@@ -41,7 +43,7 @@ export default function PasswordInput({
           type={showPassword ? 'text' : 'password'}
           value={value}
           onChange={onChange}
-          placeholder={placeholder}
+          placeholder={placeholder || t('passwordPlaceholder')}
           autoFocus={autoFocus}
           className="w-full px-3 py-2.5 pr-10 bg-white dark:bg-gray-800/50 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
@@ -50,7 +52,7 @@ export default function PasswordInput({
           onClick={() => setShowPassword(prev => !prev)}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           tabIndex={-1}
-          aria-label={showPassword ? 'Hide password' : 'Show password'}
+          aria-label={showPassword ? t('hidePassword') : t('showPassword')}
         >
           {showPassword ? (
             <IoEyeOffOutline className="w-5 h-5" />
