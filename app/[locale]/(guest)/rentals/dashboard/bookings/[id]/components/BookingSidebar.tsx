@@ -91,7 +91,7 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
               <div className="text-xs sm:text-sm text-green-800">
                 <p className="font-medium mb-1">{t('paymentConfirmed')}</p>
                 <p className="text-xs">
-                  {t('paymentConfirmedDesc', { amount: formatCurrency(booking.totalAmount), email: booking.guestEmail })}
+                  {t('paymentConfirmedDesc', { amount: formatCurrency(booking.totalAmount), email: booking.guestEmail || '' })}
                 </p>
               </div>
             </div>

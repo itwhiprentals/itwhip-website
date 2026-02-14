@@ -35,7 +35,7 @@ interface TripRecord {
 }
 
 // Generate simulated trip data
-function generateTripData(): TripRecord[] {
+function generateTripData(locale: string = 'en'): TripRecord[] {
   const trips: TripRecord[] = []
   const now = new Date()
 
@@ -89,7 +89,7 @@ export default function MileageForensicsDemo({ initialCoordinates }: MileageFore
   const [showReport, setShowReport] = useState(false)
 
   // Trip data
-  const trips = useMemo(() => generateTripData(), [])
+  const trips = useMemo(() => generateTripData(locale), [locale])
 
   // Animated counters
   const totalObd = trips.reduce((sum, t) => sum + t.obdMiles, 0)

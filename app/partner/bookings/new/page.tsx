@@ -1301,7 +1301,7 @@ export default function NewBookingPage() {
                         <>
                           <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
                           <span className="font-medium text-green-700 dark:text-green-400">
-                            {t('availableDays', { days: availability.tripDays })}
+                            {t('availableDays', { days: availability.tripDays || 0 })}
                           </span>
                         </>
                       ) : (

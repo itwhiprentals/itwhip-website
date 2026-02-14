@@ -58,6 +58,8 @@ export interface AIBookingRequest {
   visitorId?: string | null;
   /** Pass back vehicles from previous response so Claude can reference them */
   previousVehicles?: VehicleSummary[] | null;
+  /** User's locale for multilingual responses */
+  locale?: string;
 }
 
 export interface AIBookingResponse {

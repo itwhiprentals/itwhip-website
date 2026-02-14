@@ -381,7 +381,7 @@ function NewClaimPageInner() {
                           </span>
                           {booking.tripIssue?.hoursUntilEscalation !== null && (
                             <span className="text-xs text-gray-500">
-                              {t('hoursLeft', { hours: booking.tripIssue?.hoursUntilEscalation })}
+                              {t('hoursLeft', { hours: booking.tripIssue?.hoursUntilEscalation ?? 0 })}
                             </span>
                           )}
                         </div>

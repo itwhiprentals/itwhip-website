@@ -40,7 +40,7 @@ interface Review {
 }
 
 // Helper function to calculate time ago
-function getTimeAgo(dateString: string, t: (key: string, values?: Record<string, unknown>) => string): string {
+function getTimeAgo(dateString: string, t: (key: string, values?: Record<string, string | number | Date>) => string): string {
   const date = new Date(dateString)
   const now = new Date()
   const diffInMs = now.getTime() - date.getTime()

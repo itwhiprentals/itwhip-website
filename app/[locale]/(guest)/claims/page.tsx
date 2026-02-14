@@ -131,7 +131,7 @@ export default function ClaimsListPage() {
             : 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
         }`}>
           <Clock className="w-3 h-3 mr-1" />
-          {t('hoursToRespond', { hours: claim.hoursRemaining })}
+          {t('hoursToRespond', { hours: claim.hoursRemaining ?? 0 })}
         </span>
       )
     }

@@ -1232,7 +1232,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                         <div>
                           <p className="font-medium text-green-700 dark:text-green-300">{t('bdAgreementSigned')}</p>
                           <p className="text-sm text-green-600 dark:text-green-400">
-                            {t('bdSignedByOn', { name: booking.signerName, date: booking.agreementSignedAt ? new Date(booking.agreementSignedAt).toLocaleDateString() : 'N/A' })}
+                            {t('bdSignedByOn', { name: booking.signerName || '', date: booking.agreementSignedAt ? new Date(booking.agreementSignedAt).toLocaleDateString() : 'N/A' })}
                           </p>
                         </div>
                       </div>
@@ -1843,7 +1843,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   )}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {booking.agreementStatus === 'signed' ? t('bdSignedBy', { name: booking.signerName }) :
+                  {booking.agreementStatus === 'signed' ? t('bdSignedBy', { name: booking.signerName || '' }) :
                    booking.agreementStatus === 'viewed' ? t('bdCustomerReviewing') :
                    booking.agreementStatus === 'sent' ? t('bdAwaitingSignature') : t('bdNotSentYet')}
                 </p>

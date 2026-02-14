@@ -13,10 +13,11 @@ import frMessages from '@/messages/fr.json'
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
+// Portal layouts only use a subset of namespaces; cast to bypass full-key equality check
 const allMessages: Record<string, typeof enMessages> = {
   en: enMessages,
-  es: esMessages,
-  fr: frMessages,
+  es: esMessages as unknown as typeof enMessages,
+  fr: frMessages as unknown as typeof enMessages,
 }
 
 function pickNamespaces(messages: typeof enMessages) {

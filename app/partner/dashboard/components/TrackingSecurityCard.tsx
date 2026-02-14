@@ -783,7 +783,7 @@ export default function TrackingSecurityCard({
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>{t('tsGuest', { name: vehicle.guest })}</span>
+                            <span>{t('tsGuest', { name: vehicle.guest || '' })}</span>
                             {vehicle.tripEndsIn && <span>{t('tsEndsIn', { time: vehicle.tripEndsIn })}</span>}
                           </div>
                         </div>

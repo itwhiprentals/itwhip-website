@@ -144,7 +144,7 @@ function ConfirmLinkContent() {
               {t('loginRequired')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
-              {t('loginToConfirm', { type })}
+              {t('loginToConfirm', { type: type || '' })}
             </p>
 
             <button

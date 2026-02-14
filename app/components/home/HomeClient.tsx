@@ -194,10 +194,10 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
                   <IoCarSportOutline className="w-8 h-8 text-amber-700 dark:text-amber-400" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                  {t('noCarsInCity', { city: userLocation.city })}
+                  {t('noCarsInCity', { city: userLocation.city || '' })}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                  {t('beFirstHost', { city: userLocation.city })}
+                  {t('beFirstHost', { city: userLocation.city || '' })}
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                   <Link

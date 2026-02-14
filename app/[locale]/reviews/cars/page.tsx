@@ -30,7 +30,7 @@ function RatingBreakdown({
 }: {
   distribution: { rating: number; _count: { rating: number } }[]
   total: number
-  t: (key: string, values?: Record<string, unknown>) => string
+  t: (key: string, values?: Record<string, string | number | Date>) => string
 }) {
   const ratings = [5, 4, 3, 2, 1]
 
@@ -74,7 +74,7 @@ function getFirstName(name: string | null | undefined, fallback: string = 'Guest
 }
 
 // Helper to get car type label
-function getTypeLabel(type: string, t: (key: string, values?: Record<string, unknown>) => string): string {
+function getTypeLabel(type: string, t: (key: string, values?: Record<string, string | number | Date>) => string): string {
   const keyMap: Record<string, string> = {
     SEDAN: 'typeSedan',
     SUV: 'typeSUV',
@@ -92,7 +92,7 @@ function getTypeLabel(type: string, t: (key: string, values?: Record<string, unk
 }
 
 // Helper to get time ago
-function getTimeAgo(date: Date | string, t: (key: string, values?: Record<string, unknown>) => string): string {
+function getTimeAgo(date: Date | string, t: (key: string, values?: Record<string, string | number | Date>) => string): string {
   const d = new Date(date)
   const now = new Date()
   const diffInDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))

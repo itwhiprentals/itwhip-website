@@ -350,7 +350,7 @@ export default function PendingRequestCard() {
               {/* Fee Breakdown */}
               <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-700 space-y-1 text-sm">
                 <div className="flex justify-between text-gray-600 dark:text-gray-300">
-                  <span>{t('prDaysAtRate', { days: request.durationDays, rate: request.offeredRate?.toFixed(2) })}</span>
+                  <span>{t('prDaysAtRate', { days: request.durationDays || 0, rate: request.offeredRate?.toFixed(2) || '0' })}</span>
                   <span>${request.totalAmount?.toLocaleString() || (request.offeredRate! * request.durationDays!).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-gray-500 dark:text-gray-400">
@@ -398,7 +398,7 @@ export default function PendingRequestCard() {
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400">{t('prRentalPeriod')}</p>
               <p className="text-sm text-gray-900 dark:text-white font-medium">
-                {datesDisplay} ({t('prDaysCount', { days: request?.durationDays })})
+                {datesDisplay} ({t('prDaysCount', { days: request?.durationDays || 0 })})
               </p>
             </div>
             {/* Location */}
