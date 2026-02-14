@@ -118,9 +118,10 @@ function transformCarForCompactCard(car: any) {
     year: car.year,
     dailyRate: Number(car.dailyRate),
     carType: car.carType,
+    vehicleType: car.vehicleType,
     seats: car.seats || 5,
     city: car.city,
-    rating: car.rating ? Number(car.rating) : null,
+    rating: car._count?.reviews > 0 ? Number(car.rating) : null,
     totalTrips: car.totalTrips,
     instantBook: car.instantBook,
     photos: car.photos || [],
@@ -167,7 +168,9 @@ export default async function CitiesPage() {
           totalTrips: true,
           instantBook: true,
           carType: true,
+          vehicleType: true,
           seats: true,
+          _count: { select: { reviews: true } },
           photos: {
             select: {
               url: true,
