@@ -5,6 +5,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import PhoneLoginButton from '@/app/components/auth/PhoneLoginButton'
 import OAuthButtonsMinimal from '@/app/components/auth/OAuthButtonsMinimal'
@@ -45,6 +46,7 @@ function HostSignupContent() {
   const searchParams = useSearchParams()
   const { data: session, status } = useSession()
   const { executeRecaptcha } = useGoogleReCaptcha()
+  const t = useTranslations('HostSignup')
   const isOAuthUser = searchParams.get('oauth') === 'true' && session?.user
 
   // Dark mode detection
@@ -235,13 +237,13 @@ function HostSignupContent() {
       for (const file of Array.from(files)) {
         // Validate file type
         if (!file.type.startsWith('image/')) {
-          setError('Only image files are allowed')
+          setError(t('errorImageOnly'))
           continue
         }
 
         // Validate file size (10MB max)
         if (file.size > 10 * 1024 * 1024) {
-          setError('Each photo must be under 10MB')
+          setError(t('errorPhotoSize'))
           continue
         }
 
@@ -266,7 +268,7 @@ function HostSignupContent() {
       setVehiclePhotos(prev => [...prev, ...newPhotos])
     } catch (err) {
       console.error('Upload error:', err)
-      setError('Failed to upload photos. Please try again.')
+      setError(t('errorUploadFailed'))
     } finally {
       setUploadingPhotos(false)
       // Reset input
@@ -287,13 +289,13 @@ function HostSignupContent() {
 
     // For manage-only, skip step 3 validation (no photos required)
     if (!isManageOnly && !isStep3Valid()) {
-      setError('Please complete all required fields and upload at least 4 photos')
+      setError(t('errorIncomplete'))
       return
     }
 
     // For manage-only, just need to agree to terms
     if (isManageOnly && !formData.agreeToTerms) {
-      setError('Please agree to the Terms of Service')
+      setError(t('errorAgreeTerms'))
       return
     }
 
@@ -426,7 +428,7 @@ function HostSignupContent() {
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          <span className="text-sm">Back</span>
+          <span className="text-sm">{t('back')}</span>
         </a>
       </div>
       <div className="pb-12">
@@ -444,10 +446,10 @@ function HostSignupContent() {
               />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Host/Partner Application
+              {t('pageTitle')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Start earning by sharing your vehicle
+              {t('pageSubtitle')}
             </p>
           </div>
 
@@ -461,7 +463,7 @@ function HostSignupContent() {
                 }`}>
                   {currentStep > 1 ? '✓' : '1'}
                 </div>
-                <span className="text-xs text-gray-600 dark:text-gray-400 mt-2 font-medium">Info</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400 mt-2 font-medium">{t('stepInfo')}</span>
               </div>
 
               {/* Arrow Connector 1-2 */}
@@ -481,7 +483,7 @@ function HostSignupContent() {
                 }`}>
                   {(formData.hostRole === 'manage' && currentStep === 2) ? '✓' : (currentStep > 2 ? '✓' : '2')}
                 </div>
-                <span className="text-xs text-gray-600 dark:text-gray-400 mt-2 font-medium">{formData.hostRole === 'manage' ? 'Role' : 'Vehicle'}</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400 mt-2 font-medium">{formData.hostRole === 'manage' ? t('stepRole') : t('stepVehicle')}</span>
               </div>
 
               {/* Arrow Connector 2-3 and Step 3 - only show if not manage-only */}
@@ -503,7 +505,7 @@ function HostSignupContent() {
                     }`}>
                       3
                     </div>
-                    <span className="text-xs text-gray-600 dark:text-gray-400 mt-2 font-medium">Photos</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400 mt-2 font-medium">{t('stepPhotos')}</span>
                   </div>
                 </>
               )}
@@ -518,9 +520,9 @@ function HostSignupContent() {
               {currentStep === 1 && (
                 <div className="space-y-3">
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 text-center">
-                    Personal Information
+                    {t('personalInfoTitle')}
                   </h2>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 text-center">Create your host account</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 text-center">{t('createHostAccount')}</p>
 
                   {/* Phone-first + OAuth Buttons */}
                   <PhoneLoginButton hostMode mode="signup" />
@@ -534,7 +536,7 @@ function HostSignupContent() {
                       className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-all"
                     >
                       <IoMailOutline className="w-5 h-5" />
-                      <span className="font-medium">Continue with Email</span>
+                      <span className="font-medium">{t('continueWithEmail')}</span>
                     </button>
                   ) : (
                     <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
@@ -542,7 +544,7 @@ function HostSignupContent() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            First Name <span className="text-red-500">*</span>
+                            {t('firstName')} <span className="text-red-500">*</span>
                           </label>
                           <div className="relative">
                             <IoPersonOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -558,7 +560,7 @@ function HostSignupContent() {
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Last Name <span className="text-red-500">*</span>
+                            {t('lastName')} <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
@@ -574,7 +576,7 @@ function HostSignupContent() {
                       {/* Email */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Email Address <span className="text-red-500">*</span>
+                          {t('emailAddress')} <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
                           <IoMailOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -592,7 +594,7 @@ function HostSignupContent() {
                       {/* Phone */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Phone Number <span className="text-red-500">*</span>
+                          {t('phoneNumber')} <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
                           <IoPhonePortraitOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -611,7 +613,7 @@ function HostSignupContent() {
                       {/* Password */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Password <span className="text-red-500">*</span>
+                          {t('password')} <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
                           <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -620,7 +622,7 @@ function HostSignupContent() {
                             value={formData.password}
                             onChange={(e) => setFormData({...formData, password: e.target.value})}
                             className="w-full pl-10 pr-12 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-colors"
-                            placeholder="Min. 8 characters"
+                            placeholder={t('minCharacters')}
                             required
                             minLength={8}
                           />
@@ -637,7 +639,7 @@ function HostSignupContent() {
                       {/* Confirm Password */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Confirm Password <span className="text-red-500">*</span>
+                          {t('confirmPassword')} <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
                           <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -646,12 +648,12 @@ function HostSignupContent() {
                             value={formData.confirmPassword}
                             onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
                             className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-colors"
-                            placeholder="Confirm your password"
+                            placeholder={t('confirmYourPassword')}
                             required
                           />
                         </div>
                         {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                          <p className="text-red-500 text-sm mt-1">Passwords do not match</p>
+                          <p className="text-red-500 text-sm mt-1">{t('passwordsMismatch')}</p>
                         )}
                       </div>
 
@@ -662,7 +664,7 @@ function HostSignupContent() {
                         disabled={!isStep1Valid()}
                         className="w-full py-3 px-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                       >
-                        Continue to Vehicle Info
+                        {t('continueToVehicle')}
                       </button>
                     </div>
                   )}
@@ -679,10 +681,10 @@ function HostSignupContent() {
                         <IoCheckmarkCircle className="w-6 h-6 text-green-500 flex-shrink-0" />
                         <div>
                           <p className="font-medium text-green-800 dark:text-green-100">
-                            Welcome, {session?.user?.name || 'Host'}!
+                            {t('welcomeOAuth', { name: session?.user?.name || 'Host' })}
                           </p>
                           <p className="text-sm text-green-700 dark:text-green-300">
-                            Complete your host profile by selecting your role.
+                            {t('completeProfile')}
                           </p>
                         </div>
                       </div>
@@ -693,8 +695,8 @@ function HostSignupContent() {
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Left Column: Host Role Selection */}
                     <div>
-                      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1 text-center">What will you be doing on ItWhip?</h2>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 text-center">Choose how you plan to use the platform</p>
+                      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1 text-center">{t('roleSelectionTitle')}</h2>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 text-center">{t('roleSelectionSubtitle')}</p>
 
                       <div className="space-y-3">
                         {/* Option: Rent out my own cars */}
@@ -716,10 +718,10 @@ function HostSignupContent() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <IoCarOutline className="w-5 h-5 text-green-500" />
-                              <span className="font-medium text-gray-900 dark:text-white text-sm lg:text-base">Rent out my own car(s)</span>
+                              <span className="font-medium text-gray-900 dark:text-white text-sm lg:text-base">{t('roleOwnCars')}</span>
                             </div>
                             <p className="text-xs lg:text-sm text-gray-600 dark:text-gray-400 mt-1">
-                              I&apos;ll manage my vehicles and handle bookings myself
+                              {t('roleOwnCarsDesc')}
                             </p>
                           </div>
                         </label>
@@ -743,10 +745,10 @@ function HostSignupContent() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <IoPeopleOutline className="w-5 h-5 text-purple-500" />
-                              <span className="font-medium text-gray-900 dark:text-white text-sm lg:text-base">Manage other people&apos;s cars</span>
+                              <span className="font-medium text-gray-900 dark:text-white text-sm lg:text-base">{t('roleManageCars')}</span>
                             </div>
                             <p className="text-xs lg:text-sm text-gray-600 dark:text-gray-400 mt-1">
-                              I&apos;m a fleet manager - I&apos;ll manage vehicles for other owners
+                              {t('roleManageCarsDesc')}
                             </p>
                           </div>
                         </label>
@@ -770,10 +772,10 @@ function HostSignupContent() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <IoLayersOutline className="w-5 h-5 text-indigo-500" />
-                              <span className="font-medium text-gray-900 dark:text-white text-sm lg:text-base">Both - I want to do it all</span>
+                              <span className="font-medium text-gray-900 dark:text-white text-sm lg:text-base">{t('roleBoth')}</span>
                             </div>
                             <p className="text-xs lg:text-sm text-gray-600 dark:text-gray-400 mt-1">
-                              I&apos;ll rent my own vehicles AND manage for other owners
+                              {t('roleBothDesc')}
                             </p>
                           </div>
                         </label>
@@ -797,10 +799,10 @@ function HostSignupContent() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <IoBusinessOutline className="w-5 h-5 text-orange-500" />
-                              <span className="font-medium text-gray-900 dark:text-white text-sm lg:text-base">Fleet Owner - I own 5+ vehicles</span>
+                              <span className="font-medium text-gray-900 dark:text-white text-sm lg:text-base">{t('roleFleetOwner')}</span>
                             </div>
                             <p className="text-xs lg:text-sm text-gray-600 dark:text-gray-400 mt-1">
-                              I own a fleet of 5 or more vehicles and want to list them all
+                              {t('roleFleetOwnerDesc')}
                             </p>
                           </div>
                         </label>
@@ -812,8 +814,8 @@ function HostSignupContent() {
                       {/* Vehicle Details - only shown for hosts who own cars */}
                       {formData.hostRole !== 'manage' && formData.hostRole !== '' && (
                         <>
-                          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1 text-center">Vehicle Details</h2>
-                          <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 text-center">Add your first vehicle to start earning</p>
+                          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1 text-center">{t('vehicleDetailsTitle')}</h2>
+                          <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 text-center">{t('vehicleDetailsSubtitle')}</p>
 
                           <CarInformationForm
                             carData={vehicleData}
@@ -829,7 +831,7 @@ function HostSignupContent() {
                       {formData.hostRole === '' && (
                         <div className="h-full flex items-center justify-center border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg p-8">
                           <p className="text-gray-500 text-center">
-                            Select how you plan to use ItWhip to continue
+                            {t('selectRolePlaceholder')}
                           </p>
                         </div>
                       )}
@@ -838,19 +840,18 @@ function HostSignupContent() {
                       {formData.hostRole === 'manage' && (
                         <div className="flex flex-col">
                           {/* Header spacing to align with left column */}
-                          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1 text-center">Fleet Manager</h2>
-                          <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 text-center">Your fleet management profile</p>
+                          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1 text-center">{t('fleetManagerTitle')}</h2>
+                          <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 text-center">{t('fleetManagerSubtitle')}</p>
 
                           <div className="p-4 lg:p-5 bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-700 rounded-lg">
                             <div className="flex items-start gap-3">
                               <IoPeopleOutline className="w-5 h-5 text-purple-500 dark:text-purple-400 flex-shrink-0 mt-0.5" />
                               <div>
-                                <h3 className="font-medium text-gray-900 dark:text-white mb-1 text-center text-sm">Fleet Manager Account</h3>
+                                <h3 className="font-medium text-gray-900 dark:text-white mb-1 text-center text-sm">{t('fleetManagerAccount')}</h3>
                                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                                  After approval, you&apos;ll get your own profile page to showcase your fleet management services.
-                                  You can invite car owners to have you manage their vehicles, or they can invite you to manage their listings.{' '}
+                                  {t('fleetManagerDesc')}{' '}
                                   <Link href="/how-it-works" className="text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300">
-                                    Learn more →
+                                    {t('learnMore')}
                                   </Link>
                                 </p>
                               </div>
@@ -867,14 +868,18 @@ function HostSignupContent() {
                               className="mt-0.5 h-5 w-5 text-green-600 focus:ring-green-500 border-2 border-gray-300 dark:border-gray-500 rounded cursor-pointer bg-white dark:bg-gray-800 flex-shrink-0"
                             />
                             <label htmlFor="termsManage" className="text-xs lg:text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none">
-                              I agree to the{' '}
-                              <Link href="/terms" className="text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 underline font-medium">
-                                Terms and Conditions
-                              </Link>{' '}
-                              and{' '}
-                              <Link href="/privacy" className="text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 underline font-medium">
-                                Privacy Policy
-                              </Link>
+                              {t.rich('agreeToTerms', {
+                                termsLink: (chunks) => (
+                                  <Link href="/terms" className="text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 underline font-medium">
+                                    {chunks}
+                                  </Link>
+                                ),
+                                privacyLink: (chunks) => (
+                                  <Link href="/privacy" className="text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 underline font-medium">
+                                    {chunks}
+                                  </Link>
+                                )
+                              })}
                             </label>
                           </div>
                         </div>
@@ -897,7 +902,7 @@ function HostSignupContent() {
                         onClick={handlePrevStep}
                         className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium rounded-lg transition-all duration-200"
                       >
-                        Back
+                        {t('back')}
                       </button>
                     )}
                     <button
@@ -913,10 +918,10 @@ function HostSignupContent() {
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            Creating Fleet Manager Account...
+                            {t('creatingFleetManager')}
                           </span>
-                        ) : 'Complete Signup'
-                      ) : 'Continue to Photos'}
+                        ) : t('completeSignup')
+                      ) : t('continueToPhotos')}
                     </button>
                   </div>
                 </div>
@@ -926,10 +931,10 @@ function HostSignupContent() {
               {currentStep === 3 && (
                 <div className="space-y-4">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1 text-center">
-                    Vehicle Photos
+                    {t('vehiclePhotosTitle')}
                   </h2>
                   <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 text-center">
-                    Upload at least {MIN_PHOTOS_REQUIRED} photos of your vehicle to help renters see what they&apos;re booking.
+                    {t('vehiclePhotosSubtitle', { count: MIN_PHOTOS_REQUIRED })}
                   </p>
 
                   {/* Photo Count Indicator */}
@@ -949,12 +954,12 @@ function HostSignupContent() {
                           ? 'text-emerald-300'
                           : 'text-amber-300'
                       }`}>
-                        {vehiclePhotos.length} of {MIN_PHOTOS_REQUIRED} minimum photos uploaded
+                        {t('photosUploaded', { current: vehiclePhotos.length, min: MIN_PHOTOS_REQUIRED })}
                       </span>
                     </div>
                     {vehiclePhotos.length < MIN_PHOTOS_REQUIRED && (
                       <span className="text-xs text-amber-400">
-                        {MIN_PHOTOS_REQUIRED - vehiclePhotos.length} more required
+                        {t('photosMoreRequired', { count: MIN_PHOTOS_REQUIRED - vehiclePhotos.length })}
                       </span>
                     )}
                   </div>
@@ -976,16 +981,16 @@ function HostSignupContent() {
                     {uploadingPhotos ? (
                       <div className="flex flex-col items-center gap-2">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Uploading photos...</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{t('uploadingPhotos')}</span>
                       </div>
                     ) : (
                       <>
                         <IoCloudUploadOutline className="w-10 h-10 text-green-500 mx-auto mb-2" />
                         <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Click to upload photos
+                          {t('clickToUpload')}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          JPG, PNG up to 10MB each
+                          {t('photoFormats')}
                         </p>
                       </>
                     )}
@@ -1011,7 +1016,7 @@ function HostSignupContent() {
                           </button>
                           {index === 0 && (
                             <div className="absolute bottom-2 left-2 px-2 py-1 bg-green-500 text-white text-xs rounded">
-                              Main Photo
+                              {t('mainPhoto')}
                             </div>
                           )}
                         </div>
@@ -1023,9 +1028,9 @@ function HostSignupContent() {
                   {vehiclePhotos.length === 0 && (
                     <div className="text-center py-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                       <IoImageOutline className="w-10 h-10 text-gray-400 dark:text-gray-500 mx-auto mb-2" />
-                      <p className="text-sm text-gray-600 dark:text-gray-400">No photos uploaded yet</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('noPhotosYet')}</p>
                       <p className="text-xs text-gray-500 mt-1">
-                        Add photos of exterior, interior, and key features
+                        {t('photosTip')}
                       </p>
                     </div>
                   )}
@@ -1041,14 +1046,18 @@ function HostSignupContent() {
                       required
                     />
                     <label htmlFor="terms" className="text-xs lg:text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none">
-                      I agree to the{' '}
-                      <Link href="/terms" className="text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 underline font-medium">
-                        Terms and Conditions
-                      </Link>{' '}
-                      and{' '}
-                      <Link href="/privacy" className="text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 underline font-medium">
-                        Privacy Policy
-                      </Link>
+                      {t.rich('agreeToTerms', {
+                        termsLink: (chunks) => (
+                          <Link href="/terms" className="text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 underline font-medium">
+                            {chunks}
+                          </Link>
+                        ),
+                        privacyLink: (chunks) => (
+                          <Link href="/privacy" className="text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 underline font-medium">
+                            {chunks}
+                          </Link>
+                        )
+                      })}
                     </label>
                   </div>
 
@@ -1069,14 +1078,14 @@ function HostSignupContent() {
                       onClick={handlePrevStep}
                       className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium rounded-lg transition-all duration-200"
                     >
-                      Back
+                      {t('back')}
                     </button>
                     <button
                       type="submit"
                       disabled={isLoading || !isStep3Valid()}
                       className="flex-1 py-3 px-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isLoading ? 'Creating Host Profile...' : 'Create Account'}
+                      {isLoading ? t('creatingHostProfile') : t('createAccount')}
                     </button>
                   </div>
                 </div>
@@ -1086,9 +1095,9 @@ function HostSignupContent() {
             {/* Login Link */}
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Already have an account?{' '}
+                {t('alreadyHaveAccount')}{' '}
                 <Link href="/host/login" className="text-green-600 dark:text-green-400 hover:underline font-medium">
-                  Sign In
+                  {t('signIn')}
                 </Link>
               </p>
             </div>
@@ -1097,24 +1106,24 @@ function HostSignupContent() {
           {/* Benefits */}
           <div className="mt-10 max-w-md mx-auto">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4 text-center">
-              Why host with ItWhip?
+              {t('whyHost')}
             </h3>
             <div className="flex flex-col gap-3 items-center md:items-start">
               <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
                 <IoCheckmarkCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                <span>Earn up to 90% of each rental</span>
+                <span>{t('benefit1')}</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
                 <IoCheckmarkCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                <span>$1M liability insurance included</span>
+                <span>{t('benefit2')}</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
                 <IoCheckmarkCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                <span>24/7 roadside assistance</span>
+                <span>{t('benefit3')}</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
                 <IoCheckmarkCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                <span>You control pricing &amp; availability</span>
+                <span>{t('benefit4')}</span>
               </div>
             </div>
 
@@ -1123,14 +1132,18 @@ function HostSignupContent() {
           {/* Mini Footer */}
           <div className="mt-8 pb-4 text-center">
             <p className="text-xs text-gray-500 dark:text-gray-500">
-              By continuing, you agree to our{' '}
-              <Link href="/terms" className="underline hover:text-gray-700 dark:hover:text-gray-300">
-                Terms of Service
-              </Link>{' '}
-              and{' '}
-              <Link href="/privacy" className="underline hover:text-gray-700 dark:hover:text-gray-300">
-                Privacy Policy
-              </Link>
+              {t.rich('footerDisclaimer', {
+                termsLink: (chunks) => (
+                  <Link href="/terms" className="underline hover:text-gray-700 dark:hover:text-gray-300">
+                    {chunks}
+                  </Link>
+                ),
+                privacyLink: (chunks) => (
+                  <Link href="/privacy" className="underline hover:text-gray-700 dark:hover:text-gray-300">
+                    {chunks}
+                  </Link>
+                )
+              })}
             </p>
           </div>
         </div>

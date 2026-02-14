@@ -4,7 +4,8 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import HeroSection from '@/app/rentals-sections/HeroSection'
 import QuickActionsBar from '@/app/rentals-sections/QuickActionsBar'
 import BrowseByTypeSection from '@/app/rentals-sections/BrowseByTypeSection'
@@ -24,6 +25,8 @@ interface HomeClientProps {
 }
 
 export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClientProps) {
+  const t = useTranslations('Home')
+
   // Initialize with server-rendered data (no empty state!)
   const [esgCars, setEsgCars] = useState<HomePageCar[]>(initialEsgCars)
   const [cityCars, setCityCars] = useState<HomePageCar[]>(initialCityCars)
@@ -97,17 +100,17 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
               <div>
                 <span className="text-emerald-700 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
                   <IoLeafOutline className="w-3.5 h-3.5" />
-                  ESG Impact Leaders
+                  {t('esgLabel')}
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                  Top ESG-Impact Vehicles in Arizona
+                  {t('esgHeading')}
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  Low emissions rentals with verified maintenance scores
+                  {t('esgDescription')}
                 </p>
               </div>
               <Link href="/rentals/search?filter=impact" className="hidden sm:flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium hover:underline">
-                View all <IoArrowForwardOutline className="w-4 h-4" />
+                {t('viewAll')} <IoArrowForwardOutline className="w-4 h-4" />
               </Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
@@ -137,7 +140,7 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
             {esgCars.length > 0 && (
               <div className="mt-6 text-center sm:hidden">
                 <Link href="/rentals/search?filter=impact" className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-700 text-white rounded-lg font-medium">
-                  View all Impact Leaders <IoArrowForwardOutline className="w-5 h-5" />
+                  {t('viewAllImpactLeaders')} <IoArrowForwardOutline className="w-5 h-5" />
                 </Link>
               </div>
             )}
@@ -151,20 +154,20 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
               <div>
                 <span className="text-amber-700 dark:text-amber-400 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
                   <IoLocationOutline className="w-3.5 h-3.5" />
-                  Rent From Local Owners
+                  {t('p2pLabel')}
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                  P2P Rentals in {userLocation.displayLocationFull}
+                  {t('p2pHeading', { location: userLocation.displayLocationFull })}
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  Rent directly from verified local hosts
+                  {t('p2pDescription')}
                 </p>
               </div>
               <Link
                 href="/rentals/cities"
                 className="hidden sm:flex items-center gap-1 text-amber-700 dark:text-amber-400 font-medium hover:underline"
               >
-                View all <IoArrowForwardOutline className="w-4 h-4" />
+                {t('viewAll')} <IoArrowForwardOutline className="w-4 h-4" />
               </Link>
             </div>
 
@@ -191,10 +194,10 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
                   <IoCarSportOutline className="w-8 h-8 text-amber-700 dark:text-amber-400" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                  No cars available in {userLocation.city} yet
+                  {t('noCarsInCity', { city: userLocation.city || '' })}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                  Be the first host to list your car in {userLocation.city} and start earning up to 90% of each rental.
+                  {t('beFirstHost', { city: userLocation.city || '' })}
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                   <Link
@@ -202,14 +205,14 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
                     className="inline-flex items-center gap-2 px-6 py-3 bg-amber-700 hover:bg-amber-800 text-white rounded-lg font-medium transition-colors"
                   >
                     <IoCarSportOutline className="w-5 h-5" />
-                    List Your Car
+                    {t('listYourCar')}
                   </Link>
                   <Link
                     href="/rentals/search"
                     className="inline-flex items-center gap-2 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
                     <IoMapOutline className="w-5 h-5" />
-                    View Other Cities
+                    {t('viewOtherCities')}
                   </Link>
                 </div>
               </div>
@@ -222,16 +225,16 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
                   <IoMapOutline className="w-8 h-8 text-amber-700 dark:text-amber-400" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                  Explore Cars Across Arizona
+                  {t('exploreCarsArizona')}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                  Browse peer-to-peer rentals in Phoenix, Scottsdale, Tempe, and other Arizona cities.
+                  {t('browseP2PRentals')}
                 </p>
                 <Link
                   href="/rentals/search"
                   className="inline-flex items-center gap-2 px-6 py-3 bg-amber-700 hover:bg-amber-800 text-white rounded-lg font-medium transition-colors"
                 >
-                  Browse All Cars <IoArrowForwardOutline className="w-5 h-5" />
+                  {t('browseAllCars')} <IoArrowForwardOutline className="w-5 h-5" />
                 </Link>
               </div>
             )}
@@ -256,7 +259,7 @@ export default function HomeClient({ initialEsgCars, initialCityCars }: HomeClie
                     href="/rentals/cities"
                     className="inline-flex items-center gap-2 px-6 py-3 bg-amber-700 hover:bg-amber-800 text-white rounded-lg font-medium transition-colors"
                   >
-                    Browse All <IoArrowForwardOutline className="w-5 h-5" />
+                    {t('browseAll')} <IoArrowForwardOutline className="w-5 h-5" />
                   </Link>
                 </div>
               </>

@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   IoWalletOutline,
   IoTrendingUpOutline,
@@ -94,6 +95,9 @@ interface PayoutHistoryData {
 }
 
 export default function PartnerRevenuePage() {
+  const t = useTranslations('PartnerRevenue')
+
+  const locale = useLocale()
   const [data, setData] = useState<RevenueData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [period, setPeriod] = useState<'month' | 'quarter' | 'year' | 'all'>('month')
@@ -186,7 +190,7 @@ export default function PartnerRevenuePage() {
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
@@ -247,9 +251,9 @@ export default function PartnerRevenuePage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Revenue</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('title')}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Track earnings and commission breakdown
+            {t('subtitle')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -258,10 +262,10 @@ export default function PartnerRevenuePage() {
             onChange={(e) => setPeriod(e.target.value as any)}
             className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
           >
-            <option value="month">This Month</option>
-            <option value="quarter">This Quarter</option>
-            <option value="year">This Year</option>
-            <option value="all">All Time</option>
+            <option value="month">{t('thisMonth')}</option>
+            <option value="quarter">{t('thisQuarter')}</option>
+            <option value="year">{t('thisYear')}</option>
+            <option value="all">{t('allTime')}</option>
           </select>
           <a
             href="/api/partner/export?type=revenue"
@@ -269,7 +273,7 @@ export default function PartnerRevenuePage() {
             className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <IoDownloadOutline className="w-5 h-5" />
-            Export CSV
+            {t('exportCsv')}
           </a>
         </div>
       </div>
@@ -309,10 +313,10 @@ export default function PartnerRevenuePage() {
                     : 'text-blue-800 dark:text-blue-300'
                 }`}>
                   {bankingStatus.stripeConnectStatus === 'not_connected'
-                    ? 'Set Up Payouts'
+                    ? t('setUpPayouts')
                     : bankingStatus.stripeConnectStatus === 'restricted'
-                    ? 'Action Required'
-                    : 'Verification Pending'}
+                    ? t('actionRequired')
+                    : t('verificationPending')}
                 </h3>
                 <p className={`text-sm mt-0.5 ${
                   bankingStatus.stripeConnectStatus === 'not_connected'
@@ -322,10 +326,10 @@ export default function PartnerRevenuePage() {
                     : 'text-blue-700 dark:text-blue-400'
                 }`}>
                   {bankingStatus.stripeConnectStatus === 'not_connected'
-                    ? 'Connect your bank account to receive payouts for your bookings.'
+                    ? t('connectBankDescription')
                     : bankingStatus.stripeConnectStatus === 'restricted'
-                    ? 'Complete verification to enable payouts. Additional information is required.'
-                    : 'Your account is being verified. This usually takes 1-2 business days.'}
+                    ? t('completeVerificationDescription')
+                    : t('verificationPendingDescription')}
                 </p>
               </div>
             </div>
@@ -340,12 +344,12 @@ export default function PartnerRevenuePage() {
                   : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 cursor-not-allowed'
               }`}
             >
-              {connectingStripe ? 'Connecting...' : (
+              {connectingStripe ? t('connecting') : (
                 bankingStatus.stripeConnectStatus === 'not_connected'
-                  ? 'Connect Bank Account'
+                  ? t('connectBankAccount')
                   : bankingStatus.stripeConnectStatus === 'restricted'
-                  ? 'Complete Verification'
-                  : 'Pending...'
+                  ? t('completeVerification')
+                  : t('pending')
               )}
             </button>
           </div>
@@ -360,15 +364,15 @@ export default function PartnerRevenuePage() {
               <IoCardOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="font-medium text-green-800 dark:text-green-300">Payouts Enabled</p>
-              <p className="text-sm text-green-700 dark:text-green-400">Your bank account is connected and ready to receive payouts.</p>
+              <p className="font-medium text-green-800 dark:text-green-300">{t('payoutsEnabled')}</p>
+              <p className="text-sm text-green-700 dark:text-green-400">{t('payoutsEnabledDescription')}</p>
             </div>
           </div>
           <a
             href="/partner/settings?tab=banking"
             className="text-sm text-green-700 dark:text-green-400 hover:underline font-medium"
           >
-            Manage →
+            {t('manage')} →
           </a>
         </div>
       )}
@@ -386,12 +390,12 @@ export default function PartnerRevenuePage() {
               +12%
             </span>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Net Revenue</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('netRevenue')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
             {formatCurrency(revenueData.netRevenue)}
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            After {Math.round(revenueData.commissionRate * 100)}% commission
+            {t('afterCommission', { rate: Math.round(revenueData.commissionRate * 100) })}
           </p>
         </div>
 
@@ -402,12 +406,12 @@ export default function PartnerRevenuePage() {
               <IoReceiptOutline className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Gross Revenue</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('grossRevenue')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
             {formatCurrency(revenueData.grossRevenue)}
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            Total booking value
+            {t('totalBookingValue')}
           </p>
         </div>
 
@@ -418,12 +422,12 @@ export default function PartnerRevenuePage() {
               <IoCardOutline className="w-6 h-6 text-orange-600 dark:text-orange-400" />
             </div>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Platform Commission</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('platformCommission')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
             {formatCurrency(revenueData.commission)}
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            {Math.round(revenueData.commissionRate * 100)}% of gross
+            {t('ofGross', { rate: Math.round(revenueData.commissionRate * 100) })}
           </p>
         </div>
 
@@ -434,12 +438,12 @@ export default function PartnerRevenuePage() {
               <IoCalendarOutline className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             </div>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Avg Booking Value</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('avgBookingValue')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
             {formatCurrency(revenueData.avgBookingValue)}
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            From {revenueData.totalBookings} bookings
+            {t('fromBookings', { count: revenueData.totalBookings })}
           </p>
         </div>
       </div>
@@ -454,15 +458,15 @@ export default function PartnerRevenuePage() {
                 <IoCarOutline className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <span className="px-2 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg">
-                Active
+                {t('activeBadge')}
               </span>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">In Progress</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('inProgress')}</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
               {formatCurrency(revenueData.upcomingNetRevenue || 0)}
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              {revenueData.upcomingBookingsCount} active trip{revenueData.upcomingBookingsCount !== 1 ? 's' : ''}
+              {t('activeTrips', { count: revenueData.upcomingBookingsCount })}
             </p>
           </div>
 
@@ -473,15 +477,15 @@ export default function PartnerRevenuePage() {
                 <IoReceiptOutline className="w-6 h-6 text-amber-600 dark:text-amber-400" />
               </div>
               <span className="px-2 py-1 text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg">
-                Pending
+                {t('pendingBadge')}
               </span>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Awaiting Approval</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('awaitingApproval')}</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
               {formatCurrency(revenueData.pendingGrossRevenue || 0)}
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              {revenueData.pendingBookingsCount} request{revenueData.pendingBookingsCount !== 1 ? 's' : ''} pending
+              {t('requestsPending', { count: revenueData.pendingBookingsCount })}
             </p>
           </div>
 
@@ -492,15 +496,15 @@ export default function PartnerRevenuePage() {
                 <IoCardOutline className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
               </div>
               <span className="px-2 py-1 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-lg">
-                Online
+                {t('onlineBadge')}
               </span>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Stripe Payments</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('stripePayments')}</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
               {formatCurrency(revenueData.stripeRevenue || 0)}
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              {revenueData.stripeBookingsCount || 0} booking{(revenueData.stripeBookingsCount || 0) !== 1 ? 's' : ''}
+              {t('bookingsCount', { count: revenueData.stripeBookingsCount || 0 })}
             </p>
           </div>
 
@@ -511,15 +515,15 @@ export default function PartnerRevenuePage() {
                 <IoWalletOutline className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
               <span className="px-2 py-1 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg">
-                Cash
+                {t('cashBadge')}
               </span>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Manual Payments</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('manualPayments')}</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
               {formatCurrency(revenueData.cashRevenue || 0)}
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              {revenueData.cashBookingsCount || 0} booking{(revenueData.cashBookingsCount || 0) !== 1 ? 's' : ''}
+              {t('bookingsCount', { count: revenueData.cashBookingsCount || 0 })}
             </p>
           </div>
         </div>
@@ -529,7 +533,7 @@ export default function PartnerRevenuePage() {
         {/* Monthly Revenue Chart */}
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Monthly Revenue</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('monthlyRevenue')}</h2>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowGross(false)}
@@ -539,7 +543,7 @@ export default function PartnerRevenuePage() {
                     : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
-                Net
+                {t('net')}
               </button>
               <button
                 onClick={() => setShowGross(true)}
@@ -549,7 +553,7 @@ export default function PartnerRevenuePage() {
                     : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
-                Gross
+                {t('gross')}
               </button>
             </div>
           </div>
@@ -559,9 +563,9 @@ export default function PartnerRevenuePage() {
             {revenueData.monthlyData.length === 0 ? (
               <div className="text-center py-8">
                 <IoTrendingUpOutline className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                <p className="text-gray-500 dark:text-gray-400">No revenue data yet</p>
+                <p className="text-gray-500 dark:text-gray-400">{t('noRevenueData')}</p>
                 <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-                  Complete bookings to see your monthly revenue
+                  {t('completeBookingsMonthly')}
                 </p>
               </div>
             ) : (
@@ -602,11 +606,11 @@ export default function PartnerRevenuePage() {
             <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-blue-500 rounded" />
-                <span className="text-xs text-gray-500 dark:text-gray-400">Gross Revenue</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{t('grossRevenueLabel')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-orange-500 rounded" />
-                <span className="text-xs text-gray-500 dark:text-gray-400">Commission</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{t('commissionLabel')}</span>
               </div>
             </div>
           )}
@@ -614,14 +618,14 @@ export default function PartnerRevenuePage() {
 
         {/* Top Performing Vehicles */}
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Top Vehicles</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{t('topVehicles')}</h2>
 
           {revenueData.topVehicles.length === 0 ? (
             <div className="text-center py-8">
               <IoCarOutline className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-500 dark:text-gray-400">No vehicle data yet</p>
+              <p className="text-gray-500 dark:text-gray-400">{t('noVehicleData')}</p>
               <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-                Complete bookings to see top performing vehicles
+                {t('completeBookingsVehicles')}
               </p>
             </div>
           ) : (
@@ -639,7 +643,7 @@ export default function PartnerRevenuePage() {
                       {vehicle.name}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {vehicle.bookings} bookings
+                      {t('vehicleBookings', { count: vehicle.bookings })}
                     </p>
                   </div>
                   <div className="text-right">
@@ -657,7 +661,7 @@ export default function PartnerRevenuePage() {
       {/* Recent Payouts */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Payouts</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('recentPayouts')}</h2>
           <div className="flex items-center gap-4">
             <button
               onClick={() => {
@@ -666,7 +670,7 @@ export default function PartnerRevenuePage() {
               }}
               className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"
             >
-              View All Payouts →
+              {t('viewAllPayouts')} →
             </button>
           </div>
         </div>
@@ -674,9 +678,9 @@ export default function PartnerRevenuePage() {
         {revenueData.recentPayouts.length === 0 ? (
           <div className="text-center py-8">
             <IoWalletOutline className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">No payouts yet</p>
+            <p className="text-gray-500 dark:text-gray-400">{t('noPayoutsYet')}</p>
             <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-              Payouts are processed weekly once you complete bookings
+              {t('payoutsProcessedWeekly')}
             </p>
           </div>
         ) : (
@@ -685,16 +689,16 @@ export default function PartnerRevenuePage() {
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700">
                   <th className="pb-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Period
+                    {t('periodHeader')}
                   </th>
                   <th className="pb-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Amount
+                    {t('amountHeader')}
                   </th>
                   <th className="pb-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Status
+                    {t('statusHeader')}
                   </th>
                   <th className="pb-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Date
+                    {t('dateHeader')}
                   </th>
                 </tr>
               </thead>
@@ -719,7 +723,7 @@ export default function PartnerRevenuePage() {
                     <td className="py-4">
                       <span className="text-sm text-gray-500 dark:text-gray-400">
                         {payout.paidAt
-                          ? new Date(payout.paidAt).toLocaleDateString('en-US', {
+                          ? new Date(payout.paidAt).toLocaleDateString(locale, {
                               month: 'short',
                               day: 'numeric',
                               year: 'numeric'
@@ -745,10 +749,10 @@ export default function PartnerRevenuePage() {
               {/* Modal Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Payout History</h2>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('payoutHistory')}</h2>
                   {payoutHistory && (
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      {payoutHistory.stats.completedPayouts} completed · {formatCurrency(payoutHistory.stats.totalPaid)} total paid
+                      {t('completedTotalPaid', { completed: payoutHistory.stats.completedPayouts, totalPaid: formatCurrency(payoutHistory.stats.totalPaid) })}
                     </p>
                   )}
                 </div>
@@ -767,25 +771,25 @@ export default function PartnerRevenuePage() {
                     <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                       {formatCurrency(payoutHistory.stats.totalPaid)}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Total Paid</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('totalPaid')}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                       {formatCurrency(payoutHistory.stats.pendingAmount)}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Pending</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('pendingAmount')}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {payoutHistory.stats.totalPayouts}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Total Payouts</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('totalPayouts')}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {payoutHistory.stats.completedPayouts}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('completed')}</p>
                   </div>
                 </div>
               )}
@@ -799,32 +803,32 @@ export default function PartnerRevenuePage() {
                 ) : !payoutHistory || payoutHistory.payouts.length === 0 ? (
                   <div className="text-center py-12">
                     <IoWalletOutline className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                    <p className="text-gray-500 dark:text-gray-400">No payouts yet</p>
+                    <p className="text-gray-500 dark:text-gray-400">{t('noPayoutsYet')}</p>
                   </div>
                 ) : (
                   <table className="w-full">
                     <thead className="bg-gray-50 dark:bg-gray-900/50 sticky top-0">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                          Period
+                          {t('periodHeader')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                          Bookings
+                          {t('bookingsHeader')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                          Gross
+                          {t('grossHeader')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                          Commission
+                          {t('commissionHeader')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                          Net Payout
+                          {t('netPayoutHeader')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                          Status
+                          {t('statusHeader')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                          Date
+                          {t('dateHeader')}
                         </th>
                       </tr>
                     </thead>
@@ -864,7 +868,7 @@ export default function PartnerRevenuePage() {
                           <td className="px-6 py-4">
                             <span className="text-sm text-gray-500 dark:text-gray-400">
                               {payout.paidAt
-                                ? new Date(payout.paidAt).toLocaleDateString('en-US', {
+                                ? new Date(payout.paidAt).toLocaleDateString(locale, {
                                     month: 'short',
                                     day: 'numeric',
                                     year: 'numeric'
@@ -884,7 +888,7 @@ export default function PartnerRevenuePage() {
               {payoutHistory && payoutHistory.pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-gray-700">
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Page {payoutHistory.pagination.page} of {payoutHistory.pagination.totalPages}
+                    {t('pageOf', { page: payoutHistory.pagination.page, totalPages: payoutHistory.pagination.totalPages })}
                   </p>
                   <div className="flex items-center gap-2">
                     <button

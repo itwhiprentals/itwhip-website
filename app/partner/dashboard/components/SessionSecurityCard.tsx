@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -88,6 +89,9 @@ export default function SessionSecurityCard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'session' | 'security' | 'api' | 'audit'>('session')
+  const t = useTranslations('PartnerDashboard')
+
+  const locale = useLocale()
 
   useEffect(() => {
     fetchSessionInfo()
@@ -123,7 +127,7 @@ export default function SessionSecurityCard() {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Never'
     const date = new Date(dateString)
-    return date.toLocaleString('en-US', {
+    return date.toLocaleString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -191,7 +195,7 @@ export default function SessionSecurityCard() {
             onClick={fetchSessionInfo}
             className="mt-2 text-sm text-orange-600 hover:text-orange-700"
           >
-            Try Again
+            {t('tsTryAgain')}
           </button>
         </div>
       </div>
@@ -246,7 +250,7 @@ export default function SessionSecurityCard() {
           }`}
         >
           <IoDesktopOutline className="w-4 h-4 inline-block mr-1.5" />
-          Session
+          {t('tsSession')}
         </button>
         <button
           onClick={() => setActiveTab('security')}
@@ -257,7 +261,7 @@ export default function SessionSecurityCard() {
           }`}
         >
           <IoShieldCheckmarkOutline className="w-4 h-4 inline-block mr-1.5" />
-          Security
+          {t('tsSecurity')}
         </button>
         <button
           onClick={() => setActiveTab('api')}
@@ -268,7 +272,7 @@ export default function SessionSecurityCard() {
           }`}
         >
           <IoKeyOutline className="w-4 h-4 inline-block mr-1.5" />
-          API
+          {t('tsAPI')}
         </button>
         <button
           onClick={() => setActiveTab('audit')}
@@ -279,7 +283,7 @@ export default function SessionSecurityCard() {
           }`}
         >
           <IoListOutline className="w-4 h-4 inline-block mr-1.5" />
-          Audit
+          {t('tsAudit')}
         </button>
       </div>
 
@@ -291,7 +295,7 @@ export default function SessionSecurityCard() {
             {/* Current Session */}
             <div>
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-                Current Session
+                {t('tsCurrentSession')}
               </p>
               <div className="space-y-2">
                 <div className="flex items-center justify-between py-1.5">
@@ -301,7 +305,7 @@ export default function SessionSecurityCard() {
                     ) : (
                       <IoDesktopOutline className="w-4 h-4" />
                     )}
-                    <span>Device</span>
+                    <span>{t('tsDevice')}</span>
                   </div>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
                     {data.currentSession.deviceType} ({data.currentSession.os})
@@ -310,7 +314,7 @@ export default function SessionSecurityCard() {
                 <div className="flex items-center justify-between py-1.5">
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                     <IoGlobeOutline className="w-4 h-4" />
-                    <span>Browser</span>
+                    <span>{t('tsBrowser')}</span>
                   </div>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
                     {data.currentSession.browser}
@@ -319,7 +323,7 @@ export default function SessionSecurityCard() {
                 <div className="flex items-center justify-between py-1.5">
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                     <IoServerOutline className="w-4 h-4" />
-                    <span>IP Address</span>
+                    <span>{t('tsIpAddress')}</span>
                   </div>
                   <span className="text-sm font-medium text-gray-900 dark:text-white font-mono">
                     {data.currentSession.ip}
@@ -331,13 +335,13 @@ export default function SessionSecurityCard() {
             {/* Last Login */}
             <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-                Activity
+                {t('tsActivity')}
               </p>
               <div className="space-y-2">
                 <div className="flex items-center justify-between py-1.5">
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                     <IoTimeOutline className="w-4 h-4" />
-                    <span>Last Login</span>
+                    <span>{t('tsLastLogin')}</span>
                   </div>
                   <span className="text-sm text-gray-900 dark:text-white">
                     {formatRelativeTime(data.user.lastLogin)}
@@ -346,7 +350,7 @@ export default function SessionSecurityCard() {
                 <div className="flex items-center justify-between py-1.5">
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                     <IoLockClosedOutline className="w-4 h-4" />
-                    <span>Active Sessions</span>
+                    <span>{t('tsActiveSessions')}</span>
                   </div>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
                     {data.security.activeSessions}
@@ -363,8 +367,8 @@ export default function SessionSecurityCard() {
             {/* Security Score */}
             <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Security Score</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Complete your profile to improve</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{t('tsSecurityScore')}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('tsCompleteProfile')}</p>
               </div>
               <div className="text-right">
                 <p className={`text-2xl font-bold ${getSecurityColor(data.security.score)}`}>
@@ -385,7 +389,7 @@ export default function SessionSecurityCard() {
             <div className="space-y-2">
               {/* Email Verified */}
               <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-gray-600 dark:text-gray-300">Email Verified</span>
+                <span className="text-sm text-gray-600 dark:text-gray-300">{t('tsEmailVerified')}</span>
                 <div className="flex items-center gap-2">
                   {data.security.emailVerified ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
@@ -395,7 +399,7 @@ export default function SessionSecurityCard() {
                         href="/partner/settings?tab=profile&verify=email"
                         className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
                       >
-                        Verify
+                        {t('tsVerifyBtn')}
                       </Link>
                       <IoCloseCircleOutline className="w-5 h-5 text-red-400" />
                     </>
@@ -405,7 +409,7 @@ export default function SessionSecurityCard() {
 
               {/* Phone Verified */}
               <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-gray-600 dark:text-gray-300">Phone Verified</span>
+                <span className="text-sm text-gray-600 dark:text-gray-300">{t('tsPhoneVerified')}</span>
                 <div className="flex items-center gap-2">
                   {data.security.phoneVerified ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
@@ -415,7 +419,7 @@ export default function SessionSecurityCard() {
                         href="/partner/settings?tab=profile&verify=phone"
                         className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
                       >
-                        Verify
+                        {t('tsVerifyBtn')}
                       </Link>
                       <IoCloseCircleOutline className="w-5 h-5 text-red-400" />
                     </>
@@ -425,7 +429,7 @@ export default function SessionSecurityCard() {
 
               {/* Identity Verified */}
               <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-gray-600 dark:text-gray-300">Identity Verified</span>
+                <span className="text-sm text-gray-600 dark:text-gray-300">{t('tsIdentityVerified')}</span>
                 <div className="flex items-center gap-2">
                   {data.security.identityVerified ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
@@ -435,7 +439,7 @@ export default function SessionSecurityCard() {
                         href="/partner/settings?tab=documents&verify=identity"
                         className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
                       >
-                        Verify
+                        {t('tsVerifyBtn')}
                       </Link>
                       <IoCloseCircleOutline className="w-5 h-5 text-red-400" />
                     </>
@@ -445,7 +449,7 @@ export default function SessionSecurityCard() {
 
               {/* Stripe Connected */}
               <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-gray-600 dark:text-gray-300">Stripe Connected</span>
+                <span className="text-sm text-gray-600 dark:text-gray-300">{t('tsStripeConnected')}</span>
                 <div className="flex items-center gap-2">
                   {data.security.stripeConnected ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
@@ -455,7 +459,7 @@ export default function SessionSecurityCard() {
                         href="/partner/settings?tab=banking"
                         className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
                       >
-                        Connect
+                        {t('tsConnectBtn')}
                       </Link>
                       <IoCloseCircleOutline className="w-5 h-5 text-red-400" />
                     </>
@@ -468,7 +472,7 @@ export default function SessionSecurityCard() {
             {data.security.recentLogins.length > 0 && (
               <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-                  Recent Activity
+                  {t('tsRecentActivity')}
                 </p>
                 <div className="space-y-2">
                   {data.security.recentLogins.slice(0, 3).map(login => (
@@ -502,11 +506,11 @@ export default function SessionSecurityCard() {
                   <div className="flex items-center gap-2">
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
                     <span className="text-sm font-medium text-green-700 dark:text-green-400">
-                      API Access Enabled
+                      {t('tsApiEnabled')}
                     </span>
                   </div>
                   <span className="text-sm text-green-600 dark:text-green-400">
-                    {data.api.activeKeys} active key{data.api.activeKeys !== 1 ? 's' : ''}
+                    {data.api.activeKeys !== 1 ? t('tsActiveKeysPlural', { count: data.api.activeKeys }) : t('tsActiveKeys', { count: data.api.activeKeys })}
                   </span>
                 </div>
 
@@ -521,7 +525,7 @@ export default function SessionSecurityCard() {
                         <div>
                           <p className="text-sm font-medium text-gray-900 dark:text-white">{key.name}</p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Last used: {key.lastUsed ? formatRelativeTime(key.lastUsed) : 'Never'}
+                            {t('tsLastUsed', { time: key.lastUsed ? formatRelativeTime(key.lastUsed) : t('tsNever') })}
                           </p>
                         </div>
                         <IoEllipsisHorizontalOutline className="w-5 h-5 text-gray-400" />
@@ -535,23 +539,23 @@ export default function SessionSecurityCard() {
                   className="flex items-center justify-center gap-2 w-full py-2 text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
                 >
                   <IoKeyOutline className="w-4 h-4" />
-                  Manage API Keys
+                  {t('tsManageApiKeys')}
                 </Link>
               </>
             ) : (
               <div className="text-center py-6">
                 <IoKeyOutline className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  No API access configured
+                  {t('tsNoApiAccess')}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-500 mb-4">
-                  Contact support to enable API access for your account
+                  {t('tsContactSupport')}
                 </p>
                 <Link
                   href="/contact"
                   className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400"
                 >
-                  Request API Access
+                  {t('tsRequestApiAccess')}
                 </Link>
               </div>
             )}
@@ -563,10 +567,10 @@ export default function SessionSecurityCard() {
           <div className="space-y-3">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                Activity Log
+                {t('tsActivityLog')}
               </p>
               <span className="text-xs text-gray-400 dark:text-gray-500">
-                Last 20 events
+                {t('tsLast20Events')}
               </span>
             </div>
 
@@ -622,10 +626,10 @@ export default function SessionSecurityCard() {
               <div className="text-center py-6">
                 <IoListOutline className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  No activity recorded yet
+                  {t('tsNoActivity')}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                  Actions like settings changes, logins, and more will appear here
+                  {t('tsAuditDesc')}
                 </p>
               </div>
             )}
@@ -639,7 +643,7 @@ export default function SessionSecurityCard() {
           href="/partner/settings"
           className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
         >
-          Account Settings
+          {t('tsAccountSettings')}
           <IoChevronForwardOutline className="w-4 h-4" />
         </Link>
       </div>

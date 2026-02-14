@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
 import {
   IoPersonOutline,
@@ -66,6 +67,7 @@ interface PartnerSettings {
 type SectionId = 'account' | 'company' | 'banking' | 'security' | 'notifications' | 'privacy'
 
 export default function PartnerSettingsPage() {
+  const t = useTranslations('PartnerSettings')
   const searchParams = useSearchParams()
   const [settings, setSettings] = useState<PartnerSettings>({
     email: '',
@@ -141,12 +143,12 @@ export default function PartnerSettingsPage() {
       const data = await res.json()
 
       if (data.success) {
-        setSaveMessage({ type: 'success', text: 'Settings saved successfully!' })
+        setSaveMessage({ type: 'success', text: t('settingsSavedSuccess') })
       } else {
-        setSaveMessage({ type: 'error', text: data.error || 'Failed to save settings' })
+        setSaveMessage({ type: 'error', text: data.error || t('failedToSaveSettings') })
       }
     } catch (error) {
-      setSaveMessage({ type: 'error', text: 'Failed to save settings' })
+      setSaveMessage({ type: 'error', text: t('failedToSaveSettings') })
     } finally {
       setIsSaving(false)
       setTimeout(() => setSaveMessage(null), 3000)
@@ -163,11 +165,11 @@ export default function PartnerSettingsPage() {
       if (data.success && data.onboardingUrl) {
         window.location.href = data.onboardingUrl
       } else if (!data.success) {
-        setSaveMessage({ type: 'error', text: data.error || 'Failed to connect Stripe' })
+        setSaveMessage({ type: 'error', text: data.error || t('failedToConnectStripe') })
       }
     } catch (error) {
       console.error('Failed to start Stripe Connect:', error)
-      setSaveMessage({ type: 'error', text: 'Failed to connect with Stripe' })
+      setSaveMessage({ type: 'error', text: t('failedToConnectWithStripe') })
     }
   }
 
@@ -185,12 +187,12 @@ export default function PartnerSettingsPage() {
       const data = await res.json()
 
       if (data.success) {
-        setSaveMessage({ type: 'success', text: 'Password changed successfully!' })
+        setSaveMessage({ type: 'success', text: t('passwordChangedSuccess') })
       } else {
-        setSaveMessage({ type: 'error', text: data.error || 'Failed to change password' })
+        setSaveMessage({ type: 'error', text: data.error || t('failedToChangePassword') })
       }
     } catch (error) {
-      setSaveMessage({ type: 'error', text: 'Failed to change password' })
+      setSaveMessage({ type: 'error', text: t('failedToChangePassword') })
     } finally {
       setIsSaving(false)
     }
@@ -271,12 +273,12 @@ export default function PartnerSettingsPage() {
   }
 
   const sections = [
-    { id: 'account' as SectionId, label: 'Account', icon: IoPersonOutline },
-    { id: 'company' as SectionId, label: 'Company', icon: IoBusinessOutline },
-    { id: 'banking' as SectionId, label: 'Banking & Payouts', icon: IoCardOutline },
-    { id: 'security' as SectionId, label: 'Security', icon: IoShieldCheckmarkOutline },
-    { id: 'notifications' as SectionId, label: 'Notifications', icon: IoNotificationsOutline },
-    { id: 'privacy' as SectionId, label: 'Data & Privacy', icon: IoShieldCheckmarkOutline }
+    { id: 'account' as SectionId, label: t('account'), icon: IoPersonOutline },
+    { id: 'company' as SectionId, label: t('company'), icon: IoBusinessOutline },
+    { id: 'banking' as SectionId, label: t('bankingAndPayouts'), icon: IoCardOutline },
+    { id: 'security' as SectionId, label: t('security'), icon: IoShieldCheckmarkOutline },
+    { id: 'notifications' as SectionId, label: t('notifications'), icon: IoNotificationsOutline },
+    { id: 'privacy' as SectionId, label: t('dataAndPrivacy'), icon: IoShieldCheckmarkOutline }
   ]
 
   if (isLoading) {
@@ -291,9 +293,9 @@ export default function PartnerSettingsPage() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('settings')}</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Manage your account, company info, and preferences
+          {t('manageDescription')}
         </p>
       </div>
 

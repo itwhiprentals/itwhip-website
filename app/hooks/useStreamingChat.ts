@@ -50,6 +50,7 @@ interface SendMessageParams {
   previousVehicles?: VehicleSummary[] | null
   userId?: string | null
   visitorId?: string | null
+  locale?: string
 }
 
 // =============================================================================
@@ -79,6 +80,7 @@ export function useStreamingChat(options: StreamingOptions = {}) {
     previousVehicles,
     userId,
     visitorId,
+    locale,
   }: SendMessageParams) => {
     // Cancel any existing request
     if (abortControllerRef.current) {
@@ -109,6 +111,7 @@ export function useStreamingChat(options: StreamingOptions = {}) {
           previousVehicles,
           userId,
           visitorId,
+          locale,
         }),
         signal: abortController.signal,
       })

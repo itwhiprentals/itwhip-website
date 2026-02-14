@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 interface PhoneLoginButtonProps {
   hostMode?: boolean
@@ -8,6 +9,7 @@ interface PhoneLoginButtonProps {
 }
 
 export default function PhoneLoginButton({ hostMode = false, mode = 'login' }: PhoneLoginButtonProps) {
+  const t = useTranslations('Auth')
   const router = useRouter()
 
   const handleClick = () => {
@@ -27,7 +29,7 @@ export default function PhoneLoginButton({ hostMode = false, mode = 'login' }: P
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
       </svg>
-      Continue with Phone
+      {t('continueWithPhone')}
     </button>
   )
 }

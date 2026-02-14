@@ -3,6 +3,8 @@
 
 'use client'
 
+import { useMemo } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   IoTextOutline,
   IoCallOutline,
@@ -19,16 +21,18 @@ interface TabNavigationProps {
   faqCount: number
 }
 
-const TABS = [
-  { id: 'content' as TabType, label: 'Content', icon: IoTextOutline },
-  { id: 'social' as TabType, label: 'Contact & Social', shortLabel: 'Contact', icon: IoCallOutline },
-  { id: 'branding' as TabType, label: 'Branding', icon: IoColorPaletteOutline },
-  { id: 'services' as TabType, label: 'Services', icon: IoSettingsOutline },
-  { id: 'policies' as TabType, label: 'Policies', icon: IoDocumentTextOutline },
-  { id: 'faqs' as TabType, label: 'FAQs', icon: IoCreateOutline }
-]
-
 export default function TabNavigation({ activeTab, onTabChange, faqCount }: TabNavigationProps) {
+  const t = useTranslations('PartnerLanding')
+
+  const TABS = useMemo(() => [
+    { id: 'content' as TabType, label: t('tabContent'), icon: IoTextOutline },
+    { id: 'social' as TabType, label: t('tabContactSocial'), shortLabel: t('tabContactShort'), icon: IoCallOutline },
+    { id: 'branding' as TabType, label: t('tabBranding'), icon: IoColorPaletteOutline },
+    { id: 'services' as TabType, label: t('tabServices'), icon: IoSettingsOutline },
+    { id: 'policies' as TabType, label: t('tabPolicies'), icon: IoDocumentTextOutline },
+    { id: 'faqs' as TabType, label: t('tabFaqs'), icon: IoCreateOutline }
+  ], [t])
+
   return (
     <div className="border-b border-gray-200 dark:border-gray-700 -mx-4 sm:-mx-6 px-4 sm:px-6 overflow-x-auto scrollbar-hide">
       <nav className="flex gap-0 sm:gap-2 min-w-max">

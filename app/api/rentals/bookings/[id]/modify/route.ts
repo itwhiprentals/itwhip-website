@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
-import { calculateBookingPricing } from '@/app/(guest)/rentals/lib/booking-pricing'
+import { calculateBookingPricing } from '@/app/[locale]/(guest)/rentals/lib/booking-pricing'
 import { stripe, toStripeCents } from '@/app/lib/stripe'
 
 type RouteParams = { params: Promise<{ id: string }> }

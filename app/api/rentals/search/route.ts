@@ -4,8 +4,8 @@ import prisma from '@/app/lib/database/prisma'
 import { calculateDistance, getBoundingBox } from '@/lib/utils/distance'
 import { checkAvailability } from '@/lib/utils/availability'
 import { getLocationByName, ALL_ARIZONA_LOCATIONS } from '@/lib/data/arizona-locations'
-import { getTaxRate } from '@/app/(guest)/rentals/lib/arizona-taxes'
-import { getActualDeposit } from '@/app/(guest)/rentals/lib/booking-pricing'
+import { getTaxRate } from '@/app/[locale]/(guest)/rentals/lib/arizona-taxes'
+import { getActualDeposit } from '@/app/[locale]/(guest)/rentals/lib/booking-pricing'
 import { buildSearchWhereClause, type SearchRouteFilters } from '@/app/lib/ai-booking/filters'
 
 // Default search radius in miles

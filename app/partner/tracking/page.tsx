@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import {
   IoLocationOutline,
@@ -149,6 +150,7 @@ interface BouncieDevice {
 }
 
 export default function TrackingPage() {
+  const t = useTranslations('PartnerTracking')
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [connectedProviders, setConnectedProviders] = useState<ConnectedProvider[]>([])
@@ -190,7 +192,7 @@ export default function TrackingPage() {
     if (smartcarSuccess === 'true') {
       setSmartcarNotification({
         type: 'success',
-        message: `Successfully connected ${vehiclesConnected || '1'} vehicle(s) via Smartcar!`
+        message: t('smartcarConnectSuccess', { count: vehiclesConnected || '1' })
       })
       // Clear URL params after reading
       window.history.replaceState({}, '', '/partner/tracking')
@@ -201,17 +203,17 @@ export default function TrackingPage() {
       window.history.replaceState({}, '', '/partner/tracking')
     } else if (smartcarError) {
       const errorMessages: Record<string, string> = {
-        'access_denied': 'You denied access to your vehicle. Please try again if this was a mistake.',
-        'no_vehicles': 'No compatible vehicles were found. Make sure your vehicle is connected to its manufacturer\'s app.',
-        'state_expired': 'The connection request expired. Please try again.',
-        'invalid_host': 'Session expired. Please log in and try again.',
-        'missing_params': 'Invalid callback. Please try connecting again.',
-        'not_configured': 'Smartcar is not configured. Please contact support.',
-        'processing_failed': 'Failed to process the connection. Please try again.'
+        'access_denied': t('errorAccessDenied'),
+        'no_vehicles': t('errorNoVehicles'),
+        'state_expired': t('errorStateExpired'),
+        'invalid_host': t('errorInvalidHost'),
+        'missing_params': t('errorMissingParams'),
+        'not_configured': t('errorNotConfigured'),
+        'processing_failed': t('errorProcessingFailed')
       }
       setSmartcarNotification({
         type: 'error',
-        message: errorMessages[smartcarError] || `Connection failed: ${smartcarError}`
+        message: errorMessages[smartcarError] || t('connectionFailed', { error: smartcarError })
       })
       window.history.replaceState({}, '', '/partner/tracking')
     }
@@ -354,7 +356,7 @@ export default function TrackingPage() {
 
   // Handle Smartcar disconnect
   const handleSmartcarDisconnect = async (vehicleId: string) => {
-    if (!confirm('Are you sure you want to disconnect this vehicle from Smartcar?')) return
+    if (!confirm(t('confirmDisconnect'))) return
     try {
       const response = await fetch('/api/smartcar/disconnect', {
         method: 'POST',
@@ -366,14 +368,14 @@ export default function TrackingPage() {
         setSmartcarVehicles(prev => prev.filter(v => v.id !== vehicleId))
         setSmartcarNotification({
           type: 'success',
-          message: 'Vehicle disconnected successfully'
+          message: t('vehicleDisconnected')
         })
       }
     } catch (error) {
       console.error('Disconnect error:', error)
       setSmartcarNotification({
         type: 'error',
-        message: 'Failed to disconnect vehicle'
+        message: t('disconnectFailed')
       })
     }
   }
@@ -381,7 +383,7 @@ export default function TrackingPage() {
   // Handle Smartcar disconnect ALL vehicles (master disconnect)
   const [disconnectingAll, setDisconnectingAll] = useState(false)
   const handleSmartcarDisconnectAll = async () => {
-    if (!confirm(`Disconnect all ${smartcarVehicles.length} vehicle(s) from Smartcar? This will revoke access for every connected vehicle.`)) return
+    if (!confirm(t('confirmDisconnectAll', { count: smartcarVehicles.length }))) return
     setDisconnectingAll(true)
     try {
       let failed = 0
@@ -398,14 +400,14 @@ export default function TrackingPage() {
       setSmartcarNotification({
         type: failed > 0 ? 'error' : 'success',
         message: failed > 0
-          ? `Disconnected with ${failed} error(s). Some vehicles may need manual removal.`
-          : 'All vehicles disconnected from Smartcar successfully'
+          ? t('disconnectAllPartialError', { failed })
+          : t('disconnectAllSuccess')
       })
     } catch (error) {
       console.error('Disconnect all error:', error)
       setSmartcarNotification({
         type: 'error',
-        message: 'Failed to disconnect all vehicles'
+        message: t('disconnectAllFailed')
       })
     } finally {
       setDisconnectingAll(false)
@@ -431,7 +433,7 @@ export default function TrackingPage() {
         ))
         setSmartcarNotification({
           type: 'success',
-          message: `Vehicle ${action}ed successfully`
+          message: t('vehicleLockSuccess', { action })
         })
       } else {
         throw new Error('Failed to control vehicle')
@@ -440,7 +442,7 @@ export default function TrackingPage() {
       console.error('Lock/unlock error:', error)
       setSmartcarNotification({
         type: 'error',
-        message: 'Failed to control vehicle lock'
+        message: t('vehicleLockFailed')
       })
     } finally {
       setIsLocking(null)
@@ -477,7 +479,7 @@ export default function TrackingPage() {
         ))
         setSmartcarNotification({
           type: 'success',
-          message: isCharging ? 'Charging stopped' : 'Charging started'
+          message: isCharging ? t('chargingStopped') : t('chargingStarted')
         })
       } else {
         const error = await response.json()
@@ -487,7 +489,7 @@ export default function TrackingPage() {
       console.error('Charging control error:', error)
       setSmartcarNotification({
         type: 'error',
-        message: error instanceof Error ? error.message : 'Failed to control charging. Make sure the vehicle is plugged in.'
+        message: error instanceof Error ? error.message : t('chargingControlFailed')
       })
     } finally {
       setIsChargingControl(null)
@@ -504,7 +506,7 @@ export default function TrackingPage() {
         await loadSmartcarVehicles()
         setSmartcarNotification({
           type: 'success',
-          message: 'Vehicle data refreshed'
+          message: t('vehicleDataRefreshed')
         })
       }
     } catch (error) {
@@ -544,9 +546,9 @@ export default function TrackingPage() {
     const diffMins = Math.floor(diffMs / 60000)
     const diffHours = Math.floor(diffMs / 3600000)
 
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffMins < 1) return t('justNow')
+    if (diffMins < 60) return t('minutesAgo', { minutes: diffMins })
+    if (diffHours < 24) return t('hoursAgo', { hours: diffHours })
     return date.toLocaleDateString()
   }
 
@@ -577,26 +579,26 @@ export default function TrackingPage() {
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <IoLocationOutline className="w-7 h-7 text-orange-600" />
-                Vehicle Tracking
+                {t('title')}
               </h1>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm text-gray-600 dark:text-gray-300">
                 <IoCarSportOutline className="w-4 h-4" />
-                {trackedVehicles.length} of {totalVehicles} tracked
+                {t('trackedCount', { tracked: trackedVehicles.length, total: totalVehicles })}
               </span>
             </div>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Track your fleet in real-time, prevent theft, and resolve disputes faster
+              {t('subtitle')}
             </p>
           </div>
           {hasTracking && (
             <div className="flex items-center gap-2 sm:gap-3">
               <button className="flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 <IoAddOutline className="w-5 h-5" />
-                <span className="hidden sm:inline">Add Provider</span>
+                <span className="hidden sm:inline">{t('addProvider')}</span>
               </button>
               <button className="flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 <IoSettingsOutline className="w-5 h-5" />
-                <span className="hidden sm:inline">Settings</span>
+                <span className="hidden sm:inline">{t('settings')}</span>
               </button>
             </div>
           )}
@@ -645,8 +647,8 @@ export default function TrackingPage() {
                   <IoCarSportOutline className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Smartcar Connected</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{smartcarVehicles.length} vehicle(s) linked</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('smartcarConnected')}</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('vehiclesLinked', { count: smartcarVehicles.length })}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -656,7 +658,7 @@ export default function TrackingPage() {
                   className="flex items-center gap-2 px-3 py-1.5 text-sm border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 rounded-lg transition-colors"
                 >
                   <IoCloseCircleOutline className="w-4 h-4" />
-                  {disconnectingAll ? 'Disconnecting...' : 'Disconnect All'}
+                  {disconnectingAll ? t('disconnectingAll') : t('disconnectAll')}
                 </button>
                 <button
                   onClick={handleSmartcarConnect}
@@ -664,7 +666,7 @@ export default function TrackingPage() {
                   className="flex items-center gap-2 px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg transition-colors"
                 >
                   <IoAddOutline className="w-4 h-4" />
-                  Add More
+                  {t('addMore')}
                 </button>
               </div>
             </div>
@@ -695,17 +697,17 @@ export default function TrackingPage() {
                             {vehicle.year} {vehicle.make} {vehicle.model}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {vehicle.vin ? `VIN: ...${vehicle.vin.slice(-6)}` : 'VIN pending'}
+                            {vehicle.vin ? t('vinLabel', { lastSix: vehicle.vin.slice(-6) }) : t('vinPending')}
                           </p>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">
-                          Connected
+                          {t('connected')}
                         </span>
                         {isEV && (
                           <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-medium rounded">
-                            EV
+                            {t('ev')}
                           </span>
                         )}
                       </div>
@@ -719,7 +721,7 @@ export default function TrackingPage() {
                         <p className="text-xs font-semibold text-gray-900 dark:text-white">
                           {vehicle.lastOdometer ? `${Math.round(vehicle.lastOdometer).toLocaleString()}` : '—'}
                         </p>
-                        <p className="text-[10px] text-gray-500">miles</p>
+                        <p className="text-[10px] text-gray-500">{t('miles')}</p>
                       </div>
 
                       {/* Fuel or Battery */}
@@ -734,7 +736,7 @@ export default function TrackingPage() {
                               {vehicle.lastBattery !== null ? `${Math.round(vehicle.lastBattery)}%` : '—'}
                             </p>
                             <p className="text-[10px] text-gray-500">
-                              {isCharging ? 'charging' : isFullyCharged ? 'full' : 'battery'}
+                              {isCharging ? t('charging') : isFullyCharged ? t('full') : t('battery')}
                             </p>
                           </>
                         ) : (
@@ -745,7 +747,7 @@ export default function TrackingPage() {
                             <p className="text-xs font-semibold text-gray-900 dark:text-white">
                               {vehicle.lastFuel !== null ? `${Math.round(vehicle.lastFuel)}%` : '—'}
                             </p>
-                            <p className="text-[10px] text-gray-500">fuel</p>
+                            <p className="text-[10px] text-gray-500">{t('fuel')}</p>
                           </>
                         )}
                       </div>
@@ -758,9 +760,9 @@ export default function TrackingPage() {
                               isCharging ? 'text-green-500 animate-pulse' : 'text-gray-400'
                             }`} />
                             <p className="text-xs font-semibold text-gray-900 dark:text-white">
-                              {vehicle.lastChargeState.isPluggedIn ? 'Yes' : 'No'}
+                              {vehicle.lastChargeState.isPluggedIn ? t('yes') : t('no')}
                             </p>
-                            <p className="text-[10px] text-gray-500">plugged</p>
+                            <p className="text-[10px] text-gray-500">{t('pluggedIn')}</p>
                           </>
                         ) : vehicle.lastOilLife !== null ? (
                           <>
@@ -770,7 +772,7 @@ export default function TrackingPage() {
                             <p className="text-xs font-semibold text-gray-900 dark:text-white">
                               {Math.round(vehicle.lastOilLife)}%
                             </p>
-                            <p className="text-[10px] text-gray-500">oil life</p>
+                            <p className="text-[10px] text-gray-500">{t('oilLife')}</p>
                           </>
                         ) : (
                           <>
@@ -778,7 +780,7 @@ export default function TrackingPage() {
                             <p className="text-xs font-semibold text-gray-900 dark:text-white">
                               {vehicle.lastSyncAt ? formatRelativeTime(vehicle.lastSyncAt) : '—'}
                             </p>
-                            <p className="text-[10px] text-gray-500">synced</p>
+                            <p className="text-[10px] text-gray-500">{t('synced')}</p>
                           </>
                         )}
                       </div>
@@ -787,22 +789,22 @@ export default function TrackingPage() {
                     {/* Tire Pressure (if available) */}
                     {vehicle.lastTirePressure && (
                       <div className="mb-3 p-2 bg-white dark:bg-gray-800 rounded-lg">
-                        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Tire Pressure (PSI)</p>
+                        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">{t('tirePressureLabel')}</p>
                         <div className="grid grid-cols-2 gap-1 text-[10px]">
                           <div className="flex justify-between">
-                            <span className="text-gray-500">FL:</span>
+                            <span className="text-gray-500">{t('tireFl')}</span>
                             <span className="font-medium text-gray-900 dark:text-white">{vehicle.lastTirePressure.frontLeft}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-500">FR:</span>
+                            <span className="text-gray-500">{t('tireFr')}</span>
                             <span className="font-medium text-gray-900 dark:text-white">{vehicle.lastTirePressure.frontRight}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-500">BL:</span>
+                            <span className="text-gray-500">{t('tireBl')}</span>
                             <span className="font-medium text-gray-900 dark:text-white">{vehicle.lastTirePressure.backLeft}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-500">BR:</span>
+                            <span className="text-gray-500">{t('tireBr')}</span>
                             <span className="font-medium text-gray-900 dark:text-white">{vehicle.lastTirePressure.backRight}</span>
                           </div>
                         </div>
@@ -820,7 +822,7 @@ export default function TrackingPage() {
                           onClick={() => window.open(`https://www.google.com/maps?q=${vehicle.lastLocation!.lat},${vehicle.lastLocation!.lng}`, '_blank')}
                           className="ml-auto text-purple-600 hover:text-purple-700 dark:text-purple-400 font-medium"
                         >
-                          View
+                          {t('view')}
                         </button>
                       </div>
                     )}
@@ -833,7 +835,7 @@ export default function TrackingPage() {
                         className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-medium rounded-lg transition-colors"
                       >
                         <IoRefreshOutline className={`w-3.5 h-3.5 ${refreshingVehicle === vehicle.id ? 'animate-spin' : ''}`} />
-                        {refreshingVehicle === vehicle.id ? 'Syncing...' : 'Sync Now'}
+                        {refreshingVehicle === vehicle.id ? t('syncingButton') : t('syncNow')}
                       </button>
                       {isEV && (
                         <button
@@ -846,7 +848,7 @@ export default function TrackingPage() {
                           }`}
                         >
                           <IoFlashOutline className={`w-3.5 h-3.5 ${isChargingControl === vehicle.id ? 'animate-pulse' : ''}`} />
-                          {isCharging ? 'Stop' : 'Charge'}
+                          {isCharging ? t('stopCharge') : t('startCharge')}
                         </button>
                       )}
                       <button
@@ -876,13 +878,13 @@ export default function TrackingPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h2 className="text-2xl font-bold">ItWhip+ Active</h2>
+                        <h2 className="text-2xl font-bold">{t('itwhipPlusActive')}</h2>
                         <span className="px-2 py-0.5 bg-white/20 text-white text-xs font-semibold rounded">
-                          COMPLETE PROTECTION
+                          {t('completeProtection')}
                         </span>
                       </div>
                       <p className="text-white/80">
-                        Both Smartcar + Bouncie connected • All {TRACKING_FEATURES.length} features • Mileage Forensics™ enabled
+                        {t('itwhipPlusDescription', { count: TRACKING_FEATURES.length })}
                       </p>
                     </div>
                   </div>
@@ -913,11 +915,11 @@ export default function TrackingPage() {
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold text-gray-900 dark:text-white">{PROVIDERS.smartcar.name}</h3>
                           <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">
-                            Connected
+                            {t('connected')}
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {smartcarVehicles.length} vehicle(s) • Lock/Unlock, EV Charging, Odometer
+                          {t('smartcarStatusDescription', { count: smartcarVehicles.length })}
                         </p>
                       </div>
                     </div>
@@ -933,11 +935,11 @@ export default function TrackingPage() {
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold text-gray-900 dark:text-white">{PROVIDERS.bouncie.name}</h3>
                           <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">
-                            Connected
+                            {t('connected')}
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {bouncieDevices.length} device(s) • Real-time GPS, Geofencing, Speed Alerts
+                          {t('bouncieStatusDescription', { count: bouncieDevices.length })}
                         </p>
                       </div>
                     </div>
@@ -948,7 +950,7 @@ export default function TrackingPage() {
               <>
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <IoInformationCircleOutline className="w-5 h-5 text-gray-400" />
-                  Your Tracking Capabilities
+                  {t('yourTrackingCapabilities')}
                 </h2>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -970,7 +972,7 @@ export default function TrackingPage() {
                               ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                               : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                           }`}>
-                            {hasSmartcar ? 'Connected' : 'Not Connected'}
+                            {hasSmartcar ? t('connected') : t('notConnected')}
                           </span>
                         </h3>
                         <p className="text-xs text-gray-500 dark:text-gray-400">{PROVIDERS.smartcar.tagline}</p>
@@ -979,7 +981,7 @@ export default function TrackingPage() {
 
                     <div className="mb-4">
                       <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-                        {hasSmartcar ? 'Available' : 'Would Unlock'} Features ({getFeaturesByProvider('smartcar').length})
+                        {hasSmartcar ? t('availableFeatures', { count: getFeaturesByProvider('smartcar').length }) : t('wouldUnlockFeatures', { count: getFeaturesByProvider('smartcar').length })}
                       </p>
                       <div className="grid grid-cols-2 gap-2">
                         {getFeaturesByProvider('smartcar').map(feature => (
@@ -1013,7 +1015,7 @@ export default function TrackingPage() {
                         disabled={smartcarConnecting}
                         className="w-full py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white text-sm font-medium rounded-lg transition-colors"
                       >
-                        {smartcarConnecting ? 'Connecting...' : 'Connect Smartcar'}
+                        {smartcarConnecting ? t('connectingSmartcar') : t('connectSmartcar')}
                       </button>
                     )}
                   </div>
@@ -1036,7 +1038,7 @@ export default function TrackingPage() {
                               ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                               : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                           }`}>
-                            {hasBouncie ? 'Connected' : 'Not Connected'}
+                            {hasBouncie ? t('connected') : t('notConnected')}
                           </span>
                         </h3>
                         <p className="text-xs text-gray-500 dark:text-gray-400">{PROVIDERS.bouncie.tagline}</p>
@@ -1045,7 +1047,7 @@ export default function TrackingPage() {
 
                     <div className="mb-4">
                       <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-                        {hasBouncie ? 'Available' : 'Would Unlock'} {getBouncieOnlyFeatures().length} Features
+                        {hasBouncie ? t('availableFeaturesCount', { count: getBouncieOnlyFeatures().length }) : t('wouldUnlockFeaturesCount', { count: getBouncieOnlyFeatures().length })}
                       </p>
                       <div className="grid grid-cols-2 gap-2">
                         {getBouncieOnlyFeatures().map(feature => (
@@ -1073,7 +1075,7 @@ export default function TrackingPage() {
                     {!hasBouncie && (
                       <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
                         <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                          Add Bouncie for real-time GPS, geofencing, speed alerts, and OBD diagnostics.
+                          {t('addBouncieDescription')}
                         </p>
                         <a
                           href="https://bouncie.com"
@@ -1081,7 +1083,7 @@ export default function TrackingPage() {
                           rel="noopener noreferrer"
                           className="block w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors text-center"
                         >
-                          Get Bouncie Device ($8.35/mo)
+                          {t('getBouncieDevice')}
                         </a>
                       </div>
                     )}
@@ -1097,9 +1099,9 @@ export default function TrackingPage() {
                           <IoStar className="w-6 h-6" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-lg">Upgrade to ItWhip+</h3>
+                          <h3 className="font-bold text-lg">{t('upgradeToItwhipPlus')}</h3>
                           <p className="text-white/80 text-sm">
-                            Connect both Smartcar + Bouncie for complete fleet protection • All {TRACKING_FEATURES.length} features • Mileage Forensics™
+                            {t('itwhipPlusUpsellDescription', { count: TRACKING_FEATURES.length })}
                           </p>
                         </div>
                       </div>
@@ -1110,7 +1112,7 @@ export default function TrackingPage() {
                           rel="noopener noreferrer"
                           className="px-6 py-2.5 bg-white text-purple-700 font-semibold rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
                         >
-                          Add Bouncie to Complete Setup
+                          {t('addBouncieComplete')}
                         </a>
                       ) : (
                         <button
@@ -1118,7 +1120,7 @@ export default function TrackingPage() {
                           disabled={smartcarConnecting}
                           className="px-6 py-2.5 bg-white text-purple-700 font-semibold rounded-lg hover:bg-gray-100 disabled:opacity-50 transition-colors flex-shrink-0"
                         >
-                          {smartcarConnecting ? 'Connecting...' : 'Add Smartcar to Complete Setup'}
+                          {smartcarConnecting ? t('connecting') : t('addSmartcarComplete')}
                         </button>
                       )}
                     </div>
@@ -1141,34 +1143,34 @@ export default function TrackingPage() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Recommended Setup</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{t('recommendedSetup')}</h3>
                     <span className="flex items-center gap-1 px-2 py-0.5 bg-green-600 text-white text-xs font-medium rounded border border-white/50 whitespace-nowrap">
                       <IoTrendingUpOutline className="w-3 h-3" />
-                      44% less than FleetBold
+                      {t('lessFleetBold')}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">~$15/mo per vehicle</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('pricePerVehicle')}</p>
                 </div>
               </div>
 
               {/* Description */}
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Get complete fleet protection with Bouncie + Smartcar combination. All 8 features covered plus Mileage Forensics™.
+                {t('recommendedDescription')}
               </p>
 
               {/* Features Grid */}
               <div className="space-y-2 mb-4">
                 <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
                   <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                  <span><strong className="text-gray-900 dark:text-white">Bouncie ($8/mo):</strong> GPS, Speed Alerts, Geofencing, OBD Diagnostics</span>
+                  <span><strong className="text-gray-900 dark:text-white">{t('bouncieFeatures')}</strong> {t('bouncieFeaturesList')}</span>
                 </div>
                 <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
                   <IoCheckmarkCircleOutline className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
-                  <span><strong className="text-gray-900 dark:text-white">Smartcar ($1.99/mo):</strong> Lock/Unlock, Remote Start, Climate Control</span>
+                  <span><strong className="text-gray-900 dark:text-white">{t('smartcarFeatures')}</strong> {t('smartcarFeaturesList')}</span>
                 </div>
                 <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
                   <IoCheckmarkCircleOutline className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
-                  <span><strong className="text-gray-900 dark:text-white">ItWhip+ <span className="text-green-600 dark:text-green-400">(Free)</span>:</strong> Mileage Forensics™, Unified Dashboard</span>
+                  <span><strong className="text-gray-900 dark:text-white">{t('itwhipPlusFeatures')} <span className="text-green-600 dark:text-green-400">{t('itwhipPlusFree')}</span>:</strong> {t('itwhipPlusFeaturesList')}</span>
                 </div>
               </div>
 
@@ -1180,7 +1182,7 @@ export default function TrackingPage() {
                   rel="noopener noreferrer"
                   className="flex-1 flex items-center justify-center gap-2 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
                 >
-                  Get Bouncie
+                  {t('getBouncie')}
                   <IoChevronForwardOutline className="w-4 h-4" />
                 </a>
                 <button
@@ -1191,12 +1193,12 @@ export default function TrackingPage() {
                   {smartcarConnecting ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Connecting...
+                      {t('connecting')}
                     </>
                   ) : (
                     <>
                       <IoLinkOutline className="w-4 h-4" />
-                      Connect Smartcar
+                      {t('connectSmartcarButton')}
                     </>
                   )}
                 </button>
@@ -1216,10 +1218,10 @@ export default function TrackingPage() {
                       {MILEAGE_FORENSICS.name}
                     </h3>
                     <span className="px-2 py-0.5 bg-amber-500 text-white text-xs font-semibold rounded border border-white/50">
-                      EXCLUSIVE
+                      {t('exclusive')}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">ItWhip+ Feature</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('itwhipPlusFeature')}</p>
                 </div>
               </div>
 
@@ -1254,10 +1256,10 @@ export default function TrackingPage() {
             {/* Other Provider Options */}
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 text-center">
-                Other Provider Options
+                {t('otherProviderOptions')}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
-                Alternative tracking solutions if you prefer a single provider
+                {t('otherProviderDescription')}
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1282,7 +1284,7 @@ export default function TrackingPage() {
                           </h3>
                           {provider.hasApiIntegration === false && (
                             <span className="px-2 py-0.5 bg-red-600 text-white text-xs font-medium rounded border border-white/50 whitespace-nowrap">
-                              No ItWhip+ integration
+                              {t('noItwhipIntegration')}
                             </span>
                           )}
                         </div>
@@ -1312,7 +1314,7 @@ export default function TrackingPage() {
                       rel="noopener noreferrer"
                       className="block w-full py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-sm font-medium rounded-lg transition-colors text-center"
                     >
-                      Learn More
+                      {t('learnMore')}
                     </a>
                   </div>
                 ))}
@@ -1322,7 +1324,7 @@ export default function TrackingPage() {
             {/* Already Have a Device */}
             <div className="text-center py-6 border-t border-gray-200 dark:border-gray-700">
               <p className="text-gray-600 dark:text-gray-400 mb-3">
-                Already have a connected vehicle? Link it via Smartcar (no hardware needed).
+                {t('alreadyHaveDevice')}
               </p>
               <button
                 onClick={handleSmartcarConnect}
@@ -1332,12 +1334,12 @@ export default function TrackingPage() {
                 {smartcarConnecting ? (
                   <>
                     <div className="w-5 h-5 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin" />
-                    Connecting...
+                    {t('connecting')}
                   </>
                 ) : (
                   <>
                     <IoLinkOutline className="w-5 h-5" />
-                    Connect via Smartcar
+                    {t('connectViaSmartcar')}
                   </>
                 )}
               </button>
@@ -1352,33 +1354,33 @@ export default function TrackingPage() {
                     <IoPlayOutline className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Interactive Demo</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">No signup required</p>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{t('interactiveDemo')}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('noSignupRequired')}</p>
                   </div>
                 </div>
                 <span className="px-2.5 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full text-xs font-medium">
-                  Try Free
+                  {t('tryFree')}
                 </span>
               </div>
 
               {/* Description */}
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                See what hosts experience with a fully connected fleet. Live map, remote commands, and real-time alerts.
+                {t('demoDescription')}
               </p>
 
               {/* Features List */}
               <div className="space-y-1 mb-4">
                 <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
                   <IoCheckmarkCircleOutline className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
-                  <span>Live GPS • Lock/Unlock • Remote Start • Pre-Cool</span>
+                  <span>{t('demoFeature1')}</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
                   <IoCheckmarkCircleOutline className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
-                  <span>Geofencing • Speed Alerts • Horn/Lights • Mileage Forensics™</span>
+                  <span>{t('demoFeature2')}</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
                   <IoCheckmarkCircleOutline className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
-                  <span>Interactive Mapbox map with Phoenix demo fleet</span>
+                  <span>{t('demoFeature3')}</span>
                 </div>
               </div>
 
@@ -1387,7 +1389,7 @@ export default function TrackingPage() {
                 href="/partner/tracking/demo"
                 className="block w-full py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors text-center"
               >
-                Launch Demo
+                {t('launchDemo')}
               </Link>
             </div>
           </div>
@@ -1407,13 +1409,13 @@ export default function TrackingPage() {
                   }`}></div>
                   <span className="font-medium text-gray-900 dark:text-white">{provider.name}</span>
                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {provider.vehicleCount} vehicles
+                    {provider.vehicleCount} {t('vehicles')}
                   </span>
                 </div>
               ))}
               <button className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 rounded-lg hover:border-orange-400 hover:text-orange-600 transition-colors flex-shrink-0">
                 <IoAddOutline className="w-4 h-4" />
-                Add
+                {t('add')}
               </button>
             </div>
 
@@ -1424,12 +1426,12 @@ export default function TrackingPage() {
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                   <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     <IoMapOutline className="w-5 h-5 text-gray-400" />
-                    Live Fleet Map
+                    {t('liveFleetMap')}
                   </h2>
                   <div className="flex items-center gap-2">
                     {smartcarVehicles.length > 0 && smartcarVehicles[0]?.lastSyncAt && (
                       <span className="text-xs text-gray-500 dark:text-gray-400">
-                        Last sync: {formatRelativeTime(smartcarVehicles[0].lastSyncAt)}
+                        {t('lastSync', { time: formatRelativeTime(smartcarVehicles[0].lastSyncAt) })}
                       </span>
                     )}
                     <button
@@ -1468,32 +1470,32 @@ export default function TrackingPage() {
               <div className="space-y-4">
                 <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                   <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">
-                    Fleet Status
+                    {t('fleetStatus')}
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                       <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {trackedVehicles.length}/{totalVehicles}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Tracked</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('tracked')}</p>
                     </div>
                     <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                       <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                         {trackedVehicles.filter(v => v.status === 'moving').length}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Moving</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('moving')}</p>
                     </div>
                     <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                       <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                         {trackedVehicles.filter(v => v.status === 'parked').length}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Parked</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('parked')}</p>
                     </div>
                     <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                       <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">
                         {trackedVehicles.filter(v => v.status === 'offline').length}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Offline</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('offline')}</p>
                     </div>
                   </div>
                 </div>
@@ -1501,20 +1503,20 @@ export default function TrackingPage() {
                 {/* Quick Actions */}
                 <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                   <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-                    Quick Actions
+                    {t('quickActions')}
                   </h3>
                   <div className="space-y-2">
                     <button className="w-full flex items-center gap-3 p-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
                       <IoDownloadOutline className="w-5 h-5 text-gray-400" />
-                      <span className="text-sm">Export Trip Report</span>
+                      <span className="text-sm">{t('exportTripReport')}</span>
                     </button>
                     <button className="w-full flex items-center gap-3 p-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
                       <IoStatsChartOutline className="w-5 h-5 text-gray-400" />
-                      <span className="text-sm">Mileage Forensics™</span>
+                      <span className="text-sm">{t('mileageForensics')}</span>
                     </button>
                     <button className="w-full flex items-center gap-3 p-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
                       <IoSettingsOutline className="w-5 h-5 text-gray-400" />
-                      <span className="text-sm">Geofence Settings</span>
+                      <span className="text-sm">{t('geofenceSettings')}</span>
                     </button>
                   </div>
                 </div>
@@ -1526,7 +1528,7 @@ export default function TrackingPage() {
               <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                 <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   <span className="text-orange-600 dark:text-orange-400">ItWhip+</span>
-                  Vehicle Control
+                  {t('vehicleControl')}
                 </h2>
                 <div className="flex items-center gap-2">
                   <button
@@ -1534,11 +1536,11 @@ export default function TrackingPage() {
                     className="text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 flex items-center gap-1"
                   >
                     <IoRefreshOutline className="w-4 h-4" />
-                    Refresh
+                    {t('refresh')}
                   </button>
                   <button className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 flex items-center gap-1">
                     <IoDownloadOutline className="w-4 h-4" />
-                    Export
+                    {t('export')}
                   </button>
                 </div>
               </div>
@@ -1546,9 +1548,9 @@ export default function TrackingPage() {
               {trackedVehicles.length === 0 ? (
                 <div className="p-8 text-center">
                   <IoCarSportOutline className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                  <p className="text-gray-500 dark:text-gray-400">No vehicles connected</p>
+                  <p className="text-gray-500 dark:text-gray-400">{t('noVehiclesConnected')}</p>
                   <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-                    Connect a tracking provider to see your vehicles here
+                    {t('connectProviderPrompt')}
                   </p>
                 </div>
               ) : (
@@ -1587,15 +1589,15 @@ export default function TrackingPage() {
                               <p className="font-medium text-gray-900 dark:text-white text-sm sm:text-base truncate">
                                 {vehicle.year} {vehicle.make} {vehicle.model}
                                 {vehicle.isDisabled && (
-                                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-red-100 dark:bg-red-500/30 text-red-600 dark:text-red-400 rounded">DISABLED</span>
+                                  <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-red-100 dark:bg-red-500/30 text-red-600 dark:text-red-400 rounded">{t('statusDisabled').toUpperCase()}</span>
                                 )}
                               </p>
                               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1 truncate">
                                 <IoLocationOutline className="w-3 h-3 flex-shrink-0" />
-                                <span className="truncate">{vehicle.location || 'Location unknown'}</span>
+                                <span className="truncate">{vehicle.location || t('locationUnknown')}</span>
                               </p>
                               <div className="flex items-center gap-2 mt-1">
-                                <span className="text-[10px] text-gray-400">via {vehicle.provider}</span>
+                                <span className="text-[10px] text-gray-400">{t('via', { provider: vehicle.provider })}</span>
                               </div>
                             </div>
                           </div>
@@ -1603,9 +1605,9 @@ export default function TrackingPage() {
                             {/* Status icons - hidden on mobile */}
                             <div className="hidden sm:flex items-center gap-2">
                               {vehicle.isLocked ? (
-                                <IoLockClosedOutline className="w-4 h-4 text-green-500" title="Locked" />
+                                <IoLockClosedOutline className="w-4 h-4 text-green-500" title={t('locked')} />
                               ) : (
-                                <IoLockOpenOutline className="w-4 h-4 text-red-500" title="Unlocked" />
+                                <IoLockOpenOutline className="w-4 h-4 text-red-500" title={t('unlocked')} />
                               )}
                               {vehicle.engineRunning && (
                                 <IoPowerOutline className="w-4 h-4 text-blue-500 animate-pulse" title="Engine Running" />
@@ -1616,10 +1618,13 @@ export default function TrackingPage() {
                             </div>
                             <span className={`px-2 sm:px-2.5 py-1 text-[10px] sm:text-xs font-medium rounded-lg ${getStatusColor(vehicle.status)}`}>
                               {vehicle.isDisabled
-                                ? 'Disabled'
+                                ? t('disabled')
                                 : vehicle.status === 'moving' && vehicle.speed
-                                ? `${vehicle.speed} mph`
-                                : vehicle.status.charAt(0).toUpperCase() + vehicle.status.slice(1)}
+                                ? t('speedMph', { speed: vehicle.speed })
+                                : vehicle.status === 'moving' ? t('statusMoving')
+                                : vehicle.status === 'parked' ? t('statusParked')
+                                : vehicle.status === 'offline' ? t('statusOffline')
+                                : vehicle.status}
                             </span>
                             {vehicle.guest && (
                               <div className="text-right hidden md:block">
@@ -1645,7 +1650,7 @@ export default function TrackingPage() {
                                 <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
                                   {vehicle.odometer ? vehicle.odometer.toLocaleString() : '—'}
                                 </p>
-                                <p className="text-[10px] sm:text-xs text-gray-500">Miles</p>
+                                <p className="text-[10px] sm:text-xs text-gray-500">{t('milesLabel')}</p>
                               </div>
                               <div className="text-center p-2 sm:p-3 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm">
                                 {vehicle.isEV ? (
@@ -1662,7 +1667,7 @@ export default function TrackingPage() {
                                   {vehicle.batteryLevel ?? vehicle.fuelLevel ?? '—'}%
                                 </p>
                                 <p className="text-[10px] sm:text-xs text-gray-500">
-                                  {vehicle.isEV ? (vehicle.chargeState?.state === 'CHARGING' ? 'Charging' : 'Battery') : 'Fuel'}
+                                  {vehicle.isEV ? (vehicle.chargeState?.state === 'CHARGING' ? t('chargingLabel') : t('batteryLabel')) : t('fuelLabel')}
                                 </p>
                               </div>
                               {/* Oil Life (ICE vehicles) */}
@@ -1674,7 +1679,7 @@ export default function TrackingPage() {
                                   <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
                                     {vehicle.oilLife !== null ? `${Math.round(vehicle.oilLife)}%` : '—'}
                                   </p>
-                                  <p className="text-[10px] sm:text-xs text-gray-500">Oil Life</p>
+                                  <p className="text-[10px] sm:text-xs text-gray-500">{t('oilLifeLabel')}</p>
                                 </div>
                               )}
                               {/* Charging Status (EVs) */}
@@ -1684,9 +1689,9 @@ export default function TrackingPage() {
                                     vehicle.chargeState?.isPluggedIn ? 'text-green-500' : 'text-gray-400'
                                   }`} />
                                   <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
-                                    {vehicle.chargeState?.isPluggedIn ? 'Yes' : 'No'}
+                                    {vehicle.chargeState?.isPluggedIn ? t('yes') : t('no')}
                                   </p>
-                                  <p className="text-[10px] sm:text-xs text-gray-500">Plugged In</p>
+                                  <p className="text-[10px] sm:text-xs text-gray-500">{t('pluggedInLabel')}</p>
                                 </div>
                               )}
                               <div className="text-center p-2 sm:p-3 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm">
@@ -1694,7 +1699,7 @@ export default function TrackingPage() {
                                 <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
                                   {formatRelativeTime(vehicle.lastUpdate)}
                                 </p>
-                                <p className="text-[10px] sm:text-xs text-gray-500">Updated</p>
+                                <p className="text-[10px] sm:text-xs text-gray-500">{t('updated')}</p>
                               </div>
                               <div className="text-center p-2 sm:p-3 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm hidden sm:block">
                                 {vehicle.isLocked ? (
@@ -1703,44 +1708,44 @@ export default function TrackingPage() {
                                   <IoLockOpenOutline className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mx-auto mb-1" />
                                 )}
                                 <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
-                                  {vehicle.isLocked ? 'Locked' : 'Unlocked'}
+                                  {vehicle.isLocked ? t('locked') : t('unlocked')}
                                 </p>
-                                <p className="text-[10px] sm:text-xs text-gray-500">Doors</p>
+                                <p className="text-[10px] sm:text-xs text-gray-500">{t('doors')}</p>
                               </div>
                               <div className="text-center p-2 sm:p-3 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm hidden sm:block">
                                 <IoNavigateOutline className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 mx-auto mb-1" />
                                 <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
                                   {vehicle.heading || '—'}
                                 </p>
-                                <p className="text-[10px] sm:text-xs text-gray-500">Heading</p>
+                                <p className="text-[10px] sm:text-xs text-gray-500">{t('heading')}</p>
                               </div>
                             </div>
 
                             {/* Tire Pressure (if available) */}
                             {vehicle.tirePressure && (
                               <div className="mb-4 p-3 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm">
-                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Tire Pressure (PSI)</p>
+                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">{t('tirePressurePsi')}</p>
                                 <div className="grid grid-cols-4 gap-2 text-center">
                                   <div>
-                                    <p className="text-[10px] text-gray-500">Front Left</p>
+                                    <p className="text-[10px] text-gray-500">{t('frontLeft')}</p>
                                     <p className={`text-sm font-semibold ${
                                       vehicle.tirePressure.frontLeft < 30 ? 'text-red-600' : 'text-gray-900 dark:text-white'
                                     }`}>{vehicle.tirePressure.frontLeft}</p>
                                   </div>
                                   <div>
-                                    <p className="text-[10px] text-gray-500">Front Right</p>
+                                    <p className="text-[10px] text-gray-500">{t('frontRight')}</p>
                                     <p className={`text-sm font-semibold ${
                                       vehicle.tirePressure.frontRight < 30 ? 'text-red-600' : 'text-gray-900 dark:text-white'
                                     }`}>{vehicle.tirePressure.frontRight}</p>
                                   </div>
                                   <div>
-                                    <p className="text-[10px] text-gray-500">Back Left</p>
+                                    <p className="text-[10px] text-gray-500">{t('backLeft')}</p>
                                     <p className={`text-sm font-semibold ${
                                       vehicle.tirePressure.backLeft < 30 ? 'text-red-600' : 'text-gray-900 dark:text-white'
                                     }`}>{vehicle.tirePressure.backLeft}</p>
                                   </div>
                                   <div>
-                                    <p className="text-[10px] text-gray-500">Back Right</p>
+                                    <p className="text-[10px] text-gray-500">{t('backRight')}</p>
                                     <p className={`text-sm font-semibold ${
                                       vehicle.tirePressure.backRight < 30 ? 'text-red-600' : 'text-gray-900 dark:text-white'
                                     }`}>{vehicle.tirePressure.backRight}</p>
@@ -1752,7 +1757,7 @@ export default function TrackingPage() {
                             {/* Remote Control Buttons */}
                             <div className="mb-4">
                               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-                                Remote Commands {vehicle.isEV && <span className="text-emerald-600 ml-1">• EV Controls Available</span>}
+                                {t('remoteCommands')} {vehicle.isEV && <span className="text-emerald-600 ml-1">{t('evControlsAvailable')}</span>}
                               </p>
                               <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 sm:gap-2">
                                 {/* Lock/Unlock */}
@@ -1775,7 +1780,7 @@ export default function TrackingPage() {
                                     <IoLockOpenOutline className="w-5 h-5" />
                                   )}
                                   <span className="text-[10px] font-medium">
-                                    {isLocking === vehicle.id ? '...' : vehicle.isLocked ? 'Unlock' : 'Lock'}
+                                    {isLocking === vehicle.id ? '...' : vehicle.isLocked ? t('unlock') : t('lock')}
                                   </span>
                                 </button>
 
@@ -1798,7 +1803,7 @@ export default function TrackingPage() {
                                       <IoFlashOutline className={`w-5 h-5 ${vehicle.chargeState?.state === 'CHARGING' ? 'animate-pulse' : ''}`} />
                                     )}
                                     <span className="text-[10px] font-medium">
-                                      {isChargingControl === vehicle.id ? '...' : vehicle.chargeState?.state === 'CHARGING' ? 'Stop' : 'Charge'}
+                                      {isChargingControl === vehicle.id ? '...' : vehicle.chargeState?.state === 'CHARGING' ? t('stopCharge') : t('startCharge')}
                                     </span>
                                   </button>
                                 )}
@@ -1818,7 +1823,7 @@ export default function TrackingPage() {
                                   ) : (
                                     <IoLocateOutline className="w-5 h-5" />
                                   )}
-                                  <span className="text-[10px] font-medium">Locate</span>
+                                  <span className="text-[10px] font-medium">{t('locate')}</span>
                                 </button>
 
                                 {/* Refresh Data */}
@@ -1828,7 +1833,7 @@ export default function TrackingPage() {
                                   className={`flex flex-col items-center gap-0.5 p-2 sm:p-3 rounded-lg transition-all border bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-200 border-blue-300 dark:border-blue-500/30 ${refreshingVehicle === vehicle.id ? 'opacity-50' : ''}`}
                                 >
                                   <IoRefreshOutline className={`w-5 h-5 ${refreshingVehicle === vehicle.id ? 'animate-spin' : ''}`} />
-                                  <span className="text-[10px] font-medium">Sync</span>
+                                  <span className="text-[10px] font-medium">{t('sync')}</span>
                                 </button>
 
                                 {/* View on Map */}
@@ -1842,7 +1847,7 @@ export default function TrackingPage() {
                                   }`}
                                 >
                                   <IoMapOutline className="w-5 h-5" />
-                                  <span className="text-[10px] font-medium">Map</span>
+                                  <span className="text-[10px] font-medium">{t('map')}</span>
                                 </button>
 
                                 {/* Trip History */}
@@ -1851,7 +1856,7 @@ export default function TrackingPage() {
                                   className="flex flex-col items-center gap-0.5 p-2 sm:p-3 rounded-lg transition-all border bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 hover:bg-orange-200 border-orange-300 dark:border-orange-500/30"
                                 >
                                   <IoStatsChartOutline className="w-5 h-5" />
-                                  <span className="text-[10px] font-medium">History</span>
+                                  <span className="text-[10px] font-medium">{t('history')}</span>
                                 </button>
                               </div>
                             </div>
@@ -1860,12 +1865,12 @@ export default function TrackingPage() {
                             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
                               <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors">
                                 <IoMapOutline className="w-4 h-4" />
-                                View Trip History
+                                {t('viewTripHistory')}
                               </button>
                               {vehicle.guest && (
                                 <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                   <IoChatbubbleOutline className="w-4 h-4" />
-                                  Message Guest
+                                  {t('messageGuest')}
                                 </button>
                               )}
                               <button
@@ -1873,7 +1878,7 @@ export default function TrackingPage() {
                                 className="flex items-center justify-center gap-2 px-4 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 text-sm font-medium rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                               >
                                 <IoCloseCircleOutline className="w-4 h-4" />
-                                Disconnect
+                                {t('disconnect')}
                               </button>
                             </div>
                           </div>

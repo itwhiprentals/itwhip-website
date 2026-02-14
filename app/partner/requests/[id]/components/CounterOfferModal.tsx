@@ -3,6 +3,8 @@
 
 'use client'
 
+import { useLocale } from 'next-intl'
+
 import { useState } from 'react'
 import {
   IoCloseOutline,
@@ -25,6 +27,8 @@ export default function CounterOfferModal({
   onClose,
   onSuccess
 }: CounterOfferModalProps) {
+  const locale = useLocale()
+
   const [amount, setAmount] = useState<string>(currentRate.toString())
   const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -112,7 +116,7 @@ export default function CounterOfferModal({
               ${currentRate}/day
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Total: ${(currentRate * durationDays).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({durationDays} days)
+              Total: ${(currentRate * durationDays).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({durationDays} days)
             </p>
           </div>
 
@@ -153,7 +157,7 @@ export default function CounterOfferModal({
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">New Total</span>
-                  <span className="font-medium text-gray-900 dark:text-white">${newTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span className="font-medium text-gray-900 dark:text-white">${newTotal.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Platform Fee (10%)</span>

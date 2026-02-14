@@ -4,6 +4,8 @@
 
 'use client'
 
+import { useLocale } from 'next-intl'
+
 import { useState, useEffect, useMemo } from 'react'
 import {
   IoSpeedometerOutline,
@@ -33,7 +35,7 @@ interface TripRecord {
 }
 
 // Generate simulated trip data
-function generateTripData(): TripRecord[] {
+function generateTripData(locale: string = 'en'): TripRecord[] {
   const trips: TripRecord[] = []
   const now = new Date()
 
@@ -63,7 +65,7 @@ function generateTripData(): TripRecord[] {
 
     trips.push({
       id: `trip-${i}`,
-      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      date: date.toLocaleDateString(locale, { month: 'short', day: 'numeric' }),
       obdMiles,
       gpsMiles,
       variance: Math.round(variance * 10) / 10,
@@ -79,13 +81,15 @@ interface MileageForensicsDemoProps {
 }
 
 export default function MileageForensicsDemo({ initialCoordinates }: MileageForensicsDemoProps) {
+  const locale = useLocale()
+
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisComplete, setAnalysisComplete] = useState(false)
   const [selectedTrip, setSelectedTrip] = useState<string | null>(null)
   const [showReport, setShowReport] = useState(false)
 
   // Trip data
-  const trips = useMemo(() => generateTripData(), [])
+  const trips = useMemo(() => generateTripData(locale), [locale])
 
   // Animated counters
   const totalObd = trips.reduce((sum, t) => sum + t.obdMiles, 0)

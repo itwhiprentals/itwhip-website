@@ -4,6 +4,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   IoSaveOutline,
   IoCarSportOutline,
@@ -28,47 +29,48 @@ interface VehicleCounts {
   total: number
 }
 
-// Core services that can be enabled/disabled
+// Core services - key-only, labels resolved via t() at render time
 const CORE_SERVICES = [
   {
     id: 'enableRideshare' as const,
-    label: 'Rideshare Rentals',
-    description: 'Vehicles for Uber, Lyft, and other rideshare platforms',
+    labelKey: 'rideshareRentals',
+    descriptionKey: 'rideshareRentalsDesc',
     icon: IoCarSportOutline,
     countKey: 'rideshare' as const
   },
   {
     id: 'enableRentals' as const,
-    label: 'Standard Rentals',
-    description: 'Includes Peer-to-Peers, Managed Hosts and Partners',
+    labelKey: 'standardRentals',
+    descriptionKey: 'standardRentalsDesc',
     icon: IoKeyOutline,
     countKey: 'rental' as const
   }
 ]
 
-// Premium services that require contacting sales
+// Premium services - key-only, labels resolved via t() at render time
 const PREMIUM_SERVICES = [
   {
     id: 'enableSales' as const,
-    label: 'Vehicle Sales',
-    description: 'Buy vehicles outright from your inventory',
+    labelKey: 'vehicleSales',
+    descriptionKey: 'vehicleSalesDesc',
     icon: IoCartOutline
   },
   {
     id: 'enableLeasing' as const,
-    label: 'Leasing Options',
-    description: 'Long-term vehicle leasing programs',
+    labelKey: 'leasingOptions',
+    descriptionKey: 'leasingOptionsDesc',
     icon: IoCalendarOutline
   },
   {
     id: 'enableRentToOwn' as const,
-    label: 'Rent-to-Own',
-    description: 'Rent with the option to purchase the vehicle',
+    labelKey: 'rentToOwn',
+    descriptionKey: 'rentToOwnDesc',
     icon: IoSwapHorizontalOutline
   }
 ]
 
 export default function ServicesTab({ data, onChange, onSave, isSaving }: ServicesTabProps) {
+  const t = useTranslations('PartnerLanding')
   const [vehicleCounts, setVehicleCounts] = useState<VehicleCounts>({ rideshare: 0, rental: 0, total: 0 })
   const [isLoadingCounts, setIsLoadingCounts] = useState(true)
 
@@ -102,10 +104,10 @@ export default function ServicesTab({ data, onChange, onSave, isSaving }: Servic
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 space-y-6">
       <div>
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
-          Available Services
+          {t('availableServices')}
         </h3>
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-          Select which services to display on your landing page. Visitors will see tabs for each enabled service.
+          {t('servicesDescription')}
         </p>
       </div>
 
@@ -148,10 +150,10 @@ export default function ServicesTab({ data, onChange, onSave, isSaving }: Servic
                     ? 'text-gray-900 dark:text-white'
                     : 'text-gray-700 dark:text-gray-300'
                 }`}>
-                  {service.label}
+                  {t(service.labelKey)}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {service.description}
+                  {t(service.descriptionKey)}
                 </p>
               </div>
               {/* Vehicle Count Badge */}
@@ -160,7 +162,7 @@ export default function ServicesTab({ data, onChange, onSave, isSaving }: Servic
                   ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300'
                   : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
               }`}>
-                {isLoadingCounts ? '...' : `${count} vehicle${count !== 1 ? 's' : ''}`}
+                {isLoadingCounts ? '...' : t('vehicleCount', { count })}
               </div>
             </label>
           )
@@ -170,7 +172,7 @@ export default function ServicesTab({ data, onChange, onSave, isSaving }: Servic
       {/* Premium Services - Contact Sales */}
       <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-          Premium services require approval. Contact our sales team to get started.
+          {t('premiumServicesNote')}
         </p>
         <div className="space-y-4">
           {PREMIUM_SERVICES.map((service) => {
@@ -186,10 +188,10 @@ export default function ServicesTab({ data, onChange, onSave, isSaving }: Servic
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-gray-700 dark:text-gray-300">
-                    {service.label}
+                    {t(service.labelKey)}
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {service.description}
+                    {t(service.descriptionKey)}
                   </p>
                 </div>
                 <a
@@ -197,7 +199,7 @@ export default function ServicesTab({ data, onChange, onSave, isSaving }: Servic
                   className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg transition-colors flex-shrink-0"
                 >
                   <IoMailOutline className="w-4 h-4" />
-                  Contact Sales
+                  {t('contactSales')}
                 </a>
               </div>
             )
@@ -208,7 +210,7 @@ export default function ServicesTab({ data, onChange, onSave, isSaving }: Servic
       {/* Info note */}
       <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
         <p className="text-sm text-blue-700 dark:text-blue-300">
-          <strong>Note:</strong> Enabling a service creates a tab on your landing page. Make sure you have vehicles configured for each enabled service type. Your page will be published when you have a valid slug and at least one core service enabled.
+          <strong>{t('noteLabel')}</strong> {t('servicesInfoNote')}
         </p>
       </div>
 
@@ -220,7 +222,7 @@ export default function ServicesTab({ data, onChange, onSave, isSaving }: Servic
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white text-sm font-medium rounded-lg transition-colors"
         >
           <IoSaveOutline className="w-4 h-4" />
-          {isSaving ? 'Saving...' : 'Save Services'}
+          {isSaving ? t('saving') : t('saveServices')}
         </button>
       </div>
     </div>

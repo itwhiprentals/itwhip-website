@@ -6,8 +6,8 @@ import Stripe from 'stripe'
 import { getServerSession } from 'next-auth/next'
 import { z } from 'zod'
 import prisma from '@/app/lib/database/prisma'
-import { getActualDeposit } from '@/app/(guest)/rentals/lib/booking-pricing'
-import { getTaxRate } from '@/app/(guest)/rentals/lib/arizona-taxes'
+import { getActualDeposit } from '@/app/[locale]/(guest)/rentals/lib/booking-pricing'
+import { getTaxRate } from '@/app/[locale]/(guest)/rentals/lib/arizona-taxes'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil',

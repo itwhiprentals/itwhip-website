@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   IoTrendingUpOutline,
   IoTrendingDownOutline,
@@ -54,6 +55,9 @@ interface AnalyticsData {
 }
 
 export default function PartnerAnalyticsPage() {
+  const t = useTranslations('PartnerAnalytics')
+
+  const locale = useLocale()
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -116,7 +120,7 @@ export default function PartnerAnalyticsPage() {
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
@@ -134,7 +138,7 @@ export default function PartnerAnalyticsPage() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading analytics...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('loadingAnalytics')}</p>
           </div>
         </div>
       </div>
@@ -146,9 +150,9 @@ export default function PartnerAnalyticsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Analytics</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('title')}</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Track your fleet performance and revenue metrics
+            {t('subtitle')}
           </p>
         </div>
 
@@ -160,10 +164,10 @@ export default function PartnerAnalyticsPage() {
               onChange={(e) => setTimeRange(e.target.value as any)}
               className="appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2 pr-8 text-sm font-medium text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
-              <option value="7d">Last 7 days</option>
-              <option value="30d">Last 30 days</option>
-              <option value="90d">Last 90 days</option>
-              <option value="12m">Last 12 months</option>
+              <option value="7d">{t('last7Days')}</option>
+              <option value="30d">{t('last30Days')}</option>
+              <option value="90d">{t('last90Days')}</option>
+              <option value="12m">{t('last12Months')}</option>
             </select>
             <IoChevronDownOutline className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
           </div>
@@ -182,7 +186,7 @@ export default function PartnerAnalyticsPage() {
       {error && (
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
           <p className="text-yellow-800 dark:text-yellow-200 text-sm">
-            Analytics data is currently being set up. Check back soon for detailed insights!
+            {t('analyticsSetup')}
           </p>
         </div>
       )}
@@ -190,7 +194,7 @@ export default function PartnerAnalyticsPage() {
       {/* Overview Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Revenue"
+          title={t('totalRevenue')}
           value={formatCurrency(data?.overview.totalRevenue || 0)}
           change={data?.revenueGrowth || 0}
           icon={IoWalletOutline}
@@ -198,7 +202,7 @@ export default function PartnerAnalyticsPage() {
           iconColor="text-green-600 dark:text-green-400"
         />
         <StatCard
-          title="Total Bookings"
+          title={t('totalBookings')}
           value={String(data?.overview.totalBookings || 0)}
           change={data?.bookingGrowth || 0}
           icon={IoCalendarOutline}
@@ -206,14 +210,14 @@ export default function PartnerAnalyticsPage() {
           iconColor="text-blue-600 dark:text-blue-400"
         />
         <StatCard
-          title="Avg. Booking Value"
+          title={t('avgBookingValue')}
           value={formatCurrency(data?.overview.avgBookingValue || 0)}
           icon={IoTrendingUpOutline}
           iconBg="bg-purple-100 dark:bg-purple-900/30"
           iconColor="text-purple-600 dark:text-purple-400"
         />
         <StatCard
-          title="Utilization Rate"
+          title={t('utilizationRate')}
           value={`${data?.overview.utilizationRate || 0}%`}
           icon={IoCarOutline}
           iconBg="bg-orange-100 dark:bg-orange-900/30"
@@ -224,28 +228,28 @@ export default function PartnerAnalyticsPage() {
       {/* Second Row Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Avg. Trip Duration"
-          value={`${data?.overview.avgTripDuration || 0} days`}
+          title={t('avgTripDuration')}
+          value={t('daysUnit', { count: data?.overview.avgTripDuration || 0 })}
           icon={IoTimeOutline}
           iconBg="bg-cyan-100 dark:bg-cyan-900/30"
           iconColor="text-cyan-600 dark:text-cyan-400"
         />
         <StatCard
-          title="Average Rating"
-          value={`${(data?.overview.avgRating || 0).toFixed(1)} / 5.0`}
+          title={t('averageRating')}
+          value={t('ratingValue', { rating: (data?.overview.avgRating || 0).toFixed(1) })}
           icon={IoStarOutline}
           iconBg="bg-yellow-100 dark:bg-yellow-900/30"
           iconColor="text-yellow-600 dark:text-yellow-400"
         />
         <StatCard
-          title="Total Reviews"
+          title={t('totalReviews')}
           value={String(data?.overview.totalReviews || 0)}
           icon={IoStarOutline}
           iconBg="bg-pink-100 dark:bg-pink-900/30"
           iconColor="text-pink-600 dark:text-pink-400"
         />
         <StatCard
-          title="Repeat Customers"
+          title={t('repeatCustomers')}
           value={`${data?.overview.repeatCustomerRate || 0}%`}
           icon={IoAnalyticsOutline}
           iconBg="bg-indigo-100 dark:bg-indigo-900/30"
@@ -257,23 +261,23 @@ export default function PartnerAnalyticsPage() {
       {((data?.overview.upcomingBookingsCount || 0) > 0 || (data?.overview.pendingBookingsCount || 0) > 0) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <StatCard
-            title="In Progress"
+            title={t('inProgress')}
             value={formatCurrency(data?.overview.upcomingRevenue || 0)}
-            subtitle={`${data?.overview.upcomingBookingsCount || 0} active trip${(data?.overview.upcomingBookingsCount || 0) !== 1 ? 's' : ''}`}
+            subtitle={t('activeTrips', { count: data?.overview.upcomingBookingsCount || 0 })}
             icon={IoCarOutline}
             iconBg="bg-blue-100 dark:bg-blue-900/30"
             iconColor="text-blue-600 dark:text-blue-400"
-            badge="Active"
+            badge={t('activeBadge')}
             badgeColor="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
           />
           <StatCard
-            title="Awaiting Approval"
+            title={t('awaitingApproval')}
             value={formatCurrency(data?.overview.pendingRevenue || 0)}
-            subtitle={`${data?.overview.pendingBookingsCount || 0} request${(data?.overview.pendingBookingsCount || 0) !== 1 ? 's' : ''} pending`}
+            subtitle={t('requestsPending', { count: data?.overview.pendingBookingsCount || 0 })}
             icon={IoTimeOutline}
             iconBg="bg-amber-100 dark:bg-amber-900/30"
             iconColor="text-amber-600 dark:text-amber-400"
-            badge="Pending"
+            badge={t('pendingBadge')}
             badgeColor="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
           />
         </div>
@@ -284,7 +288,7 @@ export default function PartnerAnalyticsPage() {
         {/* Revenue Chart */}
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Revenue Over Time
+            {t('revenueOverTime')}
           </h3>
           {data?.revenueByMonth && data.revenueByMonth.length > 0 ? (
             <div className="space-y-3">
@@ -311,8 +315,8 @@ export default function PartnerAnalyticsPage() {
             <div className="flex items-center justify-center h-48 text-gray-500 dark:text-gray-400">
               <div className="text-center">
                 <IoAnalyticsOutline className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>No revenue data yet</p>
-                <p className="text-sm">Complete bookings to see revenue trends</p>
+                <p>{t('noRevenueData')}</p>
+                <p className="text-sm">{t('completeBookingsRevenue')}</p>
               </div>
             </div>
           )}
@@ -321,7 +325,7 @@ export default function PartnerAnalyticsPage() {
         {/* Booking Status Distribution */}
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Booking Status Distribution
+            {t('bookingStatusDistribution')}
           </h3>
           {data?.bookingsByStatus && data.bookingsByStatus.length > 0 ? (
             <div className="space-y-3">
@@ -348,8 +352,8 @@ export default function PartnerAnalyticsPage() {
             <div className="flex items-center justify-center h-48 text-gray-500 dark:text-gray-400">
               <div className="text-center">
                 <IoCalendarOutline className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>No bookings yet</p>
-                <p className="text-sm">Bookings will appear here once created</p>
+                <p>{t('noBookingsYet')}</p>
+                <p className="text-sm">{t('bookingsAppearHere')}</p>
               </div>
             </div>
           )}
@@ -359,17 +363,17 @@ export default function PartnerAnalyticsPage() {
       {/* Top Performing Vehicles */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Top Performing Vehicles
+          {t('topPerformingVehicles')}
         </h3>
         {data?.topVehicles && data.topVehicles.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Vehicle</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Bookings</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Revenue</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">Rating</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">{t('vehicleHeader')}</th>
+                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">{t('bookingsHeader')}</th>
+                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">{t('revenueHeader')}</th>
+                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-400">{t('ratingHeader')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -400,8 +404,8 @@ export default function PartnerAnalyticsPage() {
           <div className="flex items-center justify-center h-32 text-gray-500 dark:text-gray-400">
             <div className="text-center">
               <IoCarOutline className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>No vehicle data yet</p>
-              <p className="text-sm">Add vehicles to your fleet to see performance</p>
+              <p>{t('noVehicleData')}</p>
+              <p className="text-sm">{t('addVehiclesPrompt')}</p>
             </div>
           </div>
         )}

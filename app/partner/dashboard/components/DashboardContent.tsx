@@ -3,6 +3,7 @@
 
 'use client'
 
+import { useTranslations, useLocale } from 'next-intl'
 import { DashboardSection } from './DashboardNavigation'
 import TrackingSecurityCard from './TrackingSecurityCard'
 import FleetOverview from './FleetOverview'
@@ -86,15 +87,6 @@ interface DashboardContentProps {
 // Map navigation sections to TrackingSecurityCard tabs
 const TRACKING_CARD_TABS: DashboardSection[] = ['tracking', 'session', 'security', 'api', 'audit']
 
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(amount)
-}
-
 export default function DashboardContent({
   activeSection,
   stats,
@@ -105,6 +97,18 @@ export default function DashboardContent({
   loading = false,
   isExternalRecruit = false
 }: DashboardContentProps) {
+  const t = useTranslations('PartnerDashboard')
+
+  const locale = useLocale()
+
+  function formatCurrency(amount: number) {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount)
+  }
   // Loading skeleton
   if (loading) {
     return (
@@ -173,32 +177,32 @@ export default function DashboardContent({
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <IoCalendarNumberOutline className="w-5 h-5 text-orange-600" />
-            Bookings Overview
+            {t('dcBookingsOverview')}
           </h2>
           <Link
             href="/partner/bookings"
             className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 flex items-center gap-1"
           >
-            Manage Bookings
+            {t('dcManageBookings')}
             <IoArrowForwardOutline className="w-4 h-4" />
           </Link>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.totalBookings || 0}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Total Bookings</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcTotalBookings')}</p>
           </div>
           <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
             <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats?.activeBookings || 0}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Active Now</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcActiveNow')}</p>
           </div>
           <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats?.completedThisMonth || 0}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">This Month</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcThisMonth')}</p>
           </div>
           <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats?.utilizationRate?.toFixed(0) || 0}%</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Utilization</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcUtilization')}</p>
           </div>
         </div>
         <QuickActions />
@@ -213,28 +217,28 @@ export default function DashboardContent({
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <IoCarOutline className="w-5 h-5 text-blue-600" />
-            Fleet Management
+            {t('dcFleetManagement')}
           </h2>
           <Link
             href="/partner/fleet"
             className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 flex items-center gap-1"
           >
-            Manage Fleet
+            {t('dcManageFleet')}
             <IoArrowForwardOutline className="w-4 h-4" />
           </Link>
         </div>
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats?.fleetSize || 0}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Total Vehicles</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcTotalVehicles')}</p>
           </div>
           <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats?.activeVehicles || 0}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Active</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcActive')}</p>
           </div>
           <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
             <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{(stats?.fleetSize || 0) - (stats?.activeVehicles || 0)}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Maintenance</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcMaintenance')}</p>
           </div>
         </div>
         <FleetOverview vehicles={vehicleStatus} />
@@ -260,32 +264,32 @@ export default function DashboardContent({
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <IoCashOutline className="w-5 h-5 text-green-600" />
-            Revenue Overview
+            {t('dcRevenueOverview')}
           </h2>
           <Link
             href="/partner/revenue"
             className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 flex items-center gap-1"
           >
-            View Details
+            {t('dcViewDetails')}
             <IoArrowForwardOutline className="w-4 h-4" />
           </Link>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats?.grossRevenue || 0)}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Gross Revenue</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcGrossRevenue')}</p>
           </div>
           <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(stats?.netRevenue || 0)}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Net Revenue</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcNetRevenue')}</p>
           </div>
           <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(stats?.thisMonthRevenue || 0)}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">This Month</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcThisMonth')}</p>
           </div>
           <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
             <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{formatCurrency(stats?.lastMonthRevenue || 0)}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Last Month</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcLastMonth')}</p>
           </div>
         </div>
         <RevenueChart />
@@ -300,7 +304,7 @@ export default function DashboardContent({
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <IoSpeedometerOutline className="w-5 h-5 text-indigo-600" />
-            Fleet Status
+            {t('dcFleetStatus')}
           </h2>
         </div>
         <FleetOverview vehicles={vehicleStatus} />
@@ -327,13 +331,13 @@ export default function DashboardContent({
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <IoListOutline className="w-5 h-5 text-amber-600" />
-            Recent Bookings
+            {t('dcRecentBookings')}
           </h2>
           <Link
             href="/partner/bookings"
             className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 flex items-center gap-1"
           >
-            View All
+            {t('dcViewAll')}
             <IoArrowForwardOutline className="w-4 h-4" />
           </Link>
         </div>
@@ -348,7 +352,7 @@ export default function DashboardContent({
       return (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-            Loading commission data...
+            {t('dcLoadingCommission')}
           </p>
         </div>
       )
@@ -371,7 +375,7 @@ export default function DashboardContent({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
       <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-        Select a section from the navigation above
+        {t('dcSelectSection')}
       </p>
     </div>
   )

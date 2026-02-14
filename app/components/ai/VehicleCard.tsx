@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { IoStar, IoLocationSharp, IoFlash, IoChevronDown, IoChevronUp, IoCarSportOutline } from 'react-icons/io5'
 import type { VehicleSummary } from '@/app/lib/ai-booking/types'
 

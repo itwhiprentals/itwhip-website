@@ -4,6 +4,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import { useTranslations } from 'next-intl'
 import { IconType } from 'react-icons'
 import {
   IoLocationOutline,
@@ -40,26 +41,26 @@ export type DashboardSection =
 
 interface NavBadge {
   id: DashboardSection
-  label: string
+  labelKey: string
   icon: IconType
   color: string
 }
 
 const NAV_BADGES: NavBadge[] = [
-  { id: 'tracking', label: 'Tracking', icon: IoLocationOutline, color: 'blue' },
-  { id: 'requests', label: 'Requests', icon: IoHandRightOutline, color: 'orange' },
-  { id: 'session', label: 'Session', icon: IoCalendarOutline, color: 'green' },
-  { id: 'security', label: 'Security', icon: IoShieldOutline, color: 'purple' },
-  { id: 'api', label: 'API', icon: IoCodeOutline, color: 'cyan' },
-  { id: 'audit', label: 'Audit', icon: IoDocumentTextOutline, color: 'yellow' },
-  { id: 'booking', label: 'Booking', icon: IoCalendarNumberOutline, color: 'orange' },
-  { id: 'fleet', label: 'Fleet', icon: IoCarOutline, color: 'blue' },
-  { id: 'invitation', label: 'Invitations', icon: IoMailOutline, color: 'pink' },
-  { id: 'revenue', label: 'Revenue', icon: IoCashOutline, color: 'green' },
-  { id: 'fleet-status', label: 'Fleet Status', icon: IoSpeedometerOutline, color: 'indigo' },
-  { id: 'recent-bookings', label: 'Recent Bookings', icon: IoListOutline, color: 'amber' },
-  { id: 'commission', label: 'Commission', icon: IoTrophyOutline, color: 'rose' },
-  { id: 'esg', label: 'ESG Score', icon: IoLeafOutline, color: 'green' },
+  { id: 'tracking', labelKey: 'navTracking', icon: IoLocationOutline, color: 'blue' },
+  { id: 'requests', labelKey: 'navRequests', icon: IoHandRightOutline, color: 'orange' },
+  { id: 'session', labelKey: 'navSession', icon: IoCalendarOutline, color: 'green' },
+  { id: 'security', labelKey: 'navSecurity', icon: IoShieldOutline, color: 'purple' },
+  { id: 'api', labelKey: 'navAPI', icon: IoCodeOutline, color: 'cyan' },
+  { id: 'audit', labelKey: 'navAudit', icon: IoDocumentTextOutline, color: 'yellow' },
+  { id: 'booking', labelKey: 'navBooking', icon: IoCalendarNumberOutline, color: 'orange' },
+  { id: 'fleet', labelKey: 'navFleet', icon: IoCarOutline, color: 'blue' },
+  { id: 'invitation', labelKey: 'navInvitations', icon: IoMailOutline, color: 'pink' },
+  { id: 'revenue', labelKey: 'navRevenue', icon: IoCashOutline, color: 'green' },
+  { id: 'fleet-status', labelKey: 'navFleetStatus', icon: IoSpeedometerOutline, color: 'indigo' },
+  { id: 'recent-bookings', labelKey: 'navRecentBookings', icon: IoListOutline, color: 'amber' },
+  { id: 'commission', labelKey: 'navCommission', icon: IoTrophyOutline, color: 'rose' },
+  { id: 'esg', labelKey: 'navESGScore', icon: IoLeafOutline, color: 'green' },
 ]
 
 // Badges to hide for external recruits (they don't need dev-focused tabs)
@@ -103,6 +104,7 @@ export default function DashboardNavigation({
   isExternalRecruit = false,
   badgeCounts = {}
 }: DashboardNavigationProps) {
+  const t = useTranslations('PartnerDashboard')
   // Get ordered and filtered badges based on user type
   const visibleBadges = useMemo(() => {
     if (isExternalRecruit) {
@@ -162,7 +164,7 @@ export default function DashboardNavigation({
               `}
             >
               <Icon className="w-4 h-4" />
-              <span>{badge.label}</span>
+              <span>{t(badge.labelKey)}</span>
               {/* Badge count indicator */}
               {count !== undefined && count > 0 && (
                 <span className={`

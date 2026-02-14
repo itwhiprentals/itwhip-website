@@ -8,6 +8,7 @@ import {
   IoCard,
 } from 'react-icons/io5'
 import { BookingState, CheckoutStep } from '@/app/lib/ai-booking/types'
+import { useTranslations } from 'next-intl'
 
 interface ProgressBarProps {
   state: BookingState
@@ -15,12 +16,12 @@ interface ProgressBarProps {
   checkoutStep?: CheckoutStep
 }
 
-const STEPS = [
-  { key: BookingState.COLLECTING_LOCATION, label: 'Location', icon: IoLocationSharp },
-  { key: BookingState.COLLECTING_DATES, label: 'Dates', icon: IoCalendar },
-  { key: BookingState.COLLECTING_VEHICLE, label: 'Vehicle', icon: IoCar },
-  { key: BookingState.CONFIRMING, label: 'Confirm', icon: IoCheckmarkCircle },
-  { key: BookingState.READY_FOR_PAYMENT, label: 'Pay', icon: IoCard },
+const STEP_DEFS = [
+  { key: BookingState.COLLECTING_LOCATION, labelKey: 'stepLocation' as const, icon: IoLocationSharp },
+  { key: BookingState.COLLECTING_DATES, labelKey: 'stepDates' as const, icon: IoCalendar },
+  { key: BookingState.COLLECTING_VEHICLE, labelKey: 'stepVehicle' as const, icon: IoCar },
+  { key: BookingState.CONFIRMING, labelKey: 'stepConfirm' as const, icon: IoCheckmarkCircle },
+  { key: BookingState.READY_FOR_PAYMENT, labelKey: 'stepPay' as const, icon: IoCard },
 ]
 
 const STATE_ORDER: Record<string, number> = {
@@ -34,6 +35,8 @@ const STATE_ORDER: Record<string, number> = {
 }
 
 export default function ProgressBar({ state, checkoutStep }: ProgressBarProps) {
+  const t = useTranslations('ChoeAI')
+
   // When in checkout, override to show "Pay" step as active/complete
   let currentOrder = STATE_ORDER[state] ?? 0
   if (checkoutStep) {
@@ -45,7 +48,7 @@ export default function ProgressBar({ state, checkoutStep }: ProgressBarProps) {
 
   return (
     <div className="flex items-center py-2 px-3">
-      {STEPS.map((step, i) => {
+      {STEP_DEFS.map((step, i) => {
         const stepOrder = STATE_ORDER[step.key] ?? 0
         const isComplete = currentOrder > stepOrder
         const isCurrent = currentOrder === stepOrder
@@ -86,7 +89,7 @@ export default function ProgressBar({ state, checkoutStep }: ProgressBarProps) {
                   }
                 `}
               >
-                {step.label}
+                {t(step.labelKey)}
               </span>
             </div>
           </div>

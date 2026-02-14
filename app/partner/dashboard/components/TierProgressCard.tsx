@@ -3,6 +3,7 @@
 
 'use client'
 
+import { useTranslations } from 'next-intl'
 import {
   IoTrophyOutline,
   IoChevronUpOutline,
@@ -33,7 +34,8 @@ export default function TierProgressCard({
   fleetSize,
   tier
 }: TierProgressCardProps) {
-  const currentTierIndex = tiers.findIndex(t => t.name === tier.current)
+  const t = useTranslations('PartnerDashboard')
+  const currentTierIndex = tiers.findIndex(tc => tc.name === tier.current)
   const nextTier = currentTierIndex < tiers.length - 1 ? tiers[currentTierIndex + 1] : null
 
   const getProgressToNextTier = () => {
@@ -73,15 +75,15 @@ export default function TierProgressCard({
             <div className="flex items-center gap-2 mb-1">
               <IoTrophyOutline className="w-5 h-5 text-orange-600 dark:text-orange-400" />
               <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                Commission Tier
+                {t('tierCommissionTier')}
               </h3>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Grow your fleet to unlock lower commission rates
+              {t('tierGrowFleet')}
             </p>
           </div>
           <div className={`px-3 py-1.5 rounded-full text-sm font-semibold ${getTierBgColor(tier.current)}`}>
-            {tier.current} Partner
+            {t('tierPartner', { tier: tier.current })}
           </div>
         </div>
       </div>
@@ -92,18 +94,18 @@ export default function TierProgressCard({
         <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Your Commission Rate</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('tierCommissionRate')}</p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white">
                 {(currentRate * 100).toFixed(0)}%
               </p>
               <p className="text-sm text-green-600 dark:text-green-400">
-                You keep {((1 - currentRate) * 100).toFixed(0)}% of each booking
+                {t('tierYouKeep', { percent: ((1 - currentRate) * 100).toFixed(0) })}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Fleet Size</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('tierFleetSize')}</p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white">{fleetSize}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">vehicles</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('tierVehicles')}</p>
             </div>
           </div>
         </div>
@@ -113,10 +115,10 @@ export default function TierProgressCard({
           <div className="mb-4">
             <div className="flex items-center justify-between text-sm mb-2">
               <span className="text-gray-600 dark:text-gray-400">
-                Progress to {nextTier.name}
+                {t('tierProgressTo', { tier: nextTier.name })}
               </span>
               <span className="font-semibold text-gray-900 dark:text-white">
-                {tier.vehiclesNeeded} more vehicles needed
+                {t('tierMoreVehiclesNeeded', { count: tier.vehiclesNeeded })}
               </span>
             </div>
             <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -126,22 +128,22 @@ export default function TierProgressCard({
               />
             </div>
             <div className="flex items-center justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
-              <span>{fleetSize} vehicles</span>
-              <span>{nextTier.minVehicles} vehicles</span>
+              <span>{t('tierVehicleCount', { count: fleetSize })}</span>
+              <span>{t('tierVehicleCount', { count: nextTier.minVehicles })}</span>
             </div>
           </div>
         )}
 
         {/* Tier Ladder */}
         <div className="grid grid-cols-4 gap-2 mt-4">
-          {tiers.map((t, index) => {
-            const isCurrentTier = t.name === tier.current
+          {tiers.map((tierConfig, index) => {
+            const isCurrentTier = tierConfig.name === tier.current
             const isUnlocked = index <= currentTierIndex
             const isNextTier = index === currentTierIndex + 1
 
             return (
               <div
-                key={t.name}
+                key={tierConfig.name}
                 className={`relative p-2.5 rounded-lg text-center transition-all ${
                   isCurrentTier
                     ? 'bg-gray-50 dark:bg-gray-700 border-2 border-orange-500'
@@ -152,12 +154,12 @@ export default function TierProgressCard({
               >
                 {isCurrentTier && (
                   <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full">
-                    Current
+                    {t('tierCurrent')}
                   </div>
                 )}
                 {isNextTier && (
                   <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full">
-                    Next
+                    {t('tierNext')}
                   </div>
                 )}
 
@@ -176,7 +178,7 @@ export default function TierProgressCard({
                     ? 'text-orange-600 dark:text-orange-400'
                     : 'text-gray-700 dark:text-gray-300'
                 }`}>
-                  {t.name}
+                  {tierConfig.name}
                 </p>
 
                 <p className={`text-base font-bold ${
@@ -184,11 +186,11 @@ export default function TierProgressCard({
                     ? 'text-gray-900 dark:text-white'
                     : 'text-gray-600 dark:text-gray-400'
                 }`}>
-                  {(t.rate * 100).toFixed(0)}%
+                  {(tierConfig.rate * 100).toFixed(0)}%
                 </p>
 
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {t.minVehicles}+ cars
+                  {t('tierCars', { count: tierConfig.minVehicles })}
                 </p>
               </div>
             )
@@ -201,11 +203,11 @@ export default function TierProgressCard({
             <div className="flex items-center gap-2 mb-1">
               <IoTrophyOutline className="w-4 h-4 text-orange-600 dark:text-orange-400" />
               <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                Unlock Diamond Benefits
+                {t('tierUnlockDiamond')}
               </span>
             </div>
             <p className="text-xs text-gray-600 dark:text-gray-400">
-              Reach 100+ vehicles to unlock 10% commission rate, priority support, and dedicated account manager.
+              {t('tierDiamondBenefitsDesc')}
             </p>
           </div>
         )}

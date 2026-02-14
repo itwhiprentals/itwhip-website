@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { z } from 'zod'
 import prisma from '@/app/lib/database/prisma'
-import { getActualDeposit } from '@/app/(guest)/rentals/lib/booking-pricing'
+import { getActualDeposit } from '@/app/[locale]/(guest)/rentals/lib/booking-pricing'
 import type {
   InsuranceTierOption,
   DeliveryOption,

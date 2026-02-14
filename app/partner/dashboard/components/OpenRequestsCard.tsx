@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import {
   IoDocumentTextOutline,
@@ -60,6 +61,9 @@ export default function OpenRequestsCard() {
   const [stats, setStats] = useState<RequestStats>({ openCount: 0, myActiveClaimCount: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const t = useTranslations('PartnerDashboard')
+
+  const locale = useLocale()
 
   const fetchRequests = async () => {
     try {
@@ -106,7 +110,7 @@ export default function OpenRequestsCard() {
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return 'TBD'
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    return new Date(dateStr).toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric'
     })
@@ -155,7 +159,7 @@ export default function OpenRequestsCard() {
             className="text-orange-600 hover:text-orange-700 text-sm flex items-center gap-1 mx-auto"
           >
             <IoRefreshOutline className="w-4 h-4" />
-            Retry
+            {t('orRetry')}
           </button>
         </div>
       </div>
@@ -172,9 +176,9 @@ export default function OpenRequestsCard() {
               <IoDocumentTextOutline className="w-5 h-5 text-orange-600 dark:text-orange-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">Open Requests</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white">{t('orOpenRequests')}</h3>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {stats.openCount} available to claim
+                {t('orAvailableToClaim', { count: stats.openCount })}
               </p>
             </div>
           </div>
@@ -182,7 +186,7 @@ export default function OpenRequestsCard() {
             href="/partner/requests"
             className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 flex items-center gap-1"
           >
-            View All
+            {t('orViewAll')}
             <IoArrowForwardOutline className="w-4 h-4" />
           </Link>
         </div>
@@ -195,14 +199,14 @@ export default function OpenRequestsCard() {
             <IoWarningOutline className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                You have {pendingCarClaims.length} claim{pendingCarClaims.length > 1 ? 's' : ''} waiting for car assignment
+                {t('orClaimsWaiting', { count: pendingCarClaims.length })}
               </p>
               {pendingCarClaims.map((claim) => {
                 const timer = getTimeRemaining(claim.claimExpiresAt)
                 return (
                   <div key={claim.id} className="mt-1 flex items-center gap-2">
                     <span className="text-xs text-yellow-700 dark:text-yellow-300">
-                      {claim.request.vehicleMake || claim.request.vehicleType || 'Request'}
+                      {claim.request.vehicleMake || claim.request.vehicleType || t('orRequest')}
                     </span>
                     <span className={`text-xs font-medium ${timer.urgent ? 'text-red-600' : 'text-yellow-600'}`}>
                       <IoTimeOutline className="w-3 h-3 inline mr-1" />
@@ -215,7 +219,7 @@ export default function OpenRequestsCard() {
                 href="/partner/requests?filter=my_claims"
                 className="text-xs text-yellow-700 dark:text-yellow-300 hover:underline mt-1 inline-block"
               >
-                Assign car now →
+                {t('orAssignCarNow')}
               </Link>
             </div>
           </div>
@@ -228,10 +232,10 @@ export default function OpenRequestsCard() {
           <div className="p-6 text-center">
             <IoDocumentTextOutline className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              No open requests right now
+              {t('orNoOpenRequests')}
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              Check back later for new opportunities
+              {t('orCheckBackLater')}
             </p>
           </div>
         ) : (
@@ -248,12 +252,12 @@ export default function OpenRequestsCard() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-gray-900 dark:text-white truncate">
-                      {request.vehicleMake || request.vehicleType || 'Any Vehicle'}
+                      {request.vehicleMake || request.vehicleType || t('orAnyVehicle')}
                     </span>
                     {request.priority === 'URGENT' && (
                       <span className="flex items-center gap-1 px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded text-xs">
                         <IoFlashOutline className="w-3 h-3" />
-                        Urgent
+                        {t('orUrgent')}
                       </span>
                     )}
                   </div>
@@ -267,13 +271,13 @@ export default function OpenRequestsCard() {
                     {request.durationDays && (
                       <span className="flex items-center gap-1">
                         <IoCalendarOutline className="w-3 h-3" />
-                        {request.durationDays}d
+                        {t('orDurationDays', { days: request.durationDays })}
                       </span>
                     )}
                     {request.offeredRate && (
                       <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
                         <IoCashOutline className="w-3 h-3" />
-                        ${request.offeredRate}/day
+                        {t('orPerDay', { rate: request.offeredRate })}
                       </span>
                     )}
                   </div>
@@ -294,7 +298,7 @@ export default function OpenRequestsCard() {
             href="/partner/requests"
             className="w-full py-2 text-center text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium flex items-center justify-center gap-1"
           >
-            View {stats.openCount - 3} more requests
+            {t('orViewMoreRequests', { count: stats.openCount - 3 })}
             <IoArrowForwardOutline className="w-4 h-4" />
           </Link>
         </div>

@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   IoBuildOutline,
   IoCarOutline,
@@ -57,21 +58,24 @@ interface Stats {
   totalCost: number
 }
 
-const SERVICE_TYPE_LABELS: Record<string, string> = {
-  OIL_CHANGE: 'Oil Change',
-  STATE_INSPECTION: 'State Inspection',
-  TIRE_ROTATION: 'Tire Rotation',
-  BRAKE_CHECK: 'Brake Check',
-  FLUID_CHECK: 'Fluid Check',
-  BATTERY_CHECK: 'Battery Check',
-  AIR_FILTER: 'Air Filter',
-  MAJOR_SERVICE_30K: '30K Service',
-  MAJOR_SERVICE_60K: '60K Service',
-  MAJOR_SERVICE_90K: '90K Service',
-  CUSTOM: 'Custom Service'
+const SERVICE_TYPE_KEYS: Record<string, string> = {
+  OIL_CHANGE: 'serviceOilChange',
+  STATE_INSPECTION: 'serviceStateInspection',
+  TIRE_ROTATION: 'serviceTireRotation',
+  BRAKE_CHECK: 'serviceBrakeCheck',
+  FLUID_CHECK: 'serviceFluidCheck',
+  BATTERY_CHECK: 'serviceBatteryCheck',
+  AIR_FILTER: 'serviceAirFilter',
+  MAJOR_SERVICE_30K: 'serviceMajor30K',
+  MAJOR_SERVICE_60K: 'serviceMajor60K',
+  MAJOR_SERVICE_90K: 'serviceMajor90K',
+  CUSTOM: 'serviceCustom'
 }
 
 export default function MaintenancePage() {
+  const t = useTranslations('PartnerMaintenance')
+
+  const locale = useLocale()
   const [records, setRecords] = useState<MaintenanceRecord[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [stats, setStats] = useState<Stats>({ total: 0, overdue: 0, dueSoon: 0, upToDate: 0, totalCost: 0 })
@@ -108,7 +112,7 @@ export default function MaintenancePage() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -116,11 +120,16 @@ export default function MaintenancePage() {
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0
     }).format(amount)
+  }
+
+  const getServiceTypeLabel = (serviceType: string) => {
+    const key = SERVICE_TYPE_KEYS[serviceType]
+    return key ? t(key) : serviceType
   }
 
   const getDueStatusBadge = (status: 'ok' | 'due_soon' | 'overdue') => {
@@ -129,21 +138,21 @@ export default function MaintenancePage() {
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
             <IoWarningOutline className="w-3 h-3" />
-            Overdue
+            {t('badgeOverdue')}
           </span>
         )
       case 'due_soon':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">
             <IoTimeOutline className="w-3 h-3" />
-            Due Soon
+            {t('badgeDueSoon')}
           </span>
         )
       default:
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
             <IoCheckmarkCircleOutline className="w-3 h-3" />
-            Up to Date
+            {t('badgeUpToDate')}
           </span>
         )
     }
@@ -154,9 +163,9 @@ export default function MaintenancePage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Maintenance</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('title')}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Track and manage vehicle service records
+            {t('subtitle')}
           </p>
         </div>
         <button
@@ -164,7 +173,7 @@ export default function MaintenancePage() {
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium text-sm transition-colors"
         >
           <IoAddOutline className="w-5 h-5" />
-          Add Service Record
+          {t('addServiceRecord')}
         </button>
       </div>
 
@@ -177,7 +186,7 @@ export default function MaintenancePage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.overdue}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Overdue</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('statsOverdue')}</p>
             </div>
           </div>
         </div>
@@ -188,7 +197,7 @@ export default function MaintenancePage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.dueSoon}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Due Soon</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('statsDueSoon')}</p>
             </div>
           </div>
         </div>
@@ -199,7 +208,7 @@ export default function MaintenancePage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.upToDate}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Up to Date</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('statsUpToDate')}</p>
             </div>
           </div>
         </div>
@@ -210,7 +219,7 @@ export default function MaintenancePage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats.totalCost)}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Total Spent</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('statsTotalSpent')}</p>
             </div>
           </div>
         </div>
@@ -231,7 +240,7 @@ export default function MaintenancePage() {
                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
-                {f === 'all' ? 'All' : f === 'due_soon' ? 'Due Soon' : 'Overdue'}
+                {f === 'all' ? t('filterAll') : f === 'due_soon' ? t('filterDueSoon') : t('filterOverdue')}
               </button>
             ))}
           </div>
@@ -242,7 +251,7 @@ export default function MaintenancePage() {
             onChange={(e) => setVehicleFilter(e.target.value)}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-orange-500"
           >
-            <option value="">All Vehicles</option>
+            <option value="">{t('allVehicles')}</option>
             {vehicles.map((v) => (
               <option key={v.id} value={v.id}>{v.name}</option>
             ))}
@@ -255,23 +264,23 @@ export default function MaintenancePage() {
         {loading ? (
           <div className="p-8 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">Loading maintenance records...</p>
+            <p className="text-gray-500 dark:text-gray-400">{t('loadingRecords')}</p>
           </div>
         ) : records.length === 0 ? (
           <div className="p-8 text-center">
             <IoBuildOutline className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              No maintenance records
+              {t('noRecords')}
             </h3>
             <p className="text-gray-500 dark:text-gray-400 mb-4">
-              Start tracking vehicle maintenance to stay on top of service schedules
+              {t('noRecordsDescription')}
             </p>
             <button
               onClick={() => setShowAddModal(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium text-sm transition-colors"
             >
               <IoAddOutline className="w-5 h-5" />
-              Add First Record
+              {t('addFirstRecord')}
             </button>
           </div>
         ) : (
@@ -297,14 +306,14 @@ export default function MaintenancePage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        {SERVICE_TYPE_LABELS[record.serviceType] || record.serviceType}
+                        {getServiceTypeLabel(record.serviceType)}
                       </span>
                       {getDueStatusBadge(record.dueStatus)}
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
                       <span>{record.vehicleName}</span>
                       <span>{formatDate(record.serviceDate)}</span>
-                      <span>{record.mileageAtService.toLocaleString()} mi</span>
+                      <span>{t('mileageUnit', { mileage: record.mileageAtService.toLocaleString() })}</span>
                       <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(record.costTotal)}</span>
                     </div>
                   </div>
@@ -322,15 +331,15 @@ export default function MaintenancePage() {
                   <div className="mt-4 pl-20 space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="text-gray-500 dark:text-gray-400">Service Provider</p>
+                        <p className="text-gray-500 dark:text-gray-400">{t('serviceProvider')}</p>
                         <p className="font-medium text-gray-900 dark:text-white">{record.shopName}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">{record.shopAddress}</p>
                         {record.technicianName && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Tech: {record.technicianName}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{t('techLabel', { name: record.technicianName })}</p>
                         )}
                       </div>
                       <div>
-                        <p className="text-gray-500 dark:text-gray-400">Next Service</p>
+                        <p className="text-gray-500 dark:text-gray-400">{t('nextService')}</p>
                         {record.nextServiceDue && (
                           <p className="font-medium text-gray-900 dark:text-white">
                             {formatDate(record.nextServiceDue)}
@@ -338,18 +347,18 @@ export default function MaintenancePage() {
                         )}
                         {record.nextServiceMileage && (
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            or at {record.nextServiceMileage.toLocaleString()} mi
+                            {t('orAtMileage', { mileage: record.nextServiceMileage.toLocaleString() })}
                           </p>
                         )}
                         {!record.nextServiceDue && !record.nextServiceMileage && (
-                          <p className="text-gray-500 dark:text-gray-400">Not scheduled</p>
+                          <p className="text-gray-500 dark:text-gray-400">{t('notScheduled')}</p>
                         )}
                       </div>
                     </div>
 
                     {record.itemsServiced.length > 0 && (
                       <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Items Serviced</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('itemsServiced')}</p>
                         <div className="flex flex-wrap gap-1">
                           {record.itemsServiced.map((item, i) => (
                             <span
@@ -365,7 +374,7 @@ export default function MaintenancePage() {
 
                     {record.notes && (
                       <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Notes</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('notes')}</p>
                         <p className="text-sm text-gray-700 dark:text-gray-300">{record.notes}</p>
                       </div>
                     )}
@@ -378,7 +387,7 @@ export default function MaintenancePage() {
                         className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                       >
                         <IoDocumentOutline className="w-4 h-4" />
-                        View Receipt
+                        {t('viewReceipt')}
                       </a>
                     </div>
                   </div>
@@ -414,6 +423,7 @@ function AddMaintenanceModal({
   onClose: () => void
   onSuccess: () => void
 }) {
+  const t = useTranslations('PartnerMaintenance')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
@@ -453,10 +463,10 @@ function AddMaintenanceModal({
       if (data.success) {
         onSuccess()
       } else {
-        setError(data.error || 'Failed to create record')
+        setError(data.error || t('errorCreateFailed'))
       }
     } catch (err) {
-      setError('Failed to create record')
+      setError(t('errorCreateFailed'))
     } finally {
       setLoading(false)
     }
@@ -466,11 +476,16 @@ function AddMaintenanceModal({
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
+  const getServiceTypeLabel = (key: string) => {
+    const tKey = SERVICE_TYPE_KEYS[key]
+    return tKey ? t(tKey) : key
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full my-8">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add Maintenance Record</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('modalTitle')}</h3>
           <button onClick={onClose} className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
             <IoCloseOutline className="w-5 h-5" />
           </button>
@@ -486,14 +501,14 @@ function AddMaintenanceModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Vehicle */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vehicle *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelVehicle')}</label>
               <select
                 value={formData.carId}
                 onChange={(e) => updateField('carId', e.target.value)}
                 required
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
               >
-                <option value="">Select vehicle</option>
+                <option value="">{t('selectVehicle')}</option>
                 {vehicles.map((v) => (
                   <option key={v.id} value={v.id}>{v.name}</option>
                 ))}
@@ -502,22 +517,22 @@ function AddMaintenanceModal({
 
             {/* Service Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Service Type *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelServiceType')}</label>
               <select
                 value={formData.serviceType}
                 onChange={(e) => updateField('serviceType', e.target.value)}
                 required
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
               >
-                {Object.entries(SERVICE_TYPE_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
+                {Object.keys(SERVICE_TYPE_KEYS).map((key) => (
+                  <option key={key} value={key}>{getServiceTypeLabel(key)}</option>
                 ))}
               </select>
             </div>
 
             {/* Service Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Service Date *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelServiceDate')}</label>
               <input
                 type="date"
                 value={formData.serviceDate}
@@ -529,20 +544,20 @@ function AddMaintenanceModal({
 
             {/* Mileage at Service */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mileage at Service *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelMileageAtService')}</label>
               <input
                 type="number"
                 value={formData.mileageAtService}
                 onChange={(e) => updateField('mileageAtService', e.target.value)}
                 required
-                placeholder="e.g., 45000"
+                placeholder={t('placeholderMileage')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
               />
             </div>
 
             {/* Next Service Due */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Next Service Due</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelNextServiceDue')}</label>
               <input
                 type="date"
                 value={formData.nextServiceDue}
@@ -553,69 +568,69 @@ function AddMaintenanceModal({
 
             {/* Next Service Mileage */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Next Service Mileage</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelNextServiceMileage')}</label>
               <input
                 type="number"
                 value={formData.nextServiceMileage}
                 onChange={(e) => updateField('nextServiceMileage', e.target.value)}
-                placeholder="e.g., 50000"
+                placeholder={t('placeholderNextMileage')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
               />
             </div>
 
             {/* Shop Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Shop Name *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelShopName')}</label>
               <input
                 type="text"
                 value={formData.shopName}
                 onChange={(e) => updateField('shopName', e.target.value)}
                 required
-                placeholder="e.g., AutoZone Service Center"
+                placeholder={t('placeholderShopName')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
               />
             </div>
 
             {/* Shop Address */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Shop Address *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelShopAddress')}</label>
               <input
                 type="text"
                 value={formData.shopAddress}
                 onChange={(e) => updateField('shopAddress', e.target.value)}
                 required
-                placeholder="e.g., 123 Main St, Phoenix, AZ"
+                placeholder={t('placeholderShopAddress')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
               />
             </div>
 
             {/* Technician Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Technician Name</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelTechnicianName')}</label>
               <input
                 type="text"
                 value={formData.technicianName}
                 onChange={(e) => updateField('technicianName', e.target.value)}
-                placeholder="Optional"
+                placeholder={t('placeholderOptional')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
               />
             </div>
 
             {/* Invoice Number */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Invoice Number</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelInvoiceNumber')}</label>
               <input
                 type="text"
                 value={formData.invoiceNumber}
                 onChange={(e) => updateField('invoiceNumber', e.target.value)}
-                placeholder="Optional"
+                placeholder={t('placeholderOptional')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
               />
             </div>
 
             {/* Receipt URL */}
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Receipt URL *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelReceiptUrl')}</label>
               <input
                 type="url"
                 value={formData.receiptUrl}
@@ -624,12 +639,12 @@ function AddMaintenanceModal({
                 placeholder="https://..."
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Upload receipt to cloud storage and paste URL</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('receiptUrlHint')}</p>
             </div>
 
             {/* Cost */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Total Cost</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelTotalCost')}</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
                 <input
@@ -645,12 +660,12 @@ function AddMaintenanceModal({
 
             {/* Items Serviced */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Items Serviced</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelItemsServiced')}</label>
               <input
                 type="text"
                 value={formData.itemsServiced}
                 onChange={(e) => updateField('itemsServiced', e.target.value)}
-                placeholder="Oil, Filter, Fluids (comma separated)"
+                placeholder={t('placeholderItems')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
               />
             </div>
@@ -658,12 +673,12 @@ function AddMaintenanceModal({
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelNotes')}</label>
             <textarea
               value={formData.notes}
               onChange={(e) => updateField('notes', e.target.value)}
               rows={2}
-              placeholder="Additional notes..."
+              placeholder={t('placeholderNotes')}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 resize-none"
             />
           </div>
@@ -674,14 +689,14 @@ function AddMaintenanceModal({
               onClick={onClose}
               className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium"
             >
-              Cancel
+              {t('buttonCancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium"
             >
-              {loading ? 'Creating...' : 'Add Record'}
+              {loading ? t('buttonCreating') : t('buttonAddRecord')}
             </button>
           </div>
         </form>

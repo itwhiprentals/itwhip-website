@@ -294,8 +294,8 @@ async function attachInsurancePricing(
 // SUGGESTION CHIPS
 // =============================================================================
 
-function getSuggestions(state: BookingState): string[] {
-  const suggestions: Record<BookingState, string[]> = {
+const SUGGESTIONS_BY_LOCALE: Record<string, Record<BookingState, string[]>> = {
+  en: {
     [BookingState.INIT]: ['I need a car in Phoenix', 'SUV in Scottsdale', 'Cheapest car tomorrow'],
     [BookingState.COLLECTING_LOCATION]: ['Phoenix', 'Scottsdale', 'Tempe', 'Mesa'],
     [BookingState.COLLECTING_DATES]: ['This weekend', 'Tomorrow for 3 days', 'Next Friday to Sunday'],
@@ -303,7 +303,29 @@ function getSuggestions(state: BookingState): string[] {
     [BookingState.CONFIRMING]: ['Book it', 'Change dates', 'Show other cars'],
     [BookingState.CHECKING_AUTH]: ['Log in', 'Continue as guest'],
     [BookingState.READY_FOR_PAYMENT]: ['Proceed to payment'],
-  }
+  },
+  es: {
+    [BookingState.INIT]: ['Necesito un auto en Phoenix', 'SUV en Scottsdale', 'Auto más barato mañana'],
+    [BookingState.COLLECTING_LOCATION]: ['Phoenix', 'Scottsdale', 'Tempe', 'Mesa'],
+    [BookingState.COLLECTING_DATES]: ['Este fin de semana', 'Mañana por 3 días', 'Viernes a domingo'],
+    [BookingState.COLLECTING_VEHICLE]: ['Muéstrame SUVs', 'Menos de $100/día', 'La opción más barata'],
+    [BookingState.CONFIRMING]: ['Reservar', 'Cambiar fechas', 'Ver otros autos'],
+    [BookingState.CHECKING_AUTH]: ['Iniciar sesión', 'Continuar como invitado'],
+    [BookingState.READY_FOR_PAYMENT]: ['Proceder al pago'],
+  },
+  fr: {
+    [BookingState.INIT]: ['J\'ai besoin d\'une voiture à Phoenix', 'SUV à Scottsdale', 'Voiture la moins chère demain'],
+    [BookingState.COLLECTING_LOCATION]: ['Phoenix', 'Scottsdale', 'Tempe', 'Mesa'],
+    [BookingState.COLLECTING_DATES]: ['Ce week-end', 'Demain pour 3 jours', 'Vendredi à dimanche'],
+    [BookingState.COLLECTING_VEHICLE]: ['Montrez-moi les SUV', 'Moins de 100$/jour', 'L\'option la moins chère'],
+    [BookingState.CONFIRMING]: ['Réserver', 'Changer les dates', 'Voir d\'autres voitures'],
+    [BookingState.CHECKING_AUTH]: ['Se connecter', 'Continuer en tant qu\'invité'],
+    [BookingState.READY_FOR_PAYMENT]: ['Procéder au paiement'],
+  },
+}
+
+function getSuggestions(state: BookingState, locale = 'en'): string[] {
+  const suggestions = SUGGESTIONS_BY_LOCALE[locale] || SUGGESTIONS_BY_LOCALE.en
   return suggestions[state] || []
 }
 
@@ -458,11 +480,13 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     }
 
     // Build system prompt (enhanced for complex queries)
+    const locale = body.locale || 'en'
     let systemPrompt = buildSystemPrompt({
       session,
       isLoggedIn: !!body.userId,
       isVerified: false,
       vehicles: body.previousVehicles || undefined,
+      locale,
     })
 
     // Enhance prompt for extended thinking
@@ -684,6 +708,7 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
             isLoggedIn: !!body.userId,
             isVerified: false,
             vehicles: filteredVehicles,
+            locale,
           })
         }
 
@@ -794,7 +819,7 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       vehicles,
       summary,
       action,
-      suggestions: getSuggestions(session.state),
+      suggestions: getSuggestions(session.state, locale),
       tokensUsed: totalTokensUsed,
     })
 

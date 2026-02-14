@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
+import { useTranslations } from 'next-intl'
 import PasswordInput from './PasswordInput'
 
 interface GuardResponse {
@@ -22,6 +23,7 @@ interface EmailLoginExpandProps {
 }
 
 export default function EmailLoginExpand({ mode, hostMode = false, onSuccess, onGuard }: EmailLoginExpandProps) {
+  const t = useTranslations('Auth')
   const { executeRecaptcha } = useGoogleReCaptcha()
   const [expanded, setExpanded] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -45,15 +47,15 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess, on
 
     if (mode === 'signup') {
       if (!formData.name.trim()) {
-        setError('Name is required')
+        setError(t('nameRequired'))
         return
       }
       if (formData.password !== formData.confirmPassword) {
-        setError('Passwords do not match')
+        setError(t('passwordsDoNotMatch'))
         return
       }
       if (formData.password.length < 8) {
-        setError('Password must be at least 8 characters')
+        setError(t('passwordMinLength'))
         return
       }
     }
@@ -89,7 +91,7 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess, on
           onGuard(data.guard, formData.email)
           return
         }
-        setError(data.error || 'Something went wrong')
+        setError(data.error || t('somethingWentWrong'))
         return
       }
 
@@ -102,7 +104,7 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess, on
         window.location.href = redirectUrl
       }
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError(t('somethingWentWrongRetry'))
     } finally {
       setLoading(false)
     }
@@ -117,7 +119,7 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess, on
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
         </svg>
-        Continue with Email
+        {t('continueWithEmail')}
       </button>
     )
   }
@@ -134,7 +136,7 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess, on
         {mode === 'signup' && (
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Full Name
+              {t('fullName')}
             </label>
             <input
               id="name"
@@ -142,7 +144,7 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess, on
               type="text"
               value={formData.name}
               onChange={handleChange}
-              placeholder="John Doe"
+              placeholder={t('fullNamePlaceholder')}
               className="w-full px-3 py-2.5 bg-white dark:bg-gray-800/50 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               autoFocus
             />
@@ -151,7 +153,7 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess, on
 
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Email
+            {t('email')}
           </label>
           <input
             id="email"
@@ -159,7 +161,7 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess, on
             type="email"
             value={formData.email}
             onChange={handleChange}
-            placeholder="you@example.com"
+            placeholder={t('emailPlaceholder')}
             className="w-full px-3 py-2.5 bg-white dark:bg-gray-800/50 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             autoFocus={mode === 'login'}
           />
@@ -198,7 +200,7 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess, on
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
           ) : (
-            mode === 'login' ? 'Sign In' : 'Create Account'
+            mode === 'login' ? t('signIn') : t('createAccount')
           )}
         </button>
 
@@ -207,7 +209,7 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess, on
           onClick={() => setExpanded(false)}
           className="w-full text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
         >
-          ← Back to other options
+          {t('backToOptions')}
         </button>
       </form>
     </div>

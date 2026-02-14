@@ -3,6 +3,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { IoSaveOutline, IoAlertCircleOutline, IoCheckmarkCircleOutline, IoMailOutline, IoCallOutline } from 'react-icons/io5'
 
 interface AccountTabProps {
@@ -26,43 +27,44 @@ interface ValidationErrors {
   phone?: string
 }
 
-// Validation helpers
-const validateEmail = (email: string): string | undefined => {
-  if (!email.trim()) return 'Email is required'
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(email)) return 'Please enter a valid email address'
-  return undefined
-}
-
-const validatePhone = (phone: string): string | undefined => {
-  if (!phone.trim()) return undefined
-  const phoneRegex = /^[\d\s\-\+\(\)]{10,}$/
-  if (!phoneRegex.test(phone)) return 'Please enter a valid phone number'
-  return undefined
-}
-
-const validateName = (name: string, fieldName: string): string | undefined => {
-  if (!name.trim()) return `${fieldName} is required`
-  if (name.trim().length < 2) return `${fieldName} must be at least 2 characters`
-  return undefined
-}
-
 export function AccountTab({ settings, setSettings, onSave, isSaving }: AccountTabProps) {
   const router = useRouter()
+  const t = useTranslations('PartnerSettings')
   const [errors, setErrors] = useState<ValidationErrors>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [emailVerifySending, setEmailVerifySending] = useState(false)
   const [emailVerifyMessage, setEmailVerifyMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  // Validation helpers (inlined to use t())
+  const validateEmail = (email: string): string | undefined => {
+    if (!email.trim()) return t('valEmailRequired')
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) return t('valEmailInvalid')
+    return undefined
+  }
+
+  const validatePhone = (phone: string): string | undefined => {
+    if (!phone.trim()) return undefined
+    const phoneRegex = /^[\d\s\-\+\(\)]{10,}$/
+    if (!phoneRegex.test(phone)) return t('valPhoneInvalid')
+    return undefined
+  }
+
+  const validateName = (name: string, fieldName: string): string | undefined => {
+    if (!name.trim()) return t('valNameRequired', { field: fieldName })
+    if (name.trim().length < 2) return t('valNameMinLength', { field: fieldName })
+    return undefined
+  }
 
   const validateField = (field: keyof ValidationErrors, value: string) => {
     let error: string | undefined
 
     switch (field) {
       case 'firstName':
-        error = validateName(value, 'First name')
+        error = validateName(value, t('firstName'))
         break
       case 'lastName':
-        error = validateName(value, 'Last name')
+        error = validateName(value, t('lastName'))
         break
       case 'email':
         error = validateEmail(value)
@@ -90,8 +92,8 @@ export function AccountTab({ settings, setSettings, onSave, isSaving }: AccountT
 
   const validateAll = (): boolean => {
     const newErrors: ValidationErrors = {
-      firstName: validateName(settings.firstName, 'First name'),
-      lastName: validateName(settings.lastName, 'Last name'),
+      firstName: validateName(settings.firstName, t('firstName')),
+      lastName: validateName(settings.lastName, t('lastName')),
       email: validateEmail(settings.email),
       phone: validatePhone(settings.phone)
     }
@@ -113,12 +115,12 @@ export function AccountTab({ settings, setSettings, onSave, isSaving }: AccountT
       const res = await fetch('/api/partner/email/send-verification', { method: 'POST' })
       const data = await res.json()
       if (data.success) {
-        setEmailVerifyMessage({ type: 'success', text: `Verification email sent to ${settings.email}` })
+        setEmailVerifyMessage({ type: 'success', text: t('verificationEmailSent', { email: settings.email }) })
       } else {
-        setEmailVerifyMessage({ type: 'error', text: data.error || 'Failed to send verification email' })
+        setEmailVerifyMessage({ type: 'error', text: data.error || t('failedToSendVerification') })
       }
     } catch {
-      setEmailVerifyMessage({ type: 'error', text: 'Failed to send verification email' })
+      setEmailVerifyMessage({ type: 'error', text: t('failedToSendVerification') })
     } finally {
       setEmailVerifySending(false)
     }
@@ -152,12 +154,12 @@ export function AccountTab({ settings, setSettings, onSave, isSaving }: AccountT
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Account Information</h2>
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('accountInfo')}</h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            First Name <span className="text-red-500">*</span>
+            {t('firstName')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -172,7 +174,7 @@ export function AccountTab({ settings, setSettings, onSave, isSaving }: AccountT
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Last Name <span className="text-red-500">*</span>
+            {t('lastName')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -188,7 +190,7 @@ export function AccountTab({ settings, setSettings, onSave, isSaving }: AccountT
         {/* Email with verification */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Email Address <span className="text-red-500">*</span>
+            {t('emailAddress')} <span className="text-red-500">*</span>
           </label>
           <input
             type="email"
@@ -202,7 +204,7 @@ export function AccountTab({ settings, setSettings, onSave, isSaving }: AccountT
           <div className="mt-2 flex items-center gap-2">
             {settings.emailVerified ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                <IoCheckmarkCircleOutline className="w-3 h-3" /> Verified
+                <IoCheckmarkCircleOutline className="w-3 h-3" /> {t('verified')}
               </span>
             ) : (
               <button
@@ -211,7 +213,7 @@ export function AccountTab({ settings, setSettings, onSave, isSaving }: AccountT
                 className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
               >
                 <IoMailOutline className="w-3 h-3" />
-                {emailVerifySending ? 'Sending...' : 'Verify Email'}
+                {emailVerifySending ? t('sendingVerification') : t('verifyEmail')}
               </button>
             )}
           </div>
@@ -225,7 +227,7 @@ export function AccountTab({ settings, setSettings, onSave, isSaving }: AccountT
         {/* Phone with verification */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Phone Number
+            {t('phoneNumber')}
           </label>
           <input
             type="tel"
@@ -239,7 +241,7 @@ export function AccountTab({ settings, setSettings, onSave, isSaving }: AccountT
           <div className="mt-2 flex items-center gap-2">
             {settings.phoneVerified ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                <IoCheckmarkCircleOutline className="w-3 h-3" /> Verified
+                <IoCheckmarkCircleOutline className="w-3 h-3" /> {t('verified')}
               </span>
             ) : settings.phone ? (
               <button
@@ -247,10 +249,10 @@ export function AccountTab({ settings, setSettings, onSave, isSaving }: AccountT
                 className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
               >
                 <IoCallOutline className="w-3 h-3" />
-                Verify Phone
+                {t('verifyPhone')}
               </button>
             ) : (
-              <span className="text-xs text-gray-400 dark:text-gray-500">Add phone to verify</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">{t('addPhoneToVerify')}</span>
             )}
           </div>
         </div>
@@ -263,7 +265,7 @@ export function AccountTab({ settings, setSettings, onSave, isSaving }: AccountT
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg transition-colors"
         >
           <IoSaveOutline className="w-5 h-5" />
-          {isSaving ? 'Saving...' : 'Save Changes'}
+          {isSaving ? t('saving') : t('saveChanges')}
         </button>
       </div>
     </div>

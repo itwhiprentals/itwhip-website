@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   IoCalendarOutline,
   IoSearchOutline,
@@ -38,6 +39,9 @@ interface Booking {
 type FilterStatus = 'all' | 'confirmed' | 'pending' | 'active' | 'completed' | 'cancelled'
 
 export default function PartnerBookingsPage() {
+  const t = useTranslations('PartnerBookings')
+
+  const locale = useLocale()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -66,31 +70,31 @@ export default function PartnerBookingsPage() {
     switch (status) {
       case 'confirmed':
         return {
-          label: 'Confirmed',
+          label: t('statusConfirmed'),
           color: 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30',
           icon: IoCheckmarkCircleOutline
         }
       case 'pending':
         return {
-          label: 'Pending',
+          label: t('statusPending'),
           color: 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30',
           icon: IoTimeOutline
         }
       case 'active':
         return {
-          label: 'Active',
+          label: t('statusActive'),
           color: 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30',
           icon: IoCarOutline
         }
       case 'completed':
         return {
-          label: 'Completed',
+          label: t('statusCompleted'),
           color: 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700',
           icon: IoCheckmarkCircleOutline
         }
       case 'cancelled':
         return {
-          label: 'Cancelled',
+          label: t('statusCancelled'),
           color: 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30',
           icon: IoCloseCircleOutline
         }
@@ -104,7 +108,7 @@ export default function PartnerBookingsPage() {
   }
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    return new Date(dateStr).toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -112,7 +116,7 @@ export default function PartnerBookingsPage() {
   }
 
   const formatShortDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    return new Date(dateStr).toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric'
     })
@@ -176,9 +180,9 @@ export default function PartnerBookingsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Bookings</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('bookingsTitle')}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Manage reservations across your fleet
+            {t('manageReservations')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -187,11 +191,11 @@ export default function PartnerBookingsPage() {
             className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <IoRefreshOutline className="w-5 h-5" />
-            Refresh
+            {t('refresh')}
           </button>
           <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
             <IoDownloadOutline className="w-5 h-5" />
-            Export
+            {t('export')}
           </button>
         </div>
       </div>
@@ -207,7 +211,7 @@ export default function PartnerBookingsPage() {
           }`}
         >
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t('total')}</p>
         </button>
         <button
           onClick={() => setStatusFilter('pending')}
@@ -218,7 +222,7 @@ export default function PartnerBookingsPage() {
           }`}
         >
           <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.pending}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Pending</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t('pending')}</p>
         </button>
         <button
           onClick={() => setStatusFilter('confirmed')}
@@ -229,7 +233,7 @@ export default function PartnerBookingsPage() {
           }`}
         >
           <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.confirmed}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Confirmed</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t('confirmed')}</p>
         </button>
         <button
           onClick={() => setStatusFilter('active')}
@@ -240,7 +244,7 @@ export default function PartnerBookingsPage() {
           }`}
         >
           <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.active}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Active</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t('active')}</p>
         </button>
         <button
           onClick={() => setStatusFilter('completed')}
@@ -251,7 +255,7 @@ export default function PartnerBookingsPage() {
           }`}
         >
           <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">{stats.completed}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t('completed')}</p>
         </button>
         <button
           onClick={() => setStatusFilter('cancelled')}
@@ -262,7 +266,7 @@ export default function PartnerBookingsPage() {
           }`}
         >
           <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.cancelled}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Cancelled</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t('cancelled')}</p>
         </button>
       </div>
 
@@ -272,7 +276,7 @@ export default function PartnerBookingsPage() {
           <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by guest, vehicle, or booking ID..."
+            placeholder={t('searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -283,10 +287,10 @@ export default function PartnerBookingsPage() {
           onChange={(e) => setDateRange(e.target.value as any)}
           className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
         >
-          <option value="all">All Time</option>
-          <option value="today">Today</option>
-          <option value="week">This Week</option>
-          <option value="month">This Month</option>
+          <option value="all">{t('allTime')}</option>
+          <option value="today">{t('today')}</option>
+          <option value="week">{t('thisWeek')}</option>
+          <option value="month">{t('thisMonth')}</option>
         </select>
       </div>
 
@@ -296,10 +300,10 @@ export default function PartnerBookingsPage() {
           <div className="text-center py-12">
             <IoCalendarOutline className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-gray-400 mb-2">
-              {bookings.length === 0 ? 'No bookings yet' : 'No bookings match your filters'}
+              {bookings.length === 0 ? t('noBookingsYet') : t('noBookingsMatch')}
             </p>
             <p className="text-sm text-gray-400 dark:text-gray-500">
-              Bookings will appear here when guests reserve your vehicles
+              {t('bookingsWillAppear')}
             </p>
           </div>
         ) : (
@@ -308,22 +312,22 @@ export default function PartnerBookingsPage() {
               <thead className="bg-gray-50 dark:bg-gray-900/50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Guest
+                    {t('guest')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Vehicle
+                    {t('vehicle')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Dates
+                    {t('dates')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Status
+                    {t('status')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Amount
+                    {t('amount')}
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Actions
+                    {t('actions')}
                   </th>
                 </tr>
               </thead>
@@ -363,7 +367,7 @@ export default function PartnerBookingsPage() {
                             {formatShortDate(booking.startDate)} - {formatShortDate(booking.endDate)}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {booking.days} day{booking.days !== 1 ? 's' : ''}
+                            {t('daysCount', { count: booking.days })}
                           </p>
                         </div>
                       </td>
@@ -383,7 +387,7 @@ export default function PartnerBookingsPage() {
                           href={`/partner/bookings/${booking.id}`}
                           className="inline-flex items-center gap-1 text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"
                         >
-                          View
+                          {t('view')}
                           <IoChevronForwardOutline className="w-4 h-4" />
                         </Link>
                       </td>
@@ -400,10 +404,10 @@ export default function PartnerBookingsPage() {
       {filteredBookings.length > 0 && (
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
           <p>
-            Showing {filteredBookings.length} of {bookings.length} bookings
+            {t('showingOf', { filtered: filteredBookings.length, total: bookings.length })}
           </p>
           <p>
-            Total Revenue: <span className="font-semibold text-gray-900 dark:text-white">${totalRevenue.toLocaleString()}</span>
+            {t('totalRevenue')} <span className="font-semibold text-gray-900 dark:text-white">${totalRevenue.toLocaleString()}</span>
           </p>
         </div>
       )}

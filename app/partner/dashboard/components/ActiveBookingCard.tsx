@@ -17,6 +17,7 @@ import {
   IoRefreshOutline,
   IoCheckmarkCircleOutline
 } from 'react-icons/io5'
+import { useTranslations, useLocale } from 'next-intl'
 
 interface ActiveBooking {
   id: string
@@ -51,6 +52,9 @@ export default function ActiveBookingCard({
   collapsible = true,
   defaultCollapsed = false
 }: ActiveBookingCardProps) {
+  const t = useTranslations('PartnerDashboard')
+
+  const locale = useLocale()
   const [bookings, setBookings] = useState<ActiveBooking[]>([])
   const [loading, setLoading] = useState(true)
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed)
@@ -109,7 +113,7 @@ export default function ActiveBookingCard({
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       hour: 'numeric',
@@ -119,10 +123,10 @@ export default function ActiveBookingCard({
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; className: string }> = {
-      pending: { label: 'Pending', className: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' },
-      confirmed: { label: 'Confirmed', className: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' },
-      active: { label: 'In Progress', className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' },
-      completed: { label: 'Completed', className: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }
+      pending: { label: t('abPending'), className: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' },
+      confirmed: { label: t('abConfirmed'), className: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' },
+      active: { label: t('abInProgress'), className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' },
+      completed: { label: t('abCompleted'), className: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }
     }
     return statusMap[status] || { label: status, className: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }
   }
@@ -132,16 +136,16 @@ export default function ActiveBookingCard({
     const end = new Date(endDate)
     const diffMs = end.getTime() - now.getTime()
 
-    if (diffMs <= 0) return 'Overdue'
+    if (diffMs <= 0) return t('abOverdue')
 
     const hours = Math.floor(diffMs / (1000 * 60 * 60))
     const days = Math.floor(hours / 24)
 
-    if (days > 0) return `${days}d ${hours % 24}h left`
-    if (hours > 0) return `${hours}h left`
+    if (days > 0) return t('abDaysHoursLeft', { days, hours: hours % 24 })
+    if (hours > 0) return t('abHoursLeft', { hours })
 
     const minutes = Math.floor(diffMs / (1000 * 60))
-    return `${minutes}m left`
+    return t('abMinutesLeft', { minutes })
   }
 
   if (loading) {
@@ -173,14 +177,14 @@ export default function ActiveBookingCard({
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <IoCarSportOutline className="w-5 h-5 text-orange-500" />
-            Active Bookings
+            {t('abActiveBookings')}
           </h3>
         </div>
         <div className="text-center py-4">
           <IoCheckmarkCircleOutline className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">No active bookings</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('abNoActiveBookings')}</p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            Your fleet is ready for new trips
+            {t('abFleetReady')}
           </p>
         </div>
       </div>
@@ -194,7 +198,7 @@ export default function ActiveBookingCard({
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <IoCarSportOutline className="w-5 h-5 text-orange-500" />
-            Active Bookings
+            {t('abActiveBookings')}
             <span className="px-1.5 py-0.5 text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded">
               {bookings.length}
             </span>
@@ -276,7 +280,7 @@ export default function ActiveBookingCard({
                     </span>
                     <span className="flex items-center gap-1">
                       <IoCalendarOutline className="w-3 h-3" />
-                      Returns {formatDate(booking.endDate)}
+                      {t('abReturns', { date: formatDate(booking.endDate) })}
                     </span>
                   </div>
                 </div>
@@ -294,7 +298,7 @@ export default function ActiveBookingCard({
             href="/partner/bookings?status=active"
             className="flex items-center justify-center gap-2 text-sm text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 pt-2 border-t border-gray-100 dark:border-gray-700"
           >
-            View All Bookings
+            {t('abViewAllBookings')}
             <IoChevronForwardOutline className="w-4 h-4" />
           </Link>
         </div>

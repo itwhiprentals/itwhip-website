@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -45,6 +46,7 @@ interface Vehicle {
 type FilterStatus = 'all' | 'available' | 'booked' | 'maintenance' | 'inactive' | 'active'
 
 export default function PartnerFleetPage() {
+  const t = useTranslations('PartnerFleet')
   const router = useRouter()
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -73,7 +75,7 @@ export default function PartnerFleetPage() {
   const getStatusConfig = (vehicle: Vehicle) => {
     if (!vehicle.isActive) {
       return {
-        label: 'Inactive',
+        label: t('statusInactive'),
         color: 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700',
         icon: IoPauseCircleOutline
       }
@@ -81,25 +83,25 @@ export default function PartnerFleetPage() {
     switch (vehicle.status) {
       case 'available':
         return {
-          label: 'Available',
+          label: t('statusAvailable'),
           color: 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30',
           icon: IoCheckmarkCircleOutline
         }
       case 'booked':
         return {
-          label: 'Booked',
+          label: t('statusBooked'),
           color: 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30',
           icon: IoTimeOutline
         }
       case 'maintenance':
         return {
-          label: 'Maintenance',
+          label: t('statusMaintenance'),
           color: 'text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30',
           icon: IoConstructOutline
         }
       default:
         return {
-          label: 'Unknown',
+          label: t('statusUnknown'),
           color: 'text-gray-600 bg-gray-100',
           icon: IoCarOutline
         }
@@ -204,9 +206,9 @@ export default function PartnerFleetPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Fleet Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('fleetManagement')}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Manage your vehicles and track their performance
+            {t('manageVehiclesTrack')}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -215,14 +217,14 @@ export default function PartnerFleetPage() {
             className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors"
           >
             <IoCalendarOutline className="w-5 h-5" />
-            Calendar
+            {t('calendar')}
           </Link>
           <Link
             href="/partner/fleet/add"
             className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors"
           >
             <IoAddCircleOutline className="w-5 h-5" />
-            Add Vehicle
+            {t('addVehicle')}
           </Link>
         </div>
       </div>
@@ -238,7 +240,7 @@ export default function PartnerFleetPage() {
           }`}
         >
           <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Total</p>
+          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('total')}</p>
         </button>
         <button
           onClick={() => setStatusFilter('active')}
@@ -249,7 +251,7 @@ export default function PartnerFleetPage() {
           }`}
         >
           <p className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.active}</p>
-          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Active</p>
+          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('active')}</p>
         </button>
         <button
           onClick={() => setStatusFilter('available')}
@@ -260,7 +262,7 @@ export default function PartnerFleetPage() {
           }`}
         >
           <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">{stats.available}</p>
-          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Available</p>
+          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('available')}</p>
         </button>
         <button
           onClick={() => setStatusFilter('booked')}
@@ -271,7 +273,7 @@ export default function PartnerFleetPage() {
           }`}
         >
           <p className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.booked}</p>
-          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Booked</p>
+          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('booked')}</p>
         </button>
         <button
           onClick={() => setStatusFilter('maintenance')}
@@ -282,7 +284,7 @@ export default function PartnerFleetPage() {
           }`}
         >
           <p className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.maintenance}</p>
-          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Maintenance</p>
+          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('maintenance')}</p>
         </button>
         <button
           onClick={() => setStatusFilter('inactive')}
@@ -293,7 +295,7 @@ export default function PartnerFleetPage() {
           }`}
         >
           <p className="text-xl sm:text-2xl font-bold text-gray-600 dark:text-gray-400">{stats.inactive}</p>
-          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Inactive</p>
+          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('inactive')}</p>
         </button>
       </div>
 
@@ -303,7 +305,7 @@ export default function PartnerFleetPage() {
           <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by make, model, or plate..."
+            placeholder={t('searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -314,7 +316,7 @@ export default function PartnerFleetPage() {
           className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         >
           <IoRefreshOutline className="w-5 h-5" />
-          Refresh
+          {t('refresh')}
         </button>
       </div>
 
@@ -324,7 +326,7 @@ export default function PartnerFleetPage() {
           <div className="text-center py-12">
             <IoCarOutline className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-gray-400 mb-2">
-              {vehicles.length === 0 ? 'No vehicles in your fleet yet' : 'No vehicles match your filters'}
+              {vehicles.length === 0 ? t('noVehiclesYet') : t('noVehiclesMatch')}
             </p>
             {vehicles.length === 0 && (
               <Link
@@ -332,7 +334,7 @@ export default function PartnerFleetPage() {
                 className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors mt-4"
               >
                 <IoAddCircleOutline className="w-5 h-5" />
-                Add Your First Vehicle
+                {t('addFirstVehicle')}
               </Link>
             )}
           </div>
@@ -342,28 +344,28 @@ export default function PartnerFleetPage() {
               <thead className="bg-gray-50 dark:bg-gray-900/50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Vehicle
+                    {t('vehicle')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Type
+                    {t('type')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Status
+                    {t('status')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Rate
+                    {t('rate')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Trips
+                    {t('trips')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Revenue
+                    {t('revenue')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Rating
+                    {t('ratingCol')}
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Actions
+                    {t('actions')}
                   </th>
                 </tr>
               </thead>
@@ -405,17 +407,17 @@ export default function PartnerFleetPage() {
                               ? 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:hover:bg-orange-900/50'
                               : 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50'
                           }`}
-                          title="Click to switch type"
+                          title={t('clickToSwitch')}
                         >
                           {vehicle.vehicleType === 'RIDESHARE' ? (
                             <>
                               <IoCarSportOutline className="w-3.5 h-3.5" />
-                              Rideshare
+                              {t('rideshare')}
                             </>
                           ) : (
                             <>
                               <IoKeyOutline className="w-3.5 h-3.5" />
-                              Rental
+                              {t('rental')}
                             </>
                           )}
                           <IoSwapHorizontalOutline className="w-3 h-3 ml-1 opacity-50" />
@@ -429,7 +431,7 @@ export default function PartnerFleetPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          ${vehicle.dailyRate}/day
+                          {t('perDay', { rate: vehicle.dailyRate })}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -468,14 +470,14 @@ export default function PartnerFleetPage() {
                                 className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                               >
                                 <IoEyeOutline className="w-4 h-4" />
-                                View Details
+                                {t('viewDetails')}
                               </Link>
                               <Link
                                 href={`/partner/fleet/${vehicle.id}/edit`}
                                 className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                               >
                                 <IoCreateOutline className="w-4 h-4" />
-                                Edit Vehicle
+                                {t('editVehicle')}
                               </Link>
                               <button
                                 onClick={() => handleAction(vehicle.id, vehicle.isActive ? 'deactivate' : 'activate')}
@@ -484,12 +486,12 @@ export default function PartnerFleetPage() {
                                 {vehicle.isActive ? (
                                   <>
                                     <IoPauseCircleOutline className="w-4 h-4" />
-                                    Deactivate
+                                    {t('deactivate')}
                                   </>
                                 ) : (
                                   <>
                                     <IoPlayCircleOutline className="w-4 h-4" />
-                                    Activate
+                                    {t('activate')}
                                   </>
                                 )}
                               </button>
@@ -499,7 +501,7 @@ export default function PartnerFleetPage() {
                                   className="flex items-center gap-2 w-full px-4 py-2 text-sm text-orange-600 dark:text-orange-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                                 >
                                   <IoConstructOutline className="w-4 h-4" />
-                                  Set Maintenance
+                                  {t('setMaintenance')}
                                 </button>
                               )}
                             </div>

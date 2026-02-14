@@ -2,49 +2,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import { IoArrowForwardOutline, IoCarOutline } from 'react-icons/io5'
 import { capitalizeCarMake } from '@/app/lib/utils/formatters'
-
-const carTypes = [
-  {
-    type: 'sedan',
-    label: 'Sedan',
-    price: 'from $35/day',
-    image: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=210&h=158&fit=crop&fm=webp&q=60'
-  },
-  {
-    type: 'suv',
-    label: 'SUV',
-    price: 'from $45/day',
-    image: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=210&h=158&fit=crop&fm=webp&q=60'
-  },
-  {
-    type: 'luxury',
-    label: 'Luxury',
-    price: 'from $100/day',
-    image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=210&h=158&fit=crop&fm=webp&q=60'
-  },
-  {
-    type: 'sports',
-    label: 'Sports',
-    price: 'from $150/day',
-    image: 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=210&h=158&fit=crop&fm=webp&q=60'
-  },
-  {
-    type: 'electric',
-    label: 'Electric',
-    price: 'from $80/day',
-    image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=210&h=158&fit=crop&fm=webp&q=60'
-  },
-  {
-    type: 'truck',
-    label: 'Truck',
-    price: 'from $60/day',
-    image: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=210&h=158&fit=crop&fm=webp&q=60'
-  }
-]
 
 interface CarData {
   id: string
@@ -74,9 +36,49 @@ interface MakeData {
 }
 
 export default function BrowseByTypeSection() {
+  const t = useTranslations('Home')
   const [activeTab, setActiveTab] = useState<'type' | 'make'>('type')
   const [makesData, setMakesData] = useState<MakeData[]>([])
   const [isLoading, setIsLoading] = useState(false)
+
+  const carTypes = [
+    {
+      type: 'sedan',
+      label: t('typeSedanLabel'),
+      price: t('typeSedanPrice'),
+      image: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=210&h=158&fit=crop&fm=webp&q=60'
+    },
+    {
+      type: 'suv',
+      label: t('typeSuvLabel'),
+      price: t('typeSuvPrice'),
+      image: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=210&h=158&fit=crop&fm=webp&q=60'
+    },
+    {
+      type: 'luxury',
+      label: t('typeLuxuryLabel'),
+      price: t('typeLuxuryPrice'),
+      image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=210&h=158&fit=crop&fm=webp&q=60'
+    },
+    {
+      type: 'sports',
+      label: t('typeSportsLabel'),
+      price: t('typeSportsPrice'),
+      image: 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=210&h=158&fit=crop&fm=webp&q=60'
+    },
+    {
+      type: 'electric',
+      label: t('typeElectricLabel'),
+      price: t('typeElectricPrice'),
+      image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=210&h=158&fit=crop&fm=webp&q=60'
+    },
+    {
+      type: 'truck',
+      label: t('typeTruckLabel'),
+      price: t('typeTruckPrice'),
+      image: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=210&h=158&fit=crop&fm=webp&q=60'
+    }
+  ]
 
   // Fetch makes data when switching to make tab
   useEffect(() => {
@@ -112,7 +114,7 @@ export default function BrowseByTypeSection() {
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
-              Browse by Type
+              {t('browseByType')}
             </button>
             <button
               onClick={() => setActiveTab('make')}
@@ -122,7 +124,7 @@ export default function BrowseByTypeSection() {
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
-              Browse by Make
+              {t('browseByMake')}
             </button>
           </div>
         </div>
@@ -199,14 +201,14 @@ export default function BrowseByTypeSection() {
                         {capitalizeCarMake(makeData.make)}
                       </h3>
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300">
-                        {makeData.totalCars} {makeData.totalCars === 1 ? 'car' : 'cars'}
+                        {t('carCount', { count: makeData.totalCars })}
                       </span>
                     </div>
                     <Link
                       href={`/rentals/makes/${makeData.slug}`}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors text-sm sm:text-base"
                     >
-                      View all {capitalizeCarMake(makeData.make) === 'Mercedes-Benz' ? 'Mercedes' : capitalizeCarMake(makeData.make)}
+                      {t('viewAllMake', { make: capitalizeCarMake(makeData.make) === 'Mercedes-Benz' ? 'Mercedes' : capitalizeCarMake(makeData.make) })}
                       <IoArrowForwardOutline className="w-4 h-4" />
                     </Link>
                   </div>
@@ -244,10 +246,10 @@ export default function BrowseByTypeSection() {
                   <IoCarOutline className="w-8 h-8 text-gray-400" />
                 </div>
                 <p className="text-gray-500 dark:text-gray-400 font-medium">
-                  No cars available at the moment.
+                  {t('noCarsAvailable')}
                 </p>
                 <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-                  Check back soon for new listings.
+                  {t('checkBackSoon')}
                 </p>
               </div>
             )}

@@ -4,6 +4,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { IoCarOutline, IoCheckmarkCircleOutline, IoTimeOutline, IoConstructOutline } from 'react-icons/io5'
 
 interface Vehicle {
@@ -22,6 +23,7 @@ interface FleetOverviewProps {
 }
 
 export default function FleetOverview({ vehicles }: FleetOverviewProps) {
+  const t = useTranslations('PartnerDashboard')
   const available = vehicles.filter(v => v.status === 'available').length
   const booked = vehicles.filter(v => v.status === 'booked').length
   const maintenance = vehicles.filter(v => v.status === 'maintenance').length
@@ -49,12 +51,12 @@ export default function FleetOverview({ vehicles }: FleetOverviewProps) {
     return (
       <div className="text-center py-8">
         <IoCarOutline className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-500 dark:text-gray-400 mb-4">No vehicles in your fleet yet</p>
+        <p className="text-gray-500 dark:text-gray-400 mb-4">{t('foNoVehicles')}</p>
         <Link
           href="/partner/fleet/add"
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors"
         >
-          Add Your First Vehicle
+          {t('foAddFirstVehicle')}
         </Link>
       </div>
     )
@@ -67,24 +69,24 @@ export default function FleetOverview({ vehicles }: FleetOverviewProps) {
         <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
           <IoCheckmarkCircleOutline className="w-6 h-6 text-green-600 dark:text-green-400 mx-auto mb-1" />
           <p className="text-2xl font-bold text-green-600 dark:text-green-400">{available}</p>
-          <p className="text-xs text-gray-600 dark:text-gray-400">Available</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">{t('foAvailable')}</p>
         </div>
         <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
           <IoTimeOutline className="w-6 h-6 text-blue-600 dark:text-blue-400 mx-auto mb-1" />
           <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{booked}</p>
-          <p className="text-xs text-gray-600 dark:text-gray-400">Booked</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">{t('foBooked')}</p>
         </div>
         <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
           <IoConstructOutline className="w-6 h-6 text-orange-600 dark:text-orange-400 mx-auto mb-1" />
           <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{maintenance}</p>
-          <p className="text-xs text-gray-600 dark:text-gray-400">Maintenance</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">{t('foMaintenance')}</p>
         </div>
       </div>
 
       {/* Utilization Bar */}
       <div className="mb-6">
         <div className="flex items-center justify-between text-sm mb-2">
-          <span className="text-gray-600 dark:text-gray-400">Fleet Utilization</span>
+          <span className="text-gray-600 dark:text-gray-400">{t('foFleetUtilization')}</span>
           <span className="font-semibold text-gray-900 dark:text-white">
             {total > 0 ? Math.round((booked / total) * 100) : 0}%
           </span>
@@ -124,7 +126,7 @@ export default function FleetOverview({ vehicles }: FleetOverviewProps) {
                     {vehicle.year} {vehicle.make} {vehicle.model}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    ${vehicle.dailyRate}/day • {vehicle.totalTrips} trips
+                    {t('foPerDayTrips', { rate: vehicle.dailyRate, trips: vehicle.totalTrips })}
                   </p>
                 </div>
               </div>
@@ -142,7 +144,7 @@ export default function FleetOverview({ vehicles }: FleetOverviewProps) {
           href="/partner/fleet"
           className="block text-center mt-4 text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400"
         >
-          View all {vehicles.length} vehicles
+          {t('foViewAllVehicles', { count: vehicles.length })}
         </Link>
       )}
     </div>

@@ -3,6 +3,8 @@
 
 'use client'
 
+import { useLocale } from 'next-intl'
+
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import {
@@ -76,6 +78,8 @@ interface HostCar {
 }
 
 export default function PartnerRequestsPage() {
+  const locale = useLocale()
+
   const [requests, setRequests] = useState<ReservationRequest[]>([])
   const [myCars, setMyCars] = useState<HostCar[]>([])
   const [loading, setLoading] = useState(true)
@@ -237,7 +241,7 @@ export default function PartnerRequestsPage() {
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return 'TBD'
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    return new Date(dateStr).toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric'
     })

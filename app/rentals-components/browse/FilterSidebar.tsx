@@ -21,7 +21,7 @@ import {
 import {
   CAR_TYPES,
   CAR_FEATURES
-} from '@/app/(guest)/rentals/lib/constants'
+} from '@/app/[locale]/(guest)/rentals/lib/constants'
 import { RentalSearchFilters } from '@/types/rental'
 
 // Local filter option arrays - CAR_TYPES is a Record, not an array

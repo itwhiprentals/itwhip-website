@@ -23,6 +23,7 @@ import {
   IoSettingsOutline
 } from 'react-icons/io5'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 interface InsuranceSettings {
   hasPartnerInsurance: boolean
@@ -63,6 +64,7 @@ interface VehicleEditForm {
 }
 
 export default function InsurancePage() {
+  const t = useTranslations('PartnerInsurance')
   const [stats, setStats] = useState<Stats | null>(null)
   const [vehicles, setVehicles] = useState<VehicleInsurance[]>([])
   const [loading, setLoading] = useState(true)
@@ -201,15 +203,15 @@ export default function InsurancePage() {
       const data = await response.json()
 
       if (data.success) {
-        setMessage({ type: 'success', text: 'Vehicle insurance updated!' })
+        setMessage({ type: 'success', text: t('vehicleInsuranceUpdated') })
         setExpandedVehicleId(null)
         fetchVehicles() // Refresh the list
         fetchInsurance() // Refresh stats
       } else {
-        setMessage({ type: 'error', text: data.error || 'Failed to update vehicle insurance' })
+        setMessage({ type: 'error', text: data.error || t('failedToUpdateVehicleInsurance') })
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to update vehicle insurance' })
+      setMessage({ type: 'error', text: t('failedToUpdateVehicleInsurance') })
     } finally {
       setSavingVehicle(false)
     }
@@ -223,7 +225,7 @@ export default function InsurancePage() {
 
     // Validate - if no coverage anywhere, must acknowledge
     if (!hasAnyCoverage && !acknowledgedNoInsurance) {
-      setMessage({ type: 'error', text: 'Please acknowledge that customers must provide their own insurance' })
+      setMessage({ type: 'error', text: t('acknowledgeNoInsurance') })
       return
     }
 
@@ -252,14 +254,14 @@ export default function InsurancePage() {
       const data = await response.json()
 
       if (data.success) {
-        setMessage({ type: 'success', text: 'Insurance settings saved successfully!' })
+        setMessage({ type: 'success', text: t('insuranceSettingsSaved') })
         fetchInsurance()
         fetchVehicles() // Refresh to update coverage status
       } else {
-        setMessage({ type: 'error', text: data.error || 'Failed to save settings' })
+        setMessage({ type: 'error', text: data.error || t('failedToSaveSettings') })
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to save settings' })
+      setMessage({ type: 'error', text: t('failedToSaveSettings') })
     } finally {
       setSaving(false)
     }
@@ -282,10 +284,10 @@ export default function InsurancePage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <IoShieldCheckmarkOutline className="w-7 h-7 text-orange-600" />
-            Insurance Settings
+            {t('title')}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Manage your business insurance for vehicle rentals
+            {t('subtitle')}
           </p>
         </div>
         <button
@@ -293,7 +295,7 @@ export default function InsurancePage() {
           className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium text-sm transition-colors"
         >
           <IoRefreshOutline className="w-5 h-5" />
-          Refresh
+          {t('refresh')}
         </button>
       </div>
 
@@ -322,7 +324,7 @@ export default function InsurancePage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.totalVehicles || 0}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Total Vehicles</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('totalVehicles')}</p>
             </div>
           </div>
         </div>
@@ -334,7 +336,7 @@ export default function InsurancePage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.vehiclesWithInsurance || 0}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">With Vehicle Insurance</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('withVehicleInsurance')}</p>
             </div>
           </div>
         </div>
@@ -358,9 +360,9 @@ export default function InsurancePage() {
                   ? 'text-green-600 dark:text-green-400'
                   : 'text-amber-600 dark:text-amber-400'
               }`}>
-                {hasInsurance && coversDuringRentals ? 'Covered' : 'Not Covered'}
+                {hasInsurance && coversDuringRentals ? t('covered') : t('notCovered')}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Rental Coverage</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('rentalCoverage')}</p>
             </div>
           </div>
         </div>
@@ -372,10 +374,10 @@ export default function InsurancePage() {
           {/* Partner Insurance Toggle */}
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Your Business Insurance
+              {t('yourBusinessInsurance')}
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              Do you have your own insurance policy that covers your rental fleet?
+              {t('businessInsuranceQuestion')}
             </p>
 
             {/* Has Insurance Toggle */}
@@ -399,9 +401,9 @@ export default function InsurancePage() {
                     className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
                   />
                   <div>
-                    <span className="font-medium text-gray-900 dark:text-white">I have business insurance</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{t('iHaveBusinessInsurance')}</span>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      My company has an insurance policy for rental operations
+                      {t('businessInsuranceDescription')}
                     </p>
                   </div>
                 </div>
@@ -417,33 +419,33 @@ export default function InsurancePage() {
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <IoDocumentTextOutline className="w-5 h-5" />
-                Insurance Policy Details
+                {t('insurancePolicyDetails')}
               </h2>
 
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Insurance Provider *
+                      {t('insuranceProviderLabel')}
                     </label>
                     <input
                       type="text"
                       value={insuranceProvider}
                       onChange={(e) => setInsuranceProvider(e.target.value)}
-                      placeholder="e.g., State Farm, Progressive, Geico"
+                      placeholder={t('insuranceProviderPlaceholder')}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Policy Number *
+                      {t('policyNumberLabel')}
                     </label>
                     <input
                       type="text"
                       value={policyNumber}
                       onChange={(e) => setPolicyNumber(e.target.value)}
-                      placeholder="Enter your policy number"
+                      placeholder={t('policyNumberPlaceholder')}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
                     />
                   </div>
@@ -451,7 +453,7 @@ export default function InsurancePage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Policy Expiration Date
+                    {t('policyExpirationDate')}
                   </label>
                   <input
                     type="date"
@@ -465,10 +467,10 @@ export default function InsurancePage() {
                 <div className="p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-center">
                   <IoCloudUploadOutline className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Insurance document upload coming soon
+                    {t('documentUploadComingSoon')}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    You'll be able to upload your insurance certificate
+                    {t('uploadCertificateNote')}
                   </p>
                 </div>
               </div>
@@ -479,10 +481,10 @@ export default function InsurancePage() {
           {hasInsurance && (
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Coverage Options
+                {t('coverageOptions')}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                Select what your insurance covers and which vehicles
+                {t('coverageOptionsDescription')}
               </p>
 
               <div className="space-y-6">
@@ -506,9 +508,9 @@ export default function InsurancePage() {
                         className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
                       />
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-white">Covers My Vehicles</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{t('coversMyVehicles')}</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Insurance provides coverage for my fleet vehicles
+                          {t('coversMyVehiclesDescription')}
                         </p>
                       </div>
                     </div>
@@ -520,7 +522,7 @@ export default function InsurancePage() {
                       <div className="border-t border-blue-200 dark:border-blue-800 pt-3 mt-2">
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Select covered vehicles:
+                            {t('selectCoveredVehicles')}
                           </p>
                           <button
                             type="button"
@@ -533,7 +535,7 @@ export default function InsurancePage() {
                             }}
                             className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
                           >
-                            {coveredVehicleIds.length === vehicles.length ? 'Deselect All' : 'Select All'}
+                            {coveredVehicleIds.length === vehicles.length ? t('deselectAll') : t('selectAll')}
                           </button>
                         </div>
                         <div className="space-y-2 max-h-40 overflow-y-auto">
@@ -570,7 +572,7 @@ export default function InsurancePage() {
                           ))}
                         </div>
                         <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                          {coveredVehicleIds.length} of {vehicles.length} vehicles covered
+                          {t('vehiclesCoveredCount', { count: coveredVehicleIds.length, total: vehicles.length })}
                         </p>
                       </div>
                     </div>
@@ -597,9 +599,9 @@ export default function InsurancePage() {
                         className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
                       />
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-white">Covers During Rentals</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{t('coversDuringRentals')}</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Customers are covered by my insurance while renting
+                          {t('coversDuringRentalsDescription')}
                         </p>
                       </div>
                     </div>
@@ -611,7 +613,7 @@ export default function InsurancePage() {
                       <div className="border-t border-green-200 dark:border-green-800 pt-3 mt-2">
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Select vehicles covered for rentals:
+                            {t('selectVehiclesCoveredForRentals')}
                           </p>
                           <button
                             type="button"
@@ -624,7 +626,7 @@ export default function InsurancePage() {
                             }}
                             className="text-xs text-green-600 hover:text-green-700 dark:text-green-400"
                           >
-                            {rentalCoveredVehicleIds.length === vehicles.length ? 'Deselect All' : 'Select All'}
+                            {rentalCoveredVehicleIds.length === vehicles.length ? t('deselectAll') : t('selectAll')}
                           </button>
                         </div>
                         <div className="space-y-2 max-h-40 overflow-y-auto">
@@ -661,7 +663,7 @@ export default function InsurancePage() {
                           ))}
                         </div>
                         <p className="text-xs text-green-600 dark:text-green-400 mt-2">
-                          {rentalCoveredVehicleIds.length} of {vehicles.length} vehicles covered for rentals
+                          {t('vehiclesCoveredForRentalsCount', { count: rentalCoveredVehicleIds.length, total: vehicles.length })}
                         </p>
                       </div>
                     </div>
@@ -686,9 +688,9 @@ export default function InsurancePage() {
                 <div className="flex items-start gap-3 mb-4">
                   <IoAlertCircleOutline className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h3 className="font-semibold text-amber-800 dark:text-amber-400">No Insurance Coverage</h3>
+                    <h3 className="font-semibold text-amber-800 dark:text-amber-400">{t('noInsuranceCoverage')}</h3>
                     <p className="text-sm text-amber-700 dark:text-amber-500 mt-1">
-                      Without business insurance or vehicle insurance, customers must provide their own coverage at pickup or select insurance during booking.
+                      {t('noInsuranceWarning')}
                     </p>
                   </div>
                 </div>
@@ -701,14 +703,14 @@ export default function InsurancePage() {
                     className="w-5 h-5 mt-0.5 text-amber-600 rounded focus:ring-amber-500"
                   />
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">I acknowledge and understand</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{t('acknowledgeAndUnderstand')}</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      Customers renting my vehicles must:
+                      {t('customersRentingMustColon')}
                     </p>
                     <ul className="text-sm text-gray-500 dark:text-gray-400 mt-2 list-disc list-inside space-y-1">
-                      <li>Provide their own insurance at vehicle pickup</li>
-                      <li>Or select an insurance option during booking</li>
-                      <li>I am responsible for verifying customer insurance before handover</li>
+                      <li>{t('provideOwnInsurance')}</li>
+                      <li>{t('selectInsuranceDuringBooking')}</li>
+                      <li>{t('verifyCustomerInsurance')}</li>
                     </ul>
                   </div>
                 </label>
@@ -722,10 +724,10 @@ export default function InsurancePage() {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   <IoCarOutline className="w-5 h-5" />
-                  Vehicle Coverage
+                  {t('vehicleCoverage')}
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Manage insurance for each vehicle in your fleet
+                  {t('vehicleCoverageSubtitle')}
                 </p>
               </div>
             </div>
@@ -735,7 +737,7 @@ export default function InsurancePage() {
               <div className="flex items-start gap-2">
                 <IoInformationCircleOutline className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-blue-700 dark:text-blue-300">
-                  <strong>Host/Partner Responsibility:</strong> You are responsible for ensuring each vehicle has proper insurance coverage. Click on a vehicle to configure its insurance settings.
+                  <strong>{t('hostResponsibility')}</strong> {t('hostResponsibilityText')}
                 </div>
               </div>
             </div>
@@ -744,27 +746,27 @@ export default function InsurancePage() {
             <div className="flex flex-wrap gap-4 mb-4 text-xs">
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-green-500" />
-                <span className="text-gray-600 dark:text-gray-400">Vehicle Insurance</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('legendVehicleInsurance')}</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-purple-500" />
-                <span className="text-gray-600 dark:text-gray-400">Partner Insurance</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('legendPartnerInsurance')}</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-amber-500" />
-                <span className="text-gray-600 dark:text-gray-400">Guest Must Provide</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('legendGuestMustProvide')}</span>
               </div>
             </div>
 
             {vehicles.length === 0 ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <IoCarOutline className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>No vehicles in your fleet yet</p>
+                <p>{t('noVehiclesYet')}</p>
                 <Link
                   href="/partner/fleet/add"
                   className="text-orange-600 hover:text-orange-700 text-sm mt-2 inline-block"
                 >
-                  Add your first vehicle →
+                  {t('addFirstVehicle')} &rarr;
                 </Link>
               </div>
             ) : (
@@ -824,10 +826,10 @@ export default function InsurancePage() {
                                 : 'text-amber-600 dark:text-amber-400'
                             }`}>
                               {hasVehicleInsurance
-                                ? `Vehicle: ${vehicle.insuranceProvider || 'Own Insurance'}`
+                                ? (vehicle.insuranceProvider ? t('vehicleInsuranceProvider', { provider: vehicle.insuranceProvider }) : t('vehicleOwnInsurance'))
                                 : hasPartnerCoverage
-                                ? 'Covered by Partner Insurance'
-                                : 'No Coverage - Guest Must Provide'}
+                                ? t('coveredByPartnerInsurance')
+                                : t('noCoverageGuestMustProvide')}
                             </p>
                           </div>
                         </div>
@@ -863,9 +865,9 @@ export default function InsurancePage() {
                                   className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
                                 />
                                 <div>
-                                  <p className="font-medium text-gray-900 dark:text-white text-sm">This vehicle has its own insurance</p>
+                                  <p className="font-medium text-gray-900 dark:text-white text-sm">{t('vehicleHasOwnInsurance')}</p>
                                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    Insurance policy specific to this vehicle
+                                    {t('vehicleInsuranceSpecific')}
                                   </p>
                                 </div>
                               </div>
@@ -877,7 +879,7 @@ export default function InsurancePage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                   <div>
                                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                      Insurance Provider
+                                      {t('vehicleInsuranceProvider2')}
                                     </label>
                                     <input
                                       type="text"
@@ -886,13 +888,13 @@ export default function InsurancePage() {
                                         ...vehicleEditForm,
                                         insuranceProvider: e.target.value
                                       })}
-                                      placeholder="e.g., State Farm"
+                                      placeholder={t('insuranceProviderPlaceholderShort')}
                                       className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
                                     />
                                   </div>
                                   <div>
                                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                      Policy Number
+                                      {t('vehiclePolicyNumber')}
                                     </label>
                                     <input
                                       type="text"
@@ -901,7 +903,7 @@ export default function InsurancePage() {
                                         ...vehicleEditForm,
                                         policyNumber: e.target.value
                                       })}
-                                      placeholder="Policy #"
+                                      placeholder={t('policyNumberPlaceholderShort')}
                                       className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
                                     />
                                   </div>
@@ -909,7 +911,7 @@ export default function InsurancePage() {
 
                                 <div>
                                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Policy Expiration
+                                    {t('vehiclePolicyExpiration')}
                                   </label>
                                   <input
                                     type="date"
@@ -939,9 +941,9 @@ export default function InsurancePage() {
                                       className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
                                     />
                                     <div>
-                                      <p className="font-medium text-gray-900 dark:text-white text-sm">Use for rentals</p>
+                                      <p className="font-medium text-gray-900 dark:text-white text-sm">{t('useForRentals')}</p>
                                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        This insurance covers customers during rentals
+                                        {t('useForRentalsDescription')}
                                       </p>
                                     </div>
                                   </div>
@@ -957,11 +959,11 @@ export default function InsurancePage() {
                                   : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'
                               }`}>
                                 {hasPartnerCoverage ? (
-                                  <p>This vehicle is covered by your Partner Insurance during rentals.</p>
+                                  <p>{t('coveredByPartnerDuringRentals')}</p>
                                 ) : hasInsurance && coversDuringRentals ? (
-                                  <p>Add this vehicle to Partner Insurance coverage in the Coverage Options section above.</p>
+                                  <p>{t('addToPartnerCoverage')}</p>
                                 ) : (
-                                  <p>Without vehicle or partner insurance, guests must provide their own insurance at pickup.</p>
+                                  <p>{t('guestsMustProvideOwn')}</p>
                                 )}
                               </div>
                             )}
@@ -972,7 +974,7 @@ export default function InsurancePage() {
                                 onClick={() => setExpandedVehicleId(null)}
                                 className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                               >
-                                Cancel
+                                {t('cancel')}
                               </button>
                               <button
                                 onClick={() => handleSaveVehicleInsurance(vehicle.id)}
@@ -982,12 +984,12 @@ export default function InsurancePage() {
                                 {savingVehicle ? (
                                   <>
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                                    Saving...
+                                    {t('saving')}
                                   </>
                                 ) : (
                                   <>
                                     <IoSaveOutline className="w-4 h-4" />
-                                    Save
+                                    {t('save')}
                                   </>
                                 )}
                               </button>
@@ -1006,19 +1008,19 @@ export default function InsurancePage() {
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex flex-wrap justify-between gap-2 text-sm">
                   <span className="text-green-600 dark:text-green-400">
-                    {vehicles.filter(v => v.hasOwnInsurance && v.useForRentals).length} with vehicle insurance
+                    {t('withVehicleInsuranceCount', { count: vehicles.filter(v => v.hasOwnInsurance && v.useForRentals).length })}
                   </span>
                   <span className="text-purple-600 dark:text-purple-400">
-                    {vehicles.filter(v =>
+                    {t('withPartnerInsuranceCount', { count: vehicles.filter(v =>
                       !(v.hasOwnInsurance && v.useForRentals) &&
                       rentalCoveredVehicleIds.includes(v.id)
-                    ).length} with partner insurance
+                    ).length })}
                   </span>
                   <span className="text-amber-600 dark:text-amber-400">
-                    {vehicles.filter(v =>
+                    {t('guestMustProvideCount', { count: vehicles.filter(v =>
                       !(v.hasOwnInsurance && v.useForRentals) &&
                       !rentalCoveredVehicleIds.includes(v.id)
-                    ).length} guest must provide
+                    ).length })}
                   </span>
                 </div>
               </div>
@@ -1035,12 +1037,12 @@ export default function InsurancePage() {
               {saving ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-                  Saving...
+                  {t('saving')}
                 </>
               ) : (
                 <>
                   <IoSaveOutline className="w-5 h-5" />
-                  Save Insurance Settings
+                  {t('saveInsuranceSettings')}
                 </>
               )}
             </button>
@@ -1051,7 +1053,7 @@ export default function InsurancePage() {
         <div className="space-y-6">
           {/* Current Status */}
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Current Coverage Status</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('currentCoverageStatus')}</h3>
 
             <div className="space-y-3">
               <div className={`flex items-center gap-2 p-3 rounded-lg ${
@@ -1065,7 +1067,7 @@ export default function InsurancePage() {
                   <IoCloseCircleOutline className="w-5 h-5 text-gray-400" />
                 )}
                 <span className={`text-sm ${hasInsurance ? 'text-green-700 dark:text-green-400' : 'text-gray-500'}`}>
-                  Business Insurance
+                  {t('businessInsurance')}
                 </span>
               </div>
 
@@ -1080,7 +1082,7 @@ export default function InsurancePage() {
                   <IoCloseCircleOutline className="w-5 h-5 text-gray-400" />
                 )}
                 <span className={`text-sm ${coversVehicles ? 'text-blue-700 dark:text-blue-400' : 'text-gray-500'}`}>
-                  Vehicle Coverage
+                  {t('vehicleCoverageStatus')}
                 </span>
               </div>
 
@@ -1095,7 +1097,7 @@ export default function InsurancePage() {
                   <IoCloseCircleOutline className="w-5 h-5 text-gray-400" />
                 )}
                 <span className={`text-sm ${coversDuringRentals ? 'text-green-700 dark:text-green-400' : 'text-gray-500'}`}>
-                  Rental Coverage
+                  {t('rentalCoverageStatus')}
                 </span>
               </div>
             </div>
@@ -1105,18 +1107,18 @@ export default function InsurancePage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <IoInformationCircleOutline className="w-5 h-5 text-blue-600" />
-              How It Works
+              {t('howItWorks')}
             </h3>
 
             <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
               <p>
-                <strong className="text-gray-900 dark:text-white">With rental coverage:</strong> Your insurance covers customers during rentals. They don't need to provide their own.
+                <strong className="text-gray-900 dark:text-white">{t('withRentalCoverageLabel')}</strong> {t('withRentalCoverageText')}
               </p>
               <p>
-                <strong className="text-gray-900 dark:text-white">Without rental coverage:</strong> Customers must provide their own insurance at pickup or select coverage during booking.
+                <strong className="text-gray-900 dark:text-white">{t('withoutRentalCoverageLabel')}</strong> {t('withoutRentalCoverageText')}
               </p>
               <p>
-                <strong className="text-gray-900 dark:text-white">Per-vehicle insurance:</strong> Individual vehicles can have their own insurance that overrides these settings.
+                <strong className="text-gray-900 dark:text-white">{t('perVehicleInsuranceLabel')}</strong> {t('perVehicleInsuranceText')}
               </p>
             </div>
           </div>
@@ -1125,21 +1127,21 @@ export default function InsurancePage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <IoCodeSlashOutline className="w-5 h-5 text-purple-600" />
-              Technology
+              {t('technology')}
             </h3>
 
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Connect your insurance provider's API for automated verification and real-time coverage options.
+              {t('technologyDescription')}
             </p>
 
             <div className="space-y-3">
               <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <IoLinkOutline className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">API Integration</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('apiIntegration')}</span>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Connect to verify coverage instantly during bookings
+                  {t('apiIntegrationDescription')}
                 </p>
               </div>
 
@@ -1148,11 +1150,11 @@ export default function InsurancePage() {
                 className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
               >
                 <IoCodeSlashOutline className="w-4 h-4" />
-                Configure Integration
+                {t('configureIntegration')}
               </button>
 
               <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                Have an insurance API? Contact us to integrate.
+                {t('haveInsuranceApi')}
               </p>
             </div>
           </div>

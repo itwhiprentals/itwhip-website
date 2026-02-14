@@ -2,7 +2,8 @@
 // Compact tracking features display for home page - matches ArizonaEventsSection style
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import {
   IoLocationOutline,
   IoLockClosedOutline,
@@ -14,55 +15,57 @@ import {
   IoCheckmarkCircle
 } from 'react-icons/io5'
 
-const trackingFeatures = [
-  {
-    icon: IoLocationOutline,
-    title: 'Live GPS',
-    description: 'Real-time location tracking',
-    highlights: ['Second-by-second', 'Trip history']
-  },
-  {
-    icon: IoLockClosedOutline,
-    title: 'Remote Lock',
-    description: 'Keyless access via app',
-    highlights: ['No key handoff', 'Audit logs']
-  },
-  {
-    icon: IoCarSportOutline,
-    title: 'Remote Start',
-    description: 'Start engine from phone',
-    highlights: ['One-tap start', 'Engine warm-up']
-  },
-  {
-    icon: IoSnowOutline,
-    title: 'Pre-Cool',
-    description: 'Cool cabin remotely',
-    highlights: ['Beat AZ heat', 'Set temp']
-  },
-  {
-    icon: IoNavigateOutline,
-    title: 'Geofencing',
-    description: 'Virtual boundary alerts',
-    highlights: ['Safe zones', 'Exit alerts']
-  },
-  {
-    icon: IoSpeedometerOutline,
-    title: 'Mileage Forensics™',
-    description: 'Every mile verified',
-    highlights: ['Fraud detection', 'Dispute proof']
-  }
-]
-
 export default function TrackingSection() {
+  const t = useTranslations('Home')
+
+  const trackingFeatures = [
+    {
+      icon: IoLocationOutline,
+      title: t('trackingLiveGps'),
+      description: t('trackingLiveGpsDesc'),
+      highlights: [t('trackingLiveGpsH1'), t('trackingLiveGpsH2')]
+    },
+    {
+      icon: IoLockClosedOutline,
+      title: t('trackingRemoteLock'),
+      description: t('trackingRemoteLockDesc'),
+      highlights: [t('trackingRemoteLockH1'), t('trackingRemoteLockH2')]
+    },
+    {
+      icon: IoCarSportOutline,
+      title: t('trackingRemoteStart'),
+      description: t('trackingRemoteStartDesc'),
+      highlights: [t('trackingRemoteStartH1'), t('trackingRemoteStartH2')]
+    },
+    {
+      icon: IoSnowOutline,
+      title: t('trackingPreCool'),
+      description: t('trackingPreCoolDesc'),
+      highlights: [t('trackingPreCoolH1'), t('trackingPreCoolH2')]
+    },
+    {
+      icon: IoNavigateOutline,
+      title: t('trackingGeofencing'),
+      description: t('trackingGeofencingDesc'),
+      highlights: [t('trackingGeofencingH1'), t('trackingGeofencingH2')]
+    },
+    {
+      icon: IoSpeedometerOutline,
+      title: t('trackingMileage'),
+      description: t('trackingMileageDesc'),
+      highlights: [t('trackingMileageH1'), t('trackingMileageH2')]
+    }
+  ]
+
   return (
     <section className="py-6 bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-4">
           <span className="text-blue-700 dark:text-blue-400 text-xs font-semibold uppercase tracking-wider">
-            ItWhip+ Fleet Tracking
+            {t('trackingLabel')}
           </span>
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-1">
-            Smart Tracking, Safer Rentals
+            {t('trackingHeading')}
           </h2>
         </div>
 
@@ -98,12 +101,12 @@ export default function TrackingSection() {
         {/* Compact CTA */}
         <div className="text-center mt-4">
           <p className="text-xs text-gray-600 dark:text-gray-400">
-            Every mile tracked, verified, protected.{' '}
+            {t('trackingCta')}{' '}
             <Link
               href="/tracking"
               className="inline-flex items-center gap-1 text-blue-700 dark:text-blue-400 font-medium hover:underline"
             >
-              Learn More
+              {t('trackingLearnMore')}
               <IoArrowForwardOutline className="w-3 h-3" />
             </Link>
           </p>

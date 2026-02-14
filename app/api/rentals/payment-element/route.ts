@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import prisma from '@/app/lib/database/prisma'
-import { calculateBookingPricing, getActualDeposit, calculateAppliedBalances } from '@/app/(guest)/rentals/lib/booking-pricing'
+import { calculateBookingPricing, getActualDeposit, calculateAppliedBalances } from '@/app/[locale]/(guest)/rentals/lib/booking-pricing'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {

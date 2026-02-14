@@ -2,8 +2,9 @@
 // Partner Fleet - Add Vehicle with VIN-first 5-step wizard
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
@@ -32,15 +33,6 @@ import { decodeVIN, isValidVIN } from '@/app/lib/utils/vin-decoder'
 import { mapBodyClassToCarType } from '@/app/lib/data/vehicle-features'
 import { AddressAutocomplete, AddressResult } from '@/app/components/shared/AddressAutocomplete'
 import { CAR_COLORS, CAR_TYPES } from '@/app/host/cars/[id]/edit/types'
-
-// Wizard steps
-const STEPS = [
-  { id: 1, title: 'VIN & Vehicle', description: 'Enter VIN to auto-populate' },
-  { id: 2, title: 'Details', description: 'Color, mileage & location' },
-  { id: 3, title: 'Photos', description: 'Minimum 3 photos required' },
-  { id: 4, title: 'Pricing', description: 'Set your rates' },
-  { id: 5, title: 'Review', description: 'Confirm & submit' }
-]
 
 interface PhotoItem {
   id: string
@@ -145,6 +137,16 @@ const INITIAL_VEHICLE_DATA: VehicleData = {
 
 export default function PartnerFleetAddPage() {
   const router = useRouter()
+  const t = useTranslations('PartnerFleet')
+
+  const STEPS = useMemo(() => [
+    { id: 1, title: t('addStep1Title'), description: t('addStep1Desc') },
+    { id: 2, title: t('addStep2Title'), description: t('addStep2Desc') },
+    { id: 3, title: t('addStep3Title'), description: t('addStep3Desc') },
+    { id: 4, title: t('addStep4Title'), description: t('addStep4Desc') },
+    { id: 5, title: t('addStep5Title'), description: t('addStep5Desc') }
+  ], [t])
+
   const [currentStep, setCurrentStep] = useState(1)
   const [vehicleData, setVehicleData] = useState<VehicleData>(INITIAL_VEHICLE_DATA)
   const [photos, setPhotos] = useState<PhotoItem[]>([])
@@ -178,12 +180,12 @@ export default function PartnerFleetAddPage() {
 
     // Turo-style: 12 year max
     if (vehicleAge > 12) {
-      blockers.push(`Vehicle is ${vehicleAge} years old (max 12 years allowed)`)
+      blockers.push(t('addVehicleAgeTooOld', { age: vehicleAge }))
     }
 
     // Warning for older vehicles
     if (vehicleAge > 8 && vehicleAge <= 12) {
-      warnings.push('Older vehicles typically see lower booking demand')
+      warnings.push(t('addOlderVehicleWarning'))
     }
 
     setEligibilityResult({
@@ -200,12 +202,12 @@ export default function PartnerFleetAddPage() {
     const vin = vehicleData.vin.trim().toUpperCase()
 
     if (!vin || vin.length !== 17) {
-      setVinError('VIN must be exactly 17 characters')
+      setVinError(t('addVinMust17'))
       return
     }
 
     if (!isValidVIN(vin)) {
-      setVinError('Invalid VIN format - cannot contain I, O, or Q')
+      setVinError(t('addVinInvalidFormat'))
       return
     }
 
@@ -286,11 +288,11 @@ export default function PartnerFleetAddPage() {
         const year = parseInt(result.year) || vehicleData.year
         checkEligibility(year)
       } else {
-        setVinError('Could not decode VIN - please verify and try again')
+        setVinError(t('addVinCouldNotDecode'))
       }
     } catch (error) {
       console.error('VIN decode error:', error)
-      setVinError('Failed to decode VIN - please try again')
+      setVinError(t('addVinFailedDecode'))
     } finally {
       setVinDecoding(false)
     }
@@ -303,32 +305,32 @@ export default function PartnerFleetAddPage() {
     switch (step) {
       case 1:
         if (!vinDecoded) {
-          errors.push('Please decode your VIN first')
+          errors.push(t('addErrorDecodeVin'))
         }
         if (!eligibilityResult?.eligible) {
-          errors.push('Vehicle does not meet eligibility requirements')
+          errors.push(t('addErrorNotEligible'))
         }
         if (!vehicleData.confirmCleanTitle || !vehicleData.confirmUnder130kMiles || !vehicleData.confirmNoRecalls) {
-          errors.push('Please confirm all eligibility requirements')
+          errors.push(t('addErrorConfirmEligibility'))
         }
         break
 
       case 2:
-        if (!vehicleData.color) errors.push('Please select a color')
+        if (!vehicleData.color) errors.push(t('addErrorSelectColor'))
         if (!vehicleData.address || !vehicleData.city || !vehicleData.state) {
-          errors.push('Please enter the vehicle location')
+          errors.push(t('addErrorEnterLocation'))
         }
         break
 
       case 3:
         if (photos.length < 3) {
-          errors.push(`Please upload at least 3 photos (${photos.length} uploaded)`)
+          errors.push(t('addErrorMinPhotos', { count: photos.length }))
         }
         break
 
       case 4:
         if (!vehicleData.dailyRate || vehicleData.dailyRate < 25) {
-          errors.push('Daily rate must be at least $25')
+          errors.push(t('addErrorDailyRate'))
         }
         break
     }
@@ -495,11 +497,11 @@ export default function PartnerFleetAddPage() {
       if (result.success) {
         router.push('/partner/fleet?added=true')
       } else {
-        setSubmitError(result.error || 'Failed to add vehicle')
+        setSubmitError(result.error || t('addFailedToAdd'))
       }
     } catch (error) {
       console.error('Submit error:', error)
-      setSubmitError('Failed to add vehicle. Please try again.')
+      setSubmitError(t('addFailedToAddRetry'))
     } finally {
       setIsSubmitting(false)
     }
@@ -528,9 +530,9 @@ export default function PartnerFleetAddPage() {
           <div className="flex items-center justify-between">
             <Link href="/partner/fleet" className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
               <IoChevronBack className="w-5 h-5" />
-              <span>Back to Fleet</span>
+              <span>{t('addBackToFleet')}</span>
             </Link>
-            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Add Vehicle</h1>
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">{t('addVehicleTitle')}</h1>
             <div className="w-24" /> {/* Spacer */}
           </div>
         </div>
@@ -601,11 +603,11 @@ export default function PartnerFleetAddPage() {
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2 mb-4">
                 <IoShieldCheckmark className="w-6 h-6 text-purple-600" />
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Enter Your VIN</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('addEnterYourVin')}</h2>
               </div>
 
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Your 17-character Vehicle Identification Number will auto-populate vehicle details.
+                {t('addVinAutoPopulate')}
               </p>
 
               {/* VIN Input with Decode Button Inside */}
@@ -623,7 +625,7 @@ export default function PartnerFleetAddPage() {
                       setEligibilityResult(null)
                     }
                   }}
-                  placeholder="Enter 17-character VIN"
+                  placeholder={t('addVinPlaceholder')}
                   maxLength={17}
                   className="flex-1 px-2 py-2 text-lg font-mono uppercase bg-transparent border-none focus:outline-none focus:ring-0 dark:text-white"
                 />
@@ -634,7 +636,7 @@ export default function PartnerFleetAddPage() {
                     type="button"
                     onClick={() => setShowVinScanner(true)}
                     className="h-10 w-10 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-purple-100 hover:text-purple-600 dark:hover:bg-purple-900/30 dark:hover:text-purple-400 rounded-md transition-colors flex items-center justify-center"
-                    title="Scan VIN with camera"
+                    title={t('addScanVinCamera')}
                   >
                     <IoCameraOutline className="w-5 h-5" />
                   </button>
@@ -647,16 +649,16 @@ export default function PartnerFleetAddPage() {
                     {vinDecoding ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5" />
-                        Decoding...
+                        {t('addDecoding')}
                       </>
                     ) : (
-                      'Decode'
+                      t('addDecode')
                     )}
                   </button>
                 </div>
               </div>
               <div className="flex justify-between mt-1">
-                <span className="text-xs text-gray-500">{vehicleData.vin.length}/17 characters</span>
+                <span className="text-xs text-gray-500">{t('addVinCharCount', { count: vehicleData.vin.length })}</span>
                 {vinError && <span className="text-xs text-red-500">{vinError}</span>}
               </div>
 
@@ -680,11 +682,11 @@ export default function PartnerFleetAddPage() {
                 <div className="flex items-start gap-2">
                   <IoInformationCircleOutline className="w-5 h-5 text-blue-600 mt-0.5" />
                   <div className="text-sm text-blue-700 dark:text-blue-300">
-                    <p className="font-medium">Where to find your VIN:</p>
+                    <p className="font-medium">{t('addWhereToFindVin')}</p>
                     <ul className="list-disc ml-4 mt-1 text-blue-600 dark:text-blue-400">
-                      <li>Driver's side dashboard (visible through windshield)</li>
-                      <li>Driver's door jamb sticker</li>
-                      <li>Vehicle registration or title document</li>
+                      <li>{t('addVinLocation1')}</li>
+                      <li>{t('addVinLocation2')}</li>
+                      <li>{t('addVinLocation3')}</li>
                     </ul>
                   </div>
                 </div>
@@ -696,7 +698,7 @@ export default function PartnerFleetAddPage() {
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-4">
                   <IoCheckmarkCircle className="w-6 h-6 text-green-600" />
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Vehicle Detected</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('addVehicleDetected')}</h2>
                 </div>
 
                 <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg mb-4">
@@ -711,25 +713,25 @@ export default function PartnerFleetAddPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {vinDecodedFields.includes('transmission') && (
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Transmission</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('addTransmission')}</p>
                       <p className="font-medium text-gray-900 dark:text-white capitalize">{vehicleData.transmission}</p>
                     </div>
                   )}
                   {vinDecodedFields.includes('fuelType') && (
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Fuel Type</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('addFuelType')}</p>
                       <p className="font-medium text-gray-900 dark:text-white capitalize">{vehicleData.fuelType}</p>
                     </div>
                   )}
                   {vinDecodedFields.includes('driveType') && vehicleData.driveType && (
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Drive Type</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('addDriveType')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">{vehicleData.driveType}</p>
                     </div>
                   )}
                   {vinDecodedFields.includes('doors') && (
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Doors</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('addDoors')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">{vehicleData.doors}</p>
                     </div>
                   )}
@@ -742,11 +744,11 @@ export default function PartnerFleetAddPage() {
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-4">
                   <IoCarOutline className="w-6 h-6 text-purple-600" />
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Vehicle Designation</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('addVehicleDesignation')}</h2>
                 </div>
 
                 <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  How will this vehicle be used?
+                  {t('addHowWillBeUsed')}
                 </p>
 
                 <div className="grid md:grid-cols-2 gap-4">
@@ -776,13 +778,13 @@ export default function PartnerFleetAddPage() {
                           <div className="w-2.5 h-2.5 rounded-full bg-purple-600" />
                         )}
                       </div>
-                      <span className="font-semibold text-gray-900 dark:text-white">Rental</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{t('addRental')}</span>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 ml-8">
-                      Standard car rental for travelers and locals
+                      {t('addRentalDesc')}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-500 ml-8 mt-1">
-                      Minimum 1 day booking
+                      {t('addRentalMinBooking')}
                     </p>
                   </label>
 
@@ -812,16 +814,16 @@ export default function PartnerFleetAddPage() {
                           <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
                         )}
                       </div>
-                      <span className="font-semibold text-gray-900 dark:text-white">Rideshare</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{t('addRideshare')}</span>
                       <span className="px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full">
                         UBER / LYFT
                       </span>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 ml-8">
-                      For gig economy drivers (Uber, Lyft, DoorDash)
+                      {t('addRideshareDesc')}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-500 ml-8 mt-1">
-                      Minimum 3 day booking required
+                      {t('addRideshareMinBooking')}
                     </p>
                   </label>
                 </div>
@@ -831,11 +833,11 @@ export default function PartnerFleetAddPage() {
                     <div className="flex items-start gap-2">
                       <IoInformationCircleOutline className="w-5 h-5 text-orange-600 mt-0.5" />
                       <div className="text-sm text-orange-700 dark:text-orange-300">
-                        <p className="font-medium">Rideshare vehicles:</p>
+                        <p className="font-medium">{t('addRideshareVehicles')}</p>
                         <ul className="list-disc ml-4 mt-1 text-orange-600 dark:text-orange-400">
-                          <li>Require 3+ day minimum bookings</li>
-                          <li>Optimized for weekly/monthly drivers</li>
-                          <li>Show "Rideshare" badge on listing</li>
+                          <li>{t('addRideshareReq1')}</li>
+                          <li>{t('addRideshareReq2')}</li>
+                          <li>{t('addRideshareReq3')}</li>
                         </ul>
                       </div>
                     </div>
@@ -859,12 +861,12 @@ export default function PartnerFleetAddPage() {
                   {eligibilityResult.eligible ? (
                     <>
                       <IoCheckmarkCircle className="w-5 h-5" />
-                      Vehicle Eligible
+                      {t('addVehicleEligible')}
                     </>
                   ) : (
                     <>
                       <IoCloseCircle className="w-5 h-5" />
-                      Vehicle Not Eligible
+                      {t('addVehicleNotEligible')}
                     </>
                   )}
                 </h3>
@@ -897,7 +899,7 @@ export default function PartnerFleetAddPage() {
                 {eligibilityResult.eligible && (
                   <div className="space-y-3">
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                      Please confirm the following requirements:
+                      {t('addConfirmRequirements')}
                     </p>
 
                     <label className="flex items-start gap-3 cursor-pointer">
@@ -908,7 +910,7 @@ export default function PartnerFleetAddPage() {
                         className="w-5 h-5 mt-0.5 text-green-600 rounded focus:ring-green-500"
                       />
                       <span className="text-gray-700 dark:text-gray-300">
-                        This vehicle has a <strong>clean title</strong> (not salvage, rebuilt, or flood damaged)
+                        {t.rich('addConfirmCleanTitle', { bold: (chunks) => <strong>{chunks}</strong> })}
                       </span>
                     </label>
 
@@ -920,7 +922,7 @@ export default function PartnerFleetAddPage() {
                         className="w-5 h-5 mt-0.5 text-green-600 rounded focus:ring-green-500"
                       />
                       <span className="text-gray-700 dark:text-gray-300">
-                        This vehicle has <strong>under 130,000 miles</strong>
+                        {t.rich('addConfirmUnder130k', { bold: (chunks) => <strong>{chunks}</strong> })}
                       </span>
                     </label>
 
@@ -932,14 +934,14 @@ export default function PartnerFleetAddPage() {
                         className="w-5 h-5 mt-0.5 text-green-600 rounded focus:ring-green-500"
                       />
                       <span className="text-gray-700 dark:text-gray-300">
-                        This vehicle has <strong>no open safety recalls</strong>
+                        {t.rich('addConfirmNoRecalls', { bold: (chunks) => <strong>{chunks}</strong> })}
                         <a
                           href={`https://www.nhtsa.gov/recalls?vin=${vehicleData.vin}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="ml-1 text-purple-600 hover:text-purple-700 underline"
                         >
-                          (Check recalls)
+                          {t('addCheckRecalls')}
                         </a>
                       </span>
                     </label>
@@ -954,20 +956,20 @@ export default function PartnerFleetAddPage() {
         {currentStep === 2 && (
           <div className="space-y-6">
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Vehicle Details</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">{t('addVehicleDetails')}</h2>
 
               <div className="grid md:grid-cols-2 gap-4">
                 {/* Color */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Color *
+                    {t('addColor')}
                   </label>
                   <select
                     value={vehicleData.color}
                     onChange={(e) => setVehicleData(prev => ({ ...prev, color: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   >
-                    <option value="">Select color</option>
+                    <option value="">{t('addSelectColor')}</option>
                     {CAR_COLORS.map(color => (
                       <option key={color} value={color}>{color}</option>
                     ))}
@@ -977,7 +979,7 @@ export default function PartnerFleetAddPage() {
                 {/* License Plate */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    License Plate
+                    {t('addLicensePlate')}
                   </label>
                   <input
                     type="text"
@@ -991,7 +993,7 @@ export default function PartnerFleetAddPage() {
                 {/* Current Mileage */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Current Mileage
+                    {t('addCurrentMileage')}
                   </label>
                   <input
                     type="number"
@@ -1010,11 +1012,11 @@ export default function PartnerFleetAddPage() {
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2 mb-4">
                 <IoLocationOutline className="w-6 h-6 text-purple-600" />
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Vehicle Location</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('addVehicleLocation')}</h2>
               </div>
 
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Where is this vehicle primarily located for pickup?
+                {t('addLocationDesc')}
               </p>
 
               <AddressAutocomplete
@@ -1023,7 +1025,7 @@ export default function PartnerFleetAddPage() {
                 state={vehicleData.state}
                 zipCode={vehicleData.zipCode}
                 onAddressSelect={handleAddressSelect}
-                placeholder="Start typing the vehicle address..."
+                placeholder={t('addLocationPlaceholder')}
               />
 
               {vehicleData.city && vehicleData.state && (
@@ -1040,19 +1042,19 @@ export default function PartnerFleetAddPage() {
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2 mb-4">
                 <IoShieldOutline className="w-6 h-6 text-blue-600" />
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Vehicle Insurance</h2>
-                <span className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">Optional</span>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('addVehicleInsurance')}</h2>
+                <span className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">{t('addOptional')}</span>
               </div>
 
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Does this vehicle have its own commercial or rideshare insurance policy?
+                {t('addInsuranceQuestion')}
               </p>
 
               {/* Has Own Insurance Toggle */}
               <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer">
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Vehicle Has Its Own Insurance</p>
-                  <p className="text-sm text-gray-500">This vehicle is covered under a commercial or rideshare policy</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{t('addHasOwnInsurance')}</p>
+                  <p className="text-sm text-gray-500">{t('addHasOwnInsuranceDesc')}</p>
                 </div>
                 <input
                   type="checkbox"
@@ -1075,26 +1077,26 @@ export default function PartnerFleetAddPage() {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Insurance Provider
+                        {t('addInsuranceProvider')}
                       </label>
                       <input
                         type="text"
                         value={vehicleData.insuranceProvider}
                         onChange={(e) => setVehicleData(prev => ({ ...prev, insuranceProvider: e.target.value }))}
-                        placeholder="e.g., State Farm, Progressive"
+                        placeholder={t('addInsuranceProviderPlaceholder')}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-white"
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Policy Number
+                        {t('addPolicyNumber')}
                       </label>
                       <input
                         type="text"
                         value={vehicleData.insurancePolicyNumber}
                         onChange={(e) => setVehicleData(prev => ({ ...prev, insurancePolicyNumber: e.target.value }))}
-                        placeholder="Policy number"
+                        placeholder={t('addPolicyNumberPlaceholder')}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-white"
                       />
                     </div>
@@ -1102,7 +1104,7 @@ export default function PartnerFleetAddPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Policy Expiry Date
+                      {t('addPolicyExpiryDate')}
                     </label>
                     <input
                       type="date"
@@ -1115,9 +1117,9 @@ export default function PartnerFleetAddPage() {
                   {/* Use for Rentals Toggle */}
                   <label className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg cursor-pointer">
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-white">Use This Insurance for Rentals</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{t('addUseForRentals')}</p>
                       <p className="text-sm text-gray-500">
-                        Cover guests with this vehicle's insurance during rentals
+                        {t('addUseForRentalsDesc')}
                       </p>
                     </div>
                     <input
@@ -1136,7 +1138,7 @@ export default function PartnerFleetAddPage() {
                   <div className="flex items-start gap-2">
                     <IoInformationCircleOutline className="w-5 h-5 text-amber-600 mt-0.5" />
                     <p className="text-sm text-amber-700 dark:text-amber-300">
-                      Without vehicle insurance, guests will need to provide their own insurance or use the platform's guest insurance option during booking.
+                      {t('addNoInsuranceInfo')}
                     </p>
                   </div>
                 </div>
@@ -1152,11 +1154,11 @@ export default function PartnerFleetAddPage() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <IoImageOutline className="w-6 h-6 text-purple-600" />
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Vehicle Photos</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('addVehiclePhotos')}</h2>
                 </div>
                 <label className="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 cursor-pointer flex items-center gap-2">
                   <IoAddOutline className="w-5 h-5" />
-                  Add Photos
+                  {t('addAddPhotos')}
                   <input
                     type="file"
                     accept="image/*"
@@ -1184,12 +1186,12 @@ export default function PartnerFleetAddPage() {
                       ? 'text-green-800 dark:text-green-300'
                       : 'text-amber-800 dark:text-amber-300'
                   }`}>
-                    {photos.length} of 3 minimum photos uploaded
+                    {t('addPhotoCount', { count: photos.length })}
                   </span>
                 </div>
                 {photos.length < 3 && (
                   <span className="text-xs text-amber-600 dark:text-amber-400">
-                    {3 - photos.length} more required
+                    {t('addMoreRequired', { count: 3 - photos.length })}
                   </span>
                 )}
               </div>
@@ -1197,7 +1199,7 @@ export default function PartnerFleetAddPage() {
               {/* Photo tips */}
               <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  <strong>Photo tips:</strong> Include exterior (front, side, rear), interior, and dashboard shots. High-quality photos increase bookings.
+                  <strong>{t('addPhotoTipsLabel')}</strong> {t('addPhotoTips')}
                 </p>
               </div>
 
@@ -1205,8 +1207,8 @@ export default function PartnerFleetAddPage() {
               {photos.length === 0 ? (
                 <label className="block text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-purple-400 transition-colors">
                   <IoImageOutline className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-600 dark:text-gray-400">Click or drag photos here</p>
-                  <p className="text-sm text-gray-500 mt-1">PNG, JPG up to 10MB each</p>
+                  <p className="text-gray-600 dark:text-gray-400">{t('addClickOrDrag')}</p>
+                  <p className="text-sm text-gray-500 mt-1">{t('addPhotoFormat')}</p>
                   <input
                     type="file"
                     accept="image/*"
@@ -1229,7 +1231,7 @@ export default function PartnerFleetAddPage() {
                         <button
                           onClick={() => setHeroPhoto(photo.id)}
                           className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-lg hover:bg-white dark:hover:bg-gray-800"
-                          title="Set as main photo"
+                          title={t('addSetMainPhoto')}
                         >
                           {photo.isHero ? (
                             <IoStar className="w-5 h-5 text-yellow-500" />
@@ -1240,14 +1242,14 @@ export default function PartnerFleetAddPage() {
                         <button
                           onClick={() => deletePhoto(photo.id)}
                           className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-lg hover:bg-white dark:hover:bg-gray-800"
-                          title="Delete photo"
+                          title={t('addDeletePhoto')}
                         >
                           <IoTrashOutline className="w-5 h-5 text-red-500" />
                         </button>
                       </div>
                       {photo.isHero && (
                         <div className="absolute bottom-2 left-2 px-2 py-1 bg-purple-600 text-white text-xs rounded">
-                          Main Photo
+                          {t('addMainPhoto')}
                         </div>
                       )}
                     </div>
@@ -1256,7 +1258,7 @@ export default function PartnerFleetAddPage() {
                   {/* Add more photos button */}
                   <label className="aspect-[4/3] flex flex-col items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-purple-400 transition-colors">
                     <IoAddOutline className="w-8 h-8 text-gray-400" />
-                    <span className="text-sm text-gray-500 mt-1">Add more</span>
+                    <span className="text-sm text-gray-500 mt-1">{t('addAddMore')}</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -1275,12 +1277,12 @@ export default function PartnerFleetAddPage() {
         {currentStep === 4 && (
           <div className="space-y-6">
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Pricing</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">{t('addPricing')}</h2>
 
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Daily Rate *
+                    {t('addDailyRate')}
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-gray-500">$</span>
@@ -1299,12 +1301,12 @@ export default function PartnerFleetAddPage() {
                       className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-gray-700 dark:text-white"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Minimum $25/day</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('addMinPerDay')}</p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Weekly Rate
+                    {t('addWeeklyRate')}
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-gray-500">$</span>
@@ -1318,13 +1320,13 @@ export default function PartnerFleetAddPage() {
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Suggested: ${Math.round(vehicleData.dailyRate * 6.5) || 0}
+                    {t('addSuggested', { amount: Math.round(vehicleData.dailyRate * 6.5) || 0 })}
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Monthly Rate
+                    {t('addMonthlyRate')}
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-gray-500">$</span>
@@ -1338,7 +1340,7 @@ export default function PartnerFleetAddPage() {
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Suggested: ${Math.round(vehicleData.dailyRate * 25) || 0}
+                    {t('addSuggested', { amount: Math.round(vehicleData.dailyRate * 25) || 0 })}
                   </p>
                 </div>
               </div>
@@ -1346,7 +1348,7 @@ export default function PartnerFleetAddPage() {
 
             {/* Delivery Options */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Delivery Options</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('addDeliveryOptions')}</h3>
 
               <div className="space-y-3">
                 <label className="flex items-center gap-3 cursor-pointer">
@@ -1356,7 +1358,7 @@ export default function PartnerFleetAddPage() {
                     onChange={(e) => setVehicleData(prev => ({ ...prev, airportPickup: e.target.checked }))}
                     className="w-5 h-5 text-purple-600 rounded focus:ring-purple-600"
                   />
-                  <span className="text-gray-700 dark:text-gray-300">Airport Pickup Available</span>
+                  <span className="text-gray-700 dark:text-gray-300">{t('addAirportPickup')}</span>
                 </label>
 
                 <label className="flex items-center gap-3 cursor-pointer">
@@ -1366,7 +1368,7 @@ export default function PartnerFleetAddPage() {
                     onChange={(e) => setVehicleData(prev => ({ ...prev, hotelDelivery: e.target.checked }))}
                     className="w-5 h-5 text-purple-600 rounded focus:ring-purple-600"
                   />
-                  <span className="text-gray-700 dark:text-gray-300">Hotel Delivery Available</span>
+                  <span className="text-gray-700 dark:text-gray-300">{t('addHotelDelivery')}</span>
                 </label>
 
                 <label className="flex items-center gap-3 cursor-pointer">
@@ -1376,14 +1378,14 @@ export default function PartnerFleetAddPage() {
                     onChange={(e) => setVehicleData(prev => ({ ...prev, homeDelivery: e.target.checked }))}
                     className="w-5 h-5 text-purple-600 rounded focus:ring-purple-600"
                   />
-                  <span className="text-gray-700 dark:text-gray-300">Home Delivery Available</span>
+                  <span className="text-gray-700 dark:text-gray-300">{t('addHomeDelivery')}</span>
                 </label>
               </div>
 
               {(vehicleData.airportPickup || vehicleData.hotelDelivery || vehicleData.homeDelivery) && (
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Delivery Fee
+                    {t('addDeliveryFee')}
                   </label>
                   <div className="relative max-w-xs">
                     <span className="absolute left-3 top-2.5 text-gray-500">$</span>
@@ -1429,33 +1431,33 @@ export default function PartnerFleetAddPage() {
                 <div className="grid md:grid-cols-2 gap-6 mt-6">
                   {/* Vehicle Details */}
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Vehicle Details</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{t('addVehicleDetailsReview')}</h3>
                     <dl className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <dt className="text-gray-500">VIN</dt>
+                        <dt className="text-gray-500">{t('addVin')}</dt>
                         <dd className="font-mono text-gray-900 dark:text-white">{vehicleData.vin}</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-gray-500">Color</dt>
+                        <dt className="text-gray-500">{t('addColorLabel')}</dt>
                         <dd className="text-gray-900 dark:text-white">{vehicleData.color}</dd>
                       </div>
                       {vehicleData.licensePlate && (
                         <div className="flex justify-between">
-                          <dt className="text-gray-500">License Plate</dt>
+                          <dt className="text-gray-500">{t('addLicensePlateLabel')}</dt>
                           <dd className="text-gray-900 dark:text-white">{vehicleData.licensePlate}</dd>
                         </div>
                       )}
                       <div className="flex justify-between">
-                        <dt className="text-gray-500">Transmission</dt>
+                        <dt className="text-gray-500">{t('addTransmissionLabel')}</dt>
                         <dd className="text-gray-900 dark:text-white capitalize">{vehicleData.transmission}</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-gray-500">Fuel Type</dt>
+                        <dt className="text-gray-500">{t('addFuelTypeLabel')}</dt>
                         <dd className="text-gray-900 dark:text-white capitalize">{vehicleData.fuelType}</dd>
                       </div>
                       {vehicleData.driveType && (
                         <div className="flex justify-between">
-                          <dt className="text-gray-500">Drive Type</dt>
+                          <dt className="text-gray-500">{t('addDriveTypeLabel')}</dt>
                           <dd className="text-gray-900 dark:text-white">{vehicleData.driveType}</dd>
                         </div>
                       )}
@@ -1464,26 +1466,26 @@ export default function PartnerFleetAddPage() {
 
                   {/* Pricing & Location */}
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Pricing & Location</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{t('addPricingLocation')}</h3>
                     <dl className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <dt className="text-gray-500">Daily Rate</dt>
-                        <dd className="text-gray-900 dark:text-white font-semibold">${vehicleData.dailyRate}/day</dd>
+                        <dt className="text-gray-500">{t('addDailyRateLabel')}</dt>
+                        <dd className="text-gray-900 dark:text-white font-semibold">{t('addDailyRateValue', { rate: vehicleData.dailyRate })}</dd>
                       </div>
                       {vehicleData.weeklyRate > 0 && (
                         <div className="flex justify-between">
-                          <dt className="text-gray-500">Weekly Rate</dt>
-                          <dd className="text-gray-900 dark:text-white">${vehicleData.weeklyRate}/week</dd>
+                          <dt className="text-gray-500">{t('addWeeklyRateLabel')}</dt>
+                          <dd className="text-gray-900 dark:text-white">{t('addWeeklyRateValue', { rate: vehicleData.weeklyRate })}</dd>
                         </div>
                       )}
                       {vehicleData.monthlyRate > 0 && (
                         <div className="flex justify-between">
-                          <dt className="text-gray-500">Monthly Rate</dt>
-                          <dd className="text-gray-900 dark:text-white">${vehicleData.monthlyRate}/month</dd>
+                          <dt className="text-gray-500">{t('addMonthlyRateLabel')}</dt>
+                          <dd className="text-gray-900 dark:text-white">{t('addMonthlyRateValue', { rate: vehicleData.monthlyRate })}</dd>
                         </div>
                       )}
                       <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                        <dt className="text-gray-500">Location</dt>
+                        <dt className="text-gray-500">{t('addLocationLabel')}</dt>
                         <dd className="text-gray-900 dark:text-white mt-1">
                           {vehicleData.address}<br />
                           {vehicleData.city}, {vehicleData.state} {vehicleData.zipCode}
@@ -1495,7 +1497,7 @@ export default function PartnerFleetAddPage() {
 
                 {/* Photos Preview */}
                 <div className="mt-6">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Photos ({photos.length})</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{t('addPhotosCount', { count: photos.length })}</h3>
                   <div className="flex gap-2 overflow-x-auto pb-2">
                     {photos.map(photo => (
                       <div key={photo.id} className="relative flex-shrink-0 w-20 h-16">
@@ -1514,27 +1516,27 @@ export default function PartnerFleetAddPage() {
                 <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                     <IoShieldOutline className="w-5 h-5 text-blue-600" />
-                    Insurance
+                    {t('addInsurance')}
                   </h3>
                   {vehicleData.hasOwnInsurance ? (
                     <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                       <p className="text-sm text-blue-700 dark:text-blue-300">
-                        <strong>{vehicleData.insuranceProvider || 'Own Insurance'}</strong>
+                        <strong>{vehicleData.insuranceProvider || t('addOwnInsurance')}</strong>
                         {vehicleData.insurancePolicyNumber && (
                           <span className="ml-2 text-blue-600 dark:text-blue-400">
-                            Policy: {vehicleData.insurancePolicyNumber}
+                            {t('addPolicyLabel', { number: vehicleData.insurancePolicyNumber })}
                           </span>
                         )}
                       </p>
                       {vehicleData.useForRentals && (
                         <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                          Will be used to cover rentals
+                          {t('addWillCoverRentals')}
                         </p>
                       )}
                     </div>
                   ) : (
                     <p className="text-sm text-gray-500">
-                      No vehicle insurance configured - guests will use their own or platform insurance
+                      {t('addNoInsuranceConfigured')}
                     </p>
                   )}
                 </div>
@@ -1545,20 +1547,20 @@ export default function PartnerFleetAddPage() {
             <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-6 border border-green-200 dark:border-green-800">
               <div className="flex items-center gap-2 mb-3">
                 <IoRocketOutline className="w-6 h-6 text-green-600" />
-                <h3 className="font-semibold text-green-800 dark:text-green-300">Partner Benefits</h3>
+                <h3 className="font-semibold text-green-800 dark:text-green-300">{t('addPartnerBenefits')}</h3>
               </div>
               <ul className="space-y-2 text-sm text-green-700 dark:text-green-400">
                 <li className="flex items-center gap-2">
                   <IoCheckmarkCircle className="w-4 h-4" />
-                  <span><strong>Auto-Approved:</strong> No waiting for manual review</span>
+                  <span><strong>{t('addAutoApproved')}</strong> {t('addAutoApprovedDesc')}</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <IoCheckmarkCircle className="w-4 h-4" />
-                  <span><strong>Instant Book:</strong> Guests can book immediately</span>
+                  <span><strong>{t('addInstantBook')}</strong> {t('addInstantBookDesc')}</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <IoCheckmarkCircle className="w-4 h-4" />
-                  <span><strong>Fleet Pricing:</strong> Lower commission rates for partners</span>
+                  <span><strong>{t('addFleetPricing')}</strong> {t('addFleetPricingDesc')}</span>
                 </li>
               </ul>
             </div>
@@ -1583,7 +1585,7 @@ export default function PartnerFleetAddPage() {
             className="flex items-center gap-2 px-6 py-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <IoChevronBack className="w-5 h-5" />
-            Back
+            {t('addBack')}
           </button>
 
           {currentStep < 5 ? (
@@ -1591,7 +1593,7 @@ export default function PartnerFleetAddPage() {
               onClick={goToNextStep}
               className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700"
             >
-              Continue
+              {t('addContinue')}
               <IoChevronForward className="w-5 h-5" />
             </button>
           ) : (
@@ -1603,12 +1605,12 @@ export default function PartnerFleetAddPage() {
               {isSubmitting ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Submitting...
+                  {t('addSubmitting')}
                 </>
               ) : (
                 <>
                   <IoCheckmarkCircle className="w-5 h-5" />
-                  Add Vehicle to Fleet
+                  {t('addAddVehicleToFleet')}
                 </>
               )}
             </button>

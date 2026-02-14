@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import PasswordVerification from './PasswordVerification'
 import EmailOtpVerification from './EmailOtpVerification'
 import VerifyLinkSuccess from './VerifyLinkSuccess'
@@ -22,6 +23,7 @@ interface VerifyLinkFormProps {
 type VerificationMethod = 'password' | 'email-otp'
 
 export default function VerifyLinkForm({ token, info }: VerifyLinkFormProps) {
+  const t = useTranslations('Auth')
   const [method, setMethod] = useState<VerificationMethod>(
     info.hasPassword ? 'password' : 'email-otp'
   )
@@ -43,8 +45,8 @@ export default function VerifyLinkForm({ token, info }: VerifyLinkFormProps) {
 
   // Available methods
   const methods: { key: VerificationMethod; label: string; available: boolean }[] = [
-    { key: 'password', label: 'Password', available: info.hasPassword },
-    { key: 'email-otp', label: 'Email Code', available: true },
+    { key: 'password', label: t('password'), available: info.hasPassword },
+    { key: 'email-otp', label: t('emailCode'), available: true },
   ]
 
   const availableMethods = methods.filter(m => m.available)
@@ -68,10 +70,10 @@ export default function VerifyLinkForm({ token, info }: VerifyLinkFormProps) {
           )}
         </div>
         <h2 className="text-xl font-semibold text-white">
-          Verify Your Identity
+          {t('verifyIdentity')}
         </h2>
         <p className="text-sm text-gray-400 mt-1">
-          Confirm it&apos;s you before linking {info.providerName} to your account
+          {t('confirmIdentityDesc', { provider: info.providerName })}
         </p>
       </div>
 
@@ -124,7 +126,7 @@ export default function VerifyLinkForm({ token, info }: VerifyLinkFormProps) {
           href="/auth/login"
           className="text-sm text-gray-400 hover:text-gray-300 transition-colors"
         >
-          Sign in with a different method
+          {t('signInDifferentMethod')}
         </a>
       </div>
     </div>

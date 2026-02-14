@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   IoShieldCheckmarkOutline,
   IoCarOutline,
@@ -53,65 +54,71 @@ interface Stats {
   totalPaid: number
 }
 
-const CLAIM_TYPE_LABELS: Record<string, string> = {
-  ACCIDENT: 'Accident',
-  THEFT: 'Theft',
-  VANDALISM: 'Vandalism',
-  CLEANING: 'Cleaning',
-  MECHANICAL: 'Mechanical',
-  WEATHER: 'Weather Damage',
-  OTHER: 'Other'
+const CLAIM_TYPE_KEYS: Record<string, string> = {
+  ACCIDENT: 'typeAccident',
+  THEFT: 'typeTheft',
+  VANDALISM: 'typeVandalism',
+  CLEANING: 'typeCleaning',
+  MECHANICAL: 'typeMechanical',
+  WEATHER: 'typeWeather',
+  OTHER: 'typeOther'
 }
 
-const CLAIM_STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+const CLAIM_STATUS_KEYS: Record<string, string> = {
+  PENDING: 'statusPending',
+  UNDER_REVIEW: 'statusUnderReview',
+  APPROVED: 'statusApproved',
+  DENIED: 'statusDenied',
+  PAID: 'statusPaid',
+  DISPUTED: 'statusDisputed',
+  RESOLVED: 'statusResolved',
+  GUEST_RESPONSE_PENDING: 'statusAwaitingGuest',
+  GUEST_RESPONDED: 'statusGuestResponded'
+}
+
+const CLAIM_STATUS_STYLE: Record<string, { color: string; icon: React.ReactNode }> = {
   PENDING: {
-    label: 'Pending',
     color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
     icon: <IoTimeOutline className="w-3 h-3" />
   },
   UNDER_REVIEW: {
-    label: 'Under Review',
     color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
     icon: <IoTimeOutline className="w-3 h-3" />
   },
   APPROVED: {
-    label: 'Approved',
     color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
     icon: <IoCheckmarkCircleOutline className="w-3 h-3" />
   },
   DENIED: {
-    label: 'Denied',
     color: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
     icon: <IoCloseCircleOutline className="w-3 h-3" />
   },
   PAID: {
-    label: 'Paid',
     color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
     icon: <IoCheckmarkCircleOutline className="w-3 h-3" />
   },
   DISPUTED: {
-    label: 'Disputed',
     color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
     icon: <IoWarningOutline className="w-3 h-3" />
   },
   RESOLVED: {
-    label: 'Resolved',
     color: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
     icon: <IoCheckmarkCircleOutline className="w-3 h-3" />
   },
   GUEST_RESPONSE_PENDING: {
-    label: 'Awaiting Guest',
     color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
     icon: <IoPersonOutline className="w-3 h-3" />
   },
   GUEST_RESPONDED: {
-    label: 'Guest Responded',
     color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
     icon: <IoChatbubbleOutline className="w-3 h-3" />
   }
 }
 
 export default function ClaimsPage() {
+  const t = useTranslations('PartnerClaims')
+
+  const locale = useLocale()
   const [claims, setClaims] = useState<Claim[]>([])
   const [stats, setStats] = useState<Stats>({
     total: 0, pending: 0, approved: 0, disputed: 0, totalEstimated: 0, totalPaid: 0
@@ -145,7 +152,7 @@ export default function ClaimsPage() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -154,24 +161,33 @@ export default function ClaimsPage() {
 
   const formatCurrency = (amount: number | null) => {
     if (amount === null) return '-'
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0
     }).format(amount)
   }
 
+  const getClaimTypeLabel = (type: string) => {
+    const key = CLAIM_TYPE_KEYS[type]
+    return key ? t(key) : type
+  }
+
+  const getStatusLabel = (status: string) => {
+    const key = CLAIM_STATUS_KEYS[status]
+    return key ? t(key) : status
+  }
+
   const getStatusBadge = (status: string) => {
-    const config = CLAIM_STATUS_CONFIG[status] || {
-      label: status,
+    const style = CLAIM_STATUS_STYLE[status] || {
       color: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
       icon: null
     }
 
     return (
-      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
-        {config.icon}
-        {config.label}
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${style.color}`}>
+        {style.icon}
+        {getStatusLabel(status)}
       </span>
     )
   }
@@ -181,9 +197,9 @@ export default function ClaimsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Claims</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('title')}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Manage damage claims and insurance matters
+            {t('subtitle')}
           </p>
         </div>
         <button
@@ -191,7 +207,7 @@ export default function ClaimsPage() {
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium text-sm transition-colors"
         >
           <IoAddOutline className="w-5 h-5" />
-          File New Claim
+          {t('fileNewClaim')}
         </button>
       </div>
 
@@ -204,7 +220,7 @@ export default function ClaimsPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.pending}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Pending</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('statsPending')}</p>
             </div>
           </div>
         </div>
@@ -215,7 +231,7 @@ export default function ClaimsPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.approved}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Approved</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('statsApproved')}</p>
             </div>
           </div>
         </div>
@@ -226,7 +242,7 @@ export default function ClaimsPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats.totalEstimated)}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Estimated</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('statsEstimated')}</p>
             </div>
           </div>
         </div>
@@ -237,7 +253,7 @@ export default function ClaimsPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats.totalPaid)}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Paid Out</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('statsPaidOut')}</p>
             </div>
           </div>
         </div>
@@ -256,7 +272,7 @@ export default function ClaimsPage() {
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
-              {status === 'all' ? 'All' : CLAIM_STATUS_CONFIG[status]?.label || status}
+              {status === 'all' ? t('filterAll') : getStatusLabel(status)}
             </button>
           ))}
         </div>
@@ -267,25 +283,25 @@ export default function ClaimsPage() {
         {loading ? (
           <div className="p-8 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">Loading claims...</p>
+            <p className="text-gray-500 dark:text-gray-400">{t('loadingClaims')}</p>
           </div>
         ) : claims.length === 0 ? (
           <div className="p-8 text-center">
             <IoShieldCheckmarkOutline className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              No claims found
+              {t('noClaims')}
             </h3>
             <p className="text-gray-500 dark:text-gray-400 mb-4">
               {statusFilter !== 'all'
-                ? 'No claims match the selected filter'
-                : 'Claims will appear here when filed'}
+                ? t('noClaimsFilterEmpty')
+                : t('noClaimsEmpty')}
             </p>
             <button
               onClick={() => setShowNewModal(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium text-sm transition-colors"
             >
               <IoAddOutline className="w-5 h-5" />
-              File New Claim
+              {t('fileNewClaim')}
             </button>
           </div>
         ) : (
@@ -318,7 +334,7 @@ export default function ClaimsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      {CLAIM_TYPE_LABELS[claim.type] || claim.type}
+                      {getClaimTypeLabel(claim.type)}
                     </span>
                     {getStatusBadge(claim.status)}
                     {claim.hasUnreadMessages && (
@@ -344,7 +360,7 @@ export default function ClaimsPage() {
                   )}
                   {claim.paidAmount && claim.paidAmount > 0 && (
                     <p className="text-xs text-green-600 dark:text-green-400">
-                      Paid: {formatCurrency(claim.paidAmount)}
+                      {t('paidLabel', { amount: formatCurrency(claim.paidAmount) })}
                     </p>
                   )}
                 </div>
@@ -378,6 +394,7 @@ function NewClaimModal({
   onClose: () => void
   onSuccess: () => void
 }) {
+  const t = useTranslations('PartnerClaims')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [bookings, setBookings] = useState<any[]>([])
@@ -429,10 +446,10 @@ function NewClaimModal({
       if (data.success) {
         onSuccess()
       } else {
-        setError(data.error || 'Failed to file claim')
+        setError(data.error || t('errorFileFailed'))
       }
     } catch (err) {
-      setError('Failed to file claim')
+      setError(t('errorFileFailed'))
     } finally {
       setLoading(false)
     }
@@ -442,11 +459,16 @@ function NewClaimModal({
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
+  const getClaimTypeLabel = (type: string) => {
+    const key = CLAIM_TYPE_KEYS[type]
+    return key ? t(key) : type
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full my-8">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">File New Claim</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('modalTitle')}</h3>
           <button onClick={onClose} className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
             <IoCloseOutline className="w-5 h-5" />
           </button>
@@ -461,14 +483,14 @@ function NewClaimModal({
 
           {/* Booking Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Booking *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelBooking')}</label>
             <select
               value={formData.bookingId}
               onChange={(e) => updateField('bookingId', e.target.value)}
               required
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
             >
-              <option value="">Select booking</option>
+              <option value="">{t('selectBooking')}</option>
               {bookings.map((booking) => (
                 <option key={booking.id} value={booking.id}>
                   {booking.vehicleName} - {booking.guestName} ({new Date(booking.startDate).toLocaleDateString()})
@@ -479,22 +501,22 @@ function NewClaimModal({
 
           {/* Claim Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Claim Type *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelClaimType')}</label>
             <select
               value={formData.type}
               onChange={(e) => updateField('type', e.target.value)}
               required
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
             >
-              {Object.entries(CLAIM_TYPE_LABELS).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
+              {Object.keys(CLAIM_TYPE_KEYS).map((key) => (
+                <option key={key} value={key}>{getClaimTypeLabel(key)}</option>
               ))}
             </select>
           </div>
 
           {/* Incident Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Incident Date *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelIncidentDate')}</label>
             <input
               type="date"
               value={formData.incidentDate}
@@ -506,20 +528,20 @@ function NewClaimModal({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelDescription')}</label>
             <textarea
               value={formData.description}
               onChange={(e) => updateField('description', e.target.value)}
               required
               rows={3}
-              placeholder="Describe the incident in detail..."
+              placeholder={t('placeholderDescription')}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 resize-none"
             />
           </div>
 
           {/* Estimated Cost */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estimated Cost</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labelEstimatedCost')}</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
               <input
@@ -536,16 +558,16 @@ function NewClaimModal({
           {/* Photo URLs */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Photo URLs <span className="text-gray-400">(comma separated)</span>
+              {t('labelPhotoUrls')} <span className="text-gray-400">{t('photoUrlsSuffix')}</span>
             </label>
             <input
               type="text"
               value={formData.photoUrls}
               onChange={(e) => updateField('photoUrls', e.target.value)}
-              placeholder="https://... , https://..."
+              placeholder={t('placeholderPhotoUrls')}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Upload photos to cloud storage and paste URLs</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('photoUrlsHint')}</p>
           </div>
 
           <div className="flex gap-3 pt-4">
@@ -554,14 +576,14 @@ function NewClaimModal({
               onClick={onClose}
               className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium"
             >
-              Cancel
+              {t('buttonCancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium"
             >
-              {loading ? 'Filing...' : 'File Claim'}
+              {loading ? t('buttonFiling') : t('buttonFileClaim')}
             </button>
           </div>
         </form>

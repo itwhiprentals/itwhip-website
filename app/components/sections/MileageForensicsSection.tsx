@@ -1,7 +1,7 @@
 // app/components/sections/MileageForensicsSection.tsx
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import {
   IoSpeedometerOutline,
   IoCheckmarkCircle,

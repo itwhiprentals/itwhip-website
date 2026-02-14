@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -140,6 +141,9 @@ export default function TrackingSecurityCard({
   collapsible = true,
   defaultCollapsed = false
 }: TrackingSecurityCardProps = {}) {
+  const t = useTranslations('PartnerDashboard')
+
+  const locale = useLocale()
   const [data, setData] = useState<SessionInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -355,7 +359,7 @@ export default function TrackingSecurityCard({
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Never'
     const date = new Date(dateString)
-    return date.toLocaleString('en-US', {
+    return date.toLocaleString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -458,7 +462,7 @@ export default function TrackingSecurityCard({
             onClick={fetchSessionInfo}
             className="mt-2 text-sm text-orange-600 hover:text-orange-700"
           >
-            Try Again
+            {t('tsTryAgain')}
           </button>
         </div>
       </div>
@@ -531,7 +535,7 @@ export default function TrackingSecurityCard({
           }`}
         >
           <IoLocationOutline className="w-4 h-4 inline-block mr-1" />
-          Tracking
+          {t('tsTracking')}
         </button>
         <button
           onClick={() => setActiveTab('session')}
@@ -542,7 +546,7 @@ export default function TrackingSecurityCard({
           }`}
         >
           <IoDesktopOutline className="w-4 h-4 inline-block mr-1" />
-          Session
+          {t('tsSession')}
         </button>
         <button
           onClick={() => setActiveTab('security')}
@@ -553,7 +557,7 @@ export default function TrackingSecurityCard({
           }`}
         >
           <IoShieldCheckmarkOutline className="w-4 h-4 inline-block mr-1" />
-          Security
+          {t('tsSecurity')}
         </button>
         <button
           onClick={() => setActiveTab('api')}
@@ -564,7 +568,7 @@ export default function TrackingSecurityCard({
           }`}
         >
           <IoKeyOutline className="w-4 h-4 inline-block mr-1" />
-          API
+          {t('tsAPI')}
         </button>
         <button
           onClick={() => setActiveTab('audit')}
@@ -575,7 +579,7 @@ export default function TrackingSecurityCard({
           }`}
         >
           <IoListOutline className="w-4 h-4 inline-block mr-1" />
-          Audit
+          {t('tsAudit')}
         </button>
       </div>
       )}
@@ -604,12 +608,12 @@ export default function TrackingSecurityCard({
                   <IoLocationOutline className="w-7 h-7 text-orange-600 dark:text-orange-400" />
                 </div>
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
-                  {totalVehicles === 0 ? 'Add Vehicles to Track' : 'No Tracking Connected'}
+                  {totalVehicles === 0 ? t('tsAddVehiclesToTrack') : t('tsNoTrackingConnected')}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 max-w-xs mx-auto">
                   {totalVehicles === 0
-                    ? 'List your first vehicle or invite hosts to start tracking your fleet.'
-                    : 'Track your vehicles in real-time, get theft alerts, and generate dispute evidence.'
+                    ? t('tsAddVehiclesDesc')
+                    : t('tsTrackDesc')
                   }
                 </p>
 
@@ -618,8 +622,8 @@ export default function TrackingSecurityCard({
                   <IoCarSportOutline className="w-4 h-4" />
                   <span>
                     {totalVehicles === 0
-                      ? 'No vehicles in fleet'
-                      : `${smartcarVehicles.length} of ${totalVehicles} vehicle${totalVehicles !== 1 ? 's' : ''} tracked`
+                      ? t('tsNoVehiclesInFleet')
+                      : t('tsVehiclesTracked', { tracked: smartcarVehicles.length, total: totalVehicles })
                     }
                   </span>
                 </div>
@@ -633,13 +637,13 @@ export default function TrackingSecurityCard({
                         className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors"
                       >
                         <IoCarSportOutline className="w-4 h-4" />
-                        List a Vehicle
+                        {t('tsListVehicle')}
                       </Link>
                       <Link
                         href="/partner/invitations"
                         className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg transition-colors"
                       >
-                        Send Invitations
+                        {t('tsSendInvitations')}
                       </Link>
                     </>
                   ) : (
@@ -649,7 +653,7 @@ export default function TrackingSecurityCard({
                         className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors"
                       >
                         <IoLocationOutline className="w-4 h-4" />
-                        Connect a Provider
+                        {t('tsConnectProvider')}
                       </Link>
                       <button
                         onClick={handleEnterDemoMode}
@@ -657,7 +661,7 @@ export default function TrackingSecurityCard({
                         className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30"
                       >
                         <IoSparkles className="w-4 h-4" />
-                        {fleetLoading ? 'Loading...' : 'Try Demo'}
+                        {fleetLoading ? t('tsLoading') : t('tsTryDemo')}
                       </button>
                     </>
                   )}
@@ -670,14 +674,14 @@ export default function TrackingSecurityCard({
                     disabled={fleetLoading}
                     className="mt-3 text-sm text-purple-600 dark:text-purple-400 hover:underline"
                   >
-                    {fleetLoading ? 'Loading...' : '✨ Try the tracking demo'}
+                    {fleetLoading ? t('tsLoading') : t('tsTryTrackingDemo')}
                   </button>
                 )}
 
                 {/* ItWhip+ Provider Hints - only show when user has vehicles */}
                 {totalVehicles > 0 && (
                   <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">Powered by ItWhip+</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">{t('tsPoweredBy')}</p>
                     <div className="flex items-center justify-center gap-2 flex-wrap">
                       <span className="px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-xs text-blue-700 dark:text-blue-400 rounded font-medium">
                         Bouncie OBD
@@ -697,11 +701,11 @@ export default function TrackingSecurityCard({
                   <div className="flex items-center gap-2">
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
                     <span className="text-sm font-medium text-green-700 dark:text-green-400">
-                      {trackingProviders.filter(p => p.connected).map(p => p.name).join(', ')} Connected
+                      {t('tsConnected', { provider: trackingProviders.filter(p => p.connected).map(p => p.name).join(', ') })}
                     </span>
                   </div>
                   <span className="text-xs text-green-600 dark:text-green-400">
-                    Last sync: {formatRelativeTime(trackingProviders[0]?.lastSync)}
+                    {t('tsLastSync', { time: formatRelativeTime(trackingProviders[0]?.lastSync) })}
                   </span>
                 </div>
 
@@ -711,26 +715,26 @@ export default function TrackingSecurityCard({
                     <p className="text-lg font-bold text-gray-900 dark:text-white">
                       {trackedVehicles.length}/{totalVehicles}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Tracked</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('tsTracked')}</p>
                   </div>
                   <div className="text-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
                       {trackedVehicles.filter(v => v.status === 'moving').length}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Moving</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('tsMoving')}</p>
                   </div>
                   <div className="text-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <p className="text-lg font-bold text-green-600 dark:text-green-400">
                       {trackedVehicles.filter(v => v.status === 'parked').length}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Parked</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('tsParked')}</p>
                   </div>
                 </div>
 
                 {/* Connected Vehicles with Disconnect */}
                 <div>
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-                    Connected Vehicles
+                    {t('tsConnectedVehicles')}
                   </p>
                   <div className="space-y-2">
                     {trackedVehicles.map(vehicle => (
@@ -746,7 +750,7 @@ export default function TrackingSecurityCard({
                           disabled={disconnecting === vehicle.id}
                           className="px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
                         >
-                          {disconnecting === vehicle.id ? 'Disconnecting...' : 'Disconnect'}
+                          {disconnecting === vehicle.id ? t('tsDisconnecting') : t('tsDisconnect')}
                         </button>
                       </div>
                     ))}
@@ -757,7 +761,7 @@ export default function TrackingSecurityCard({
                 {trackedVehicles.filter(v => v.guest).length > 0 && (
                   <div>
                     <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-                      Active Rentals
+                      {t('tsActiveRentals')}
                     </p>
                     <div className="space-y-2">
                       {trackedVehicles.filter(v => v.guest).slice(0, 2).map(vehicle => (
@@ -775,12 +779,12 @@ export default function TrackingSecurityCard({
                                 : 'text-green-600 dark:text-green-400'
                             }`}>
                               <IoNavigateOutline className="w-3 h-3" />
-                              {vehicle.status === 'moving' ? 'Moving' : 'Parked'}
+                              {vehicle.status === 'moving' ? t('tsMoving') : t('tsParked')}
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>Guest: {vehicle.guest}</span>
-                            {vehicle.tripEndsIn && <span>Ends in {vehicle.tripEndsIn}</span>}
+                            <span>{t('tsGuest', { name: vehicle.guest || '' })}</span>
+                            {vehicle.tripEndsIn && <span>{t('tsEndsIn', { time: vehicle.tripEndsIn })}</span>}
                           </div>
                         </div>
                       ))}
@@ -791,7 +795,7 @@ export default function TrackingSecurityCard({
                 {/* Alerts */}
                 <div className="flex items-center gap-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-sm">
                   <IoAlertCircleOutline className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-                  <span className="text-yellow-700 dark:text-yellow-400">No alerts</span>
+                  <span className="text-yellow-700 dark:text-yellow-400">{t('tsNoAlerts')}</span>
                 </div>
               </div>
             )}
@@ -804,7 +808,7 @@ export default function TrackingSecurityCard({
             {/* Current Session */}
             <div>
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-                Current Session
+                {t('tsCurrentSession')}
               </p>
               <div className="space-y-2">
                 <div className="flex items-center justify-between py-1.5">
@@ -814,7 +818,7 @@ export default function TrackingSecurityCard({
                     ) : (
                       <IoDesktopOutline className="w-4 h-4" />
                     )}
-                    <span>Device</span>
+                    <span>{t('tsDevice')}</span>
                   </div>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
                     {data.currentSession.deviceType} ({data.currentSession.os})
@@ -823,7 +827,7 @@ export default function TrackingSecurityCard({
                 <div className="flex items-center justify-between py-1.5">
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                     <IoGlobeOutline className="w-4 h-4" />
-                    <span>Browser</span>
+                    <span>{t('tsBrowser')}</span>
                   </div>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
                     {data.currentSession.browser}
@@ -832,7 +836,7 @@ export default function TrackingSecurityCard({
                 <div className="flex items-center justify-between py-1.5">
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                     <IoServerOutline className="w-4 h-4" />
-                    <span>IP Address</span>
+                    <span>{t('tsIpAddress')}</span>
                   </div>
                   <span className="text-sm font-medium text-gray-900 dark:text-white font-mono">
                     {data.currentSession.ip}
@@ -844,13 +848,13 @@ export default function TrackingSecurityCard({
             {/* Last Login */}
             <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-                Activity
+                {t('tsActivity')}
               </p>
               <div className="space-y-2">
                 <div className="flex items-center justify-between py-1.5">
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                     <IoTimeOutline className="w-4 h-4" />
-                    <span>Last Login</span>
+                    <span>{t('tsLastLogin')}</span>
                   </div>
                   <span className="text-sm text-gray-900 dark:text-white">
                     {formatRelativeTime(data.user.lastLogin)}
@@ -859,7 +863,7 @@ export default function TrackingSecurityCard({
                 <div className="flex items-center justify-between py-1.5">
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                     <IoLockClosedOutline className="w-4 h-4" />
-                    <span>Active Sessions</span>
+                    <span>{t('tsActiveSessions')}</span>
                   </div>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
                     {data.security.activeSessions}
@@ -876,8 +880,8 @@ export default function TrackingSecurityCard({
             {/* Security Score */}
             <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Security Score</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Complete your profile to improve</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{t('tsSecurityScore')}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('tsCompleteProfile')}</p>
               </div>
               <div className="text-right">
                 <p className={`text-2xl font-bold ${getSecurityColor(data.security.score)}`}>
@@ -898,7 +902,7 @@ export default function TrackingSecurityCard({
             <div className="space-y-2">
               {/* Email Verified */}
               <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-gray-600 dark:text-gray-300">Email Verified</span>
+                <span className="text-sm text-gray-600 dark:text-gray-300">{t('tsEmailVerified')}</span>
                 <div className="flex items-center gap-2">
                   {data.security.emailVerified ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
@@ -908,7 +912,7 @@ export default function TrackingSecurityCard({
                         href="/partner/settings?tab=profile&verify=email"
                         className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
                       >
-                        Verify
+                        {t('tsVerifyBtn')}
                       </Link>
                       <IoCloseCircleOutline className="w-5 h-5 text-red-400" />
                     </>
@@ -918,7 +922,7 @@ export default function TrackingSecurityCard({
 
               {/* Phone Verified */}
               <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-gray-600 dark:text-gray-300">Phone Verified</span>
+                <span className="text-sm text-gray-600 dark:text-gray-300">{t('tsPhoneVerified')}</span>
                 <div className="flex items-center gap-2">
                   {data.security.phoneVerified ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
@@ -928,7 +932,7 @@ export default function TrackingSecurityCard({
                         href="/partner/settings?tab=profile&verify=phone"
                         className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
                       >
-                        Verify
+                        {t('tsVerifyBtn')}
                       </Link>
                       <IoCloseCircleOutline className="w-5 h-5 text-red-400" />
                     </>
@@ -938,7 +942,7 @@ export default function TrackingSecurityCard({
 
               {/* Identity Verified */}
               <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-gray-600 dark:text-gray-300">Identity Verified</span>
+                <span className="text-sm text-gray-600 dark:text-gray-300">{t('tsIdentityVerified')}</span>
                 <div className="flex items-center gap-2">
                   {data.security.identityVerified ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
@@ -948,7 +952,7 @@ export default function TrackingSecurityCard({
                         href="/partner/settings?tab=documents&verify=identity"
                         className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
                       >
-                        Verify
+                        {t('tsVerifyBtn')}
                       </Link>
                       <IoCloseCircleOutline className="w-5 h-5 text-red-400" />
                     </>
@@ -958,7 +962,7 @@ export default function TrackingSecurityCard({
 
               {/* Stripe Connected */}
               <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-gray-600 dark:text-gray-300">Stripe Connected</span>
+                <span className="text-sm text-gray-600 dark:text-gray-300">{t('tsStripeConnected')}</span>
                 <div className="flex items-center gap-2">
                   {data.security.stripeConnected ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
@@ -968,7 +972,7 @@ export default function TrackingSecurityCard({
                         href="/partner/settings?tab=banking"
                         className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
                       >
-                        Connect
+                        {t('tsConnectBtn')}
                       </Link>
                       <IoCloseCircleOutline className="w-5 h-5 text-red-400" />
                     </>
@@ -981,7 +985,7 @@ export default function TrackingSecurityCard({
             {data.security.recentLogins.length > 0 && (
               <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-                  Recent Activity
+                  {t('tsRecentActivity')}
                 </p>
                 <div className="space-y-2">
                   {data.security.recentLogins.slice(0, 3).map(login => (
@@ -1015,11 +1019,13 @@ export default function TrackingSecurityCard({
                   <div className="flex items-center gap-2">
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
                     <span className="text-sm font-medium text-green-700 dark:text-green-400">
-                      API Access Enabled
+                      {t('tsApiEnabled')}
                     </span>
                   </div>
                   <span className="text-sm text-green-600 dark:text-green-400">
-                    {data.api.activeKeys} active key{data.api.activeKeys !== 1 ? 's' : ''}
+                    {data.api.activeKeys !== 1
+                      ? t('tsActiveKeysPlural', { count: data.api.activeKeys })
+                      : t('tsActiveKeys', { count: data.api.activeKeys })}
                   </span>
                 </div>
 
@@ -1034,7 +1040,7 @@ export default function TrackingSecurityCard({
                         <div>
                           <p className="text-sm font-medium text-gray-900 dark:text-white">{key.name}</p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Last used: {key.lastUsed ? formatRelativeTime(key.lastUsed) : 'Never'}
+                            {t('tsLastUsed', { time: key.lastUsed ? formatRelativeTime(key.lastUsed) : t('tsNever') })}
                           </p>
                         </div>
                         <IoEllipsisHorizontalOutline className="w-5 h-5 text-gray-400" />
@@ -1048,23 +1054,23 @@ export default function TrackingSecurityCard({
                   className="flex items-center justify-center gap-2 w-full py-2 text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
                 >
                   <IoKeyOutline className="w-4 h-4" />
-                  Manage API Keys
+                  {t('tsManageApiKeys')}
                 </Link>
               </>
             ) : (
               <div className="text-center py-6">
                 <IoKeyOutline className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  No API access configured
+                  {t('tsNoApiAccess')}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-500 mb-4">
-                  Contact support to enable API access for your account
+                  {t('tsContactSupport')}
                 </p>
                 <Link
                   href="/contact"
                   className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400"
                 >
-                  Request API Access
+                  {t('tsRequestApiAccess')}
                 </Link>
               </div>
             )}
@@ -1076,10 +1082,10 @@ export default function TrackingSecurityCard({
           <div className="space-y-3">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                Activity Log
+                {t('tsActivityLog')}
               </p>
               <span className="text-xs text-gray-400 dark:text-gray-500">
-                Last 20 events
+                {t('tsLast20Events')}
               </span>
             </div>
 
@@ -1135,10 +1141,10 @@ export default function TrackingSecurityCard({
               <div className="text-center py-6">
                 <IoListOutline className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  No activity recorded yet
+                  {t('tsNoActivity')}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                  Actions like settings changes, logins, and more will appear here
+                  {t('tsAuditDesc')}
                 </p>
               </div>
             )}
@@ -1154,7 +1160,7 @@ export default function TrackingSecurityCard({
             href={activeTab === 'tracking' ? '/partner/tracking' : '/partner/settings'}
             className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
           >
-            {activeTab === 'tracking' ? 'Vehicle Tracking' : 'Account Settings'}
+            {activeTab === 'tracking' ? t('tsVehicleTracking') : t('tsAccountSettings')}
             <IoChevronForwardOutline className="w-4 h-4" />
           </Link>
         </div>

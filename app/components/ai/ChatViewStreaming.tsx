@@ -15,6 +15,7 @@ import GrandTotalCard from './GrandTotalCard'
 import PaymentCard from './PaymentCard'
 import ConfirmationCard from './ConfirmationCard'
 import { IoSunnyOutline, IoMoonOutline } from 'react-icons/io5'
+import { useLocale, useTranslations } from 'next-intl'
 import { useStreamingChat } from '@/app/hooks/useStreamingChat'
 import { useCheckout } from '@/app/hooks/useCheckout'
 import type {
@@ -50,6 +51,8 @@ export default function ChatViewStreaming({
   onToggleTheme,
   hideHeader,
 }: ChatViewStreamingProps) {
+  const locale = useLocale()
+  const t = useTranslations('ChoeAI')
   const [persistedSession, setPersistedSession] = useState<BookingSession | null>(null)
   const [persistedVehicles, setPersistedVehicles] = useState<VehicleSummary[] | null>(null)
   const [isLoadingSession, setIsLoadingSession] = useState(true)
@@ -181,8 +184,9 @@ export default function ChatViewStreaming({
       message,
       session: persistedSession, // Send original session to backend
       previousVehicles: persistedVehicles,
+      locale,
     })
-  }, [sendMessage, persistedSession, persistedVehicles])
+  }, [sendMessage, persistedSession, persistedVehicles, locale])
 
   // Reset handler
   const handleReset = useCallback(() => {
@@ -443,7 +447,7 @@ export default function ChatViewStreaming({
                     <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                     <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Confirming your booking...</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('confirmingBooking')}</p>
                 </div>
               )}
 
@@ -457,13 +461,13 @@ export default function ChatViewStreaming({
               {checkout.state.step === CheckoutStep.FAILED && (
                 <div className="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-800 rounded-lg p-4">
                   <p className="text-sm text-red-600 dark:text-red-400 mb-2">
-                    {checkout.state.error || 'Something went wrong. Please try again.'}
+                    {checkout.state.error || t('somethingWentWrong')}
                   </p>
                   <button
                     onClick={checkout.goBack}
                     className="text-xs text-primary hover:text-primary/80 font-medium"
                   >
-                    Go Back
+                    {t('goBack')}
                   </button>
                 </div>
               )}
@@ -549,18 +553,19 @@ function ChatHeader({ onClassicSearch, isDarkMode, onToggleTheme }: {
   isDarkMode?: boolean
   onToggleTheme?: () => void
 }) {
+  const t = useTranslations('ChoeAI')
   return (
     <div className="flex-shrink-0 flex items-center justify-between px-4 pb-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
       <div className="-mt-4">
         <Image src="/images/choe-logo.png" alt="Choé" width={300} height={87} className="h-[83px] w-auto" />
-        <span className="text-[9px] text-gray-400 block -mt-7">ItWhip Search Studio</span>
+        <span className="text-[9px] text-gray-400 block -mt-7">{t('searchStudio')}</span>
       </div>
       <div className="flex items-center gap-2">
         {onToggleTheme && (
           <button
             onClick={onToggleTheme}
             type="button"
-            aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={isDarkMode ? t('switchToLight') : t('switchToDark')}
             className="p-2 rounded-md text-gray-500 dark:text-gray-400
               hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
@@ -579,7 +584,7 @@ function ChatHeader({ onClassicSearch, isDarkMode, onToggleTheme }: {
               px-3 py-1.5 rounded-md bg-gray-900 dark:bg-white dark:text-gray-900
               hover:bg-gray-700 dark:hover:bg-gray-200 transition-colors shadow-sm"
           >
-            Classic Search
+            {t('classicSearch')}
           </button>
         )}
       </div>
@@ -588,20 +593,21 @@ function ChatHeader({ onClassicSearch, isDarkMode, onToggleTheme }: {
 }
 
 function WelcomeMessage() {
+  const t = useTranslations('ChoeAI')
   return (
     <div className="text-center py-8">
       <Image src="/images/choe-logo.png" alt="Choé" width={64} height={64} className="mx-auto mb-3 rounded-lg" />
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-        Find your perfect ride
+        {t('welcomeTitle')}
       </h3>
       <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto mb-3">
-        Tell me what you&apos;re looking for and I&apos;ll find the best car for you in Arizona.
+        {t('welcomeDescription')}
       </p>
       <a
         href="/help/choe"
         className="text-[10px] text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 underline underline-offset-2"
       >
-        Learn about ChoéAI
+        {t('learnAboutChoe')}
       </a>
     </div>
   )
@@ -640,23 +646,12 @@ function ActionPrompt({
   action: BookingAction
   onAction: () => void
 }) {
-  const config: Record<string, { label: string; description: string }> = {
-    NEEDS_LOGIN: {
-      label: 'Log In to Continue',
-      description: 'You need to be logged in to complete your booking.',
-    },
-    NEEDS_VERIFICATION: {
-      label: 'Verify Identity',
-      description: 'Quick verification needed before booking.',
-    },
-    HIGH_RISK_REVIEW: {
-      label: 'Upload Documents',
-      description: 'Additional verification required for this booking.',
-    },
-    HANDOFF_TO_PAYMENT: {
-      label: 'Go to Payment',
-      description: 'Everything looks good! Ready to complete your booking.',
-    },
+  const t = useTranslations('ChoeAI')
+  const config: Record<string, { labelKey: string; descKey: string }> = {
+    NEEDS_LOGIN: { labelKey: 'loginLabel', descKey: 'loginDescription' },
+    NEEDS_VERIFICATION: { labelKey: 'verifyLabel', descKey: 'verifyDescription' },
+    HIGH_RISK_REVIEW: { labelKey: 'uploadDocsLabel', descKey: 'uploadDocsDescription' },
+    HANDOFF_TO_PAYMENT: { labelKey: 'paymentLabel', descKey: 'paymentDescription' },
   }
 
   const c = config[action]
@@ -664,12 +659,12 @@ function ActionPrompt({
 
   return (
     <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-center">
-      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">{c.description}</p>
+      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">{t(c.descKey as any)}</p>
       <button
         onClick={onAction}
         className="px-6 py-2.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary/90 transition-colors"
       >
-        {c.label}
+        {t(c.labelKey as any)}
       </button>
     </div>
   )
@@ -682,17 +677,18 @@ function ThinkingIndicator({
   isThinking: boolean
   toolsInUse: Array<{ name: string; input: unknown }>
 }) {
+  const t = useTranslations('ChoeAI')
   const toolLabels: Record<string, string> = {
-    search_vehicles: 'Searching cars',
-    get_weather: 'Checking weather',
-    get_reviews: 'Reading reviews',
-    select_vehicle: 'Selecting vehicle',
-    update_booking_details: 'Updating details',
-    calculator: 'Calculating',
+    search_vehicles: t('toolSearching'),
+    get_weather: t('toolWeather'),
+    get_reviews: t('toolReviews'),
+    select_vehicle: t('toolSelecting'),
+    update_booking_details: t('toolUpdating'),
+    calculator: t('toolCalculating'),
   }
 
   const currentTool = toolsInUse[0]
-  const label = currentTool ? toolLabels[currentTool.name] || 'Processing' : 'Thinking'
+  const label = currentTool ? toolLabels[currentTool.name] || t('toolProcessing') : t('toolThinking')
 
   return (
     <div className="flex gap-2 items-start">

@@ -35,6 +35,7 @@ import {
   IoArrowBackOutline,
   IoSwapHorizontalOutline
 } from 'react-icons/io5'
+import { useTranslations } from 'next-intl'
 
 // Types
 interface Discount {
@@ -132,6 +133,7 @@ function getEffectiveDeposit(
 }
 
 export default function PartnerDiscountsPage() {
+  const t = useTranslations('PartnerDiscounts')
   // View mode: which section to display
   const [viewMode, setViewMode] = useState<'global' | 'individual'>('global')
 
@@ -233,8 +235,9 @@ export default function PartnerDiscountsPage() {
     if (!vehicle) return
 
     // Confirm before removing from global
+    const vehicleName = `${vehicle.year} ${vehicle.make} ${vehicle.model}`
     const confirmed = window.confirm(
-      `Remove "${vehicle.year} ${vehicle.make} ${vehicle.model}" from global settings?\n\nThis vehicle will need to be configured individually in Individual Mode.`
+      t('removeFromGlobalConfirm', { vehicle: vehicleName })
     )
     if (!confirmed) return
 
@@ -346,7 +349,7 @@ export default function PartnerDiscountsPage() {
       const vehicles = individualVehicles.map(vehicle => {
         const edit = vehicleEdits[vehicle.id] || { requireDeposit: true, depositAmount: depositSettings.global.defaultAmount }
 
-        // Validate and normalize: if deposit is required but amount is empty/invalid → disable deposit
+        // Validate and normalize: if deposit is required but amount is empty/invalid -> disable deposit
         const hasValidAmount = edit.depositAmount !== null &&
                                edit.depositAmount !== undefined &&
                                edit.depositAmount >= 25
@@ -460,7 +463,7 @@ export default function PartnerDiscountsPage() {
   }
 
   const handleDelete = async (discountId: string) => {
-    if (!confirm('Are you sure you want to delete this discount code?')) return
+    if (!confirm(t('deleteConfirm'))) return
     try {
       const res = await fetch(`/api/partner/discounts/${discountId}`, { method: 'DELETE' })
       if (res.ok) {
@@ -504,18 +507,18 @@ export default function PartnerDiscountsPage() {
     const expiresAt = discount.expiresAt ? new Date(discount.expiresAt) : null
 
     if (!discount.isActive) {
-      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"><IoCloseCircleOutline className="w-3 h-3" />Inactive</span>
+      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"><IoCloseCircleOutline className="w-3 h-3" />{t('statusInactive')}</span>
     }
     if (expiresAt && expiresAt < now) {
-      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"><IoTimeOutline className="w-3 h-3" />Expired</span>
+      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"><IoTimeOutline className="w-3 h-3" />{t('statusExpired')}</span>
     }
     if (startsAt && startsAt > now) {
-      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400"><IoTimeOutline className="w-3 h-3" />Scheduled</span>
+      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400"><IoTimeOutline className="w-3 h-3" />{t('statusScheduled')}</span>
     }
     if (discount.maxUses && discount.usedCount >= discount.maxUses) {
-      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400"><IoCheckmarkCircleOutline className="w-3 h-3" />Maxed Out</span>
+      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400"><IoCheckmarkCircleOutline className="w-3 h-3" />{t('statusMaxedOut')}</span>
     }
-    return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"><IoCheckmarkCircleOutline className="w-3 h-3" />Active</span>
+    return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"><IoCheckmarkCircleOutline className="w-3 h-3" />{t('statusActive')}</span>
   }
 
   const filteredDiscounts = discounts.filter(d =>
@@ -536,9 +539,9 @@ export default function PartnerDiscountsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Discounts & Deposits</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('title')}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Manage security deposits and promo codes for your fleet
+            {t('subtitle')}
           </p>
         </div>
         <button
@@ -546,7 +549,7 @@ export default function PartnerDiscountsPage() {
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors"
         >
           <IoAddCircleOutline className="w-5 h-5" />
-          Create Promo Code
+          {t('createPromoCode')}
         </button>
       </div>
 
@@ -575,13 +578,13 @@ export default function PartnerDiscountsPage() {
                 <IoGlobeOutline className={`w-5 h-5 ${viewMode === 'global' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500'}`} />
               </div>
               <h4 className={`font-medium ${viewMode === 'global' ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-white'}`}>
-                Global Mode
+                {t('globalMode')}
               </h4>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Same deposit for all vehicles
+                {t('globalModeDescription')}
               </p>
               <span className="inline-block mt-2 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
-                {globalVehicles.length} vehicle{globalVehicles.length !== 1 ? 's' : ''}
+                {t('vehicleCount', { count: globalVehicles.length })}
               </span>
             </button>
 
@@ -607,13 +610,13 @@ export default function PartnerDiscountsPage() {
                 <IoListOutline className={`w-5 h-5 ${viewMode === 'individual' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500'}`} />
               </div>
               <h4 className={`font-medium ${viewMode === 'individual' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-900 dark:text-white'}`}>
-                Individual Mode
+                {t('individualMode')}
               </h4>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Configure each vehicle separately
+                {t('individualModeDescription')}
               </p>
               <span className="inline-block mt-2 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full">
-                {individualVehicles.length} vehicle{individualVehicles.length !== 1 ? 's' : ''}
+                {t('vehicleCount', { count: individualVehicles.length })}
               </span>
             </button>
       </div>
@@ -624,9 +627,9 @@ export default function PartnerDiscountsPage() {
             {/* Require Deposits Toggle */}
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-sm font-medium text-gray-900 dark:text-white">Require Deposits</label>
+                <label className="text-sm font-medium text-gray-900 dark:text-white">{t('requireDeposits')}</label>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  Collect security deposits to protect against damage
+                  {t('requireDepositsDescription')}
                 </p>
               </div>
               <button
@@ -652,7 +655,7 @@ export default function PartnerDiscountsPage() {
                 {/* Default Deposit Amount */}
                 <div>
                   <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    Default Deposit Amount
+                    {t('defaultDepositAmount')}
                   </label>
                   <div className="flex items-center gap-2 max-w-xs">
                     <span className="text-gray-500 dark:text-gray-400">$</span>
@@ -669,17 +672,17 @@ export default function PartnerDiscountsPage() {
                     />
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Min $25, increments of $25
+                    {t('minIncrements')}
                   </p>
                 </div>
 
                 {/* Per-Make Overrides */}
                 <div>
                   <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    Adjust by Make (Optional)
+                    {t('adjustByMake')}
                   </label>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                    Set different deposit amounts for specific makes
+                    {t('adjustByMakeDescription')}
                   </p>
 
                   {/* Existing make deposits */}
@@ -707,7 +710,7 @@ export default function PartnerDiscountsPage() {
                       onChange={(e) => setNewMake(e.target.value)}
                       className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      <option value="">Select make...</option>
+                      <option value="">{t('selectMake')}</option>
                       {depositSettings.makes
                         .filter(m => !depositSettings.global.makeDeposits[m])
                         .map(make => (
@@ -742,10 +745,10 @@ export default function PartnerDiscountsPage() {
                   <IoWarningOutline className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-                      No Protection
+                      {t('noProtection')}
                     </p>
                     <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                      Deposits are recommended to protect against damage and no-shows.
+                      {t('noProtectionDescription')}
                     </p>
                   </div>
                 </div>
@@ -756,14 +759,14 @@ export default function PartnerDiscountsPage() {
             <div>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                 <label className="text-sm font-medium text-gray-900 dark:text-white">
-                  Your Fleet
+                  {t('yourFleet')}
                 </label>
                 <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                   <span className="flex items-center gap-1">
-                    <IoRemoveCircleOutline className="w-3.5 h-3.5 text-red-500" /> Remove
+                    <IoRemoveCircleOutline className="w-3.5 h-3.5 text-red-500" /> {t('remove')}
                   </span>
                   <span className="flex items-center gap-1">
-                    <IoAddCircleOutline className="w-3.5 h-3.5 text-green-500" /> Add back
+                    <IoAddCircleOutline className="w-3.5 h-3.5 text-green-500" /> {t('addBack')}
                   </span>
                 </div>
               </div>
@@ -771,7 +774,7 @@ export default function PartnerDiscountsPage() {
                 <div className="text-center py-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <IoCarOutline className="w-10 h-10 text-gray-400 mx-auto mb-2" />
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    No vehicles in your fleet
+                    {t('noVehiclesInFleet')}
                   </p>
                 </div>
               ) : (
@@ -825,7 +828,7 @@ export default function PartnerDiscountsPage() {
                               {vehicle.year} {vehicle.make} {vehicle.model}
                             </h4>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                              ${vehicle.dailyRate}/day
+                              {t('perDay', { rate: vehicle.dailyRate })}
                             </p>
                           </div>
 
@@ -834,7 +837,7 @@ export default function PartnerDiscountsPage() {
                             <button
                               onClick={() => moveToGlobal(vehicle.id)}
                               className="p-1.5 text-green-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-colors flex-shrink-0"
-                              title="Add back to global settings"
+                              title={t('addBackToGlobal')}
                             >
                               <IoAddCircleOutline className="w-5 h-5" />
                             </button>
@@ -842,7 +845,7 @@ export default function PartnerDiscountsPage() {
                             <button
                               onClick={() => moveToIndividual(vehicle.id)}
                               className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors flex-shrink-0"
-                              title="Configure individually"
+                              title={t('configureIndividually')}
                             >
                               <IoRemoveCircleOutline className="w-5 h-5" />
                             </button>
@@ -853,7 +856,7 @@ export default function PartnerDiscountsPage() {
                         <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
                           {isIndividual && (
                             <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded">
-                              Individual
+                              {t('individual')}
                             </span>
                           )}
                           {!isIndividual && <div />}
@@ -862,7 +865,7 @@ export default function PartnerDiscountsPage() {
                           <div className="text-right">
                             {effectiveDeposit > 0 ? (
                               <div className="flex items-center gap-1.5">
-                                <span className="text-xs text-gray-500 dark:text-gray-400">Deposit:</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">{t('deposit')}</span>
                                 <span className={`text-sm font-semibold ${isIndividual ? 'text-purple-600 dark:text-purple-400' : 'text-gray-900 dark:text-white'}`}>
                                   ${effectiveDeposit}
                                 </span>
@@ -873,7 +876,7 @@ export default function PartnerDiscountsPage() {
                             ) : (
                               <span className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
                                 <IoWarningOutline className="w-3.5 h-3.5" />
-                                No deposit
+                                {t('noDeposit')}
                               </span>
                             )}
                           </div>
@@ -890,7 +893,7 @@ export default function PartnerDiscountsPage() {
               <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
                 <p className="text-sm text-purple-800 dark:text-purple-300 flex items-center gap-2">
                   <IoListOutline className="w-4 h-4 flex-shrink-0" />
-                  {individualVehicles.length} vehicle{individualVehicles.length !== 1 ? 's are' : ' is'} configured individually. Switch to Individual Mode to edit their settings.
+                  {t('individualVehiclesInfo', { count: individualVehicles.length })}
                 </p>
               </div>
             )}
@@ -905,17 +908,17 @@ export default function PartnerDiscountsPage() {
                 {isSavingGlobal ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                    Saving...
+                    {t('saving')}
                   </>
                 ) : globalSaved ? (
                   <>
                     <IoCheckmarkOutline className="w-4 h-4" />
-                    Saved!
+                    {t('saved')}
                   </>
                 ) : (
                   <>
                     <IoSaveOutline className="w-4 h-4" />
-                    Save Global Settings
+                    {t('saveGlobalSettings')}
                   </>
                 )}
           </button>
@@ -930,24 +933,24 @@ export default function PartnerDiscountsPage() {
               <div className="text-center py-8">
                 <IoCarOutline className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                 <p className="text-gray-600 dark:text-gray-400 mb-2">
-                  No vehicles configured individually yet
+                  {t('noVehiclesIndividualYet')}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
-                  Remove vehicles from Global Mode to configure them here
+                  {t('removeFromGlobalToConfigureHere')}
                 </p>
                 <button
                   onClick={() => setViewMode('global')}
                   className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   <IoGlobeOutline className="w-4 h-4" />
-                  Go to Global Mode
+                  {t('goToGlobalMode')}
                 </button>
               </div>
             ) : (
               <>
                 <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg mb-4">
                   <p className="text-sm text-purple-800 dark:text-purple-300">
-                    These vehicles are configured separately from global settings. Deposits must be at least $25 in $25 increments.
+                    {t('individualModeInfo')}
                   </p>
                 </div>
 
@@ -985,7 +988,7 @@ export default function PartnerDiscountsPage() {
                               {vehicle.year} {vehicle.make} {vehicle.model}
                             </h4>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                              ${vehicle.dailyRate}/day
+                              {t('perDay', { rate: vehicle.dailyRate })}
                             </p>
                           </div>
 
@@ -993,7 +996,7 @@ export default function PartnerDiscountsPage() {
                           <button
                             onClick={() => moveToGlobal(vehicle.id)}
                             className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors flex-shrink-0"
-                            title="Use global settings"
+                            title={t('useGlobalSettings')}
                           >
                             <IoArrowBackOutline className="w-4 h-4" />
                           </button>
@@ -1023,7 +1026,7 @@ export default function PartnerDiscountsPage() {
                               }`} />
                             </button>
                             <span className="text-sm text-gray-600 dark:text-gray-400">
-                              {edit.requireDeposit ? 'Deposit on' : 'Deposit off'}
+                              {edit.requireDeposit ? t('depositOn') : t('depositOff')}
                             </span>
                           </div>
 
@@ -1054,14 +1057,14 @@ export default function PartnerDiscountsPage() {
                               </div>
                               {(!edit.depositAmount || edit.depositAmount < 25) && (
                                 <span className="text-[10px] text-amber-600 dark:text-amber-400">
-                                  Min $25
+                                  {t('minAmount')}
                                 </span>
                               )}
                             </div>
                           ) : (
                             <span className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
                               <IoWarningOutline className="w-4 h-4" />
-                              No deposit
+                              {t('noDeposit')}
                             </span>
                           )}
                         </div>
@@ -1080,17 +1083,17 @@ export default function PartnerDiscountsPage() {
                     {isSavingIndividual ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                        Saving...
+                        {t('saving')}
                       </>
                     ) : individualSaved ? (
                       <>
                         <IoCheckmarkOutline className="w-4 h-4" />
-                        Saved!
+                        {t('saved')}
                       </>
                     ) : (
                       <>
                         <IoSaveOutline className="w-4 h-4" />
-                        Save Individual Settings
+                        {t('saveIndividualSettings')}
                       </>
                     )}
                   </button>
@@ -1108,9 +1111,9 @@ export default function PartnerDiscountsPage() {
               <IoPricetagOutline className="w-5 h-5 text-orange-600 dark:text-orange-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">Promo Codes</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white">{t('promoCodes')}</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                Create promotional codes for customers
+                {t('promoCodesDescription')}
               </p>
             </div>
           </div>
@@ -1122,7 +1125,7 @@ export default function PartnerDiscountsPage() {
               <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search promo codes..."
+                placeholder={t('searchPromoCodes')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -1135,7 +1138,7 @@ export default function PartnerDiscountsPage() {
           <div className="text-center py-12">
             <IoPricetagOutline className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-gray-400 mb-2">
-              {discounts.length === 0 ? 'No promo codes yet' : 'No codes match your search'}
+              {discounts.length === 0 ? t('noPromoCodesYet') : t('noCodesMatchSearch')}
             </p>
             {discounts.length === 0 && (
               <button
@@ -1143,7 +1146,7 @@ export default function PartnerDiscountsPage() {
                 className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors mt-4"
               >
                 <IoAddCircleOutline className="w-5 h-5" />
-                Create Your First Code
+                {t('createYourFirstCode')}
               </button>
             )}
           </div>
@@ -1174,7 +1177,9 @@ export default function PartnerDiscountsPage() {
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">{discount.description}</p>
                     )}
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Used: {discount.usedCount}{discount.maxUses && ` / ${discount.maxUses}`}
+                      {discount.maxUses
+                        ? t('usedWithMax', { usedCount: discount.usedCount, maxUses: discount.maxUses })
+                        : t('used', { usedCount: discount.usedCount })}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1210,17 +1215,17 @@ export default function PartnerDiscountsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
             <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Create Promo Code</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">{t('createPromoCodeTitle')}</h2>
             </div>
             <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Code</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('codeLabel')}</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={newDiscount.code}
                     onChange={(e) => setNewDiscount(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
-                    placeholder="e.g., SAVE20"
+                    placeholder={t('codePlaceholder')}
                     className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono uppercase placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
                   />
                   <button
@@ -1228,33 +1233,33 @@ export default function PartnerDiscountsPage() {
                     onClick={generateCode}
                     className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
-                    Generate
+                    {t('generate')}
                   </button>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('titleLabel')}</label>
                 <input
                   type="text"
                   value={newDiscount.title}
                   onChange={(e) => setNewDiscount(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="e.g., New Driver Special"
+                  placeholder={t('titlePlaceholder')}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description (optional)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('descriptionLabel')}</label>
                 <textarea
                   value={newDiscount.description}
                   onChange={(e) => setNewDiscount(prev => ({ ...prev, description: e.target.value }))}
                   rows={2}
-                  placeholder="Describe this promotion..."
+                  placeholder={t('descriptionPlaceholder')}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Discount %</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('discountPercent')}</label>
                   <input
                     type="number"
                     min="1"
@@ -1265,20 +1270,20 @@ export default function PartnerDiscountsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Max Uses (optional)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('maxUsesLabel')}</label>
                   <input
                     type="number"
                     min="1"
                     value={newDiscount.maxUses}
                     onChange={(e) => setNewDiscount(prev => ({ ...prev, maxUses: e.target.value }))}
-                    placeholder="Unlimited"
+                    placeholder={t('maxUsesPlaceholder')}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Start Date (optional)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('startDateLabel')}</label>
                   <input
                     type="date"
                     value={newDiscount.startsAt}
@@ -1287,7 +1292,7 @@ export default function PartnerDiscountsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">End Date (optional)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('endDateLabel')}</label>
                   <input
                     type="date"
                     value={newDiscount.expiresAt}
@@ -1302,14 +1307,14 @@ export default function PartnerDiscountsPage() {
                 onClick={() => { setShowModal(false); resetForm() }}
                 className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleCreate}
                 disabled={isSaving || !newDiscount.code || !newDiscount.title || newDiscount.percentage <= 0}
                 className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg transition-colors"
               >
-                {isSaving ? 'Creating...' : 'Create Code'}
+                {isSaving ? t('creating') : t('createCode')}
               </button>
             </div>
           </div>

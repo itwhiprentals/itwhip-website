@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { generateCarUrl } from '@/app/lib/utils/urls'
 import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 import { formatRating } from '@/app/lib/utils/formatCarSpecs'

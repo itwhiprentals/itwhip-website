@@ -4,6 +4,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { IoSaveOutline, IoCloudUploadOutline } from 'react-icons/io5'
 import { LandingPageData } from './types'
 
@@ -15,6 +16,7 @@ interface BrandingTabProps {
 }
 
 export default function BrandingTab({ data, onChange, onSave, isSaving }: BrandingTabProps) {
+  const t = useTranslations('PartnerLanding')
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
   const [isUploadingHero, setIsUploadingHero] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -28,12 +30,12 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']
     if (!allowedTypes.includes(file.type)) {
-      setUploadError('Invalid file type. Allowed: JPG, PNG, WebP, SVG')
+      setUploadError(t('invalidFileTypeLogo'))
       return
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      setUploadError('File too large. Maximum 2MB')
+      setUploadError(t('fileTooLargeLogo'))
       return
     }
 
@@ -54,10 +56,10 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
       if (result.success) {
         onChange({ logo: result.logo })
       } else {
-        setUploadError(result.error || 'Failed to upload logo')
+        setUploadError(result.error || t('failedToUploadLogo'))
       }
     } catch {
-      setUploadError('Failed to upload logo')
+      setUploadError(t('failedToUploadLogo'))
     } finally {
       setIsUploadingLogo(false)
       if (logoInputRef.current) logoInputRef.current.value = ''
@@ -71,12 +73,12 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
-      setUploadError('Invalid file type. Allowed: JPG, PNG, WebP')
+      setUploadError(t('invalidFileTypeHero'))
       return
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setUploadError('File too large. Maximum 5MB')
+      setUploadError(t('fileTooLargeHero'))
       return
     }
 
@@ -97,10 +99,10 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
       if (result.success) {
         onChange({ heroImage: result.heroImage })
       } else {
-        setUploadError(result.error || 'Failed to upload hero image')
+        setUploadError(result.error || t('failedToUploadHero'))
       }
     } catch {
-      setUploadError('Failed to upload hero image')
+      setUploadError(t('failedToUploadHero'))
     } finally {
       setIsUploadingHero(false)
       if (heroInputRef.current) heroInputRef.current.value = ''
@@ -118,10 +120,10 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
       if (result.success) {
         onChange({ logo: null })
       } else {
-        setUploadError(result.error || 'Failed to delete logo')
+        setUploadError(result.error || t('failedToDeleteLogo'))
       }
     } catch {
-      setUploadError('Failed to delete logo')
+      setUploadError(t('failedToDeleteLogo'))
     }
   }
 
@@ -136,10 +138,10 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
       if (result.success) {
         onChange({ heroImage: null })
       } else {
-        setUploadError(result.error || 'Failed to delete hero image')
+        setUploadError(result.error || t('failedToDeleteHero'))
       }
     } catch {
-      setUploadError('Failed to delete hero image')
+      setUploadError(t('failedToDeleteHero'))
     }
   }
 
@@ -153,7 +155,7 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
             onClick={() => setUploadError(null)}
             className="ml-2 text-red-500 hover:text-red-600"
           >
-            Dismiss
+            {t('dismiss')}
           </button>
         </div>
       )}
@@ -162,10 +164,10 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
         {/* Logo Upload */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Company Logo
+            {t('companyLogo')}
           </label>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-            Square format recommended. Max 2MB. JPG, PNG, WebP, or SVG.
+            {t('logoDescription')}
           </p>
           <input
             type="file"
@@ -187,7 +189,7 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
             {isUploadingLogo ? (
               <div className="space-y-2">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
-                <p className="text-sm text-orange-600 dark:text-orange-400">Uploading...</p>
+                <p className="text-sm text-orange-600 dark:text-orange-400">{t('uploading')}</p>
               </div>
             ) : data.logo ? (
               <div className="space-y-2">
@@ -213,7 +215,7 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
                     }}
                     className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400"
                   >
-                    Replace
+                    {t('replace')}
                   </button>
                   <button
                     onClick={(e) => {
@@ -222,7 +224,7 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
                     }}
                     className="text-sm text-red-600 hover:text-red-700 dark:text-red-400"
                   >
-                    Remove
+                    {t('remove')}
                   </button>
                 </div>
               </div>
@@ -230,10 +232,10 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
               <div>
                 <IoCloudUploadOutline className="w-10 h-10 text-gray-400 mx-auto mb-2" />
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Click to upload logo
+                  {t('clickToUploadLogo')}
                 </p>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                  400x400px recommended
+                  {t('logoSizeRecommended')}
                 </p>
               </div>
             )}
@@ -243,10 +245,10 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
         {/* Hero Image Upload */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Hero Image
+            {t('heroImage')}
           </label>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-            Wide landscape format. Max 5MB. JPG, PNG, or WebP.
+            {t('heroDescription')}
           </p>
           <input
             type="file"
@@ -268,7 +270,7 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
             {isUploadingHero ? (
               <div className="space-y-2">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
-                <p className="text-sm text-orange-600 dark:text-orange-400">Uploading...</p>
+                <p className="text-sm text-orange-600 dark:text-orange-400">{t('uploading')}</p>
               </div>
             ) : data.heroImage ? (
               <div className="space-y-2">
@@ -285,7 +287,7 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
                     }}
                     className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400"
                   >
-                    Replace
+                    {t('replace')}
                   </button>
                   <button
                     onClick={(e) => {
@@ -294,7 +296,7 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
                     }}
                     className="text-sm text-red-600 hover:text-red-700 dark:text-red-400"
                   >
-                    Remove
+                    {t('remove')}
                   </button>
                 </div>
               </div>
@@ -302,10 +304,10 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
               <div>
                 <IoCloudUploadOutline className="w-10 h-10 text-gray-400 mx-auto mb-2" />
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Click to upload hero image
+                  {t('clickToUploadHero')}
                 </p>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                  1920x500px recommended
+                  {t('heroSizeRecommended')}
                 </p>
               </div>
             )}
@@ -316,7 +318,7 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
       {/* Primary Color */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Primary Color
+          {t('primaryColor')}
         </label>
         <div className="flex items-center gap-4">
           <input
@@ -333,7 +335,7 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
             className="w-32 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
           />
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            Used for buttons and accents
+            {t('usedForButtons')}
           </span>
         </div>
       </div>
@@ -346,7 +348,7 @@ export default function BrandingTab({ data, onChange, onSave, isSaving }: Brandi
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white text-sm font-medium rounded-lg transition-colors"
         >
           <IoSaveOutline className="w-4 h-4" />
-          {isSaving ? 'Saving...' : 'Save Branding'}
+          {isSaving ? t('saving') : t('saveBranding')}
         </button>
       </div>
     </div>

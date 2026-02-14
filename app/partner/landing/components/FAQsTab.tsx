@@ -3,6 +3,7 @@
 
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { IoSaveOutline, IoAddCircleOutline, IoTrashOutline } from 'react-icons/io5'
 import { LandingPageData, FAQ } from './types'
 
@@ -14,6 +15,8 @@ interface FAQsTabProps {
 }
 
 export default function FAQsTab({ data, onChange, onSave, isSaving }: FAQsTabProps) {
+  const t = useTranslations('PartnerLanding')
+
   const addFAQ = () => {
     onChange({
       faqs: [
@@ -42,10 +45,10 @@ export default function FAQsTab({ data, onChange, onSave, isSaving }: FAQsTabPro
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-            Frequently Asked Questions
+            {t('frequentlyAskedQuestions')}
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Add common questions and answers for your renters
+            {t('faqDescription')}
           </p>
         </div>
         <button
@@ -53,21 +56,21 @@ export default function FAQsTab({ data, onChange, onSave, isSaving }: FAQsTabPro
           className="inline-flex items-center gap-2 px-3 py-1.5 text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors"
         >
           <IoAddCircleOutline className="w-5 h-5" />
-          Add FAQ
+          {t('addFaq')}
         </button>
       </div>
 
       {data.faqs.length === 0 ? (
         <div className="text-center py-12 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
           <p className="text-gray-500 dark:text-gray-400 mb-4">
-            No FAQs added yet
+            {t('noFaqsYet')}
           </p>
           <button
             onClick={addFAQ}
             className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors"
           >
             <IoAddCircleOutline className="w-5 h-5" />
-            Add Your First FAQ
+            {t('addYourFirstFaq')}
           </button>
         </div>
       ) : (
@@ -91,26 +94,26 @@ export default function FAQsTab({ data, onChange, onSave, isSaving }: FAQsTabPro
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Question
+                  {t('question')}
                 </label>
                 <input
                   type="text"
                   value={faq.question}
                   onChange={(e) => updateFAQ(faq.id, 'question', e.target.value)}
-                  placeholder="e.g., What documents do I need to rent?"
+                  placeholder={t('questionPlaceholder')}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Answer
+                  {t('answer')}
                 </label>
                 <textarea
                   value={faq.answer}
                   onChange={(e) => updateFAQ(faq.id, 'answer', e.target.value)}
                   rows={3}
-                  placeholder="Provide a helpful, detailed answer..."
+                  placeholder={t('answerPlaceholder')}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
                 />
               </div>
@@ -127,7 +130,7 @@ export default function FAQsTab({ data, onChange, onSave, isSaving }: FAQsTabPro
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white text-sm font-medium rounded-lg transition-colors"
         >
           <IoSaveOutline className="w-4 h-4" />
-          {isSaving ? 'Saving...' : 'Save FAQs'}
+          {isSaving ? t('saving') : t('saveFaqs')}
         </button>
       </div>
     </div>

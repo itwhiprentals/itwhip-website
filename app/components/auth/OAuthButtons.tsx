@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { signIn, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { IoPhonePortraitOutline } from 'react-icons/io5'
 import { FaApple } from 'react-icons/fa'
 
@@ -31,6 +32,7 @@ export default function OAuthButtons({
   roleHint,
   mode = 'signup'
 }: OAuthButtonsProps) {
+  const t = useTranslations('Auth')
   const [isLoading, setIsLoading] = useState<'google' | 'apple' | 'phone' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -146,12 +148,12 @@ export default function OAuthButtons({
 
       // Note: The page will redirect, so this code won't run on success
       if (result?.error) {
-        setError(`Failed to sign in with ${provider}. Please try again.`)
+        setError(t('oauthError', { provider }))
         setIsLoading(null)
       }
     } catch (err) {
       console.error(`OAuth ${provider} error:`, err)
-      setError(`Failed to sign in with ${provider}. Please try again.`)
+      setError(t('oauthError', { provider }))
       setIsLoading(null)
     }
   }
@@ -176,7 +178,7 @@ export default function OAuthButtons({
         ) : (
           <IoPhonePortraitOutline className="w-5 h-5" />
         )}
-        <span>Continue with Phone</span>
+        <span>{t('continueWithPhone')}</span>
       </button>
 
       {/* Google Sign In */}
@@ -208,7 +210,7 @@ export default function OAuthButtons({
             />
           </svg>
         )}
-        <span>Continue with Google</span>
+        <span>{t('continueWithGoogle')}</span>
       </button>
 
       {/* Apple Sign In */}
@@ -223,7 +225,7 @@ export default function OAuthButtons({
         ) : (
           <FaApple className="w-5 h-5" />
         )}
-        <span>Continue with Apple</span>
+        <span>{t('continueWithApple')}</span>
       </button>
 
       {/* Divider */}
@@ -234,7 +236,7 @@ export default function OAuthButtons({
           </div>
           <div className="relative flex justify-center text-sm">
             <span className={`px-4 ${currentTheme.dividerBg} ${currentTheme.dividerText}`}>
-              or continue with email
+              {t('orContinueWithEmail')}
             </span>
           </div>
         </div>
