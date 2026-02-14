@@ -6,29 +6,14 @@ import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import {
-  IoArrowBackOutline,
-  IoShieldCheckmarkOutline,
-  IoCheckmarkOutline,
   IoCheckmarkCircle,
-  IoCheckmarkCircleOutline,
-  IoDocumentTextOutline,
-  IoCameraOutline,
   IoCardOutline,
-  IoPersonOutline,
-  IoInformationCircleOutline,
   IoLockClosedOutline,
-  IoEyeOutline,
   IoWarningOutline,
   IoCloseCircle,
-  IoSparklesOutline,
-  IoBanOutline,
-  IoCloseCircleOutline,
-  IoHelpCircleOutline,
-  IoRibbonOutline
+  IoCloseCircleOutline
 } from 'react-icons/io5'
 import { format } from 'date-fns'
-import DatePicker from 'react-datepicker'
-import 'react-datepicker/dist/react-datepicker.css'
 
 // Import shared booking pricing utility (ensures consistent calculations)
 import {
@@ -49,7 +34,7 @@ import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatter
 // Modal components are now in BookingModals
 
 // Import Phase 14 booking UI components
-import { VisitorIdentityVerify, GuestIdentityVerify, InsurancePill, BookingSuccessModal, HeaderBar, CarInfoCard, BookingModals, AlertBanners, HostGuardModal, BookingDetailsCards, SecondDriverForm } from './components'
+import { VisitorIdentityVerify, GuestIdentityVerify, InsurancePill, BookingSuccessModal, HeaderBar, CarInfoCard, BookingModals, AlertBanners, HostGuardModal, BookingDetailsCards, SecondDriverForm, PrimaryDriverForm, PriceSummary, PricingFooter, IdentityVerificationSection } from './components'
 
 // Stripe Payment Element for Apple Pay, Google Pay, and Card payments
 import { loadStripe } from '@stripe/stripe-js'
@@ -2209,285 +2194,28 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         />
         
         {/* Primary Driver Information Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center flex-wrap gap-2">
-            <IoPersonOutline className="w-5 h-5" />
-            <span>{t('primaryDriverInformation')}</span>
-            <span className="text-xs font-normal text-gray-500 dark:text-gray-400">{t('accountHolder')}</span>
-            {userProfile?.documentsVerified && (
-              <span className="text-xs text-green-600 dark:text-green-400">
-                {t('autoFilled')}
-              </span>
-            )}
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('firstName')} <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={driverFirstName}
-                  onChange={(e) => handleFirstNameChange(e.target.value)}
-                  className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white ${
-                    driverFirstName && firstNameValidation.isValid
-                      ? 'border-green-500 dark:border-green-500'
-                      : driverFirstName && firstNameValidation.error
-                        ? 'border-red-500 dark:border-red-500'
-                        : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                  placeholder="John"
-                  required
-                />
-                {driverFirstName && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    {firstNameValidation.isValid ? (
-                      <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
-                    ) : firstNameValidation.error ? (
-                      <IoCloseCircle className="w-5 h-5 text-red-500" />
-                    ) : null}
-                  </div>
-                )}
-              </div>
-              {driverFirstName && firstNameValidation.error && (
-                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                  <IoCloseCircleOutline className="w-3.5 h-3.5" />
-                  {firstNameValidation.error}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('lastName')} <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={driverLastName}
-                  onChange={(e) => handleLastNameChange(e.target.value)}
-                  className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white ${
-                    driverLastName && lastNameValidation.isValid
-                      ? 'border-green-500 dark:border-green-500'
-                      : driverLastName && lastNameValidation.error
-                        ? 'border-red-500 dark:border-red-500'
-                        : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                  placeholder="Doe"
-                  required
-                />
-                {driverLastName && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    {lastNameValidation.isValid ? (
-                      <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
-                    ) : lastNameValidation.error ? (
-                      <IoCloseCircle className="w-5 h-5 text-red-500" />
-                    ) : null}
-                  </div>
-                )}
-              </div>
-              {driverLastName && lastNameValidation.error && (
-                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                  <IoCloseCircleOutline className="w-3.5 h-3.5" />
-                  {lastNameValidation.error}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('dateOfBirth')} <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <DatePicker
-                  selected={driverAge}
-                  onChange={(date) => handleDobChange(date)}
-                  showYearDropdown
-                  showMonthDropdown
-                  scrollableYearDropdown
-                  yearDropdownItemNumber={100}
-                  dateFormat="MM/dd/yyyy"
-                  placeholderText={t('selectDateOfBirth')}
-                  className={`w-full px-2 py-2 pr-10 bg-white dark:bg-gray-700 border rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer ${
-                    driverAge && ageValidation.isValid
-                      ? 'border-green-500 dark:border-green-500'
-                      : driverAge && ageValidation.error
-                        ? 'border-red-500 dark:border-red-500'
-                        : 'border-gray-200 dark:border-gray-600'
-                  }`}
-                  wrapperClassName="w-full"
-                  calendarClassName="!rounded-xl !border-0 !shadow-xl"
-                  popperClassName="!z-50"
-                  required
-                />
-                {/* Validation icon */}
-                {driverAge && ageValidation.isValid && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
-                  </div>
-                )}
-                {driverAge && ageValidation.error && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <IoCloseCircle className="w-5 h-5 text-red-500" />
-                  </div>
-                )}
-              </div>
-              {driverAge && ageValidation.error ? (
-                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                  <IoCloseCircleOutline className="w-3.5 h-3.5" />
-                  {ageValidation.error}
-                </p>
-              ) : driverAge && ageValidation.isValid && ageValidation.age ? (
-                <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
-                  <IoCheckmarkCircleOutline className="w-3.5 h-3.5" />
-                  {t('youAreYearsOld', { age: ageValidation.age })}
-                </p>
-              ) : (
-                <p className="text-xs text-gray-500 mt-1">{t('mustBePlusToRent', { age: getMinimumAgeForVehicle() })}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('driversLicenseNumber')} <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={driverLicense}
-                  onChange={(e) => setDriverLicense(e.target.value.toUpperCase())}
-                  className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white ${
-                    driverLicense && driverLicense.length >= 3
-                      ? 'border-green-500 dark:border-green-500'
-                      : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                  placeholder="D12345678"
-                  required
-                />
-                {/* Validation icon */}
-                {driverLicense && driverLicense.length >= 3 && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
-                  </div>
-                )}
-              </div>
-              {driverLicense && driverLicense.length >= 3 && (
-                <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
-                  <IoCheckmarkOutline className="w-3.5 h-3.5" />
-                  {t('validLicenseNumber')}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('phoneNumber')} <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="tel"
-                  value={driverPhone}
-                  onChange={(e) => handleDriverPhoneChange(e.target.value)}
-                  disabled={!!userProfile?.phone}
-                  className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-600 ${
-                    driverPhone && phoneValidation.isValid
-                      ? 'border-green-500 dark:border-green-500'
-                      : driverPhone && phoneValidation.error
-                        ? 'border-red-500 dark:border-red-500'
-                        : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                  placeholder="(602)-555-0100"
-                  required
-                />
-                {/* Validation icon */}
-                {driverPhone && !userProfile?.phone && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    {phoneValidation.isValid ? (
-                      <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
-                    ) : phoneValidation.error ? (
-                      <IoCloseCircle className="w-5 h-5 text-red-500" />
-                    ) : null}
-                  </div>
-                )}
-              </div>
-              {/* Phone validation feedback */}
-              {driverPhone && phoneValidation.error && (
-                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                  <IoCloseCircleOutline className="w-3.5 h-3.5" />
-                  {phoneValidation.error}
-                </p>
-              )}
-              {driverPhone && phoneValidation.isValid && (
-                <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
-                  <IoCheckmarkOutline className="w-3.5 h-3.5" />
-                  {t('validPhoneNumber')}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('emailAddress')} <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="email"
-                  value={driverEmail}
-                  onChange={(e) => handleDriverEmailChange(e.target.value)}
-                  disabled={!!userProfile?.email}
-                  className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-600 ${
-                    driverEmail && emailValidation.isValid
-                      ? 'border-green-500 dark:border-green-500'
-                      : driverEmail && (emailValidation.error || emailValidation.suggestion)
-                        ? 'border-orange-500 dark:border-orange-500'
-                        : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                  placeholder="john@example.com"
-                  required
-                />
-                {/* Validation icon */}
-                {driverEmail && !userProfile?.email && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    {emailValidation.isValid ? (
-                      <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
-                    ) : emailValidation.error || emailValidation.suggestion ? (
-                      <IoWarningOutline className="w-5 h-5 text-orange-500" />
-                    ) : null}
-                  </div>
-                )}
-              </div>
-              {/* Email validation feedback */}
-              {driverEmail && emailValidation.error && (
-                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                  <IoCloseCircleOutline className="w-3.5 h-3.5" />
-                  {emailValidation.error}
-                </p>
-              )}
-              {driverEmail && emailValidation.suggestion && (
-                <div className="flex items-center gap-2 mt-1">
-                  <p className="text-xs text-orange-600 dark:text-orange-400">
-                    {emailValidation.suggestion}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={acceptEmailSuggestion}
-                    className="text-xs text-amber-600 hover:text-amber-700 dark:text-amber-500 underline font-medium"
-                  >
-                    {t('yesFix')}
-                  </button>
-                </div>
-              )}
-              {driverEmail && emailValidation.isValid && (
-                <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
-                  <IoCheckmarkOutline className="w-3.5 h-3.5" />
-                  {t('validEmailAddress')}
-                </p>
-              )}
-            </div>
-          </div>
-
+        <PrimaryDriverForm
+          driverFirstName={driverFirstName}
+          driverLastName={driverLastName}
+          driverAge={driverAge}
+          driverLicense={driverLicense}
+          driverPhone={driverPhone}
+          driverEmail={driverEmail}
+          firstNameValidation={firstNameValidation}
+          lastNameValidation={lastNameValidation}
+          ageValidation={ageValidation}
+          phoneValidation={phoneValidation}
+          emailValidation={emailValidation}
+          onFirstNameChange={handleFirstNameChange}
+          onLastNameChange={handleLastNameChange}
+          onDobChange={handleDobChange}
+          onLicenseChange={setDriverLicense}
+          onPhoneChange={handleDriverPhoneChange}
+          onEmailChange={handleDriverEmailChange}
+          onAcceptEmailSuggestion={acceptEmailSuggestion}
+          minimumAge={getMinimumAgeForVehicle()}
+          userProfile={userProfile}
+        >
           <SecondDriverForm
             showSecondDriver={showSecondDriver}
             onToggle={setShowSecondDriver}
@@ -2507,410 +2235,42 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               setSecondDriverLicense('')
             }}
           />
-        </div>
+        </PrimaryDriverForm>
         
         {/* Identity Verification Section */}
-        <div ref={documentsRef} className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <IoShieldCheckmarkOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            {t('verifyYourIdentity')}
-            {(userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified' || aiVerificationResult?.passed) ? (
-              <span className="ml-2 text-sm text-green-600 dark:text-green-400 font-normal">
-                ✓ {t('verified')}
-              </span>
-            ) : aiVerificationResult?.manualPending ? (
-              <span className="ml-2 text-sm text-amber-600 dark:text-amber-400 font-normal">
-                {t('underReview')}
-              </span>
-            ) : null}
-          </h2>
-
-          {/* 🔐 NOT LOGGED IN - VERIFY FIRST, ACCOUNT LATER */}
-          {sessionStatus === 'unauthenticated' ? (
-            <div className="space-y-4">
-              {/* Email already exists notification */}
-              {existingAccountInfo?.exists && existingAccountInfo.verified && (
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                  <div className="flex items-start space-x-3">
-                    <IoCheckmarkCircle className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="font-medium text-green-900 dark:text-green-100 mb-1">
-                        {t('alreadyVerifiedExclaim')}
-                      </p>
-                      <p className="text-sm text-green-800 dark:text-green-200 mb-3">
-                        {t('emailAlreadyVerified')}
-                      </p>
-                      <button
-                        onClick={() => router.push(`/auth/login?email=${encodeURIComponent(existingAccountInfo.email)}&returnTo=${encodeURIComponent(window.location.pathname)}`)}
-                        className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        {t('signInToContinue')}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Host account exists notification */}
-              {existingAccountInfo?.exists && existingAccountInfo.type === 'host' && !existingAccountInfo.verified && (
-                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
-                  <div className="flex items-start space-x-3">
-                    <IoWarningOutline className="w-6 h-6 text-orange-600 dark:text-orange-400 flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="font-medium text-orange-900 dark:text-orange-100 mb-1">
-                        {t('hostAccountFound')}
-                      </p>
-                      <p className="text-sm text-orange-800 dark:text-orange-200 mb-3">
-                        {t('hostAccountExistsMsg')}
-                      </p>
-                      <button
-                        onClick={() => router.push(`/auth/login?email=${encodeURIComponent(existingAccountInfo.email)}&returnTo=${encodeURIComponent(window.location.pathname)}`)}
-                        className="px-4 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition-colors"
-                      >
-                        {t('signInAsHost')}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Main verification card - Phase 14: AI-powered DL verification */}
-              {!existingAccountInfo?.exists && (
-                <>
-                  {/* Show message if driver info not complete */}
-                  {!driverInfoComplete ? (
-                    <div className="flex items-center gap-3 p-4 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
-                      <IoInformationCircleOutline className="w-6 h-6 text-gray-500 dark:text-gray-400 flex-shrink-0" />
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {t('completeDriverInfoToVerify')}
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Using email from Primary Driver Info */}
-                      <div className={`mb-4 p-3 rounded-lg ${
-                        emailValidation.isValid
-                          ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
-                          : emailValidation.suggestion || emailValidation.error
-                            ? 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800'
-                            : 'bg-gray-50 dark:bg-gray-700/50'
-                      }`}>
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {t('verifyingAs')} <span className={`font-medium ${
-                              emailValidation.isValid
-                                ? 'text-green-700 dark:text-green-300'
-                                : 'text-gray-900 dark:text-white'
-                            }`}>{driverEmail}</span>
-                          </p>
-                          {emailValidation.isValid && (
-                            <IoCheckmarkCircle className="w-4 h-4 text-green-500" />
-                          )}
-                          {emailValidation.suggestion && (
-                            <IoWarningOutline className="w-4 h-4 text-orange-500" />
-                          )}
-                        </div>
-                        {emailValidation.suggestion && (
-                          <div className="mt-2 flex items-center gap-2">
-                            <p className="text-xs text-orange-600 dark:text-orange-400">
-                              {emailValidation.suggestion}
-                            </p>
-                            <button
-                              type="button"
-                              onClick={acceptEmailSuggestion}
-                              className="text-xs text-amber-600 hover:text-amber-700 dark:text-amber-500 underline font-medium"
-                            >
-                              {t('fixIt')}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Phase 14: AI-powered DL verification (~$0.02 instead of $1.50 Stripe) */}
-                      <VisitorIdentityVerify
-                        onVerificationComplete={(result) => {
-                          setAiVerificationResult(result)
-                          if (result.passed && result.data) {
-                            console.log('[Booking] AI DL verification passed:', result.data)
-                          }
-                        }}
-                        onPhotosUploaded={(frontUrl, backUrl) => {
-                          setLicensePhotoUrl(frontUrl)
-                          if (backUrl) setLicenseBackPhotoUrl(backUrl)
-                        }}
-                        driverName={`${driverFirstName} ${driverLastName}`.trim()}
-                        driverEmail={driverEmail}
-                        driverPhone={driverPhone}
-                        carId={carId}
-                        disabled={!emailValidation.isValid}
-                      />
-                    </>
-                  )}
-
-                  {/* Already have account link */}
-                  <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-3">
-                    {t('alreadyVerified')}{' '}
-                    <button
-                      onClick={() => router.push(`/auth/login?returnTo=${encodeURIComponent(window.location.pathname)}`)}
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                      {t('signIn')}
-                    </button>
-                  </p>
-                </>
-              )}
-            </div>
-          ) : /* ✅ VERIFIED USER - SKIP DOCUMENTS */
-          userProfile?.documentsVerified ? (
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-              <div className="flex items-start space-x-3">
-                <IoCheckmarkCircle className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0" />
-                <div>
-                  <p className="font-medium text-green-900 dark:text-green-100 mb-1">
-                    {t('identityVerified')}
-                  </p>
-                  <p className="text-sm text-green-800 dark:text-green-200 mb-2">
-                    {t('yourIdentityWasVerified', { date: new Date(userProfile.documentVerifiedAt || '').toLocaleDateString() })}
-                  </p>
-                  <ul className="text-xs text-green-700 dark:text-green-300 space-y-1">
-                    <li className="flex items-center gap-1">
-                      <IoCheckmarkOutline className="w-3.5 h-3.5" />
-                      {t('driversLicenseVerified')}
-                    </li>
-                    <li className="flex items-center gap-1">
-                      <IoCheckmarkOutline className="w-3.5 h-3.5" />
-                      {t('identityPhotoVerified')}
-                    </li>
-                    {userProfile.insuranceVerified && (
-                      <li className="flex items-center gap-1">
-                        <IoCheckmarkOutline className="w-3.5 h-3.5" />
-                        {t('insuranceCardVerified')}
-                      </li>
-                    )}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* NON-VERIFIED USER - SHOW STRIPE IDENTITY + INSURANCE UPLOAD */
-            <>
-              {/* ========== STRIPE IDENTITY VERIFICATION ========== */}
-              {(() => {
-                const stripeStatus = userProfile?.stripeIdentityStatus
-                const isStripeVerified = stripeStatus === 'verified'
-                const isStripePending = stripeStatus === 'pending' || stripeStatus === 'requires_input'
-
-                // Handle Stripe Identity verification
-                const handleVerifyWithStripe = async () => {
-                  setIsVerifyingIdentity(true)
-                  setIdentityError(null)
-
-                  try {
-                    const response = await fetch('/api/identity/verify', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      credentials: 'include',
-                      body: JSON.stringify({
-                        returnUrl: `${window.location.origin}/rentals/${carId}/book?verified=true`
-                      })
-                    })
-
-                    const data = await response.json()
-
-                    if (!response.ok) {
-                      throw new Error(data.error || 'Failed to start verification')
-                    }
-
-                    // Redirect to Stripe Identity verification
-                    if (data.url) {
-                      window.location.href = data.url
-                    }
-                  } catch (err) {
-                    setIdentityError(err instanceof Error ? err.message : 'Failed to start verification')
-                    setIsVerifyingIdentity(false)
-                  }
-                }
-
-                return (
-                  <div className={`p-4 mb-4 border-2 rounded-lg transition-all ${
-                    isStripeVerified
-                      ? 'border-green-500 bg-green-50 dark:bg-green-900/10'
-                      : isStripePending
-                        ? 'border-orange-300 bg-orange-50 dark:bg-orange-900/10'
-                        : 'border-gray-200 dark:border-gray-600'
-                  }`}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start space-x-3 flex-1">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          isStripeVerified
-                            ? 'bg-green-500'
-                            : isStripePending
-                              ? 'bg-orange-500'
-                              : 'bg-gray-100 dark:bg-gray-700'
-                        }`}>
-                          {isStripeVerified ? (
-                            <IoCheckmarkOutline className="w-5 h-5 text-white" />
-                          ) : isStripePending ? (
-                            <IoWarningOutline className="w-5 h-5 text-white" />
-                          ) : (
-                            <IoShieldCheckmarkOutline className="w-5 h-5 text-gray-400" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {t('identityVerification')}
-                          </p>
-                          {isStripeVerified ? (
-                            <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
-                              {t('verifiedViaStripeIdentity')}
-                            </p>
-                          ) : isStripePending ? (
-                            <>
-                              <p className="text-xs text-orange-600 dark:text-orange-400 mt-0.5">
-                                {t('verificationIncompletePrompt')}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                {t('verificationIncompleteMessage')}
-                              </p>
-                            </>
-                          ) : (
-                            <>
-                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                                {t('requiredVerifyLicenseAndIdentity')}
-                              </p>
-                              <ul className="text-xs text-gray-500 dark:text-gray-400 mt-2 space-y-1">
-                                <li className="flex items-center gap-1.5">
-                                  <span className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-500 flex items-center justify-center text-[8px]">1</span>
-                                  {t('photoOfDriversLicense')}
-                                </li>
-                                <li className="flex items-center gap-1.5">
-                                  <span className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-500 flex items-center justify-center text-[8px]">2</span>
-                                  {t('selfieToMatch')}
-                                </li>
-                                <li className="flex items-center gap-1.5">
-                                  <span className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-500 flex items-center justify-center text-[8px]">3</span>
-                                  {t('instantVerificationViaStripe')}
-                                </li>
-                              </ul>
-                            </>
-                          )}
-
-                          {identityError && (
-                            <p className="text-xs text-red-600 dark:text-red-400 mt-2">
-                              {identityError}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {!isStripeVerified && (
-                        <button
-                          onClick={handleVerifyWithStripe}
-                          disabled={isVerifyingIdentity}
-                          className={`px-4 py-2 text-white text-sm rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 flex-shrink-0 ${
-                            isStripePending
-                              ? 'bg-orange-600 hover:bg-orange-700'
-                              : 'bg-black hover:bg-gray-800'
-                          }`}
-                        >
-                          {isVerifyingIdentity ? (
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <>
-                              <IoShieldCheckmarkOutline className="w-4 h-4" />
-                              <span>{isStripePending ? t('continue') : t('verifyNow')}</span>
-                            </>
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )
-              })()}
-
-              {/* ========== INSURANCE CARD (OPTIONAL) ========== */}
-              <div className={`p-4 border-2 rounded-lg transition-all ${
-                insuranceUploaded ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-              }`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      insuranceUploaded ? 'bg-green-500' : 'bg-gray-100 dark:bg-gray-700'
-                    }`}>
-                      {insuranceUploaded ? (
-                        <IoCheckmarkOutline className="w-5 h-5 text-white" />
-                      ) : (
-                        <IoDocumentTextOutline className="w-5 h-5 text-gray-400" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {t('insuranceCard')}
-                        <span className="text-xs font-normal text-gray-500 dark:text-gray-400 ml-1">{t('optional')}</span>
-                      </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        {insurancePhotoUrl ? t('uploadedSuccessfully') : t('uploadFor50PercentDiscount')}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {insurancePhotoUrl && (
-                      <a
-                        href={insurancePhotoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                      >
-                        <IoEyeOutline className="w-4 h-4" />
-                        {t('view')}
-                      </a>
-                    )}
-
-                    <input
-                      ref={insuranceInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (file) handleFileUpload(file, 'insurance')
-                      }}
-                      className="hidden"
-                    />
-
-                    <button
-                      onClick={() => insuranceInputRef.current?.click()}
-                      disabled={isUploading}
-                      className="px-4 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
-                    >
-                      {insuranceUploaded ? t('replace') : t('upload')}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Deposit discount callout */}
-                {!insuranceUploaded && (
-                  <div className="mt-3 flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded text-xs">
-                    <IoSparklesOutline className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                    <span className="text-blue-700 dark:text-blue-300">
-                      {t('uploadYourInsuranceCard')}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Success message when identity verified */}
-              {userProfile?.stripeIdentityStatus === 'verified' && (
-                <div className="mt-4 p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                  <p className="text-xs font-medium text-green-700 dark:text-green-300 text-center flex items-center justify-center gap-1">
-                    <IoCheckmarkCircle className="w-4 h-4" />
-                    {t('identityVerifiedProceedToPayment')}
-                  </p>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+        <IdentityVerificationSection
+          sessionStatus={sessionStatus}
+          userProfile={userProfile}
+          existingAccountInfo={existingAccountInfo}
+          aiVerificationResult={aiVerificationResult}
+          driverInfoComplete={driverInfoComplete}
+          emailValidation={emailValidation}
+          driverEmail={driverEmail}
+          driverFirstName={driverFirstName}
+          driverLastName={driverLastName}
+          driverPhone={driverPhone}
+          identityError={identityError}
+          isVerifyingIdentity={isVerifyingIdentity}
+          insuranceUploaded={insuranceUploaded}
+          insurancePhotoUrl={insurancePhotoUrl}
+          isUploading={isUploading}
+          carId={carId}
+          documentsRef={documentsRef}
+          onAcceptEmailSuggestion={acceptEmailSuggestion}
+          onAiVerificationComplete={(result) => {
+            setAiVerificationResult(result)
+            if (result.passed && result.data) {
+              console.log('[Booking] AI DL verification passed:', result.data)
+            }
+          }}
+          onPhotosUploaded={(frontUrl, backUrl) => {
+            setLicensePhotoUrl(frontUrl)
+            if (backUrl) setLicenseBackPhotoUrl(backUrl)
+          }}
+          onSetIsVerifyingIdentity={setIsVerifyingIdentity}
+          onSetIdentityError={setIdentityError}
+          onFileUpload={handleFileUpload}
+        />
 
         {/* Phase 14: Insurance Pill - Prompts users to upload insurance for deposit discount */}
         <InsurancePill
@@ -3112,255 +2472,22 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           </div>
           )}
 
-          {/* Price Summary - Credits/Bonus/Deposit Wallet applied inline below */}
-          <div className="border-t dark:border-gray-700 pt-6">
-            {(() => {
-              // Use shared pricing utility for consistent calculations with BookingWidget
-              const carCity = (car as any)?.city || getCityFromAddress(car?.address || 'Phoenix, AZ')
-              const pricing = calculateBookingPricing({
-                dailyRate: savedBookingDetails.pricing.dailyRate,
-                days: savedBookingDetails.pricing.days,
-                insurancePrice: savedBookingDetails.pricing.insurancePrice,
-                deliveryFee: savedBookingDetails.pricing.deliveryFee,
-                enhancements: {
-                  refuelService: savedBookingDetails.pricing.breakdown.refuelService,
-                  additionalDriver: savedBookingDetails.pricing.breakdown.additionalDriver,
-                  extraMiles: savedBookingDetails.pricing.breakdown.extraMiles,
-                  vipConcierge: savedBookingDetails.pricing.breakdown.vipConcierge
-                },
-                city: carCity
-              })
-
-              // Calculate applied balances (credits, bonus, deposit wallet)
-              const appliedBalances = calculateAppliedBalances(
-                pricing,
-                adjustedDeposit,
-                guestBalances,
-                0.25 // 25% max bonus
-              )
-
-              return (
-                <div className="space-y-2 text-sm">
-                  {/* Rental */}
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-gray-900 dark:text-white">{t('rentalDays', { days: numberOfDays })}</span>
-                    <span className="font-medium text-gray-900 dark:text-white">${formatPrice(pricing.basePrice)}</span>
-                  </div>
-
-                  {/* Insurance */}
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-gray-900 dark:text-white">{t('insurance')}</span>
-                    <span className="font-medium text-gray-900 dark:text-white">${formatPrice(pricing.insurancePrice)}</span>
-                  </div>
-
-                  {/* Delivery (conditional) */}
-                  {pricing.deliveryFee > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">{t('delivery')}</span>
-                      <span className="font-medium text-gray-900 dark:text-white">${formatPrice(pricing.deliveryFee)}</span>
-                    </div>
-                  )}
-
-                  {/* Enhancements (conditional) */}
-                  {pricing.enhancementsTotal > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">{t('enhancements')}</span>
-                      <span className="font-medium text-gray-900 dark:text-white">${formatPrice(pricing.enhancementsTotal)}</span>
-                    </div>
-                  )}
-
-                  {/* Service fee */}
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-gray-900 dark:text-white">{t('serviceFee')}</span>
-                    <span className="font-medium text-gray-900 dark:text-white">${formatPrice(pricing.serviceFee)}</span>
-                  </div>
-
-                  {/* Taxes with dynamic percentage */}
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-gray-900 dark:text-white">{t('taxes', { rate: pricing.taxRateDisplay })}</span>
-                    <span className="font-medium text-gray-900 dark:text-white">${formatPrice(pricing.taxes)}</span>
-                  </div>
-
-                  {/* ✅ Applied Credits (if any) */}
-                  {appliedBalances.creditsApplied > 0 && (
-                    <div className="flex justify-between text-purple-600 dark:text-purple-400">
-                      <span className="font-medium">{t('creditsApplied')}</span>
-                      <span className="font-medium">-${formatPrice(appliedBalances.creditsApplied)}</span>
-                    </div>
-                  )}
-
-                  {/* ✅ Applied Bonus (if any) */}
-                  {appliedBalances.bonusApplied > 0 && (
-                    <div className="flex justify-between text-amber-600 dark:text-amber-400">
-                      <span className="font-medium">{t('bonusAppliedMax25')}</span>
-                      <span className="font-medium">-${formatPrice(appliedBalances.bonusApplied)}</span>
-                    </div>
-                  )}
-
-                  {/* ✅ Deposit from wallet (if any) */}
-                  {appliedBalances.depositFromWallet > 0 && (
-                    <div className="flex justify-between text-blue-600 dark:text-blue-400">
-                      <span className="font-medium">{t('depositFromWallet')}</span>
-                      <span className="font-medium">-${formatPrice(appliedBalances.depositFromWallet)}</span>
-                    </div>
-                  )}
-
-                  {/* Totals Section */}
-                  <div className="pt-4 mt-4 border-t dark:border-gray-700">
-                    {/* Trip Total - strikethrough if savings applied */}
-                    {appliedBalances.totalSavings > 0 ? (
-                      <>
-                        <div className="flex justify-between items-baseline">
-                          <span className="text-gray-500 dark:text-gray-400">{t('originalTotal')}</span>
-                          <span className="text-gray-500 dark:text-gray-400 line-through">${formatPrice(pricing.total)}</span>
-                        </div>
-                        <div className="flex justify-between items-baseline mt-1">
-                          <span className="font-bold text-gray-900 dark:text-white">{t('amountToPay')}</span>
-                          <span className="text-lg font-bold text-green-600 dark:text-green-400">${formatPrice(appliedBalances.amountToPay)}</span>
-                        </div>
-                        <div className="flex justify-end mt-1">
-                          <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
-                            {t('youSave', { amount: formatPrice(appliedBalances.totalSavings) })}
-                          </span>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="flex justify-between items-baseline">
-                        <span className="font-bold text-gray-900 dark:text-white">{t('tripTotal')}</span>
-                        <span className="text-lg font-bold text-gray-900 dark:text-white">${formatPrice(pricing.total)}</span>
-                      </div>
-                    )}
-
-                {/* Security Deposit - Show wallet coverage, card hold, or waived */}
-                <div className="flex justify-end mt-2 mb-3">
-                  {adjustedDeposit > 0 ? (
-                    appliedBalances.depositFromCard > 0 ? (
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-500 rounded-lg">
-                        <span className="text-sm font-medium text-white">
-                          {t('depositFromCard', { amount: formatPrice(appliedBalances.depositFromCard) })}
-                        </span>
-                        {userProfile?.insuranceVerified && (
-                          <span className="text-xs text-green-200 font-medium">
-                            {t('fiftyPercentOff')}
-                          </span>
-                        )}
-                        {appliedBalances.depositFromWallet > 0 && (
-                          <span className="text-xs text-green-200 font-medium">
-                            {t('walletCoverage', { amount: formatPrice(appliedBalances.depositFromWallet) })}
-                          </span>
-                        )}
-                        {/* (Hold) with tooltip inline */}
-                        <div className="relative inline-flex items-center gap-0.5">
-                          <span className="text-xs text-white/80 font-medium">{t('hold')}</span>
-                          <button
-                            type="button"
-                            onMouseEnter={() => setShowDepositTooltip(true)}
-                            onMouseLeave={() => setShowDepositTooltip(false)}
-                            onClick={() => setShowDepositTooltip(!showDepositTooltip)}
-                            className="text-white/70 hover:text-white -mt-0.5"
-                            aria-label="Learn about security deposit"
-                          >
-                            <IoHelpCircleOutline className="w-3.5 h-3.5" />
-                          </button>
-
-                          {showDepositTooltip && (
-                            <div className="absolute z-50 right-0 bottom-full mb-1 whitespace-nowrap px-2 py-1 bg-white dark:bg-gray-800 rounded shadow-lg border border-gray-200 dark:border-gray-600">
-                              <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-line">{t('temporaryHoldNotACharge')}</p>
-                              <div className="absolute right-2 top-full w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-gray-200 dark:border-t-gray-600"></div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      /* Deposit fully covered by wallet */
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-lg">
-                        {userProfile?.insuranceVerified && (
-                          <span className="text-sm font-medium line-through text-gray-400 dark:text-gray-500">
-                            ${formatPrice(adjustedDeposit * 2)}
-                          </span>
-                        )}
-                        <span className="text-sm font-medium line-through text-gray-400 dark:text-gray-500">
-                          ${formatPrice(adjustedDeposit)}
-                        </span>
-                        <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                          {t('depositCoveredByWallet')}
-                        </span>
-                      </div>
-                    )
-                  ) : rateBasedDeposit > 0 ? (
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-lg">
-                      <span className="text-sm font-medium line-through text-gray-400 dark:text-gray-500">
-                        ${rateBasedDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                      <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                        {t('depositWaived')}
-                      </span>
-                    </div>
-                  ) : null}
-                </div>
-
-                    {/* Grand Total (Trip + Deposit from card only) */}
-                    <div className="flex justify-between items-baseline pt-3 border-t dark:border-gray-700">
-                      <span className="text-base font-semibold text-gray-900 dark:text-white">{t('totalDueToday')}</span>
-                      <div className="text-right">
-                        <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                          ${formatPrice(appliedBalances.amountToPay + appliedBalances.depositFromCard)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })()}
-          </div>
-
-          {/* Terms and Conditions Agreement */}
-          <div className="mt-6 p-3 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
-            <label className="flex items-start space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={agreedToTerms}
-                onChange={(e) => setAgreedToTerms(e.target.checked)}
-                className="mt-0.5 w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
-              />
-              <div className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                {t('iAgreePrefix')}{' '}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    setShowRentalAgreement(true)
-                  }}
-                  className="text-amber-600 hover:text-amber-700 underline font-medium text-xs"
-                >
-                  {t('rentalAgreement')}
-                </button>
-                ,{' '}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    setShowInsuranceModal(true)
-                  }}
-                  className="text-amber-600 hover:text-amber-700 underline font-medium text-xs"
-                >
-                  {t('insuranceRequirements')}
-                </button>
-                {t('andSeparator')}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    setShowTrustSafetyModal(true)
-                  }}
-                  className="text-amber-600 hover:text-amber-700 underline font-medium text-xs"
-                >
-                  {t('trustSafety')}
-                </button>
-                {' '}{t('policies')}.
-              </div>
-            </label>
-          </div>
+          <PriceSummary
+            savedBookingDetails={savedBookingDetails}
+            car={car}
+            adjustedDeposit={adjustedDeposit}
+            rateBasedDeposit={rateBasedDeposit}
+            guestBalances={guestBalances}
+            userProfile={userProfile}
+            numberOfDays={numberOfDays}
+            agreedToTerms={agreedToTerms}
+            onAgreedToTermsChange={setAgreedToTerms}
+            showDepositTooltip={showDepositTooltip}
+            onShowDepositTooltipChange={setShowDepositTooltip}
+            onShowRentalAgreement={() => setShowRentalAgreement(true)}
+            onShowInsuranceModal={() => setShowInsuranceModal(true)}
+            onShowTrustSafetyModal={() => setShowTrustSafetyModal(true)}
+          />
 
         </div>
       </div>
@@ -3381,97 +2508,19 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-2xl z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3">
-          <div className="flex items-center justify-between gap-3">
-            {/* Pricing Info - Compact on mobile */}
-            {(() => {
-              // Use shared pricing utility for consistent calculations with BookingWidget
-              const carCity = (car as any)?.city || getCityFromAddress(car?.address || 'Phoenix, AZ')
-              const pricing = calculateBookingPricing({
-                dailyRate: savedBookingDetails.pricing.dailyRate,
-                days: savedBookingDetails.pricing.days,
-                insurancePrice: savedBookingDetails.pricing.insurancePrice,
-                deliveryFee: savedBookingDetails.pricing.deliveryFee,
-                enhancements: {
-                  refuelService: savedBookingDetails.pricing.breakdown.refuelService,
-                  additionalDriver: savedBookingDetails.pricing.breakdown.additionalDriver,
-                  extraMiles: savedBookingDetails.pricing.breakdown.extraMiles,
-                  vipConcierge: savedBookingDetails.pricing.breakdown.vipConcierge
-                },
-                city: carCity
-              })
-              // Calculate applied balances to account for credits/bonus
-              const stickyAppliedBalances = calculateAppliedBalances(
-                pricing,
-                adjustedDeposit,
-                guestBalances,
-                0.25 // 25% max bonus
-              )
-              // Use amountToPay (after credits) + deposit FROM CARD for the actual total
-              const grandTotal = stickyAppliedBalances.amountToPay + stickyAppliedBalances.depositFromCard
-
-              return (
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-1.5 sm:gap-2">
-                    <span className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                      ${formatPrice(grandTotal)}
-                    </span>
-                    <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{t('total')}</span>
-                  </div>
-                  {/* Show deposit info based on wallet coverage */}
-                  {adjustedDeposit > 0 && stickyAppliedBalances.depositFromCard > 0 ? (
-                    <>
-                      <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
-                        <span className="hidden sm:inline">${formatPrice(stickyAppliedBalances.amountToPay)} + </span>
-                        <span className="text-red-600 dark:text-red-400">${formatPrice(stickyAppliedBalances.depositFromCard)} {t('depositLabel')}</span>
-                        <span className="text-gray-400 dark:text-gray-500 ml-1">{t('depositRefundable')}</span>
-                      </p>
-                      {userProfile?.insuranceVerified && (
-                        <p className="text-[10px] sm:text-xs text-green-600 dark:text-green-400 font-medium">
-                          {t('fiftyPercentDepositDiscountApplied')}
-                        </p>
-                      )}
-                    </>
-                  ) : adjustedDeposit > 0 && stickyAppliedBalances.depositFromCard === 0 ? (
-                    <p className="text-[10px] sm:text-xs text-green-600 dark:text-green-400 font-medium">
-                      {t('depositCoveredByWallet')}
-                    </p>
-                  ) : rateBasedDeposit > 0 ? (
-                    <p className="text-[10px] sm:text-xs flex items-center gap-1">
-                      <span className="hidden sm:inline text-gray-500 dark:text-gray-400">${formatPrice(stickyAppliedBalances.amountToPay)} + </span>
-                      <span className="line-through text-gray-400 dark:text-gray-500">${formatPrice(rateBasedDeposit)}</span>
-                      <span className="text-green-600 dark:text-green-400 font-medium">{t('depositWaivedStatus')}</span>
-                    </p>
-                  ) : null}
-                </div>
-              )
-            })()}
-
-            {/* Book Button */}
-            <button
-              onClick={handleCheckoutClick}
-              disabled={isProcessing || isUploading || !eligibility.allowed || !isIdentityVerified}
-              className={`flex-shrink-0 px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-semibold shadow-lg rounded-lg transition-all ${
-                !isProcessing && !isUploading && eligibility.allowed && isIdentityVerified
-                  ? 'bg-black text-white hover:bg-gray-800 active:scale-[0.98]'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              {isProcessing ? (
-                <span className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span className="hidden sm:inline">{t('processing')}</span>
-                </span>
-              ) : !isIdentityVerified ? (
-                t('verifyIdentityToBook')
-              ) : (
-                t('completeBooking')
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
+      <PricingFooter
+        savedBookingDetails={savedBookingDetails}
+        car={car}
+        adjustedDeposit={adjustedDeposit}
+        rateBasedDeposit={rateBasedDeposit}
+        guestBalances={guestBalances}
+        userProfile={userProfile}
+        isProcessing={isProcessing}
+        isUploading={isUploading}
+        eligibility={eligibility}
+        isIdentityVerified={isIdentityVerified}
+        onCheckout={handleCheckoutClick}
+      />
       
       <BookingModals
         showRentalAgreement={showRentalAgreement}

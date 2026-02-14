@@ -108,9 +108,7 @@ export default function TrustSafetyModal({
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                 <h3 className="text-base font-semibold text-purple-900 mb-2">{t('platformOverview')}</h3>
                 <p className="text-xs text-purple-800 mb-3">
-                  ItWhip operates a professional car sharing marketplace with comprehensive protection, 
-                  verified hosts, and 24/7 human support. Unlike other platforms, we handle all guest 
-                  communication and provide complete insurance coverage during rentals.
+                  {t('platformOverviewDesc')}
                 </p>
                 
                 {/* Platform Statistics */}
@@ -239,19 +237,18 @@ export default function TrustSafetyModal({
                   <div>
                     <h4 className="text-sm font-medium text-gray-900 mb-2">{t('whatsIncluded')}</h4>
                     <ul className="text-xs space-y-1">
-                      <li>• Physical damage protection</li>
-                      <li>• Third-party liability</li>
-                      <li>• Medical payments coverage</li>
-                      <li>• 48-72 hour claims resolution</li>
-                      <li>• $0 monthly insurance cost</li>
+                      <li>• {t('whatsIncludedItem1')}</li>
+                      <li>• {t('whatsIncludedItem2')}</li>
+                      <li>• {t('whatsIncludedItem3')}</li>
+                      <li>• {t('whatsIncludedItem4')}</li>
+                      <li>• {t('whatsIncludedItem5')}</li>
                     </ul>
                   </div>
                 </div>
                 
                 <div className="mt-3 p-3 bg-purple-50 rounded">
                   <p className="text-xs text-purple-800">
-                    <strong>Important:</strong> Protection is active only during verified rental periods. 
-                    Deductibles range from $500-2,500 based on vehicle tier.
+                    <strong>{t('importantLabel')}</strong> {t('protectionImportant')}
                   </p>
                 </div>
               </div>
@@ -268,30 +265,30 @@ export default function TrustSafetyModal({
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <h4 className="text-xs font-semibold text-blue-900 mb-2">{t('gpsTracking')}</h4>
                   <ul className="text-xs text-blue-700 space-y-1">
-                    <li>• Real-time location</li>
-                    <li>• Speed monitoring</li>
-                    <li>• Geofence alerts</li>
-                    <li>• Route history</li>
+                    <li>• {t('gpsItem1')}</li>
+                    <li>• {t('gpsItem2')}</li>
+                    <li>• {t('gpsItem3')}</li>
+                    <li>• {t('gpsItem4')}</li>
                   </ul>
                 </div>
-                
+
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <h4 className="text-xs font-semibold text-blue-900 mb-2">{t('documentation')}</h4>
                   <ul className="text-xs text-blue-700 space-y-1">
-                    <li>• Pre-trip photos</li>
-                    <li>• Condition reports</li>
-                    <li>• Mileage tracking</li>
-                    <li>• Post-trip inspection</li>
+                    <li>• {t('docItem1')}</li>
+                    <li>• {t('docItem2')}</li>
+                    <li>• {t('docItem3')}</li>
+                    <li>• {t('docItem4')}</li>
                   </ul>
                 </div>
-                
+
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <h4 className="text-xs font-semibold text-blue-900 mb-2">{t('standards')}</h4>
                   <ul className="text-xs text-blue-700 space-y-1">
-                    <li>• 2015+ vehicles only</li>
-                    <li>• Safety inspections</li>
-                    <li>• Maintenance records</li>
-                    <li>• Clean title required</li>
+                    <li>• {t('standardsItem1')}</li>
+                    <li>• {t('standardsItem2')}</li>
+                    <li>• {t('standardsItem3')}</li>
+                    <li>• {t('standardsItem4')}</li>
                   </ul>
                 </div>
               </div>
@@ -306,35 +303,34 @@ export default function TrustSafetyModal({
               
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <p className="text-xs text-green-800 mb-3">
-                  Unlike other platforms that rely on automated systems, ItWhip provides real human support 
-                  available 24/7. We handle all guest communication so hosts can focus on their lives.
+                  {t('supportDescription')}
                 </p>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="bg-white rounded p-3">
                     <h4 className="text-xs font-semibold text-green-900 mb-2">{t('standardSupport')}</h4>
                     <ul className="text-xs text-green-700 space-y-1">
-                      <li>• Response: &lt;1 hour</li>
-                      <li>• Chat & email</li>
-                      <li>• All hosts</li>
+                      <li>• {t('standardItem1')}</li>
+                      <li>• {t('standardItem2')}</li>
+                      <li>• {t('standardItem3')}</li>
                     </ul>
                   </div>
-                  
+
                   <div className="bg-white rounded p-3">
                     <h4 className="text-xs font-semibold text-green-900 mb-2">{t('prioritySupport')}</h4>
                     <ul className="text-xs text-green-700 space-y-1">
-                      <li>• Response: &lt;15 min</li>
-                      <li>• Phone available</li>
-                      <li>• 10+ trips</li>
+                      <li>• {t('priorityItem1')}</li>
+                      <li>• {t('priorityItem2')}</li>
+                      <li>• {t('priorityItem3')}</li>
                     </ul>
                   </div>
-                  
+
                   <div className="bg-white rounded p-3">
-                    <h4 className="text-xs font-semibold text-green-900 mb-2">Concierge</h4>
+                    <h4 className="text-xs font-semibold text-green-900 mb-2">{t('concierge')}</h4>
                     <ul className="text-xs text-green-700 space-y-1">
-                      <li>• Immediate response</li>
-                      <li>• Dedicated manager</li>
-                      <li>• Exotic/Fleet</li>
+                      <li>• {t('conciergeItem1')}</li>
+                      <li>• {t('conciergeItem2')}</li>
+                      <li>• {t('conciergeItem3')}</li>
                     </ul>
                   </div>
                 </div>
@@ -345,31 +341,30 @@ export default function TrustSafetyModal({
             <section className="mb-6">
               <h3 className="text-base font-semibold mb-3 flex items-center">
                 <Clock className="w-5 h-5 text-orange-600 mr-2" />
-                48-72 Hour Claims Resolution
+                {t('claimsResolutionTitle')}
               </h3>
-              
+
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                 <p className="text-xs text-orange-800 mb-3">
-                  We learned from others' mistakes. While competitors leave hosts waiting weeks or months, 
-                  ItWhip resolves claims in 48-72 hours with transparent communication throughout.
+                  {t('claimsResolutionDesc')}
                 </p>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
                   <div className="text-center bg-white rounded p-2">
                     <div className="text-sm font-bold text-orange-600">0-2hr</div>
-                    <p className="text-xs text-gray-600">Report filed</p>
+                    <p className="text-xs text-gray-600">{t('reportFiled')}</p>
                   </div>
                   <div className="text-center bg-white rounded p-2">
                     <div className="text-sm font-bold text-orange-600">2-24hr</div>
-                    <p className="text-xs text-gray-600">Review & approval</p>
+                    <p className="text-xs text-gray-600">{t('reviewApproval')}</p>
                   </div>
                   <div className="text-center bg-white rounded p-2">
                     <div className="text-sm font-bold text-orange-600">24-48hr</div>
-                    <p className="text-xs text-gray-600">Repair authorized</p>
+                    <p className="text-xs text-gray-600">{t('repairAuthorized')}</p>
                   </div>
                   <div className="text-center bg-white rounded p-2">
                     <div className="text-sm font-bold text-orange-600">48-72hr</div>
-                    <p className="text-xs text-gray-600">Payment issued</p>
+                    <p className="text-xs text-gray-600">{t('paymentIssued')}</p>
                   </div>
                 </div>
               </div>
@@ -379,42 +374,41 @@ export default function TrustSafetyModal({
             <section className="mb-6">
               <h3 className="text-base font-semibold mb-3 flex items-center">
                 <AlertTriangle className="w-5 h-5 text-red-600 mr-2" />
-                Emergency Response Protocol
+                {t('emergencyResponse')}
               </h3>
-              
+
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="text-sm font-medium text-red-900 mb-2">Emergency Contacts</h4>
+                    <h4 className="text-sm font-medium text-red-900 mb-2">{t('emergencyContacts')}</h4>
                     <div className="space-y-2">
                       <p className="text-xs text-red-800">
-                        <strong>911:</strong> Life-threatening emergencies
+                        <strong>911:</strong> {t('emergency911Desc')}
                       </p>
                       <p className="text-xs text-red-800">
-                        <strong>1-800-ITWHIP-1:</strong> Urgent support (24/7)
+                        <strong>1-800-ITWHIP-1:</strong> {t('urgentSupportDesc')}
                       </p>
                       <p className="text-xs text-red-800">
-                        <strong>1-800-ITWHIP-2:</strong> Roadside assistance
+                        <strong>1-800-ITWHIP-2:</strong> {t('roadsideAssistanceDesc')}
                       </p>
                     </div>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-red-900 mb-2">Immediate Action Items</h4>
+                    <h4 className="text-sm font-medium text-red-900 mb-2">{t('immediateActions')}</h4>
                     <ol className="text-xs text-red-700 space-y-1">
-                      <li>1. Ensure safety of all parties</li>
-                      <li>2. Contact emergency services if needed</li>
-                      <li>3. Document with photos/video</li>
-                      <li>4. Call ItWhip support immediately</li>
-                      <li>5. File police report if required</li>
+                      <li>1. {t('actionItem1')}</li>
+                      <li>2. {t('actionItem2')}</li>
+                      <li>3. {t('actionItem3')}</li>
+                      <li>4. {t('actionItem4')}</li>
+                      <li>5. {t('actionItem5')}</li>
                     </ol>
                   </div>
                 </div>
-                
+
                 <div className="mt-3 p-3 bg-white rounded">
                   <p className="text-xs text-red-800">
-                    <strong>Our Promise:</strong> In any emergency, a real person will answer your call 
-                    and stay with you until the situation is resolved. No automated systems, no transfers.
+                    <strong>{t('ourPromise')}</strong> {t('ourPromiseDesc')}
                   </p>
                 </div>
               </div>
@@ -424,32 +418,31 @@ export default function TrustSafetyModal({
             <section className="mb-6">
               <h3 className="text-base font-semibold mb-3 flex items-center">
                 <Users className="w-5 h-5 text-purple-600 mr-2" />
-                Platform Stability & Reliability
+                {t('platformStability')}
               </h3>
-              
+
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                 <p className="text-xs text-purple-800 mb-3">
-                  ItWhip is built for long-term success with sustainable economics, proper funding, 
-                  and a commitment to our community. We won't suddenly shut down or change terms.
+                  {t('platformStabilityDesc')}
                 </p>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="text-center bg-white rounded p-3">
-                    <h4 className="text-xs font-semibold text-purple-900 mb-1">No Surprises</h4>
+                    <h4 className="text-xs font-semibold text-purple-900 mb-1">{t('noSurprises')}</h4>
                     <p className="text-xs text-purple-700">
-                      Locked commission rates, stable insurance, no sudden changes
+                      {t('noSurprisesDesc')}
                     </p>
                   </div>
                   <div className="text-center bg-white rounded p-3">
-                    <h4 className="text-xs font-semibold text-purple-900 mb-1">Guaranteed Bookings</h4>
+                    <h4 className="text-xs font-semibold text-purple-900 mb-1">{t('guaranteedBookings')}</h4>
                     <p className="text-xs text-purple-700">
-                      Hosts can't cancel without penalty, protecting your plans
+                      {t('guaranteedBookingsDesc')}
                     </p>
                   </div>
                   <div className="text-center bg-white rounded p-3">
-                    <h4 className="text-xs font-semibold text-purple-900 mb-1">Fast Payments</h4>
+                    <h4 className="text-xs font-semibold text-purple-900 mb-1">{t('fastPayments')}</h4>
                     <p className="text-xs text-purple-700">
-                      48-hour direct deposits, no payment disputes or holds
+                      {t('fastPaymentsDesc')}
                     </p>
                   </div>
                 </div>
@@ -458,32 +451,32 @@ export default function TrustSafetyModal({
 
             {/* Safety Best Practices */}
             <section className="mb-6">
-              <h3 className="text-base font-semibold mb-3">Safety Best Practices</h3>
-              
+              <h3 className="text-base font-semibold mb-3">{t('safetyBestPractices')}</h3>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">For Guests</h4>
+                  <h4 className="text-sm font-medium text-gray-900 mb-2">{t('forGuests')}</h4>
                   <ul className="text-xs text-gray-600 space-y-1">
-                    <li>• Inspect vehicle thoroughly before driving</li>
-                    <li>• Take photos of any existing damage</li>
-                    <li>• Test all safety features before departing</li>
-                    <li>• Keep all receipts (fuel, tolls, parking)</li>
-                    <li>• Report any issues immediately via app</li>
-                    <li>• Return vehicle in same condition</li>
-                    <li>• Follow all agreed terms and rules</li>
+                    <li>• {t('guestTip1')}</li>
+                    <li>• {t('guestTip2')}</li>
+                    <li>• {t('guestTip3')}</li>
+                    <li>• {t('guestTip4')}</li>
+                    <li>• {t('guestTip5')}</li>
+                    <li>• {t('guestTip6')}</li>
+                    <li>• {t('guestTip7')}</li>
                   </ul>
                 </div>
-                
+
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">Platform Guarantees</h4>
+                  <h4 className="text-sm font-medium text-gray-900 mb-2">{t('platformGuarantees')}</h4>
                   <ul className="text-xs text-gray-600 space-y-1">
-                    <li>• All vehicles pass safety inspection</li>
-                    <li>• Hosts maintain valid insurance</li>
-                    <li>• 24/7 support always available</li>
-                    <li>• Fast claims resolution guaranteed</li>
-                    <li>• Transparent pricing, no hidden fees</li>
-                    <li>• Protected payment processing</li>
-                    <li>• Privacy and data security</li>
+                    <li>• {t('guarantee1')}</li>
+                    <li>• {t('guarantee2')}</li>
+                    <li>• {t('guarantee3')}</li>
+                    <li>• {t('guarantee4')}</li>
+                    <li>• {t('guarantee5')}</li>
+                    <li>• {t('guarantee6')}</li>
+                    <li>• {t('guarantee7')}</li>
                   </ul>
                 </div>
               </div>
@@ -491,24 +484,23 @@ export default function TrustSafetyModal({
 
             {/* Trust Commitment */}
             <section className="mb-6">
-              <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg p-4 text-white">
-                <h4 className="text-sm font-semibold mb-2">Our Commitment to You</h4>
-                <p className="text-xs mb-3">
-                  ItWhip was built in response to the failures of other platforms. We've learned from their 
-                  mistakes to create a professional, reliable car sharing experience.
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-purple-900 mb-2">{t('ourCommitment')}</h4>
+                <p className="text-xs text-purple-800 mb-3">
+                  {t('ourCommitmentDesc')}
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <div className="text-center">
-                    <CheckCircle className="w-6 h-6 mx-auto mb-1" />
-                    <p className="text-xs">Always human support</p>
+                    <CheckCircle className="w-6 h-6 mx-auto mb-1 text-purple-600" />
+                    <p className="text-xs text-purple-700">{t('alwaysHumanSupport')}</p>
                   </div>
                   <div className="text-center">
-                    <CheckCircle className="w-6 h-6 mx-auto mb-1" />
-                    <p className="text-xs">Fast claim resolution</p>
+                    <CheckCircle className="w-6 h-6 mx-auto mb-1 text-purple-600" />
+                    <p className="text-xs text-purple-700">{t('fastClaimResolution')}</p>
                   </div>
                   <div className="text-center">
-                    <CheckCircle className="w-6 h-6 mx-auto mb-1" />
-                    <p className="text-xs">Stable & reliable platform</p>
+                    <CheckCircle className="w-6 h-6 mx-auto mb-1 text-purple-600" />
+                    <p className="text-xs text-purple-700">{t('stableReliable')}</p>
                   </div>
                 </div>
               </div>

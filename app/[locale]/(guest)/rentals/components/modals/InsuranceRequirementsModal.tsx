@@ -2,7 +2,6 @@
 
 'use client'
 
-import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import BottomSheet from '@/app/components/BottomSheet'
 
@@ -28,12 +27,6 @@ const AlertCircle = ({ className = "w-5 h-5" }: any) => (
 const CheckCircle = ({ className = "w-5 h-5" }: any) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-)
-
-const Download = ({ className = "w-5 h-5" }: any) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
   </svg>
 )
 
@@ -116,9 +109,7 @@ export default function InsuranceRequirementsModal({
                     {t('bannerTitle')}
                   </h4>
                   <p className="text-xs text-green-800">
-                    Every trip on ItWhip includes protection coverage at no additional cost. 
-                    This coverage is built into our simple {coverage.commission} platform fee 
-                    and provides up to {coverage.liability} in liability protection during your rental.
+                    {t('bannerDescription', { commission: coverage.commission, liability: coverage.liability })}
                   </p>
                 </div>
               </div>
@@ -138,7 +129,7 @@ export default function InsuranceRequirementsModal({
                     <ul className="text-xs text-gray-600 space-y-1.5 sm:space-y-2">
                       <li className="flex items-start">
                         <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                        <span>Up to {coverage.liability} third-party liability</span>
+                        <span>{t('thirdPartyLiability', { liability: coverage.liability })}</span>
                       </li>
                       <li className="flex items-start">
                         <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
@@ -168,7 +159,7 @@ export default function InsuranceRequirementsModal({
                       </li>
                       <li className="flex items-start">
                         <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                        <span>{coverage.deductible} deductible only</span>
+                        <span>{t('deductibleOnly', { deductible: coverage.deductible })}</span>
                       </li>
                       <li className="flex items-start">
                         <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
@@ -232,7 +223,7 @@ export default function InsuranceRequirementsModal({
                   </li>
                   <li className="flex items-start">
                     <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span><strong>{t('payDeductible')}</strong> Cover the {coverage.deductible} deductible if damage occurs</span>
+                    <span><strong>{t('payDeductible')}</strong> {t('payDeductibleDesc', { deductible: coverage.deductible })}</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
@@ -244,10 +235,10 @@ export default function InsuranceRequirementsModal({
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4">
                 <h4 className="text-sm font-medium text-amber-900 mb-2">{t('importantNotes')}</h4>
                 <ul className="text-xs text-amber-800 space-y-1">
-                  <li>• Protection applies only during active rental periods</li>
-                  <li>• Intentional damage or illegal activities void coverage</li>
-                  <li>• DUI/DWI incidents are not covered and may result in full liability</li>
-                  <li>• Commercial use beyond personal travel may void protection</li>
+                  <li>• {t('importantNote1')}</li>
+                  <li>• {t('importantNote2')}</li>
+                  <li>• {t('importantNote3')}</li>
+                  <li>• {t('importantNote4')}</li>
                 </ul>
               </div>
             </section>
@@ -263,16 +254,16 @@ export default function InsuranceRequirementsModal({
                 <h4 className="text-sm font-medium text-red-900 mb-2 sm:mb-3">{t('notCovered')}</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <ul className="text-xs text-red-800 space-y-1">
-                    <li>• Personal belongings left in vehicle</li>
-                    <li>• Mechanical breakdown or wear & tear</li>
-                    <li>• Interior damage from smoking/spills</li>
-                    <li>• Parking tickets or traffic violations</li>
+                    <li>• {t('notCovered1')}</li>
+                    <li>• {t('notCovered2')}</li>
+                    <li>• {t('notCovered3')}</li>
+                    <li>• {t('notCovered4')}</li>
                   </ul>
                   <ul className="text-xs text-red-800 space-y-1">
-                    <li>• Damage from off-road driving</li>
-                    <li>• Racing or speed contests</li>
-                    <li>• Unauthorized drivers</li>
-                    <li>• International travel (Mexico/Canada)</li>
+                    <li>• {t('notCovered5')}</li>
+                    <li>• {t('notCovered6')}</li>
+                    <li>• {t('notCovered7')}</li>
+                    <li>• {t('notCovered8')}</li>
                   </ul>
                 </div>
               </div>
@@ -288,39 +279,38 @@ export default function InsuranceRequirementsModal({
                   <li className="flex items-start">
                     <span className="bg-purple-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 flex-shrink-0 text-xs">1</span>
                     <div>
-                      <strong>{t('ensureSafety')}</strong> Move to a safe location and check for injuries
+                      <strong>{t('ensureSafety')}</strong> {t('ensureSafetyDesc')}
                     </div>
                   </li>
                   <li className="flex items-start">
                     <span className="bg-purple-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 flex-shrink-0 text-xs">2</span>
                     <div>
-                      <strong>{t('call911')}</strong> If there are injuries or significant damage
+                      <strong>{t('call911')}</strong> {t('call911Desc')}
                     </div>
                   </li>
                   <li className="flex items-start">
                     <span className="bg-purple-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 flex-shrink-0 text-xs">3</span>
                     <div>
-                      <strong>{t('documentEverything')}</strong> Take photos, get witness info, file police report
+                      <strong>{t('documentEverything')}</strong> {t('documentEverythingDesc')}
                     </div>
                   </li>
                   <li className="flex items-start">
                     <span className="bg-purple-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 flex-shrink-0 text-xs">4</span>
                     <div>
-                      <strong>{t('contactItWhip')}</strong> Call our 24/7 claims line at 1-800-ITWHIP-1
+                      <strong>{t('contactItWhip')}</strong> {t('contactItWhipDesc')}
                     </div>
                   </li>
                   <li className="flex items-start">
                     <span className="bg-purple-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 flex-shrink-0 text-xs">5</span>
                     <div>
-                      <strong>{t('submitClaim')}</strong> Upload photos and documentation in the app
+                      <strong>{t('submitClaim')}</strong> {t('submitClaimDesc')}
                     </div>
                   </li>
                 </ol>
                 
                 <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-green-100 rounded">
                   <p className="text-xs text-green-800">
-                    <strong>Fast Resolution:</strong> Most claims are processed within 48-72 hours. 
-                    We handle all coordination with repair shops and insurance carriers.
+                    <strong>{t('fastResolutionTitle')}</strong> {t('fastResolutionDesc')}
                   </p>
                 </div>
               </div>
@@ -333,41 +323,37 @@ export default function InsuranceRequirementsModal({
               <div className="space-y-3">
                 <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
                   <h4 className="text-sm font-medium text-gray-900 mb-2">
-                    Q: Do I need my own insurance to rent?
+                    {t('faqQ1')}
                   </h4>
                   <p className="text-xs text-gray-600">
-                    A: No, protection is included with every rental. However, having personal auto insurance 
-                    may provide additional benefits and could help with deductible costs.
+                    {t('faqA1')}
                   </p>
                 </div>
-                
+
                 <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
                   <h4 className="text-sm font-medium text-gray-900 mb-2">
-                    Q: How much is the deductible if damage occurs?
+                    {t('faqQ2')}
                   </h4>
                   <p className="text-xs text-gray-600">
-                    A: Your deductible is {coverage.deductible} for this {vehicleType} vehicle. This is the maximum 
-                    you would pay out-of-pocket for covered physical damage to the vehicle.
+                    {t('faqA2', { deductible: coverage.deductible, vehicleType })}
                   </p>
                 </div>
-                
+
                 <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
                   <h4 className="text-sm font-medium text-gray-900 mb-2">
-                    Q: What if I have an accident with another car?
+                    {t('faqQ3')}
                   </h4>
                   <p className="text-xs text-gray-600">
-                    A: Our liability coverage up to {coverage.liability} protects you for damage to other vehicles 
-                    and property. Always exchange information and file a police report for any accident.
+                    {t('faqA3', { liability: coverage.liability })}
                   </p>
                 </div>
-                
+
                 <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
                   <h4 className="text-sm font-medium text-gray-900 mb-2">
-                    Q: Can I add additional drivers?
+                    {t('faqQ4')}
                   </h4>
                   <p className="text-xs text-gray-600">
-                    A: Yes, additional drivers can be added if they meet our requirements (valid license, 21+ years old). 
-                    They must be added before driving to ensure coverage applies.
+                    {t('faqA4')}
                   </p>
                 </div>
               </div>
@@ -400,14 +386,7 @@ export default function InsuranceRequirementsModal({
             <section className="mb-4 sm:mb-6">
               <div className="bg-gray-100 rounded-lg p-3 sm:p-4">
                 <p className="text-xs text-gray-600 leading-relaxed">
-                  <strong>Legal Notice:</strong> This summary provides an overview of protection included with your 
-                  ItWhip rental. Coverage is provided through licensed third-party insurance carriers and is subject 
-                  to terms, conditions, and exclusions detailed in the full policy documents. Coverage applies only 
-                  during active rental periods booked through the ItWhip platform. This is not a complete description 
-                  of coverage. For full details, please review the complete terms of service and insurance policy 
-                  documentation available in your account. Coverage levels and deductibles vary by vehicle tier. 
-                  ItWhip Technologies Inc. is not an insurance company but facilitates coverage through partnerships 
-                  with licensed carriers.
+                  <strong>{t('legalNoticeLabel')}</strong> {t('legalNoticeText')}
                 </p>
               </div>
             </section>
