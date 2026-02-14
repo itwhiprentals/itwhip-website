@@ -18,6 +18,7 @@ function InternalLayoutContent({
   const [isChecking, setIsChecking] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [langBadge, setLangBadge] = useState(0)
 
   // Check if we're on the login page
   const isLoginPage = pathname === '/fleet/login'
@@ -59,6 +60,22 @@ function InternalLayoutContent({
 
     checkSession()
   }, [isLoginPage, router])
+
+  // Fetch language badge count (missing keys)
+  useEffect(() => {
+    if (!isAuthorized) return
+    const fetchLangBadge = async () => {
+      try {
+        const res = await fetch('/fleet/api/language?key=phoenix-fleet-2847')
+        if (res.ok) {
+          const data = await res.json()
+          const missing = Object.values(data.summary?.totalMissingKeys || {}).reduce((a: number, b: unknown) => a + (b as number), 0)
+          setLangBadge(missing as number)
+        }
+      } catch { /* ignore */ }
+    }
+    fetchLangBadge()
+  }, [isAuthorized])
 
   const handleLogout = async () => {
     setLoggingOut(true)
@@ -210,6 +227,17 @@ function InternalLayoutContent({
                     ID Check
                   </Link>
                   <Link
+                    href="/fleet/language"
+                    className="px-2.5 py-1.5 rounded-md text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors whitespace-nowrap font-medium relative"
+                  >
+                    Language
+                    {langBadge > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                        {langBadge > 9 ? '9+' : langBadge}
+                      </span>
+                    )}
+                  </Link>
+                  <Link
                     href="/fleet/settings"
                     className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
                   >
@@ -357,6 +385,18 @@ function InternalLayoutContent({
                     className="px-3 py-2 rounded-md text-sm text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-900/20 font-medium"
                   >
                     ID Check
+                  </Link>
+                  <Link
+                    href="/fleet/language"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2 rounded-md text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 font-medium flex items-center gap-2"
+                  >
+                    Language
+                    {langBadge > 0 && (
+                      <span className="w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                        {langBadge > 9 ? '9+' : langBadge}
+                      </span>
+                    )}
                   </Link>
                   <Link
                     href="/fleet/settings"

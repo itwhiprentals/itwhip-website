@@ -1,7 +1,6 @@
 // app/[locale]/layout.tsx
 // Locale-aware layout — wraps all guest-facing pages with translation provider
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Suspense } from 'react'
 import { NextIntlClientProvider, hasLocale } from 'next-intl'
@@ -9,10 +8,8 @@ import { setRequestLocale, getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
 import PageTracker from '@/app/components/PageTracker'
-import '@/app/globals.css'
 import { Providers } from '@/app/providers'
-
-const inter = Inter({ subsets: ['latin'], display: 'swap' })
+import SetHtmlLang from '@/app/components/SetHtmlLang'
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }))
@@ -256,7 +253,8 @@ export default async function LocaleLayout({
   const messages = await getMessages()
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <>
+      <SetHtmlLang locale={locale} />
       <head>
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
@@ -280,17 +278,15 @@ export default async function LocaleLayout({
           }}
         />
       </head>
-      <body className={`${inter.className} antialiased`}>
-        <NextIntlClientProvider messages={messages}>
-          <Providers>
-            {children}
-          </Providers>
-        </NextIntlClientProvider>
-        <Analytics />
-        <Suspense fallback={null}>
-          <PageTracker />
-        </Suspense>
-      </body>
-    </html>
+      <NextIntlClientProvider messages={messages}>
+        <Providers>
+          {children}
+        </Providers>
+      </NextIntlClientProvider>
+      <Analytics />
+      <Suspense fallback={null}>
+        <PageTracker />
+      </Suspense>
+    </>
   )
 }

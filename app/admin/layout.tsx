@@ -1,9 +1,5 @@
-import { Inter } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
-import '@/app/globals.css'
 import enMessages from '@/messages/en.json'
-
-const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
 // Only pass Header/MobileMenu/Common namespaces — admin portal stays English
 const adminMessages = {
@@ -19,28 +15,24 @@ export default function AdminLayout({
     children: React.ReactNode
   }) {
     return (
-      <html lang="en" suppressHydrationWarning>
-        <body className={`${inter.className} antialiased`}>
-          <NextIntlClientProvider locale="en" messages={adminMessages}>
-            <div className="min-h-screen bg-gray-50">
-              <nav className="bg-white shadow-sm border-b">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                  <div className="flex justify-between h-16">
-                    <div className="flex items-center">
-                      <h1 className="text-xl font-semibold">ItWhip Admin</h1>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <a href="/admin/rentals/bookings" className="text-gray-700 hover:text-gray-900">Bookings</a>
-                      <a href="/admin/rentals/cars" className="text-gray-700 hover:text-gray-900">Cars</a>
-                      <a href="/admin/rentals/hosts" className="text-gray-700 hover:text-gray-900">Hosts</a>
-                    </div>
-                  </div>
+      <NextIntlClientProvider locale="en" messages={adminMessages}>
+        <div className="min-h-screen bg-gray-50">
+          <nav className="bg-white shadow-sm border-b">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between h-16">
+                <div className="flex items-center">
+                  <h1 className="text-xl font-semibold">ItWhip Admin</h1>
                 </div>
-              </nav>
-              {children}
+                <div className="flex items-center space-x-4">
+                  <a href="/admin/rentals/bookings" className="text-gray-700 hover:text-gray-900">Bookings</a>
+                  <a href="/admin/rentals/cars" className="text-gray-700 hover:text-gray-900">Cars</a>
+                  <a href="/admin/rentals/hosts" className="text-gray-700 hover:text-gray-900">Hosts</a>
+                </div>
+              </div>
             </div>
-          </NextIntlClientProvider>
-        </body>
-      </html>
+          </nav>
+          {children}
+        </div>
+      </NextIntlClientProvider>
     )
   }

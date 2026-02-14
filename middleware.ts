@@ -281,8 +281,12 @@ function requiresApproval(pathname: string, method: string = 'GET'): boolean {
 
 // Check if a path belongs to a non-i18n portal (admin, fleet, partner, host, API)
 function isNonI18nRoute(p: string): boolean {
-  return p.startsWith('/api/') || p.startsWith('/admin/') || p.startsWith('/partner/') ||
-    p.startsWith('/fleet/') || p.startsWith('/host/')
+  return p.startsWith('/api/') ||
+    p === '/admin' || p.startsWith('/admin/') ||
+    p === '/partner' || p.startsWith('/partner/') ||
+    p === '/fleet' || p.startsWith('/fleet/') ||
+    p === '/host' || p.startsWith('/host/') ||
+    p === '/sys-2847' || p.startsWith('/sys-2847/')
 }
 
 // Build locale regex dynamically from routing config — adding Portuguese later needs zero changes
@@ -394,7 +398,7 @@ export async function middleware(request: NextRequest) {
   // EXCLUDE: /fleet/login - public login page
   const isFleetRoute = pathname.startsWith('/api/fleet/') ||
                        pathname.startsWith('/fleet/api/') ||
-                       pathname.startsWith('/fleet/')
+                       pathname === '/fleet' || pathname.startsWith('/fleet/')
   const isFleetExcluded = pathname.startsWith('/api/fleet/auth') ||
                           pathname.startsWith('/api/fleet/analytics/track') ||
                           pathname === '/fleet/login'
@@ -438,7 +442,7 @@ export async function middleware(request: NextRequest) {
     console.warn(`[FLEET] 🚫 BLOCKED unauthorized access to ${pathname}`)
 
     // For UI routes, redirect to login; for API routes, return 403
-    if (pathname.startsWith('/fleet/') && !pathname.startsWith('/fleet/api/')) {
+    if ((pathname === '/fleet' || pathname.startsWith('/fleet/')) && !pathname.startsWith('/fleet/api/')) {
       return NextResponse.redirect(new URL('/fleet/login', request.url))
     }
 

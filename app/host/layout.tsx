@@ -1,18 +1,13 @@
 // app/host/layout.tsx
-// Server component wrapper — provides html/body for host portal
-// (root layout is now a pass-through for i18n [locale] support)
+// Host portal layout — providers only (html/body in root layout)
 // Note: Host dashboard is being deprecated in favor of /partner/
 
-import { Inter } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { cookies } from 'next/headers'
-import '@/app/globals.css'
 import { Providers } from '@/app/providers'
 import enMessages from '@/messages/en.json'
 import esMessages from '@/messages/es.json'
 import frMessages from '@/messages/fr.json'
-
-const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
 // Portal layouts only use a subset of namespaces; cast to bypass full-key equality check
 const allMessages: Record<string, typeof enMessages> = {
@@ -43,14 +38,10 @@ export default async function HostLayout({
   const hostMessages = pickNamespaces(allMessages[safeLocale])
 
   return (
-    <html lang={safeLocale} suppressHydrationWarning>
-      <body className={`${inter.className} antialiased`}>
-        <NextIntlClientProvider locale={safeLocale} messages={hostMessages}>
-          <Providers>
-            {children}
-          </Providers>
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <NextIntlClientProvider locale={safeLocale} messages={hostMessages}>
+      <Providers>
+        {children}
+      </Providers>
+    </NextIntlClientProvider>
   )
 }

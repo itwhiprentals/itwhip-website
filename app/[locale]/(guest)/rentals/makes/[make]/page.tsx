@@ -402,8 +402,6 @@ const CAR_MAKE_SEO_DATA: Record<string, {
 // Slug aliases for makes with different URL formats
 const MAKE_SLUG_ALIASES: Record<string, string> = {
   'mercedes-benz': 'mercedes',
-  'land-rover': 'land rover',
-  'alfa-romeo': 'alfa romeo',
 }
 
 // Generate metadata

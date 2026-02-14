@@ -1,17 +1,12 @@
 // app/partner/layout.tsx
-// Server component wrapper — provides html/body for partner portal
-// (root layout is now a pass-through for i18n [locale] support)
+// Partner portal layout — providers only (html/body in root layout)
 
-import { Inter } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { cookies } from 'next/headers'
-import '@/app/globals.css'
 import PartnerLayoutClient from './PartnerLayoutClient'
 import enMessages from '@/messages/en.json'
 import esMessages from '@/messages/es.json'
 import frMessages from '@/messages/fr.json'
-
-const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
 // Portal layouts only use a subset of namespaces; cast to bypass full-key equality check
 const allMessages: Record<string, typeof enMessages> = {
@@ -63,12 +58,8 @@ export default async function PartnerLayout({
   const partnerMessages = pickNamespaces(allMessages[safeLocale])
 
   return (
-    <html lang={safeLocale} suppressHydrationWarning>
-      <body className={`${inter.className} antialiased`}>
-        <NextIntlClientProvider locale={safeLocale} messages={partnerMessages}>
-          <PartnerLayoutClient>{children}</PartnerLayoutClient>
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <NextIntlClientProvider locale={safeLocale} messages={partnerMessages}>
+      <PartnerLayoutClient>{children}</PartnerLayoutClient>
+    </NextIntlClientProvider>
   )
 }

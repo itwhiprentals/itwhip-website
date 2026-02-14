@@ -140,6 +140,7 @@ function getModelDisplayName(modelSlug: string): string {
     'cx-30': 'CX-30',
     'mx-5': 'MX-5 Miata',
     'id4': 'ID.4',
+    'id.4': 'ID.4',
     'gti': 'GTI',
     'xc40': 'XC40',
     'xc60': 'XC60',

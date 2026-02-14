@@ -1,11 +1,22 @@
 // app/layout.tsx
-// Minimal root layout — no html/body tags
-// html/body are in [locale]/layout.tsx (guest pages) and portal layouts (admin/fleet/partner)
+// Root layout — provides <html> and <body> for all routes (required by Next.js 15)
+// Sub-layouts (fleet, admin, partner, host, [locale]) wrap with their own providers
+
+import { Inter } from 'next/font/google'
+import '@/app/globals.css'
+
+const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return children
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} antialiased`}>
+        {children}
+      </body>
+    </html>
+  )
 }
