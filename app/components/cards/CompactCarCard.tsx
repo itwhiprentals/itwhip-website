@@ -201,25 +201,25 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
         </div>
 
         {/* Car details + rating + trips row */}
-        <div className="flex items-center gap-x-1.5 text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-          <span>{car.seats || 5} {t('seats')}</span>
-          <span>•</span>
+        <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-1.5 whitespace-nowrap overflow-hidden">
+          <span className="flex-shrink-0">{car.seats || 5} {t('seats')}</span>
+          <span className="mx-1 flex-shrink-0">•</span>
           {trips > 0 ? (
             <>
-              <IoStar className="w-3.5 h-3.5 text-amber-400 fill-current" />
-              <span className="font-semibold text-gray-700 dark:text-gray-300">{formatRating(rating ?? 5)}</span>
-              <span>•</span>
-              <span>{trips} {trips !== 1 ? t('trips') : t('trip')}</span>
+              <IoStar className="w-3 h-3 text-amber-400 fill-current flex-shrink-0" />
+              <span className="font-semibold text-gray-700 dark:text-gray-300 ml-0.5 flex-shrink-0">{formatRating(rating ?? 5)}</span>
+              <span className="mx-1 flex-shrink-0">•</span>
+              <span className="truncate">{trips} {trips !== 1 ? t('trips') : t('trip')}</span>
             </>
           ) : (
-            <span className="text-green-600 dark:text-green-400 font-medium">{t('newListing')}</span>
+            <span className="text-green-600 dark:text-green-400 font-medium truncate">{t('newListing')}</span>
           )}
         </div>
 
         {/* Location row */}
-        <div className="flex mt-1.5 items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-          <IoLocationOutline className="w-3.5 h-3.5" />
-          <span>{car.city || 'Phoenix'}, AZ</span>
+        <div className="flex mt-1 items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+          <IoLocationOutline className="w-3 h-3 flex-shrink-0" />
+          <span className="truncate">{car.city || 'Phoenix'}, AZ</span>
         </div>
       </div>
     </Link>

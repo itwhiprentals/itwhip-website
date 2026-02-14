@@ -103,12 +103,12 @@ export default function BrowseByTypeSection() {
   return (
     <section className="py-4 sm:py-8 bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Toggle Header - Centered */}
-        <div className="flex items-center justify-center mb-6 sm:mb-8">
-          <div className="inline-flex bg-gray-100 dark:bg-gray-700 rounded-full p-1 shadow-md border border-gray-200 dark:border-gray-600">
+        {/* Toggle Header - Centered, scrollable on small screens */}
+        <div className="flex items-center justify-center mb-6 sm:mb-8 overflow-x-auto">
+          <div className="inline-flex bg-gray-100 dark:bg-gray-700 rounded-full p-1 shadow-md border border-gray-200 dark:border-gray-600 flex-shrink-0">
             <button
               onClick={() => setActiveTab('type')}
-              className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-sm sm:text-base font-semibold transition-all duration-200 ${
+              className={`px-3 sm:px-6 py-2 sm:py-2.5 rounded-full text-xs sm:text-base font-semibold transition-all duration-200 whitespace-nowrap ${
                 activeTab === 'type'
                   ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -118,7 +118,7 @@ export default function BrowseByTypeSection() {
             </button>
             <button
               onClick={() => setActiveTab('make')}
-              className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-sm sm:text-base font-semibold transition-all duration-200 ${
+              className={`px-3 sm:px-6 py-2 sm:py-2.5 rounded-full text-xs sm:text-base font-semibold transition-all duration-200 whitespace-nowrap ${
                 activeTab === 'make'
                   ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -195,18 +195,18 @@ export default function BrowseByTypeSection() {
                   className="py-6 sm:py-8 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700"
                 >
                   {/* Make Header */}
-                  <div className="flex items-center justify-between mb-4 sm:mb-6">
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                  <div className="flex items-center justify-between mb-4 sm:mb-6 gap-2 min-w-0">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                      <h3 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white truncate">
                         {capitalizeCarMake(makeData.make)}
                       </h3>
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300">
+                      <span className="inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-semibold bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 whitespace-nowrap flex-shrink-0">
                         {t('carCount', { count: makeData.totalCars })}
                       </span>
                     </div>
                     <Link
                       href={`/rentals/makes/${makeData.slug}`}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors text-sm sm:text-base"
+                      className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors text-xs sm:text-base whitespace-nowrap flex-shrink-0"
                     >
                       {t('viewAllMake', { make: capitalizeCarMake(makeData.make) === 'Mercedes-Benz' ? 'Mercedes' : capitalizeCarMake(makeData.make) })}
                       <IoArrowForwardOutline className="w-4 h-4" />
