@@ -72,6 +72,9 @@ export async function getSimilarCars(
           select: { url: true },
           orderBy: { order: 'asc' },
           take: 1
+        },
+        _count: {
+          select: { reviews: true }
         }
       }
     })
@@ -120,6 +123,9 @@ export async function getHostCars(
           select: { url: true },
           orderBy: { order: 'asc' },
           take: 1
+        },
+        _count: {
+          select: { reviews: true }
         }
       }
     })
@@ -165,7 +171,7 @@ function transformCar(car: any): SimilarCarData {
     carType: car.carType,
     city: car.city,
     state: car.state,
-    rating: car.totalTrips > 0 ? car.rating : null,
+    rating: car._count?.reviews > 0 ? Number(car.rating) : null,
     totalTrips: car.totalTrips || 0,
     instantBook: car.instantBook,
     photos: car.photos || [],

@@ -50,6 +50,9 @@ export async function GET(request: NextRequest) {
             city: true,
             state: true
           }
+        },
+        _count: {
+          select: { reviews: true }
         }
       },
       orderBy: {
@@ -73,9 +76,9 @@ export async function GET(request: NextRequest) {
       city: car.city,
       state: car.state,
       zipCode: car.zipCode,
-      rating: typeof car.rating === 'string'
-        ? parseFloat(car.rating)
-        : Number(car.rating || 0),
+      rating: car._count.reviews > 0
+        ? (typeof car.rating === 'string' ? parseFloat(car.rating) : Number(car.rating || 0))
+        : 0,
       totalTrips: car.totalTrips || 0,
       instantBook: car.instantBook || false,
       photos: car.photos.map(photo => ({
