@@ -120,7 +120,10 @@ export default function CityCarCard({ car }: CityCarCardProps) {
             </>
           ) : (
             <>
-              <span className="text-xs text-gray-400 dark:text-gray-500">{t('noReviewsYet')}</span>
+              <div className="flex items-center gap-0.5">
+                <IoStarSharp className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                <span className="text-xs font-medium text-gray-400 dark:text-gray-500">0.0</span>
+              </div>
               <span className="text-xs text-gray-500 dark:text-gray-400">
                 {car.totalTrips} {t('trips')}
               </span>

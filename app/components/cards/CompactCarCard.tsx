@@ -215,7 +215,8 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
             </>
           ) : (
             <>
-              <span className="text-gray-400 dark:text-gray-500 flex-shrink-0">{t('noReviewsYet')}</span>
+              <IoStar className="w-3 h-3 text-gray-300 dark:text-gray-600 flex-shrink-0" />
+              <span className="font-semibold text-gray-400 dark:text-gray-500 ml-0.5 flex-shrink-0">0.0</span>
               <span className="mx-1 flex-shrink-0">•</span>
               <span className="truncate">{trips} {trips !== 1 ? t('trips') : t('trip')}</span>
             </>

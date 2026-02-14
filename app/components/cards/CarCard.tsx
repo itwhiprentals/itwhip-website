@@ -173,7 +173,10 @@ export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
                 </>
               ) : (
                 <>
-                  <span className="text-gray-400 dark:text-gray-500">{t('noReviewsYet')}</span>
+                  <div className="flex items-center gap-1">
+                    <IoStarOutline className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600" />
+                    <span className="font-semibold text-gray-400 dark:text-gray-500">0.0</span>
+                  </div>
                   <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
                     <IoCarSportOutline className="w-3.5 h-3.5" /> {tripCount} {t('trips')}
                   </span>

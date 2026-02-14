@@ -135,7 +135,8 @@ export default function CarCard({
                         </div>
                       ) : (
                         <div className="flex items-center gap-1">
-                          <span className="text-sm text-gray-400">{t('noReviewsYet')}</span>
+                          <IoStar className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                          <span className="text-sm font-medium text-gray-400 dark:text-gray-500">0.0</span>
                           <span className="text-sm text-gray-500">{t('tripsCount', { count: car.totalTrips })}</span>
                         </div>
                       )}
@@ -306,7 +307,8 @@ export default function CarCard({
                 </div>
               ) : (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-400">{t('noReviewsYet')}</span>
+                  <IoStar className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                  <span className="text-sm font-medium text-gray-400 dark:text-gray-500">0.0</span>
                   <span className="text-xs text-gray-500">({car.totalTrips})</span>
                 </div>
               )}
