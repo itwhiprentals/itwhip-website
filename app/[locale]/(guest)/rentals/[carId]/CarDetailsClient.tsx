@@ -722,8 +722,9 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                 </div>
                 
                 {/* Rating and Trips Display */}
-                {(car.rating !== null && car.rating !== undefined && car.rating > 0) &&
-                 (car.totalTrips !== null && car.totalTrips !== undefined && car.totalTrips > 0) ? (
+                {!car.totalTrips || car.totalTrips === 0 ? (
+                  <span className="text-green-600 dark:text-green-400 font-medium">{t('newListing')}</span>
+                ) : car.rating && car.rating > 0 ? (
                   <div className="flex items-center gap-1.5">
                     <div className="flex items-center">
                       <IoStar className="w-4 h-4 text-amber-400 fill-current" />
@@ -734,7 +735,10 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                     <span className="text-gray-500">({car.totalTrips} {car.totalTrips === 1 ? t('trip') : t('trips')})</span>
                   </div>
                 ) : (
-                  <span className="text-green-600 dark:text-green-400 font-medium">{t('newListing')}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-gray-400 dark:text-gray-500 font-medium">{t('noReviewsYet')}</span>
+                    <span className="text-gray-500">({car.totalTrips} {car.totalTrips === 1 ? t('trip') : t('trips')})</span>
+                  </div>
                 )}
 
                 {isRideshare ? (

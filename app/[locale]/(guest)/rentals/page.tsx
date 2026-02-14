@@ -208,16 +208,12 @@ export default async function RentalsPage({
       parsedFeatures = []
     }
 
-    // Calculate average rating from reviews, fallback to static rating field
+    // Calculate average rating from actual reviews only — ignore DB default (5.0)
     const reviewCount = car.reviews?.length || 0
     let finalRating: number | null = null
     if (reviewCount > 0) {
-      // Use calculated average from actual reviews
       const sum = car.reviews.reduce((acc, review) => acc + review.rating, 0)
       finalRating = sum / reviewCount
-    } else if (car.rating) {
-      // Fallback to static rating field from database
-      finalRating = Number(car.rating)
     }
 
     return {

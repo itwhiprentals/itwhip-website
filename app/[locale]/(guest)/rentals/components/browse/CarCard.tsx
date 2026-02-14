@@ -127,10 +127,15 @@ export default function CarCard({
                       )}
                       {isNewListing(car.totalTrips) ? (
                         <span className="text-sm text-green-600 dark:text-green-400 font-medium">{t('newListing')}</span>
-                      ) : (
+                      ) : car.rating && Number(car.rating) > 0 ? (
                         <div className="flex items-center gap-1">
                           <IoStar className="w-4 h-4 text-yellow-500" />
                           <span className="text-sm font-medium">{formatRating(car.rating)}</span>
+                          <span className="text-sm text-gray-500">{t('tripsCount', { count: car.totalTrips })}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <span className="text-sm text-gray-400">{t('noReviewsYet')}</span>
                           <span className="text-sm text-gray-500">{t('tripsCount', { count: car.totalTrips })}</span>
                         </div>
                       )}
@@ -293,10 +298,15 @@ export default function CarCard({
               </div>
               {isNewListing(car.totalTrips) ? (
                 <span className="text-sm text-green-600 dark:text-green-400 font-medium">{t('newListing')}</span>
-              ) : (
+              ) : car.rating && Number(car.rating) > 0 ? (
                 <div className="flex items-center gap-1">
                   <IoStar className="w-4 h-4 text-yellow-500" />
                   <span className="text-sm font-medium">{formatRating(car.rating)}</span>
+                  <span className="text-xs text-gray-500">({car.totalTrips})</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-400">{t('noReviewsYet')}</span>
                   <span className="text-xs text-gray-500">({car.totalTrips})</span>
                 </div>
               )}

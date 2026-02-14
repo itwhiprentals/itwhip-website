@@ -106,16 +106,21 @@ export default function CityCarCard({ car }: CityCarCardProps) {
         <div className="flex items-center gap-2 mt-1">
           {isNewListing(car.totalTrips) ? (
             <span className="text-xs text-green-600 dark:text-green-400 font-medium">{t('newListing')}</span>
+          ) : car.rating && Number(car.rating) > 0 ? (
+            <>
+              <div className="flex items-center gap-0.5">
+                <IoStarSharp className="w-3 h-3 text-amber-400" />
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                  {formatRating(car.rating)}
+                </span>
+              </div>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {car.totalTrips} {t('trips')}
+              </span>
+            </>
           ) : (
             <>
-              {car.rating && (
-                <div className="flex items-center gap-0.5">
-                  <IoStarSharp className="w-3 h-3 text-amber-400" />
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                    {formatRating(car.rating)}
-                  </span>
-                </div>
-              )}
+              <span className="text-xs text-gray-400 dark:text-gray-500">{t('noReviewsYet')}</span>
               <span className="text-xs text-gray-500 dark:text-gray-400">
                 {car.totalTrips} {t('trips')}
               </span>

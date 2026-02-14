@@ -152,23 +152,28 @@ export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
             <div className="flex items-center gap-3">
               {isNewListing(tripCount) ? (
                 <span className="text-green-600 dark:text-green-400 font-medium">{t('newListing')}</span>
+              ) : car.rating && (Number(car.rating.average || car.rating) > 0) ? (
+                <>
+                  <div className="flex items-center gap-1">
+                    <div className="flex">
+                      {[...Array(5)].map((_, i) => (
+                        <IoStarOutline
+                          key={i}
+                          className={`w-3.5 h-3.5 ${i < Math.floor(car.rating.average || car.rating) ? 'text-amber-400 fill-current' : 'text-gray-300'}`}
+                        />
+                      ))}
+                    </div>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">
+                      {formatRating(car.rating.average || car.rating)}
+                    </span>
+                  </div>
+                  <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                    <IoCarSportOutline className="w-3.5 h-3.5" /> {tripCount} {t('trips')}
+                  </span>
+                </>
               ) : (
                 <>
-                  {car.rating && (
-                    <div className="flex items-center gap-1">
-                      <div className="flex">
-                        {[...Array(5)].map((_, i) => (
-                          <IoStarOutline
-                            key={i}
-                            className={`w-3.5 h-3.5 ${i < Math.floor(car.rating.average || car.rating) ? 'text-amber-400 fill-current' : 'text-gray-300'}`}
-                          />
-                        ))}
-                      </div>
-                      <span className="font-semibold text-gray-700 dark:text-gray-300">
-                        {formatRating(car.rating.average || car.rating)}
-                      </span>
-                    </div>
-                  )}
+                  <span className="text-gray-400 dark:text-gray-500">{t('noReviewsYet')}</span>
                   <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
                     <IoCarSportOutline className="w-3.5 h-3.5" /> {tripCount} {t('trips')}
                   </span>

@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
         instantBook: true,
         fuelType: true,
         esgScore: true,
+        _count: { select: { reviews: true } },
         photos: {
           select: { url: true },
           orderBy: { order: 'asc' },
@@ -111,7 +112,7 @@ export async function GET(request: NextRequest) {
             vehicleType: car.vehicleType, // For rideshare badge
             city: car.city,
             seats: car.seats,
-            rating: car.rating ? Number(car.rating) : null,
+            rating: car._count.reviews > 0 ? Number(car.rating) : null,
             totalTrips: car.totalTrips,
             instantBook: car.instantBook,
             photos: car.photos || [],

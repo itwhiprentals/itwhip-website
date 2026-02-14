@@ -310,14 +310,12 @@ export async function GET(
       hasVerifiedPhone: car.host?.isVerified || false,
     } : null
 
-    // Calculate average rating from reviews
-    let averageRating: number
-    
+    // Calculate average rating from reviews only — ignore DB default (5.0)
+    let averageRating: number = 0
+
     if (car.reviews.length > 0) {
       const totalRating = car.reviews.reduce((sum, review) => sum + review.rating, 0)
       averageRating = totalRating / car.reviews.length
-    } else {
-      averageRating = car.rating || 0
     }
     
     const formattedRating = parseFloat(averageRating.toFixed(1))

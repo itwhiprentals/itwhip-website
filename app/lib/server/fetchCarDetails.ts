@@ -93,8 +93,8 @@ export async function getCarForSSR(carId: string) {
 
   if (!car) return null
 
-  // Calculate average rating from reviews
-  let averageRating = car.rating || 0
+  // Calculate average rating from reviews only — ignore DB default (5.0)
+  let averageRating = 0
   if (car.reviews.length > 0) {
     const total = car.reviews.reduce((sum, r) => sum + r.rating, 0)
     averageRating = total / car.reviews.length

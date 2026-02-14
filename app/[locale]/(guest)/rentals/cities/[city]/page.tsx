@@ -272,7 +272,7 @@ function transformCarForCompactCard(car: any, cityName: string) {
     carType: car.carType,
     seats: car.seats || 5,
     city: car.city || cityName,
-    rating: car.rating ? Number(car.rating) : null,
+    rating: car._count?.reviews > 0 ? Number(car.rating) : null,
     totalTrips: car.totalTrips,
     instantBook: car.instantBook,
     photos: car.photos || [],
@@ -540,6 +540,7 @@ export default async function CityPage({
       totalTrips: true,
       instantBook: true,
       createdAt: true,
+      _count: { select: { reviews: true } },
       photos: {
         select: { url: true, caption: true, isHero: true },
         orderBy: { order: 'asc' },

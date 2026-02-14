@@ -270,15 +270,19 @@ function CarCard({
             <span className="capitalize">{car.carType?.toLowerCase() || 'sedan'}</span>
             <span>•</span>
             <span>{car.seats || 5} {t('seats')}</span>
-            {!isNewListing(car.totalTrips) && car.rating && car.rating > 0 && (
+            {!isNewListing(car.totalTrips) && (
               <>
                 <span>•</span>
-                <div className="flex items-center gap-0.5">
-                  <IoStarOutline className="w-2.5 h-2.5 text-amber-400 fill-current" />
-                  <span className="font-medium text-gray-700 dark:text-gray-300">
-                    {formatRating(car.rating)}
-                  </span>
-                </div>
+                {car.rating && car.rating > 0 ? (
+                  <div className="flex items-center gap-0.5">
+                    <IoStarOutline className="w-2.5 h-2.5 text-amber-400 fill-current" />
+                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                      {formatRating(car.rating)}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-gray-400 dark:text-gray-500">{t('noReviewsYet')}</span>
+                )}
               </>
             )}
           </div>

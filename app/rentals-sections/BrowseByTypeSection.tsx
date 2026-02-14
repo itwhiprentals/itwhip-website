@@ -103,12 +103,12 @@ export default function BrowseByTypeSection() {
   return (
     <section className="py-4 sm:py-8 bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Toggle Header - Centered, scrollable on small screens */}
-        <div className="flex items-center justify-center mb-6 sm:mb-8 overflow-x-auto">
+        {/* Toggle Header - Centered, scrollable if text is too wide */}
+        <div className="flex justify-center mb-6 sm:mb-8 overflow-x-auto scrollbar-hide px-2 py-1">
           <div className="inline-flex bg-gray-100 dark:bg-gray-700 rounded-full p-1 shadow-md border border-gray-200 dark:border-gray-600 flex-shrink-0">
             <button
               onClick={() => setActiveTab('type')}
-              className={`px-3 sm:px-6 py-2 sm:py-2.5 rounded-full text-xs sm:text-base font-semibold transition-all duration-200 whitespace-nowrap ${
+              className={`px-3 sm:px-6 py-1.5 sm:py-2.5 rounded-full text-[13px] sm:text-base font-semibold transition-all duration-200 whitespace-nowrap ${
                 activeTab === 'type'
                   ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -118,7 +118,7 @@ export default function BrowseByTypeSection() {
             </button>
             <button
               onClick={() => setActiveTab('make')}
-              className={`px-3 sm:px-6 py-2 sm:py-2.5 rounded-full text-xs sm:text-base font-semibold transition-all duration-200 whitespace-nowrap ${
+              className={`px-3 sm:px-6 py-1.5 sm:py-2.5 rounded-full text-[13px] sm:text-base font-semibold transition-all duration-200 whitespace-nowrap ${
                 activeTab === 'make'
                   ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
