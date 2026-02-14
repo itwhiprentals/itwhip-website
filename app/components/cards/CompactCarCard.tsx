@@ -196,12 +196,12 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
           </span>
         </div>
         {/* Model row */}
-        <div className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 line-clamp-1">
+        <div className="text-[11px] sm:text-[13px] font-medium text-gray-700 dark:text-gray-300 line-clamp-1">
           {normalizeModelName(car.model, car.make)}
         </div>
 
         {/* Car details + rating + trips row */}
-        <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-1.5 whitespace-nowrap overflow-hidden">
+        <div className="flex items-center text-[11px] sm:text-[13px] text-gray-500 dark:text-gray-400 mt-0.5 whitespace-nowrap overflow-hidden">
           <span className="flex-shrink-0">{car.seats || 5} {t('seats')}</span>
           <span className="mx-1 flex-shrink-0">•</span>
           {trips === 0 ? (
@@ -211,20 +211,20 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
               <IoStar className="w-3 h-3 text-amber-400 fill-current flex-shrink-0" />
               <span className="font-semibold text-gray-700 dark:text-gray-300 ml-0.5 flex-shrink-0">{formatRating(rating)}</span>
               <span className="mx-1 flex-shrink-0">•</span>
-              <span className="truncate">{trips} {trips !== 1 ? t('trips') : t('trip')}</span>
+              <span className="truncate">({trips} {trips !== 1 ? t('trips') : t('trip')})</span>
             </>
           ) : (
             <>
               <IoStar className="w-3 h-3 text-gray-300 dark:text-gray-600 flex-shrink-0" />
               <span className="font-semibold text-gray-400 dark:text-gray-500 ml-0.5 flex-shrink-0">0.0</span>
               <span className="mx-1 flex-shrink-0">•</span>
-              <span className="truncate">{trips} {trips !== 1 ? t('trips') : t('trip')}</span>
+              <span className="truncate">({trips} {trips !== 1 ? t('trips') : t('trip')})</span>
             </>
           )}
         </div>
 
         {/* Location row */}
-        <div className="flex mt-1 items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+        <div className="flex mt-0.5 items-center gap-1 text-[11px] sm:text-[13px] text-gray-500 dark:text-gray-400">
           <IoLocationOutline className="w-3 h-3 flex-shrink-0" />
           <span className="truncate">{car.city || 'Phoenix'}, AZ</span>
         </div>
