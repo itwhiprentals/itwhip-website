@@ -78,7 +78,7 @@ export default function UseCasePage({
   const tips = useCaseData.tipKeys.map(key => tc(key))
   const faqs = useCaseData.faqKeys.map(faq => ({
     question: tc(faq.questionKey),
-    answer: tc(faq.answerKey)
+    answer: tc.raw(faq.answerKey)
   }))
 
   const jsonLd = {
@@ -138,7 +138,7 @@ export default function UseCasePage({
         <Header />
 
         {/* Hero Section */}
-        <section className="relative h-[320px] sm:h-[360px] lg:h-[420px] overflow-hidden">
+        <section className="relative h-[420px] sm:h-[440px] lg:h-[460px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{ backgroundImage: 'url(/images/hero/arizona-hero.jpg)' }}
@@ -146,7 +146,7 @@ export default function UseCasePage({
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-          <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-end pb-8 sm:pb-10 lg:pb-12">
+          <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-end pt-20 pb-8 sm:pb-10 lg:pb-12">
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-xs font-medium mb-3">
                 <IoCarOutline className="w-3.5 h-3.5" />

@@ -7,6 +7,7 @@ import { NextIntlClientProvider, hasLocale } from 'next-intl'
 import { setRequestLocale, getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
+import Script from 'next/script'
 import PageTracker from '@/app/components/PageTracker'
 import { Providers } from '@/app/providers'
 import SetHtmlLang from '@/app/components/SetHtmlLang'
@@ -255,29 +256,21 @@ export default async function LocaleLayout({
   return (
     <>
       <SetHtmlLang locale={locale} />
-      <head>
-        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
-
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationSchema)
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(autoRentalSchema)
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(webSiteSchema)
-          }}
-        />
-      </head>
+      <Script
+        id="org-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
+      <Script
+        id="auto-rental-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(autoRentalSchema) }}
+      />
+      <Script
+        id="website-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteSchema) }}
+      />
       <NextIntlClientProvider messages={messages}>
         <Providers>
           {children}

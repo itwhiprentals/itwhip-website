@@ -397,6 +397,44 @@ export const USE_CASE_DATA: Record<string, UseCaseData> = {
     ]
   },
 
+  'weekly': {
+    slug: 'weekly',
+    titleKey: 'weekly.title',
+    h1Key: 'weekly.h1',
+    metaTitle: 'Weekly Car Rentals Phoenix | 7-Day Deals | ItWhip',
+    metaDescription: 'Weekly car rentals in Phoenix from $199/week. Save up to 25% vs daily rates. Sedans, SUVs, electric vehicles. Perfect for extended stays, work trips, and visitors.',
+    heroSubtitleKey: 'weekly.heroSubtitle',
+    contentKey: 'weekly.content',
+    benefitKeys: [
+      'weekly.benefit1',
+      'weekly.benefit2',
+      'weekly.benefit3',
+      'weekly.benefit4',
+      'weekly.benefit5',
+      'weekly.benefit6'
+    ],
+    priceRangeKey: 'weekly.priceRange',
+    durationSuggestionKey: 'weekly.durationSuggestion',
+    idealCarTypes: ['SEDAN', 'SUV', 'ELECTRIC'],
+    filters: {
+      minDays: 7,
+      maxDays: 14,
+      carTypes: ['SEDAN', 'SUV', 'ELECTRIC']
+    },
+    faqKeys: [
+      { questionKey: 'weekly.faq1Question', answerKey: 'weekly.faq1Answer' },
+      { questionKey: 'weekly.faq2Question', answerKey: 'weekly.faq2Answer' },
+      { questionKey: 'weekly.faq3Question', answerKey: 'weekly.faq3Answer' },
+      { questionKey: 'weekly.faq4Question', answerKey: 'weekly.faq4Answer' }
+    ],
+    tipKeys: [
+      'weekly.tip1',
+      'weekly.tip2',
+      'weekly.tip3',
+      'weekly.tip4'
+    ]
+  },
+
   'hotel-delivery': {
     slug: 'hotel-delivery',
     titleKey: 'hotelDelivery.title',
