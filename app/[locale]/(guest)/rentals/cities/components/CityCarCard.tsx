@@ -1,6 +1,7 @@
 // app/(guest)/rentals/cities/components/CityCarCard.tsx
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { generateCarUrl } from '@/app/lib/utils/urls'
 import { optimizeImageUrl } from '@/app/lib/utils/imageOptimization'
@@ -31,6 +32,7 @@ interface CityCarCardProps {
 }
 
 export default function CityCarCard({ car }: CityCarCardProps) {
+  const t = useTranslations('VehicleCard')
   // Get the main photo with optimization
   const rawPhotoUrl = car.photos?.[0]?.url ||
     'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=400&h=300&fit=crop&fm=webp&q=80'
@@ -69,13 +71,13 @@ export default function CityCarCard({ car }: CityCarCardProps) {
           {showLocalHostBadge && (
             <span className="px-2 py-0.5 bg-black/80 backdrop-blur-sm text-white text-[10px] font-bold rounded-full shadow-sm flex items-center gap-0.5">
               <IoStarSharp className="w-2.5 h-2.5" />
-              HOST
+              {t('host')}
             </span>
           )}
           {car.instantBook && (
             <span className="px-2 py-0.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[10px] font-bold rounded-full shadow-sm flex items-center gap-0.5">
               <IoFlashOutline className="w-2.5 h-2.5" />
-              INSTANT
+              {t('instant')}
             </span>
           )}
         </div>
@@ -87,7 +89,7 @@ export default function CityCarCard({ car }: CityCarCardProps) {
               <span className="text-base font-bold text-gray-900 dark:text-white">
                 ${car.dailyRate}
               </span>
-              <span className="text-[10px] text-gray-600 dark:text-gray-400">/day</span>
+              <span className="text-[10px] text-gray-600 dark:text-gray-400">{t('perDay')}</span>
             </div>
           </div>
         </div>
@@ -103,7 +105,7 @@ export default function CityCarCard({ car }: CityCarCardProps) {
         {/* Rating & Trips - Very compact */}
         <div className="flex items-center gap-2 mt-1">
           {isNewListing(car.totalTrips) ? (
-            <span className="text-xs text-green-600 dark:text-green-400 font-medium">New Listing</span>
+            <span className="text-xs text-green-600 dark:text-green-400 font-medium">{t('newListing')}</span>
           ) : (
             <>
               {car.rating && (
@@ -115,7 +117,7 @@ export default function CityCarCard({ car }: CityCarCardProps) {
                 </div>
               )}
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {car.totalTrips} trips
+                {car.totalTrips} {t('trips')}
               </span>
             </>
           )}

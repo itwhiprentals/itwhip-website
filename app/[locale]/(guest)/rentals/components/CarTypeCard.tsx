@@ -4,6 +4,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { 
   IoSparklesOutline,
@@ -21,6 +22,7 @@ interface CarTypeCardProps {
 }
 
 export default function CarTypeCard({ car, index, isActive = false }: CarTypeCardProps) {
+  const t = useTranslations('VehicleCard')
   const router = useRouter()
   const [isHovered, setIsHovered] = useState(false)
   
@@ -71,7 +73,7 @@ export default function CarTypeCard({ car, index, isActive = false }: CarTypeCar
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
           </span>
-          {car.available} available
+          {car.available} {t('available')}
         </div>
       </div>
       
@@ -103,7 +105,7 @@ export default function CarTypeCard({ car, index, isActive = false }: CarTypeCar
           <h3 className="text-2xl font-bold">{car.label}</h3>
           <div className="text-right">
             <span className="text-2xl font-bold">${car.priceValue}</span>
-            <span className="text-sm text-gray-300">/day</span>
+            <span className="text-sm text-gray-300">{t('perDay')}</span>
           </div>
         </div>
         
@@ -129,7 +131,7 @@ export default function CarTypeCard({ car, index, isActive = false }: CarTypeCar
           transition-all duration-300
           ${isHovered ? 'bg-white/20 border-white/30' : ''}
         `}>
-          <span className="font-semibold">Browse {car.label}s</span>
+          <span className="font-semibold">{t('browseType', { type: car.label })}</span>
           <IoArrowForwardOutline className={`
             w-5 h-5 transition-transform duration-300
             ${isHovered ? 'translate-x-2' : 'translate-x-0'}

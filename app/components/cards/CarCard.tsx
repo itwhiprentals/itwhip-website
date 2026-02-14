@@ -2,6 +2,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { generateCarUrl } from '@/app/lib/utils/urls'
 import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
@@ -34,6 +35,7 @@ const isValidHostPhoto = (url: string | undefined | null): boolean => {
 }
 
 export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
+  const t = useTranslations('VehicleCard')
   const [hostAvatarError, setHostAvatarError] = useState(false)
   const isTraditional = car.provider_type === 'traditional'
   const showLocalHostBadge = car.host && !car.instantBook
@@ -54,21 +56,21 @@ export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
           <div className="absolute top-3 left-3 flex flex-col gap-2">
             {showLocalHostBadge && (
               <span className="px-3 py-1 bg-black/80 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
-                <IoStarSharp className="w-3 h-3" /> LOCAL HOST
+                <IoStarSharp className="w-3 h-3" /> {t('localHost')}
               </span>
             )}
             {car.vehicleType?.toUpperCase() === 'RIDESHARE' ? (
               <span className="px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
-                <IoCarSportOutline className="w-3 h-3" /> RIDESHARE
+                <IoCarSportOutline className="w-3 h-3" /> {t('rideshare')}
               </span>
             ) : car.instantBook && (
               <span className="px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
-                <IoFlashOutline className="w-3 h-3" /> INSTANT
+                <IoFlashOutline className="w-3 h-3" /> {t('instant')}
               </span>
             )}
             {isElectric && (
               <span className="px-3 py-1 bg-cyan-500 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
-                <IoFlashOutline className="w-3 h-3" /> EV
+                <IoFlashOutline className="w-3 h-3" /> {t('ev')}
               </span>
             )}
             {isTraditional && car.provider && (
@@ -83,7 +85,7 @@ export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
             <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-lg px-4 py-2.5 shadow-xl border border-white/20">
               <div className="flex items-baseline gap-1">
                 <span className="text-2xl font-black text-gray-900 dark:text-white">${car.dailyRate || car.totalDaily}</span>
-                <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">/day</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">{t('perDay')}</span>
               </div>
             </div>
           </div>
@@ -149,7 +151,7 @@ export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-3">
               {isNewListing(tripCount) ? (
-                <span className="text-green-600 dark:text-green-400 font-medium">New Listing</span>
+                <span className="text-green-600 dark:text-green-400 font-medium">{t('newListing')}</span>
               ) : (
                 <>
                   {car.rating && (
@@ -168,7 +170,7 @@ export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
                     </div>
                   )}
                   <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <IoCarSportOutline className="w-3.5 h-3.5" /> {tripCount} trips
+                    <IoCarSportOutline className="w-3.5 h-3.5" /> {tripCount} {t('trips')}
                   </span>
                 </>
               )}
@@ -180,10 +182,10 @@ export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
 
           <div className="flex flex-wrap gap-2">
             <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-xs rounded text-gray-600 dark:text-gray-400">
-              Airport Delivery
+              {t('airportDelivery')}
             </span>
             <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-xs rounded text-gray-600 dark:text-gray-400">
-              Hotel Delivery
+              {t('hotelDelivery')}
             </span>
           </div>
 
@@ -198,11 +200,11 @@ export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
                 const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
                 let d = R * c
                 if (d < 1) d = 1.1 + (car.id.charCodeAt(0) % 9) / 10
-                return `${d.toFixed(1)} mi away`
+                return `${d.toFixed(1)} ${t('miAway')}`
               })() : `${car.location?.city || 'Phoenix'}, ${car.location?.state || 'AZ'}`}
             </div>
             <div className="flex items-center text-amber-600 dark:text-amber-400 font-semibold group-hover:gap-2 transition-all">
-              View <IoArrowForwardOutline className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+              {t('view')} <IoArrowForwardOutline className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
         </div>

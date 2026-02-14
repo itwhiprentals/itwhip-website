@@ -2,6 +2,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { generateCarUrl } from '@/app/lib/utils/urls'
 import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
@@ -85,6 +86,7 @@ const getHostDisplayName = (name: string | null | undefined): string | null => {
 }
 
 export default function CompactCarCard({ car, accentColor = 'amber', className = '' }: CompactCarCardProps) {
+  const t = useTranslations('VehicleCard')
   const [hostAvatarError, setHostAvatarError] = useState(false)
 
   const rawImageUrl = car.photos?.[0]?.url ||
@@ -141,13 +143,13 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
         <div className="absolute top-2 left-2 flex gap-1.5">
           {car.vehicleType?.toUpperCase() === 'RIDESHARE' && (
             <span className="px-2 py-0.5 bg-orange-500/90 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold rounded-full">
-              Rideshare
+              {t('rideshareLabel')}
             </span>
           )}
           {car.instantBook && car.vehicleType?.toUpperCase() !== 'RIDESHARE' && (
             <span className="px-2 py-0.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold rounded-full flex items-center gap-0.5">
               <IoFlashOutline className="w-3 h-3" />
-              Instant
+              {t('instantLabel')}
             </span>
           )}
         </div>
@@ -190,7 +192,7 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
             <span className={`text-sm sm:text-base font-bold ${colors.priceText}`}>
               ${Math.round(car.dailyRate)}
             </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">/day</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">{t('perDay')}</span>
           </span>
         </div>
         {/* Model row */}
@@ -200,17 +202,17 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
 
         {/* Car details + rating + trips row */}
         <div className="flex items-center gap-x-1.5 text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-          <span>{car.seats || 5} seats</span>
+          <span>{car.seats || 5} {t('seats')}</span>
           <span>•</span>
           {trips > 0 ? (
             <>
               <IoStar className="w-3.5 h-3.5 text-amber-400 fill-current" />
               <span className="font-semibold text-gray-700 dark:text-gray-300">{formatRating(rating ?? 5)}</span>
               <span>•</span>
-              <span>{trips} trip{trips !== 1 ? 's' : ''}</span>
+              <span>{trips} {trips !== 1 ? t('trips') : t('trip')}</span>
             </>
           ) : (
-            <span className="text-green-600 dark:text-green-400 font-medium">New Listing</span>
+            <span className="text-green-600 dark:text-green-400 font-medium">{t('newListing')}</span>
           )}
         </div>
 

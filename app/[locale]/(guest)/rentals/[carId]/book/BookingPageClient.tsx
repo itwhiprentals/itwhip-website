@@ -797,7 +797,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               } else if (firstTrimmed.length > 0) {
                 setCardholderFirstValidation({
                   isValid: false,
-                  error: firstTrimmed.length < 3 ? 'Cardholder first name must be at least 3 characters' : 'Cardholder first name can only contain letters'
+                  error: firstTrimmed.length < 3 ? t('cardholderFirstMinLength') : t('cardholderFirstLettersOnly')
                 })
               }
 
@@ -806,7 +806,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               } else if (lastTrimmed.length > 0) {
                 setCardholderLastValidation({
                   isValid: false,
-                  error: lastTrimmed.length < 3 ? 'Cardholder last name must be at least 3 characters' : 'Cardholder last name can only contain letters'
+                  error: lastTrimmed.length < 3 ? t('cardholderLastMinLength') : t('cardholderLastLettersOnly')
                 })
               }
 
@@ -1264,12 +1264,12 @@ export default function BookingPageClient({ carId }: { carId: string }) {
 
         // Check if car is still active/bookable before proceeding
         if (data.isActive === false) {
-          setBookingError('This vehicle is no longer available for booking.')
+          setBookingError(t('vehicleNoLongerAvailable'))
           setIsLoading(false)
           return
         }
         if (data.hostStatus && data.hostStatus !== 'APPROVED') {
-          setBookingError('This vehicle is temporarily unavailable.')
+          setBookingError(t('vehicleTemporarilyUnavailable'))
           setIsLoading(false)
           return
         }
@@ -1329,11 +1329,11 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         )
         const availData = await availRes.json()
         if (!availData.available) {
-          setBookingError('These dates are no longer available. Please go back and select different dates.')
+          setBookingError(t('datesNoLongerAvailable'))
           return
         }
       } catch {
-        setBookingError('Unable to verify date availability. Please try again.')
+        setBookingError(t('unableToVerifyDates'))
         return
       }
 
@@ -1415,10 +1415,10 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             sessionStorage.setItem('_expected_pi', data.paymentIntentId)
           }
         } else {
-          setPaymentError('Unable to initialize payment. Please try again.')
+          setPaymentError(t('paymentIntentNotReady'))
         }
       } catch (error) {
-        setPaymentError('Payment initialization failed. Please refresh the page.')
+        setPaymentError(t('paymentIntentNotReady'))
       }
     }
 
@@ -1433,12 +1433,12 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     if (!file) return
 
     if (file.size > 5 * 1024 * 1024) {
-      setBookingError('File size must be less than 5MB')
+      setBookingError(t('fileSizeLimit'))
       return
     }
 
     if (!file.type.startsWith('image/')) {
-      setBookingError('Please upload an image file')
+      setBookingError(t('pleaseUploadImage'))
       return
     }
 
@@ -1746,16 +1746,16 @@ export default function BookingPageClient({ carId }: { carId: string }) {
 
     if (age < minAge) {
       const carType = car?.carType?.toLowerCase() || ''
-      const vehicleDesc = (carType === 'exotic' || carType === 'luxury') ? 'exotic/luxury vehicles' : 'this vehicle'
+      const vehicleDesc = (carType === 'exotic' || carType === 'luxury') ? 'exotic/luxury' : 'standard'
       return {
         isValid: false,
-        error: `Must be ${minAge}+ to rent ${vehicleDesc}. You are ${age}.`,
+        error: t('mustBeMinAgeToRent', { age: minAge, vehicleType: vehicleDesc, currentAge: age }),
         age
       }
     }
 
     if (age > 100) {
-      return { isValid: false, error: 'Please enter a valid date of birth', age: null }
+      return { isValid: false, error: t('pleaseEnterValidDob'), age: null }
     }
 
     return { isValid: true, error: null, age }
@@ -1834,7 +1834,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     const insuranceSelection = (savedBookingDetails?.insuranceType || savedBookingDetails?.insuranceTier || '')?.toLowerCase()
     const insurancePrice = savedBookingDetails?.pricing?.insurancePrice ?? 0
     if (!insuranceSelection || insuranceSelection === 'none' || insurancePrice <= 0) {
-      setBookingError('Insurance is required for all bookings. Please go back and select an insurance option.')
+      setBookingError(t('insuranceRequired'))
       return
     }
 
@@ -1862,7 +1862,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         console.log('[Checkout] Confirming with saved payment method:', selectedPaymentMethod)
 
         if (!paymentIntentId) {
-          setBookingError('Payment intent not ready. Please try again.')
+          setBookingError(t('paymentIntentNotReady'))
           setIsProcessing(false)
           return
         }
@@ -2104,7 +2104,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           }
         }, 3000)
       } else {
-        const errorMessage = data.error || data.message || 'Booking failed'
+        const errorMessage = data.error || data.message || t('bookingFailed')
         console.error('Booking error:', errorMessage)
 
         if (data.details) {
@@ -2120,7 +2120,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       }
     } catch (error) {
       console.error('Booking submission error:', error)
-      setBookingError('Failed to submit booking. Please try again or contact support.')
+      setBookingError(t('failedToSubmitBooking'))
     } finally {
       setIsProcessing(false)
     }
@@ -2324,7 +2324,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                   {car.year} {capitalizeCarMake(car.make)} {normalizeModelName(car.model, car.make)}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {car.carType} • {car.seats} seats
+                  {car.carType} • {car.seats} {t('seats')}
                 </p>
                 <div className="flex items-center mt-1 space-x-3">
                   {car.rating && car.rating > 0 ? (
@@ -2342,11 +2342,11 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                     </div>
                   ) : (
                     <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded-full font-medium">
-                      New
+                      {t('newListing')}
                     </span>
                   )}
                   <span className="text-xs text-gray-500">
-                    {car.totalTrips || 0} trips
+                    {car.totalTrips || 0} {t('trips')}
                   </span>
                 </div>
               </div>
@@ -2365,18 +2365,18 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               <IoCloseCircleOutline className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <p className="font-semibold text-red-900 dark:text-red-100 mb-2 text-base">
-                  Vehicle Currently Unavailable
+                  {t('vehicleUnavailable')}
                 </p>
                 <p className="text-sm text-red-800 dark:text-red-200 mb-3">
-                  This vehicle is temporarily unavailable for booking. This may be due to:
+                  {t('vehicleUnavailableDesc')}
                 </p>
                 <ul className="text-sm text-red-800 dark:text-red-200 space-y-1 ml-4">
-                  <li>• Active insurance claim being processed</li>
-                  <li>• Scheduled maintenance or repairs</li>
-                  <li>• Owner temporarily deactivated the listing</li>
+                  <li>• {t('vehicleUnavailableReason1')}</li>
+                  <li>• {t('vehicleUnavailableReason2')}</li>
+                  <li>• {t('vehicleUnavailableReason3')}</li>
                 </ul>
                 <p className="text-sm text-red-700 dark:text-red-300 mt-3 font-medium">
-                  Please browse other available vehicles or check back later.
+                  {t('vehicleUnavailableCta')}
                 </p>
               </div>
             </div>
@@ -2391,7 +2391,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               <IoBanOutline className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold text-red-900 dark:text-red-100 mb-1">
-                  Booking Restricted
+                  {t('bookingRestricted')}
                 </p>
                 <p className="text-sm text-red-800 dark:text-red-200">
                   {eligibility.reason}
@@ -2423,13 +2423,13 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           <div className="flex items-start space-x-3">
             <IoInformationCircleOutline className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
             <div className="text-sm">
-              <p className="font-medium text-amber-900 dark:text-amber-100 mb-2">Important Booking Information</p>
+              <p className="font-medium text-amber-900 dark:text-amber-100 mb-2">{t('importantBookingInfo')}</p>
               <ul className="space-y-1 text-xs text-amber-800 dark:text-amber-200">
-                <li>• <strong>Book without an account:</strong> Complete your booking as a guest - we&apos;ll create your account automatically using your driver&apos;s license info{' '}
-                  <a href="/help/guest-account" className="text-amber-700 dark:text-amber-300 underline hover:no-underline">Learn more</a>
+                <li>• <span dangerouslySetInnerHTML={{ __html: t.raw('bookWithoutAccount') }} />{' '}
+                  <a href="/help/guest-account" className="text-amber-700 dark:text-amber-300 underline hover:no-underline">{t('learnMore')}</a>
                 </li>
-                <li>• <strong>Quick verification:</strong> Upload your driver&apos;s license for instant verification - no redirects or lengthy forms</li>
-                <li>• <strong>No charges until approved:</strong> Your card is securely saved but won&apos;t be charged until the host approves your booking</li>
+                <li>• <span dangerouslySetInnerHTML={{ __html: t.raw('quickVerification') }} /></li>
+                <li>• <span dangerouslySetInnerHTML={{ __html: t.raw('noChargesUntilApproved') }} /></li>
               </ul>
             </div>
           </div>
@@ -2443,11 +2443,11 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                 <IoCheckmarkOutline className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Trip Dates Selected</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{t('tripDatesSelected')}</p>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                  {format(new Date(savedBookingDetails.startDate + 'T00:00:00'), 'MMM d')} - 
-                  {format(new Date(savedBookingDetails.endDate + 'T00:00:00'), 'MMM d, yyyy')} 
-                  ({numberOfDays} {numberOfDays === 1 ? 'day' : 'days'})
+                  {format(new Date(savedBookingDetails.startDate + 'T00:00:00'), 'MMM d')} -
+                  {format(new Date(savedBookingDetails.endDate + 'T00:00:00'), 'MMM d, yyyy')}
+                  ({t('dayCount', { count: numberOfDays })})
                 </p>
               </div>
             </div>
@@ -2455,11 +2455,11 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               onClick={() => router.back()}
               className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
-              Edit
+              {t('edit')}
             </button>
           </div>
         </div>
-        
+
         {/* Selected Insurance Card */}
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
           <div className="flex items-center justify-between">
@@ -2468,33 +2468,33 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                 <IoCheckmarkOutline className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Insurance Selected</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{t('insuranceSelected')}</p>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
                   {(() => {
                     // Handle both insuranceType (legacy) and insuranceTier (current) field names
                     const tier = (savedBookingDetails.insuranceType || savedBookingDetails.insuranceTier || '').toUpperCase()
                     switch(tier) {
-                      case 'LUXURY': return 'Luxury Protection'
-                      case 'PREMIUM': return 'Premium Protection'
+                      case 'LUXURY': return t('luxuryProtection')
+                      case 'PREMIUM': return t('premiumProtection')
                       case 'BASIC':
-                      case 'STANDARD': return 'Standard Protection'
-                      case 'MINIMUM': return 'Minimum Protection'
-                      default: return 'Basic Protection'
+                      case 'STANDARD': return t('standardProtection')
+                      case 'MINIMUM': return t('minimumProtection')
+                      default: return t('basicProtection')
                     }
                   })()}
-                  {' '}- ${savedBookingDetails.pricing.insurancePrice / numberOfDays}/day
+                  {' '}- ${savedBookingDetails.pricing.insurancePrice / numberOfDays}{t('perDay')}
                 </p>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => router.back()}
               className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
-              Edit
+              {t('edit')}
             </button>
           </div>
         </div>
-        
+
         {/* Experience Enhancements Card */}
         {Object.values(savedBookingDetails.addOns).some(v => v) && (
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
@@ -2504,17 +2504,17 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                   <IoCheckmarkOutline className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Experience Enhancements</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{t('experienceEnhancements')}</p>
                   <p className="text-xs text-gray-600 dark:text-gray-400">
-                    {Object.values(savedBookingDetails.addOns).filter(v => v).length} add-ons selected
+                    {t('addOnsSelected', { count: Object.values(savedBookingDetails.addOns).filter(v => v).length })}
                   </p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => router.back()}
                 className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               >
-                Edit
+                {t('edit')}
               </button>
             </div>
           </div>
@@ -2621,7 +2621,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                   scrollableYearDropdown
                   yearDropdownItemNumber={100}
                   dateFormat="MM/dd/yyyy"
-                  placeholderText="Select date of birth"
+                  placeholderText={t('selectDateOfBirth')}
                   className={`w-full px-2 py-2 pr-10 bg-white dark:bg-gray-700 border rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer ${
                     driverAge && ageValidation.isValid
                       ? 'border-green-500 dark:border-green-500'
@@ -2654,7 +2654,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               ) : driverAge && ageValidation.isValid && ageValidation.age ? (
                 <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
                   <IoCheckmarkCircleOutline className="w-3.5 h-3.5" />
-                  You are {ageValidation.age} years old
+                  {t('youAreYearsOld', { age: ageValidation.age })}
                 </p>
               ) : (
                 <p className="text-xs text-gray-500 mt-1">{t('mustBePlusToRent', { age: getMinimumAgeForVehicle() })}</p>
@@ -2821,8 +2821,8 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     <IoPersonOutline className="w-4 h-4" />
-                    Second Driver Information
-                    <span className="text-xs font-normal text-amber-600 dark:text-amber-400">+$10/day</span>
+                    {t('secondDriverInfo')}
+                    <span className="text-xs font-normal text-amber-600 dark:text-amber-400">{t('additionalDriverFee')}</span>
                   </h3>
                   <button
                     type="button"
@@ -2835,7 +2835,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                     }}
                     className="text-xs text-red-600 hover:text-red-700 dark:text-red-400"
                   >
-                    Remove
+                    {t('remove')}
                   </button>
                 </div>
 
@@ -2878,13 +2878,13 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                       scrollableYearDropdown
                       yearDropdownItemNumber={100}
                       dateFormat="MM/dd/yyyy"
-                      placeholderText="Select date of birth"
+                      placeholderText={t('selectDateOfBirth')}
                       className="w-full px-2 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer"
                       wrapperClassName="w-full"
                       calendarClassName="!rounded-xl !border-0 !shadow-xl"
                       popperClassName="!z-50"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Must be 21 or older</p>
+                    <p className="text-xs text-gray-500 mt-1">{t('mustBe21OrOlder')}</p>
                   </div>
 
                   <div>
@@ -2902,7 +2902,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                 </div>
 
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Second driver will need to present their license at pickup for verification.
+                  {t('secondDriverNote')}
                 </p>
               </div>
             )}
@@ -2913,14 +2913,14 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         <div ref={documentsRef} className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <IoShieldCheckmarkOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            Verify Your Identity
+            {t('verifyYourIdentity')}
             {(userProfile?.documentsVerified || userProfile?.stripeIdentityStatus === 'verified' || aiVerificationResult?.passed) ? (
               <span className="ml-2 text-sm text-green-600 dark:text-green-400 font-normal">
-                ✓ Verified
+                ✓ {t('verified')}
               </span>
             ) : aiVerificationResult?.manualPending ? (
               <span className="ml-2 text-sm text-amber-600 dark:text-amber-400 font-normal">
-                Under Review
+                {t('underReview')}
               </span>
             ) : null}
           </h2>
@@ -2935,16 +2935,16 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                     <IoCheckmarkCircle className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0" />
                     <div className="flex-1">
                       <p className="font-medium text-green-900 dark:text-green-100 mb-1">
-                        Already Verified!
+                        {t('alreadyVerifiedExclaim')}
                       </p>
                       <p className="text-sm text-green-800 dark:text-green-200 mb-3">
-                        This email is already verified. Sign in to continue with your booking.
+                        {t('emailAlreadyVerified')}
                       </p>
                       <button
                         onClick={() => router.push(`/auth/login?email=${encodeURIComponent(existingAccountInfo.email)}&returnTo=${encodeURIComponent(window.location.pathname)}`)}
                         className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
                       >
-                        Sign In to Continue
+                        {t('signInToContinue')}
                       </button>
                     </div>
                   </div>
@@ -2958,16 +2958,16 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                     <IoWarningOutline className="w-6 h-6 text-orange-600 dark:text-orange-400 flex-shrink-0" />
                     <div className="flex-1">
                       <p className="font-medium text-orange-900 dark:text-orange-100 mb-1">
-                        Host Account Found
+                        {t('hostAccountFound')}
                       </p>
                       <p className="text-sm text-orange-800 dark:text-orange-200 mb-3">
-                        A host account exists with this email. Sign in and switch to guest mode to book.
+                        {t('hostAccountExistsMsg')}
                       </p>
                       <button
                         onClick={() => router.push(`/auth/login?email=${encodeURIComponent(existingAccountInfo.email)}&returnTo=${encodeURIComponent(window.location.pathname)}`)}
                         className="px-4 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition-colors"
                       >
-                        Sign In as Host
+                        {t('signInAsHost')}
                       </button>
                     </div>
                   </div>
@@ -2982,7 +2982,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                     <div className="flex items-center gap-3 p-4 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
                       <IoInformationCircleOutline className="w-6 h-6 text-gray-500 dark:text-gray-400 flex-shrink-0" />
                       <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Please complete the Primary Driver Information above to verify your identity.
+                        {t('completeDriverInfoToVerify')}
                       </p>
                     </div>
                   ) : (
@@ -2997,7 +2997,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                       }`}>
                         <div className="flex items-center justify-between">
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Verifying as: <span className={`font-medium ${
+                            {t('verifyingAs')} <span className={`font-medium ${
                               emailValidation.isValid
                                 ? 'text-green-700 dark:text-green-300'
                                 : 'text-gray-900 dark:text-white'
@@ -3020,7 +3020,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                               onClick={acceptEmailSuggestion}
                               className="text-xs text-amber-600 hover:text-amber-700 dark:text-amber-500 underline font-medium"
                             >
-                              Fix it
+                              {t('fixIt')}
                             </button>
                           </div>
                         )}
@@ -3326,14 +3326,14 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         >
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
             <IoCardOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            Payment Information
+            {t('paymentInformation')}
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             {isZeroPaymentBooking
-              ? 'Your credits cover this booking - no payment required!'
+              ? t('creditsPaymentSubtitle')
               : savedPaymentMethods.length > 0
-                ? 'Select a saved card or enter new payment details'
-                : 'Enter your card details for payment and security deposit'
+                ? t('savedCardSubtitle')
+                : t('newCardSubtitle')
             }
           </p>
 
@@ -3346,15 +3346,15 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                     <IoCheckmarkCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                   </div>
                   <div>
-                    <p className="font-medium text-amber-800 dark:text-amber-200">Credits Applied</p>
+                    <p className="font-medium text-amber-800 dark:text-amber-200">{t('creditsAppliedBox')}</p>
                     <p className="text-sm text-amber-600 dark:text-amber-400">
-                      Your account balance covers this booking
+                      {t('balanceCoversBooking')}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">$0.00</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Amount due</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('amountDue')}</p>
                 </div>
               </div>
             </div>
@@ -3364,7 +3364,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           {!isZeroPaymentBooking && savedPaymentMethods.length > 0 && (
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Payment Method
+                {t('paymentMethodLabel')}
               </label>
               <div className="space-y-2">
                 {savedPaymentMethods.map((method) => (
@@ -3396,11 +3396,11 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                         {method.brand} •••• {method.last4}
                       </span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">
-                        Expires {method.expMonth.toString().padStart(2, '0')}/{method.expYear.toString().slice(-2)}
+                        {t('expires')} {method.expMonth.toString().padStart(2, '0')}/{method.expYear.toString().slice(-2)}
                       </span>
                       {method.isDefault && (
                         <span className="ml-auto text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded">
-                          Default
+                          {t('defaultLabel')}
                         </span>
                       )}
                     </div>
@@ -3724,44 +3724,40 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                 className="mt-0.5 w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
               />
               <div className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                {t.rich('iAgreeToThePolicies', {
-                  agreements: () => (
-                    <>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          setShowRentalAgreement(true)
-                        }}
-                        className="text-amber-600 hover:text-amber-700 underline font-medium text-xs"
-                      >
-                        {t('rentalAgreement')}
-                      </button>
-                      ,{' '}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          setShowInsuranceModal(true)
-                        }}
-                        className="text-amber-600 hover:text-amber-700 underline font-medium text-xs"
-                      >
-                        {t('insuranceRequirements')}
-                      </button>
-                      , and{' '}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          setShowTrustSafetyModal(true)
-                        }}
-                        className="text-amber-600 hover:text-amber-700 underline font-medium text-xs"
-                      >
-                        {t('trustSafety')}
-                      </button>
-                    </>
-                  )
-                })}
+                {t('iAgreePrefix')}{' '}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setShowRentalAgreement(true)
+                  }}
+                  className="text-amber-600 hover:text-amber-700 underline font-medium text-xs"
+                >
+                  {t('rentalAgreement')}
+                </button>
+                ,{' '}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setShowInsuranceModal(true)
+                  }}
+                  className="text-amber-600 hover:text-amber-700 underline font-medium text-xs"
+                >
+                  {t('insuranceRequirements')}
+                </button>
+                {t('andSeparator')}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setShowTrustSafetyModal(true)
+                  }}
+                  className="text-amber-600 hover:text-amber-700 underline font-medium text-xs"
+                >
+                  {t('trustSafety')}
+                </button>
+                {' '}{t('policies')}.
               </div>
             </label>
           </div>
@@ -3857,7 +3853,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                     <>
                       <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
                         <span className="hidden sm:inline">${formatPrice(stickyAppliedBalances.amountToPay)} + </span>
-                        <span className="text-red-600 dark:text-red-400">${formatPrice(stickyAppliedBalances.depositFromCard)} deposit</span>
+                        <span className="text-red-600 dark:text-red-400">${formatPrice(stickyAppliedBalances.depositFromCard)} {t('depositLabel')}</span>
                         <span className="text-gray-400 dark:text-gray-500 ml-1">{t('depositRefundable')}</span>
                       </p>
                       {userProfile?.insuranceVerified && (

@@ -7,6 +7,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import {
   IoShieldOutline,
   IoCheckmarkCircle,
@@ -30,6 +31,7 @@ export function InsurancePill({
   onInsuranceUploaded
 }: InsurancePillProps) {
   const router = useRouter()
+  const t = useTranslations('BookingPage')
   const [showModal, setShowModal] = useState(false)
 
   const handleClick = () => {
@@ -48,7 +50,7 @@ export function InsurancePill({
       <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
         <IoShieldOutline className="text-green-600" />
         <span className="text-sm text-green-800 dark:text-green-300 font-medium">
-          Insurance on file
+          {t('insuranceOnFile')}
         </span>
         <IoCheckmarkCircle className="text-green-600 ml-auto" />
       </div>
@@ -65,12 +67,12 @@ export function InsurancePill({
         <IoShieldOutline className="text-xl text-blue-600 flex-shrink-0" />
         <div className="flex-1">
           <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
-            Upload Your Insurance
+            {t('uploadYourInsurance')}
           </p>
           <p className="text-xs text-blue-600 dark:text-blue-400">
             {isLoggedIn
-              ? 'Add your insurance in profile for faster checkout'
-              : 'Save 50% on coverage by uploading your own insurance'}
+              ? t('addInsuranceInProfile')
+              : t('save50OnCoverage')}
           </p>
         </div>
         <IoArrowForwardOutline className="text-blue-600" />
@@ -83,7 +85,7 @@ export function InsurancePill({
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
               <h3 className="font-semibold text-gray-900 dark:text-white">
-                Upload Insurance After Booking
+                {t('uploadInsuranceAfterBooking')}
               </h3>
               <button
                 onClick={() => setShowModal(false)}
@@ -102,11 +104,11 @@ export function InsurancePill({
               </div>
 
               <h4 className="text-center text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Complete Your Booking First
+                {t('completeYourBookingFirst')}
               </h4>
 
               <p className="text-center text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Once you complete your booking, you'll be able to upload your insurance in your account dashboard.
+                {t('uploadInsuranceAfterBookingDesc')}
               </p>
 
               <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 mb-4">
@@ -114,10 +116,10 @@ export function InsurancePill({
                   <IoSparklesOutline className="text-xl text-green-600 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-medium text-green-800 dark:text-green-300 text-sm">
-                      Save 50% on coverage!
+                      {t('save50OnCoverageExclaim')}
                     </p>
                     <p className="text-xs text-green-700 dark:text-green-400 mt-1">
-                      Upload your own insurance after booking to get our reduced coverage rate.
+                      {t('uploadOwnInsuranceForReduced')}
                     </p>
                   </div>
                 </div>
@@ -126,15 +128,15 @@ export function InsurancePill({
               <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 <p className="flex items-center gap-2">
                   <IoCheckmarkCircle className="text-green-500" />
-                  Your account will be created automatically
+                  {t('accountCreatedAutomatically')}
                 </p>
                 <p className="flex items-center gap-2">
                   <IoCheckmarkCircle className="text-green-500" />
-                  Upload insurance anytime before your trip
+                  {t('uploadInsuranceAnytime')}
                 </p>
                 <p className="flex items-center gap-2">
                   <IoCheckmarkCircle className="text-green-500" />
-                  Adjust coverage level after upload
+                  {t('adjustCoverageAfterUpload')}
                 </p>
               </div>
             </div>
@@ -145,7 +147,7 @@ export function InsurancePill({
                 onClick={() => setShowModal(false)}
                 className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
               >
-                Got it, continue booking
+                {t('gotItContinueBooking')}
               </button>
             </div>
           </div>

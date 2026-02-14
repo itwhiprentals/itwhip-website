@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
 import { IoStar, IoLocationSharp, IoFlash, IoChevronDown, IoChevronUp, IoCarSportOutline } from 'react-icons/io5'
@@ -22,6 +23,7 @@ interface VehicleCardProps {
 }
 
 export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: VehicleCardProps) {
+  const t = useTranslations('VehicleCard')
   const [expanded, setExpanded] = useState(false)
 
   // Use photos array if available, fallback to single photo
@@ -73,7 +75,7 @@ export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: V
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-              No photo
+              {t('noPhoto')}
             </div>
           )}
           {/* Photo count badge */}
@@ -105,22 +107,22 @@ export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: V
               {vehicle.vehicleType?.toUpperCase() === 'RIDESHARE' ? (
                 <span className="flex items-center gap-0.5 text-[9px] font-bold text-white bg-orange-500 px-1.5 py-0.5 rounded">
                   <IoCarSportOutline size={9} />
-                  Rideshare
+                  {t('rideshareLabel')}
                 </span>
               ) : vehicle.depositAmount === 0 ? (
                 <span className="text-[9px] font-bold text-white bg-blue-500 px-1.5 py-0.5 rounded">
-                  No Deposit
+                  {t('noDeposit')}
                 </span>
               ) : vehicle.instantBook && (
                 <span className="flex items-center gap-0.5 text-[9px] font-bold text-white bg-emerald-500 px-1.5 py-0.5 rounded">
                   <IoFlash size={9} />
-                  Instant
+                  {t('instantLabel')}
                 </span>
               )}
             </div>
             {/* Model + Trips on second line */}
             <p className="text-[11px] text-gray-600 dark:text-gray-300 truncate">
-              {vehicle.model} · {vehicle.trips > 0 ? `(Trips ${vehicle.trips})` : '(New)'}
+              {vehicle.model} · {vehicle.trips > 0 ? `(${t('tripsCount', { count: vehicle.trips })})` : `(${t('newLabel')})`}
             </p>
 
             {/* Location, distance */}
@@ -143,7 +145,7 @@ export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: V
           <div className="flex items-center justify-between w-full">
             <div>
               <span className="text-[15px] font-bold text-gray-900 dark:text-white">${vehicle.dailyRate}</span>
-              <span className="text-[11px] text-gray-500 dark:text-gray-400">/day</span>
+              <span className="text-[11px] text-gray-500 dark:text-gray-400">{t('perDay')}</span>
             </div>
             {/* Select to Book button - card click expands */}
             <button
@@ -153,7 +155,7 @@ export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: V
               }}
               className="px-2.5 py-1 bg-primary text-white text-[10px] font-semibold rounded hover:bg-primary/90 transition-colors"
             >
-              Select to Book
+              {t('selectToBook')}
             </button>
           </div>
         </div>
@@ -184,31 +186,31 @@ export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: V
           {/* Pricing breakdown */}
           <div className="p-3">
             <h5 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              Estimated Pricing ({numberOfDays} {numberOfDays === 1 ? 'day' : 'days'})
+              {t('estimatedPricing', { count: numberOfDays })}
             </h5>
             <div className="space-y-1.5 text-xs">
               <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                <span>${vehicle.dailyRate} × {numberOfDays} {numberOfDays === 1 ? 'day' : 'days'}</span>
+                <span>${vehicle.dailyRate} × {numberOfDays} {numberOfDays === 1 ? t('day') : t('days')}</span>
                 <span>${pricing.subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                <span>Service fee ({(SERVICE_FEE_RATE * 100).toFixed(0)}%)</span>
+                <span>{t('serviceFee', { rate: (SERVICE_FEE_RATE * 100).toFixed(0) })}</span>
                 <span>${pricing.serviceFee.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                <span>Taxes ({(TAX_RATE * 100).toFixed(1)}%)</span>
+                <span>{t('taxes', { rate: (TAX_RATE * 100).toFixed(1) })}</span>
                 <span>${pricing.tax.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                <span>Insurance ({vehicle.insuranceBasicDaily ? 'Basic' : 'est., Basic'})</span>
+                <span>{vehicle.insuranceBasicDaily ? t('insuranceBasic') : t('insuranceEstBasic')}</span>
                 <span>${pricing.insuranceEstimate.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                <span>Security deposit (refundable)</span>
+                <span>{t('securityDepositRefundable')}</span>
                 <span>${pricing.deposit.toFixed(2)}</span>
               </div>
               <div className="flex justify-between font-semibold text-gray-900 dark:text-white pt-1.5 border-t border-gray-200 dark:border-gray-700">
-                <span>Total at checkout</span>
+                <span>{t('totalAtCheckout')}</span>
                 <span>${pricing.total.toFixed(2)}</span>
               </div>
             </div>
@@ -221,7 +223,7 @@ export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: V
                 className="text-xs text-primary font-medium hover:underline"
                 onClick={(e) => e.stopPropagation()}
               >
-                View Full Listing →
+                {t('viewFullListing')}
               </Link>
             </div>
           </div>

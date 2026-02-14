@@ -4,7 +4,7 @@ import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import { Suspense } from 'react'
 import { NextIntlClientProvider, hasLocale } from 'next-intl'
-import { setRequestLocale, getMessages } from 'next-intl/server'
+import { setRequestLocale, getMessages, getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
 import Script from 'next/script'
@@ -28,101 +28,116 @@ export const viewport: Viewport = {
   ],
 }
 
-export const metadata: Metadata = {
-  metadataBase: new URL('https://itwhip.com'),
+const ogLocaleMap: Record<string, string> = {
+  en: 'en_US',
+  es: 'es_MX',
+  fr: 'fr_FR',
+}
 
-  title: 'Peer to Peer Car Rental Arizona | Hosts Earn 90% | ItWhip',
-  description: 'Arizona\'s #1 peer-to-peer car rental platform. Rent unique cars from local Phoenix owners or list your car and earn up to 90%. $1M insurance included. Phoenix, Scottsdale, Tempe, Mesa, Chandler.',
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
 
-  verification: {
-    google: 'BHWkhY02dx7jq6OPC5fLJXDEL7_PaiyguPwn2GnnpLw',
-  },
+  return {
+    metadataBase: new URL('https://itwhip.com'),
 
-  openGraph: {
-    title: 'Peer to Peer Car Rental Arizona | ItWhip',
-    description: 'Rent unique cars from local owners or earn up to 90% sharing yours. $1M insurance included. Phoenix, Scottsdale, Tempe & more.',
-    url: 'https://itwhip.com',
-    siteName: 'ItWhip',
-    images: [
-      {
-        url: 'https://itwhip.com/og-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'ItWhip - Peer to Peer Car Rental Arizona',
-      }
+    title: t('homeTitle'),
+    description: t('homeDescription'),
+
+    verification: {
+      google: 'BHWkhY02dx7jq6OPC5fLJXDEL7_PaiyguPwn2GnnpLw',
+    },
+
+    openGraph: {
+      title: t('homeOgTitle'),
+      description: t('homeOgDescription'),
+      url: 'https://itwhip.com',
+      siteName: 'ItWhip',
+      images: [
+        {
+          url: 'https://itwhip.com/og-image.jpg',
+          width: 1200,
+          height: 630,
+          alt: 'ItWhip - Peer to Peer Car Rental Arizona',
+        }
+      ],
+      locale: ogLocaleMap[locale] || 'en_US',
+      type: 'website',
+    },
+
+    twitter: {
+      card: 'summary_large_image',
+      title: t('homeTwitterTitle'),
+      description: t('homeTwitterDescription'),
+      images: ['https://itwhip.com/og-image.jpg'],
+      creator: '@itwhip',
+      site: '@itwhip',
+    },
+
+    keywords: [
+      'peer to peer car rental Arizona',
+      'peer to peer car rental Phoenix',
+      'P2P car rental Arizona',
+      'Turo alternative Arizona',
+      'rent car from owner Phoenix',
+      'car sharing Arizona',
+      'list your car Phoenix',
+      'rent my car Phoenix',
+      'local car rentals Scottsdale',
+      'Mesa car sharing',
+      'Chandler car rental',
+      'Tempe vehicle rental',
+      'earn money with your car Arizona',
+      'Arizona car sharing platform'
     ],
-    locale: 'en_US',
-    type: 'website',
-  },
 
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Peer to Peer Car Rental Arizona | ItWhip',
-    description: 'Skip the rental counter. Rent from local owners or list your car and earn up to 90%. $1M insurance included.',
-    images: ['https://itwhip.com/og-image.jpg'],
-    creator: '@itwhip',
-    site: '@itwhip',
-  },
+    authors: [{ name: 'ItWhip' }],
+    creator: 'ItWhip',
+    publisher: 'ItWhip',
+    formatDetection: {
+      email: false,
+      address: false,
+      telephone: false,
+    },
 
-  keywords: [
-    'peer to peer car rental Arizona',
-    'peer to peer car rental Phoenix',
-    'P2P car rental Arizona',
-    'Turo alternative Arizona',
-    'rent car from owner Phoenix',
-    'car sharing Arizona',
-    'list your car Phoenix',
-    'rent my car Phoenix',
-    'local car rentals Scottsdale',
-    'Mesa car sharing',
-    'Chandler car rental',
-    'Tempe vehicle rental',
-    'earn money with your car Arizona',
-    'Arizona car sharing platform'
-  ],
+    icons: {
+      icon: [
+        { url: '/favicon.ico' },
+        { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+        { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      ],
+      apple: [
+        { url: '/apple-touch-icon.png' },
+      ],
+    },
 
-  authors: [{ name: 'ItWhip' }],
-  creator: 'ItWhip',
-  publisher: 'ItWhip',
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'black-translucent',
+      title: 'ItWhip',
+    },
 
-  icons: {
-    icon: [
-      { url: '/favicon.ico' },
-      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-    ],
-    apple: [
-      { url: '/apple-touch-icon.png' },
-    ],
-  },
+    applicationName: 'ItWhip',
+    referrer: 'origin-when-cross-origin',
+    category: 'car rental',
+    classification: 'Peer-to-Peer Car Sharing Marketplace',
 
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: 'ItWhip',
-  },
-
-  applicationName: 'ItWhip',
-  referrer: 'origin-when-cross-origin',
-  category: 'car rental',
-  classification: 'Peer-to-Peer Car Sharing Marketplace',
-
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+    robots: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
     },
-  },
+  }
 }
 
 // Schema definitions
