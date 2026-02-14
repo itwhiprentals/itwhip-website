@@ -1,7 +1,15 @@
 // app/(guest)/rentals/[carId]/book/components/index.ts
-// Phase 14 Booking UI Components
+// Booking UI Components
 
 export { VisitorIdentityVerify } from './VisitorIdentityVerify'
 export { CameraCapture } from './CameraCapture'
 export { GuestIdentityVerify } from './GuestIdentityVerify'
 export { InsurancePill } from './InsurancePill'
+export { BookingSuccessModal } from './BookingSuccessModal'
+export { HeaderBar } from './HeaderBar'
+export { CarInfoCard } from './CarInfoCard'
+export { BookingModals } from './BookingModals'
+export { AlertBanners } from './AlertBanners'
+export { HostGuardModal } from './HostGuardModal'
+export { BookingDetailsCards } from './BookingDetailsCards'
+export { SecondDriverForm } from './SecondDriverForm'

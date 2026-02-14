@@ -46,13 +46,10 @@ import { getCityFromAddress } from '@/app/[locale]/(guest)/rentals/lib/arizona-t
 import Header from '@/app/components/Header'
 import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 
-// Import modal components
-import RentalAgreementModal from '@/app/[locale]/(guest)/rentals/components/modals/RentalAgreementModal'
-import InsuranceRequirementsModal from '@/app/[locale]/(guest)/rentals/components/modals/InsuranceRequirementsModal'
-import TrustSafetyModal from '@/app/[locale]/(guest)/rentals/components/modals/TrustSafetyModal'
+// Modal components are now in BookingModals
 
 // Import Phase 14 booking UI components
-import { VisitorIdentityVerify, GuestIdentityVerify, InsurancePill } from './components'
+import { VisitorIdentityVerify, GuestIdentityVerify, InsurancePill, BookingSuccessModal, HeaderBar, CarInfoCard, BookingModals, AlertBanners, HostGuardModal, BookingDetailsCards, SecondDriverForm } from './components'
 
 // Stripe Payment Element for Apple Pay, Google Pay, and Card payments
 import { loadStripe } from '@stripe/stripe-js'
@@ -2187,338 +2184,29 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       {/* Main Header */}
       <Header />
 
-      {/* ============================================ */}
-      {/* HOST GUARD MODAL - Overlay on booking page */}
-      {/* ============================================ */}
-      {hostGuard.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop - semi-transparent to see page behind */}
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => router.back()}
-          />
+      <HostGuardModal
+        hostGuard={hostGuard}
+        onBack={() => router.back()}
+        onCreateGuestAccount={() => router.push('/auth/signup?roleHint=guest')}
+        onGoToHostDashboard={() => router.push('/host/dashboard')}
+        onSwitchToGuest={handleSwitchToGuest}
+        onSignInDifferent={() => router.push('/auth/login?roleHint=guest&returnTo=' + encodeURIComponent(window.location.pathname))}
+      />
 
-          {/* Modal Content */}
-          <div className="relative bg-gray-800 rounded-xl p-8 max-w-md w-full text-center shadow-2xl border border-gray-700 animate-in fade-in zoom-in duration-200">
-            {/* Warning Icon */}
-            <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <IoWarningOutline className="w-10 h-10 text-yellow-500" />
-            </div>
-
-            {hostGuard.type === 'host-only' ? (
-              /* HOST-ONLY: No guest account exists */
-              <>
-                <h2 className="text-2xl font-bold text-white mb-2">
-                  {t('guestAccountRequired')}
-                </h2>
-                <p className="text-gray-400 mb-6">
-                  {t('youreLoggedInAsHost')}
-                </p>
-                <div className="space-y-3">
-                  <button
-                    onClick={() => router.push('/auth/signup?roleHint=guest')}
-                    className="w-full py-3 px-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium rounded-lg transition-colors"
-                  >
-                    {t('createGuestAccount')}
-                  </button>
-                  <button
-                    onClick={() => router.push('/host/dashboard')}
-                    className="w-full py-3 px-4 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
-                  >
-                    {t('backToHostDashboard')}
-                  </button>
-                </div>
-              </>
-            ) : (
-              /* DUAL ACCOUNT: Guest account exists - offer smooth switch */
-              <>
-                <h2 className="text-2xl font-bold text-white mb-2">
-                  {t('switchToGuestMode')}
-                </h2>
-                <p className="text-gray-400 mb-2">
-                  {t('youreCurrentlyLoggedInAsHost')}
-                </p>
-                <p className="text-gray-300 mb-6">
-                  {t('weDetectedYouHaveGuestAccount')}
-                </p>
-
-                <div className="space-y-3">
-                  {/* Primary Action: Switch to Guest */}
-                  <button
-                    onClick={handleSwitchToGuest}
-                    disabled={hostGuard.isSwitching}
-                    className="w-full py-3 px-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:from-gray-600 disabled:to-gray-600 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-                  >
-                    {hostGuard.isSwitching ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        {t('switching')}
-                      </>
-                    ) : (
-                      <>
-                        <IoCheckmarkCircle className="w-5 h-5" />
-                        {t('switchToGuestAccount')}
-                      </>
-                    )}
-                  </button>
-
-                  {/* Secondary: Manual login */}
-                  <button
-                    onClick={() => router.push('/auth/login?roleHint=guest&returnTo=' + encodeURIComponent(window.location.pathname))}
-                    className="w-full py-2.5 px-4 text-gray-400 hover:text-white text-sm transition-colors"
-                  >
-                    {t('signInWithDifferentGuestAccount')}
-                  </button>
-
-                  {/* Tertiary: Go back */}
-                  <button
-                    onClick={() => router.back()}
-                    className="w-full py-2.5 px-4 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
-                  >
-                    {t('goBack')}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Spacer for fixed header */}
-      <div className="h-16" />
-
-      {/* Header Bar - sticky below main header */}
-      <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-16 z-40">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-            >
-              <IoArrowBackOutline className="w-5 h-5 mr-2" />
-              <span className="text-sm">{t('backToCarDetails')}</span>
-            </button>
-            
-            <div className="flex items-center text-sm text-gray-500">
-              <IoShieldCheckmarkOutline className="w-5 h-5 mr-1 text-green-500" />
-              <span>{t('secureCheckout')}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <HeaderBar onBack={() => router.back()} />
       
-      {/* Car Info Card */}
-      <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              {car.photos?.[0] && (
-                <img
-                  src={car.photos[0].url}
-                  alt={`${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`}
-                  className="w-20 h-14 object-cover rounded-lg"
-                />
-              )}
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {car.year} {capitalizeCarMake(car.make)} {normalizeModelName(car.model, car.make)}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {car.carType} • {car.seats} {t('seats')}
-                </p>
-                <div className="flex items-center mt-1 space-x-3">
-                  {car.rating && car.rating > 0 ? (
-                    <div className="flex items-center">
-                      <div className="flex text-amber-400 text-xs">
-                        {'★★★★★'.split('').map((star, i) => (
-                          <span key={i} className={i < Math.floor(car.rating!) ? '' : 'opacity-30'}>
-                            {star}
-                          </span>
-                        ))}
-                      </div>
-                      <span className="ml-1 text-xs text-gray-500">
-                        {car.rating.toFixed(1)}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded-full font-medium">
-                      {t('newListing')}
-                    </span>
-                  )}
-                  <span className="text-xs text-gray-500">
-                    {car.totalTrips || 0} {t('trips')}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <CarInfoCard car={car} />
       
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 py-6 pb-24">
         
-        {/* ✅ NEW: VEHICLE UNAVAILABLE BANNER - HIGHEST PRIORITY */}
-        {!car.isActive && (
-          <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-lg p-4 mb-6 shadow-sm">
-            <div className="flex items-start gap-3">
-              <IoCloseCircleOutline className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="font-semibold text-red-900 dark:text-red-100 mb-2 text-base">
-                  {t('vehicleUnavailable')}
-                </p>
-                <p className="text-sm text-red-800 dark:text-red-200 mb-3">
-                  {t('vehicleUnavailableDesc')}
-                </p>
-                <ul className="text-sm text-red-800 dark:text-red-200 space-y-1 ml-4">
-                  <li>• {t('vehicleUnavailableReason1')}</li>
-                  <li>• {t('vehicleUnavailableReason2')}</li>
-                  <li>• {t('vehicleUnavailableReason3')}</li>
-                </ul>
-                <p className="text-sm text-red-700 dark:text-red-300 mt-3 font-medium">
-                  {t('vehicleUnavailableCta')}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* ⚠️ ACCOUNT WARNING/RESTRICTION BANNER - Only show for account-level restrictions (has reason) */}
-        {/* Field validation errors show inline under each field - no banner needed for those */}
-        {!eligibility.allowed && eligibility.reason && car.isActive && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4 shadow-sm">
-            <div className="flex items-start space-x-3">
-              <IoBanOutline className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-red-900 dark:text-red-100 mb-1">
-                  {t('bookingRestricted')}
-                </p>
-                <p className="text-sm text-red-800 dark:text-red-200">
-                  {eligibility.reason}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* ⚠️ MANUAL APPROVAL WARNING */}
-        {eligibility.allowed && eligibility.reason && car.isActive && (
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4 shadow-sm">
-            <div className="flex items-start space-x-3">
-              <IoWarningOutline className="w-6 h-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-yellow-900 dark:text-yellow-100 mb-1">
-                  {t('manualApprovalRequired')}
-                </p>
-                <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                  {eligibility.reason}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* P2P Important Notice */}
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4 shadow-sm">
-          <div className="flex items-start space-x-3">
-            <IoInformationCircleOutline className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-            <div className="text-sm">
-              <p className="font-medium text-amber-900 dark:text-amber-100 mb-2">{t('importantBookingInfo')}</p>
-              <ul className="space-y-1 text-xs text-amber-800 dark:text-amber-200">
-                <li>• <span dangerouslySetInnerHTML={{ __html: t.raw('bookWithoutAccount') }} />{' '}
-                  <a href="/help/guest-account" className="text-amber-700 dark:text-amber-300 underline hover:no-underline">{t('learnMore')}</a>
-                </li>
-                <li>• <span dangerouslySetInnerHTML={{ __html: t.raw('quickVerification') }} /></li>
-                <li>• <span dangerouslySetInnerHTML={{ __html: t.raw('noChargesUntilApproved') }} /></li>
-              </ul>
-            </div>
-          </div>
-        </div>
-        
-        {/* Selected Dates Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-                <IoCheckmarkOutline className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">{t('tripDatesSelected')}</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  {format(new Date(savedBookingDetails.startDate + 'T00:00:00'), 'MMM d')} -
-                  {format(new Date(savedBookingDetails.endDate + 'T00:00:00'), 'MMM d, yyyy')}
-                  ({t('dayCount', { count: numberOfDays })})
-                </p>
-              </div>
-            </div>
-            <button 
-              onClick={() => router.back()}
-              className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            >
-              {t('edit')}
-            </button>
-          </div>
-        </div>
+        <AlertBanners carIsActive={car.isActive} eligibility={eligibility} />
 
-        {/* Selected Insurance Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-                <IoCheckmarkOutline className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">{t('insuranceSelected')}</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  {(() => {
-                    // Handle both insuranceType (legacy) and insuranceTier (current) field names
-                    const tier = (savedBookingDetails.insuranceType || savedBookingDetails.insuranceTier || '').toUpperCase()
-                    switch(tier) {
-                      case 'LUXURY': return t('luxuryProtection')
-                      case 'PREMIUM': return t('premiumProtection')
-                      case 'BASIC':
-                      case 'STANDARD': return t('standardProtection')
-                      case 'MINIMUM': return t('minimumProtection')
-                      default: return t('basicProtection')
-                    }
-                  })()}
-                  {' '}- ${savedBookingDetails.pricing.insurancePrice / numberOfDays}{t('perDay')}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => router.back()}
-              className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            >
-              {t('edit')}
-            </button>
-          </div>
-        </div>
-
-        {/* Experience Enhancements Card */}
-        {Object.values(savedBookingDetails.addOns).some(v => v) && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-                  <IoCheckmarkOutline className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{t('experienceEnhancements')}</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    {t('addOnsSelected', { count: Object.values(savedBookingDetails.addOns).filter(v => v).length })}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => router.back()}
-                className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                {t('edit')}
-              </button>
-            </div>
-          </div>
-        )}
+        <BookingDetailsCards
+          savedBookingDetails={savedBookingDetails}
+          numberOfDays={numberOfDays}
+          onEdit={() => router.back()}
+        />
         
         {/* Primary Driver Information Section */}
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
@@ -2800,113 +2488,25 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             </div>
           </div>
 
-          {/* Add Second Driver Section */}
-          <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-            {!showSecondDriver ? (
-              <>
-                <button
-                  type="button"
-                  className="flex items-center gap-2 text-sm font-medium text-amber-600 hover:text-amber-700 dark:text-amber-500 dark:hover:text-amber-400 transition-colors"
-                  onClick={() => setShowSecondDriver(true)}
-                >
-                  <span className="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center text-xs font-bold">+</span>
-                  {t('addSecondDriver')}
-                </button>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {t('additionalDriversNote')}
-                </p>
-              </>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    <IoPersonOutline className="w-4 h-4" />
-                    {t('secondDriverInfo')}
-                    <span className="text-xs font-normal text-amber-600 dark:text-amber-400">{t('additionalDriverFee')}</span>
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowSecondDriver(false)
-                      setSecondDriverFirstName('')
-                      setSecondDriverLastName('')
-                      setSecondDriverAge(null)
-                      setSecondDriverLicense('')
-                    }}
-                    className="text-xs text-red-600 hover:text-red-700 dark:text-red-400"
-                  >
-                    {t('remove')}
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {t('firstName')} <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={secondDriverFirstName}
-                      onChange={(e) => setSecondDriverFirstName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white"
-                      placeholder="Jane"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {t('lastName')} <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={secondDriverLastName}
-                      onChange={(e) => setSecondDriverLastName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white"
-                      placeholder="Doe"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {t('dateOfBirth')} <span className="text-red-500">*</span>
-                    </label>
-                    <DatePicker
-                      selected={secondDriverAge}
-                      onChange={(date) => setSecondDriverAge(date)}
-                      showYearDropdown
-                      showMonthDropdown
-                      scrollableYearDropdown
-                      yearDropdownItemNumber={100}
-                      dateFormat="MM/dd/yyyy"
-                      placeholderText={t('selectDateOfBirth')}
-                      className="w-full px-2 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer"
-                      wrapperClassName="w-full"
-                      calendarClassName="!rounded-xl !border-0 !shadow-xl"
-                      popperClassName="!z-50"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">{t('mustBe21OrOlder')}</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {t('driversLicenseNumber')} <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={secondDriverLicense}
-                      onChange={(e) => setSecondDriverLicense(e.target.value.toUpperCase())}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white"
-                      placeholder="D12345678"
-                    />
-                  </div>
-                </div>
-
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {t('secondDriverNote')}
-                </p>
-              </div>
-            )}
-          </div>
+          <SecondDriverForm
+            showSecondDriver={showSecondDriver}
+            onToggle={setShowSecondDriver}
+            secondDriverFirstName={secondDriverFirstName}
+            onFirstNameChange={setSecondDriverFirstName}
+            secondDriverLastName={secondDriverLastName}
+            onLastNameChange={setSecondDriverLastName}
+            secondDriverAge={secondDriverAge}
+            onAgeChange={setSecondDriverAge}
+            secondDriverLicense={secondDriverLicense}
+            onLicenseChange={setSecondDriverLicense}
+            onRemove={() => {
+              setShowSecondDriver(false)
+              setSecondDriverFirstName('')
+              setSecondDriverLastName('')
+              setSecondDriverAge(null)
+              setSecondDriverLicense('')
+            }}
+          />
         </div>
         
         {/* Identity Verification Section */}
@@ -3766,36 +3366,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       </div>
 
       {/* Sticky Floating Checkout Bar - Mobile Optimized */}
-      {/* Booking Success Banner */}
-      {bookingSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-md w-full text-center shadow-2xl">
-            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <IoCheckmarkCircle className="w-10 h-10 text-green-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('bookingSubmitted')}</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              {t('reference')} <span className="font-mono font-semibold text-gray-900 dark:text-white">{bookingSuccess.bookingCode}</span>
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              {t('yourBookingIsUnderReview')}
-            </p>
-            <button
-              onClick={() => {
-                if (bookingSuccess.id) {
-                  router.push(`/rentals/dashboard/bookings/${bookingSuccess.id}?new=1`)
-                } else {
-                  router.push('/rentals/dashboard/bookings')
-                }
-              }}
-              className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
-            >
-              {t('viewBookingStatus')}
-            </button>
-            <p className="text-xs text-gray-400 mt-3">{t('redirectingAutomatically')}</p>
-          </div>
-        </div>
-      )}
+      {bookingSuccess && <BookingSuccessModal bookingSuccess={bookingSuccess} />}
 
       {/* Booking Error Banner */}
       {bookingError && !bookingSuccess && (
@@ -3902,61 +3473,25 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         </div>
       </div>
       
-      {/* Modals */}
-      <RentalAgreementModal
-        isOpen={showRentalAgreement}
-        onClose={() => setShowRentalAgreement(false)}
-        carDetails={car}
-        bookingDetails={savedBookingDetails as any}
-        guestDetails={{
-          name: `${guestName} ${guestLastName}`.trim() || session?.user?.name || `${driverFirstName} ${driverLastName}`.trim() || '',
-          email: guestEmail || session?.user?.email || driverEmail || '',
-          bookingCode: '',
-          verificationStatus: 'PENDING'
+      <BookingModals
+        showRentalAgreement={showRentalAgreement}
+        onCloseRentalAgreement={() => setShowRentalAgreement(false)}
+        showInsuranceModal={showInsuranceModal}
+        onCloseInsuranceModal={() => setShowInsuranceModal(false)}
+        showTrustSafetyModal={showTrustSafetyModal}
+        onCloseTrustSafetyModal={() => setShowTrustSafetyModal(false)}
+        showManualApprovalModal={showManualApprovalModal}
+        onCloseManualApprovalModal={() => setShowManualApprovalModal(null)}
+        onAcceptManualApproval={() => {
+          setShowManualApprovalModal(null)
+          manualApprovalAccepted.current = true
+          handleCheckoutClick()
         }}
-        isDraft={true}
+        car={car}
+        savedBookingDetails={savedBookingDetails}
+        guestName={`${guestName} ${guestLastName}`.trim() || session?.user?.name || `${driverFirstName} ${driverLastName}`.trim() || ''}
+        guestEmail={guestEmail || session?.user?.email || driverEmail || ''}
       />
-      
-      <InsuranceRequirementsModal
-        isOpen={showInsuranceModal}
-        onClose={() => setShowInsuranceModal(false)}
-      />
-      
-      <TrustSafetyModal
-        isOpen={showTrustSafetyModal}
-        onClose={() => setShowTrustSafetyModal(false)}
-      />
-
-      {/* Manual Approval Warning Modal */}
-      {showManualApprovalModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full shadow-2xl">
-            <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <IoWarningOutline className="w-7 h-7 text-amber-600" />
-            </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">{t('manualApprovalRequired')}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-6">{showManualApprovalModal}</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowManualApprovalModal(null)}
-                className="flex-1 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                {t('cancel')}
-              </button>
-              <button
-                onClick={() => {
-                  setShowManualApprovalModal(null)
-                  manualApprovalAccepted.current = true
-                  handleCheckoutClick()
-                }}
-                className="flex-1 py-2.5 rounded-lg bg-amber-600 text-white font-medium hover:bg-amber-700 transition-colors"
-              >
-                {t('continueAnyway')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
