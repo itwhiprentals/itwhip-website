@@ -31,12 +31,15 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
   const locale = useLocale()
   const [newMessage, setNewMessage] = useState('')
   const [showQuickActions, setShowQuickActions] = useState(true)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll within the messages container (not the page)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const container = messagesContainerRef.current
+    if (container) {
+      container.scrollTop = container.scrollHeight
+    }
   }, [messages])
 
   const handleSendMessage = async () => {
@@ -137,7 +140,7 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
         </span>
       </div>
 
-      <div className="border border-gray-200 rounded-lg bg-white h-[400px] lg:h-[450px] overflow-y-auto">
+      <div ref={messagesContainerRef} className="border border-gray-200 rounded-lg bg-white h-[400px] lg:h-[450px] overflow-y-auto">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-400 p-4">
             <svg className="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,7 +152,6 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
         ) : (
           <div className="p-3 space-y-2">
             {messages.map((msg, idx) => renderMessage(msg, idx))}
-            <div ref={messagesEndRef} />
           </div>
         )}
       </div>

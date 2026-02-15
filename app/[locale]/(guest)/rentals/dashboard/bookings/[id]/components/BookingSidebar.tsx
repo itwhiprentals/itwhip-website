@@ -4,7 +4,7 @@ import React, { useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { Booking } from '../types'
 import {
-  ShieldCheck, CheckCircle, Key, User, Phone, Calendar,
+  ShieldCheck, CheckCircle, User, Phone, Calendar,
   AlertCircle
 } from './Icons'
 import { IoHourglassOutline as HourglassOutline } from 'react-icons/io5'
@@ -174,23 +174,30 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
                 </div>
               </div>
             )}
-          </div>
-          
-          {booking.depositAmount > 0 && (
-            <div className="p-3 bg-amber-50 rounded-lg mt-3">
-              <div className="flex items-start">
-                <Key className="w-4 h-4 text-amber-600 mr-2 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs sm:text-sm font-medium text-amber-900">
-                    {t('securityDeposit', { amount: formatCurrency(booking.depositAmount) })}
-                  </p>
-                  <p className="text-xs text-amber-700 mt-1">
-                    {t('depositRefundInfo', { amount: formatCurrency(booking.depositAmount) })}
-                  </p>
+
+            {/* Security Deposit */}
+            {booking.depositAmount > 0 && (
+              <div className="mt-3 pt-3 border-t border-dashed border-gray-200 space-y-1.5">
+                <div className="flex justify-between text-xs sm:text-sm">
+                  <span className="text-gray-600">{t('securityDepositHold')}</span>
+                  <span className="font-medium">{formatCurrency(booking.depositAmount)}</span>
                 </div>
+                {(booking.depositFromWallet ?? 0) > 0 && (
+                  <div className="flex justify-between text-xs sm:text-sm">
+                    <span className="text-blue-600">{t('depositFromWalletLabel')}</span>
+                    <span className="text-blue-600 font-medium">-{formatCurrency(booking.depositFromWallet!)}</span>
+                  </div>
+                )}
+                {(booking.depositFromCard ?? 0) > 0 && (
+                  <div className="flex justify-between text-xs sm:text-sm">
+                    <span className="text-red-600">{t('depositFromCardLabel')}</span>
+                    <span className="text-red-600 font-medium">{formatCurrency(booking.depositFromCard!)}</span>
+                  </div>
+                )}
+                <p className="text-[10px] text-gray-400 mt-1">{t('depositRefundNote')}</p>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 

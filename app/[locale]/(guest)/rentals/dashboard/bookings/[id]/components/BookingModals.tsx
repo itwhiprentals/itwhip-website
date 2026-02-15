@@ -432,7 +432,7 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking }) => {
           dailyRate: booking.car.dailyRate || 0,
           rating: booking.car.rating,
           totalTrips: booking.car.totalTrips,
-          address: booking.pickupLocation,
+          address: booking.onboardingCompletedAt ? booking.pickupLocation : 'Phoenix, AZ',
           host: booking.host ? {
             name: booking.host.name,
             profilePhoto: booking.host.profilePhoto ?? undefined,
@@ -447,7 +447,7 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking }) => {
           startTime: booking.startTime,
           endTime: booking.endTime,
           deliveryType: booking.deliveryType || 'pickup',
-          deliveryAddress: booking.pickupLocation,
+          deliveryAddress: booking.onboardingCompletedAt ? (booking.pickupLocation || 'Phoenix, AZ') : 'Phoenix, AZ',
           insuranceType: booking.insuranceType || 'basic',
           addOns: {
             refuelService: false,

@@ -624,7 +624,7 @@ export default function BookingDetailsPage() {
             carType: booking.car.type || 'standard',
             seats: booking.car.seats || 4,
             dailyRate: booking.dailyRate,
-            city: booking.pickupLocation
+            city: booking.onboardingCompletedAt ? booking.pickupLocation : 'Phoenix, AZ'
           }}
           bookingDetails={{
             carId: booking.car.id || '',
@@ -634,7 +634,7 @@ export default function BookingDetailsPage() {
             startTime: booking.startTime || '10:00 AM',
             endTime: booking.endTime || '10:00 AM',
             deliveryType: booking.pickupType || 'pickup',
-            deliveryAddress: booking.pickupLocation || 'Phoenix, AZ',
+            deliveryAddress: booking.onboardingCompletedAt ? (booking.pickupLocation || 'Phoenix, AZ') : 'Phoenix, AZ',
             insuranceType: booking.insuranceType || 'basic',
             addOns: { refuelService: false, additionalDriver: false, extraMiles: false, vipConcierge: false },
             pricing: {
