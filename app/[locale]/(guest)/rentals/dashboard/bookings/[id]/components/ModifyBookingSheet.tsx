@@ -69,12 +69,24 @@ const ADDON_PRICES = {
 
 const INSURANCE_TIERS = ['MINIMUM', 'BASIC', 'PREMIUM', 'LUXURY'] as const
 
+// Values must match DB pickupType: 'host' | 'delivery' | 'airport' | 'hotel'
 const DELIVERY_OPTIONS = [
-  { value: 'pickup', label: 'Pickup', icon: IoCarSportOutline, fee: 0, desc: 'Meet at host location' },
-  { value: 'valet', label: 'Valet', icon: IoSparklesOutline, fee: 195, desc: 'White glove service' },
+  { value: 'host', label: 'Pickup', icon: IoCarSportOutline, fee: 0, desc: 'Meet at host location' },
+  { value: 'delivery', label: 'Delivery', icon: IoSparklesOutline, fee: 35, desc: 'Delivered to your location' },
   { value: 'airport', label: 'Airport', icon: IoAirplaneOutline, fee: 50, desc: 'PHX Sky Harbor' },
-  { value: 'hotel', label: 'Hotel', icon: IoHomeOutline, fee: 105, desc: 'Your accommodation' },
+  { value: 'hotel', label: 'Hotel', icon: IoHomeOutline, fee: 35, desc: 'Your accommodation' },
 ] as const
+
+/**
+ * Infer actual delivery type from booking data.
+ * DB pickupType can be 'host' even when a delivery fee was charged (data mismatch).
+ * If pickupType='host' but deliveryFee > 0, the booking was actually a delivery.
+ */
+function inferDeliveryType(booking: Booking): string {
+  const raw = booking.pickupType || 'host'
+  if (raw === 'host' && Number(booking.deliveryFee) > 0) return 'delivery'
+  return raw
+}
 
 // ============================================================================
 // COMPONENT
@@ -104,8 +116,8 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
     vipConcierge: booking.vipConcierge || false,
   })
 
-  // Delivery
-  const [deliveryType, setDeliveryType] = useState<string>(booking.pickupType || 'pickup')
+  // Delivery — infer actual type from fee data (DB pickupType can be wrong)
+  const [deliveryType, setDeliveryType] = useState<string>(inferDeliveryType(booking))
   const [deliveryAddress, setDeliveryAddress] = useState<string>(booking.deliveryAddress || '')
 
   // UI state
@@ -126,7 +138,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
         extraMiles: booking.extraMilesPackage || false,
         vipConcierge: booking.vipConcierge || false,
       })
-      setDeliveryType(booking.pickupType || 'pickup')
+      setDeliveryType(inferDeliveryType(booking))
       setDeliveryAddress(booking.deliveryAddress || '')
       setError(null)
       setIsAvailable(null)
@@ -163,7 +175,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             carId: booking.car.id,
-            vehicleValue: 30000, // Default estimate
+            vehicleValue: booking.car.estimatedValue || 30000,
             startDate: formatDate(newStartDate),
             endDate: formatDate(newEndDate),
             tier
@@ -231,42 +243,52 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
 
   // Calculate delivery fee based on selected type
   const selectedDeliveryFee = useMemo(() => {
+    const originalType = inferDeliveryType(booking)
+    // When type unchanged, preserve original booking fee
+    if (deliveryType === originalType) {
+      return Number(booking.deliveryFee) || 0
+    }
+    // User changed delivery type — use option fee
     const option = DELIVERY_OPTIONS.find(o => o.value === deliveryType)
     return option?.fee ?? 0
-  }, [deliveryType])
+  }, [deliveryType, booking])
 
   // Get insurance price for selected tier
+  // IMPORTANT: When tier AND dates are unchanged, preserve original booking fee
+  // to avoid quote API discrepancies (different vehicleValue brackets, rounding, etc.)
   const selectedInsurancePrice = useMemo(() => {
+    const originalTier = booking.insuranceSelection || booking.insuranceType || 'BASIC'
+    if (insuranceTier === originalTier && !datesChanged) {
+      return Number(booking.insuranceFee) || 0
+    }
     const quote = insuranceQuotes[insuranceTier]
     if (quote) return quote.totalPremium
-    // Fallback: use current booking's insurance fee if tier unchanged
-    if (insuranceTier === (booking.insuranceSelection || booking.insuranceType || 'BASIC')) {
-      return booking.insuranceFee
-    }
-    return booking.insuranceFee
-  }, [insuranceTier, insuranceQuotes, booking])
+    return Number(booking.insuranceFee) || 0
+  }, [insuranceTier, insuranceQuotes, booking, datesChanged])
 
   // Calculate new pricing
   const newPricing = useMemo(() => {
     if (days < 1) return null
+    const dailyRate = Number(booking.dailyRate) || 0
+    if (dailyRate <= 0) return null
     return calculateBookingPricing({
-      dailyRate: booking.dailyRate,
+      dailyRate,
       days,
-      insurancePrice: selectedInsurancePrice,
-      deliveryFee: selectedDeliveryFee,
+      insurancePrice: Number(selectedInsurancePrice) || 0,
+      deliveryFee: Number(selectedDeliveryFee) || 0,
       enhancements: addOnAmounts,
       city: booking.car.city || 'phoenix'
     })
   }, [days, booking.dailyRate, selectedInsurancePrice, selectedDeliveryFee, addOnAmounts, booking.car.city])
 
   // Price difference
-  const priceDiff = newPricing ? Math.round((newPricing.total - booking.totalAmount) * 100) / 100 : 0
+  const priceDiff = newPricing ? Math.round((newPricing.total - (Number(booking.totalAmount) || 0)) * 100) / 100 : 0
 
   // Check if anything changed
   const hasChanges = useMemo(() => {
     if (datesChanged) return true
     if (insuranceTier !== (booking.insuranceSelection || booking.insuranceType || 'BASIC')) return true
-    if (deliveryType !== (booking.pickupType || 'pickup')) return true
+    if (deliveryType !== inferDeliveryType(booking)) return true
     if (addOns.refuelService !== (booking.refuelService || false)) return true
     if (addOns.additionalDriver !== (booking.additionalDriver || false)) return true
     if (addOns.extraMiles !== (booking.extraMilesPackage || false)) return true
@@ -354,9 +376,9 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
           <h3 className="text-sm font-semibold text-gray-900 mb-2">{t('rentalDates')}</h3>
 
           {/* Current dates */}
-          <div className="p-2.5 bg-gray-50 rounded-lg mb-3">
-            <p className="text-[10px] font-medium text-gray-500 mb-0.5">{t('current')}</p>
-            <p className="text-xs text-gray-900">
+          <div className="p-3 bg-gray-50 rounded-lg mb-3 text-center">
+            <p className="text-xs font-medium text-gray-500 mb-0.5">{t('current')}</p>
+            <p className="text-sm text-gray-900">
               {new Date(booking.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               {' → '}
               {new Date(booking.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -493,7 +515,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
           <div className="grid grid-cols-2 gap-1.5">
             {DELIVERY_OPTIONS.map((option) => {
               const isSelected = deliveryType === option.value
-              const isCurrent = option.value === (booking.pickupType || 'pickup')
+              const isCurrent = option.value === inferDeliveryType(booking)
               const Icon = option.icon
 
               return (
@@ -614,7 +636,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
               )}
               <div className="flex justify-between">
                 <span className="text-gray-600">
-                  Delivery ({DELIVERY_OPTIONS.find(o => o.value === deliveryType)?.label || 'Pickup'})
+                  Delivery ({DELIVERY_OPTIONS.find(o => o.value === deliveryType)?.label || booking.deliveryType || 'Pickup'})
                 </span>
                 <span>{newPricing.deliveryFee > 0 ? `$${formatPrice(newPricing.deliveryFee)}` : t('free')}</span>
               </div>
@@ -631,6 +653,37 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
                 <span>{t('newTotal')}</span>
                 <span>${formatPrice(newPricing.total)}</span>
               </div>
+
+              {/* Credits/bonus applied — show card charge breakdown */}
+              {((Number(booking.creditsApplied) || 0) > 0 || (Number(booking.bonusApplied) || 0) > 0) && (() => {
+                const credits = Math.min(Number(booking.creditsApplied) || 0, newPricing.total)
+                const maxBonus = Math.round(newPricing.basePrice * 0.25 * 100) / 100
+                const bonus = credits > 0 ? 0 : Math.min(Number(booking.bonusApplied) || 0, maxBonus, newPricing.total)
+                const depCard = Number(booking.depositFromCard) || 0
+                let cardCharge = Math.round((newPricing.total - credits - bonus) * 100) / 100
+                if (cardCharge + depCard < 1.00) cardCharge = Math.round((1.00 - depCard) * 100) / 100
+                if (cardCharge < 0) cardCharge = 1.00
+                return (
+                  <>
+                    {credits > 0 && (
+                      <div className="flex justify-between text-gray-600">
+                        <span>{t('creditsApplied')}</span>
+                        <span className="font-semibold">(-${formatPrice(credits)})</span>
+                      </div>
+                    )}
+                    {bonus > 0 && (
+                      <div className="flex justify-between text-gray-600">
+                        <span>{t('bonusApplied')}</span>
+                        <span className="font-semibold">(-${formatPrice(bonus)})</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-medium text-gray-900">
+                      <span>{t('cardCharge')}</span>
+                      <span>${formatPrice(cardCharge)}</span>
+                    </div>
+                  </>
+                )
+              })()}
 
               {/* Price difference */}
               {hasChanges && Math.abs(priceDiff) > 0.01 && (

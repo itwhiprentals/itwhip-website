@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/app/lib/database/prisma'
 import type { RentalBookingStatus } from '@/app/lib/dal/types'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
+import { stripe } from '@/app/lib/stripe/client'
 
 // Whitelist of allowed sort columns to prevent SQL injection via column names
 const ALLOWED_SORT_COLUMNS: Record<string, string> = {
@@ -134,6 +135,11 @@ export async function GET(request: NextRequest) {
         b.taxes,
         b."totalAmount",
         b."depositAmount",
+        b."creditsApplied",
+        b."bonusApplied",
+        b."chargeAmount",
+        b."depositFromWallet",
+        b."depositFromCard",
         b."paymentStatus",
         b."paymentIntentId",
         b."stripeCustomerId",
@@ -169,6 +175,7 @@ export async function GET(request: NextRequest) {
           'seats', c.seats,
           'city', c.city,
           'state', c.state,
+          'estimatedValue', c."estimatedValue",
           'photos', COALESCE(
             (SELECT json_agg(json_build_object(
               'id', cp.id,
@@ -229,6 +236,33 @@ export async function GET(request: NextRequest) {
     `
 
     console.log(`Found ${bookingsRaw.length} bookings for authenticated user: ${userEmail}`)
+
+    // Fetch card brand + last4 from Stripe for single-booking detail view
+    const isSingleBooking = bookingId && bookingsRaw.length === 1
+    let cardBrand: string | null = null
+    let cardLast4: string | null = null
+    if (isSingleBooking) {
+      const b = bookingsRaw[0]
+      try {
+        if (b.stripePaymentMethodId) {
+          const pm = await stripe.paymentMethods.retrieve(b.stripePaymentMethodId)
+          cardBrand = (pm as any).card?.brand || null
+          cardLast4 = (pm as any).card?.last4 || null
+        } else if (b.paymentIntentId) {
+          // Fallback: expand payment_method from the payment intent
+          const pi = await stripe.paymentIntents.retrieve(b.paymentIntentId, {
+            expand: ['payment_method']
+          })
+          const pm = pi.payment_method as any
+          if (pm && typeof pm === 'object') {
+            cardBrand = pm.card?.brand || null
+            cardLast4 = pm.card?.last4 || null
+          }
+        }
+      } catch {
+        // Non-blocking — card info is cosmetic
+      }
+    }
 
     const transformedBookings = bookingsRaw.map(booking => {
       const now = new Date()
@@ -294,7 +328,8 @@ export async function GET(request: NextRequest) {
           photos: booking.car.photos || [],
           location: `${booking.car.city}, ${booking.car.state}`,
           city: booking.car.city,
-          state: booking.car.state
+          state: booking.car.state,
+          estimatedValue: booking.car.estimatedValue ? parseFloat(booking.car.estimatedValue) : null
         },
         host: booking.host,
         guestName: booking.guestName,
@@ -317,6 +352,11 @@ export async function GET(request: NextRequest) {
         taxes: parseFloat(booking.taxes),
         totalAmount: parseFloat(booking.totalAmount),
         depositAmount: parseFloat(booking.depositAmount),
+        creditsApplied: parseFloat(booking.creditsApplied || '0'),
+        bonusApplied: parseFloat(booking.bonusApplied || '0'),
+        chargeAmount: booking.chargeAmount ? parseFloat(booking.chargeAmount) : null,
+        depositFromWallet: parseFloat(booking.depositFromWallet || '0'),
+        depositFromCard: parseFloat(booking.depositFromCard || '0'),
         paymentStatus: booking.paymentStatus,
         paymentIntentId: booking.paymentIntentId,
         stripeCustomerId: booking.stripeCustomerId,
@@ -332,7 +372,9 @@ export async function GET(request: NextRequest) {
         hasUnreadMessages: booking.unread_messages_count > 0,
         latestMessage: null,
         createdAt: booking.createdAt,
-        updatedAt: booking.updatedAt
+        updatedAt: booking.updatedAt,
+        // Card identity (only populated for single-booking detail view)
+        ...(isSingleBooking ? { cardBrand, cardLast4 } : {})
       }
     })
 

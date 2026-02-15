@@ -286,6 +286,14 @@ export default function BookingDetailsPage() {
     } else if (urlParams.get('tripEnded') === 'true') {
       setToast({ message: t('tripCompletedSuccess'), type: 'success' })
       window.history.replaceState({}, '', window.location.pathname)
+    } else if (urlParams.get('verified') === 'true') {
+      // Returning from Stripe Identity verification — auto-complete onboarding
+      setToast({ message: t('identityVerified'), type: 'success' })
+      window.history.replaceState({}, '', window.location.pathname)
+      fetch(`/api/rentals/bookings/${bookingId}/onboarding`, {
+        method: 'POST',
+        credentials: 'include'
+      }).then(() => loadBooking()).catch(() => {})
     }
   }, [])
 
@@ -364,7 +372,7 @@ export default function BookingDetailsPage() {
   // Not found state
   if (!booking) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="text-center">
           <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('bookingNotFound')}</h1>
@@ -397,7 +405,7 @@ export default function BookingDetailsPage() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-6">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-6">
         {/* Header */}
         <div className="mb-4 sm:mb-6 mt-4 sm:mt-2">
           <button
@@ -412,7 +420,7 @@ export default function BookingDetailsPage() {
           <div className="space-y-3 pl-6">
             <div>
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
                   {booking.car.year} {booking.car.make}
                 </h1>
                 <div className="flex items-center gap-1.5 ml-auto">
@@ -478,7 +486,7 @@ export default function BookingDetailsPage() {
           documentsSubmittedAt={typeof booking.documentsSubmittedAt === 'string' ? booking.documentsSubmittedAt : undefined}
           reviewedAt={typeof booking.reviewedAt === 'string' ? booking.reviewedAt : undefined}
           onCancel={booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? () => setShowCancelDialog(true) : undefined}
-          onModify={booking.status === 'PENDING' ? () => setShowModifyModal(true) : undefined}
+          onModify={['PENDING', 'CONFIRMED'].includes(booking.status) ? () => setShowModifyModal(true) : undefined}
           onViewAgreement={() => setShowAgreement(true)}
         />
 
@@ -503,8 +511,8 @@ export default function BookingDetailsPage() {
           </div>
         )}
 
-        {/* Booking Onboarding - only after host approves (CONFIRMED) */}
-        {booking.status === 'CONFIRMED' && !booking.onboardingCompletedAt && (
+        {/* Booking Onboarding - show for PENDING (grayed out) and CONFIRMED (active) */}
+        {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && !booking.onboardingCompletedAt && (
           <div className="mt-6">
             <BookingOnboarding booking={booking} onDocumentUploaded={loadBooking} />
           </div>

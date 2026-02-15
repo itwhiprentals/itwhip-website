@@ -76,7 +76,7 @@ export function PrimaryDriverForm({
   const t = useTranslations('BookingPage')
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
+    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 mb-4 shadow-sm border border-gray-300 dark:border-gray-600">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center flex-wrap gap-2">
         <IoPersonOutline className="w-5 h-5" />
         <span>{t('primaryDriverInformation')}</span>

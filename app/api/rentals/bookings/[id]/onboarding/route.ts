@@ -24,9 +24,6 @@ export async function POST(
         renterId: true,
         guestEmail: true,
         status: true,
-        licensePhotoUrl: true,
-        licenseBackPhotoUrl: true,
-        insurancePhotoUrl: true,
         onboardingCompletedAt: true
       }
     })
@@ -46,30 +43,38 @@ export async function POST(
       return NextResponse.json({ success: true, message: 'Already completed' })
     }
 
-    // For Stripe-verified users: check docs are uploaded
-    // For visitors: Stripe verification is checked via profile
+    // Check guest verification status
     const guestProfile = await prisma.reviewerProfile.findUnique({
       where: { email: booking.guestEmail?.toLowerCase() || '' },
       select: {
         stripeIdentityStatus: true,
         documentsVerified: true,
-        insuranceVerified: true
       }
     })
 
-    const isStripeVerified = guestProfile?.stripeIdentityStatus === 'verified' || guestProfile?.documentsVerified === true
+    const wasStripeVerified = guestProfile?.stripeIdentityStatus === 'verified' || guestProfile?.documentsVerified === true
 
-    if (isStripeVerified) {
-      // Account holder flow — must have DL front + back + insurance
-      if (!booking.licensePhotoUrl || !booking.licenseBackPhotoUrl) {
-        return NextResponse.json({ error: 'Please upload driver\'s license (front and back)' }, { status: 400 })
-      }
-      if (!booking.insurancePhotoUrl && !guestProfile?.insuranceVerified) {
-        return NextResponse.json({ error: 'Please upload insurance proof or add insurance to your profile' }, { status: 400 })
+    if (wasStripeVerified) {
+      // Path A: Already Stripe-verified → check Claude AI DL verification pass or manual review
+      const aiVerification = await prisma.dLVerificationLog.findFirst({
+        where: { guestEmail: booking.guestEmail?.toLowerCase() || '', passed: true },
+        orderBy: { createdAt: 'desc' }
+      })
+
+      const manualReview = await prisma.manualVerificationRequest.findFirst({
+        where: {
+          email: booking.guestEmail?.toLowerCase() || '',
+          status: { in: ['APPROVED', 'PENDING'] }
+        },
+        orderBy: { createdAt: 'desc' }
+      })
+
+      if (!aiVerification && !manualReview) {
+        return NextResponse.json({ error: 'Please complete identity verification first' }, { status: 400 })
       }
     } else {
-      // Visitor flow — must have completed Stripe Identity
-      if (!isStripeVerified) {
+      // Path B: Not previously verified → must have just completed Stripe Identity
+      if (guestProfile?.stripeIdentityStatus !== 'verified') {
         return NextResponse.json({ error: 'Please complete Stripe Identity verification first' }, { status: 400 })
       }
     }

@@ -1,23 +1,23 @@
 // app/(guest)/rentals/dashboard/bookings/[id]/components/BookingOnboarding.tsx
-// Post-booking onboarding section
-// - Grayed out when PENDING (awaiting approval)
-// - Active when CONFIRMED
-// - For visitors (not Stripe verified): "Start Now" in header triggers Stripe Identity
-// - For account holders (Stripe verified): DL front/back + insurance upload
+// Post-booking onboarding — smart verification routing
+// Path A (Stripe verified): Claude AI DL camera verification → selfie fallback
+// Path B (not Stripe verified): Stripe Identity redirect → auto-complete on return
 
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Booking } from '../types'
 import {
   IoShieldCheckmarkOutline,
-  IoDocumentOutline,
-  IoCheckmarkCircle,
-  IoCloudUploadOutline,
   IoLockClosedOutline,
-  IoArrowForwardOutline
+  IoCheckmarkCircle,
+  IoIdCardOutline,
+  IoCameraOutline,
+  IoFlashOutline,
+  IoInformationCircleOutline,
 } from 'react-icons/io5'
+import { VisitorIdentityVerify } from '../../../../[carId]/book/components/VisitorIdentityVerify'
 
 interface BookingOnboardingProps {
   booking: Booking
@@ -27,24 +27,45 @@ interface BookingOnboardingProps {
 export function BookingOnboarding({ booking, onDocumentUploaded }: BookingOnboardingProps) {
   const t = useTranslations('BookingDetail')
   const [isVerifying, setIsVerifying] = useState(false)
-  const [uploadingType, setUploadingType] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const pendingUploadType = useRef<string | null>(null)
+  const [verificationDone, setVerificationDone] = useState(false)
+  const [showTooltip, setShowTooltip] = useState(false)
+  const [showContent, setShowContent] = useState(false)
 
   const isPending = booking.status === 'PENDING'
-  const isConfirmed = booking.status === 'CONFIRMED'
   const onboardingDone = !!booking.onboardingCompletedAt
 
   if (booking.status === 'ACTIVE' || booking.status === 'COMPLETED' || onboardingDone) return null
 
-  const needsStripeVerification = !booking.guestStripeVerified
-  const hasLicenseFront = !!booking.licensePhotoUrl
-  const hasLicenseBack = !!booking.licenseBackPhotoUrl
-  const hasInsurance = !!booking.insurancePhotoUrl || !!booking.guestInsuranceOnFile
-  const allDocsUploaded = hasLicenseFront && hasLicenseBack && hasInsurance
+  const isStripeVerified = !!booking.guestStripeVerified
 
-  // Handle Stripe Identity verification
+  // Complete onboarding via API
+  const completeOnboarding = async () => {
+    try {
+      const response = await fetch(`/api/rentals/bookings/${booking.id}/onboarding`, {
+        method: 'POST',
+        credentials: 'include'
+      })
+      if (response.ok) {
+        onDocumentUploaded()
+      } else {
+        const data = await response.json()
+        setError(data.error || 'Failed to complete onboarding')
+      }
+    } catch {
+      setError('Failed to complete onboarding')
+    }
+  }
+
+  // Path A: Stripe-verified → Claude AI camera verification
+  const handleAIVerificationComplete = async (result: any) => {
+    if (result.passed || result.manualPending) {
+      setVerificationDone(true)
+      await completeOnboarding()
+    }
+  }
+
+  // Path B: Not Stripe-verified → Redirect to Stripe Identity
   const handleStripeVerify = async () => {
     setIsVerifying(true)
     setError(null)
@@ -66,168 +87,138 @@ export function BookingOnboarding({ booking, onDocumentUploaded }: BookingOnboar
     }
   }
 
-  // Handle document upload
-  const triggerUpload = (type: string) => {
-    pendingUploadType.current = type
-    fileInputRef.current?.click()
-  }
-
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    const docType = pendingUploadType.current
-    if (!file || !docType) return
-
-    setUploadingType(docType)
-    setError(null)
-
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('documentType', docType)
-
-      const response = await fetch(`/api/rentals/bookings/${booking.id}/upload`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to upload')
-      }
-
-      onDocumentUploaded()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed')
-    } finally {
-      setUploadingType(null)
-      pendingUploadType.current = null
-      if (fileInputRef.current) fileInputRef.current.value = ''
-    }
-  }
-
-  // Mark onboarding complete
-  const handleCompleteOnboarding = async () => {
-    try {
-      const response = await fetch(`/api/rentals/bookings/${booking.id}/onboarding`, {
-        method: 'POST',
-        credentials: 'include'
-      })
-      if (response.ok) onDocumentUploaded()
-      else {
-        const data = await response.json()
-        setError(data.error || 'Failed to complete onboarding')
-      }
-    } catch {
-      setError('Failed to complete onboarding')
-    }
-  }
-
   return (
     <div className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-all ${isPending ? 'opacity-60' : ''}`}>
-      {/* Header with Start Now button for visitors */}
-      <div className="px-4 sm:px-6 py-4 bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="p-2 bg-orange-100 rounded-lg flex-shrink-0">
-              <IoShieldCheckmarkOutline className="w-5 h-5 text-orange-600" />
-            </div>
-            <div className="min-w-0">
+      {/* Header */}
+      <div className="px-4 sm:px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div className="flex items-start sm:items-center gap-3">
+          <div className="p-2 bg-gray-900 rounded-lg flex-shrink-0">
+            <IoShieldCheckmarkOutline className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
               <h3 className="font-semibold text-gray-900 text-sm sm:text-base">
                 {t('onboardTitle')}
               </h3>
-              <p className="text-xs text-gray-500 mt-0.5">
+              {isPending ? (
+                <div className="flex items-center gap-1.5 text-xs text-gray-400 flex-shrink-0">
+                  <IoLockClosedOutline className="w-4 h-4" />
+                  <span className="hidden sm:inline">{t('locked')}</span>
+                </div>
+              ) : !showContent && !verificationDone && (
+                <button
+                  onClick={() => setShowContent(true)}
+                  className="hidden sm:flex px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors items-center gap-2 flex-shrink-0"
+                >
+                  <IoShieldCheckmarkOutline className="w-4 h-4" />
+                  <span>{t('uploadNow')}</span>
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-1 mt-0.5">
+              <p className="text-xs text-gray-500">
                 {isPending
                   ? t('onboardAvailableAfterApproval')
-                  : isConfirmed && !needsStripeVerification
-                    ? t('onboardUploadDocs')
-                    : t('onboardCompleteToFinalize')}
+                  : isStripeVerified
+                    ? t('hostWantsToSeeDL', { hostName: booking.host.name })
+                    : t('onboardCompleteStripe')}
               </p>
-            </div>
-          </div>
-
-          {/* Start Now button (visitors only) — in the header */}
-          {needsStripeVerification ? (
-            <button
-              onClick={handleStripeVerify}
-              disabled={isPending || isVerifying}
-              className="ml-3 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 flex-shrink-0 flex items-center gap-1.5"
-            >
-              {isVerifying ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  <span>{t('startNow')}</span>
-                  <IoArrowForwardOutline className="w-4 h-4" />
-                </>
+              {!isPending && isStripeVerified && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowTooltip(!showTooltip)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <IoInformationCircleOutline className="w-3.5 h-3.5" />
+                  </button>
+                  {showTooltip && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowTooltip(false)} />
+                      <div className="absolute right-0 top-full mt-1 z-50 w-72 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg leading-relaxed sm:left-0 sm:right-auto">
+                        {t('hostVerifyTooltip')}
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
-            </button>
-          ) : isPending ? (
-            <div className="flex items-center gap-1.5 text-xs text-gray-400 ml-3 flex-shrink-0">
-              <IoLockClosedOutline className="w-4 h-4" />
-              <span className="hidden sm:inline">{t('locked')}</span>
             </div>
-          ) : null}
+            {/* Mobile: full-width button below text */}
+            {!isPending && !showContent && !verificationDone && (
+              <button
+                onClick={() => setShowContent(true)}
+                className="sm:hidden mt-3 w-full px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                <IoShieldCheckmarkOutline className="w-4 h-4" />
+                <span>{t('uploadNow')}</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Content — only for account holders (DL + insurance upload) or insurance reminder */}
-      {needsStripeVerification ? (
-        // Visitor flow: insurance reminder only when confirmed
-        isConfirmed && !hasInsurance ? (
-          <div className="px-4 sm:px-6 py-3">
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-xs text-amber-800">
-                <span className="font-medium">{t('saveOnDeposit')}</span> {t('addInsuranceForDiscount')}
-              </p>
-            </div>
-          </div>
-        ) : null
-      ) : (
-        // Account holder flow: DL front + back + insurance
-        <div className={`px-4 sm:px-6 py-4 space-y-2 ${isPending ? 'pointer-events-none' : ''}`}>
-          <OnboardingItem
-            label={t('driversLicenseFront')}
-            completed={hasLicenseFront}
-            uploading={uploadingType === 'license-front'}
-            disabled={isPending}
-            onUpload={() => triggerUpload('license-front')}
-            uploadLabel={t('upload')}
-          />
-          <OnboardingItem
-            label={t('driversLicenseBack')}
-            completed={hasLicenseBack}
-            uploading={uploadingType === 'license-back'}
-            disabled={isPending}
-            onUpload={() => triggerUpload('license-back')}
-            uploadLabel={t('upload')}
-          />
-          <OnboardingItem
-            label={t('insuranceProof')}
-            completed={hasInsurance}
-            uploading={uploadingType === 'insurance'}
-            disabled={isPending}
-            onUpload={() => triggerUpload('insurance')}
-            subtitle={booking.guestInsuranceOnFile ? t('usingProfileInsurance') : undefined}
-            uploadLabel={t('upload')}
-          />
+      {/* Content — collapsed by default, expand on button click */}
+      {!isPending && (showContent || verificationDone) && (
+        <div className="px-4 sm:px-6 py-4">
+          {isStripeVerified ? (
+            // ═══ Path A: Already Stripe-verified → Claude AI DL verification ═══
+            verificationDone ? (
+              <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <IoCheckmarkCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-green-900">{t('identityVerified')}</p>
+                </div>
+              </div>
+            ) : (
+              <VisitorIdentityVerify
+                onVerificationComplete={handleAIVerificationComplete}
+                driverName={booking.guestName}
+                driverEmail={booking.guestEmail}
+                driverPhone={booking.guestPhone}
+                carId={booking.car.id}
+                hideStripeFallback={true}
+              />
+            )
+          ) : (
+            // ═══ Path B: Not Stripe-verified → Stripe Identity ═══
+            <div className="space-y-4">
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="text-sm font-semibold text-blue-900 mb-1">
+                  {t('stripeIdentityRequired')}
+                </h4>
+                <p className="text-xs text-blue-700 mb-3">
+                  {t('stripeIdentityDesc')}
+                </p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs text-blue-800">
+                    <IoIdCardOutline className="w-4 h-4 flex-shrink-0" />
+                    <span>{t('stripeStep1PhotoId')}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-blue-800">
+                    <IoCameraOutline className="w-4 h-4 flex-shrink-0" />
+                    <span>{t('stripeStep2Selfie')}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-blue-800">
+                    <IoFlashOutline className="w-4 h-4 flex-shrink-0" />
+                    <span>{t('stripeStep3Instant')}</span>
+                  </div>
+                </div>
+              </div>
 
-          {!hasInsurance && !booking.guestInsuranceOnFile && (
-            <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-xs text-amber-800">
-                <span className="font-medium">{t('saveOnDeposit')}</span> {t('uploadInsuranceForDiscount')}
-              </p>
+              <button
+                onClick={handleStripeVerify}
+                disabled={isVerifying}
+                className="w-full px-4 py-3 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isVerifying ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <IoShieldCheckmarkOutline className="w-4 h-4" />
+                    {t('verifyNow')}
+                  </>
+                )}
+              </button>
             </div>
-          )}
-
-          {allDocsUploaded && !onboardingDone && (
-            <button
-              onClick={handleCompleteOnboarding}
-              className="w-full mt-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <IoCheckmarkCircle className="w-4 h-4" />
-              {t('completeOnboarding')}
-            </button>
           )}
         </div>
       )}
@@ -236,74 +227,6 @@ export function BookingOnboarding({ booking, onDocumentUploaded }: BookingOnboar
         <div className="px-4 sm:px-6 pb-3">
           <p className="text-xs text-red-600">{error}</p>
         </div>
-      )}
-
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,application/pdf"
-        className="hidden"
-        onChange={handleFileChange}
-      />
-    </div>
-  )
-}
-
-// Individual onboarding checklist item
-function OnboardingItem({
-  label,
-  completed,
-  uploading,
-  disabled,
-  onUpload,
-  subtitle,
-  uploadLabel = 'Upload'
-}: {
-  label: string
-  completed: boolean
-  uploading: boolean
-  disabled: boolean
-  onUpload: () => void
-  subtitle?: string
-  uploadLabel?: string
-}) {
-  return (
-    <div className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
-      completed
-        ? 'bg-green-50 border-green-200'
-        : 'bg-gray-50 border-gray-200'
-    }`}>
-      <div className="flex items-center gap-3">
-        {completed ? (
-          <IoCheckmarkCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-        ) : (
-          <IoDocumentOutline className="w-5 h-5 text-gray-400 flex-shrink-0" />
-        )}
-        <div>
-          <p className={`text-sm font-medium ${completed ? 'text-green-900' : 'text-gray-900'}`}>
-            {label}
-          </p>
-          {subtitle && (
-            <p className="text-xs text-green-600 mt-0.5">{subtitle}</p>
-          )}
-        </div>
-      </div>
-      {!completed && (
-        <button
-          onClick={onUpload}
-          disabled={disabled || uploading}
-          className="px-3 py-1.5 bg-gray-800 hover:bg-gray-900 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
-        >
-          {uploading ? (
-            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <>
-              <IoCloudUploadOutline className="w-3.5 h-3.5" />
-              {uploadLabel}
-            </>
-          )}
-        </button>
       )}
     </div>
   )

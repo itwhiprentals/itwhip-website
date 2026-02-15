@@ -160,7 +160,7 @@ export function PriceSummary({
                 </div>
                 <div className="flex justify-between items-baseline mt-1">
                   <span className="font-bold text-gray-900 dark:text-white">{t('amountToPay')}</span>
-                  <span className="text-lg font-bold text-green-600 dark:text-green-400">${formatPrice(appliedBalances.amountToPay)}</span>
+                  <span className="text-base sm:text-lg font-bold text-green-600 dark:text-green-400">${formatPrice(appliedBalances.amountToPay)}</span>
                 </div>
                 <div className="flex justify-end mt-1">
                   <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
@@ -171,7 +171,7 @@ export function PriceSummary({
             ) : (
               <div className="flex justify-between items-baseline">
                 <span className="font-bold text-gray-900 dark:text-white">{t('tripTotal')}</span>
-                <span className="text-lg font-bold text-gray-900 dark:text-white">${formatPrice(pricing.total)}</span>
+                <span className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">${formatPrice(pricing.total)}</span>
               </div>
             )}
 
@@ -247,7 +247,7 @@ export function PriceSummary({
             <div className="flex justify-between items-baseline pt-3 border-t dark:border-gray-700">
               <span className="text-base font-semibold text-gray-900 dark:text-white">{t('totalDueToday')}</span>
               <div className="text-right">
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                <span className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                   ${formatPrice(appliedBalances.amountToPay + appliedBalances.depositFromCard)}
                 </span>
               </div>

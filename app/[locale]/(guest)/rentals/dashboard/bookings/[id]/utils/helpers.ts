@@ -1,8 +1,9 @@
 // app/(guest)/rentals/dashboard/bookings/[id]/utils/helpers.ts
 
 import { Booking, RefundCalculation, TimelineStep } from '../types'
-import { STATUS_COLORS, CANCELLATION_POLICIES } from '../constants'
+import { STATUS_COLORS } from '../constants'
 import { CheckCircle, Car } from '../components/Icons'
+import { calculateCancellationRefund, calculatePenaltyDistribution } from '@/app/lib/booking/cancellation-policy'
 
 export const getTimeAgo = (date: Date): string => {
   const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000)
@@ -47,42 +48,71 @@ export const getTimeUntilPickup = (booking: Booking | null): string | null => {
 }
 
 export const calculateRefund = (booking: Booking): RefundCalculation => {
-  const hoursUntilTrip = getHoursUntilPickup(booking.startDate)
   const tripDays = booking.numberOfDays || calculateTripDays(booking.startDate, booking.endDate)
-  const safeDays = Math.max(1, tripDays)
-  const averageDailyCost = booking.totalAmount / safeDays
-  const serviceFeeRefund = hoursUntilTrip >= 168 ? booking.serviceFee : 0
 
-  // 24+ hours: free cancellation
-  if (hoursUntilTrip >= 24) {
-    return {
-      refundAmount: booking.totalAmount,
-      serviceFeeRefund,
-      totalRefund: booking.totalAmount + serviceFeeRefund,
-      refundPercentage: 1.0,
-      penaltyAmount: 0,
-      penaltyDays: 0,
-      depositRefunded: true,
-      label: 'Full refund'
-    }
-  }
+  // Only the base rental (subtotal) is refundable.
+  // Service fee, insurance, and delivery fee are always non-refundable.
+  const subtotal = Number(booking.subtotal || (booking.dailyRate * tripDays))
 
-  // <24 hours: day-based penalty
-  const penaltyDays = safeDays > 2 ? 1 : 0.5
-  const penaltyAmount = Math.round(averageDailyCost * penaltyDays * 100) / 100
-  const refundAmount = Math.max(0, Math.round((booking.totalAmount - penaltyAmount) * 100) / 100)
+  // Delegate to canonical cancellation policy (single source of truth)
+  // Uses MST timezone (Arizona) for proper hours-until-pickup calculation
+  const result = calculateCancellationRefund(
+    new Date(booking.startDate),
+    subtotal,
+    tripDays
+  )
+
+  // Service fee is non-refundable
+  const serviceFeeRefund = 0
+
+  // Non-refundable fees total
+  const nonRefundableFees = booking.serviceFee + booking.insuranceFee + booking.deliveryFee
+
+  // Calculate how penalty/refund is distributed across payment sources
+  const creditsApplied = Number(booking.creditsApplied || 0)
+  const bonusApplied = Number(booking.bonusApplied || 0)
+  const chargeAmount = Number(booking.chargeAmount || booking.totalAmount)
+  const depositFromCard = Number(booking.depositFromCard || 0)
+  const depositFromWallet = Number(booking.depositFromWallet || 0)
+
+  // Cap each source at the refundable base (subtotal) for distribution
+  const refundableCredits = Math.min(creditsApplied, subtotal)
+  const refundableBonus = Math.min(bonusApplied, Math.max(0, subtotal - refundableCredits))
+  const refundableCard = Math.max(0, subtotal - refundableCredits - refundableBonus)
+
+  const distribution = calculatePenaltyDistribution(
+    result.penaltyAmount,
+    subtotal,
+    refundableCredits,
+    refundableBonus,
+    refundableCard
+  )
+
+  // The $1 minimum Stripe validation charge (when credits cover 100%) is always refunded
+  const isValidationOnly = chargeAmount <= 1 && (creditsApplied + bonusApplied) >= booking.totalAmount
+  const cardValidationRefund = isValidationOnly ? chargeAmount : 0
 
   return {
-    refundAmount,
-    serviceFeeRefund: 0,
-    totalRefund: refundAmount,
-    refundPercentage: booking.totalAmount > 0 ? refundAmount / booking.totalAmount : 0,
-    penaltyAmount,
-    penaltyDays,
-    depositRefunded: true,
-    label: safeDays > 2
-      ? `1-day penalty ($${penaltyAmount.toFixed(2)})`
-      : `Half-day penalty ($${penaltyAmount.toFixed(2)})`
+    refundAmount: result.refundAmount,
+    serviceFeeRefund,
+    totalRefund: result.refundAmount,
+    refundPercentage: subtotal > 0 ? result.refundAmount / subtotal : 0,
+    penaltyAmount: result.penaltyAmount,
+    penaltyDays: result.penaltyDays,
+    depositRefunded: result.depositRefunded,
+    label: result.tier === 'free'
+      ? 'Full refund'
+      : `${result.penaltyDays === 1 ? '1-day' : 'Half-day'} penalty ($${result.penaltyAmount.toFixed(2)})`,
+    cardRefund: distribution.cardRefund + cardValidationRefund,
+    creditsRestored: distribution.creditsRestored,
+    bonusRestored: distribution.bonusRestored,
+    penaltyFromCard: distribution.penaltyFromCard,
+    penaltyFromCredits: distribution.penaltyFromCredits,
+    penaltyFromBonus: distribution.penaltyFromBonus,
+    depositFromCard,
+    depositFromWallet,
+    totalCardRefund: distribution.cardRefund + cardValidationRefund + depositFromCard,
+    nonRefundableFees,
   }
 }
 

@@ -2,14 +2,14 @@
 
 import React, { useMemo, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
-import { Booking, Message, PrePickupChecklistItem } from '../types'
+import { Booking, Message } from '../types'
 import { 
-  Calendar, Clock, MapPin, Car, CheckCircle, AlertCircle, 
+  Calendar, Clock, MapPin, Car, AlertCircle,
   InfoCircle, LocationPin, Key 
 } from './Icons'
 import { 
   getDaysUntilPickup, getHoursUntilPickup, 
-  shouldShowPrePickupChecklist, formatDate, getProgressiveInfoLevel 
+  formatDate, getProgressiveInfoLevel
 } from '../utils/helpers'
 import { TIME_THRESHOLDS } from '../constants'
 import { IoNavigateOutline, IoChevronDownOutline, IoMailOutline, IoBusinessOutline, IoTimeOutline, IoCheckmarkCircle, IoCarOutline } from 'react-icons/io5'
@@ -70,17 +70,6 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
   const progressiveInfoLevel = useMemo(() => getProgressiveInfoLevel(booking), [booking])
   const [showAllDropoffLocations, setShowAllDropoffLocations] = useState(false)
   const [selectedDropoffLocation, setSelectedDropoffLocation] = useState<string | null>(null)
-
-  const prePickupChecklist: PrePickupChecklistItem[] = useMemo(() => {
-    if (!shouldShowPrePickupChecklist(booking)) return []
-    return [
-      { id: 'license', label: t('validDriversLicense'), completed: booking.licenseVerified || false },
-      { id: 'insurance', label: t('insuranceVerified'), completed: !!booking.insurancePhotoUrl },
-      { id: 'payment', label: t('paymentProcessed'), completed: booking.paymentStatus === 'PAID' || booking.paymentStatus === 'paid' || booking.paymentStatus === 'CAPTURED' || booking.paymentStatus === 'captured' },
-      { id: 'deposit', label: t('securityDepositHeld'), completed: booking.depositAmount > 0 },
-      { id: 'contact', label: t('hostContacted'), completed: messages.length > 0 }
-    ]
-  }, [booking, messages])
 
   // Helper to get pickup time display
   const getPickupTimeDisplay = () => {
@@ -172,8 +161,8 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
             </div>
           )}
 
-          {/* Trip Locations Card - Separate card with black/gray styling */}
-          {(progressiveInfoLevel === 'full_details' || booking.tripStatus === 'ACTIVE' || booking.tripStartedAt) && (
+          {/* Trip Locations Card - Hidden until onboarding complete */}
+          {(progressiveInfoLevel === 'full_details' || booking.tripStatus === 'ACTIVE' || booking.tripStartedAt) && booking.onboardingCompletedAt && (
             <>
               {/* Trip Locations - First Card */}
               <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
@@ -384,13 +373,19 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
             <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-xs font-medium text-gray-700">{t('location')}</p>
-              <p className="text-xs text-gray-600">
-                {hoursUntilPickup <= TIME_THRESHOLDS.SHOW_FULL_DETAILS_HOURS
-                  ? (booking.exactAddress || booking.pickupLocation || 'Phoenix, AZ')
-                  : (booking.pickupLocation || 'Phoenix, AZ')}
-              </p>
-              {hoursUntilPickup > TIME_THRESHOLDS.SHOW_FULL_DETAILS_HOURS && (
-                <p className="text-xs text-gray-500 mt-0.5">{t('fullAddressBefore24h')}</p>
+              {booking.onboardingCompletedAt ? (
+                <>
+                  <p className="text-xs text-gray-600">
+                    {hoursUntilPickup <= TIME_THRESHOLDS.SHOW_FULL_DETAILS_HOURS
+                      ? (booking.exactAddress || booking.pickupLocation || 'Phoenix, AZ')
+                      : (booking.pickupLocation || 'Phoenix, AZ')}
+                  </p>
+                  {hoursUntilPickup > TIME_THRESHOLDS.SHOW_FULL_DETAILS_HOURS && (
+                    <p className="text-xs text-gray-500 mt-0.5">{t('fullAddressBefore24h')}</p>
+                  )}
+                </>
+              ) : (
+                <p className="text-xs text-gray-500 italic">{t('completeOnboardingForLocation')}</p>
               )}
             </div>
           </div>
@@ -407,26 +402,6 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
           </div>
         </div>
 
-        {/* Pre-trip Checklist - WITH GREEN CHECKMARKS */}
-        {prePickupChecklist.length > 0 && (
-          <div className="mt-6 pt-6 border-t">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">{t('preTripChecklist')}</h3>
-            <div className="space-y-2">
-              {prePickupChecklist.map(item => (
-                <div key={item.id} className="flex items-center">
-                  {item.completed ? (
-                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-                  ) : (
-                    <div className="w-5 h-5 border-2 border-gray-300 rounded-full mr-2" />
-                  )}
-                  <span className={`text-sm ${item.completed ? 'text-gray-700' : 'text-gray-400'}`}>
-                    {item.label}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )

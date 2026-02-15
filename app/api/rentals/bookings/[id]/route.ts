@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/app/lib/database/prisma'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
+import { stripe } from '@/app/lib/stripe/client'
 
 // SECURITY FIX: Added authentication and ownership verification to prevent IDOR attacks
 
@@ -192,6 +193,11 @@ export async function GET(
         taxes: true,
         totalAmount: true,
         depositAmount: true,
+        creditsApplied: true,
+        bonusApplied: true,
+        chargeAmount: true,
+        depositFromWallet: true,
+        depositFromCard: true,
         
         // Payment tracking
         paymentIntentId: true,
@@ -317,6 +323,29 @@ export async function GET(
       )
     }
 
+    // Fetch card brand + last4 from Stripe (safe to expose, like Turo/Airbnb)
+    let cardBrand: string | null = null
+    let cardLast4: string | null = null
+    try {
+      if (booking.stripePaymentMethodId) {
+        const pm = await stripe.paymentMethods.retrieve(booking.stripePaymentMethodId)
+        cardBrand = (pm as any).card?.brand || null
+        cardLast4 = (pm as any).card?.last4 || null
+      } else if (booking.paymentIntentId) {
+        // Fallback: expand payment_method from the payment intent
+        const pi = await stripe.paymentIntents.retrieve(booking.paymentIntentId, {
+          expand: ['payment_method']
+        })
+        const pm = pi.payment_method as any
+        if (pm && typeof pm === 'object') {
+          cardBrand = pm.card?.brand || null
+          cardLast4 = pm.card?.last4 || null
+        }
+      }
+    } catch {
+      // Non-blocking — card info is cosmetic
+    }
+
     // Format the response to ensure clean data
     // Strip Stripe IDs from guest-facing responses (only admins/hosts need them)
     const response = {
@@ -324,6 +353,8 @@ export async function GET(
       messageCount: booking._count.messages,
       disputeCount: booking._count.disputes,
       _count: undefined,  // Remove internal structure
+      cardBrand,
+      cardLast4,
       // Redact Stripe internals for guest users
       ...(!user.isAdmin && !user.isHost ? {
         paymentIntentId: undefined,

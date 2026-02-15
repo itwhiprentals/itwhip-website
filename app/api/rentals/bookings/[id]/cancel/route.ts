@@ -34,6 +34,7 @@ export async function POST(
         paymentStatus: true,
         paymentIntentId: true,
         totalAmount: true,
+        subtotal: true,
         numberOfDays: true,
         dailyRate: true,
         startDate: true,
@@ -94,12 +95,14 @@ export async function POST(
       }
     })
 
-    // Calculate day-based penalty
+    // Calculate day-based penalty — only the base rental (subtotal) is refundable
+    // Service fee, insurance, and delivery fee are always non-refundable
     const tripCost = Number(booking.totalAmount || 0)
+    const subtotal = Number(booking.subtotal || tripCost)
     const days = booking.numberOfDays || Math.max(1, Math.ceil(
       ((booking.endDate?.getTime() || 0) - (booking.startDate?.getTime() || 0)) / (1000 * 60 * 60 * 24)
     ))
-    const cancellation = calculateCancellationRefund(booking.startDate!, tripCost, days)
+    const cancellation = calculateCancellationRefund(booking.startDate!, subtotal, days)
 
     // Calculate proportional penalty distribution across payment sources
     const creditsApplied = Number(booking.creditsApplied || 0)
@@ -109,24 +112,33 @@ export async function POST(
     const depositFromWallet = Number(booking.depositFromWallet || 0)
     const securityDeposit = Number(booking.securityDeposit || 0)
 
+    // Cap each source at the refundable base (subtotal) for distribution
+    const refundableCredits = Math.min(creditsApplied, subtotal)
+    const refundableBonus = Math.min(bonusApplied, Math.max(0, subtotal - refundableCredits))
+    const refundableCard = Math.max(0, subtotal - refundableCredits - refundableBonus)
+
     const distribution = calculatePenaltyDistribution(
       cancellation.penaltyAmount,
-      tripCost,
-      creditsApplied,
-      bonusApplied,
-      chargeAmount
+      subtotal,
+      refundableCredits,
+      refundableBonus,
+      refundableCard
     )
 
+    // The $1 minimum Stripe validation charge (when credits cover 100%) is always refunded
+    const isValidationOnly = chargeAmount <= 1 && (creditsApplied + bonusApplied) >= tripCost
+    const cardValidationRefund = isValidationOnly ? chargeAmount : 0
+
     console.log(`[Cancel Booking] Policy: ${cancellation.label} (${cancellation.hoursUntilPickup.toFixed(1)}h before pickup)`)
-    console.log(`[Cancel Booking] Trip: $${tripCost} over ${days} days. Avg daily: $${cancellation.averageDailyCost.toFixed(2)}`)
-    console.log(`[Cancel Booking] Penalty: $${cancellation.penaltyAmount} (${cancellation.penaltyDays} days)`)
+    console.log(`[Cancel Booking] Trip total: $${tripCost}, refundable base (subtotal): $${subtotal} over ${days} days`)
+    console.log(`[Cancel Booking] Penalty: $${cancellation.penaltyAmount} (${cancellation.penaltyDays} days, avg daily: $${cancellation.averageDailyCost.toFixed(2)})`)
     console.log(`[Cancel Booking] Penalty split → card: $${distribution.penaltyFromCard}, credits: $${distribution.penaltyFromCredits}, bonus: $${distribution.penaltyFromBonus}`)
-    console.log(`[Cancel Booking] Restoring → credits: $${distribution.creditsRestored}, bonus: $${distribution.bonusRestored}, card refund: $${distribution.cardRefund}`)
+    console.log(`[Cancel Booking] Restoring → credits: $${distribution.creditsRestored}, bonus: $${distribution.bonusRestored}, card refund: $${distribution.cardRefund}${cardValidationRefund > 0 ? ` + $${cardValidationRefund} validation` : ''}`)
     console.log(`[Cancel Booking] Deposit: $${securityDeposit} (wallet: $${depositFromWallet}, card: $${depositFromCard}) — ALWAYS released`)
 
     // Handle Stripe payment based on ACTUAL PI status (not just DB paymentStatus)
-    // Card refund = trip refund portion + deposit from card (deposit always released)
-    const totalCardRefund = distribution.cardRefund + depositFromCard
+    // Card refund = trip refund portion + validation refund + deposit from card (deposit always released)
+    const totalCardRefund = distribution.cardRefund + cardValidationRefund + depositFromCard
     if (cancelledBooking.paymentIntentId) {
       try {
         const pi = await stripe.paymentIntents.retrieve(cancelledBooking.paymentIntentId)

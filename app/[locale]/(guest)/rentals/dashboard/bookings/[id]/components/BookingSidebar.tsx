@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl'
 import { Booking } from '../types'
 import {
   ShieldCheck, CheckCircle, Key, User, Phone, Calendar,
-  AlertCircle, MessageSquare
+  AlertCircle
 } from './Icons'
 import { IoHourglassOutline as HourglassOutline } from 'react-icons/io5'
 import {
@@ -146,6 +146,34 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
                 )}
               </div>
             </div>
+
+            {/* Credits/bonus applied + card charge */}
+            {((booking.creditsApplied ?? 0) > 0 || (booking.bonusApplied ?? 0) > 0) && (
+              <div className="mt-2 space-y-1.5">
+                {(booking.creditsApplied ?? 0) > 0 && (
+                  <div className="flex justify-between text-xs sm:text-sm">
+                    <span className="text-green-700">{t('creditsApplied')}</span>
+                    <span className="text-green-700 font-medium">-{formatCurrency(booking.creditsApplied!)}</span>
+                  </div>
+                )}
+                {(booking.bonusApplied ?? 0) > 0 && (
+                  <div className="flex justify-between text-xs sm:text-sm">
+                    <span className="text-green-700">{t('bonusApplied')}</span>
+                    <span className="text-green-700 font-medium">-{formatCurrency(booking.bonusApplied!)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-xs sm:text-sm font-medium">
+                  <span className="text-gray-900">
+                    {booking.cardBrand && booking.cardLast4
+                      ? t('paidWithCard', { brand: booking.cardBrand, last4: booking.cardLast4 })
+                      : t('cardCharge')}
+                  </span>
+                  <span className="text-gray-900">
+                    {formatCurrency(booking.chargeAmount ?? (booking.totalAmount - (booking.creditsApplied || 0) - (booking.bonusApplied || 0)))}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
           
           {booking.depositAmount > 0 && (
@@ -194,25 +222,6 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
           </button>
         )}
 
-        {/* Messages */}
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">{t('messages')}</h3>
-          {booking.status === 'PENDING' ? (
-            <div className="bg-gray-200 rounded-lg border border-gray-300 py-5 text-center">
-              <MessageSquare className="w-6 h-6 text-gray-400 mx-auto mb-1.5" />
-              <p className="text-xs font-semibold text-gray-700">{t('messageHost')}</p>
-              <p className="text-[10px] text-gray-500 mt-0.5">{t('availableAfterConfirmation')}</p>
-            </div>
-          ) : (
-            <a
-              href="/messages"
-              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs sm:text-sm font-medium transition-colors"
-            >
-              <MessageSquare className="w-4 h-4" />
-              {t('messageHost')}
-            </a>
-          )}
-        </div>
       </div>
     </div>
   )

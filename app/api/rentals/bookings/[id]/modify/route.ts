@@ -19,12 +19,12 @@ const ADDON_PRICES = {
   vipConcierge: 150,        // per day
 }
 
-// Delivery fee constants (must match ModifyBookingSheet)
+// Delivery fee defaults — keys match DB pickupType values
 const DELIVERY_FEES: Record<string, number> = {
-  pickup: 0,
+  host: 0,
+  delivery: 35,
   airport: 50,
-  hotel: 105,
-  valet: 195,
+  hotel: 35,
 }
 
 // Shared: validate ownership + fetch booking
@@ -67,6 +67,11 @@ async function getBookingWithAuth(request: NextRequest, bookingId: string) {
       enhancementsTotal: true,
       pickupType: true,
       deliveryAddress: true,
+      creditsApplied: true,
+      bonusApplied: true,
+      chargeAmount: true,
+      depositFromCard: true,
+      depositFromWallet: true,
       car: {
         select: {
           id: true,
@@ -76,7 +81,11 @@ async function getBookingWithAuth(request: NextRequest, bookingId: string) {
           weeklyDiscount: true,
           monthlyDiscount: true,
           city: true,
-          estimatedValue: true
+          estimatedValue: true,
+          deliveryFee: true,
+          airportFee: true,
+          hotelFee: true,
+          homeFee: true
         }
       }
     }
@@ -94,8 +103,8 @@ async function getBookingWithAuth(request: NextRequest, bookingId: string) {
     return { error: 'Unauthorized', status: 403 }
   }
 
-  if (booking.status !== 'PENDING') {
-    return { error: `Can only modify PENDING bookings. Current status: ${booking.status}`, status: 400 }
+  if (booking.status !== 'PENDING' && booking.status !== 'CONFIRMED') {
+    return { error: `Can only modify PENDING or CONFIRMED bookings. Current status: ${booking.status}`, status: 400 }
   }
 
   return { booking }
@@ -266,9 +275,27 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       insurancePrice = dailyInsurance * days
     }
 
-    // Resolve delivery fee
-    const resolvedDeliveryType = newDeliveryType || booking.pickupType || 'pickup'
-    const deliveryFee = DELIVERY_FEES[resolvedDeliveryType] ?? 0
+    // Infer actual original delivery type (DB pickupType can be 'host' even when fee was charged)
+    const originalDeliveryType = (booking.pickupType === 'host' && booking.deliveryFee > 0)
+      ? 'delivery'
+      : (booking.pickupType || 'host')
+    const resolvedDeliveryType = newDeliveryType || originalDeliveryType
+    const deliveryTypeChanged = newDeliveryType && newDeliveryType !== originalDeliveryType
+    let deliveryFee: number
+    if (!deliveryTypeChanged) {
+      // Preserve original booking fee when delivery type unchanged
+      deliveryFee = booking.deliveryFee ?? 0
+    } else {
+      // Use car's actual fees, fallback to defaults
+      const car = bookingCar
+      switch (resolvedDeliveryType) {
+        case 'host': deliveryFee = 0; break
+        case 'delivery': deliveryFee = Number(car?.deliveryFee) || Number(car?.homeFee) || DELIVERY_FEES.delivery; break
+        case 'airport': deliveryFee = Number(car?.airportFee) || DELIVERY_FEES.airport; break
+        case 'hotel': deliveryFee = Number(car?.hotelFee) || DELIVERY_FEES.hotel; break
+        default: deliveryFee = DELIVERY_FEES[resolvedDeliveryType] ?? 0
+      }
+    }
 
     // Calculate add-on amounts
     const resolvedAddOns = {
@@ -298,11 +325,48 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const newTotal = Math.round(newPricing.total * 100) / 100
     const previousTotal = booking.totalAmount
 
-    // Stripe: handle payment re-authorization when total changes
-    let newPaymentIntentId = booking.paymentIntentId
-    const totalChanged = Math.abs(newTotal - previousTotal) > 0.01
+    // ====== RECALCULATE CREDITS / BONUS ======
+    const originalCreditsApplied = Number(booking.creditsApplied) || 0
+    const originalBonusApplied = Number(booking.bonusApplied) || 0
+    const depositFromCard = Number(booking.depositFromCard) || 0
 
-    if (totalChanged && booking.paymentIntentId) {
+    let newCreditsApplied = 0
+    let newBonusApplied = 0
+
+    if (originalCreditsApplied > 0) {
+      // Credits take priority: cap at new total (if total dropped, reduce credits used)
+      newCreditsApplied = Math.round(Math.min(originalCreditsApplied, newTotal) * 100) / 100
+      newBonusApplied = 0
+    } else if (originalBonusApplied > 0) {
+      // Bonus: max 25% of base rental price, capped at what was originally used
+      const maxBonusAllowed = Math.round(newPricing.basePrice * 0.25 * 100) / 100
+      newBonusApplied = Math.round(Math.min(originalBonusApplied, maxBonusAllowed, newTotal) * 100) / 100
+      newCreditsApplied = 0
+    }
+
+    // Calculate card charge amount (rental portion)
+    let newChargeAmount = Math.round((newTotal - newCreditsApplied - newBonusApplied) * 100) / 100
+
+    // Enforce $1.00 minimum Stripe charge
+    if (newChargeAmount + depositFromCard < 1.00) {
+      newChargeAmount = Math.round((1.00 - depositFromCard) * 100) / 100
+      if (newChargeAmount < 0) newChargeAmount = 1.00
+    }
+
+    // Stripe PI amount = card charge for rental + deposit from card
+    const stripeAmount = Math.round((newChargeAmount + depositFromCard) * 100) / 100
+
+    // Calculate excess credits/bonus to restore to guest wallet
+    const creditsToRestore = Math.max(0, Math.round((originalCreditsApplied - newCreditsApplied) * 100) / 100)
+    const bonusToRestore = Math.max(0, Math.round((originalBonusApplied - newBonusApplied) * 100) / 100)
+
+    // ====== STRIPE RE-AUTHORIZATION ======
+    let newPaymentIntentId = booking.paymentIntentId
+    const previousChargeAmount = Number(booking.chargeAmount) || previousTotal
+    const previousStripeAmount = previousChargeAmount + depositFromCard
+    const stripeAmountChanged = Math.abs(stripeAmount - previousStripeAmount) > 0.01
+
+    if (stripeAmountChanged && booking.paymentIntentId) {
       try {
         // Cancel old authorization hold
         await stripe.paymentIntents.cancel(booking.paymentIntentId)
@@ -310,7 +374,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         // Create new authorization with saved card on file
         if (booking.stripeCustomerId && booking.stripePaymentMethodId) {
           const newIntent = await stripe.paymentIntents.create({
-            amount: toStripeCents(newTotal),
+            amount: toStripeCents(stripeAmount),
             currency: 'usd',
             customer: booking.stripeCustomerId,
             payment_method: booking.stripePaymentMethodId,
@@ -322,7 +386,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
               bookingCode: booking.bookingCode,
               modified: 'true',
               previousTotal: String(previousTotal),
-              newTotal: String(newTotal)
+              newTotal: String(newTotal),
+              creditsApplied: String(newCreditsApplied),
+              bonusApplied: String(newBonusApplied),
+              chargeAmount: String(newChargeAmount),
+              depositFromCard: String(depositFromCard)
             }
           })
           newPaymentIntentId = newIntent.id
@@ -356,6 +424,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         taxes: Math.round(newPricing.taxes * 100) / 100,
         totalAmount: newTotal,
         paymentIntentId: newPaymentIntentId,
+        // Financial fields
+        creditsApplied: newCreditsApplied,
+        bonusApplied: newBonusApplied,
+        chargeAmount: newChargeAmount,
         // Add-on fields
         refuelService: resolvedAddOns.refuelService,
         additionalDriver: resolvedAddOns.additionalDriver,
@@ -377,6 +449,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         totalAmount: true,
         dailyRate: true,
         paymentIntentId: true,
+        creditsApplied: true,
+        bonusApplied: true,
+        chargeAmount: true,
+        depositFromCard: true,
+        depositFromWallet: true,
         refuelService: true,
         additionalDriver: true,
         extraMilesPackage: true,
@@ -388,14 +465,81 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
     })
 
+    // ====== RESTORE EXCESS CREDITS / BONUS TO GUEST WALLET ======
+    if (creditsToRestore > 0 || bonusToRestore > 0) {
+      const guestEmail = booking.guestEmail
+      if (guestEmail) {
+        try {
+          const guestProfile = await prisma.reviewerProfile.findFirst({
+            where: { email: guestEmail },
+            select: { id: true, creditBalance: true, bonusBalance: true }
+          })
+
+          if (guestProfile) {
+            if (creditsToRestore > 0) {
+              await prisma.reviewerProfile.update({
+                where: { id: guestProfile.id },
+                data: { creditBalance: { increment: creditsToRestore } }
+              })
+              await prisma.creditBonusTransaction.create({
+                data: {
+                  id: crypto.randomUUID(),
+                  guestId: guestProfile.id,
+                  amount: creditsToRestore,
+                  type: 'CREDIT',
+                  action: 'ADD',
+                  balanceAfter: guestProfile.creditBalance + creditsToRestore,
+                  reason: `Restored from modified booking ${booking.bookingCode} (total decreased)`,
+                  bookingId: booking.id
+                }
+              })
+              console.log(`[Modify Booking] Restored $${creditsToRestore.toFixed(2)} credits to guest wallet`)
+            }
+
+            if (bonusToRestore > 0) {
+              await prisma.reviewerProfile.update({
+                where: { id: guestProfile.id },
+                data: { bonusBalance: { increment: bonusToRestore } }
+              })
+              await prisma.creditBonusTransaction.create({
+                data: {
+                  id: crypto.randomUUID(),
+                  guestId: guestProfile.id,
+                  amount: bonusToRestore,
+                  type: 'BONUS',
+                  action: 'ADD',
+                  balanceAfter: guestProfile.bonusBalance + bonusToRestore,
+                  reason: `Restored from modified booking ${booking.bookingCode} (total decreased)`,
+                  bookingId: booking.id
+                }
+              })
+              console.log(`[Modify Booking] Restored $${bonusToRestore.toFixed(2)} bonus to guest wallet`)
+            }
+          }
+        } catch (balanceError) {
+          console.error('[Modify Booking] Failed to restore balances (non-blocking):', balanceError)
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       booking: updated,
       previousPricing: {
         totalAmount: previousTotal,
-        numberOfDays: booking.numberOfDays
+        numberOfDays: booking.numberOfDays,
+        creditsApplied: originalCreditsApplied,
+        bonusApplied: originalBonusApplied,
       },
-      priceDifference: Math.round((newTotal - previousTotal) * 100) / 100
+      priceDifference: Math.round((newTotal - previousTotal) * 100) / 100,
+      financialSummary: {
+        creditsApplied: newCreditsApplied,
+        bonusApplied: newBonusApplied,
+        chargeAmount: newChargeAmount,
+        stripeAmount,
+        creditsRestored: creditsToRestore,
+        bonusRestored: bonusToRestore,
+      }
     })
   } catch (error) {
     console.error('[Modify Booking] Error:', error)

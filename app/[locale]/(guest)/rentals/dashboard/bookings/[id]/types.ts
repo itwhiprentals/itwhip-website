@@ -25,6 +25,7 @@ export interface Booking {
       dailyRate?: number
       rating?: number
       totalTrips?: number
+      estimatedValue?: number | null
     }
     host: {
       name: string
@@ -53,6 +54,13 @@ export interface Booking {
     returnLocation?: string | null
     taxes: number
     depositAmount: number
+    creditsApplied?: number
+    bonusApplied?: number
+    chargeAmount?: number
+    depositFromWallet?: number
+    depositFromCard?: number
+    cardBrand?: string | null
+    cardLast4?: string | null
     paymentStatus: string
     tripStatus?: string
     tripStartedAt?: string | Date | null
@@ -112,6 +120,19 @@ export interface Booking {
     penaltyDays: number
     depositRefunded: boolean
     label: string
+    // Payment source breakdown (when credits/bonus were used)
+    cardRefund: number
+    creditsRestored: number
+    bonusRestored: number
+    penaltyFromCard: number
+    penaltyFromCredits: number
+    penaltyFromBonus: number
+    // Deposit source tracking
+    depositFromCard: number
+    depositFromWallet: number
+    totalCardRefund: number  // cardRefund + depositFromCard (matches actual Stripe refund)
+    // Non-refundable fees (service + insurance + delivery — always kept by platform)
+    nonRefundableFees: number
   }
   
   export interface TimelineStep {

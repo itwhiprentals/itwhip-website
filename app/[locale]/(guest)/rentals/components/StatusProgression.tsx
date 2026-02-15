@@ -2,6 +2,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { useTranslations } from 'next-intl'
 import {
   IoCheckmarkCircle,
   IoCloseCircle,
@@ -39,7 +40,8 @@ export default function StatusProgression({
   onModify,
   onViewAgreement
 }: StatusProgressionProps) {
-  
+  const t = useTranslations('StatusProgression')
+
   // Determine which steps are complete - FIXED case sensitivity
   const isBooked = true // Always true if viewing
   const isVerified = verificationStatus?.toLowerCase() === 'approved' || 
@@ -64,39 +66,39 @@ export default function StatusProgression({
   const wasConfirmed = isConfirmed || isActive || isCompleted // Was ever confirmed
   
   const steps = [
-    { 
-      name: 'Booked', 
+    {
+      name: t('stepBooked'),
       complete: isBooked,
       active: !isVerified && !isCancelled,
-      description: documentsSubmittedAt ? 'Docs submitted' : 'Awaiting docs'
+      description: documentsSubmittedAt ? t('docsSubmitted') : t('awaitingDocs')
     },
-    { 
-      name: 'Verified', 
+    {
+      name: t('stepVerified'),
       complete: isVerified,
       active: isVerified && !wasConfirmed && !paymentFailed && !isCancelled && !hasPendingCharges,
-      description: isVerified ? 'Documents approved' : 'Under review',
+      description: isVerified ? t('documentsApproved') : t('underReview'),
       error: paymentFailed
     },
-    { 
-      name: hasPendingCharges ? 'Charges' : 'Confirmed', 
+    {
+      name: hasPendingCharges ? t('stepCharges') : t('stepConfirmed'),
       complete: isConfirmed && !hasPendingCharges,
       active: hasPendingCharges || (isConfirmed && !isActive),
-      description: hasPendingCharges ? 'Processing final charges' : 
-                   isConfirmed ? 'Payment successful' : 
-                   paymentFailed ? 'Payment failed' : 'Processing payment',
+      description: hasPendingCharges ? t('processingFinalCharges') :
+                   isConfirmed ? t('paymentSuccessful') :
+                   paymentFailed ? t('paymentFailed') : t('processingPayment'),
       error: paymentFailed
     },
-    { 
-      name: 'Active', 
+    {
+      name: t('stepActive'),
       complete: isActive,
       active: isActive && !isCompleted,
-      description: isActive ? 'Trip in progress' : 'Ready for pickup'
+      description: isActive ? t('tripInProgress') : t('readyForPickup')
     },
-    { 
-      name: 'Completed', 
+    {
+      name: t('stepCompleted'),
       complete: isCompleted,
       active: false,
-      description: isCompleted ? 'Trip finished' : 'Not started'
+      description: isCompleted ? t('tripFinished') : t('notStarted')
     }
   ]
   
@@ -107,8 +109,8 @@ export default function StatusProgression({
         <div className="flex items-center">
           <IoCloseCircle className="w-8 h-8 text-red-500 mr-3" />
           <div>
-            <h3 className="text-lg font-semibold text-red-900">Booking Cancelled</h3>
-            <p className="text-sm text-red-700 mt-1">This booking has been cancelled and is no longer active.</p>
+            <h3 className="text-lg font-semibold text-red-900">{t('bookingCancelled')}</h3>
+            <p className="text-sm text-red-700 mt-1">{t('bookingCancelledDesc')}</p>
           </div>
         </div>
       </div>
@@ -118,17 +120,17 @@ export default function StatusProgression({
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Booking Status</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t('bookingStatus')}</h2>
         {paymentFailed && !hasPendingCharges && (
           <span className="flex items-center text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full">
             <IoAlertCircle className="w-4 h-4 mr-1" />
-            Payment Required
+            {t('paymentRequired')}
           </span>
         )}
         {hasPendingCharges && (
           <span className="flex items-center text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
             <IoHourglassOutline className="w-4 h-4 mr-1" />
-            Charges Pending
+            {t('chargesPending')}
           </span>
         )}
       </div>
@@ -200,10 +202,9 @@ export default function StatusProgression({
                 <div className="flex items-start">
                   <IoHourglassOutline className="w-5 h-5 text-amber-600 mr-2 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-amber-900">Processing Final Charges</p>
+                    <p className="text-sm font-medium text-amber-900">{t('processingFinalChargesTitle')}</p>
                     <p className="text-xs text-amber-700 mt-1">
-                      Your trip has ended. We're calculating final charges for mileage, fuel, or any additional fees. 
-                      You'll receive an email with the detailed breakdown shortly.
+                      {t('processingFinalChargesDesc')}
                     </p>
                   </div>
                 </div>
@@ -217,9 +218,9 @@ export default function StatusProgression({
                 <div className="flex items-start">
                   <IoCheckmarkCircle className="w-5 h-5 text-gray-600 mr-2 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Trip Completed</p>
+                    <p className="text-sm font-medium text-gray-900">{t('tripCompleted')}</p>
                     <p className="text-xs text-gray-700 mt-1">
-                      Thank you for choosing ItWhip! We hope you enjoyed your rental experience.
+                      {t('tripCompletedDesc')}
                     </p>
                   </div>
                 </div>
@@ -233,9 +234,9 @@ export default function StatusProgression({
                 <div className="flex items-start">
                   <IoCheckmarkCircle className="w-5 h-5 text-blue-600 mr-2 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-blue-900">Trip Active</p>
+                    <p className="text-sm font-medium text-blue-900">{t('tripActive')}</p>
                     <p className="text-xs text-blue-700 mt-1">
-                      Your rental is currently active. Drive safely and enjoy your trip!
+                      {t('tripActiveDesc')}
                     </p>
                   </div>
                 </div>
@@ -249,9 +250,9 @@ export default function StatusProgression({
                 <div className="flex items-start">
                   <IoCheckmarkCircle className="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-green-900">Booking Confirmed</p>
+                    <p className="text-sm font-medium text-green-900">{t('bookingConfirmed')}</p>
                     <p className="text-xs text-green-700 mt-1">
-                      Your booking is confirmed and payment has been processed. You'll receive pickup instructions 24 hours before your trip.
+                      {t('bookingConfirmedDesc')}
                     </p>
                   </div>
                 </div>
@@ -265,12 +266,12 @@ export default function StatusProgression({
                 <div className="flex items-start">
                   <IoAlertCircle className="w-5 h-5 text-red-600 mr-2 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-red-900">Payment Failed - Action Required</p>
+                    <p className="text-sm font-medium text-red-900">{t('paymentFailedTitle')}</p>
                     <p className="text-xs text-red-700 mt-1">
-                      Your documents have been verified, but payment could not be processed. Please update your payment method within 24 hours to secure your booking.
+                      {t('paymentFailedDesc')}
                     </p>
                     <button className="mt-2 text-xs font-semibold text-red-600 hover:text-red-700">
-                      Update Payment Method →
+                      {t('updatePaymentMethod')}
                     </button>
                   </div>
                 </div>
@@ -290,7 +291,7 @@ export default function StatusProgression({
                 className="flex items-center justify-center gap-1.5 px-2 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium"
               >
                 <IoCloseOutline className="w-3.5 h-3.5" />
-                <span>Cancel</span>
+                <span>{t('cancel')}</span>
               </button>
             )}
             {onModify && (
@@ -299,7 +300,7 @@ export default function StatusProgression({
                 className="flex items-center justify-center gap-1.5 px-2 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-xs font-medium"
               >
                 <IoCreateOutline className="w-3.5 h-3.5" />
-                <span>Modify</span>
+                <span>{t('modify')}</span>
               </button>
             )}
             {onViewAgreement && (
@@ -308,7 +309,7 @@ export default function StatusProgression({
                 className="flex items-center justify-center gap-1.5 px-2 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-xs font-medium"
               >
                 <IoDocumentTextOutline className="w-3.5 h-3.5" />
-                <span>Agreement</span>
+                <span>{t('agreement')}</span>
               </button>
             )}
           </div>

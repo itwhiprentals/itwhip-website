@@ -7,6 +7,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   IoCheckmarkCircle,
   IoIdCardOutline,
@@ -56,6 +57,7 @@ interface VisitorIdentityVerifyProps {
   driverPhone?: string
   carId?: string
   disabled?: boolean
+  hideStripeFallback?: boolean
 }
 
 type VerifyStep =
@@ -75,7 +77,9 @@ export function VisitorIdentityVerify({
   driverPhone,
   carId,
   disabled = false,
+  hideStripeFallback = false,
 }: VisitorIdentityVerifyProps) {
+  const t = useTranslations('DLVerification')
   // Step flow
   const [step, setStep] = useState<VerifyStep>('front')
 
@@ -164,6 +168,13 @@ export function VisitorIdentityVerify({
   useEffect(() => {
     checkVerificationStatus()
   }, [checkVerificationStatus])
+
+  // ── Auto-skip Stripe fallback when embedded in onboarding (already Stripe-verified) ──
+  useEffect(() => {
+    if (step === 'fallback-options' && hideStripeFallback) {
+      setStep('selfie-verify')
+    }
+  }, [step, hideStripeFallback])
 
   // ── Blob URL cleanup ──
   useEffect(() => {
@@ -505,7 +516,7 @@ export function VisitorIdentityVerify({
     return (
       <div className="py-6 text-center">
         <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-        <p className="text-xs text-gray-500 dark:text-gray-400">Checking verification status...</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{t('checkingStatus')}</p>
       </div>
     )
   }
@@ -525,12 +536,12 @@ export function VisitorIdentityVerify({
         onCameraError={handleCameraError}
         label={
           cameraTarget === 'front'
-            ? 'Front of Driver\'s License'
+            ? t('dlFrontLabel')
             : cameraTarget === 'back'
-              ? 'Back of Driver\'s License'
+              ? t('dlBackLabel')
               : step === 'selfie-verify'
-                ? 'Selfie with License'
-                : 'Take a Selfie'
+                ? t('selfieWithLicense')
+                : t('takeSelfie')
         }
         facingMode={cameraTarget === 'selfie' ? 'user' : 'environment'}
         guideShape={cameraGuideShape}
@@ -552,8 +563,8 @@ export function VisitorIdentityVerify({
           <PhotoTips />
           <UploadTarget
             icon={<IoIdCardOutline className="text-4xl text-gray-400" />}
-            label="Front of Driver's License"
-            sublabel="Tap to open camera"
+            label={t('dlFrontLabel')}
+            sublabel={t('tapToOpenCamera')}
             preview={frontPreview}
             isUploading={uploadingFront}
             disabled={disabled}
@@ -582,13 +593,13 @@ export function VisitorIdentityVerify({
                 <IoCheckmarkCircle className="w-3 h-3 text-white" />
               </div>
             </div>
-            <p className="text-xs text-green-600 dark:text-green-400 font-medium">Front uploaded</p>
+            <p className="text-xs text-green-600 dark:text-green-400 font-medium">{t('frontUploaded')}</p>
           </div>
 
           <UploadTarget
             icon={<IoIdCardOutline className="text-4xl text-gray-400 rotate-180" />}
-            label="Back of Driver's License"
-            sublabel="Tap to open camera"
+            label={t('dlBackLabel')}
+            sublabel={t('tapToOpenCamera')}
             preview={backPreview}
             isUploading={uploadingBack}
             disabled={disabled}
@@ -614,10 +625,10 @@ export function VisitorIdentityVerify({
               <IoShieldCheckmarkOutline className="text-3xl text-orange-500" />
             </div>
             <p className="text-sm font-medium text-gray-900 dark:text-white">
-              Verifying your license...
+              {t('verifyingLicense')}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              This takes just a few seconds
+              {t('takesFewSeconds')}
             </p>
             {/* Indeterminate progress bar */}
             <div className="mt-4 mx-auto max-w-[200px] h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -650,7 +661,7 @@ export function VisitorIdentityVerify({
             >
               <span className="flex items-center gap-2">
                 <IoPersonOutline className="text-lg" />
-                {selfiePreview ? 'Selfie uploaded' : 'Add selfie (optional)'}
+                {selfiePreview ? t('selfieUploaded') : t('addSelfieOptional')}
                 {selfiePreview && <IoCheckmarkCircle className="text-green-500" />}
               </span>
               {showSelfie ? (
@@ -673,7 +684,7 @@ export function VisitorIdentityVerify({
                       }}
                       className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] py-1 text-center"
                     >
-                      Remove
+                      {t('remove')}
                     </button>
                   </div>
                 ) : (
@@ -685,12 +696,12 @@ export function VisitorIdentityVerify({
                     {uploadingSelfie ? (
                       <div className="flex items-center justify-center gap-2">
                         <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-xs text-gray-500">Uploading...</span>
+                        <span className="text-xs text-gray-500">{t('uploading')}</span>
                       </div>
                     ) : (
                       <div className="flex items-center justify-center gap-2">
                         <IoCameraOutline className="text-xl text-gray-400" />
-                        <span className="text-xs text-gray-500">Take a selfie</span>
+                        <span className="text-xs text-gray-500">{t('takeSelfie')}</span>
                       </div>
                     )}
                   </button>
@@ -722,10 +733,10 @@ export function VisitorIdentityVerify({
             <IoCardOutline className="text-3xl text-blue-600" />
           </div>
           <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-            Redirecting to Stripe...
+            {t('redirectingToStripe')}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            You&apos;ll be redirected to complete verification
+            {t('redirectedToComplete')}
           </p>
           <div className="mt-4 mx-auto w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
         </div>
@@ -750,7 +761,7 @@ export function VisitorIdentityVerify({
       {/* Info text (shown on upload steps only) */}
       {(step === 'front' || step === 'back') && (
         <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-3">
-          Your data is encrypted and secure. Verification takes just a few seconds.
+          {t('dataEncryptedSecure')}
         </p>
       )}
     </div>
@@ -760,11 +771,12 @@ export function VisitorIdentityVerify({
 // ─── Inline Helper Components ───────────────────────────────────────────────
 
 function PhotoTips() {
+  const t = useTranslations('DLVerification')
   return (
     <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg mb-4">
       <IoInformationCircleOutline className="text-blue-500 flex-shrink-0 text-base" />
       <p className="text-xs text-blue-700 dark:text-blue-400">
-        Place license on a flat surface. Good lighting, all 4 corners visible.
+        {t('photoTips')}
       </p>
     </div>
   )
@@ -789,6 +801,7 @@ function UploadTarget({
   onClick: () => void
   onRetake: () => void
 }) {
+  const t = useTranslations('DLVerification')
   return (
     <div
       onClick={() => !disabled && !isUploading && !preview && onClick()}
@@ -803,7 +816,7 @@ function UploadTarget({
         /* Uploading without preview (fallback path) */
         <div className="flex flex-col items-center justify-center h-full gap-2">
           <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-gray-500">Uploading...</p>
+          <p className="text-xs text-gray-500">{t('uploading')}</p>
         </div>
       ) : preview ? (
         /* Image preview with upload overlay */
@@ -823,7 +836,7 @@ function UploadTarget({
               className="absolute bottom-2 right-2 flex items-center gap-1 px-3 py-1.5 bg-black/60 backdrop-blur text-white text-xs rounded-lg hover:bg-black/80 transition-colors"
             >
               <IoRefreshOutline className="text-sm" />
-              Retake
+              {t('retake')}
             </button>
           )}
         </div>
@@ -872,6 +885,7 @@ function SuccessCard({
   result: VerificationResult
   onReVerify: () => void
 }) {
+  const t = useTranslations('DLVerification')
   const confidence = result.confidence || 0
 
   return (
@@ -882,14 +896,14 @@ function SuccessCard({
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-green-800 dark:text-green-200">
-            Identity Verified
+            {t('identityVerifiedTitle')}
           </p>
           {result.data && (
             <div className="mt-2 space-y-1.5">
-              <InfoRow label="Name" value={result.data.name} />
-              <InfoRow label="License" value={`${result.data.state} — ${result.data.licenseNumber}`} />
-              <InfoRow label="Expires" value={result.data.expiration} />
-              {result.data.dob && <InfoRow label="DOB" value={result.data.dob} />}
+              <InfoRow label={t('nameLabel')} value={result.data.name} />
+              <InfoRow label={t('licenseLabel')} value={`${result.data.state} — ${result.data.licenseNumber}`} />
+              <InfoRow label={t('expiresLabel')} value={result.data.expiration} />
+              {result.data.dob && <InfoRow label={t('dobLabel')} value={result.data.dob} />}
             </div>
           )}
 
@@ -904,7 +918,7 @@ function SuccessCard({
               />
             </div>
             <span className="text-xs text-green-600 dark:text-green-400 font-medium">
-              {confidence >= 85 ? 'High confidence' : confidence >= 70 ? 'Verified' : 'Moderate'}
+              {confidence >= 85 ? t('highConfidence') : confidence >= 70 ? t('verified') : t('moderate')}
             </span>
           </div>
         </div>
@@ -917,7 +931,7 @@ function SuccessCard({
           className="text-xs text-green-600 dark:text-green-400 hover:underline inline-flex items-center gap-1"
         >
           <IoRefreshOutline className="text-xs" />
-          Re-verify
+          {t('reVerify')}
         </button>
       </div>
     </div>
@@ -940,6 +954,7 @@ function ErrorCard({
   result: VerificationResult
   onRetry: () => void
 }) {
+  const t = useTranslations('DLVerification')
   const criticalFlags = result.criticalFlags || []
   const infoFlags = result.informationalFlags || []
   // Fallback: if no separated flags, use redFlags
@@ -962,7 +977,7 @@ function ErrorCard({
       {/* Critical flags */}
       {(criticalFlags.length > 0 || fallbackFlags.length > 0) && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-          <p className="text-xs font-semibold text-red-700 dark:text-red-300 mb-2">Issues found:</p>
+          <p className="text-xs font-semibold text-red-700 dark:text-red-300 mb-2">{t('issuesFound')}</p>
           <ul className="space-y-1.5">
             {[...criticalFlags, ...fallbackFlags].map((flag, i) => (
               <li key={i} className="flex items-start gap-2 text-xs text-red-600 dark:text-red-400">
@@ -977,7 +992,7 @@ function ErrorCard({
       {/* Informational flags */}
       {infoFlags.length > 0 && (
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-          <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-2">Notes:</p>
+          <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-2">{t('notes')}</p>
           <ul className="space-y-1">
             {infoFlags.map((flag, i) => (
               <li key={i} className="flex items-start gap-2 text-xs text-amber-600 dark:text-amber-400">
@@ -991,7 +1006,7 @@ function ErrorCard({
 
       {/* Actionable guidance */}
       <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-        Please retake your photos with better lighting or ensure your name matches the booking.
+        {t('retakeWithBetterLighting')}
       </p>
 
       {/* Try again button */}
@@ -1000,7 +1015,7 @@ function ErrorCard({
         className="w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white transition-colors"
       >
         <IoRefreshOutline className="text-lg" />
-        Try Again
+        {t('tryAgain')}
       </button>
     </div>
   )
@@ -1017,6 +1032,7 @@ function FallbackOptionsCard({
   onSelfieVerify: () => void
   lastResult: VerificationResult | null
 }) {
+  const t = useTranslations('DLVerification')
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -1025,10 +1041,10 @@ function FallbackOptionsCard({
           <IoShieldCheckmarkOutline className="text-2xl text-amber-600" />
         </div>
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-          Verification Options
+          {t('verificationOptions')}
         </h3>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          We couldn&apos;t verify your license automatically. Choose how to verify:
+          {t('couldntVerifyAuto')}
         </p>
       </div>
 
@@ -1053,10 +1069,10 @@ function FallbackOptionsCard({
             <IoCardOutline className="text-xl text-white" />
           </div>
           <span className="text-sm font-semibold text-blue-800 dark:text-blue-200">
-            Verify with Stripe
+            {t('verifyWithStripe')}
           </span>
           <span className="text-[11px] text-blue-600 dark:text-blue-400 leading-tight">
-            Official ID verification. Takes ~2 minutes.
+            {t('stripeVerifyDesc')}
           </span>
         </button>
 
@@ -1069,16 +1085,16 @@ function FallbackOptionsCard({
             <IoCameraOutline className="text-xl text-white" />
           </div>
           <span className="text-sm font-semibold text-orange-800 dark:text-orange-200">
-            Verify with Selfie
+            {t('verifyWithSelfie')}
           </span>
           <span className="text-[11px] text-orange-600 dark:text-orange-400 leading-tight">
-            Hold your license. Quick review by our team.
+            {t('selfieVerifyDesc')}
           </span>
         </button>
       </div>
 
       <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center">
-        We may request additional information to verify your identity.
+        {t('mayRequestAdditional')}
       </p>
     </div>
   )
@@ -1097,6 +1113,7 @@ function SelfieVerifyStep({
   onOpenCamera: () => void
   onBack: () => void
 }) {
+  const t = useTranslations('DLVerification')
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -1105,10 +1122,10 @@ function SelfieVerifyStep({
           <IoPersonOutline className="text-2xl text-orange-600" />
         </div>
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-          Selfie Verification
+          {t('selfieVerification')}
         </h3>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          Take a selfie while holding your driver&apos;s license next to your face.
+          {t('selfieInstructions')}
         </p>
       </div>
 
@@ -1117,15 +1134,15 @@ function SelfieVerifyStep({
         <ul className="space-y-1.5 text-xs text-orange-700 dark:text-orange-300">
           <li className="flex items-start gap-2">
             <span className="font-bold mt-0.5">1.</span>
-            Hold your driver&apos;s license next to your face
+            {t('selfieStep1')}
           </li>
           <li className="flex items-start gap-2">
             <span className="font-bold mt-0.5">2.</span>
-            Make sure both your face and license are clearly visible
+            {t('selfieStep2')}
           </li>
           <li className="flex items-start gap-2">
             <span className="font-bold mt-0.5">3.</span>
-            Good lighting, no glare on the license
+            {t('selfieStep3')}
           </li>
         </ul>
       </div>
@@ -1140,7 +1157,7 @@ function SelfieVerifyStep({
             <div className="flex items-center justify-center gap-2 mt-3">
               <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
               <span className="text-xs text-gray-500">
-                {uploadingSelfie ? 'Uploading...' : 'Submitting for review...'}
+                {uploadingSelfie ? t('uploading') : t('submittingForReview')}
               </span>
             </div>
           )}
@@ -1151,7 +1168,7 @@ function SelfieVerifyStep({
           className="w-full py-4 rounded-lg font-medium flex flex-col items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white transition-colors"
         >
           <IoCameraOutline className="text-2xl" />
-          <span>Take Selfie with License</span>
+          <span>{t('takeSelfieWithLicense')}</span>
         </button>
       )}
 
@@ -1160,33 +1177,35 @@ function SelfieVerifyStep({
         onClick={onBack}
         className="w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
       >
-        Back to options
+        {t('backToOptions')}
       </button>
     </div>
   )
 }
 
 function AlreadyVerifiedCard() {
+  const t = useTranslations('DLVerification')
   return (
     <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-5 text-center">
       <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-500 mb-3">
         <IoShieldCheckmarkOutline className="text-2xl text-white" />
       </div>
       <h3 className="text-sm font-semibold text-green-800 dark:text-green-200">
-        Identity Already Verified
+        {t('alreadyVerified')}
       </h3>
       <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-        You&apos;ve been verified through Stripe Identity. No additional verification needed.
+        {t('alreadyVerifiedDesc')}
       </p>
     </div>
   )
 }
 
 function FrozenCard({ frozenUntil }: { frozenUntil: string | null }) {
+  const t = useTranslations('DLVerification')
   const frozenDate = frozenUntil ? new Date(frozenUntil) : null
   const formattedDate = frozenDate
-    ? frozenDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-    : 'a few days'
+    ? frozenDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
+    : '—'
 
   return (
     <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-5 text-center">
@@ -1194,36 +1213,37 @@ function FrozenCard({ frozenUntil }: { frozenUntil: string | null }) {
         <IoLockClosedOutline className="text-2xl text-white" />
       </div>
       <h3 className="text-sm font-semibold text-red-800 dark:text-red-200">
-        Verification Temporarily Unavailable
+        {t('verificationFrozen')}
       </h3>
       <p className="text-xs text-red-600 dark:text-red-400 mt-2">
-        Your account has been temporarily frozen due to multiple failed verification attempts.
+        {t('frozenDesc')}
       </p>
       <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-red-700 dark:text-red-300">
         <IoTimeOutline className="text-sm" />
-        <span>Try again after: <strong>{formattedDate}</strong></span>
+        <span>{t('tryAgainAfter')} <strong>{formattedDate}</strong></span>
       </div>
       <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-3">
-        Need help? Contact support@itwhip.com
+        {t('needHelpContact')}
       </p>
     </div>
   )
 }
 
 function ManualPendingCard() {
+  const t = useTranslations('DLVerification')
   return (
     <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-5 text-center">
       <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-amber-500 mb-3">
         <IoTimeOutline className="text-2xl text-white" />
       </div>
       <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-200">
-        Selfie Under Review
+        {t('selfieUnderReview')}
       </h3>
       <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
-        Your selfie is under review. You can continue booking now — fill in your details and complete payment below.
+        {t('selfieUnderReviewDesc')}
       </p>
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-        We&apos;ll confirm your booking once verification is approved.
+        {t('confirmAfterApproval')}
       </p>
     </div>
   )

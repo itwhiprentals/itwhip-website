@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { Booking } from '../types'
 import { XCircle, DocumentText, ShieldCheck, Calendar, ArrowForward } from './Icons'
 import { calculateRefund, formatCurrency } from '../utils/helpers'
+import BottomSheet from '@/app/components/BottomSheet'
 
 // Import all modal components from the main rentals area
 import RentalAgreementModal from '@/app/[locale]/(guest)/rentals/components/modals/RentalAgreementModal'
@@ -29,59 +30,259 @@ export const CancellationDialog: React.FC<CancellationDialogProps> = ({
   const t = useTranslations('BookingDetail')
   const [cancellationReason, setCancellationReason] = useState('')
   const refundInfo = calculateRefund(booking)
-
-  if (!isOpen) return null
+  const hasPenalty = refundInfo.penaltyAmount > 0
+  const subtotal = booking.subtotal || (booking.dailyRate * (booking.numberOfDays || 1))
+  const penaltyPercent = subtotal > 0 ? Math.round((refundInfo.penaltyAmount / subtotal) * 100) : 0
+  const hasCreditsOrBonus = (booking.creditsApplied || 0) > 0 || (booking.bonusApplied || 0) > 0
+  const hasWalletDeposit = (booking.depositFromWallet || 0) > 0
+  const hasCardDeposit = (booking.depositFromCard || 0) > 0
+  const hasMultipleSources = hasCreditsOrBonus || hasWalletDeposit
+  const cardLabel = booking.cardBrand && booking.cardLast4
+    ? `${booking.cardBrand.charAt(0).toUpperCase() + booking.cardBrand.slice(1)} •••• ${booking.cardLast4}`
+    : null
+  // Accurate total: sum of all refund destinations
+  const totalBack = hasMultipleSources
+    ? refundInfo.totalCardRefund + refundInfo.creditsRestored + refundInfo.bonusRestored + refundInfo.depositFromWallet
+    : refundInfo.refundAmount + booking.depositAmount
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-sm sm:max-w-md w-full p-4 sm:p-6">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
-          {t('cancelBookingTitle')}
-        </h3>
-
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-          <p className="text-sm font-medium text-gray-900 mb-2">{t('refundSummary')}</p>
-          <div className="space-y-1 text-xs">
-            <div className="flex justify-between">
-              <span className="text-gray-600">{t('tripTotal')}</span>
-              <span>{formatCurrency(booking.totalAmount)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">{t('refundAmount', { label: refundInfo.label })}</span>
-              <span className="font-medium text-green-600">
-                {formatCurrency(refundInfo.totalRefund)}
-              </span>
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            {t('refundProcessingInfo')}
-          </p>
-        </div>
-        
-        <textarea
-          placeholder={t('cancellationReasonPlaceholder')}
-          className="w-full p-2 border border-gray-300 rounded-lg text-sm mb-4"
-          rows={3}
-          value={cancellationReason}
-          onChange={(e) => setCancellationReason(e.target.value)}
-        />
-        
-        <div className="flex gap-2 sm:gap-3">
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t('cancelBookingTitle')}
+      size="large"
+      footer={
+        <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
+            className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
           >
             {t('keepBooking')}
           </button>
           <button
             onClick={() => onConfirm(cancellationReason)}
-            className="flex-1 px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base"
+            disabled={!cancellationReason}
+            className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {t('yesCancel')}
           </button>
         </div>
+      }
+    >
+      {/* Policy tier badge */}
+      {hasPenalty ? (
+        <div className="mb-3 p-2.5 bg-red-600 rounded-lg flex items-start gap-2">
+          <span className="text-white text-sm mt-0.5">&#9888;</span>
+          <p className="text-xs font-medium text-white">
+            {t('lateCancelBadge', { penalty: formatCurrency(refundInfo.penaltyAmount), percent: penaltyPercent })}
+          </p>
+        </div>
+      ) : (
+        <div className="mb-3 p-2.5 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
+          <span className="text-green-600 text-sm mt-0.5">&#10003;</span>
+          <p className="text-xs font-medium text-green-800">
+            {t('freeCancellationBadge')}
+          </p>
+        </div>
+      )}
+
+      {/* What You Paid */}
+      <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+        <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">{t('whatYouPaid')}</p>
+        <div className="space-y-1.5 text-xs">
+          <div className="flex justify-between">
+            <span className="text-gray-600">
+              {t('baseRental', {
+                days: booking.numberOfDays || 1,
+                rate: formatCurrency(booking.dailyRate)
+              })}
+            </span>
+            <span className="text-gray-900">{formatCurrency(booking.subtotal || (booking.dailyRate * (booking.numberOfDays || 1)))}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">{t('serviceFeeLine')} <span className="text-gray-400 text-[10px]">({t('nonRefundable')})</span></span>
+            <span className="text-gray-900">{formatCurrency(booking.serviceFee)}</span>
+          </div>
+          {booking.insuranceFee > 0 && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">{t('insuranceLine', { tier: booking.insuranceType || 'Basic' })} <span className="text-gray-400 text-[10px]">({t('nonRefundable')})</span></span>
+              <span className="text-gray-900">{formatCurrency(booking.insuranceFee)}</span>
+            </div>
+          )}
+          {booking.deliveryFee > 0 && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">{t('deliveryFeeLine')} <span className="text-gray-400 text-[10px]">({t('nonRefundable')})</span></span>
+              <span className="text-gray-900">{formatCurrency(booking.deliveryFee)}</span>
+            </div>
+          )}
+          <div className="flex justify-between">
+            <span className="text-gray-600">{t('taxesLine')}</span>
+            <span className="text-gray-900">{formatCurrency(booking.taxes)}</span>
+          </div>
+          <div className="border-t border-gray-200 pt-1.5 mt-1.5">
+            <div className="flex justify-between font-semibold">
+              <span className="text-gray-900">{t('tripTotalLine')}</span>
+              <span className="text-gray-900">{formatCurrency(booking.totalAmount)}</span>
+            </div>
+          </div>
+          {hasCreditsOrBonus && (
+            <>
+              {(booking.creditsApplied || 0) > 0 && (
+                <div className="flex justify-between text-gray-600">
+                  <span>{t('creditsAppliedLine')}</span>
+                  <span className="font-semibold">(-{formatCurrency(booking.creditsApplied!)})</span>
+                </div>
+              )}
+              {(booking.bonusApplied || 0) > 0 && (
+                <div className="flex justify-between text-gray-600">
+                  <span>{t('bonusAppliedLine')}</span>
+                  <span className="font-semibold">(-{formatCurrency(booking.bonusApplied!)})</span>
+                </div>
+              )}
+              <div className="flex justify-between font-medium">
+                <span className="text-gray-700">{t('youPaidWithCard')}</span>
+                <span className="text-gray-900">{formatCurrency(booking.chargeAmount || booking.totalAmount)}</span>
+              </div>
+            </>
+          )}
+          {hasCardDeposit && hasWalletDeposit ? (
+            <>
+              <div className="flex justify-between text-gray-500">
+                <span>{t('depositFromCardLine')}</span>
+                <span>{formatCurrency(booking.depositFromCard!)}</span>
+              </div>
+              <div className="flex justify-between text-gray-500">
+                <span>{t('depositFromWalletLine')}</span>
+                <span>{formatCurrency(booking.depositFromWallet!)}</span>
+              </div>
+            </>
+          ) : hasWalletDeposit ? (
+            <div className="flex justify-between text-gray-500">
+              <span>{t('depositFromWalletLine')}</span>
+              <span>{formatCurrency(booking.depositFromWallet!)}</span>
+            </div>
+          ) : (
+            <div className="flex justify-between text-gray-500">
+              <span>{t('securityDepositHeld')}</span>
+              <span>{formatCurrency(booking.depositAmount)}</span>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Refund Breakdown */}
+      <div className="mb-3 p-3 bg-white border border-gray-200 rounded-lg">
+        <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">{t('refundBreakdown')}</p>
+        <div className="space-y-1.5 text-xs">
+
+          {/* ── Not refunded ── */}
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{t('notRefundedSection')}</p>
+          {refundInfo.nonRefundableFees > 0 && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">{t('nonRefundableFeesTotal')}</span>
+              <span className="text-gray-900">{formatCurrency(refundInfo.nonRefundableFees)}</span>
+            </div>
+          )}
+          {booking.taxes > 0 && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">{t('taxesLine')}</span>
+              <span className="text-gray-900">{formatCurrency(booking.taxes)}</span>
+            </div>
+          )}
+          {hasPenalty && (
+            <div className="flex justify-between">
+              <span className="font-semibold text-red-600">{t('latePenalty')}</span>
+              <span className="font-semibold text-red-600">{formatCurrency(refundInfo.penaltyAmount)}</span>
+            </div>
+          )}
+
+          {/* Separator */}
+          <div className="border-t border-gray-100 my-1"></div>
+
+          {/* ── Your refund ── */}
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{t('yourRefundSection')}</p>
+          {hasMultipleSources ? (
+            <>
+              {refundInfo.creditsRestored > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-700">{t('creditsRestoredLine')}</span>
+                  <span className="font-semibold text-gray-900">{formatCurrency(refundInfo.creditsRestored)}</span>
+                </div>
+              )}
+              {refundInfo.bonusRestored > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-700">{t('bonusRestoredLine')}</span>
+                  <span className="font-semibold text-gray-900">{formatCurrency(refundInfo.bonusRestored)}</span>
+                </div>
+              )}
+              {refundInfo.depositFromWallet > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-700">{t('depositWalletRestored')}</span>
+                  <span className="font-semibold text-gray-900">{formatCurrency(refundInfo.depositFromWallet)}</span>
+                </div>
+              )}
+              {refundInfo.totalCardRefund > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-700">
+                    {cardLabel ? t('refundToCardLabel', { card: cardLabel }) : t('cardRefundLine')}
+                  </span>
+                  <span className="font-semibold text-gray-900">{formatCurrency(refundInfo.totalCardRefund)}</span>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="flex justify-between">
+                <span className="text-gray-700">
+                  {cardLabel ? t('refundToCardLabel', { card: cardLabel }) : t('tripRefundLine')}
+                </span>
+                <span className="font-semibold text-gray-900">{formatCurrency(refundInfo.refundAmount)}</span>
+              </div>
+              {booking.depositAmount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-700">{t('depositReleased')}</span>
+                  <span className="font-semibold text-gray-900">{formatCurrency(booking.depositAmount)}</span>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Total back to you */}
+          <div className="border-t border-gray-200 pt-1.5 mt-1.5">
+            <div className="flex justify-between font-semibold">
+              <span className="text-gray-900">{t('totalBackToYou')}</span>
+              <span className="text-gray-900">{formatCurrency(totalBack)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Reason dropdown */}
+      <div className="mb-3">
+        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+          {t('reasonRequired')} <span className="text-red-500">*</span>
+        </label>
+        <select
+          value={cancellationReason}
+          onChange={(e) => setCancellationReason(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+        >
+          <option value="">{t('selectReason')}</option>
+          <option value="plans_changed">{t('reasonPlansChanged')}</option>
+          <option value="found_alternative">{t('reasonFoundAlternative')}</option>
+          <option value="dates_wrong">{t('reasonDatesWrong')}</option>
+          <option value="price_concern">{t('reasonPriceConcern')}</option>
+          <option value="personal_emergency">{t('reasonEmergency')}</option>
+          <option value="host_communication">{t('reasonHostIssue')}</option>
+          <option value="vehicle_concern">{t('reasonVehicleConcern')}</option>
+          <option value="other">{t('reasonOther')}</option>
+        </select>
+      </div>
+
+      <p className="text-xs text-gray-500">
+        {t('refundProcessingInfo')}
+      </p>
+    </BottomSheet>
   )
 }
 
