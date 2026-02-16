@@ -1802,6 +1802,16 @@ model RentalBooking {
   hostHandoffDistance        Float?                // meters from car
   keyInstructionsDeliveredAt DateTime?
   handoffAutoFallbackAt      DateTime?             // when auto-release should trigger
+
+  // ===== GUEST LIVE TRACKING =====
+  guestLiveLatitude          Float?
+  guestLiveLongitude         Float?
+  guestLiveDistance           Float?                // meters from car, overwritten each ping
+  guestLiveUpdatedAt         DateTime?
+  guestLocationTrust         Float?                // 0-100 anti-spoofing confidence
+  guestEtaMessage            String?               // Haiku-generated ETA message
+  guestArrivalSummary        String?               // Haiku-generated arrival summary for host
+
   vehicleMatchResult         Json?                 // { sameVehicle, confidence, damageNotes }
   vehicleMatchCheckedAt      DateTime?
 

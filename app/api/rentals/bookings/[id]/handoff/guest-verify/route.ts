@@ -5,6 +5,8 @@ import { geocodeAddress } from '@/app/lib/geocoding/mapbox'
 import { calculateDistance } from '@/lib/utils/distance'
 import { TRIP_CONSTANTS, HANDOFF_STATUS } from '@/app/lib/trip/constants'
 import { TESTING_MODE } from '@/app/lib/trip/validation'
+import { generateArrivalSummary } from '@/app/lib/trip/handoff-ai'
+import { sendEmail } from '@/app/lib/email/send-email'
 
 export async function POST(
   request: NextRequest,
@@ -24,13 +26,22 @@ export async function POST(
         id: true,
         renterId: true,
         guestEmail: true,
+        guestName: true,
+        bookingCode: true,
+        startDate: true,
+        startTime: true,
+        endDate: true,
         status: true,
         onboardingCompletedAt: true,
         tripStartedAt: true,
         handoffStatus: true,
+        guestLocationTrust: true,
         car: {
           select: {
             id: true,
+            year: true,
+            make: true,
+            model: true,
             latitude: true,
             longitude: true,
             address: true,
@@ -38,6 +49,14 @@ export async function POST(
             state: true,
             instantBook: true,
             keyInstructions: true,
+            host: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                businessName: true,
+              }
+            }
           }
         }
       }
@@ -67,7 +86,7 @@ export async function POST(
     }
 
     const body = await request.json()
-    const { latitude, longitude } = body
+    const { latitude, longitude, message } = body
 
     if (typeof latitude !== 'number' || typeof longitude !== 'number') {
       return NextResponse.json({ error: 'Valid latitude and longitude required' }, { status: 400 })
@@ -138,7 +157,45 @@ export async function POST(
       ? new Date(Date.now() + TRIP_CONSTANTS.HANDOFF_AUTO_FALLBACK_MINUTES * 60 * 1000)
       : null
 
-    // Update booking with GPS verification
+    // Get guest's DL verification info for arrival summary
+    const dlVerification = await prisma.dLVerificationLog.findFirst({
+      where: { bookingId },
+      orderBy: { createdAt: 'desc' },
+      select: { model: true, score: true, recommendation: true },
+    })
+
+    // Count guest's previous bookings (for trust context)
+    const totalBookings = booking.renterId
+      ? await prisma.rentalBooking.count({
+          where: { renterId: booking.renterId, status: { in: ['CONFIRMED', 'COMPLETED'] } },
+        })
+      : 0
+
+    // Calculate booking duration
+    const bookingDays = booking.startDate && booking.endDate
+      ? Math.max(1, Math.ceil((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / (1000 * 60 * 60 * 24)))
+      : 1
+
+    // Generate Haiku arrival summary (non-blocking — fallback if fails)
+    let arrivalSummary: string | undefined
+    try {
+      arrivalSummary = await generateArrivalSummary({
+        guestName: booking.guestName || 'Guest',
+        distanceMeters,
+        verificationMethod: dlVerification?.model || null,
+        verificationScore: dlVerification?.score || null,
+        totalBookings: Math.max(0, totalBookings - 1), // exclude current
+        bookingDays,
+        locationTrust: booking.guestLocationTrust || 85,
+        scheduledPickupDate: booking.startDate?.toISOString() || null,
+        scheduledPickupTime: booking.startTime || null,
+        currentTime: new Date(),
+      })
+    } catch (err) {
+      console.error('[Handoff] Arrival summary generation failed:', err)
+    }
+
+    // Update booking with GPS verification + arrival summary
     await prisma.rentalBooking.update({
       where: { id: bookingId },
       data: {
@@ -148,8 +205,49 @@ export async function POST(
         guestGpsLongitude: longitude,
         guestGpsDistance: distanceMeters,
         handoffAutoFallbackAt: autoFallbackAt,
+        ...(arrivalSummary ? { guestArrivalSummary: arrivalSummary } : {}),
       }
     })
+
+    // Create arrival notification message
+    const arrivalMessage = typeof message === 'string' && message.trim()
+      ? message.trim()
+      : "I've arrived at the vehicle"
+
+    await prisma.rentalMessage.create({
+      data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
+        bookingId,
+        senderId: user.id || bookingId,
+        senderType: 'guest',
+        senderName: booking.guestName || 'Guest',
+        senderEmail: booking.guestEmail || undefined,
+        message: arrivalMessage,
+        category: 'arrival_notification',
+      }
+    })
+
+    // Email host about guest arrival
+    const hostEmail = booking.car.host?.email
+    if (hostEmail) {
+      const carLabel = `${booking.car.year || ''} ${booking.car.make || ''} ${booking.car.model || ''}`.trim()
+      const distanceLabel = distanceMeters < 1000
+        ? `${distanceMeters}m`
+        : `${(distanceMeters / 1609.34).toFixed(1)} mi`
+
+      await sendEmail({
+        to: hostEmail,
+        subject: `Guest arrived — ${booking.bookingCode || bookingId}`,
+        html: `
+          <p><strong>${booking.guestName || 'Your guest'}</strong> has arrived near the <strong>${carLabel}</strong> (${distanceLabel} away).</p>
+          ${arrivalMessage !== "I've arrived at the vehicle" ? `<blockquote style="border-left: 3px solid #22c55e; padding-left: 10px; margin: 10px 0; color: #374151;">${arrivalMessage}</blockquote>` : ''}
+          ${arrivalSummary ? `<p style="color: #6b7280; font-size: 14px;">${arrivalSummary}</p>` : ''}
+          <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/partner/bookings/${bookingId}" style="color: #22c55e;">View booking &amp; confirm handoff</a></p>
+        `,
+        text: `${booking.guestName || 'Your guest'} has arrived near the ${carLabel} (${distanceLabel} away). ${arrivalMessage}`,
+      }).catch(err => console.error('[Handoff] Host email failed:', err))
+    }
 
     return NextResponse.json({
       verified: true,

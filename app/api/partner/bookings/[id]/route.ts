@@ -289,6 +289,13 @@ export async function GET(
         hostHandoffDistance: booking.hostHandoffDistance || null,
         keyInstructionsDeliveredAt: booking.keyInstructionsDeliveredAt?.toISOString() || null,
 
+        // Live tracking fields
+        guestLiveDistance: booking.guestLiveDistance || null,
+        guestLiveUpdatedAt: booking.guestLiveUpdatedAt?.toISOString() || null,
+        guestEtaMessage: booking.guestEtaMessage || null,
+        guestArrivalSummary: booking.guestArrivalSummary || null,
+        guestLocationTrust: booking.guestLocationTrust || null,
+
         // Onboarding fields
         onboardingCompletedAt: booking.onboardingCompletedAt?.toISOString() || null,
         licensePhotoUrl: booking.licensePhotoUrl || null,

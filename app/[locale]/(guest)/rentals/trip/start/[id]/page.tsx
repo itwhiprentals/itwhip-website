@@ -11,6 +11,7 @@ import { OdometerInput } from './components/OdometerInput'
 import { FuelSelector } from './components/FuelSelector'
 import { HandoffVerify } from './components/HandoffVerify'
 import { InspectionChecklist } from './components/InspectionChecklist'
+import TripStepProgress from '@/app/components/TripStepProgress'
 import { TRIP_CONSTANTS } from '@/app/lib/trip/constants'
 import { validateInspectionPhotos, validateOdometer, validateFuelLevel, canStartTrip } from '@/app/lib/trip/validation'
 
@@ -212,19 +213,19 @@ export default function TripStartPage() {
   }
 
   const steps = [
-    { title: 'Verify Handoff', component: HandoffVerify },
-    { title: 'Capture Photos', component: PhotoCapture },
-    { title: 'Odometer Reading', component: OdometerInput },
-    { title: 'Fuel Level', component: FuelSelector },
-    { title: 'Safety Checklist', component: InspectionChecklist }
+    { title: 'Handoff', component: HandoffVerify },
+    { title: 'Photos', component: PhotoCapture },
+    { title: 'Odometer', component: OdometerInput },
+    { title: 'Fuel', component: FuelSelector },
+    { title: 'Checklist', component: InspectionChecklist }
   ]
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">{t('loadingInspection')}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('loadingInspection')}</p>
         </div>
       </div>
     )
@@ -232,12 +233,12 @@ export default function TripStartPage() {
 
   if (!booking) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error || t('bookingNotFound')}</p>
+          <p className="text-red-600 dark:text-red-400 mb-4">{error || t('bookingNotFound')}</p>
           <button
             onClick={() => router.push('/dashboard')}
-            className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800"
+            className="px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100"
           >
             {t('backToDashboard')}
           </button>
@@ -249,59 +250,32 @@ export default function TripStartPage() {
   const CurrentStepComponent = steps[currentStep].component
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="max-w-3xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">{t('startTripInspection')}</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('startTripInspection')}</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             {booking.car.year} {booking.car.make} {booking.car.model}
           </p>
         </div>
 
         {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            {steps.map((step, index) => (
-              <div
-                key={index}
-                className={`flex items-center ${index < steps.length - 1 ? 'flex-1' : ''}`}
-              >
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center font-medium text-sm ${
-                    index < currentStep
-                      ? 'bg-gray-900 text-white'
-                      : index === currentStep
-                      ? 'bg-black text-white'
-                      : 'bg-gray-300 text-gray-600'
-                  }`}
-                >
-                  {index < currentStep ? '✓' : index + 1}
-                </div>
-                {index < steps.length - 1 && (
-                  <div
-                    className={`flex-1 h-1 mx-2 ${
-                      index < currentStep ? 'bg-gray-900' : 'bg-gray-300'
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-          <p className="text-center text-sm font-medium text-gray-700">
-            {steps[currentStep].title}
-          </p>
-        </div>
+        <TripStepProgress
+          steps={steps.map(s => ({ name: s.title }))}
+          currentStep={currentStep}
+          className="mb-8"
+        />
 
         {/* Error Display */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">{error}</p>
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
           </div>
         )}
 
         {/* Current Step Component */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-6 mb-6">
           <CurrentStepComponent
             booking={booking}
             data={tripData}
@@ -319,15 +293,15 @@ export default function TripStartPage() {
           <button
             onClick={currentStep === 0 ? () => router.back() : handleBack}
             disabled={submitting}
-            className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
+            className="px-6 py-2 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
           >
             {currentStep === 0 ? 'Cancel' : 'Back'}
           </button>
-          
+
           <button
             onClick={handleNext}
             disabled={submitting}
-            className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors disabled:opacity-50"
           >
             {submitting ? (
               <span>Processing...</span>

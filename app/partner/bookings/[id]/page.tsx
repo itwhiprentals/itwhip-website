@@ -91,6 +91,12 @@ interface BookingDetails {
   hostHandoffVerifiedAt: string | null
   hostHandoffDistance: number | null
   keyInstructionsDeliveredAt: string | null
+  // Live tracking fields
+  guestLiveDistance: number | null
+  guestLiveUpdatedAt: string | null
+  guestEtaMessage: string | null
+  guestArrivalSummary: string | null
+  guestLocationTrust: number | null
   // Onboarding fields
   onboardingCompletedAt: string | null
   licensePhotoUrl: string | null
@@ -1078,6 +1084,12 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 hostHandoffDistance={booking.hostHandoffDistance}
                 licensePhotoUrl={booking.licensePhotoUrl}
                 licenseBackPhotoUrl={booking.licenseBackPhotoUrl}
+                guestLiveDistance={booking.guestLiveDistance}
+                guestLiveUpdatedAt={booking.guestLiveUpdatedAt}
+                guestEtaMessage={booking.guestEtaMessage}
+                guestArrivalSummary={booking.guestArrivalSummary}
+                guestLocationTrust={booking.guestLocationTrust}
+                pickupLocation={booking.pickupLocation}
               />
             )}
 

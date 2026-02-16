@@ -500,6 +500,7 @@ export default function BookingDetailsPage() {
           paymentStatus={booking.paymentStatus}
           documentsSubmittedAt={typeof booking.documentsSubmittedAt === 'string' ? booking.documentsSubmittedAt : undefined}
           reviewedAt={typeof booking.reviewedAt === 'string' ? booking.reviewedAt : undefined}
+          handoffStatus={booking.handoffStatus}
           onCancel={!isPreTripReady && (booking.status === 'PENDING' || booking.status === 'CONFIRMED') ? () => setShowCancelDialog(true) : undefined}
           onModify={!isPreTripReady && ['PENDING', 'CONFIRMED'].includes(booking.status) ? () => setShowModifyModal(true) : undefined}
           onViewAgreement={!isPreTripReady ? () => setShowAgreement(true) : undefined}

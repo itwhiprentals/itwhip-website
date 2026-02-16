@@ -4,6 +4,7 @@ import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
 import { calculateDistance } from '@/lib/utils/distance'
 import { HANDOFF_STATUS, TRIP_CONSTANTS } from '@/app/lib/trip/constants'
+import { sendEmail } from '@/app/lib/email/send-email'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!)
 
@@ -47,9 +48,13 @@ export async function POST(
         handoffStatus: true,
         guestName: true,
         guestEmail: true,
+        bookingCode: true,
         car: {
           select: {
             id: true,
+            year: true,
+            make: true,
+            model: true,
             latitude: true,
             longitude: true,
             instantBook: true,
@@ -98,8 +103,13 @@ export async function POST(
       hostHandoffDistance: hostDistanceMeters,
     }
 
-    // If key instructions provided, mark as delivered
-    if (keyInstructions && typeof keyInstructions === 'string' && keyInstructions.trim()) {
+    // Resolve effective key instructions: host-typed > saved on car
+    const effectiveKeyInstructions =
+      (typeof keyInstructions === 'string' && keyInstructions.trim())
+        ? keyInstructions.trim()
+        : (booking.car.keyInstructions || null)
+
+    if (effectiveKeyInstructions) {
       updateData.keyInstructionsDeliveredAt = new Date()
     }
 
@@ -108,8 +118,8 @@ export async function POST(
       data: updateData,
     })
 
-    // Create a message for guest if key instructions were provided
-    if (keyInstructions && typeof keyInstructions === 'string' && keyInstructions.trim()) {
+    // Create a message for guest with key instructions
+    if (effectiveKeyInstructions) {
       await prisma.rentalMessage.create({
         data: {
           id: crypto.randomUUID(),
@@ -118,14 +128,32 @@ export async function POST(
           senderId: partner.id,
           senderType: 'host',
           senderName: partner.businessName || partner.name || 'Host',
-          message: keyInstructions.trim(),
+          message: effectiveKeyInstructions,
           category: 'key_instructions',
         }
       })
+
+      // Email guest with key instructions
+      if (booking.guestEmail) {
+        const carLabel = `${booking.car.year || ''} ${booking.car.make || ''} ${booking.car.model || ''}`.trim()
+        await sendEmail({
+          to: booking.guestEmail,
+          subject: `Key instructions — ${booking.bookingCode || bookingId}`,
+          html: `
+            <p>Your host has confirmed the handoff for the <strong>${carLabel}</strong>.</p>
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 12px 0;">
+              <p style="margin: 0 0 4px; font-weight: 600; color: #166534;">Key Instructions</p>
+              <p style="margin: 0; color: #374151;">${effectiveKeyInstructions}</p>
+            </div>
+            <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/rentals/trip/start/${bookingId}" style="color: #22c55e;">Continue to vehicle inspection</a></p>
+          `,
+          text: `Key instructions for ${carLabel}: ${effectiveKeyInstructions}`,
+        }).catch(err => console.error('[Handoff] Guest key email failed:', err))
+      }
     }
 
     // Optionally save key instructions to car for reuse
-    if (saveKeyInstructions && keyInstructions && keyInstructions.trim()) {
+    if (saveKeyInstructions && typeof keyInstructions === 'string' && keyInstructions.trim()) {
       await prisma.rentalCar.update({
         where: { id: booking.car.id },
         data: { keyInstructions: keyInstructions.trim() }

@@ -20,6 +20,13 @@ interface HandoffPanelProps {
   hostHandoffDistance?: number | null
   licensePhotoUrl?: string | null
   licenseBackPhotoUrl?: string | null
+  // Live tracking
+  guestLiveDistance?: number | null
+  guestLiveUpdatedAt?: string | null
+  guestEtaMessage?: string | null
+  guestArrivalSummary?: string | null
+  guestLocationTrust?: number | null
+  pickupLocation?: string | null
 }
 
 export function HandoffPanel({
@@ -35,6 +42,12 @@ export function HandoffPanel({
   hostHandoffDistance,
   licensePhotoUrl,
   licenseBackPhotoUrl,
+  guestLiveDistance: initialLiveDistance,
+  guestLiveUpdatedAt: initialLiveUpdatedAt,
+  guestEtaMessage: initialEtaMessage,
+  guestArrivalSummary: initialArrivalSummary,
+  guestLocationTrust: initialLocationTrust,
+  pickupLocation,
 }: HandoffPanelProps) {
   const t = useTranslations('HandoffHost')
   const [status, setStatus] = useState(initialStatus || HANDOFF_STATUS.PENDING)
@@ -46,6 +59,17 @@ export function HandoffPanel({
   const [autoCountdown, setAutoCountdown] = useState<number | null>(null)
   const [expanded, setExpanded] = useState(false)
   const [dlPreview, setDlPreview] = useState<string | null>(null)
+  const [liveDistance, setLiveDistance] = useState<number | null>(initialLiveDistance ?? null)
+  const [liveUpdatedAt, setLiveUpdatedAt] = useState<string | null>(initialLiveUpdatedAt ?? null)
+  const [etaMessage, setEtaMessage] = useState<string | null>(initialEtaMessage ?? null)
+  const [arrivalSummary, setArrivalSummary] = useState<string | null>(initialArrivalSummary ?? null)
+  const [hostConfirmedLocally, setHostConfirmedLocally] = useState(false)
+  const [handoffChecklist, setHandoffChecklist] = useState({
+    idVerified: false,
+    vehicleReviewed: false,
+    keysProvided: false,
+  })
+  const allChecked = Object.values(handoffChecklist).every(Boolean)
   const pollRef = useRef<NodeJS.Timeout | null>(null)
   const countdownRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -98,6 +122,11 @@ export function HandoffPanel({
         if (result.guestDistance !== null) {
           setGuestDistance(result.guestDistance)
         }
+        // Update live tracking data
+        if (result.guestLiveDistance !== undefined) setLiveDistance(result.guestLiveDistance)
+        if (result.guestLiveUpdatedAt !== undefined) setLiveUpdatedAt(result.guestLiveUpdatedAt)
+        if (result.guestEtaMessage !== undefined) setEtaMessage(result.guestEtaMessage)
+        if (result.guestArrivalSummary !== undefined) setArrivalSummary(result.guestArrivalSummary)
 
         // Stop polling on terminal states
         if (result.handoffStatus === HANDOFF_STATUS.HANDOFF_COMPLETE ||
@@ -147,6 +176,7 @@ export function HandoffPanel({
       })
 
       if (response.ok) {
+        setHostConfirmedLocally(true)
         setStatus(HANDOFF_STATUS.HANDOFF_COMPLETE)
         if (pollRef.current) clearInterval(pollRef.current)
       }
@@ -171,7 +201,15 @@ export function HandoffPanel({
     return `${miles.toFixed(1)} mi`
   }
 
-  // WAITING — Guest hasn't arrived yet
+  const formatTimeAgo = (dateStr: string) => {
+    const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
+    if (seconds < 60) return `${seconds}s ago`
+    const minutes = Math.floor(seconds / 60)
+    if (minutes < 60) return `${minutes}m ago`
+    return `${Math.floor(minutes / 60)}h ago`
+  }
+
+  // WAITING — Guest hasn't arrived yet (show live tracking if available)
   if (status === HANDOFF_STATUS.PENDING || status === null) {
     return (
       <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
@@ -179,36 +217,167 @@ export function HandoffPanel({
           <IoLocationOutline className="w-5 h-5 text-gray-400" />
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('tripHandoff')}</h3>
         </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{t('waitingForGuest')}</p>
+
+        {liveDistance !== null ? (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                {t('guestIs')} <span className="text-blue-600 dark:text-blue-400">{formatDistance(liveDistance)}</span> {t('away')}
+              </p>
+              {liveUpdatedAt && (
+                <span className="text-[10px] text-gray-400">{formatTimeAgo(liveUpdatedAt)}</span>
+              )}
+            </div>
+            {etaMessage && (
+              <p className="text-xs text-gray-600 dark:text-gray-400 italic">{etaMessage}</p>
+            )}
+            {/* Pulsing indicator */}
+            <div className="flex items-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+              </span>
+              <span className="text-[10px] text-gray-400">{t('trackingLive')}</span>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('waitingForGuest')}</p>
+        )}
       </div>
     )
   }
 
-  // GUEST VERIFIED — Guest is at the car!
+  // GUEST VERIFIED — Guest is nearby, notified host
   if (status === HANDOFF_STATUS.GUEST_VERIFIED) {
     return (
       <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800 p-4">
-        <div className="flex items-center gap-2 mb-2">
+        {/* Handoff animation CSS */}
+        <style>{`
+          @keyframes handoff-bar {
+            0% { transform: translateX(-100%); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateX(100%); opacity: 0; }
+          }
+          @keyframes handoff-bar-reverse {
+            0% { transform: translateX(100%); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateX(-100%); opacity: 0; }
+          }
+          @keyframes handoff-icon-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+          }
+        `}</style>
+
+        <div className="flex items-center gap-2 mb-3">
           <IoLocationOutline className="w-5 h-5 text-amber-600 dark:text-amber-400" />
           <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-            {t('guestArrived')}
+            {t('guestNearby')}
             {guestDistance !== null && (
-              <span className="font-normal text-amber-600 dark:text-amber-400 ml-1">({guestDistance}m {t('away')})</span>
+              <span className="font-normal text-amber-600 dark:text-amber-400 ml-1">({formatDistance(guestDistance)})</span>
             )}
           </h3>
         </div>
 
-        {/* Visual checklist (not blocking) */}
-        <div className="flex flex-wrap gap-2 mb-3">
-          <span className="inline-flex items-center text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 px-2 py-1 rounded">
-            <IoCheckmarkCircleOutline className="w-3.5 h-3.5 mr-1 text-green-500" /> {t('guestPresent')}
-          </span>
-          <span className="inline-flex items-center text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 px-2 py-1 rounded">
-            <IoCheckmarkCircleOutline className="w-3.5 h-3.5 mr-1 text-green-500" /> {t('dlChecked')}
-          </span>
-          <span className="inline-flex items-center text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 px-2 py-1 rounded">
-            <IoKeyOutline className="w-3.5 h-3.5 mr-1 text-green-500" /> {t('keysHandedOver')}
-          </span>
+        {/* Key ←→ Person handoff animation */}
+        <div className="flex items-center justify-center gap-0 my-4 px-2">
+          {/* Key icon */}
+          <div
+            className="flex-shrink-0 w-11 h-11 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-md"
+            style={{ animation: 'handoff-icon-pulse 2s ease-in-out infinite' }}
+          >
+            <IoKeyOutline className="w-5 h-5 text-white" />
+          </div>
+
+          {/* Animated bars between icons */}
+          <div className="flex-1 mx-2 h-6 relative overflow-hidden">
+            {/* Static dashed track */}
+            <div className="absolute inset-y-0 left-0 right-0 flex items-center">
+              <div className="w-full border-t-2 border-dashed border-amber-300/50 dark:border-amber-600/40" />
+            </div>
+            {/* Moving bars (left → right) */}
+            <div className="absolute inset-y-0 left-0 right-0 flex items-center overflow-hidden">
+              <div
+                className="w-6 h-1.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 absolute"
+                style={{ animation: 'handoff-bar 1.8s ease-in-out infinite', left: '10%' }}
+              />
+              <div
+                className="w-6 h-1.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 absolute"
+                style={{ animation: 'handoff-bar 1.8s ease-in-out 0.6s infinite', left: '40%' }}
+              />
+              <div
+                className="w-6 h-1.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 absolute"
+                style={{ animation: 'handoff-bar 1.8s ease-in-out 1.2s infinite', left: '70%' }}
+              />
+            </div>
+            {/* Moving bars (right → left) */}
+            <div className="absolute inset-y-0 left-0 right-0 flex items-center overflow-hidden">
+              <div
+                className="w-6 h-1.5 rounded-full bg-gradient-to-l from-green-400 to-green-500 absolute"
+                style={{ animation: 'handoff-bar-reverse 1.8s ease-in-out 0.3s infinite', left: '20%' }}
+              />
+              <div
+                className="w-6 h-1.5 rounded-full bg-gradient-to-l from-green-400 to-green-500 absolute"
+                style={{ animation: 'handoff-bar-reverse 1.8s ease-in-out 0.9s infinite', left: '55%' }}
+              />
+            </div>
+          </div>
+
+          {/* Person icon */}
+          <div
+            className="flex-shrink-0 w-11 h-11 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-md"
+            style={{ animation: 'handoff-icon-pulse 2s ease-in-out 0.5s infinite' }}
+          >
+            <IoPersonOutline className="w-5 h-5 text-white" />
+          </div>
+        </div>
+
+        <p className="text-center text-xs text-amber-700 dark:text-amber-400 mb-3 font-medium">
+          {t('meetGuestOrHandoff')}
+        </p>
+
+        {/* AI arrival summary */}
+        {arrivalSummary && (
+          <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 italic">{arrivalSummary}</p>
+        )}
+
+        {/* Auto-send note if car has key instructions */}
+        {savedKeyInstructions && (
+          <p className="text-[10px] text-amber-600 dark:text-amber-400 mb-2">
+            {t('keyAutoSendNote')}
+          </p>
+        )}
+
+        {/* Handoff checklist — host must confirm each step */}
+        <div className="space-y-2 mb-3">
+          {([
+            { key: 'idVerified' as const, label: t('checkIdVerified') },
+            { key: 'vehicleReviewed' as const, label: t('checkVehicleReviewed') },
+            { key: 'keysProvided' as const, label: t('checkKeysProvided') },
+          ]).map(({ key, label }) => (
+            <label
+              key={key}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+                handoffChecklist[key]
+                  ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                  : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={handoffChecklist[key]}
+                onChange={(e) => setHandoffChecklist(prev => ({ ...prev, [key]: e.target.checked }))}
+                className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+              />
+              <span className={`text-xs font-medium ${
+                handoffChecklist[key] ? 'text-green-700 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'
+              }`}>
+                {label}
+              </span>
+            </label>
+          ))}
         </div>
 
         {/* Optional key instructions */}
@@ -240,11 +409,15 @@ export function HandoffPanel({
           </div>
         )}
 
-        {/* Big confirm button */}
+        {/* Confirm button — disabled until all checklist items checked */}
         <button
           onClick={handleConfirmHandoff}
-          disabled={confirming}
-          className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={confirming || !allChecked}
+          className={`w-full py-3 font-semibold rounded-lg transition-colors disabled:cursor-not-allowed ${
+            allChecked
+              ? 'bg-green-600 hover:bg-green-700 text-white'
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
+          }`}
         >
           {confirming ? (
             <span className="flex items-center justify-center gap-2">
@@ -272,7 +445,7 @@ export function HandoffPanel({
   // HANDOFF COMPLETE — expandable
   if (status === HANDOFF_STATUS.HANDOFF_COMPLETE || status === HANDOFF_STATUS.BYPASSED) {
     const handoffTime = hostHandoffVerifiedAt || guestGpsVerifiedAt
-    const wasAutoConfirmed = !hostHandoffVerifiedAt && status === HANDOFF_STATUS.HANDOFF_COMPLETE
+    const wasAutoConfirmed = !hostHandoffVerifiedAt && !hostConfirmedLocally && status === HANDOFF_STATUS.HANDOFF_COMPLETE
     const handoffType = wasAutoConfirmed ? t('autoConfirmed') : t('metInPerson')
 
     return (
@@ -336,18 +509,28 @@ export function HandoffPanel({
                     </div>
                   </div>
 
-                  {/* Guest distance — only show if reasonable (< 50km) */}
-                  {(hostHandoffDistance || guestDistance) && (hostHandoffDistance || guestDistance)! < 50000 && (
-                    <div className="flex items-start gap-2">
-                      <IoLocationOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('guestDistance')}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {formatDistance(hostHandoffDistance || guestDistance!)} {t('fromVehicle')}
-                        </p>
-                      </div>
+                  {/* Pickup location + guest distance */}
+                  <div className="flex items-start gap-2">
+                    <IoLocationOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('pickupLocation')}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {pickupLocation || '—'}
+                        {(hostHandoffDistance || guestDistance) && (hostHandoffDistance || guestDistance)! < 50000 && (
+                          <span className="ml-1 text-gray-400 dark:text-gray-500">
+                            ({formatDistance(hostHandoffDistance || guestDistance!)} {t('away')})
+                          </span>
+                        )}
+                        {' '}
+                        <a
+                          href="/partner/tracking"
+                          className="text-[10px] text-green-600 dark:text-green-400 hover:underline"
+                        >
+                          {t('trackVehicle')}
+                        </a>
+                      </p>
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* Divider + Right column — Guest DL photos stacked */}

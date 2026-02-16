@@ -89,6 +89,7 @@ export interface Booking {
     parkingInstructions?: string
     keyboxCode?: string
     hasKeybox?: boolean
+    handoffStatus?: string | null
   }
   
   export interface Message {

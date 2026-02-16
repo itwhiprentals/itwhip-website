@@ -22,6 +22,7 @@ interface StatusProgressionProps {
   paymentStatus: string
   documentsSubmittedAt?: string
   reviewedAt?: string
+  handoffStatus?: string | null
   onCancel?: () => void
   onModify?: () => void
   onViewAgreement?: () => void
@@ -38,6 +39,7 @@ export default function StatusProgression({
   paymentStatus,
   documentsSubmittedAt,
   reviewedAt,
+  handoffStatus,
   onCancel,
   onModify,
   onViewAgreement,
@@ -60,6 +62,7 @@ export default function StatusProgression({
   // Check trip status for Active state
   const isActive = status === 'ACTIVE' || tripStatus === 'ACTIVE' || !!tripStartedAt
   const isCompleted = status === 'COMPLETED' || tripStatus === 'COMPLETED' || !!tripEndedAt
+  const isHandoffDone = handoffStatus === 'HANDOFF_COMPLETE' || handoffStatus === 'BYPASSED'
   
   // Check for special states - FIXED case sensitivity
   const isCancelled = status === 'CANCELLED'
@@ -88,6 +91,7 @@ export default function StatusProgression({
       complete: isConfirmed && !hasPendingCharges,
       active: hasPendingCharges || (isConfirmed && !isActive),
       description: hasPendingCharges ? t('processingFinalCharges') :
+                   (isConfirmed && isHandoffDone) ? t('handoffComplete') :
                    isConfirmed ? t('paymentSuccessful') :
                    paymentFailed ? t('paymentFailed') : t('processingPayment'),
       error: paymentFailed
@@ -150,6 +154,7 @@ export default function StatusProgression({
             animate={{
               width: isCompleted ? '100%' :
                      isActive ? '85%' :
+                     (isConfirmed && isHandoffDone) ? '73%' :
                      isConfirmed ? '60%' :
                      isVerified ? '35%' : '0%'
             }}

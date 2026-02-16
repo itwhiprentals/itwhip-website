@@ -99,11 +99,14 @@ export const TRIP_CONSTANTS = {
   PICKUP_RADIUS_METERS: 500,
 
   // Handoff verification
-  HANDOFF_RADIUS_METERS: 200,           // Guest must be within 200m
+  HANDOFF_RADIUS_METERS: 500,           // Guest must be within 500m
   HOST_HANDOFF_RADIUS_METERS: 500,      // Host soft-check (logged, doesn't block)
   HANDOFF_AUTO_FALLBACK_MINUTES: 5,     // Auto-complete after 5min (instant-book only)
   HANDOFF_POLLING_INTERVAL: 5000,       // 5s polling during handoff
   HANDOFF_TIMEOUT_MINUTES: 30,          // Mark expired after 30min no-action
+  GUEST_PING_INTERVAL: 15000,           // 15s guest location ping
+  GUEST_ETA_INTERVAL: 4,               // Call Haiku every 4th ping (~60s)
+  IMPOSSIBLE_SPEED_MPH: 200,           // Anti-spoofing: flag if faster than this
   
   // Dispute
   DISPUTE_RESOLUTION_HOURS: 24, // UPDATED: 24 hours for resolution

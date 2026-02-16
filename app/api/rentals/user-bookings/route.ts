@@ -152,6 +152,7 @@ export async function GET(request: NextRequest) {
         b."enhancementsTotal",
         b."carId",
         b."hostId",
+        b."handoffStatus",
         
         (
           SELECT json_build_object(
@@ -373,6 +374,7 @@ export async function GET(request: NextRequest) {
         latestMessage: null,
         createdAt: booking.createdAt,
         updatedAt: booking.updatedAt,
+        handoffStatus: booking.handoffStatus || null,
         // Card identity (only populated for single-booking detail view)
         ...(isSingleBooking ? { cardBrand, cardLast4 } : {})
       }
