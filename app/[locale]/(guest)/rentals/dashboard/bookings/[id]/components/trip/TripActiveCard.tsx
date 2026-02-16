@@ -111,6 +111,19 @@ export function TripActiveCard({ booking }: TripActiveCardProps) {
   const pickupTime = pickupDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
     ' at ' + pickupDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
 
+  // Late pickup detection
+  const scheduledPickup = combineDateTime(booking.startDate, booking.startTime || '10:00')
+  const actualPickup = booking.tripStartedAt ? new Date(booking.tripStartedAt) : null
+  const isLatePickup = actualPickup ? actualPickup.getTime() > scheduledPickup.getTime() + (5 * 60 * 1000) : false // 5min grace
+  const lateByMs = actualPickup ? actualPickup.getTime() - scheduledPickup.getTime() : 0
+  const lateByHours = Math.floor(lateByMs / (1000 * 60 * 60))
+  const lateByMinutes = Math.floor((lateByMs % (1000 * 60 * 60)) / (1000 * 60))
+  const lateByText = lateByHours > 0 ? `${lateByHours}h ${lateByMinutes}m late` : `${lateByMinutes}m late`
+  const actualPickupFormatted = actualPickup
+    ? actualPickup.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+      ' at ' + actualPickup.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+    : ''
+
   const carPhoto = booking.car?.photos?.[0]?.url
 
   return (
@@ -170,11 +183,26 @@ export function TripActiveCard({ booking }: TripActiveCardProps) {
             {/* Row 1: Time remaining + mileage */}
             <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{timeRemaining}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">{booking.startMileage ? `${booking.startMileage.toLocaleString()} mi start` : 'Trip active'}</p>
-            {/* Row 2: Pickup label + date */}
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-3">Pickup</p>
+            {/* Row 2: Pickup label + date + late badge */}
+            <div className="flex items-baseline gap-1.5 mt-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Pickup</p>
+              {isLatePickup && (
+                <span className="relative inline-block group cursor-help" style={{ position: 'relative', top: '-2px' }}>
+                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 leading-none">
+                    Late
+                  </span>
+                  <span className="invisible group-hover:visible absolute bottom-full left-0 mb-1.5 px-2.5 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 w-[180px]">
+                    <span className="text-[11px] font-medium text-gray-900 dark:text-gray-100 block">Picked up {lateByText}</span>
+                    <span className="text-[10px] text-gray-500 dark:text-gray-400 block mt-0.5">Actual: {actualPickupFormatted}</span>
+                    <span className="text-[10px] text-gray-500 dark:text-gray-400 block">Scheduled: {pickupTime}</span>
+                    <span className="absolute bottom-0 left-3 translate-y-1/2 rotate-45 w-2 h-2 bg-white dark:bg-gray-800 border-r border-b border-gray-200 dark:border-gray-700" />
+                  </span>
+                </span>
+              )}
+            </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">{pickupTime}</p>
-            {/* Row 3: Pickup location + city/state */}
-            <p className="text-sm text-gray-900 dark:text-gray-100 mt-3">{booking.pickupLocation || 'Phoenix, AZ'}</p>
+            {/* Row 3: Pickup location — use car address (actual vehicle location) */}
+            <p className="text-sm text-gray-900 dark:text-gray-100 mt-3">{booking.car?.address || booking.pickupLocation || 'Phoenix, AZ'}</p>
             {booking.car?.city && (
               <p className="text-xs text-gray-500 dark:text-gray-400">{booking.car.city}, {booking.car.state} {booking.car.zipCode}</p>
             )}
@@ -191,8 +219,8 @@ export function TripActiveCard({ booking }: TripActiveCardProps) {
             {/* Row 2: Return by label + date */}
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-3">Return By</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">{returnTime}</p>
-            {/* Row 3: Drop-off location + city/state */}
-            <p className="text-sm text-gray-900 dark:text-gray-100 mt-3">{booking.dropoffLocation || booking.pickupLocation || 'Phoenix, AZ'}</p>
+            {/* Row 3: Drop-off location — use car address (return to vehicle location) */}
+            <p className="text-sm text-gray-900 dark:text-gray-100 mt-3">{booking.car?.address || booking.dropoffLocation || booking.pickupLocation || 'Phoenix, AZ'}</p>
             {booking.car?.city && (
               <p className="text-xs text-gray-500 dark:text-gray-400">{booking.car.city}, {booking.car.state} {booking.car.zipCode}</p>
             )}

@@ -174,8 +174,10 @@ export async function GET(request: NextRequest) {
           'carType', c."carType",
           'transmission', c.transmission,
           'seats', c.seats,
+          'address', c.address,
           'city', c.city,
           'state', c.state,
+          'zipCode', c."zipCode",
           'estimatedValue', c."estimatedValue",
           'photos', COALESCE(
             (SELECT json_agg(json_build_object(
@@ -328,8 +330,10 @@ export async function GET(request: NextRequest) {
           seats: booking.car.seats,
           photos: booking.car.photos || [],
           location: `${booking.car.city}, ${booking.car.state}`,
+          address: booking.car.address,
           city: booking.car.city,
           state: booking.car.state,
+          zipCode: booking.car.zipCode,
           estimatedValue: booking.car.estimatedValue ? parseFloat(booking.car.estimatedValue) : null
         },
         host: booking.host,

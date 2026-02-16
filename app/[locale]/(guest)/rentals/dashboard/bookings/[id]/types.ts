@@ -22,6 +22,7 @@ export interface Booking {
       address?: string
       city?: string
       state?: string
+      zipCode?: string
       dailyRate?: number
       rating?: number
       totalTrips?: number
