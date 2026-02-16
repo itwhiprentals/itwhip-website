@@ -1111,68 +1111,6 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               </div>
             )}
 
-            {/* Rental Period */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <IoCalendarOutline className="w-5 h-5 text-gray-400" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdRentalPeriod')}</h3>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('bdPickup')}</p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {formatDate(booking.startDate)}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('bdAt')} {booking.startTime}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('bdReturn')}</p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {formatDate(booking.endDate)}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('bdAt')} {booking.endTime}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <IoLocationOutline className="w-5 h-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {booking.pickupType === 'PARTNER_LOCATION' ? t('bdPartnerLocation') :
-                         booking.pickupType === 'AIRPORT' ? t('bdAirportPickup') : t('bdDelivery')}
-                      </p>
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {booking.pickupLocation || t('bdBusinessLocation')}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                      {t('bdDaysCount', { count: booking.numberOfDays })}
-                    </span>
-                    {(booking.status === 'CONFIRMED' || booking.status === 'ACTIVE') && new Date(booking.endDate) > new Date() ? (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                        {(() => {
-                          const daysLeft = Math.max(0, Math.ceil((new Date(booking.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-                          return t('bdDaysLeft', { count: daysLeft })
-                        })()}
-                      </p>
-                    ) : booking.status === 'COMPLETED' ? (
-                      <p className="text-sm text-green-600 dark:text-green-400 mt-0.5">{t('bdTripCompleted')}</p>
-                    ) : booking.status === 'CANCELLED' ? (
-                      <p className="text-sm text-red-600 dark:text-red-400 mt-0.5">{t('bdTripCancelled')}</p>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Verification Status Section — only for manual bookings */}
             {renter && !isGuestDriven && (
@@ -1671,6 +1609,69 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   )}
                 </div>
               )}
+            </div>
+
+            {/* Rental Period */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <IoCalendarOutline className="w-5 h-5 text-gray-400" />
+                <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdRentalPeriod')}</h3>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('bdPickup')}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {formatDate(booking.startDate)}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {t('bdAt')} {booking.startTime}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('bdReturn')}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {formatDate(booking.endDate)}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {t('bdAt')} {booking.endTime}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <IoLocationOutline className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {booking.pickupType === 'PARTNER_LOCATION' ? t('bdPartnerLocation') :
+                         booking.pickupType === 'AIRPORT' ? t('bdAirportPickup') : t('bdDelivery')}
+                      </p>
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {booking.pickupLocation || t('bdBusinessLocation')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                      {t('bdDaysCount', { count: booking.numberOfDays })}
+                    </span>
+                    {(booking.status === 'CONFIRMED' || booking.status === 'ACTIVE') && new Date(booking.endDate) > new Date() ? (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                        {(() => {
+                          const daysLeft = Math.max(0, Math.ceil((new Date(booking.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+                          return t('bdDaysLeft', { count: daysLeft })
+                        })()}
+                      </p>
+                    ) : booking.status === 'COMPLETED' ? (
+                      <p className="text-sm text-green-600 dark:text-green-400 mt-0.5">{t('bdTripCompleted')}</p>
+                    ) : booking.status === 'CANCELLED' ? (
+                      <p className="text-sm text-red-600 dark:text-red-400 mt-0.5">{t('bdTripCancelled')}</p>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Insurance Status — only for manual bookings (platform handles insurance for guest-driven) */}

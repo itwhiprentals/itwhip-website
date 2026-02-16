@@ -293,80 +293,90 @@ export function HandoffPanel({
             <IoChevronDownOutline className={`w-4 h-4 text-green-600 dark:text-green-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
           </button>
 
-          {/* Expanded details */}
+          {/* Expanded details — two columns */}
           {expanded && (
-            <div className="border-t border-green-200 dark:border-green-800 px-4 pb-4 pt-3 space-y-3">
-              {/* Handoff time */}
-              {handoffTime && (
-                <div className="flex items-start gap-2">
-                  <IoTimeOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('handoffTime')}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {new Date(handoffTime).toLocaleString(undefined, {
-                        month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
-                      })}
-                    </p>
+            <div className="border-t border-green-200 dark:border-green-800 px-4 pb-4 pt-3">
+              <div className="flex gap-4">
+                {/* Left column — handoff details */}
+                <div className="w-1/2 space-y-3">
+                  {/* Handoff time */}
+                  {handoffTime && (
+                    <div className="flex items-start gap-2">
+                      <IoTimeOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('handoffTime')}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {new Date(handoffTime).toLocaleString(undefined, {
+                            month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Handoff type */}
+                  <div className="flex items-start gap-2">
+                    <IoPersonOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('handoffType')}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{handoffType}</p>
+                    </div>
                   </div>
-                </div>
-              )}
 
-              {/* Handoff type */}
-              <div className="flex items-start gap-2">
-                <IoPersonOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('handoffType')}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{handoffType}</p>
-                </div>
-              </div>
-
-              {/* Key instructions */}
-              <div className="flex items-start gap-2">
-                <IoKeyOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('keyInstructionsSent')}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {keyInstructionsDeliveredAt || savedKeyInstructions
-                      ? (savedKeyInstructions || t('keyInstructionsSent'))
-                      : t('noKeyInstructions')}
-                  </p>
-                </div>
-              </div>
-
-              {/* Guest distance — only show if reasonable (< 50km) */}
-              {(hostHandoffDistance || guestDistance) && (hostHandoffDistance || guestDistance)! < 50000 && (
-                <div className="flex items-start gap-2">
-                  <IoLocationOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('guestDistance')}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {formatDistance(hostHandoffDistance || guestDistance!)} {t('fromVehicle')}
-                    </p>
+                  {/* Key instructions */}
+                  <div className="flex items-start gap-2">
+                    <IoKeyOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('keyInstructionsSent')}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {keyInstructionsDeliveredAt || savedKeyInstructions
+                          ? (savedKeyInstructions || t('keyInstructionsSent'))
+                          : t('noKeyInstructions')}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
 
-              {/* Guest DL photos */}
-              {(licensePhotoUrl || licenseBackPhotoUrl) && (
-                <div className="flex items-start gap-2">
-                  <IoDocumentTextOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('guestDL')}</p>
-                    <div className="flex gap-2">
+                  {/* Guest distance — only show if reasonable (< 50km) */}
+                  {(hostHandoffDistance || guestDistance) && (hostHandoffDistance || guestDistance)! < 50000 && (
+                    <div className="flex items-start gap-2">
+                      <IoLocationOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('guestDistance')}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {formatDistance(hostHandoffDistance || guestDistance!)} {t('fromVehicle')}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Divider + Right column — Guest DL photos stacked */}
+                {(licensePhotoUrl || licenseBackPhotoUrl) && (
+                  <>
+                  <div className="w-px bg-green-200 dark:bg-green-800 self-stretch" />
+                  <div className="w-1/2 pl-3 flex flex-col items-center">
+                    <div className="flex items-center gap-1 mb-1.5">
+                      <IoDocumentTextOutline className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('guestDL')}</p>
+                    </div>
+                    <div className="space-y-1.5">
                       {licensePhotoUrl && (
-                        <button onClick={() => setDlPreview(licensePhotoUrl)} className="relative w-16 h-10 rounded border border-gray-200 dark:border-gray-600 overflow-hidden hover:opacity-80 transition-opacity">
-                          <Image src={licensePhotoUrl} alt="DL Front" fill className="object-cover" sizes="64px" />
+                        <button onClick={() => setDlPreview(licensePhotoUrl)} className="relative w-[122px] h-[76px] rounded border border-gray-200 dark:border-gray-600 overflow-hidden hover:opacity-80 transition-opacity block">
+                          <Image src={licensePhotoUrl} alt="DL Front" fill className="object-cover" sizes="122px" />
+                          <span className="absolute bottom-0 left-0 right-0 bg-black/40 text-white text-[9px] text-center py-0.5">Front</span>
                         </button>
                       )}
                       {licenseBackPhotoUrl && (
-                        <button onClick={() => setDlPreview(licenseBackPhotoUrl)} className="relative w-16 h-10 rounded border border-gray-200 dark:border-gray-600 overflow-hidden hover:opacity-80 transition-opacity">
-                          <Image src={licenseBackPhotoUrl} alt="DL Back" fill className="object-cover" sizes="64px" />
+                        <button onClick={() => setDlPreview(licenseBackPhotoUrl)} className="relative w-[122px] h-[76px] rounded border border-gray-200 dark:border-gray-600 overflow-hidden hover:opacity-80 transition-opacity block">
+                          <Image src={licenseBackPhotoUrl} alt="DL Back" fill className="object-cover" sizes="122px" />
+                          <span className="absolute bottom-0 left-0 right-0 bg-black/40 text-white text-[9px] text-center py-0.5">Back</span>
                         </button>
                       )}
                     </div>
                   </div>
-                </div>
-              )}
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>

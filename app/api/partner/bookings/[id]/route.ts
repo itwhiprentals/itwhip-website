@@ -402,12 +402,19 @@ export async function GET(
           passed: true
         },
         orderBy: { createdAt: 'desc' },
-        select: { createdAt: true }
+        select: { createdAt: true, frontImageUrl: true, backImageUrl: true }
       })
 
       if (aiVerification) {
         response.booking.verificationMethod = 'Claude AI'
         response.booking.verificationDate = aiVerification.createdAt.toISOString()
+        // Fallback: populate DL photos from verification log if not on booking
+        if (!response.booking.licensePhotoUrl && aiVerification.frontImageUrl) {
+          response.booking.licensePhotoUrl = aiVerification.frontImageUrl
+        }
+        if (!response.booking.licenseBackPhotoUrl && aiVerification.backImageUrl) {
+          response.booking.licenseBackPhotoUrl = aiVerification.backImageUrl
+        }
       } else if (booking.renter?.reviewerProfile?.stripeIdentityStatus === 'verified') {
         response.booking.verificationMethod = 'Stripe Identity'
         response.booking.verificationDate = booking.renter.reviewerProfile.stripeIdentityVerifiedAt?.toISOString() || null
