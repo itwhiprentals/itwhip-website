@@ -97,6 +97,29 @@ Slug Reset:
 
 ## Recent Fixes (February 2026)
 
+### Handoff Panel + Partner Auth Fixes - DEPLOYED ✅ (Feb 16)
+**Expandable handoff details, partner login fixes, GPS data quality**
+
+Partner Auth:
+- Fixed partner login cookies (response.cookies.set instead of next/headers)
+- Added missing JWT fields (role: BUSINESS, isRentalHost) for middleware
+- Added /host/login to public pages in AuthContext (was causing redirect loops)
+- Partner logout now clears current_mode cookie
+- Added HandoffHost namespace to partner layout i18n provider
+
+Handoff Panel (partner booking detail):
+- "Handoff Complete" section now expandable — shows time, type (met in person vs auto-confirmed), key instructions, guest distance, DL photo thumbnails
+- DL photos clickable for full-size preview modal
+- Distance displayed as m/km/mi with smart formatting, hidden if > 50km (bad GPS)
+- Guest info badges (Verified, Insured, Payment, Onboard) shrunk ~40%
+
+GPS Data Quality:
+- Guest-verify API rejects null-island (0,0) coordinates
+- Host confirm API skips distance calc for (0,0)
+- HandoffVerify bypass no longer sends (0,0) to server when GPS unavailable
+
+Files: `HandoffPanel.tsx`, `HandoffVerify.tsx`, `partner/login/route.ts`, `partner/logout/route.ts`, `AuthContext.tsx`, `partner/layout.tsx`, `guest-verify/route.ts`, `confirm/route.ts`, `partner/bookings/[id]/route.ts`, `page.tsx`, translations (en/es/fr)
+
 ### Security Audit Round 7 - DEPLOYED ✅ (Feb 10)
 Full 6-area lifecycle audit found 4 critical + 8 high + 14 medium + 10 low vulnerabilities. Phase A fixes deployed:
 
