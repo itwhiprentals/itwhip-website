@@ -117,6 +117,7 @@ export async function POST(
 
      // Create inspection photo records
      const photoRecords = Object.entries(inspectionPhotos).map(([category, url]) => ({
+       id: crypto.randomUUID(),
        bookingId,
        type: 'start' as const,
        category,
@@ -135,6 +136,7 @@ export async function POST(
      // Create a message for trip start
      await tx.rentalMessage.create({
        data: {
+         id: crypto.randomUUID(),
          bookingId,
          senderId: 'system',
          senderType: 'admin',
@@ -142,13 +144,15 @@ export async function POST(
          message: `Trip started successfully at ${new Date().toLocaleTimeString()}. Starting mileage: ${startMileage} miles, Fuel level: ${fuelLevelStart}`,
          category: 'general',
          isRead: false,
-         readByAdmin: false
+         readByAdmin: false,
+         updatedAt: new Date()
        } as any
      })
 
      // Create activity log
      await (tx.activityLog.create as any)({
        data: {
+         id: crypto.randomUUID(),
          action: 'TRIP_STARTED',
          entityType: 'RentalBooking',
          entityId: bookingId,

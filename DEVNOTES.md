@@ -97,6 +97,35 @@ Slug Reset:
 
 ## Recent Fixes (February 2026)
 
+### Handoff Flow Redesign + Trip Start UX Overhaul - DEPLOYED ✅ (Feb 16)
+**Guest live GPS tracking, notify host button, redesigned trip start inspection components**
+
+Handoff Flow:
+- Guest GPS pings every 15s to `/handoff/guest-ping` API (lightweight location updates)
+- Host sees live distance + Haiku AI ETA messages ("Approaching at 30mph, ETA 8 min")
+- Guest explicitly notifies host via "Notify Host" button when within 500m (not auto)
+- Haiku AI generates context-aware arrival summaries (checks if guest is late/early/on-time)
+- Anti-spoofing: location trust scoring (impossible speed detection, null-island rejection)
+- Host interactive checklist (ID verified, vehicle reviewed, keys provided) gates handoff confirm
+- Key↔person animation with moving bars during GUEST_VERIFIED state
+- HandoffPanel: pickup location with distance + "Track your vehicle" link
+
+Trip Start Components (full redesign with dark mode):
+- PhotoCapture: 4:3 capture area, nav arrows, thumbnail strip, upload progress overlay
+- OdometerInput: digital odometer display (dark bg, green digits), validation states
+- FuelSelector: horizontal gauge visualization, gradient fill, mini gauge buttons
+- InspectionChecklist: circular SVG progress, colored category icons, tappable items
+- TripStepProgress: reusable progress bar matching StatusProgression visual style
+
+StatusProgression:
+- Added `handoffStatus` prop — fills to 73% when handoff complete (between Confirmed 60% and Active 85%)
+
+DB Migration: `add_guest_live_tracking` — 7 new fields on RentalBooking (guestLive*, guestEtaMessage, guestArrivalSummary, guestLocationTrust)
+
+New files: `guest-ping/route.ts`, `TripStepProgress.tsx`, `handoff-ai.ts`
+
+Files: `HandoffVerify.tsx`, `HandoffPanel.tsx`, `PhotoCapture.tsx`, `OdometerInput.tsx`, `FuelSelector.tsx`, `InspectionChecklist.tsx`, `StatusProgression.tsx`, `page.tsx` (trip start + booking detail + partner), `guest-verify/route.ts`, `status/route.ts`, `confirm/route.ts`, `user-bookings/route.ts`, `partner/bookings/[id]/route.ts`, `constants.ts`, `types.ts`, translations (en/es/fr), `schema.prisma`
+
 ### Handoff Panel + Partner Auth Fixes - DEPLOYED ✅ (Feb 16)
 **Expandable handoff details, partner login fixes, GPS data quality**
 

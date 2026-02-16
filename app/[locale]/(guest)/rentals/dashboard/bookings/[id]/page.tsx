@@ -399,6 +399,9 @@ export default function BookingDetailsPage() {
     && !!booking.onboardingCompletedAt
     && !booking.tripStartedAt
 
+  // Active trip: show only TripActiveCard + messages, hide everything else
+  const isTripActive = !!booking.tripStartedAt && !booking.tripEndedAt
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Toast Notification */}
@@ -414,10 +417,10 @@ export default function BookingDetailsPage() {
         </div>
       )}
 
-      <div className={`max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 ${isPreTripReady ? 'py-2 sm:py-3' : 'py-3 sm:py-6'}`}>
+      <div className={`max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 ${isPreTripReady || isTripActive ? 'py-2 sm:py-3' : 'py-3 sm:py-6'}`}>
         {/* Header */}
-        <div className={`${isPreTripReady ? 'mb-1' : 'mb-4 sm:mb-6'} ${isPreTripReady ? 'mt-4' : 'mt-4 sm:mt-2'}`}>
-          <div className={`flex items-center justify-between ${isPreTripReady ? 'mb-1' : 'mb-3'}`}>
+        <div className={`${isPreTripReady || isTripActive ? 'mb-1' : 'mb-4 sm:mb-6'} ${isPreTripReady || isTripActive ? 'mt-4' : 'mt-4 sm:mt-2'}`}>
+          <div className={`flex items-center justify-between ${isPreTripReady || isTripActive ? 'mb-1' : 'mb-3'}`}>
             <button
               onClick={() => router.push('/dashboard')}
               className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 flex items-center text-sm sm:text-base transition-colors"
@@ -429,8 +432,8 @@ export default function BookingDetailsPage() {
             <h1 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100">{t('bookingStatus')}</h1>
           </div>
           
-          {/* Car info header — hidden during inspection phase */}
-          {!isPreTripReady && (
+          {/* Car info header — hidden during inspection phase & active trip */}
+          {!isPreTripReady && !isTripActive && (
             <div className="space-y-3 pl-6">
               <div>
                 <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -487,10 +490,10 @@ export default function BookingDetailsPage() {
           )}
         </div>
 
-        {/* Secure Account Banner */}
-        <SecureAccountBanner hasPassword={hasPassword} />
+        {/* Secure Account Banner — hidden during active trip */}
+        {!isTripActive && <SecureAccountBanner hasPassword={hasPassword} />}
 
-        {/* Status Progression — always visible, but actions move to TripStartCard during inspection */}
+        {/* Status Progression — always visible */}
         <StatusProgression
           status={booking.status}
           tripStatus={booking.tripStatus}
@@ -501,11 +504,11 @@ export default function BookingDetailsPage() {
           documentsSubmittedAt={typeof booking.documentsSubmittedAt === 'string' ? booking.documentsSubmittedAt : undefined}
           reviewedAt={typeof booking.reviewedAt === 'string' ? booking.reviewedAt : undefined}
           handoffStatus={booking.handoffStatus}
-          onCancel={!isPreTripReady && (booking.status === 'PENDING' || booking.status === 'CONFIRMED') ? () => setShowCancelDialog(true) : undefined}
-          onModify={!isPreTripReady && ['PENDING', 'CONFIRMED'].includes(booking.status) ? () => setShowModifyModal(true) : undefined}
-          onViewAgreement={!isPreTripReady ? () => setShowAgreement(true) : undefined}
-          hideStatusMessage={isPreTripReady}
-          hideTitle={isPreTripReady}
+          onCancel={!isPreTripReady && !isTripActive && (booking.status === 'PENDING' || booking.status === 'CONFIRMED') ? () => setShowCancelDialog(true) : undefined}
+          onModify={!isPreTripReady && !isTripActive && ['PENDING', 'CONFIRMED'].includes(booking.status) ? () => setShowModifyModal(true) : undefined}
+          onViewAgreement={!isPreTripReady && !isTripActive ? () => setShowAgreement(true) : undefined}
+          hideStatusMessage={isPreTripReady || isTripActive}
+          hideTitle={isPreTripReady || isTripActive}
         />
 
         {/* Payment hold alert — PENDING only */}
@@ -613,20 +616,11 @@ export default function BookingDetailsPage() {
           </div>
         )}
 
-        {/* Main Content Grid */}
-        <div className={`grid gap-6 mt-6 ${isPreTripReady ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
-          {/* Left Column - Details */}
-          <div className={isPreTripReady ? '' : 'lg:col-span-2 space-y-6'}>
-            <BookingDetails
-              booking={booking}
-              messages={messages}
-              onUploadClick={() => fileInputRef.current?.click()}
-              uploadingFile={uploadingFile}
-              isPreTripReady={isPreTripReady}
-            />
-
-            {/* Messages Panel - hidden during inspection phase */}
-            {!isPreTripReady && booking.status !== 'PENDING' && booking.status !== 'CANCELLED' && (
+        {/* Main Content Grid — hidden entirely during active trip except messages */}
+        {isTripActive ? (
+          /* Active trip: only show messages */
+          booking.status !== 'CANCELLED' && (
+            <div className="mt-6">
               <MessagesPanel
                 bookingId={bookingId}
                 messages={messages}
@@ -637,20 +631,47 @@ export default function BookingDetailsPage() {
                 onFileUpload={handleMessageFileUpload}
                 uploadingFile={messageUploading}
               />
+            </div>
+          )
+        ) : (
+          <div className={`grid gap-6 mt-6 ${isPreTripReady ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
+            {/* Left Column - Details */}
+            <div className={isPreTripReady ? '' : 'lg:col-span-2 space-y-6'}>
+              <BookingDetails
+                booking={booking}
+                messages={messages}
+                onUploadClick={() => fileInputRef.current?.click()}
+                uploadingFile={uploadingFile}
+                isPreTripReady={isPreTripReady}
+              />
+
+              {/* Messages Panel - hidden during inspection phase */}
+              {!isPreTripReady && booking.status !== 'PENDING' && booking.status !== 'CANCELLED' && (
+                <MessagesPanel
+                  bookingId={bookingId}
+                  messages={messages}
+                  loading={messagesLoading}
+                  sending={messageSending}
+                  error={messageError}
+                  onSendMessage={sendMessage}
+                  onFileUpload={handleMessageFileUpload}
+                  uploadingFile={messageUploading}
+                />
+              )}
+            </div>
+
+            {/* Right Column - Sidebar (hidden during inspection phase) */}
+            {!isPreTripReady && (
+              <BookingSidebar
+                booking={booking}
+                onCancelClick={() => setShowCancelDialog(true)}
+                onUploadClick={() => fileInputRef.current?.click()}
+                onAddToCalendar={addToGoogleCalendar}
+                uploadingFile={uploadingFile}
+              />
             )}
           </div>
-
-          {/* Right Column - Sidebar (hidden during inspection phase) */}
-          {!isPreTripReady && (
-            <BookingSidebar
-              booking={booking}
-              onCancelClick={() => setShowCancelDialog(true)}
-              onUploadClick={() => fileInputRef.current?.click()}
-              onAddToCalendar={addToGoogleCalendar}
-              uploadingFile={uploadingFile}
-            />
-          )}
-        </div>
+        )}
 
         {/* Hidden file input */}
         <input
@@ -683,8 +704,8 @@ export default function BookingDetailsPage() {
           }}
         />
 
-        {/* Policy Footer — hidden during inspection phase */}
-        {!isPreTripReady && <PolicyFooter booking={booking} />}
+        {/* Policy Footer — hidden during inspection phase & active trip */}
+        {!isPreTripReady && !isTripActive && <PolicyFooter booking={booking} />}
 
         {/* Cancellation Policy & Trust Safety Modals (for inspection phase) */}
         <CancellationPolicyModal
