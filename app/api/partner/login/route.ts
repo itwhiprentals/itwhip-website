@@ -80,21 +80,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if host is a fleet partner
-    if (host.hostType !== 'FLEET_PARTNER' && host.hostType !== 'PARTNER') {
-      await logFailedLogin({
-        email,
-        source: 'partner',
-        reason: 'INVALID_ACCOUNT_TYPE',
-        ip,
-        userAgent,
-        metadata: { hostType: host.hostType }
-      })
-      return NextResponse.json(
-        { error: 'This account is not a fleet partner account' },
-        { status: 403 }
-      )
-    }
+    // Allow all host types since portals are unified
+    // (Previously restricted to FLEET_PARTNER and PARTNER only)
 
     // Check if partner is approved
     if (host.approvalStatus !== 'APPROVED') {

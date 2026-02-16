@@ -9,7 +9,7 @@ import { useTranslations } from 'next-intl'
 import { PhotoCapture } from './components/PhotoCapture'
 import { OdometerInput } from './components/OdometerInput'
 import { FuelSelector } from './components/FuelSelector'
-import { LocationVerify } from './components/LocationVerify'
+import { HandoffVerify } from './components/HandoffVerify'
 import { InspectionChecklist } from './components/InspectionChecklist'
 import { TRIP_CONSTANTS } from '@/app/lib/trip/constants'
 import { validateInspectionPhotos, validateOdometer, validateFuelLevel, canStartTrip } from '@/app/lib/trip/validation'
@@ -212,7 +212,7 @@ export default function TripStartPage() {
   }
 
   const steps = [
-    { title: 'Verify Location', component: LocationVerify },
+    { title: 'Verify Handoff', component: HandoffVerify },
     { title: 'Capture Photos', component: PhotoCapture },
     { title: 'Odometer Reading', component: OdometerInput },
     { title: 'Fuel Level', component: FuelSelector },

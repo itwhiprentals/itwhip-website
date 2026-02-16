@@ -406,6 +406,98 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     prevPathnameRef.current = pathname
   }, [pathname, refreshAuth])
 
+  // ========== GLOBAL 401 INTERCEPTOR ==========
+  // Catches the FIRST 401 from any API call and redirects immediately.
+  // Without this, polling queries (messages, bookings) spam 401s for seconds
+  // before AuthContext's own refresh cycle detects the expired token.
+  const wasLoggedInRef = useRef(false)
+
+  useEffect(() => {
+    const originalFetch = window.fetch.bind(window)
+    let redirecting = false
+
+    window.fetch = async function (...args: Parameters<typeof fetch>) {
+      const response = await originalFetch(...args)
+
+      if (response.status === 401 && !redirecting && wasLoggedInRef.current) {
+        const url = typeof args[0] === 'string' ? args[0] : args[0] instanceof Request ? args[0].url : ''
+        // Skip auth-checking endpoints (401 is expected/normal for these)
+        const isAuthEndpoint = url.includes('/api/auth/') || url.includes('/api/partner/session')
+        if (url.includes('/api/') && !isAuthEndpoint) {
+          const path = window.location.pathname
+          const isAuthPage = path.includes('/auth/') || path.includes('/partner/login')
+          if (!isAuthPage) {
+            redirecting = true
+            console.log(`[AuthContext] API 401 while authenticated — session expired, redirecting (from: ${url})`)
+            window.location.href = '/auth/login'
+          }
+        }
+      }
+
+      return response
+    }
+
+    return () => { window.fetch = originalFetch }
+  }, [])
+
+  // ========== GLOBAL AUTH GUARD ==========
+  // Two cases to handle:
+  //   1. Session expires mid-use: isLoggedIn true → false
+  //   2. Page loaded while already logged out: initial auth check finishes with isLoggedIn=false on a protected page
+  // Hard redirect via window.location.href (not router.push) — clears ALL React state,
+  // stops ALL polling intervals, prevents stale data. Same pattern as Stripe/Auth0/Okta.
+
+  useEffect(() => {
+    if (state.isLoggedIn) {
+      wasLoggedInRef.current = true
+    }
+
+    // Don't act while still loading (initial auth check in progress)
+    if (state.isLoading) return
+
+    // Not logged in — check if we should redirect
+    if (!state.isLoggedIn) {
+      const path = window.location.pathname
+
+      // Don't redirect if already on a public/auth page
+      const isPublicPage =
+        path.includes('/auth/') ||
+        path.includes('/partner/login') ||
+        path.includes('/partner/forgot') ||
+        path.includes('/partner/reset') ||
+        path === '/' ||
+        path.startsWith('/rentals/search') ||
+        path.startsWith('/rentals/cities') ||
+        path.startsWith('/rentals/types') ||
+        path.startsWith('/rentals/makes') ||
+        path.startsWith('/how-it-works') ||
+        path.startsWith('/list-your-car') ||
+        path.startsWith('/blog')
+
+      if (isPublicPage) return
+
+      // Check if on a protected page (dashboard, bookings, profile, messages, etc.)
+      const isProtectedPage =
+        path.includes('/dashboard') ||
+        path.includes('/bookings') ||
+        path.includes('/profile') ||
+        path.includes('/messages') ||
+        path.includes('/payments') ||
+        path.includes('/settings') ||
+        path.includes('/claims') ||
+        path.startsWith('/partner/') ||
+        path.startsWith('/host/') ||
+        path.startsWith('/admin/')
+
+      if (isProtectedPage) {
+        const reason = wasLoggedInRef.current ? 'session expired' : 'not authenticated'
+        console.log(`[AuthContext] ${reason} on protected page "${path}" — redirecting to login`)
+        wasLoggedInRef.current = false
+        window.location.href = '/auth/login'
+      }
+    }
+  }, [state.isLoggedIn, state.isLoading])
+
   return (
     <AuthContext.Provider value={{ ...state, refreshAuth, switchRole, logout, setUser }}>
       {children}

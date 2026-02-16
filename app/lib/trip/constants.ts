@@ -97,6 +97,13 @@ export const TRIP_CONSTANTS = {
   
   // Geolocation
   PICKUP_RADIUS_METERS: 500,
+
+  // Handoff verification
+  HANDOFF_RADIUS_METERS: 200,           // Guest must be within 200m
+  HOST_HANDOFF_RADIUS_METERS: 500,      // Host soft-check (logged, doesn't block)
+  HANDOFF_AUTO_FALLBACK_MINUTES: 5,     // Auto-complete after 5min (instant-book only)
+  HANDOFF_POLLING_INTERVAL: 5000,       // 5s polling during handoff
+  HANDOFF_TIMEOUT_MINUTES: 30,          // Mark expired after 30min no-action
   
   // Dispute
   DISPUTE_RESOLUTION_HOURS: 24, // UPDATED: 24 hours for resolution
@@ -160,6 +167,16 @@ export const TRIP_STATUS = {
 } as const
 
 export type TripStatus = typeof TRIP_STATUS[keyof typeof TRIP_STATUS]
+
+export const HANDOFF_STATUS = {
+  PENDING: 'PENDING',
+  GUEST_VERIFIED: 'GUEST_VERIFIED',
+  HANDOFF_COMPLETE: 'HANDOFF_COMPLETE',
+  EXPIRED: 'EXPIRED',
+  BYPASSED: 'BYPASSED',
+} as const
+
+export type HandoffStatus = typeof HANDOFF_STATUS[keyof typeof HANDOFF_STATUS]
 
 // NEW: Charge types for better type safety
 export const CHARGE_TYPES = {

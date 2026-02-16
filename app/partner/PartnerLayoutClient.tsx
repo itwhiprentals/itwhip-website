@@ -182,6 +182,35 @@ export default function PartnerLayoutClient({
     }
   }
 
+  // Re-check partner session periodically and on tab focus
+  // Detects mid-session token expiry and redirects to login
+  useEffect(() => {
+    if (isPublicPage || loading) return
+
+    const recheckSession = async () => {
+      try {
+        const res = await fetch('/api/partner/session', { credentials: 'include' })
+        if (!res.ok) {
+          router.push('/partner/login')
+        }
+      } catch {
+        // Network error — don't redirect, just skip
+      }
+    }
+
+    // Check every 60 seconds
+    const interval = setInterval(recheckSession, 60_000)
+
+    // Check when tab regains focus
+    const handleFocus = () => recheckSession()
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [isPublicPage, loading, router])
+
   const handleLogout = async () => {
     try {
       await fetch('/api/partner/logout', {

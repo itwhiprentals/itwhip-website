@@ -1,9 +1,9 @@
 // app/lib/trip/validation.ts
 
-import { TRIP_CONSTANTS } from './constants'
+import { TRIP_CONSTANTS, HANDOFF_STATUS } from './constants'
 
 // TESTING MODE - Set to true to bypass all date/time validations
-const TESTING_MODE = true
+export const TESTING_MODE = true
 
 export interface ValidationResult {
   valid: boolean
@@ -223,11 +223,49 @@ export function canStartTrip(
   }
   
   if (currentTime > latestStart) {
-    return { 
-      valid: false, 
-      error: 'Trip window has expired. Please contact support.' 
+    return {
+      valid: false,
+      error: 'Trip window has expired. Please contact support.'
     }
   }
-  
+
   return { valid: true }
+}
+
+// Validate handoff can start (guest prerequisites)
+export function canStartHandoff(
+  booking: any,
+  currentTime: Date = new Date()
+): ValidationResult {
+  // TESTING MODE - Bypass all validations
+  if (TESTING_MODE) {
+    console.log('🧪 TESTING MODE: Bypassing handoff validations')
+    return { valid: true }
+  }
+
+  if (booking.status !== 'CONFIRMED') {
+    return { valid: false, error: 'Booking must be confirmed' }
+  }
+
+  if (!booking.onboardingCompletedAt) {
+    return { valid: false, error: 'Please complete onboarding first' }
+  }
+
+  if (booking.tripStartedAt) {
+    return { valid: false, error: 'Trip has already started' }
+  }
+
+  if (booking.handoffStatus === HANDOFF_STATUS.HANDOFF_COMPLETE ||
+      booking.handoffStatus === HANDOFF_STATUS.BYPASSED) {
+    return { valid: false, error: 'Handoff already completed' }
+  }
+
+  return { valid: true }
+}
+
+// Check if handoff is complete (for trip start gate)
+export function isHandoffComplete(booking: any): boolean {
+  if (TESTING_MODE) return true
+  return booking.handoffStatus === HANDOFF_STATUS.HANDOFF_COMPLETE ||
+         booking.handoffStatus === HANDOFF_STATUS.BYPASSED
 }

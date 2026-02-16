@@ -84,6 +84,57 @@ export async function POST(
       data: { onboardingCompletedAt: new Date() }
     })
 
+    // Notify host about completed onboarding
+    try {
+      const fullBooking = await prisma.rentalBooking.findUnique({
+        where: { id: bookingId },
+        select: {
+          hostId: true,
+          bookingCode: true,
+          guestName: true,
+          car: { select: { make: true, model: true, year: true } },
+          host: { select: { email: true, name: true } },
+        }
+      })
+
+      if (fullBooking?.hostId) {
+        // In-app notification
+        await prisma.hostNotification.create({
+          data: {
+            id: crypto.randomUUID(),
+            hostId: fullBooking.hostId,
+            type: 'ONBOARDING_COMPLETE',
+            category: 'BOOKING',
+            subject: `Guest onboarding completed - ${fullBooking.bookingCode || bookingId.slice(0, 8)}`,
+            message: `${fullBooking.guestName || 'Your guest'} has completed pre-trip onboarding for the ${fullBooking.car?.year} ${fullBooking.car?.make} ${fullBooking.car?.model}. Their identity has been verified and they are ready for pickup.`,
+            priority: 'normal',
+            actionRequired: 'Review onboarding details',
+            actionUrl: `/partner/bookings/${bookingId}`,
+            updatedAt: new Date()
+          }
+        })
+
+        // Email notification to host (fire-and-forget)
+        if (fullBooking.host?.email) {
+          const { sendEmail } = await import('@/app/lib/email/send-email')
+          await sendEmail({
+            to: fullBooking.host.email,
+            subject: `Guest Onboarding Complete - ${fullBooking.bookingCode || bookingId.slice(0, 8)}`,
+            html: `
+              <p>Hi ${fullBooking.host.name || 'there'},</p>
+              <p><strong>${fullBooking.guestName || 'Your guest'}</strong> has completed their pre-trip onboarding for booking <strong>${fullBooking.bookingCode || bookingId.slice(0, 8)}</strong> (${fullBooking.car?.year} ${fullBooking.car?.make} ${fullBooking.car?.model}).</p>
+              <p>Their identity has been verified and they are ready for pickup.</p>
+              <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/partner/bookings/${bookingId}">View Booking Details</a></p>
+            `,
+            text: `${fullBooking.guestName || 'Your guest'} has completed onboarding for booking ${fullBooking.bookingCode || bookingId.slice(0, 8)}. View details at ${process.env.NEXT_PUBLIC_BASE_URL}/partner/bookings/${bookingId}`
+          })
+        }
+      }
+    } catch (notifyError) {
+      console.error('[Onboarding Complete] Host notification error:', notifyError)
+      // Don't fail the onboarding completion if notification fails
+    }
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('[Onboarding Complete] Error:', error)

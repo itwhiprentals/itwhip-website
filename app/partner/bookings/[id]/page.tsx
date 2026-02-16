@@ -38,6 +38,7 @@ import {
   IoDownloadOutline,
   IoKeyOutline
 } from 'react-icons/io5'
+import { HandoffPanel } from './HandoffPanel'
 
 interface BookingDetails {
   id: string
@@ -82,6 +83,18 @@ interface BookingDetails {
     status: string
     createdAt: string
   }>
+  // Handoff fields
+  handoffStatus: string | null
+  guestGpsDistance: number | null
+  handoffAutoFallbackAt: string | null
+  // Onboarding fields
+  onboardingCompletedAt: string | null
+  licensePhotoUrl: string | null
+  licenseBackPhotoUrl: string | null
+  guestStripeVerified: boolean
+  aiVerificationScore: number | null
+  verificationMethod: string | null
+  verificationDate: string | null
 }
 
 interface Renter {
@@ -128,6 +141,8 @@ interface Vehicle {
   seats: number
   currentMileage: number | null
   isActive: boolean
+  instantBook: boolean
+  keyInstructions: string | null
 }
 
 interface Partner {
@@ -196,6 +211,10 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
     charges: false
   })
 
+  // Onboard modal state
+  const [showOnboardModal, setShowOnboardModal] = useState(false)
+  const [fleetOtherActiveCount, setFleetOtherActiveCount] = useState(0)
+
   // Communication states
   const [showCommModal, setShowCommModal] = useState<'pickup_instructions' | 'keys_instructions' | null>(null)
   const [commMessage, setCommMessage] = useState('')
@@ -226,6 +245,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         setPartner(data.partner)
         setInsurance(data.insurance)
         setGuestHistory(data.guestHistory || null)
+        setFleetOtherActiveCount(data.fleetOtherActiveCount || 0)
         // Fetch communication send counts
         try {
           const commRes = await fetch(`/api/partner/bookings/${bookingId}/communicate`)
@@ -947,9 +967,14 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                           {t('bdVerified')}
                         </button>
                         {activeTooltip === 'verified' && (
-                          <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-20">
+                          <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-50">
                             <p className="font-semibold mb-1">{t('bdIdentityVerified')}</p>
                             <p>{t('bdIdentityVerifiedDesc')}</p>
+                            {booking.verificationMethod && (
+                              <p className="mt-2 text-gray-300">
+                                {t('bdVerifiedVia')}: {booking.verificationMethod}
+                              </p>
+                            )}
                             <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
                           </div>
                         )}
@@ -965,7 +990,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                           {t('bdInsured')}
                         </button>
                         {activeTooltip === 'insured' && (
-                          <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-20">
+                          <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-50">
                             <p className="font-semibold mb-1">{t('bdInsuranceCoverage')}</p>
                             <p>{t('bdInsuranceCoverageDesc')}</p>
                             <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
@@ -973,19 +998,57 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                         )}
                       </div>
 
-                      {/* Payment Badge */}
+                      {/* Payment Badge — conditional Hold/Charged */}
                       <div className="relative">
                         <button
                           onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'payment' ? null : 'payment') }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-full text-xs font-medium text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                            booking.paymentStatus === 'PAID'
+                              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30'
+                              : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+                          }`}
                         >
                           <IoWalletOutline className="w-3.5 h-3.5" />
-                          {t('bdPaymentHold')}
+                          {booking.paymentStatus === 'PAID' ? t('bdPaymentCharged') : t('bdPaymentHold')}
                         </button>
                         {activeTooltip === 'payment' && (
-                          <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-20">
-                            <p className="font-semibold mb-1">{t('bdPaymentOnHold')}</p>
-                            <p>{t('bdPaymentOnHoldDesc')}</p>
+                          <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-50">
+                            <p className="font-semibold mb-1">
+                              {booking.paymentStatus === 'PAID' ? t('bdPaymentCapturedTitle') : t('bdPaymentOnHold')}
+                            </p>
+                            <p>{booking.paymentStatus === 'PAID' ? t('bdPaymentCapturedDesc') : t('bdPaymentOnHoldDesc')}</p>
+                            <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Onboard Badge */}
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (booking.onboardingCompletedAt) {
+                              setShowOnboardModal(true)
+                            } else {
+                              setActiveTooltip(activeTooltip === 'onboard' ? null : 'onboard')
+                            }
+                          }}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                            booking.onboardingCompletedAt
+                              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30'
+                              : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30'
+                          }`}
+                        >
+                          {booking.onboardingCompletedAt
+                            ? <IoCheckmarkCircleOutline className="w-3.5 h-3.5" />
+                            : <IoCloseCircleOutline className="w-3.5 h-3.5" />
+                          }
+                          {booking.onboardingCompletedAt ? t('bdOnboarded') : t('bdNotOnboarded')}
+                        </button>
+                        {activeTooltip === 'onboard' && !booking.onboardingCompletedAt && (
+                          <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-50">
+                            <p className="font-semibold mb-1">{t('bdOnboardingPending')}</p>
+                            <p>{t('bdOnboardingPendingDesc')}</p>
                             <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
                           </div>
                         )}
@@ -995,6 +1058,18 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 </div>
               )}
             </div>
+
+            {/* Handoff Verification Panel — visible for confirmed, guest-driven, pre-trip bookings */}
+            {booking.status === 'CONFIRMED' && isGuestDriven && booking.onboardingCompletedAt && (
+              <HandoffPanel
+                bookingId={booking.id}
+                handoffStatus={booking.handoffStatus}
+                guestDistance={booking.guestGpsDistance}
+                isInstantBook={vehicle?.instantBook ?? false}
+                savedKeyInstructions={vehicle?.keyInstructions ?? null}
+                autoFallbackAt={booking.handoffAutoFallbackAt}
+              />
+            )}
 
             {/* Guest History with Host */}
             {guestHistory && renter && (
@@ -1068,9 +1143,23 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                       </p>
                     </div>
                   </div>
-                  <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    {t('bdDaysCount', { count: booking.numberOfDays })}
-                  </span>
+                  <div className="text-right flex-shrink-0">
+                    <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                      {t('bdDaysCount', { count: booking.numberOfDays })}
+                    </span>
+                    {(booking.status === 'CONFIRMED' || booking.status === 'ACTIVE') && new Date(booking.endDate) > new Date() ? (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                        {(() => {
+                          const daysLeft = Math.max(0, Math.ceil((new Date(booking.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+                          return t('bdDaysLeft', { count: daysLeft })
+                        })()}
+                      </p>
+                    ) : booking.status === 'COMPLETED' ? (
+                      <p className="text-sm text-green-600 dark:text-green-400 mt-0.5">{t('bdTripCompleted')}</p>
+                    ) : booking.status === 'CANCELLED' ? (
+                      <p className="text-sm text-red-600 dark:text-red-400 mt-0.5">{t('bdTripCancelled')}</p>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1658,13 +1747,26 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   </>
                 )}
 
-                {/* Change Vehicle — always available */}
-                <button
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
-                >
-                  <IoSwapHorizontalOutline className="w-4 h-4" />
-                  {t('bdChangeVehicle')}
-                </button>
+                {/* Change Vehicle — gated by fleet availability */}
+                <div className="relative group">
+                  <button
+                    disabled={!fleetOtherActiveCount}
+                    className={`w-full px-4 py-2 border rounded-lg flex items-center gap-2 ${
+                      fleetOtherActiveCount
+                        ? 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed bg-gray-50 dark:bg-gray-800'
+                    }`}
+                  >
+                    <IoSwapHorizontalOutline className="w-4 h-4" />
+                    {t('bdChangeVehicle')}
+                  </button>
+                  {!fleetOtherActiveCount && (
+                    <div className="invisible group-hover:visible absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-50">
+                      <p>{t('bdNoOtherVehicles')}</p>
+                      <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
+                    </div>
+                  )}
+                </div>
 
                 {/* Add Charge — always available */}
                 <button
@@ -1907,19 +2009,27 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   )}
                 </button>
               )}
-              {/* Send Keys Instructions — only for ItWhip guest-driven bookings */}
+              {/* Send Keys Instructions — only for ItWhip guest-driven + instant pickup vehicles */}
               {isGuestDriven && (
-                <button
-                  onClick={() => { setCommMessage(''); setShowCommModal('keys_instructions') }}
-                  disabled={(commSendCounts.keys_instructions || 0) >= 2}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  <IoKeyOutline className="w-4 h-4" />
-                  {t('bdSendKeysInstructions')}
-                  {(commSendCounts.keys_instructions || 0) > 0 && (
-                    <span className="text-xs text-gray-400">({commSendCounts.keys_instructions}/2)</span>
+                <div className="relative group inline-block">
+                  <button
+                    onClick={() => { setCommMessage(''); setShowCommModal('keys_instructions') }}
+                    disabled={!vehicle?.instantBook || (commSendCounts.keys_instructions || 0) >= 2}
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    <IoKeyOutline className="w-4 h-4" />
+                    {t('bdSendKeysInstructions')}
+                    {(commSendCounts.keys_instructions || 0) > 0 && (
+                      <span className="text-xs text-gray-400">({commSendCounts.keys_instructions}/2)</span>
+                    )}
+                  </button>
+                  {!vehicle?.instantBook && (
+                    <div className="invisible group-hover:visible absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-50">
+                      <p>{t('bdKeysInstantOnly')}</p>
+                      <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
+                    </div>
                   )}
-                </button>
+                </div>
               )}
             </div>
           </div>
@@ -2360,6 +2470,76 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Onboard Details Modal */}
+      {showOnboardModal && booking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowOnboardModal(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-lg mx-4 p-6 shadow-xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('bdOnboardingDetails')}</h3>
+              <button onClick={() => setShowOnboardModal(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                <IoCloseOutline className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Verification Method */}
+            <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('bdVerificationMethod')}</p>
+              <p className="font-medium text-gray-900 dark:text-white">
+                {booking.verificationMethod || t('bdUnknown')}
+              </p>
+              {booking.verificationDate && (
+                <p className="text-xs text-gray-400 mt-1">
+                  {t('bdVerifiedOn')} {new Date(booking.verificationDate).toLocaleDateString()}
+                </p>
+              )}
+              {booking.aiVerificationScore != null && (
+                <p className="text-xs text-gray-400 mt-1">
+                  {t('bdConfidenceScore')}: {booking.aiVerificationScore}%
+                </p>
+              )}
+            </div>
+
+            {/* DL Front */}
+            {booking.licensePhotoUrl ? (
+              <div className="mb-4">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('bdDLFront')}</p>
+                <img
+                  src={booking.licensePhotoUrl}
+                  alt="Driver's License Front"
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-600 pointer-events-none select-none"
+                  onContextMenu={e => e.preventDefault()}
+                  draggable={false}
+                />
+              </div>
+            ) : (
+              <div className="mb-4 p-4 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-center text-sm text-gray-400">
+                {t('bdNoDLFront')}
+              </div>
+            )}
+
+            {/* DL Back */}
+            {booking.licenseBackPhotoUrl ? (
+              <div className="mb-4">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('bdDLBack')}</p>
+                <img
+                  src={booking.licenseBackPhotoUrl}
+                  alt="Driver's License Back"
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-600 pointer-events-none select-none"
+                  onContextMenu={e => e.preventDefault()}
+                  draggable={false}
+                />
+              </div>
+            ) : (
+              <div className="mb-4 p-4 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-center text-sm text-gray-400">
+                {t('bdNoDLBack')}
+              </div>
+            )}
+
+            <p className="text-xs text-gray-400 text-center mt-4">{t('bdViewOnlyNotice')}</p>
           </div>
         </div>
       )}

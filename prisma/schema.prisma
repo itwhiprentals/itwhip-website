@@ -1790,6 +1790,21 @@ model RentalBooking {
   aiFraudFlags               Json?                 // Array of fraud indicators
   aiVerifiedAt               DateTime?
 
+  // ===== HANDOFF VERIFICATION =====
+  handoffStatus              String?               // PENDING, GUEST_VERIFIED, HANDOFF_COMPLETE, EXPIRED, BYPASSED
+  guestGpsVerifiedAt         DateTime?
+  guestGpsLatitude           Float?
+  guestGpsLongitude          Float?
+  guestGpsDistance           Float?                // meters from car
+  hostHandoffVerifiedAt      DateTime?
+  hostHandoffLatitude        Float?
+  hostHandoffLongitude       Float?
+  hostHandoffDistance        Float?                // meters from car
+  keyInstructionsDeliveredAt DateTime?
+  handoffAutoFallbackAt      DateTime?             // when auto-release should trigger
+  vehicleMatchResult         Json?                 // { sameVehicle, confidence, damageNotes }
+  vehicleMatchCheckedAt      DateTime?
+
   // ===== AUTO-LOGIN TOKEN (for visitors) =====
   autoLoginToken             String?               @unique
   autoLoginExpiresAt         DateTime?
@@ -1945,6 +1960,7 @@ model RentalCar {
   deliveryRadius             Int                        @default(10)
   freeDeliveryRadius         Int                        @default(0)
   deliveryInstructions       String?
+  keyInstructions            String?                    @db.Text  // lockbox/key info, reusable across bookings
   isActive                   Boolean                    @default(true)
   instantBook                Boolean                    @default(true)
   advanceNotice              Int                        @default(2)

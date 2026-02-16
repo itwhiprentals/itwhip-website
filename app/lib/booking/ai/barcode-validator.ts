@@ -63,12 +63,49 @@ export interface BarcodeValidationResult {
 
 function parseAAMVABarcode(rawData: string): BarcodeData {
   const result: BarcodeData = { rawData }
-  const lines = rawData.split(/[\n\r]/)
 
+  // AAMVA barcodes use various delimiters across implementations:
+  //   \n, \r, \r\n (standard line breaks)
+  //   \x1e (Record Separator — separates subfiles)
+  //   \x1f (Unit Separator — some non-standard implementations)
+  // Additionally, some decoders (zxing-wasm) return control characters as literal
+  // text representations: <LF>, <CR>, <RS>, <GS>, <US> — split on those too.
+  const lines = rawData
+    .split(/[\n\r\x1e\x1f]+|<LF>|<CR>|<RS>|<GS>|<US>/)
+    .filter(l => l.length > 0)
+
+  // Some barcodes have the first field merged with the "DL" or "ANSI..." header.
+  // E.g., "DLDCS SMITH" where "DL" is the subfile type and "DCS" is the first field.
+  // Also, the AAMVA header line embeds field data at the end:
+  //   "ANSI 636026100102DL00410274ZA03150012DLDAQD01699143"
+  //   The last "DL" starts the subfile data, and "DAQ" is the first field code.
+  // Expand these into separate entries so the field code check works.
+  const expandedLines: string[] = []
   for (const line of lines) {
+    // Case 1: Line starts with "DL" or "ID" followed by a field code
+    const dlPrefix = line.match(/^(DL|ID)([A-Z]{3}.*)/)
+    if (dlPrefix) {
+      expandedLines.push(dlPrefix[2]) // The part after DL/ID
+    } else if (line.startsWith('ANSI') || line.startsWith('@')) {
+      // Case 2: AAMVA header line — field data embedded after offset table
+      // E.g., "ANSI 636026100102DL00410274ZA03150012DLDAQD01699143"
+      // Find the LAST "DL" or "ID" followed by a 3-letter AAMVA field code (D + 2 letters)
+      const headerDataMatch = line.match(/.*(DL|ID)(D[A-Z]{2}.+)$/)
+      if (headerDataMatch) {
+        expandedLines.push(headerDataMatch[2]) // e.g., "DAQD01699143"
+      }
+      // Don't push original ANSI line — it matches no field codes anyway
+    } else {
+      expandedLines.push(line)
+    }
+  }
+
+  for (const line of expandedLines) {
+    // Try each known AAMVA field code
     for (const [code, fieldName] of Object.entries(AAMVA_FIELDS)) {
       if (line.startsWith(code)) {
         let value = line.substring(3).trim()
+        if (!value) break // Empty field, skip
 
         // Handle MMDDYYYY → YYYY-MM-DD date formatting
         if (['dateOfBirth', 'expirationDate', 'issueDate'].includes(fieldName)) {
@@ -97,6 +134,33 @@ function parseAAMVABarcode(rawData: string): BarcodeData {
   }
 
   return result
+}
+
+// ─── State Name → Abbreviation ──────────────────────────────────────────────
+
+const STATE_ABBREV: Record<string, string> = {
+  'ALABAMA': 'AL', 'ALASKA': 'AK', 'ARIZONA': 'AZ', 'ARKANSAS': 'AR',
+  'CALIFORNIA': 'CA', 'COLORADO': 'CO', 'CONNECTICUT': 'CT', 'DELAWARE': 'DE',
+  'FLORIDA': 'FL', 'GEORGIA': 'GA', 'HAWAII': 'HI', 'IDAHO': 'ID',
+  'ILLINOIS': 'IL', 'INDIANA': 'IN', 'IOWA': 'IA', 'KANSAS': 'KS',
+  'KENTUCKY': 'KY', 'LOUISIANA': 'LA', 'MAINE': 'ME', 'MARYLAND': 'MD',
+  'MASSACHUSETTS': 'MA', 'MICHIGAN': 'MI', 'MINNESOTA': 'MN', 'MISSISSIPPI': 'MS',
+  'MISSOURI': 'MO', 'MONTANA': 'MT', 'NEBRASKA': 'NE', 'NEVADA': 'NV',
+  'NEW HAMPSHIRE': 'NH', 'NEW JERSEY': 'NJ', 'NEW MEXICO': 'NM', 'NEW YORK': 'NY',
+  'NORTH CAROLINA': 'NC', 'NORTH DAKOTA': 'ND', 'OHIO': 'OH', 'OKLAHOMA': 'OK',
+  'OREGON': 'OR', 'PENNSYLVANIA': 'PA', 'RHODE ISLAND': 'RI', 'SOUTH CAROLINA': 'SC',
+  'SOUTH DAKOTA': 'SD', 'TENNESSEE': 'TN', 'TEXAS': 'TX', 'UTAH': 'UT',
+  'VERMONT': 'VT', 'VIRGINIA': 'VA', 'WASHINGTON': 'WA', 'WEST VIRGINIA': 'WV',
+  'WISCONSIN': 'WI', 'WYOMING': 'WY', 'DISTRICT OF COLUMBIA': 'DC',
+}
+
+/** Normalize state to 2-letter abbreviation (AI OCR may return full name like "Arizona") */
+function normalizeState(state: string): string {
+  const upper = state.toUpperCase().trim()
+  // Already a 2-letter code?
+  if (upper.length === 2) return upper
+  // Look up full name
+  return STATE_ABBREV[upper] || upper
 }
 
 // ─── Name Comparison Helpers ────────────────────────────────────────────────
@@ -331,7 +395,11 @@ export async function decodeAndValidateBarcode(
 
     // Parse AAMVA data
     const barcodeData = parseAAMVABarcode(barcodeText)
-    console.log(`[barcode-validator] Decoded PDF417: ${barcodeData.firstName} ${barcodeData.lastName} | DL#: ${barcodeData.licenseNumber} | State: ${barcodeData.state}`)
+    const hasAnyField = !!(barcodeData.firstName || barcodeData.lastName || barcodeData.licenseNumber || barcodeData.state || barcodeData.dateOfBirth)
+    console.log(`[barcode-validator] Decoded PDF417: ${barcodeData.firstName} ${barcodeData.lastName} | DL#: ${barcodeData.licenseNumber} | State: ${barcodeData.state} | fields_extracted: ${hasAnyField}`)
+    if (!hasAnyField) {
+      console.log(`[barcode-validator] AAMVA parse returned no fields. Raw barcode (first 200 chars): ${barcodeText.substring(0, 200).replace(/[\n\r]/g, '\\n')}`)
+    }
 
     // ── Cross-validation checks ──────────────────────────────────────────
 
@@ -370,10 +438,10 @@ export async function decodeAndValidateBarcode(
       }
     }
 
-    // 4. State match
+    // 4. State match (normalize full names like "Arizona" → "AZ")
     if (barcodeData.state && frontData.state) {
-      const frontState = frontData.state.toUpperCase().trim()
-      const barcodeState = barcodeData.state.toUpperCase().trim()
+      const frontState = normalizeState(frontData.state)
+      const barcodeState = normalizeState(barcodeData.state)
       if (frontState && barcodeState && frontState !== barcodeState) {
         mismatches.push(
           `BARCODE MISMATCH: State on front (${frontData.state}) does not match barcode (${barcodeData.state}). ` +
@@ -382,8 +450,18 @@ export async function decodeAndValidateBarcode(
       }
     }
 
-    if (mismatches.length === 0) {
-      notes.push('PDF417 barcode cross-validation passed: front and back data match')
+    // Count how many fields were actually compared
+    const fieldsCompared =
+      ((barcodeData.firstName || barcodeData.lastName) ? 1 : 0) +
+      (barcodeData.dateOfBirth ? 1 : 0) +
+      (barcodeData.licenseNumber ? 1 : 0) +
+      (barcodeData.state ? 1 : 0)
+
+    if (fieldsCompared === 0) {
+      // Barcode decoded but no AAMVA fields extracted — can't validate
+      notes.push('PDF417 barcode decoded but no fields could be extracted for cross-validation')
+    } else if (mismatches.length === 0) {
+      notes.push(`PDF417 barcode cross-validation passed: ${fieldsCompared} field(s) matched between front and back`)
     }
 
     return { decoded: true, barcodeData, mismatches, notes }

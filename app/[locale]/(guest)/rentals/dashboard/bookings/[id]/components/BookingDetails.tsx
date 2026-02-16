@@ -19,6 +19,7 @@ interface BookingDetailsProps {
   messages: Message[]
   onUploadClick: () => void
   uploadingFile: boolean
+  isPreTripReady?: boolean
 }
 
 // Approved drop-off locations for ItWhip
@@ -57,11 +58,12 @@ const APPROVED_DROPOFF_LOCATIONS = [
   }
 ]
 
-export const BookingDetails: React.FC<BookingDetailsProps> = ({ 
-  booking, 
-  messages, 
+export const BookingDetails: React.FC<BookingDetailsProps> = ({
+  booking,
+  messages,
   onUploadClick,
-  uploadingFile 
+  uploadingFile,
+  isPreTripReady = false
 }) => {
   const t = useTranslations('BookingDetail')
   const locale = useLocale()
@@ -113,8 +115,8 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
         </div>
       )}
 
-      {/* Progressive Information Alerts */}
-      {booking.status === 'CONFIRMED' && (
+      {/* Progressive Information Alerts — hidden during inspection phase */}
+      {booking.status === 'CONFIRMED' && !isPreTripReady && (
         <>
           {/* Pickup Time Display */}
           {daysUntilPickup > 0 && (
@@ -331,8 +333,8 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
         </>
       )}
 
-      {/* Car Photos */}
-      {booking.car.photos && booking.car.photos.length > 0 && (
+      {/* Car Photos — hidden during inspection phase (shown on main page instead) */}
+      {!isPreTripReady && booking.car.photos && booking.car.photos.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <img
             src={booking.car.photos[0].url}
@@ -342,7 +344,8 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
         </div>
       )}
 
-      {/* Trip Details Card */}
+      {/* Trip Details Card - hidden during inspection phase (info already in TripStartCard) */}
+      {!isPreTripReady && (
       <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4">
         <h2 className="text-sm font-semibold text-gray-900 mb-3">{t('tripDetails')}</h2>
 
@@ -402,7 +405,7 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
           </div>
         </div>
 
-      </div>
+      </div>)}
     </div>
   )
 }

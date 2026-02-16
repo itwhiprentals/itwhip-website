@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
-import { canStartTrip, validateOdometer, validateFuelLevel, validateInspectionPhotos } from '@/app/lib/trip/validation'
+import { canStartTrip, isHandoffComplete, validateOdometer, validateFuelLevel, validateInspectionPhotos } from '@/app/lib/trip/validation'
 import { calculateTripWindow } from '@/app/lib/trip/timeWindows'
 
 // ========== 🆕 ACTIVITY TRACKING IMPORT ==========
@@ -59,6 +59,14 @@ export async function POST(
    if (!canStart.valid) {
      return NextResponse.json(
        { error: canStart.error },
+       { status: 400 }
+     )
+   }
+
+   // Verify handoff is complete
+   if (!isHandoffComplete(booking)) {
+     return NextResponse.json(
+       { error: 'Handoff verification must be completed before starting the trip' },
        { status: 400 }
      )
    }

@@ -217,8 +217,9 @@ const DL_ANALYSIS_SCHEMA = {
 function optimizeImageForClaude(url: string): string {
   if (!url.includes('cloudinary.com')) return url
   // Insert resize transform into Cloudinary URL: c_limit keeps aspect ratio,
-  // w/h 1568 matches Claude's max, q_90 reduces file size with minimal quality loss
-  return url.replace('/upload/', '/upload/c_limit,w_1568,h_1568,q_90/')
+  // w/h 1568 matches Claude's max, q_90 reduces file size with minimal quality loss,
+  // f_jpg converts HEIC/HEIF (unsupported by Claude Vision API) to JPEG on the fly
+  return url.replace('/upload/', '/upload/c_limit,w_1568,h_1568,q_90,f_jpg/')
 }
 
 // ─── Main Verification Function ─────────────────────────────────────────────

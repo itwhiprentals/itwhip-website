@@ -176,6 +176,7 @@ export function BookingOnboarding({ booking, onDocumentUploaded }: BookingOnboar
                 driverPhone={booking.guestPhone}
                 carId={booking.car.id}
                 hideStripeFallback={true}
+                allowFileUpload={true}
               />
             )
           ) : (

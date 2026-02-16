@@ -129,7 +129,9 @@ export async function GET(
             currentMileage: true,
             insuranceEligible: true,
             insuranceNotes: true,
-            isActive: true
+            isActive: true,
+            instantBook: true,
+            keyInstructions: true
           }
         },
         host: {
@@ -276,7 +278,23 @@ export async function GET(
         agreementSentAt: booking.agreementSentAt?.toISOString() || null,
         agreementSignedAt: booking.agreementSignedAt?.toISOString() || null,
         agreementSignedPdfUrl: booking.agreementSignedPdfUrl || null,
-        signerName: booking.signerName || null
+        signerName: booking.signerName || null,
+
+        // Handoff fields
+        handoffStatus: booking.handoffStatus || null,
+        guestGpsDistance: booking.guestGpsDistance || null,
+        handoffAutoFallbackAt: booking.handoffAutoFallbackAt?.toISOString() || null,
+
+        // Onboarding fields
+        onboardingCompletedAt: booking.onboardingCompletedAt?.toISOString() || null,
+        licensePhotoUrl: booking.licensePhotoUrl || null,
+        licenseBackPhotoUrl: booking.licenseBackPhotoUrl || null,
+        guestStripeVerified: !!(booking.renter?.reviewerProfile?.stripeIdentityStatus === 'verified'),
+        aiVerificationScore: booking.aiVerificationScore || null,
+
+        // Verification method (populated below)
+        verificationMethod: null as string | null,
+        verificationDate: null as string | null
       },
 
       // Renter details
@@ -328,7 +346,9 @@ export async function GET(
         carType: booking.car.carType,
         seats: booking.car.seats,
         currentMileage: booking.car.currentMileage,
-        isActive: booking.car.isActive
+        isActive: booking.car.isActive,
+        instantBook: booking.car.instantBook,
+        keyInstructions: booking.car.keyInstructions || null
       } : null,
 
       // Partner/Host details (using booking.host from query)
@@ -355,6 +375,39 @@ export async function GET(
 
       // Guest history with this host (booking history + reviews)
       guestHistory: null as unknown // populated below
+    }
+
+    // Count other active vehicles in host's fleet (for Change Vehicle gating)
+    const fleetOtherActiveCount = await prisma.rentalCar.count({
+      where: {
+        hostId: partner.id,
+        isActive: true,
+        id: { not: booking.carId || '' }
+      }
+    })
+    ;(response as Record<string, unknown>).fleetOtherActiveCount = fleetOtherActiveCount
+
+    // Determine verification method for this booking
+    if (booking.onboardingCompletedAt) {
+      const aiVerification = await prisma.dLVerificationLog.findFirst({
+        where: {
+          OR: [
+            { bookingId: bookingId },
+            ...(booking.guestEmail ? [{ guestEmail: booking.guestEmail.toLowerCase() }] : [])
+          ],
+          passed: true
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { createdAt: true }
+      })
+
+      if (aiVerification) {
+        response.booking.verificationMethod = 'Claude AI'
+        response.booking.verificationDate = aiVerification.createdAt.toISOString()
+      } else if (booking.renter?.reviewerProfile?.stripeIdentityStatus === 'verified') {
+        response.booking.verificationMethod = 'Stripe Identity'
+        response.booking.verificationDate = booking.renter.reviewerProfile.stripeIdentityVerifiedAt?.toISOString() || null
+      }
     }
 
     // Fetch guest history if renter exists

@@ -17,6 +17,7 @@ import {
   IoRefreshOutline,
   IoInformationCircleOutline,
   IoCameraOutline,
+  IoCloudUploadOutline,
   IoChevronDownOutline,
   IoChevronUpOutline,
   IoLockClosedOutline,
@@ -58,7 +59,10 @@ interface VisitorIdentityVerifyProps {
   carId?: string
   disabled?: boolean
   hideStripeFallback?: boolean
+  allowFileUpload?: boolean
 }
+
+type InputMode = 'camera' | 'upload'
 
 type VerifyStep =
   | 'front' | 'back' | 'verifying' | 'success' | 'failed'
@@ -78,6 +82,7 @@ export function VisitorIdentityVerify({
   carId,
   disabled = false,
   hideStripeFallback = false,
+  allowFileUpload = false,
 }: VisitorIdentityVerifyProps) {
   const t = useTranslations('DLVerification')
   // Step flow
@@ -122,10 +127,17 @@ export function VisitorIdentityVerify({
   const [manualSelfieUrl, setManualSelfieUrl] = useState<string | null>(null)
   const [submittingManual, setSubmittingManual] = useState(false)
 
-  // Fallback file inputs
+  // Input mode toggle (camera vs upload) — only used when allowFileUpload is true
+  const [inputMode, setInputMode] = useState<InputMode>('camera')
+
+  // Fallback file inputs (with capture attribute — opens camera on mobile)
   const frontInputRef = useRef<HTMLInputElement>(null)
   const backInputRef = useRef<HTMLInputElement>(null)
   const selfieInputRef = useRef<HTMLInputElement>(null)
+
+  // Upload-only file inputs (no capture attribute — opens file picker/gallery)
+  const frontUploadRef = useRef<HTMLInputElement>(null)
+  const backUploadRef = useRef<HTMLInputElement>(null)
 
   // ── Check verification status on mount / email change ──
   const checkVerificationStatus = useCallback(async () => {
@@ -315,9 +327,15 @@ export function VisitorIdentityVerify({
     }
   }
 
-  // ── Handle upload target tap — always open CameraCapture modal ──
+  // ── Handle upload target tap — camera or file picker based on inputMode ──
   const handleUploadTap = (target: 'front' | 'back' | 'selfie') => {
     if (disabled) return
+    // In upload mode (non-selfie), open file picker instead of camera
+    if (inputMode === 'upload' && target !== 'selfie') {
+      const ref = target === 'front' ? frontUploadRef : backUploadRef
+      ref.current?.click()
+      return
+    }
     setCameraTarget(target)
     setCameraGuideShape(target === 'selfie' ? 'circle' : 'rectangle')
     setCameraOpen(true)
@@ -523,10 +541,14 @@ export function VisitorIdentityVerify({
 
   return (
     <div>
-      {/* Hidden fallback file inputs */}
+      {/* Hidden fallback file inputs (with capture — opens camera) */}
       <input ref={frontInputRef} type="file" accept="image/*" capture="environment" onChange={(e) => handleFileSelect(e, 'front')} className="hidden" disabled={disabled} />
       <input ref={backInputRef} type="file" accept="image/*" capture="environment" onChange={(e) => handleFileSelect(e, 'back')} className="hidden" disabled={disabled} />
       <input ref={selfieInputRef} type="file" accept="image/*" capture="user" onChange={(e) => handleFileSelect(e, 'selfie')} className="hidden" disabled={disabled} />
+
+      {/* Hidden upload-only file inputs (no capture — opens file picker/gallery) */}
+      <input ref={frontUploadRef} type="file" accept="image/*,.heic,.heif" onChange={(e) => handleFileSelect(e, 'front')} className="hidden" disabled={disabled} />
+      <input ref={backUploadRef} type="file" accept="image/*,.heic,.heif" onChange={(e) => handleFileSelect(e, 'back')} className="hidden" disabled={disabled} />
 
       {/* Camera modal */}
       <CameraCapture
@@ -560,16 +582,18 @@ export function VisitorIdentityVerify({
       {/* ════════════ STEP: FRONT ════════════ */}
       {step === 'front' && (
         <>
-          <PhotoTips />
+          {allowFileUpload && <InputModeToggle mode={inputMode} onModeChange={setInputMode} />}
+          <PhotoTips uploadMode={inputMode === 'upload' && allowFileUpload} />
           <UploadTarget
             icon={<IoIdCardOutline className="text-4xl text-gray-400" />}
             label={t('dlFrontLabel')}
-            sublabel={t('tapToOpenCamera')}
+            sublabel={inputMode === 'upload' && allowFileUpload ? t('tapToChooseFile') : t('tapToOpenCamera')}
             preview={frontPreview}
             isUploading={uploadingFront}
             disabled={disabled}
             onClick={() => handleUploadTap('front')}
             onRetake={() => handleRetake('front')}
+            uploadMode={inputMode === 'upload' && allowFileUpload}
           />
           <StepDots current={1} />
         </>
@@ -578,7 +602,8 @@ export function VisitorIdentityVerify({
       {/* ════════════ STEP: BACK ════════════ */}
       {step === 'back' && (
         <>
-          <PhotoTips />
+          {allowFileUpload && <InputModeToggle mode={inputMode} onModeChange={setInputMode} />}
+          <PhotoTips uploadMode={inputMode === 'upload' && allowFileUpload} />
           {/* Completed front thumbnail */}
           <div className="flex items-center gap-3 mb-3">
             <div className="relative w-20 h-14 rounded-lg overflow-hidden border-2 border-green-500 flex-shrink-0">
@@ -599,12 +624,13 @@ export function VisitorIdentityVerify({
           <UploadTarget
             icon={<IoIdCardOutline className="text-4xl text-gray-400 rotate-180" />}
             label={t('dlBackLabel')}
-            sublabel={t('tapToOpenCamera')}
+            sublabel={inputMode === 'upload' && allowFileUpload ? t('tapToChooseFile') : t('tapToOpenCamera')}
             preview={backPreview}
             isUploading={uploadingBack}
             disabled={disabled}
             onClick={() => handleUploadTap('back')}
             onRetake={() => handleRetake('back')}
+            uploadMode={inputMode === 'upload' && allowFileUpload}
           />
           <StepDots current={2} />
         </>
@@ -770,13 +796,49 @@ export function VisitorIdentityVerify({
 
 // ─── Inline Helper Components ───────────────────────────────────────────────
 
-function PhotoTips() {
+function InputModeToggle({
+  mode,
+  onModeChange,
+}: {
+  mode: InputMode
+  onModeChange: (mode: InputMode) => void
+}) {
+  const t = useTranslations('DLVerification')
+  return (
+    <div className="flex rounded-lg bg-gray-100 dark:bg-gray-800 p-1 mb-4">
+      <button
+        onClick={() => onModeChange('camera')}
+        className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-xs font-medium transition-colors ${
+          mode === 'camera'
+            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
+        }`}
+      >
+        <IoCameraOutline className="text-sm" />
+        {t('takePhoto')}
+      </button>
+      <button
+        onClick={() => onModeChange('upload')}
+        className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-xs font-medium transition-colors ${
+          mode === 'upload'
+            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
+        }`}
+      >
+        <IoCloudUploadOutline className="text-sm" />
+        {t('uploadPhoto')}
+      </button>
+    </div>
+  )
+}
+
+function PhotoTips({ uploadMode = false }: { uploadMode?: boolean }) {
   const t = useTranslations('DLVerification')
   return (
     <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg mb-4">
       <IoInformationCircleOutline className="text-blue-500 flex-shrink-0 text-base" />
       <p className="text-xs text-blue-700 dark:text-blue-400">
-        {t('photoTips')}
+        {uploadMode ? t('uploadPhotoTips') : t('photoTips')}
       </p>
     </div>
   )
@@ -791,6 +853,7 @@ function UploadTarget({
   disabled,
   onClick,
   onRetake,
+  uploadMode = false,
 }: {
   icon: React.ReactNode
   label: string
@@ -800,6 +863,7 @@ function UploadTarget({
   disabled: boolean
   onClick: () => void
   onRetake: () => void
+  uploadMode?: boolean
 }) {
   const t = useTranslations('DLVerification')
   return (
@@ -846,7 +910,7 @@ function UploadTarget({
           {icon}
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</p>
           <div className="flex items-center gap-1.5 text-orange-500">
-            <IoCameraOutline className="text-base" />
+            {uploadMode ? <IoCloudUploadOutline className="text-base" /> : <IoCameraOutline className="text-base" />}
             <span className="text-xs font-medium">{sublabel}</span>
           </div>
         </div>

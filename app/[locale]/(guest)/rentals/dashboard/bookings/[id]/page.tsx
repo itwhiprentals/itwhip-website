@@ -10,6 +10,8 @@ import { BookingDetails } from './components/BookingDetails'
 import { BookingSidebar } from './components/BookingSidebar'
 import { MessagesPanel } from './components/MessagesPanel'
 import { PolicyFooter, CancellationDialog } from './components/BookingModals'
+import CancellationPolicyModal from '@/app/[locale]/(guest)/rentals/components/modals/CancellationPolicyModal'
+import TrustSafetyModal from '@/app/[locale]/(guest)/rentals/components/modals/TrustSafetyModal'
 import { ChevronLeft, XCircle, CheckCircle, Copy, Clock, MessageSquare } from './components/Icons'
 import StatusProgression from '../../../components/StatusProgression'
 // Import Trip Cards
@@ -46,6 +48,8 @@ export default function BookingDetailsPage() {
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [showAgreement, setShowAgreement] = useState(false)
   const [showModifyModal, setShowModifyModal] = useState(false)
+  const [showCancellationPolicy, setShowCancellationPolicy] = useState(false)
+  const [showTrustSafety, setShowTrustSafety] = useState(false)
   const [hasPassword, setHasPassword] = useState<boolean | null>(null)
   const [previousStatus, setPreviousStatus] = useState<string | null>(null)
 
@@ -390,8 +394,13 @@ export default function BookingDetailsPage() {
 
   const timeUntilPickup = getTimeUntilPickup(booking)
 
+  // Inspection phase: onboarding done, trip not started → show only essentials
+  const isPreTripReady = booking.status === 'CONFIRMED'
+    && !!booking.onboardingCompletedAt
+    && !booking.tripStartedAt
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Toast Notification */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg animate-in slide-in-from-top-2 ${
@@ -405,77 +414,83 @@ export default function BookingDetailsPage() {
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-6">
+      <div className={`max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 ${isPreTripReady ? 'py-2 sm:py-3' : 'py-3 sm:py-6'}`}>
         {/* Header */}
-        <div className="mb-4 sm:mb-6 mt-4 sm:mt-2">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="text-gray-600 hover:text-gray-900 mb-3 flex items-center text-sm sm:text-base transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 mr-1" />
-            <span className="hidden sm:inline">{t('backToDashboard')}</span>
-            <span className="sm:hidden">{t('back')}</span>
-          </button>
+        <div className={`${isPreTripReady ? 'mb-1' : 'mb-4 sm:mb-6'} ${isPreTripReady ? 'mt-4' : 'mt-4 sm:mt-2'}`}>
+          <div className={`flex items-center justify-between ${isPreTripReady ? 'mb-1' : 'mb-3'}`}>
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 flex items-center text-sm sm:text-base transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 mr-1" />
+              <span className="hidden sm:inline">{t('backToDashboard')}</span>
+              <span className="sm:hidden">{t('back')}</span>
+            </button>
+            <h1 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100">{t('bookingStatus')}</h1>
+          </div>
           
-          <div className="space-y-3 pl-6">
-            <div>
-              <div className="flex items-center gap-2 flex-wrap mb-1">
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
-                  {booking.car.year} {booking.car.make}
-                </h1>
-                <div className="flex items-center gap-1.5 ml-auto">
-                  {(() => {
-                    const vc = getVehicleClass(booking.car.make, booking.car.model, (booking.car.type || null) as any)
-                    return vc ? <span className="text-xs font-medium px-2 py-1 rounded-lg border border-gray-300 text-gray-700">{vc}</span> : null
-                  })()}
-                  {(() => {
-                    const ft = formatFuelTypeBadge((booking.car as any).fuelType || null)
-                    return ft ? <span className="text-xs font-medium px-2 py-1 rounded-lg border border-gray-300 text-gray-700">{ft}</span> : null
-                  })()}
-                  {booking.car.transmission && (
-                    <span className="text-xs font-medium px-2 py-1 rounded-lg border border-gray-300 text-gray-700 capitalize">
-                      {booking.car.transmission.toLowerCase()}
-                    </span>
-                  )}
-                  {booking.car.seats && (
-                    <span className="text-xs font-medium px-2 py-1 rounded-lg border border-gray-300 text-gray-700">
-                      {t('seats', { count: booking.car.seats })}
+          {/* Car info header — hidden during inspection phase */}
+          {!isPreTripReady && (
+            <div className="space-y-3 pl-6">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
+                    {booking.car.year} {booking.car.make}
+                  </h1>
+                  <div className="flex items-center gap-1.5 ml-auto">
+                    {(() => {
+                      const vc = getVehicleClass(booking.car.make, booking.car.model, (booking.car.type || null) as any)
+                      return vc ? <span className="text-xs font-medium px-2 py-1 rounded-lg border border-gray-300 text-gray-700">{vc}</span> : null
+                    })()}
+                    {(() => {
+                      const ft = formatFuelTypeBadge((booking.car as any).fuelType || null)
+                      return ft ? <span className="text-xs font-medium px-2 py-1 rounded-lg border border-gray-300 text-gray-700">{ft}</span> : null
+                    })()}
+                    {booking.car.transmission && (
+                      <span className="text-xs font-medium px-2 py-1 rounded-lg border border-gray-300 text-gray-700 capitalize">
+                        {booking.car.transmission.toLowerCase()}
+                      </span>
+                    )}
+                    {booking.car.seats && (
+                      <span className="text-xs font-medium px-2 py-1 rounded-lg border border-gray-300 text-gray-700">
+                        {t('seats', { count: booking.car.seats })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <p className="text-sm sm:text-base text-gray-500 font-medium">
+                  {booking.car.model}
+                </p>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span className="text-xs sm:text-sm text-gray-600">{t('booking')}</span>
+                  <div className="flex items-center gap-1.5">
+                    <code className="font-mono text-xs sm:text-sm bg-gray-100 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
+                      {booking.bookingCode}
+                    </code>
+                    <button
+                      onClick={copyBookingCode}
+                      className="text-gray-400 hover:text-gray-600 transition-colors p-0.5"
+                      title={t('copyBookingCode')}
+                    >
+                      {copiedCode ? <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600" /> : <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                    </button>
+                  </div>
+                  {timeUntilPickup && booking.status === 'CONFIRMED' && (
+                    <span className="text-xs sm:text-sm text-gray-600 bg-gray-100 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full inline-flex items-center ml-auto">
+                      <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" />
+                      {timeUntilPickup}
                     </span>
                   )}
                 </div>
-              </div>
-              <p className="text-sm sm:text-base text-gray-500 font-medium">
-                {booking.car.model}
-              </p>
-              <div className="flex flex-wrap items-center gap-2 mt-2">
-                <span className="text-xs sm:text-sm text-gray-600">{t('booking')}</span>
-                <div className="flex items-center gap-1.5">
-                  <code className="font-mono text-xs sm:text-sm bg-gray-100 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
-                    {booking.bookingCode}
-                  </code>
-                  <button
-                    onClick={copyBookingCode}
-                    className="text-gray-400 hover:text-gray-600 transition-colors p-0.5"
-                    title={t('copyBookingCode')}
-                  >
-                    {copiedCode ? <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600" /> : <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                  </button>
-                </div>
-                {timeUntilPickup && booking.status === 'CONFIRMED' && (
-                  <span className="text-xs sm:text-sm text-gray-600 bg-gray-100 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full inline-flex items-center ml-auto">
-                    <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" />
-                    {timeUntilPickup}
-                  </span>
-                )}
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Secure Account Banner */}
         <SecureAccountBanner hasPassword={hasPassword} />
 
-        {/* Status Progression Component */}
+        {/* Status Progression — always visible, but actions move to TripStartCard during inspection */}
         <StatusProgression
           status={booking.status}
           tripStatus={booking.tripStatus}
@@ -485,24 +500,26 @@ export default function BookingDetailsPage() {
           paymentStatus={booking.paymentStatus}
           documentsSubmittedAt={typeof booking.documentsSubmittedAt === 'string' ? booking.documentsSubmittedAt : undefined}
           reviewedAt={typeof booking.reviewedAt === 'string' ? booking.reviewedAt : undefined}
-          onCancel={booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? () => setShowCancelDialog(true) : undefined}
-          onModify={['PENDING', 'CONFIRMED'].includes(booking.status) ? () => setShowModifyModal(true) : undefined}
-          onViewAgreement={() => setShowAgreement(true)}
+          onCancel={!isPreTripReady && (booking.status === 'PENDING' || booking.status === 'CONFIRMED') ? () => setShowCancelDialog(true) : undefined}
+          onModify={!isPreTripReady && ['PENDING', 'CONFIRMED'].includes(booking.status) ? () => setShowModifyModal(true) : undefined}
+          onViewAgreement={!isPreTripReady ? () => setShowAgreement(true) : undefined}
+          hideStatusMessage={isPreTripReady}
+          hideTitle={isPreTripReady}
         />
 
         {/* Payment hold alert — PENDING only */}
         {booking.status === 'PENDING' && (
           <div className="mt-4">
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <div className="p-1.5 bg-gray-200 rounded-full flex-shrink-0 mt-0.5">
-                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="p-1.5 bg-gray-200 dark:bg-gray-700 rounded-full flex-shrink-0 mt-0.5">
+                  <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{t('paymentOnHold')}</p>
-                  <p className="text-xs text-gray-600 mt-1">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('paymentOnHold')}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                     {t('paymentOnHoldDesc')}
                   </p>
                 </div>
@@ -520,13 +537,66 @@ export default function BookingDetailsPage() {
 
         {/* Trip Management Cards - only after onboarding complete */}
         {booking.status === 'CONFIRMED' && !booking.tripStartedAt && booking.onboardingCompletedAt && (
-          <div className="mt-6">
-            <TripStartCard booking={booking} onTripStarted={loadBooking} />
+          <div className="mt-3">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden min-h-[55vh] sm:min-h-0 flex flex-col">
+              {/* Car photo with centered Start Inspection circle */}
+              {booking.car.photos && booking.car.photos.length > 0 && (
+                <div className="relative">
+                  <img
+                    src={booking.car.photos[0].url}
+                    alt={`${booking.car.make} ${booking.car.model}`}
+                    className="w-full h-44 sm:h-52 object-cover object-[center_35%]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    {/* Pulsing ring */}
+                    <div className="absolute w-24 h-24 rounded-full border-2 border-white/30 animate-ping" style={{ animationDuration: '2s' }} />
+                    <div className="absolute w-28 h-28 rounded-full border border-white/15 animate-pulse" />
+                    <button
+                      onClick={() => {
+                        const card = document.querySelector('[data-trip-start]') as HTMLElement
+                        card?.click()
+                      }}
+                      className="relative w-[72px] h-[72px] rounded-full flex flex-col items-center justify-center
+                        bg-gradient-to-br from-green-400 via-green-500 to-green-600
+                        hover:from-green-300 hover:via-green-400 hover:to-green-500
+                        active:scale-90 transition-all duration-300 ease-out
+                        shadow-[0_6px_24px_rgba(0,0,0,0.4),inset_0_2px_3px_rgba(255,255,255,0.3),0_0_30px_rgba(34,197,94,0.35)]
+                        hover:shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_2px_3px_rgba(255,255,255,0.4),0_0_45px_rgba(34,197,94,0.5)]
+                        hover:scale-110
+                        ring-[3px] ring-white/80 ring-offset-2 ring-offset-transparent
+                        backdrop-blur-sm"
+                    >
+                      <svg className="w-6 h-6 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className="text-[7px] font-extrabold text-white uppercase tracking-[0.1em] mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]">
+                        {t('inspect')}
+                      </span>
+                      {/* Glossy highlight */}
+                      <div className="absolute top-0.5 left-2 right-2 h-6 rounded-full bg-gradient-to-b from-white/25 to-transparent pointer-events-none" />
+                    </button>
+                  </div>
+                </div>
+              )}
+              <TripStartCard
+                booking={booking}
+                onTripStarted={loadBooking}
+                onCancel={() => setShowCancelDialog(true)}
+                onModify={() => setShowModifyModal(true)}
+                onViewAgreement={() => setShowAgreement(true)}
+                onShowCancellationPolicy={() => setShowCancellationPolicy(true)}
+                onShowTrustSafety={() => setShowTrustSafety(true)}
+                noWrapper
+              />
+            </div>
+
           </div>
         )}
         {booking.status === 'CONFIRMED' && !booking.tripStartedAt && !booking.onboardingCompletedAt && (
-          <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
-            <p className="text-sm text-gray-500">{t('completeOnboardingToStart')}</p>
+          <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-center">
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('completeOnboardingToStart')}</p>
           </div>
         )}
 
@@ -543,18 +613,19 @@ export default function BookingDetailsPage() {
         )}
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        <div className={`grid gap-6 mt-6 ${isPreTripReady ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
           {/* Left Column - Details */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className={isPreTripReady ? '' : 'lg:col-span-2 space-y-6'}>
             <BookingDetails
               booking={booking}
               messages={messages}
               onUploadClick={() => fileInputRef.current?.click()}
               uploadingFile={uploadingFile}
+              isPreTripReady={isPreTripReady}
             />
 
-            {/* Messages Panel - only available after booking is confirmed (host approved) */}
-            {booking.status !== 'PENDING' && booking.status !== 'CANCELLED' && (
+            {/* Messages Panel - hidden during inspection phase */}
+            {!isPreTripReady && booking.status !== 'PENDING' && booking.status !== 'CANCELLED' && (
               <MessagesPanel
                 bookingId={bookingId}
                 messages={messages}
@@ -568,14 +639,16 @@ export default function BookingDetailsPage() {
             )}
           </div>
 
-          {/* Right Column - Sidebar */}
-          <BookingSidebar
-            booking={booking}
-            onCancelClick={() => setShowCancelDialog(true)}
-            onUploadClick={() => fileInputRef.current?.click()}
-            onAddToCalendar={addToGoogleCalendar}
-            uploadingFile={uploadingFile}
-          />
+          {/* Right Column - Sidebar (hidden during inspection phase) */}
+          {!isPreTripReady && (
+            <BookingSidebar
+              booking={booking}
+              onCancelClick={() => setShowCancelDialog(true)}
+              onUploadClick={() => fileInputRef.current?.click()}
+              onAddToCalendar={addToGoogleCalendar}
+              uploadingFile={uploadingFile}
+            />
+          )}
         </div>
 
         {/* Hidden file input */}
@@ -609,8 +682,18 @@ export default function BookingDetailsPage() {
           }}
         />
 
-        {/* Policy Footer */}
-        <PolicyFooter booking={booking} />
+        {/* Policy Footer — hidden during inspection phase */}
+        {!isPreTripReady && <PolicyFooter booking={booking} />}
+
+        {/* Cancellation Policy & Trust Safety Modals (for inspection phase) */}
+        <CancellationPolicyModal
+          isOpen={showCancellationPolicy}
+          onClose={() => setShowCancellationPolicy(false)}
+        />
+        <TrustSafetyModal
+          isOpen={showTrustSafety}
+          onClose={() => setShowTrustSafety(false)}
+        />
 
         {/* Rental Agreement Modal (triggered from StatusProgression) */}
         <RentalAgreementModal
