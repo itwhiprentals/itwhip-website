@@ -44,6 +44,7 @@ function pickNamespaces(messages: typeof enMessages) {
     PartnerLanding: m.PartnerLanding,
     PartnerDiscounts: m.PartnerDiscounts,
     PartnerSettings: m.PartnerSettings,
+    HandoffHost: m.HandoffHost,
   }
 }
 

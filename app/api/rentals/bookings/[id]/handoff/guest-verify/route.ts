@@ -73,6 +73,11 @@ export async function POST(
       return NextResponse.json({ error: 'Valid latitude and longitude required' }, { status: 400 })
     }
 
+    // Reject null-island (0, 0) — means GPS failed or was denied
+    if (latitude === 0 && longitude === 0) {
+      return NextResponse.json({ error: 'GPS location unavailable. Please enable location services and try again.' }, { status: 400 })
+    }
+
     // Get car coordinates (geocode if missing)
     let carLat = booking.car.latitude
     let carLng = booking.car.longitude

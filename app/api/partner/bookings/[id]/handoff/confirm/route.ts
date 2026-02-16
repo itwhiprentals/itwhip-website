@@ -75,6 +75,7 @@ export async function POST(
     let hostDistanceMeters: number | null = null
     let hostWithinRange = true
     if (typeof latitude === 'number' && typeof longitude === 'number' &&
+        !(latitude === 0 && longitude === 0) &&
         booking.car.latitude && booking.car.longitude) {
       const distanceMiles = calculateDistance(
         { latitude, longitude },

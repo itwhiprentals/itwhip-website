@@ -87,6 +87,10 @@ interface BookingDetails {
   handoffStatus: string | null
   guestGpsDistance: number | null
   handoffAutoFallbackAt: string | null
+  guestGpsVerifiedAt: string | null
+  hostHandoffVerifiedAt: string | null
+  hostHandoffDistance: number | null
+  keyInstructionsDeliveredAt: string | null
   // Onboarding fields
   onboardingCompletedAt: string | null
   licensePhotoUrl: string | null
@@ -961,9 +965,9 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                       <div className="relative">
                         <button
                           onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'verified' ? null : 'verified') }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-full text-xs font-medium text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-full text-[10px] font-medium text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
                         >
-                          <IoShieldCheckmarkOutline className="w-3.5 h-3.5" />
+                          <IoShieldCheckmarkOutline className="w-3 h-3" />
                           {t('bdVerified')}
                         </button>
                         {activeTooltip === 'verified' && (
@@ -984,9 +988,9 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                       <div className="relative">
                         <button
                           onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'insured' ? null : 'insured') }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-full text-xs font-medium text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-full text-[10px] font-medium text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                         >
-                          <IoShieldOutline className="w-3.5 h-3.5" />
+                          <IoShieldOutline className="w-3 h-3" />
                           {t('bdInsured')}
                         </button>
                         {activeTooltip === 'insured' && (
@@ -1002,13 +1006,13 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                       <div className="relative">
                         <button
                           onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'payment' ? null : 'payment') }}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
                             booking.paymentStatus === 'PAID'
                               ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30'
                               : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
                           }`}
                         >
-                          <IoWalletOutline className="w-3.5 h-3.5" />
+                          <IoWalletOutline className="w-3 h-3" />
                           {booking.paymentStatus === 'PAID' ? t('bdPaymentCharged') : t('bdPaymentHold')}
                         </button>
                         {activeTooltip === 'payment' && (
@@ -1033,15 +1037,15 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                               setActiveTooltip(activeTooltip === 'onboard' ? null : 'onboard')
                             }
                           }}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
                             booking.onboardingCompletedAt
                               ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30'
                               : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30'
                           }`}
                         >
                           {booking.onboardingCompletedAt
-                            ? <IoCheckmarkCircleOutline className="w-3.5 h-3.5" />
-                            : <IoCloseCircleOutline className="w-3.5 h-3.5" />
+                            ? <IoCheckmarkCircleOutline className="w-3 h-3" />
+                            : <IoCloseCircleOutline className="w-3 h-3" />
                           }
                           {booking.onboardingCompletedAt ? t('bdOnboarded') : t('bdNotOnboarded')}
                         </button>
@@ -1068,6 +1072,12 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 isInstantBook={vehicle?.instantBook ?? false}
                 savedKeyInstructions={vehicle?.keyInstructions ?? null}
                 autoFallbackAt={booking.handoffAutoFallbackAt}
+                hostHandoffVerifiedAt={booking.hostHandoffVerifiedAt}
+                guestGpsVerifiedAt={booking.guestGpsVerifiedAt}
+                keyInstructionsDeliveredAt={booking.keyInstructionsDeliveredAt}
+                hostHandoffDistance={booking.hostHandoffDistance}
+                licensePhotoUrl={booking.licensePhotoUrl}
+                licenseBackPhotoUrl={booking.licenseBackPhotoUrl}
               />
             )}
 

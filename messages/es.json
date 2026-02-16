@@ -5477,7 +5477,16 @@
     "handoffComplete": "Entrega completada",
     "guestStartingInspection": "El huésped está comenzando la inspección del vehículo.",
     "handoffExpired": "Entrega expirada",
-    "handoffExpiredDesc": "La ventana de verificación de entrega ha expirado."
+    "handoffExpiredDesc": "La ventana de verificación de entrega ha expirado.",
+    "handoffTime": "Hora de Entrega",
+    "handoffType": "Tipo de Entrega",
+    "metInPerson": "En Persona",
+    "autoConfirmed": "Auto-confirmado (Reserva Instantánea)",
+    "keyInstructionsSent": "Instrucciones de llaves enviadas",
+    "noKeyInstructions": "Sin instrucciones de llaves",
+    "guestDL": "Licencia del Huésped",
+    "guestDistance": "Distancia del Huésped",
+    "fromVehicle": "del vehículo"
   },
   "PaymentConfirm": {
     "completeYourTrip": "Completa Tu Viaje",

@@ -5278,7 +5278,16 @@
     "handoffComplete": "Remise terminée",
     "guestStartingInspection": "Le client commence l'inspection du véhicule.",
     "handoffExpired": "Remise expirée",
-    "handoffExpiredDesc": "La fenêtre de vérification de remise a expiré."
+    "handoffExpiredDesc": "La fenêtre de vérification de remise a expiré.",
+    "handoffTime": "Heure de Remise",
+    "handoffType": "Type de Remise",
+    "metInPerson": "En Personne",
+    "autoConfirmed": "Auto-confirmé (Réservation Instantanée)",
+    "keyInstructionsSent": "Instructions des clés envoyées",
+    "noKeyInstructions": "Pas d'instructions pour les clés",
+    "guestDL": "Permis du Client",
+    "guestDistance": "Distance du Client",
+    "fromVehicle": "du véhicule"
   },
   "PaymentConfirm": {
     "completeYourTrip": "Terminez Votre Voyage",

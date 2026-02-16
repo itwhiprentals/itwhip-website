@@ -5,7 +5,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verify } from 'argon2'
 import { SignJWT } from 'jose'
-import { cookies } from 'next/headers'
 import { logFailedLogin, logSuccessfulLogin, isIpBlocked } from '@/app/lib/security/loginMonitor'
 
 const JWT_SECRET = new TextEncoder().encode(
@@ -167,11 +166,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create JWT token
+    // Create JWT token — must match host login payload for middleware compatibility
     const token = await new SignJWT({
-      userId: host.userId || host.id, // userId for verifyRequest compatibility
+      userId: host.userId || host.id,
       hostId: host.id,
       email: host.email,
+      name: host.name,
+      role: 'BUSINESS',
+      isRentalHost: true,
+      approvalStatus: host.approvalStatus,
       hostType: host.hostType,
       isPartner: true
     })
@@ -179,16 +182,6 @@ export async function POST(request: NextRequest) {
       .setIssuedAt()
       .setExpirationTime('7d')
       .sign(JWT_SECRET)
-
-    // Set cookie
-    const cookieStore = await cookies()
-    cookieStore.set('partner_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: '/'
-    })
 
     // Log successful login to security events
     await logSuccessfulLogin({
@@ -241,7 +234,9 @@ export async function POST(request: NextRequest) {
       companyName: host.partnerCompanyName
     })
 
-    return NextResponse.json({
+    // Build response FIRST, then set cookies ON the response object
+    // (cookies().set() from next/headers doesn't attach to NextResponse.json())
+    const response = NextResponse.json({
       success: true,
       partner: {
         id: host.id,
@@ -251,6 +246,30 @@ export async function POST(request: NextRequest) {
         partnerSlug: host.partnerSlug
       }
     })
+
+    // Set cookies on the response — mirrors host login pattern
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax' as const,
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/'
+    }
+
+    response.cookies.set('partner_token', token, cookieOptions)
+    response.cookies.set('hostAccessToken', token, cookieOptions)
+    response.cookies.set('accessToken', token, cookieOptions)
+
+    // Set current_mode so check-dual-role knows the role
+    response.cookies.set('current_mode', 'host', {
+      httpOnly: false, // Allow client-side JS to read
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/'
+    })
+
+    return response
 
   } catch (error: any) {
     console.error('[Partner Login] Error:', error)

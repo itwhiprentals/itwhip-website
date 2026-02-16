@@ -465,6 +465,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         path.includes('/partner/login') ||
         path.includes('/partner/forgot') ||
         path.includes('/partner/reset') ||
+        path.includes('/host/login') ||
         path === '/' ||
         path.startsWith('/rentals/search') ||
         path.startsWith('/rentals/cities') ||

@@ -5658,7 +5658,16 @@
     "handoffComplete": "Handoff complete",
     "guestStartingInspection": "Guest is starting their vehicle inspection.",
     "handoffExpired": "Handoff expired",
-    "handoffExpiredDesc": "The handoff verification window has expired."
+    "handoffExpiredDesc": "The handoff verification window has expired.",
+    "handoffTime": "Handoff Time",
+    "handoffType": "Handoff Type",
+    "metInPerson": "Met in Person",
+    "autoConfirmed": "Auto-confirmed (Instant Book)",
+    "keyInstructionsSent": "Key instructions sent",
+    "noKeyInstructions": "No key instructions",
+    "guestDL": "Guest Driver License",
+    "guestDistance": "Guest Distance",
+    "fromVehicle": "from vehicle"
   },
   "PaymentConfirm": {
     "completeYourTrip": "Complete Your Trip",

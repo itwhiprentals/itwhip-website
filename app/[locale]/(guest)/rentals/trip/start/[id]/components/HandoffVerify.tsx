@@ -184,23 +184,28 @@ export function HandoffVerify({ booking, data, onLocationVerified }: HandoffVeri
 
   const handleBypass = async () => {
     setState('HANDOFF_COMPLETE')
-    onLocationVerified(gpsLocationRef.current || { lat: 0, lng: 0 })
+    const loc = gpsLocationRef.current || { lat: 0, lng: 0 }
+    onLocationVerified(loc)
 
-    // Update server with bypass status
-    try {
-      await fetch(`/api/rentals/bookings/${booking.id}/handoff/guest-verify`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ latitude: 0, longitude: 0 }),
-      })
-    } catch { /* silent */ }
+    // Only send to server if we have real GPS coordinates (not null-island)
+    if (loc.lat !== 0 || loc.lng !== 0) {
+      try {
+        await fetch(`/api/rentals/bookings/${booking.id}/handoff/guest-verify`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ latitude: loc.lat, longitude: loc.lng }),
+        })
+      } catch { /* silent */ }
+    }
+    // If no GPS available, skip server call — handoff status will stay as-is
+    // and host can still confirm manually
   }
 
   const handleContinueAnyway = async () => {
-    // For expired/bypassed scenarios
+    // For expired/bypassed scenarios — use real GPS if we have it
     setState('HANDOFF_COMPLETE')
-    onLocationVerified(gpsLocationRef.current || { lat: 0, lng: 0 })
+    onLocationVerified(gpsLocationRef.current || data.location || { lat: 0, lng: 0 })
   }
 
   const formatCountdown = (ms: number) => {

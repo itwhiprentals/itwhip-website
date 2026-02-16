@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { IoLocationOutline, IoCheckmarkCircleOutline, IoKeyOutline } from 'react-icons/io5'
+import Image from 'next/image'
+import { IoLocationOutline, IoCheckmarkCircleOutline, IoKeyOutline, IoChevronDownOutline, IoTimeOutline, IoPersonOutline, IoDocumentTextOutline } from 'react-icons/io5'
 import { HANDOFF_STATUS, TRIP_CONSTANTS } from '@/app/lib/trip/constants'
 
 interface HandoffPanelProps {
@@ -12,6 +13,13 @@ interface HandoffPanelProps {
   isInstantBook: boolean
   savedKeyInstructions: string | null
   autoFallbackAt: string | null
+  // Expanded details (for completed handoff)
+  hostHandoffVerifiedAt?: string | null
+  guestGpsVerifiedAt?: string | null
+  keyInstructionsDeliveredAt?: string | null
+  hostHandoffDistance?: number | null
+  licensePhotoUrl?: string | null
+  licenseBackPhotoUrl?: string | null
 }
 
 export function HandoffPanel({
@@ -21,6 +29,12 @@ export function HandoffPanel({
   isInstantBook,
   savedKeyInstructions,
   autoFallbackAt,
+  hostHandoffVerifiedAt,
+  guestGpsVerifiedAt,
+  keyInstructionsDeliveredAt,
+  hostHandoffDistance,
+  licensePhotoUrl,
+  licenseBackPhotoUrl,
 }: HandoffPanelProps) {
   const t = useTranslations('HandoffHost')
   const [status, setStatus] = useState(initialStatus || HANDOFF_STATUS.PENDING)
@@ -30,6 +44,8 @@ export function HandoffPanel({
   const [showKeyInput, setShowKeyInput] = useState(false)
   const [saveForFuture, setSaveForFuture] = useState(false)
   const [autoCountdown, setAutoCountdown] = useState<number | null>(null)
+  const [expanded, setExpanded] = useState(false)
+  const [dlPreview, setDlPreview] = useState<string | null>(null)
   const pollRef = useRef<NodeJS.Timeout | null>(null)
   const countdownRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -147,6 +163,14 @@ export function HandoffPanel({
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
 
+  const formatDistance = (meters: number) => {
+    if (meters < 1000) return `${Math.round(meters)}m`
+    const km = meters / 1000
+    if (km < 1.6) return `${km.toFixed(1)} km`
+    const miles = km / 1.609
+    return `${miles.toFixed(1)} mi`
+  }
+
   // WAITING — Guest hasn't arrived yet
   if (status === HANDOFF_STATUS.PENDING || status === null) {
     return (
@@ -245,16 +269,120 @@ export function HandoffPanel({
     )
   }
 
-  // HANDOFF COMPLETE
+  // HANDOFF COMPLETE — expandable
   if (status === HANDOFF_STATUS.HANDOFF_COMPLETE || status === HANDOFF_STATUS.BYPASSED) {
+    const handoffTime = hostHandoffVerifiedAt || guestGpsVerifiedAt
+    const wasAutoConfirmed = !hostHandoffVerifiedAt && status === HANDOFF_STATUS.HANDOFF_COMPLETE
+    const handoffType = wasAutoConfirmed ? t('autoConfirmed') : t('metInPerson')
+
     return (
-      <div className="bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 p-4">
-        <div className="flex items-center gap-2">
-          <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
-          <h3 className="text-sm font-semibold text-green-800 dark:text-green-300">{t('handoffComplete')}</h3>
+      <>
+        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 overflow-hidden">
+          {/* Clickable header */}
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="w-full flex items-center justify-between p-4 text-left hover:bg-green-100/50 dark:hover:bg-green-900/30 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <div>
+                <h3 className="text-sm font-semibold text-green-800 dark:text-green-300">{t('handoffComplete')}</h3>
+                <p className="text-xs text-green-600 dark:text-green-400">{t('guestStartingInspection')}</p>
+              </div>
+            </div>
+            <IoChevronDownOutline className={`w-4 h-4 text-green-600 dark:text-green-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Expanded details */}
+          {expanded && (
+            <div className="border-t border-green-200 dark:border-green-800 px-4 pb-4 pt-3 space-y-3">
+              {/* Handoff time */}
+              {handoffTime && (
+                <div className="flex items-start gap-2">
+                  <IoTimeOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('handoffTime')}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {new Date(handoffTime).toLocaleString(undefined, {
+                        month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Handoff type */}
+              <div className="flex items-start gap-2">
+                <IoPersonOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('handoffType')}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{handoffType}</p>
+                </div>
+              </div>
+
+              {/* Key instructions */}
+              <div className="flex items-start gap-2">
+                <IoKeyOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('keyInstructionsSent')}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {keyInstructionsDeliveredAt || savedKeyInstructions
+                      ? (savedKeyInstructions || t('keyInstructionsSent'))
+                      : t('noKeyInstructions')}
+                  </p>
+                </div>
+              </div>
+
+              {/* Guest distance — only show if reasonable (< 50km) */}
+              {(hostHandoffDistance || guestDistance) && (hostHandoffDistance || guestDistance)! < 50000 && (
+                <div className="flex items-start gap-2">
+                  <IoLocationOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('guestDistance')}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {formatDistance(hostHandoffDistance || guestDistance!)} {t('fromVehicle')}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Guest DL photos */}
+              {(licensePhotoUrl || licenseBackPhotoUrl) && (
+                <div className="flex items-start gap-2">
+                  <IoDocumentTextOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('guestDL')}</p>
+                    <div className="flex gap-2">
+                      {licensePhotoUrl && (
+                        <button onClick={() => setDlPreview(licensePhotoUrl)} className="relative w-16 h-10 rounded border border-gray-200 dark:border-gray-600 overflow-hidden hover:opacity-80 transition-opacity">
+                          <Image src={licensePhotoUrl} alt="DL Front" fill className="object-cover" sizes="64px" />
+                        </button>
+                      )}
+                      {licenseBackPhotoUrl && (
+                        <button onClick={() => setDlPreview(licenseBackPhotoUrl)} className="relative w-16 h-10 rounded border border-gray-200 dark:border-gray-600 overflow-hidden hover:opacity-80 transition-opacity">
+                          <Image src={licenseBackPhotoUrl} alt="DL Back" fill className="object-cover" sizes="64px" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        <p className="text-sm text-green-700 dark:text-green-400 mt-1">{t('guestStartingInspection')}</p>
-      </div>
+
+        {/* DL preview modal */}
+        {dlPreview && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setDlPreview(null)}>
+            <div className="relative max-w-lg w-full mx-4" onClick={(e) => e.stopPropagation()}>
+              <Image src={dlPreview} alt="Driver License" width={600} height={400} className="rounded-lg w-full h-auto" />
+              <button onClick={() => setDlPreview(null)} className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1.5 hover:bg-black/70">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+          </div>
+        )}
+      </>
     )
   }
 

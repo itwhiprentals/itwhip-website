@@ -284,6 +284,10 @@ export async function GET(
         handoffStatus: booking.handoffStatus || null,
         guestGpsDistance: booking.guestGpsDistance || null,
         handoffAutoFallbackAt: booking.handoffAutoFallbackAt?.toISOString() || null,
+        guestGpsVerifiedAt: booking.guestGpsVerifiedAt?.toISOString() || null,
+        hostHandoffVerifiedAt: booking.hostHandoffVerifiedAt?.toISOString() || null,
+        hostHandoffDistance: booking.hostHandoffDistance || null,
+        keyInstructionsDeliveredAt: booking.keyInstructionsDeliveredAt?.toISOString() || null,
 
         // Onboarding fields
         onboardingCompletedAt: booking.onboardingCompletedAt?.toISOString() || null,

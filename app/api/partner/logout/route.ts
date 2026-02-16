@@ -16,7 +16,8 @@ export async function POST(request: NextRequest) {
       'guestAccessToken',
       'refreshToken',
       'hostRefreshToken',
-      'guestRefreshToken'
+      'guestRefreshToken',
+      'current_mode'
     ]
 
     const cookieOptions = {
