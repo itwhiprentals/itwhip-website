@@ -12,19 +12,20 @@ import { MessagesPanel } from './components/MessagesPanel'
 import { PolicyFooter, CancellationDialog } from './components/BookingModals'
 import CancellationPolicyModal from '@/app/[locale]/(guest)/rentals/components/modals/CancellationPolicyModal'
 import TrustSafetyModal from '@/app/[locale]/(guest)/rentals/components/modals/TrustSafetyModal'
-import { ChevronLeft, XCircle, CheckCircle, Copy, Clock, MessageSquare } from './components/Icons'
+import { ChevronLeft, XCircle, CheckCircle, Copy, Clock, MessageSquare, Calendar, User } from './components/Icons'
 import StatusProgression from '../../../components/StatusProgression'
 // Import Trip Cards
 import { TripStartCard } from './components/trip/TripStartCard'
 import { TripActiveCard } from './components/trip/TripActiveCard'
 import { TripEndCard } from './components/trip/TripEndCard'
+import GuestReviewModal from '../../../components/review/GuestReviewModal'
 import { BookingOnboarding } from './components/BookingOnboarding'
 import { ModifyBookingSheet } from './components/ModifyBookingSheet'
 import { SecureAccountBanner } from './components/SecureAccountBanner'
 import RentalAgreementModal from '../../../components/modals/RentalAgreementModal'
 import { getVehicleClass, formatFuelTypeBadge } from '@/app/lib/utils/vehicleClassification'
 import {
-  getTimeUntilPickup, validateFileUpload
+  getTimeUntilPickup, validateFileUpload, formatDate, formatCurrency
 } from './utils/helpers'
 import {
   BOOKING_POLLING_INTERVAL,
@@ -52,6 +53,7 @@ export default function BookingDetailsPage() {
   const [showTrustSafety, setShowTrustSafety] = useState(false)
   const [hasPassword, setHasPassword] = useState<boolean | null>(null)
   const [previousStatus, setPreviousStatus] = useState<string | null>(null)
+  const [endTripRedirectChecked, setEndTripRedirectChecked] = useState(false)
 
   // Messages state
   const [messages, setMessages] = useState<Message[]>([])
@@ -349,6 +351,38 @@ export default function BookingDetailsPage() {
     }
   }, [bookingId]) // ✅ Only bookingId, loadBooking is stable now
 
+  // Auto-redirect to end trip page if guest already notified host
+  useEffect(() => {
+    // Don't mark checked until booking is loaded — prevents premature render
+    if (!booking) return
+    if (!booking.tripStartedAt || booking.tripEndedAt) {
+      setEndTripRedirectChecked(true)
+      return
+    }
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/rentals/bookings/${bookingId}/handoff/status`, {
+          credentials: 'include',
+        })
+        if (!res.ok || cancelled) {
+          if (!cancelled) setEndTripRedirectChecked(true)
+          return
+        }
+        const data = await res.json()
+        if (data.dropoffNotification && !cancelled) {
+          router.replace(`/rentals/trip/end/${bookingId}`)
+          return // Don't set checked — we're redirecting
+        }
+      } catch {
+        // Silently fail — show normal booking detail
+      }
+      if (!cancelled) setEndTripRedirectChecked(true)
+    })()
+    return () => { cancelled = true }
+  }, [booking?.tripStartedAt, booking?.tripEndedAt, bookingId, router])
+
   // Load and poll messages only when booking is confirmed (not PENDING/CANCELLED)
   useEffect(() => {
     if (!booking || booking.status === 'PENDING' || booking.status === 'CANCELLED') return
@@ -361,8 +395,8 @@ export default function BookingDetailsPage() {
     return () => clearInterval(messageInterval)
   }, [bookingId, booking?.status])
 
-  // Loading state
-  if (loading) {
+  // Loading state (also wait for end-trip redirect check to avoid flash)
+  if (loading || !endTripRedirectChecked) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="text-center">
@@ -402,6 +436,9 @@ export default function BookingDetailsPage() {
   // Active trip: show only TripActiveCard + messages, hide everything else
   const isTripActive = !!booking.tripStartedAt && !booking.tripEndedAt
 
+  // Completed trip: clean single-column layout
+  const isCompletedTrip = !!booking.tripEndedAt
+
   return (
     <div className={`bg-gray-50 dark:bg-gray-950 ${isTripActive ? 'pb-4' : 'min-h-screen'}`}>
       {/* Toast Notification */}
@@ -432,8 +469,8 @@ export default function BookingDetailsPage() {
             <h1 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100">{t('bookingStatus')}</h1>
           </div>
           
-          {/* Car info header — hidden during inspection phase & active trip */}
-          {!isPreTripReady && !isTripActive && (
+          {/* Car info header — hidden during inspection phase, active trip & completed trip */}
+          {!isPreTripReady && !isTripActive && !isCompletedTrip && (
             <div className="space-y-3 pl-6">
               <div>
                 <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -506,8 +543,8 @@ export default function BookingDetailsPage() {
           handoffStatus={booking.handoffStatus}
           onCancel={!isPreTripReady && !isTripActive && (booking.status === 'PENDING' || booking.status === 'CONFIRMED') ? () => setShowCancelDialog(true) : undefined}
           onModify={!isPreTripReady && !isTripActive && ['PENDING', 'CONFIRMED'].includes(booking.status) ? () => setShowModifyModal(true) : undefined}
-          onViewAgreement={!isPreTripReady && !isTripActive ? () => setShowAgreement(true) : undefined}
-          hideStatusMessage={isPreTripReady || isTripActive}
+          onViewAgreement={!isPreTripReady && !isTripActive && !isCompletedTrip ? () => setShowAgreement(true) : undefined}
+          hideStatusMessage={isPreTripReady || isTripActive || isCompletedTrip}
           hideTitle={isPreTripReady || isTripActive}
         />
 
@@ -614,14 +651,242 @@ export default function BookingDetailsPage() {
           </div>
         )}
 
-        {booking.tripEndedAt && (
-          <div className="mt-6">
-            <TripEndCard booking={booking} guestToken={booking.guestToken || ''} />
-          </div>
-        )}
+        {/* Main Content */}
+        {isCompletedTrip ? (
+          /* Completed trip: clean single-column layout */
+          <div className="max-w-3xl mx-auto mt-6 space-y-6">
+            {/* Trip Card with Car Photo */}
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+              {booking.car.photos && booking.car.photos.length > 0 && (
+                <div className="relative">
+                  <img
+                    src={booking.car.photos[0].url}
+                    alt={`${booking.car.make} ${booking.car.model}`}
+                    className="w-full h-44 sm:h-52 object-cover object-[center_35%]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent" />
+                  <div className="absolute bottom-3 left-4 right-4">
+                    <h2 className="text-lg font-bold text-white drop-shadow-sm">
+                      {booking.car.year} {booking.car.make} {booking.car.model}
+                    </h2>
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      {(() => {
+                        const vc = getVehicleClass(booking.car.make, booking.car.model, (booking.car.type || null) as any)
+                        return vc ? <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white/20 text-white backdrop-blur-sm">{vc}</span> : null
+                      })()}
+                      {booking.car.transmission && (
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white/20 text-white backdrop-blur-sm capitalize">
+                          {booking.car.transmission.toLowerCase()}
+                        </span>
+                      )}
+                      {booking.car.seats && (
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white/20 text-white backdrop-blur-sm">
+                          {t('seats', { count: booking.car.seats })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="p-4">
+                {/* Trip Completed badge + booking code */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-green-100 dark:bg-green-900/30 rounded-full p-1">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('tripCompletedTitle')}</p>
+                      <p className="text-xs text-gray-500">{t('thankYouForChoosing')}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <code className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded font-mono">{booking.bookingCode}</code>
+                    <button onClick={copyBookingCode} className="text-gray-400 hover:text-gray-600 transition-colors p-0.5" title={t('copyBookingCode')}>
+                      {copiedCode ? <CheckCircle className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
 
-        {/* Main Content Grid — hidden entirely during active trip except messages */}
-        {isTripActive ? (
+                {/* Trip Stats Grid */}
+                {(() => {
+                  const tripDuration = booking.tripStartedAt && booking.tripEndedAt
+                    ? (() => {
+                        const start = new Date(booking.tripStartedAt)
+                        const end = new Date(booking.tripEndedAt)
+                        const diff = end.getTime() - start.getTime()
+                        const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+                        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+                        if (days > 0) return `${days}d ${hours}h`
+                        return `${hours}h`
+                      })()
+                    : null
+                  const totalMiles = booking.startMileage && booking.endMileage
+                    ? booking.endMileage - booking.startMileage
+                    : null
+                  return (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                        <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{t('dates')}</p>
+                        <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{formatDate(booking.startDate)} <span className="text-gray-500 font-normal">{booking.startTime}</span></p>
+                        <p className="text-xs text-gray-500">{t('to')} {formatDate(booking.endDate)} <span className="text-gray-500 font-normal">{booking.endTime}</span></p>
+                      </div>
+                      {tripDuration && (
+                        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                          <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{t('durationLabel')}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{tripDuration}</p>
+                        </div>
+                      )}
+                      {totalMiles !== null && (
+                        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                          <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{t('milesDriven')}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{totalMiles} mi</p>
+                        </div>
+                      )}
+                      {booking.fuelLevelStart && booking.fuelLevelEnd && (
+                        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                          <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{t('fuelLabel')}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {booking.fuelLevelStart} → {booking.fuelLevelEnd}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
+
+                {/* Host Info */}
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                      <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{t('host')}: {booking.host.name}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-yellow-500 text-xs">★</span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">{booking.host.rating.toFixed(1)}</span>
+                        <span className="text-gray-300 dark:text-gray-600 text-xs">•</span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">~{booking.host.responseTime}min</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rate Your Experience */}
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <GuestReviewModal
+                    booking={{
+                      id: booking.id,
+                      car: { make: booking.car.make, model: booking.car.model, year: booking.car.year },
+                      host: { name: booking.host?.name || 'Host' },
+                      tripStartedAt: booking.tripStartedAt,
+                      tripEndedAt: booking.tripEndedAt,
+                      tripStatus: booking.tripStatus,
+                      fraudulent: booking.fraudulent,
+                      guestName: booking.guestName,
+                      guestEmail: booking.guestEmail
+                    }}
+                    guestToken={booking.guestToken || ''}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Charges Status */}
+            {(() => {
+              let extraCharges: any = null
+              if (booking.extras) {
+                try { extraCharges = JSON.parse(booking.extras) } catch {}
+              }
+              if (extraCharges && extraCharges.total > 0) {
+                return (
+                  <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-amber-900 dark:text-amber-200 mb-3">{t('additionalChargesTitle')}</h4>
+                    <div className="space-y-2">
+                      {extraCharges.breakdown?.map((item: any, idx: number) => (
+                        <div key={idx} className="flex justify-between text-sm">
+                          <span className="text-amber-800 dark:text-amber-300">{item.label}</span>
+                          <span className="font-medium text-amber-900 dark:text-amber-200">{formatCurrency(item.amount)}</span>
+                        </div>
+                      ))}
+                      <div className="pt-2 border-t border-amber-200 dark:border-amber-700">
+                        <div className="flex justify-between font-medium">
+                          <span className="text-amber-900 dark:text-amber-200">{t('tripTotal')}</span>
+                          <span className="text-amber-900 dark:text-amber-200">{formatCurrency(extraCharges.total)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+              return (
+                <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-green-600 mr-3 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-green-900 dark:text-green-200">{t('noAdditionalChargesTitle')}</p>
+                      <p className="text-xs text-green-800 dark:text-green-300 mt-1">{t('depositReleaseMessage')}</p>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+
+            {/* Payment Summary — collapsible */}
+            <details className="group">
+              <summary className="flex items-center justify-between cursor-pointer bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 select-none">
+                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('paymentSummary')}</span>
+                <svg className="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <div className="mt-2">
+                <BookingSidebar
+                  booking={booking}
+                  onCancelClick={() => {}}
+                  onUploadClick={() => {}}
+                  onAddToCalendar={() => {}}
+                  uploadingFile={false}
+                />
+              </div>
+            </details>
+
+            {/* Messages — collapsible, locked after trip */}
+            {booking.status !== 'CANCELLED' && (
+              <details className="group">
+                <summary className="flex items-center justify-between cursor-pointer bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 select-none">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('messages')}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">{t('messagesLocked')}</span>
+                  </div>
+                  <svg className="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <div className="mt-2">
+                  <MessagesPanel
+                    bookingId={bookingId}
+                    messages={messages}
+                    loading={messagesLoading}
+                    sending={messageSending}
+                    error={messageError}
+                    onSendMessage={sendMessage}
+                    onFileUpload={handleMessageFileUpload}
+                    uploadingFile={messageUploading}
+                  />
+                </div>
+              </details>
+            )}
+
+            {/* Receipt Links */}
+            <div className="text-center">
+              <button className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">{t('downloadReceipt')}</button>
+              <span className="mx-2 text-gray-400 dark:text-gray-600">•</span>
+              <button className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">{t('emailReceipt')}</button>
+            </div>
+          </div>
+        ) : isTripActive ? (
           /* Active trip: collapsible messages */
           <>
             {booking.status !== 'CANCELLED' && (

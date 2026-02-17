@@ -189,6 +189,13 @@ export async function GET(
       ? Math.max(0, new Date(booking.handoffAutoFallbackAt).getTime() - Date.now())
       : null
 
+    // Query latest drop-off notification (trip_update message from guest)
+    const dropoffMessage = await prisma.rentalMessage.findFirst({
+      where: { bookingId, category: 'trip_update' },
+      orderBy: { createdAt: 'desc' },
+      select: { message: true, createdAt: true, metadata: true }
+    })
+
     return NextResponse.json({
       handoffStatus: currentStatus || HANDOFF_STATUS.PENDING,
       guestVerifiedAt: booking.guestGpsVerifiedAt,
@@ -204,6 +211,12 @@ export async function GET(
       guestEtaMessage: booking.guestEtaMessage,
       guestArrivalSummary: booking.guestArrivalSummary,
       guestLocationTrust: booking.guestLocationTrust,
+      // Drop-off notification
+      dropoffNotification: dropoffMessage ? {
+        message: dropoffMessage.message,
+        notifiedAt: dropoffMessage.createdAt,
+        metadata: dropoffMessage.metadata,
+      } : null,
     })
   } catch (error) {
     console.error('[Handoff Status] Error:', error)

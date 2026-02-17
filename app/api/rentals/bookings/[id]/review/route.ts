@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { verifyRequest } from '@/app/lib/auth/verify-request'
 
 // ========== 🆕 ACTIVITY TRACKING IMPORT ==========
 import { trackActivity } from '@/lib/helpers/guestProfileStatus'
@@ -13,32 +14,41 @@ export async function GET(
 ) {
   try {
     const { id: bookingId } = await params
-    
-    // Get guest token from header
+
+    // Auth: try guest token first, then cookie-based auth
     const guestToken = request.headers.get('X-Guest-Token')
-    if (!guestToken) {
-      return NextResponse.json(
-        { error: 'Guest token required' },
-        { status: 401 }
-      )
+    let authorized = false
+
+    if (guestToken) {
+      const tokenRecord = await prisma.guestAccessToken.findFirst({
+        where: {
+          token: guestToken,
+          bookingId: bookingId,
+          expiresAt: { gte: new Date() }
+        }
+      })
+      authorized = !!tokenRecord
     }
-    
-    // Verify token and get booking
-    const tokenRecord = await prisma.guestAccessToken.findFirst({
-      where: {
-        token: guestToken,
-        bookingId: bookingId,
-        expiresAt: { gte: new Date() }
+
+    if (!authorized) {
+      // Fallback: cookie-based auth — verify user owns this booking
+      const user = await verifyRequest(request)
+      if (user) {
+        const booking = await prisma.rentalBooking.findFirst({
+          where: { id: bookingId, OR: [{ renterId: user.id }, { guestEmail: user.email }] },
+          select: { id: true }
+        })
+        authorized = !!booking
       }
-    })
-    
-    if (!tokenRecord) {
+    }
+
+    if (!authorized) {
       return NextResponse.json(
-        { error: 'Invalid or expired token' },
+        { error: 'Authentication required' },
         { status: 401 }
       )
     }
-    
+
     // Check for existing review
     const existingReview = await prisma.rentalReview.findFirst({
       where: {
@@ -89,32 +99,40 @@ export async function POST(
   try {
     const { id: bookingId } = await params
     const body = await request.json()
-    
-    // Get guest token from header
+
+    // Auth: try guest token first, then cookie-based auth
     const guestToken = request.headers.get('X-Guest-Token')
-    if (!guestToken) {
-      return NextResponse.json(
-        { error: 'Guest token required' },
-        { status: 401 }
-      )
+    let authorized = false
+
+    if (guestToken) {
+      const tokenRecord = await prisma.guestAccessToken.findFirst({
+        where: {
+          token: guestToken,
+          bookingId: bookingId,
+          expiresAt: { gte: new Date() }
+        }
+      })
+      authorized = !!tokenRecord
     }
-    
-    // Verify token and get booking
-    const tokenRecord = await prisma.guestAccessToken.findFirst({
-      where: {
-        token: guestToken,
-        bookingId: bookingId,
-        expiresAt: { gte: new Date() }
+
+    if (!authorized) {
+      const user = await verifyRequest(request)
+      if (user) {
+        const ownsBooking = await prisma.rentalBooking.findFirst({
+          where: { id: bookingId, OR: [{ renterId: user.id }, { guestEmail: user.email }] },
+          select: { id: true }
+        })
+        authorized = !!ownsBooking
       }
-    })
-    
-    if (!tokenRecord) {
+    }
+
+    if (!authorized) {
       return NextResponse.json(
-        { error: 'Invalid or expired token' },
+        { error: 'Authentication required' },
         { status: 401 }
       )
     }
-    
+
     // Get booking details
     const booking = await prisma.rentalBooking.findUnique({
       where: { id: bookingId },

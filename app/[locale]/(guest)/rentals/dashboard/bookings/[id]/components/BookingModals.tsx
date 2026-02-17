@@ -299,14 +299,14 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking }) => {
 
   return (
     <>
-      <div className="mt-12 bg-gradient-to-b from-gray-50 to-white border-t border-gray-200">
+      <div className="mt-12 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 border-t border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center space-x-2 mb-2">
-              <ShieldCheck className="w-5 h-5 text-indigo-600" />
-              <span className="text-sm font-semibold text-gray-900">{t('peerToPeerMarketplace')}</span>
+              <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('peerToPeerMarketplace')}</span>
             </div>
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-gray-600 dark:text-gray-400">
               {t('connectingArizona')}
             </p>
           </div>
@@ -314,25 +314,25 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <button
               onClick={() => setShowInsuranceModal(true)}
-              className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md hover:border-gray-300 transition-all text-left"
+              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all text-left"
             >
               <div className="flex items-start space-x-3">
-                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <ShieldCheck className="w-5 h-5 text-gray-600" />
+                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <ShieldCheck className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">{t('insuranceRequirements')}</h4>
-                  <ul className="text-xs text-gray-600 space-y-1 mb-3">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('insuranceRequirements')}</h4>
+                  <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1 mb-3">
                     <li className="flex items-start">
-                      <span className="text-gray-400 mr-1">✓</span>
+                      <span className="text-gray-400 dark:text-gray-500 mr-1">✓</span>
                       <span>{t('hostInsuranceRequired')}</span>
                     </li>
                     <li className="flex items-start">
-                      <span className="text-gray-400 mr-1">✓</span>
+                      <span className="text-gray-400 dark:text-gray-500 mr-1">✓</span>
                       <span>{t('rentersMustHaveCoverage')}</span>
                     </li>
                   </ul>
-                  <span className="text-xs font-medium text-gray-500 inline-flex items-center">
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 inline-flex items-center">
                     {t('viewRequirements')}
                     <ArrowForward className="w-3 h-3 ml-1" />
                   </span>
@@ -342,25 +342,25 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking }) => {
 
             <button
               onClick={() => setShowCancellationModal(true)}
-              className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md hover:border-gray-300 transition-all text-left"
+              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all text-left"
             >
               <div className="flex items-start space-x-3">
-                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-5 h-5 text-gray-600" />
+                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">{t('cancellationRefunds')}</h4>
-                  <ul className="text-xs text-gray-600 space-y-1 mb-3">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('cancellationRefunds')}</h4>
+                  <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1 mb-3">
                     <li className="flex items-start">
-                      <span className="text-gray-400 mr-1">•</span>
+                      <span className="text-gray-400 dark:text-gray-500 mr-1">•</span>
                       <span>{t('fullRefund24hrs')}</span>
                     </li>
                     <li className="flex items-start">
-                      <span className="text-gray-400 mr-1">•</span>
+                      <span className="text-gray-400 dark:text-gray-500 mr-1">•</span>
                       <span>{t('depositAlwaysReleased')}</span>
                     </li>
                   </ul>
-                  <span className="text-xs font-medium text-gray-500 inline-flex items-center">
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 inline-flex items-center">
                     {t('refundPolicy')}
                     <ArrowForward className="w-3 h-3 ml-1" />
                   </span>
@@ -370,25 +370,25 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking }) => {
 
             <button
               onClick={() => setShowTrustSafetyModal(true)}
-              className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md hover:border-gray-300 transition-all text-left"
+              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all text-left"
             >
               <div className="flex items-start space-x-3">
-                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <DocumentText className="w-5 h-5 text-gray-600" />
+                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <DocumentText className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">{t('trustSafety')}</h4>
-                  <ul className="text-xs text-gray-600 space-y-1 mb-3">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('trustSafety')}</h4>
+                  <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1 mb-3">
                     <li className="flex items-start">
-                      <span className="text-gray-400 mr-1">✓</span>
+                      <span className="text-gray-400 dark:text-gray-500 mr-1">✓</span>
                       <span>{t('idVerificationRequired')}</span>
                     </li>
                     <li className="flex items-start">
-                      <span className="text-gray-400 mr-1">✓</span>
+                      <span className="text-gray-400 dark:text-gray-500 mr-1">✓</span>
                       <span>{t('vehiclePhotosVerified')}</span>
                     </li>
                   </ul>
-                  <span className="text-xs font-medium text-gray-500 inline-flex items-center">
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 inline-flex items-center">
                     {t('learnAboutSafety')}
                     <ArrowForward className="w-3 h-3 ml-1" />
                   </span>
@@ -397,21 +397,23 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking }) => {
             </button>
           </div>
 
-          <div className="text-center mb-6">
-            <button
-              onClick={() => setShowRentalAgreement(true)}
-              className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              <DocumentText className="w-4 h-4 mr-2" />
-              {t('invoice')}
-            </button>
-          </div>
+          {!booking.tripEndedAt && (
+            <div className="text-center mb-6">
+              <button
+                onClick={() => setShowRentalAgreement(true)}
+                className="inline-flex items-center px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors"
+              >
+                <DocumentText className="w-4 h-4 mr-2" />
+                {t('invoice')}
+              </button>
+            </div>
+          )}
 
-          <div className="text-center pt-6 border-t border-gray-200">
-            <p className="text-xs text-gray-500 max-w-3xl mx-auto mb-2">
+          <div className="text-center pt-6 border-t border-gray-200 dark:border-gray-700">
+            <p className="text-xs text-gray-500 dark:text-gray-400 max-w-3xl mx-auto mb-2">
               {t('footerLegal')}
             </p>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-400 dark:text-gray-500">
               {t('copyright')}
             </p>
           </div>

@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       .setProtectedHeader({ alg: 'HS256' })
       .setJti(nanoid())
       .setIssuedAt()
-      .setExpirationTime('15m')
+      .setExpirationTime('7d')
       .sign(accessSecret)
 
     const newFamily = nanoid()
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
       success: true,
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
-      expiresIn: 15 * 60,
+      expiresIn: 7 * 24 * 60 * 60,
       user: {
         id: user.id,
         email: user.email,

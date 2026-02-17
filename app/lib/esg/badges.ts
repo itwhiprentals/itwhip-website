@@ -288,6 +288,7 @@ async function awardBadge(hostId: string, badgeCode: string): Promise<void> {
   try {
     await prisma.hostBadgeEarned.create({
       data: {
+        id: crypto.randomUUID(),
         hostId,
         badgeCode,
         earnedAt: new Date(),
@@ -297,6 +298,7 @@ async function awardBadge(hostId: string, badgeCode: string): Promise<void> {
     // Log event
     await prisma.eSGEvent.create({
       data: {
+        id: crypto.randomUUID(),
         hostId,
         eventType: "BADGE_EARNED",
         eventCategory: "GAMIFICATION",

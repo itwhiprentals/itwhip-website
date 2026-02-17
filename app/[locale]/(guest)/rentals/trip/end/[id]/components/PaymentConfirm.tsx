@@ -53,12 +53,23 @@ export function PaymentConfirm({
   // If there are disputes, charges should be held
   const chargeMethod = hasDisputes ? 'hold' : processingMethod
 
-  // Calculate tax (Arizona city-specific TPT rate)
-  // Use city first, fallback to parsing address
+  // Pricing line items from booking
+  const dailyRate = booking.dailyRate || 0
+  const tripDays = booking.numberOfDays || booking.nights || 1
+  const subtotal = booking.subtotal || (dailyRate * tripDays)
+  const deliveryFee = booking.deliveryFee || 0
+  const insuranceFee = booking.insuranceFee || 0
+  const serviceFee = booking.serviceFee || 0
+  const enhancementsTotal = booking.enhancementsTotal || 0
+  const taxes = booking.taxes || 0
+  const creditsApplied = booking.creditsApplied || 0
+  const bonusApplied = booking.bonusApplied || 0
+  const hasCreditsOrBonus = creditsApplied > 0 || bonusApplied > 0
+  const cardCharge = booking.chargeAmount ?? (booking.totalAmount - creditsApplied - bonusApplied)
+
+  // Tax display
   const carCity = booking.car?.city || getCityFromAddress(booking.car?.address || 'Phoenix, AZ')
-  const { rate: taxRate, display: taxRateDisplay } = getTaxRate(carCity)
-  const baseTripCost = booking.totalAmount / (1 + taxRate) // Back-calculate base from total
-  const tripTax = booking.totalAmount - baseTripCost
+  const { display: taxRateDisplay } = getTaxRate(carCity)
 
   return (
     <div className="space-y-6">
@@ -112,17 +123,65 @@ export function PaymentConfirm({
                 <p className="text-xs font-medium text-gray-700 mb-2">{t('initialBookingPaid')}</p>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">{t('baseRental', { days: booking.nights })}</span>
-                    <span>${baseTripCost.toFixed(2)}</span>
+                    <span className="text-gray-600">{t('baseRental', { days: tripDays })}</span>
+                    <span>${subtotal.toFixed(2)}</span>
                   </div>
+                  {deliveryFee > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">{t('deliveryFee')}</span>
+                      <span>${deliveryFee.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {insuranceFee > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">{t('insuranceProtection')}</span>
+                      <span>${insuranceFee.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">{t('serviceFee')}</span>
+                    <span>${serviceFee.toFixed(2)}</span>
+                  </div>
+                  {enhancementsTotal > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">{t('extras')}</span>
+                      <span>${enhancementsTotal.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-gray-600">{t('arizonaTax', { rate: taxRateDisplay })}</span>
-                    <span>${tripTax.toFixed(2)}</span>
+                    <span>${taxes.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between font-medium pt-1 border-t">
-                    <span>{t('paidAtBooking')}</span>
-                    <span className="text-green-700">${booking.totalAmount.toFixed(2)} ✓</span>
+                    <span>{t('tripTotal')}</span>
+                    <span>${booking.totalAmount.toFixed(2)}</span>
                   </div>
+                  {hasCreditsOrBonus && (
+                    <>
+                      {creditsApplied > 0 && (
+                        <div className="flex justify-between text-green-700">
+                          <span>{t('creditsApplied')}</span>
+                          <span>-${creditsApplied.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {bonusApplied > 0 && (
+                        <div className="flex justify-between text-green-700">
+                          <span>{t('bonusApplied')}</span>
+                          <span>-${bonusApplied.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-medium pt-1 border-t">
+                        <span>{t('paidByCard')}</span>
+                        <span className="text-green-700">${cardCharge.toFixed(2)} ✓</span>
+                      </div>
+                    </>
+                  )}
+                  {!hasCreditsOrBonus && (
+                    <div className="flex justify-between font-medium pt-1 border-t">
+                      <span>{t('paidAtBooking')}</span>
+                      <span className="text-green-700">${booking.totalAmount.toFixed(2)} ✓</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -134,6 +193,18 @@ export function PaymentConfirm({
                     <span className="text-gray-600">{t('depositHold')}</span>
                     <span className="font-medium">${depositAmount.toFixed(2)}</span>
                   </div>
+                  {(booking.depositFromWallet > 0 && booking.depositFromCard > 0) && (
+                    <div className="space-y-1 text-xs text-gray-500 ml-2">
+                      <div className="flex justify-between">
+                        <span>{t('fromWallet')}</span>
+                        <span>${booking.depositFromWallet.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>{t('fromCard')}</span>
+                        <span>${booking.depositFromCard.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  )}
                   {totalCharges > 0 && (
                     <>
                       <div className="flex justify-between text-red-600">
@@ -283,7 +354,7 @@ export function PaymentConfirm({
             </svg>
           </div>
           <div>
-            <p className="text-sm font-medium">•••• •••• •••• {booking.last4 || '4242'}</p>
+            <p className="text-sm font-medium">•••• •••• •••• {booking.cardLast4 || booking.last4 || '····'}</p>
             <p className="text-xs text-gray-500">{t('sameCardForDeposit')}</p>
           </div>
         </div>

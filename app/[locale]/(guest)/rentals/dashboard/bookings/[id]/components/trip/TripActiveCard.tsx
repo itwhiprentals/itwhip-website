@@ -4,15 +4,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import dynamic from 'next/dynamic'
 
 import { EndTripConfirmSheet } from './EndTripConfirmSheet'
-
-// Dynamic import to avoid SSR issues
-const EndTripGuidelinesModal = dynamic(
-  () => import('../../../../../components/modals/EndTripGuidelinesModal'),
-  { ssr: false }
-)
 
 interface TripActiveCardProps {
   booking: any
@@ -26,7 +19,6 @@ export function TripActiveCard({ booking, onExtend, onViewAgreement }: TripActiv
   const [timeRemaining, setTimeRemaining] = useState('')
   const [hoursRemaining, setHoursRemaining] = useState(0)
   const [showEndConfirm, setShowEndConfirm] = useState(false)
-  const [showGuidelinesModal, setShowGuidelinesModal] = useState(false)
   const [canExtend, setCanExtend] = useState(false)
 
   // GPS end-trip guard state
@@ -168,7 +160,7 @@ export function TripActiveCard({ booking, onExtend, onViewAgreement }: TripActiv
   }, [booking.car?.latitude, booking.car?.longitude])
 
   const handleEndTrip = () => {
-    router.push(`/rentals/trip/end/${booking.id}`)
+    router.replace(`/rentals/trip/end/${booking.id}`)
   }
 
   const resetEndFlow = () => {
@@ -380,13 +372,6 @@ export function TripActiveCard({ booking, onExtend, onViewAgreement }: TripActiv
         hoursRemaining={hoursRemaining}
         gpsStatus={gpsStatus}
         gpsDistance={gpsDistance}
-        onViewGuidelines={() => setShowGuidelinesModal(true)}
-      />
-
-      {/* End Trip Guidelines Modal */}
-      <EndTripGuidelinesModal
-        isOpen={showGuidelinesModal}
-        onClose={() => setShowGuidelinesModal(false)}
       />
     </div>
   )

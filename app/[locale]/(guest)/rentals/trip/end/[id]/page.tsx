@@ -390,13 +390,16 @@ export default function TripEndPage() {
         {/* Navigation Buttons - Hide on last step since PaymentConfirm has its own button */}
         {!isLastStep && (
           <div className="flex justify-between">
-            <button
-              onClick={currentStep === 0 ? () => router.push(`/rentals/dashboard/bookings/${bookingId}`) : handleBack}
-              disabled={submitting}
-              className="px-6 py-2 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-            >
-              {currentStep === 0 ? 'Cancel' : 'Back'}
-            </button>
+            {currentStep > 0 && (
+              <button
+                onClick={handleBack}
+                disabled={submitting}
+                className="px-6 py-2 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+              >
+                Back
+              </button>
+            )}
+            {currentStep === 0 && <div />}
 
             <button
               onClick={handleNext}

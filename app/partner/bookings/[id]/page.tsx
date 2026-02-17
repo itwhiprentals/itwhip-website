@@ -1069,10 +1069,11 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               )}
             </div>
 
-            {/* Handoff Verification Panel — visible for confirmed, guest-driven, pre-trip bookings */}
-            {booking.status === 'CONFIRMED' && isGuestDriven && booking.onboardingCompletedAt && (
+            {/* Handoff Verification Panel — visible for confirmed + active, guest-driven bookings */}
+            {(booking.status === 'CONFIRMED' || booking.status === 'ACTIVE') && isGuestDriven && booking.onboardingCompletedAt && (
               <HandoffPanel
                 bookingId={booking.id}
+                bookingStatus={booking.status}
                 handoffStatus={booking.handoffStatus}
                 guestDistance={booking.guestGpsDistance}
                 isInstantBook={vehicle?.instantBook ?? false}

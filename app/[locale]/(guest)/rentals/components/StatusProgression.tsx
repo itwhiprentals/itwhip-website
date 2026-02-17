@@ -48,15 +48,14 @@ export default function StatusProgression({
 }: StatusProgressionProps) {
   const t = useTranslations('StatusProgression')
 
-  // DEBUG: trace what values we receive
-  console.log('[StatusProgression]', { status, paymentStatus, verificationStatus, tripStatus, tripStartedAt, handoffStatus })
-
   // Determine which steps are complete - FIXED case sensitivity
   const isBooked = true // Always true if viewing
-  const isVerified = verificationStatus?.toLowerCase() === 'approved' || 
-                    verificationStatus?.toLowerCase() === 'verified' || 
-                    verificationStatus === 'APPROVED' || 
-                    verificationStatus === 'VERIFIED'
+  const vsLower = verificationStatus?.toLowerCase()
+  const isVerified = vsLower === 'approved' ||
+                    vsLower === 'verified' ||
+                    vsLower === 'completed' ||
+                    vsLower === 'pending_charges' ||
+                    vsLower === 'dispute_review'
   const paymentSuccessful = paymentStatus?.toLowerCase() === 'paid' ||
                            paymentStatus?.toLowerCase() === 'captured' ||
                            paymentStatus === 'PAID' ||

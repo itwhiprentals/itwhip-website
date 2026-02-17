@@ -107,6 +107,7 @@ export const TRIP_CONSTANTS = {
   GUEST_PING_INTERVAL: 15000,           // 15s guest location ping
   GUEST_ETA_INTERVAL: 4,               // Call Haiku every 4th ping (~60s)
   IMPOSSIBLE_SPEED_MPH: 200,           // Anti-spoofing: flag if faster than this
+  DROPOFF_POLLING_INTERVAL: 10000,     // 10s polling for drop-off notifications
   
   // Dispute
   DISPUTE_RESOLUTION_HOURS: 24, // UPDATED: 24 hours for resolution

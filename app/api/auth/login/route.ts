@@ -418,7 +418,7 @@ export async function POST(request: NextRequest) {
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
-      .setExpirationTime('15m')
+      .setExpirationTime('7d')
       .sign(JWT_SECRET)
 
     // Create refresh token (7 days)
@@ -499,7 +499,7 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 15 * 60, // 15 minutes
+      maxAge: 7 * 24 * 60 * 60, // 7 days
       path: '/'
     })
 

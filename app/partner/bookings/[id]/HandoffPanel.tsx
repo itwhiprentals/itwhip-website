@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import Image from 'next/image'
-import { IoLocationOutline, IoCheckmarkCircleOutline, IoKeyOutline, IoChevronDownOutline, IoTimeOutline, IoPersonOutline, IoDocumentTextOutline } from 'react-icons/io5'
+import { IoLocationOutline, IoCheckmarkCircleOutline, IoKeyOutline, IoChevronDownOutline, IoTimeOutline, IoPersonOutline, IoDocumentTextOutline, IoCarOutline } from 'react-icons/io5'
 import { HANDOFF_STATUS, TRIP_CONSTANTS } from '@/app/lib/trip/constants'
 
 interface HandoffPanelProps {
   bookingId: string
+  bookingStatus?: string
   handoffStatus: string | null
   guestDistance: number | null
   isInstantBook: boolean
@@ -31,6 +32,7 @@ interface HandoffPanelProps {
 
 export function HandoffPanel({
   bookingId,
+  bookingStatus,
   handoffStatus: initialStatus,
   guestDistance: initialDistance,
   isInstantBook,
@@ -70,10 +72,34 @@ export function HandoffPanel({
     keysProvided: false,
   })
   const allChecked = Object.values(handoffChecklist).every(Boolean)
+  const [dropoffNotification, setDropoffNotification] = useState<{
+    message: string; notifiedAt: string; metadata?: any
+  } | null>(null)
+  const [dropoffChecklist, setDropoffChecklist] = useState({
+    vehicleInspected: false,
+    keysReturned: false,
+    conditionNoted: false,
+  })
+  const [hostDistanceToCar, setHostDistanceToCar] = useState<number | null>(null)
+  const [hostGpsRetrying, setHostGpsRetrying] = useState(false)
   const pollRef = useRef<NodeJS.Timeout | null>(null)
+  const dropoffPollRef = useRef<NodeJS.Timeout | null>(null)
+  const hostGpsPollRef = useRef<NodeJS.Timeout | null>(null)
   const countdownRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Poll for guest arrival
+  const parseDropoffMessage = useCallback((message: string) => {
+    const addressMatch = message.match(/Drop-off Location: (.+?)(?:\n|$)/)
+    const mapMatch = message.match(/Map: (https:\/\/[^\s]+)/)
+    const coordMatch = message.match(/Coordinates: ([\d.-]+), ([\d.-]+)/)
+    return {
+      address: addressMatch?.[1] || null,
+      mapLink: mapMatch?.[1] || null,
+      lat: coordMatch ? parseFloat(coordMatch[1]) : null,
+      lng: coordMatch ? parseFloat(coordMatch[2]) : null,
+    }
+  }, [])
+
+  // Poll for guest arrival (pickup handoff)
   useEffect(() => {
     if (status === HANDOFF_STATUS.PENDING || status === HANDOFF_STATUS.GUEST_VERIFIED) {
       startPolling()
@@ -83,6 +109,76 @@ export function HandoffPanel({
       if (countdownRef.current) clearInterval(countdownRef.current)
     }
   }, [status])
+
+  // Poll for drop-off notifications during active trips
+  useEffect(() => {
+    if (bookingStatus === 'ACTIVE' &&
+        (status === HANDOFF_STATUS.HANDOFF_COMPLETE || status === HANDOFF_STATUS.BYPASSED) &&
+        !dropoffNotification) {
+      const pollDropoff = async () => {
+        try {
+          const response = await fetch(`/api/rentals/bookings/${bookingId}/handoff/status`, {
+            credentials: 'include',
+          })
+          if (!response.ok) return
+          const result = await response.json()
+          if (result.dropoffNotification) {
+            setDropoffNotification(result.dropoffNotification)
+            if (dropoffPollRef.current) clearInterval(dropoffPollRef.current)
+          }
+        } catch { /* silent */ }
+      }
+      pollDropoff()
+      dropoffPollRef.current = setInterval(pollDropoff, TRIP_CONSTANTS.DROPOFF_POLLING_INTERVAL)
+    }
+    return () => {
+      if (dropoffPollRef.current) clearInterval(dropoffPollRef.current)
+    }
+  }, [bookingStatus, status, dropoffNotification, bookingId])
+
+  // Haversine distance calculation (meters)
+  const haversineDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371000 // Earth radius in meters
+    const dLat = (lat2 - lat1) * Math.PI / 180
+    const dLon = (lon2 - lon1) * Math.PI / 180
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) ** 2
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  }, [])
+
+  // Track host GPS position to calculate distance to car drop-off
+  useEffect(() => {
+    if (!dropoffNotification) return
+    const dropoff = parseDropoffMessage(dropoffNotification.message)
+    if (!dropoff.lat || !dropoff.lng) return
+
+    const carLat = dropoff.lat
+    const carLng = dropoff.lng
+
+    const updateHostDistance = () => {
+      setHostGpsRetrying(true)
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const dist = haversineDistance(pos.coords.latitude, pos.coords.longitude, carLat, carLng)
+          setHostDistanceToCar(dist)
+          setHostGpsRetrying(false)
+        },
+        () => {
+          // GPS failed — keep retrying
+          setHostGpsRetrying(true)
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+      )
+    }
+
+    updateHostDistance()
+    hostGpsPollRef.current = setInterval(updateHostDistance, 15000) // update every 15s
+
+    return () => {
+      if (hostGpsPollRef.current) clearInterval(hostGpsPollRef.current)
+    }
+  }, [dropoffNotification, haversineDistance])
 
   // Countdown for auto-confirm (instant-book)
   useEffect(() => {
@@ -207,6 +303,308 @@ export function HandoffPanel({
     const minutes = Math.floor(seconds / 60)
     if (minutes < 60) return `${minutes}m ago`
     return `${Math.floor(minutes / 60)}h ago`
+  }
+
+  // ACTIVE TRIP + DROP-OFF NOTIFICATION — Guest is returning the vehicle
+  if (bookingStatus === 'ACTIVE' &&
+      (status === HANDOFF_STATUS.HANDOFF_COMPLETE || status === HANDOFF_STATUS.BYPASSED) &&
+      dropoffNotification) {
+    const dropoff = parseDropoffMessage(dropoffNotification.message)
+    return (
+      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-4">
+        {/* Drop-off animation CSS */}
+        <style>{`
+          @keyframes dropoff-bar {
+            0% { transform: translateX(-100%); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateX(100%); opacity: 0; }
+          }
+          @keyframes dropoff-bar-reverse {
+            0% { transform: translateX(100%); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateX(-100%); opacity: 0; }
+          }
+          @keyframes dropoff-icon-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+          }
+        `}</style>
+
+        <div className="flex items-center gap-2 mb-3">
+          <IoCarOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <div>
+            <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-300">{t('guestReturning')}</h3>
+            <p className="text-xs text-blue-600 dark:text-blue-400">
+              {t('notifiedAgo', { time: formatTimeAgo(dropoffNotification.notifiedAt) })}
+            </p>
+          </div>
+        </div>
+
+        {/* Car ←→ Location animation */}
+        <div className="flex items-center justify-center gap-0 my-4 px-2">
+          <div
+            className="flex-shrink-0 w-11 h-11 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-md"
+            style={{ animation: 'dropoff-icon-pulse 2s ease-in-out infinite' }}
+          >
+            <IoCarOutline className="w-5 h-5 text-white" />
+          </div>
+
+          <div className="flex-1 mx-2 h-6 relative overflow-hidden">
+            <div className="absolute inset-y-0 left-0 right-0 flex items-center">
+              <div className="w-full border-t-2 border-dashed border-blue-300/50 dark:border-blue-600/40" />
+            </div>
+            <div className="absolute inset-y-0 left-0 right-0 flex items-center overflow-hidden">
+              <div
+                className="w-6 h-1.5 rounded-full bg-gradient-to-r from-blue-400 to-blue-500 absolute"
+                style={{ animation: 'dropoff-bar 1.8s ease-in-out infinite', left: '10%' }}
+              />
+              <div
+                className="w-6 h-1.5 rounded-full bg-gradient-to-r from-blue-400 to-blue-500 absolute"
+                style={{ animation: 'dropoff-bar 1.8s ease-in-out 0.6s infinite', left: '40%' }}
+              />
+              <div
+                className="w-6 h-1.5 rounded-full bg-gradient-to-r from-blue-400 to-blue-500 absolute"
+                style={{ animation: 'dropoff-bar 1.8s ease-in-out 1.2s infinite', left: '70%' }}
+              />
+            </div>
+            <div className="absolute inset-y-0 left-0 right-0 flex items-center overflow-hidden">
+              <div
+                className="w-6 h-1.5 rounded-full bg-gradient-to-l from-green-400 to-green-500 absolute"
+                style={{ animation: 'dropoff-bar-reverse 1.8s ease-in-out 0.3s infinite', left: '20%' }}
+              />
+              <div
+                className="w-6 h-1.5 rounded-full bg-gradient-to-l from-green-400 to-green-500 absolute"
+                style={{ animation: 'dropoff-bar-reverse 1.8s ease-in-out 0.9s infinite', left: '55%' }}
+              />
+            </div>
+          </div>
+
+          <div
+            className="flex-shrink-0 w-11 h-11 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-md"
+            style={{ animation: 'dropoff-icon-pulse 2s ease-in-out 0.5s infinite' }}
+          >
+            <IoLocationOutline className="w-5 h-5 text-white" />
+          </div>
+        </div>
+
+        {/* Drop-off location + host distance */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-700 p-3 mb-3">
+          <div className="flex items-start gap-2">
+            <IoLocationOutline className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('dropoffLocation')}</p>
+              {dropoff.address && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">{dropoff.address}</p>
+              )}
+              {dropoff.mapLink && (
+                <a
+                  href={dropoff.mapLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                >
+                  {t('viewOnMap')}
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Host distance to car */}
+          <div className="mt-2 pt-2 border-t border-blue-100 dark:border-blue-800">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-600 dark:text-gray-400">{t('yourDistanceToCar')}</span>
+              {hostDistanceToCar !== null ? (
+                <span className={`text-xs font-semibold ${
+                  hostDistanceToCar < 500
+                    ? 'text-green-600 dark:text-green-400'
+                    : hostDistanceToCar < 2000
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-red-600 dark:text-red-400'
+                }`}>
+                  {formatDistance(hostDistanceToCar)}
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-xs text-gray-400">
+                  {hostGpsRetrying && (
+                    <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  )}
+                  {t('locatingYou')}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Return checklist — informational only */}
+        <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">{t('returnChecklist')}</p>
+        <div className="space-y-2 mb-3">
+          {([
+            { key: 'vehicleInspected' as const, label: t('checkVehicleInspected') },
+            { key: 'keysReturned' as const, label: t('checkKeysReturned') },
+            { key: 'conditionNoted' as const, label: t('checkConditionNoted') },
+          ]).map(({ key, label }) => (
+            <label
+              key={key}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+                dropoffChecklist[key]
+                  ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                  : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={dropoffChecklist[key]}
+                onChange={(e) => setDropoffChecklist(prev => ({ ...prev, [key]: e.target.checked }))}
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className={`text-xs font-medium ${
+                dropoffChecklist[key] ? 'text-green-700 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'
+              }`}>
+                {label}
+              </span>
+            </label>
+          ))}
+        </div>
+
+        <p className="text-[10px] text-blue-600 dark:text-blue-400 text-center">
+          {t('guestCanEndTrip')}
+        </p>
+      </div>
+    )
+  }
+
+  // ACTIVE TRIP — Handoff complete, trip in progress, no drop-off yet
+  if (bookingStatus === 'ACTIVE' &&
+      (status === HANDOFF_STATUS.HANDOFF_COMPLETE || status === HANDOFF_STATUS.BYPASSED)) {
+    const handoffTime = hostHandoffVerifiedAt || guestGpsVerifiedAt
+    const wasAutoConfirmed = !hostHandoffVerifiedAt && !hostConfirmedLocally && status === HANDOFF_STATUS.HANDOFF_COMPLETE
+    const handoffType = wasAutoConfirmed ? t('autoConfirmed') : t('metInPerson')
+
+    return (
+      <>
+        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 overflow-hidden">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="w-full flex items-center justify-between p-4 text-left hover:bg-green-100/50 dark:hover:bg-green-900/30 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <div>
+                <h3 className="text-sm font-semibold text-green-800 dark:text-green-300">{t('pickupHandoffComplete')}</h3>
+                <div className="flex items-center gap-1.5">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
+                  </span>
+                  <p className="text-xs text-green-600 dark:text-green-400">{t('awaitingReturn')}</p>
+                </div>
+              </div>
+            </div>
+            <IoChevronDownOutline className={`w-4 h-4 text-green-600 dark:text-green-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          </button>
+
+          {expanded && (
+            <div className="border-t border-green-200 dark:border-green-800 px-4 pb-4 pt-3">
+              <div className="flex gap-4">
+                <div className="w-1/2 space-y-3">
+                  {handoffTime && (
+                    <div className="flex items-start gap-2">
+                      <IoTimeOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('handoffTime')}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {new Date(handoffTime).toLocaleString(undefined, {
+                            month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-start gap-2">
+                    <IoPersonOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('handoffType')}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{handoffType}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <IoKeyOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('keyInstructionsSent')}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {keyInstructionsDeliveredAt || savedKeyInstructions
+                          ? (savedKeyInstructions || t('keyInstructionsSent'))
+                          : t('noKeyInstructions')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <IoLocationOutline className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('pickupLocation')}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {pickupLocation || '—'}
+                        {(hostHandoffDistance || guestDistance) && (hostHandoffDistance || guestDistance)! < 50000 && (
+                          <span className="ml-1 text-gray-400 dark:text-gray-500">
+                            ({formatDistance(hostHandoffDistance || guestDistance!)} {t('away')})
+                          </span>
+                        )}
+                        {' '}
+                        <a href="/partner/tracking" className="text-[10px] text-green-600 dark:text-green-400 hover:underline">
+                          {t('trackVehicle')}
+                        </a>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {(licensePhotoUrl || licenseBackPhotoUrl) && (
+                  <>
+                  <div className="w-px bg-green-200 dark:bg-green-800 self-stretch" />
+                  <div className="w-1/2 pl-3 flex flex-col items-center">
+                    <div className="flex items-center gap-1 mb-1.5">
+                      <IoDocumentTextOutline className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('guestDL')}</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      {licensePhotoUrl && (
+                        <button onClick={() => setDlPreview(licensePhotoUrl)} className="relative w-[122px] h-[76px] rounded border border-gray-200 dark:border-gray-600 overflow-hidden hover:opacity-80 transition-opacity block">
+                          <Image src={licensePhotoUrl} alt="DL Front" fill className="object-cover" sizes="122px" />
+                          <span className="absolute bottom-0 left-0 right-0 bg-black/40 text-white text-[9px] text-center py-0.5">Front</span>
+                        </button>
+                      )}
+                      {licenseBackPhotoUrl && (
+                        <button onClick={() => setDlPreview(licenseBackPhotoUrl)} className="relative w-[122px] h-[76px] rounded border border-gray-200 dark:border-gray-600 overflow-hidden hover:opacity-80 transition-opacity block">
+                          <Image src={licenseBackPhotoUrl} alt="DL Back" fill className="object-cover" sizes="122px" />
+                          <span className="absolute bottom-0 left-0 right-0 bg-black/40 text-white text-[9px] text-center py-0.5">Back</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {dlPreview && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setDlPreview(null)}>
+            <div className="relative max-w-lg w-full mx-4" onClick={(e) => e.stopPropagation()}>
+              <Image src={dlPreview} alt="Driver License" width={600} height={400} className="rounded-lg w-full h-auto" />
+              <button onClick={() => setDlPreview(null)} className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1.5 hover:bg-black/70">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+          </div>
+        )}
+      </>
+    )
   }
 
   // WAITING — Guest hasn't arrived yet (show live tracking if available)

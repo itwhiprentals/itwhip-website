@@ -59,15 +59,15 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
   return (
     <div className="space-y-4 lg:space-y-6">
       {/* Payment Summary */}
-      <div className="bg-white rounded-lg shadow-sm p-4 sm:p-5 lg:p-6">
-        <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">{t('paymentSummary')}</h2>
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm p-4 sm:p-5 lg:p-6">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">{t('paymentSummary')}</h2>
         
         {/* Payment Failed */}
         {booking.verificationStatus === 'approved' && (booking.paymentStatus === 'failed' || booking.paymentStatus === 'FAILED') && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg">
             <div className="flex items-start">
               <AlertCircle className="w-5 h-5 text-red-600 mr-2 flex-shrink-0 mt-0.5" />
-              <div className="text-xs sm:text-sm text-red-800">
+              <div className="text-xs sm:text-sm text-red-800 dark:text-red-200">
                 <p className="font-medium mb-1">{t('paymentFailedTitle')}</p>
                 <p className="text-xs mb-2">
                   {t('paymentFailedDesc')}
@@ -85,10 +85,10 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
 
         {/* Payment Successful - FIXED to check both cases */}
         {(booking.paymentStatus === 'paid' || booking.paymentStatus === 'PAID' || booking.paymentStatus === 'captured' || booking.paymentStatus === 'CAPTURED') && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="mb-4 p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg">
             <div className="flex items-start">
               <CheckCircle className="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
-              <div className="text-xs sm:text-sm text-green-800">
+              <div className="text-xs sm:text-sm text-green-800 dark:text-green-200">
                 <p className="font-medium mb-1">{t('paymentConfirmed')}</p>
                 <p className="text-xs">
                   {t('paymentConfirmedDesc', { amount: formatCurrency(booking.totalAmount), email: booking.guestEmail || '' })}
@@ -100,47 +100,47 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
         
         <div className="space-y-2.5 sm:space-y-3">
           <div className="flex justify-between text-xs sm:text-sm">
-            <span className="text-gray-600">
+            <span className="text-gray-600 dark:text-gray-400">
               {t('perDayTimeDays', { rate: formatCurrency(booking.dailyRate), days: tripDays })}
             </span>
-            <span className="font-medium">
+            <span className="font-medium text-gray-900 dark:text-gray-100">
               {formatCurrency(booking.dailyRate * tripDays)}
             </span>
           </div>
           
           {booking.deliveryFee > 0 && (
             <div className="flex justify-between text-xs sm:text-sm">
-              <span className="text-gray-600">{t('deliveryFee')}</span>
-              <span>{formatCurrency(booking.deliveryFee)}</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('deliveryFee')}</span>
+              <span className="text-gray-900 dark:text-gray-100">{formatCurrency(booking.deliveryFee)}</span>
             </div>
           )}
           
           {booking.insuranceFee > 0 && (
             <div className="flex justify-between text-xs sm:text-sm">
-              <span className="text-gray-600">{t('insuranceProtection')}</span>
-              <span>{formatCurrency(booking.insuranceFee)}</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('insuranceProtection')}</span>
+              <span className="text-gray-900 dark:text-gray-100">{formatCurrency(booking.insuranceFee)}</span>
             </div>
           )}
           
           <div className="flex justify-between text-xs sm:text-sm">
-            <span className="text-gray-600">{t('itwhipServiceFee')}</span>
-            <span>{formatCurrency(booking.serviceFee)}</span>
+            <span className="text-gray-600 dark:text-gray-400">{t('itwhipServiceFee')}</span>
+            <span className="text-gray-900 dark:text-gray-100">{formatCurrency(booking.serviceFee)}</span>
           </div>
-          
+
           <div className="flex justify-between text-xs sm:text-sm">
-            <span className="text-gray-600">{t('azTaxesFees')}</span>
-            <span>{formatCurrency(booking.taxes)}</span>
+            <span className="text-gray-600 dark:text-gray-400">{t('azTaxesFees')}</span>
+            <span className="text-gray-900 dark:text-gray-100">{formatCurrency(booking.taxes)}</span>
           </div>
-          
-          <div className="border-t pt-2.5 sm:pt-3">
+
+          <div className="border-t dark:border-gray-700 pt-2.5 sm:pt-3">
             <div className="flex justify-between items-baseline">
-              <span className="text-sm sm:text-base font-semibold">{t('tripTotal')}</span>
+              <span className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100">{t('tripTotal')}</span>
               <div className="text-right">
-                <span className="text-base sm:text-lg font-semibold">
+                <span className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {formatCurrency(booking.totalAmount)}
                 </span>
                 {booking.status === 'PENDING' && !(booking.paymentStatus === 'paid' || booking.paymentStatus === 'PAID') && (
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                     {booking.verificationStatus === 'approved' ? t('processingNow') : t('dueAtConfirmation')}
                   </p>
                 )}
@@ -152,23 +152,23 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
               <div className="mt-2 space-y-1.5">
                 {(booking.creditsApplied ?? 0) > 0 && (
                   <div className="flex justify-between text-xs sm:text-sm">
-                    <span className="text-green-700">{t('creditsApplied')}</span>
-                    <span className="text-green-700 font-medium">-{formatCurrency(booking.creditsApplied!)}</span>
+                    <span className="text-green-700 dark:text-green-400">{t('creditsApplied')}</span>
+                    <span className="text-green-700 dark:text-green-400 font-medium">-{formatCurrency(booking.creditsApplied!)}</span>
                   </div>
                 )}
                 {(booking.bonusApplied ?? 0) > 0 && (
                   <div className="flex justify-between text-xs sm:text-sm">
-                    <span className="text-green-700">{t('bonusApplied')}</span>
-                    <span className="text-green-700 font-medium">-{formatCurrency(booking.bonusApplied!)}</span>
+                    <span className="text-green-700 dark:text-green-400">{t('bonusApplied')}</span>
+                    <span className="text-green-700 dark:text-green-400 font-medium">-{formatCurrency(booking.bonusApplied!)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-xs sm:text-sm font-medium">
-                  <span className="text-gray-900">
+                  <span className="text-gray-900 dark:text-gray-100">
                     {booking.cardBrand && booking.cardLast4
                       ? t('paidWithCard', { brand: booking.cardBrand, last4: booking.cardLast4 })
                       : t('cardCharge')}
                   </span>
-                  <span className="text-gray-900">
+                  <span className="text-gray-900 dark:text-gray-100">
                     {formatCurrency(booking.chargeAmount ?? (booking.totalAmount - (booking.creditsApplied || 0) - (booking.bonusApplied || 0)))}
                   </span>
                 </div>
@@ -177,10 +177,10 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
 
             {/* Security Deposit */}
             {booking.depositAmount > 0 && (
-              <div className="mt-3 pt-3 border-t border-dashed border-gray-200 space-y-1.5">
+              <div className="mt-3 pt-3 border-t border-dashed border-gray-200 dark:border-gray-700 space-y-1.5">
                 <div className="flex justify-between text-xs sm:text-sm">
-                  <span className="text-gray-600">{t('securityDepositHold')}</span>
-                  <span className="font-medium">{formatCurrency(booking.depositAmount)}</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t('securityDepositHold')}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(booking.depositAmount)}</span>
                 </div>
                 {(booking.depositFromWallet ?? 0) > 0 && (
                   <div className="flex justify-between text-xs sm:text-sm">
@@ -202,28 +202,28 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
       </div>
 
       {/* Host & Messages */}
-      <div className="bg-white rounded-lg shadow-sm p-4 sm:p-5 lg:p-6">
-        <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">{t('host')}</h2>
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm p-4 sm:p-5 lg:p-6">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">{t('host')}</h2>
 
         <div className="flex items-start gap-2.5 sm:gap-3">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-            <User className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+            <User className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 dark:text-gray-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm sm:text-base font-medium text-gray-900 truncate">{booking.host.name}</p>
+            <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100 truncate">{booking.host.name}</p>
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-0.5 sm:mt-1">
               <div className="flex items-center">
                 <span className="text-yellow-500 text-xs sm:text-sm">★</span>
-                <span className="text-xs sm:text-sm text-gray-600 ml-0.5">{booking.host.rating.toFixed(1)}</span>
+                <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 ml-0.5">{booking.host.rating.toFixed(1)}</span>
               </div>
-              <span className="text-gray-300 text-xs">•</span>
-              <span className="text-xs sm:text-sm text-gray-600">~{booking.host.responseTime}min</span>
+              <span className="text-gray-300 dark:text-gray-600 text-xs">•</span>
+              <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">~{booking.host.responseTime}min</span>
             </div>
           </div>
         </div>
 
         {(booking.status === 'ACTIVE' || (booking.status === 'CONFIRMED' && hoursUntilPickup <= TIME_THRESHOLDS.SHOW_FULL_DETAILS_HOURS)) && (
-          <button className="w-full mt-3 sm:mt-4 px-3 sm:px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-1.5 sm:gap-2">
+          <button className="w-full mt-3 sm:mt-4 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors flex items-center justify-center gap-1.5 sm:gap-2">
             <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             {t('contactHost', { phone: booking.host.phone })}
           </button>
