@@ -93,6 +93,8 @@ export interface Booking {
     keyboxCode?: string
     hasKeybox?: boolean
     handoffStatus?: string | null
+    hostFinalReviewStatus?: string | null
+    hostFinalReviewDeadline?: string | null
   }
   
   export interface Message {

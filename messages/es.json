@@ -3954,6 +3954,10 @@
     "additionalChargesTitle": "Cargos Adicionales",
     "noAdditionalChargesTitle": "Sin Cargos Adicionales",
     "depositReleaseMessage": "Tu depósito será liberado en 7-14 días hábiles",
+    "hostReviewingTrip": "El Anfitrión Está Revisando Tu Viaje",
+    "depositReleaseWithin24h": "Tu depósito será liberado dentro de 24 horas si no se reportan problemas",
+    "hostReportedIssue": "El Anfitrión Ha Reportado un Problema",
+    "depositOnHoldPendingReview": "Tu depósito está retenido pendiente de revisión de reclamo. Serás notificado del resultado.",
     "downloadReceipt": "Descargar Recibo",
     "emailReceipt": "Enviar Recibo por Email"
   },

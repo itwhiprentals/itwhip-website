@@ -153,7 +153,9 @@ export async function GET(request: NextRequest) {
         b."carId",
         b."hostId",
         b."handoffStatus",
-        
+        b."hostFinalReviewStatus",
+        b."hostFinalReviewDeadline",
+
         (
           SELECT json_build_object(
             'token', gat.token,
@@ -383,6 +385,8 @@ export async function GET(request: NextRequest) {
         createdAt: booking.createdAt,
         updatedAt: booking.updatedAt,
         handoffStatus: booking.handoffStatus || null,
+        hostFinalReviewStatus: booking.hostFinalReviewStatus || null,
+        hostFinalReviewDeadline: booking.hostFinalReviewDeadline || null,
         // Card identity (only populated for single-booking detail view)
         ...(isSingleBooking ? { cardBrand, cardLast4 } : {})
       }

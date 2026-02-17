@@ -3954,6 +3954,10 @@
     "additionalChargesTitle": "Frais Supplémentaires",
     "noAdditionalChargesTitle": "Aucun Frais Supplémentaire",
     "depositReleaseMessage": "Votre dépôt sera libéré dans 7-14 jours ouvrables",
+    "hostReviewingTrip": "L'Hôte Examine Votre Voyage",
+    "depositReleaseWithin24h": "Votre dépôt sera libéré dans les 24 heures si aucun problème n'est signalé",
+    "hostReportedIssue": "L'Hôte a Signalé un Problème",
+    "depositOnHoldPendingReview": "Votre dépôt est retenu en attendant l'examen de la réclamation. Vous serez informé du résultat.",
     "downloadReceipt": "Télécharger le Reçu",
     "emailReceipt": "Envoyer le Reçu par Email"
   },

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import Image from 'next/image'
-import { IoLocationOutline, IoCheckmarkCircleOutline, IoKeyOutline, IoChevronDownOutline, IoTimeOutline, IoPersonOutline, IoDocumentTextOutline, IoCarOutline } from 'react-icons/io5'
+import { IoLocationOutline, IoCheckmarkCircleOutline, IoKeyOutline, IoChevronDownOutline, IoTimeOutline, IoPersonOutline, IoDocumentTextOutline, IoCarOutline, IoShieldCheckmarkOutline, IoAlertCircleOutline, IoImagesOutline, IoCloseOutline } from 'react-icons/io5'
 import { HANDOFF_STATUS, TRIP_CONSTANTS } from '@/app/lib/trip/constants'
 
 interface HandoffPanelProps {
@@ -28,6 +28,12 @@ interface HandoffPanelProps {
   guestArrivalSummary?: string | null
   guestLocationTrust?: number | null
   pickupLocation?: string | null
+  // Post-trip review
+  hostFinalReviewStatus?: string | null
+  hostFinalReviewDeadline?: string | null
+  depositAmount?: number
+  inspectionPhotosStart?: Array<{ category: string; url: string }>
+  inspectionPhotosEnd?: Array<{ category: string; url: string }>
 }
 
 export function HandoffPanel({
@@ -50,6 +56,11 @@ export function HandoffPanel({
   guestArrivalSummary: initialArrivalSummary,
   guestLocationTrust: initialLocationTrust,
   pickupLocation,
+  hostFinalReviewStatus,
+  hostFinalReviewDeadline,
+  depositAmount,
+  inspectionPhotosStart = [],
+  inspectionPhotosEnd = [],
 }: HandoffPanelProps) {
   const t = useTranslations('HandoffHost')
   const [status, setStatus] = useState(initialStatus || HANDOFF_STATUS.PENDING)
@@ -82,6 +93,11 @@ export function HandoffPanel({
   })
   const [hostDistanceToCar, setHostDistanceToCar] = useState<number | null>(null)
   const [hostGpsRetrying, setHostGpsRetrying] = useState(false)
+  // Post-trip review state
+  const [reviewSubmitting, setReviewSubmitting] = useState(false)
+  const [reviewDone, setReviewDone] = useState<string | null>(hostFinalReviewStatus === 'APPROVED' || hostFinalReviewStatus === 'AUTO_APPROVED' ? 'APPROVED' : hostFinalReviewStatus === 'CLAIM_FILED' ? 'CLAIM_FILED' : null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [reviewTimeRemaining, setReviewTimeRemaining] = useState<string | null>(null)
   const pollRef = useRef<NodeJS.Timeout | null>(null)
   const dropoffPollRef = useRef<NodeJS.Timeout | null>(null)
   const hostGpsPollRef = useRef<NodeJS.Timeout | null>(null)
@@ -303,6 +319,214 @@ export function HandoffPanel({
     const minutes = Math.floor(seconds / 60)
     if (minutes < 60) return `${minutes}m ago`
     return `${Math.floor(minutes / 60)}h ago`
+  }
+
+  // Countdown timer for 24h review deadline
+  useEffect(() => {
+    if (bookingStatus !== 'COMPLETED' || !hostFinalReviewDeadline || reviewDone) return
+    const update = () => {
+      const remaining = new Date(hostFinalReviewDeadline).getTime() - Date.now()
+      if (remaining <= 0) {
+        setReviewTimeRemaining('Expired')
+        setReviewDone('AUTO_APPROVED')
+        return
+      }
+      const h = Math.floor(remaining / 3600000)
+      const m = Math.floor((remaining % 3600000) / 60000)
+      setReviewTimeRemaining(`${h}h ${m}m remaining`)
+    }
+    update()
+    const interval = setInterval(update, 60000)
+    return () => clearInterval(interval)
+  }, [bookingStatus, hostFinalReviewDeadline, reviewDone])
+
+  const handleFinalReview = async (action: 'approve' | 'claim') => {
+    setReviewSubmitting(true)
+    try {
+      const response = await fetch(`/api/partner/bookings/${bookingId}/handoff/final-review`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      })
+      if (response.ok) {
+        const result = await response.json()
+        setReviewDone(result.status)
+        if (result.claimUrl) {
+          window.location.href = result.claimUrl
+        }
+      }
+    } catch { /* silent */ } finally {
+      setReviewSubmitting(false)
+    }
+  }
+
+  const PHOTO_LABELS: Record<string, string> = {
+    front: 'Front', back: 'Back', driver_side: 'Driver Side',
+    passenger_side: 'Passenger Side', dashboard: 'Dashboard',
+    odometer: 'Odometer', interior_front: 'Interior Front',
+    interior_back: 'Interior Back', trunk: 'Trunk',
+  }
+
+  // ── COMPLETED TRIP — Post-Trip Review ──
+  if (bookingStatus === 'COMPLETED') {
+    // Already reviewed — APPROVED
+    if (reviewDone === 'APPROVED' || reviewDone === 'AUTO_APPROVED') {
+      return (
+        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <IoShieldCheckmarkOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <h3 className="text-sm font-semibold text-green-800 dark:text-green-300">
+              Trip Approved — Deposit Released
+            </h3>
+          </div>
+          <p className="text-xs text-green-700 dark:text-green-400">
+            {reviewDone === 'AUTO_APPROVED'
+              ? 'Auto-approved after 24-hour review window expired. Deposit has been released to the guest.'
+              : 'You approved this trip. The security deposit has been released to the guest.'}
+          </p>
+        </div>
+      )
+    }
+
+    // Already reviewed — CLAIM FILED
+    if (reviewDone === 'CLAIM_FILED') {
+      return (
+        <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <IoAlertCircleOutline className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+              Claim Filed — Deposit on Hold
+            </h3>
+          </div>
+          <p className="text-xs text-amber-700 dark:text-amber-400">
+            You reported an issue with this trip. The security deposit is on hold pending claim review.
+          </p>
+        </div>
+      )
+    }
+
+    // PENDING REVIEW — show photos + actions
+    const allPhotos = [
+      ...inspectionPhotosStart.map(p => ({ ...p, phase: 'Pre-Trip' as const })),
+      ...inspectionPhotosEnd.map(p => ({ ...p, phase: 'Post-Trip' as const })),
+    ]
+
+    return (
+      <>
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 overflow-hidden">
+          <div className="p-4">
+            {/* Header with countdown */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <IoImagesOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-300">
+                  Post-Trip Review
+                </h3>
+              </div>
+              {reviewTimeRemaining && (
+                <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <IoTimeOutline className="w-3 h-3" />
+                  {reviewTimeRemaining}
+                </span>
+              )}
+            </div>
+
+            <p className="text-xs text-blue-700 dark:text-blue-400 mb-4">
+              Review the guest&apos;s inspection photos below. Approve to release the
+              {depositAmount ? ` $${depositAmount.toFixed(2)}` : ''} security deposit, or report an issue to file a claim.
+            </p>
+
+            {/* Photo grid */}
+            {allPhotos.length > 0 ? (
+              <div className="space-y-3 mb-4">
+                {/* Pre-Trip Photos */}
+                {inspectionPhotosStart.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-blue-800 dark:text-blue-300 mb-1.5 uppercase tracking-wide">Pre-Trip Photos</p>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {inspectionPhotosStart.map((photo, i) => (
+                        <button
+                          key={`start-${i}`}
+                          onClick={() => setPhotoPreview(photo.url)}
+                          className="relative aspect-[4/3] rounded-md overflow-hidden group"
+                        >
+                          <Image src={photo.url} alt={photo.category} fill className="object-cover group-hover:scale-105 transition-transform" />
+                          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-1">
+                            <span className="text-[9px] text-white font-medium">{PHOTO_LABELS[photo.category] || photo.category}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Post-Trip Photos */}
+                {inspectionPhotosEnd.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-blue-800 dark:text-blue-300 mb-1.5 uppercase tracking-wide">Post-Trip Photos</p>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {inspectionPhotosEnd.map((photo, i) => (
+                        <button
+                          key={`end-${i}`}
+                          onClick={() => setPhotoPreview(photo.url)}
+                          className="relative aspect-[4/3] rounded-md overflow-hidden group"
+                        >
+                          <Image src={photo.url} alt={photo.category} fill className="object-cover group-hover:scale-105 transition-transform" />
+                          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-1">
+                            <span className="text-[9px] text-white font-medium">{PHOTO_LABELS[photo.category] || photo.category}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-4 mb-4 bg-blue-100/50 dark:bg-blue-900/30 rounded-lg">
+                <IoImagesOutline className="w-8 h-8 text-blue-400 mx-auto mb-1" />
+                <p className="text-xs text-blue-600 dark:text-blue-400">No inspection photos available</p>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleFinalReview('approve')}
+                disabled={reviewSubmitting}
+                className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
+              >
+                <IoCheckmarkCircleOutline className="w-4 h-4" />
+                {reviewSubmitting ? 'Processing...' : 'Approve & Release Deposit'}
+              </button>
+              <button
+                onClick={() => handleFinalReview('claim')}
+                disabled={reviewSubmitting}
+                className="py-2.5 px-4 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
+              >
+                <IoAlertCircleOutline className="w-4 h-4" />
+                Report Issue
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Photo preview lightbox */}
+        {photoPreview && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setPhotoPreview(null)}>
+            <div className="relative max-w-2xl w-full mx-4" onClick={(e) => e.stopPropagation()}>
+              <Image src={photoPreview} alt="Inspection photo" width={800} height={600} className="rounded-lg w-full h-auto" />
+              <button
+                onClick={() => setPhotoPreview(null)}
+                className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1.5 hover:bg-black/70"
+              >
+                <IoCloseOutline className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
+      </>
+    )
   }
 
   // ACTIVE TRIP + DROP-OFF NOTIFICATION — Guest is returning the vehicle

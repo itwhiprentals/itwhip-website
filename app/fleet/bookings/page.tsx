@@ -29,7 +29,8 @@ export default function FleetBookingsPage() {
     completedToday: 0,
     needsAttention: 0,
     todayBookings: 0,
-    pendingReview: 0
+    pendingReview: 0,
+    pendingHostReview: 0
   })
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)

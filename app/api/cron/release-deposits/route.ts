@@ -63,13 +63,25 @@ export async function POST(request: NextRequest) {
     const eligibleBookings = await prisma.rentalBooking.findMany({
       where: {
         status: 'COMPLETED',
-        tripEndedAt: {
-          not: null,
-          lte: cutoffDate,
-        },
         depositAmount: { gt: 0 },
         depositRefundedAt: null,
         paymentIntentId: { not: null },
+        OR: [
+          // Legacy: old bookings without review system (null status, past cutoff)
+          {
+            hostFinalReviewStatus: null,
+            tripEndedAt: { not: null, lte: cutoffDate },
+          },
+          // Host already approved — release deposit
+          {
+            hostFinalReviewStatus: 'APPROVED',
+          },
+          // 24h deadline passed, host never acted — auto-approve
+          {
+            hostFinalReviewStatus: 'PENDING_REVIEW',
+            hostFinalReviewDeadline: { not: null, lte: new Date() },
+          },
+        ],
       },
       select: {
         id: true,
@@ -83,6 +95,8 @@ export async function POST(request: NextRequest) {
         paymentIntentId: true,
         tripEndedAt: true,
         renterId: true,
+        hostFinalReviewStatus: true,
+        hostFinalReviewDeadline: true,
         car: {
           select: {
             make: true,
@@ -107,6 +121,29 @@ export async function POST(request: NextRequest) {
 
     for (const booking of eligibleBookings) {
       try {
+        // Skip if host filed a claim — deposit held pending claim resolution
+        if (booking.hostFinalReviewStatus === 'CLAIM_FILED') {
+          skipped++
+          results.push({
+            bookingCode: booking.bookingCode,
+            status: 'skipped',
+            reason: 'Host filed claim — deposit held',
+          })
+          continue
+        }
+
+        // Auto-approve if host review deadline passed without action
+        if (booking.hostFinalReviewStatus === 'PENDING_REVIEW') {
+          await prisma.rentalBooking.update({
+            where: { id: booking.id },
+            data: {
+              hostFinalReviewStatus: 'AUTO_APPROVED',
+              hostFinalReviewAt: new Date(),
+            },
+          })
+          console.log(`[Deposit Release] Auto-approved review for ${booking.bookingCode} (24h deadline passed)`)
+        }
+
         // Check for open claims on this booking
         const openClaims = await prisma.claim.count({
           where: {

@@ -1151,3 +1151,150 @@ ${getEmailFooterText(emailReferenceId)}
     console.error(`[Booking Email] Failed to send fraud alert for ${bookingCode}:`, error)
   }
 }
+
+// =============================================================================
+// HOST TRIP END REVIEW EMAIL
+// =============================================================================
+
+interface HostTripEndReviewParams {
+  hostEmail: string
+  hostName: string
+  guestName: string
+  bookingCode: string
+  carMake: string
+  carModel: string
+  carYear: number
+  reviewDeadline: Date
+  reviewUrl: string
+}
+
+export async function sendHostTripEndReviewEmail(params: HostTripEndReviewParams): Promise<void> {
+  const {
+    hostEmail,
+    hostName,
+    guestName,
+    bookingCode,
+    carMake,
+    carModel,
+    carYear,
+    reviewDeadline,
+    reviewUrl,
+  } = params
+
+  const firstName = hostName.split(' ')[0]
+  const carName = `${carYear} ${carMake} ${carModel}`
+  const deadlineStr = formatDate(reviewDeadline)
+  const emailReferenceId = generateEmailReference('HTR')
+
+  const subject = `Trip ended — Review ${guestName}'s trip (${bookingCode})`
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; background-color: #ffffff; max-width: 600px; margin: 0 auto; padding: 20px;">
+
+      <!-- Header -->
+      <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
+        <p style="margin: 0 0 4px 0; font-size: 12px; color: #2563eb; text-transform: uppercase; letter-spacing: 0.5px;">Trip Review Required • #${bookingCode}</p>
+        <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #2563eb;">Trip Ended — Your Review Needed</h1>
+      </div>
+
+      <p style="font-size: 16px; margin: 0 0 16px 0; color: #1f2937;">
+        Hi ${firstName},
+      </p>
+
+      <p style="font-size: 16px; margin: 0 0 16px 0; color: #111827;">
+        <strong>${guestName}</strong> has returned your <strong>${carName}</strong> and submitted their end-of-trip inspection photos. You have <strong>24 hours</strong> to review the photos and either approve the return or report any issues.
+      </p>
+
+      <!-- Details -->
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin: 16px 0;">
+        <tr>
+          <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Vehicle</td>
+          <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${carName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Guest</td>
+          <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${guestName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Review Deadline</td>
+          <td style="padding: 8px 0; color: #dc2626; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${deadlineStr}</td>
+        </tr>
+      </table>
+
+      <!-- CTA -->
+      <div style="text-align: center; margin: 28px 0;">
+        <a href="${reviewUrl}" style="background-color: #2563eb; color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block;">
+          Review Trip
+        </a>
+      </div>
+
+      <!-- Deadline notice -->
+      <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 16px; margin: 16px 0;">
+        <p style="margin: 0; font-size: 13px; color: #92400e;">
+          <strong>⏰ Important:</strong> If no action is taken by ${deadlineStr}, the security deposit will be automatically released to the guest.
+        </p>
+      </div>
+
+      ${getEmailFooterHtml(emailReferenceId)}
+    </body>
+    </html>
+  `
+
+  const text = `Trip Ended — Review ${guestName}'s Trip
+
+Hi ${firstName},
+
+${guestName} has returned your ${carName} and submitted their end-of-trip inspection photos.
+
+You have 24 hours to review the photos and either approve the return or report any issues.
+
+Vehicle: ${carName}
+Guest: ${guestName}
+Booking: #${bookingCode}
+Review Deadline: ${deadlineStr}
+
+Review Trip: ${reviewUrl}
+
+⏰ If no action is taken by ${deadlineStr}, the security deposit will be automatically released to the guest.
+
+${getEmailFooterText(emailReferenceId)}`
+
+  try {
+    const result = await sendEmail({
+      to: hostEmail,
+      subject,
+      html,
+      text,
+      tags: [
+        { name: 'category', value: 'host-trip-review' },
+        { name: 'booking_code', value: bookingCode },
+      ],
+    })
+
+    await logEmail({
+      recipientEmail: hostEmail,
+      subject,
+      emailType: 'HOST',
+      relatedType: 'booking',
+      relatedId: bookingCode,
+      messageId: result.messageId,
+      referenceId: emailReferenceId,
+      metadata: {
+        bookingCode,
+        guestName,
+        carName,
+        reviewDeadline: reviewDeadline.toISOString(),
+      }
+    })
+
+    console.log(`[Booking Email] Host trip review email sent to ${hostEmail} for ${bookingCode}`)
+  } catch (error) {
+    console.error(`[Booking Email] Failed to send host trip review email for ${bookingCode}:`, error)
+  }
+}

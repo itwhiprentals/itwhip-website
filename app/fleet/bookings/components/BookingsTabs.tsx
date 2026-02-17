@@ -11,6 +11,7 @@ interface BookingsTabsProps {
     todayBookings: number
     totalBookings: number
     pendingReview: number
+    pendingHostReview: number
   }
 }
 
@@ -20,6 +21,7 @@ export function BookingsTabs({ activeTab, onTabChange, stats }: BookingsTabsProp
     { id: 'pending_review', label: 'Pending Review', count: stats.pendingReview, highlight: stats.pendingReview > 0 },
     { id: 'pending_verification', label: 'Pending Verification', count: stats.pendingVerification, highlight: stats.pendingVerification > 0 },
     { id: 'active', label: 'Active Trips', count: stats.activeBookings },
+    { id: 'pending_host_review', label: 'Host Review', count: stats.pendingHostReview, highlight: stats.pendingHostReview > 0 },
     { id: 'needs_attention', label: 'Needs Attention', count: stats.needsAttention, highlight: stats.needsAttention > 0 },
     { id: 'today', label: 'Today', count: stats.todayBookings }
   ]

@@ -148,6 +148,16 @@ export async function GET(
             zipCode: true
           }
         },
+        InspectionPhoto: {
+          select: {
+            id: true,
+            type: true,
+            category: true,
+            url: true,
+            uploadedAt: true,
+          },
+          orderBy: { uploadedAt: 'asc' as const },
+        },
         tripCharges: {
           select: {
             id: true,
@@ -295,6 +305,22 @@ export async function GET(
         guestEtaMessage: booking.guestEtaMessage || null,
         guestArrivalSummary: booking.guestArrivalSummary || null,
         guestLocationTrust: booking.guestLocationTrust || null,
+
+        // Host post-trip final review
+        hostFinalReviewStatus: booking.hostFinalReviewStatus || null,
+        hostFinalReviewAt: booking.hostFinalReviewAt?.toISOString() || null,
+        hostFinalReviewDeadline: booking.hostFinalReviewDeadline?.toISOString() || null,
+        depositAmount: Number(booking.depositAmount) || 0,
+        depositRefunded: booking.depositRefunded ? Number(booking.depositRefunded) : null,
+        depositRefundedAt: booking.depositRefundedAt?.toISOString() || null,
+
+        // Inspection photos (grouped by type)
+        inspectionPhotosStart: (booking.InspectionPhoto || [])
+          .filter((p: any) => p.type === 'start')
+          .map((p: any) => ({ category: p.category, url: p.url })),
+        inspectionPhotosEnd: (booking.InspectionPhoto || [])
+          .filter((p: any) => p.type === 'end')
+          .map((p: any) => ({ category: p.category, url: p.url })),
 
         // Onboarding fields
         onboardingCompletedAt: booking.onboardingCompletedAt?.toISOString() || null,

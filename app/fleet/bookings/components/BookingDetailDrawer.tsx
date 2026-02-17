@@ -16,7 +16,7 @@ import {
   IoTimeOutline,
   IoOpenOutline
 } from 'react-icons/io5'
-import { FleetBooking, formatCurrency, formatDate, formatDateTime, getStatusColor, getVerificationColor, getTripStatusLabel } from '../types'
+import { FleetBooking, formatCurrency, formatDate, formatDateTime, getStatusColor, getVerificationColor, getTripStatusLabel, getReviewStatusColor, getReviewStatusLabel } from '../types'
 import { BookingQuickActions } from './BookingQuickActions'
 
 interface BookingDetailDrawerProps {
@@ -77,6 +77,11 @@ export function BookingDetailDrawer({
                   'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
                 }`}>
                   Host: {booking.hostStatus}
+                </span>
+              )}
+              {booking.hostFinalReviewStatus && (
+                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getReviewStatusColor(booking.hostFinalReviewStatus)}`}>
+                  {getReviewStatusLabel(booking.hostFinalReviewStatus)}
                 </span>
               )}
             </div>
@@ -299,6 +304,24 @@ export function BookingDetailDrawer({
                 <span className="text-sm text-gray-500">Deposit</span>
                 <span className="text-sm text-gray-900 dark:text-white">{formatCurrency(booking.depositAmount)}</span>
               </div>
+              {booking.hostFinalReviewStatus && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-500">Deposit Review</span>
+                  <span className={`text-sm font-medium ${
+                    booking.hostFinalReviewStatus === 'APPROVED' || booking.hostFinalReviewStatus === 'AUTO_APPROVED'
+                      ? 'text-green-600' : booking.hostFinalReviewStatus === 'CLAIM_FILED'
+                      ? 'text-red-600' : 'text-blue-600'
+                  }`}>
+                    {getReviewStatusLabel(booking.hostFinalReviewStatus)}
+                  </span>
+                </div>
+              )}
+              {booking.depositRefunded && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-500">Deposit Released</span>
+                  <span className="text-sm text-green-600 font-medium">Yes</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Payment Status</span>
                 <span className={`text-sm font-medium ${

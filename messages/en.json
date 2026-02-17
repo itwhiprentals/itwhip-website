@@ -3936,6 +3936,10 @@
     "additionalChargesTitle": "Additional Charges",
     "noAdditionalChargesTitle": "No Additional Charges",
     "depositReleaseMessage": "Your deposit will be released within 7-14 business days",
+    "hostReviewingTrip": "Host is Reviewing Your Trip",
+    "depositReleaseWithin24h": "Your deposit hold will be released within 24 hours if no issues are reported",
+    "hostReportedIssue": "Host Has Reported an Issue",
+    "depositOnHoldPendingReview": "Your deposit is on hold pending claim review. You will be notified of the outcome.",
     "downloadReceipt": "Download Receipt",
     "emailReceipt": "Email Receipt"
   },

@@ -1812,6 +1812,11 @@ model RentalBooking {
   guestEtaMessage            String?               // Haiku-generated ETA message
   guestArrivalSummary        String?               // Haiku-generated arrival summary for host
 
+  // ===== HOST POST-TRIP FINAL REVIEW =====
+  hostFinalReviewStatus      HostFinalReviewStatus?
+  hostFinalReviewAt          DateTime?
+  hostFinalReviewDeadline    DateTime?
+
   vehicleMatchResult         Json?                 // { sameVehicle, confidence, damageNotes }
   vehicleMatchCheckedAt      DateTime?
 
@@ -4556,6 +4561,13 @@ enum ChargeStatus {
   ADJUSTMENT_FAILED
   UNDER_REVIEW
   EXPIRED
+}
+
+enum HostFinalReviewStatus {
+  PENDING_REVIEW
+  APPROVED
+  CLAIM_FILED
+  AUTO_APPROVED
 }
 
 enum ClaimStatus {

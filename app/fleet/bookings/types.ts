@@ -62,6 +62,12 @@ export interface FleetBooking {
   verificationStatus: VerificationStatus
   tripStatus: TripStatus
 
+  // Host Final Review
+  hostFinalReviewStatus?: string | null
+  hostFinalReviewDeadline?: string | null
+  depositRefunded?: boolean
+  depositRefundedAt?: string | null
+
   // Verification details
   licenseVerified: boolean
   selfieVerified: boolean
@@ -167,6 +173,7 @@ export interface BookingStats {
   needsAttention: number
   todayBookings: number
   pendingReview: number
+  pendingHostReview: number
 }
 
 export interface BookingActionPayload {
@@ -267,5 +274,25 @@ export function getTripStatusLabel(status: TripStatus): string {
     case 'COMPLETED': return 'Trip Completed'
     case 'CHECKED_OUT': return 'Checked Out'
     default: return status
+  }
+}
+
+export function getReviewStatusColor(status: string | null | undefined): string {
+  switch (status) {
+    case 'PENDING_REVIEW': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+    case 'APPROVED': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+    case 'AUTO_APPROVED': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+    case 'CLAIM_FILED': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+    default: return 'bg-gray-100 text-gray-800'
+  }
+}
+
+export function getReviewStatusLabel(status: string | null | undefined): string {
+  switch (status) {
+    case 'PENDING_REVIEW': return 'Pending Host Review'
+    case 'APPROVED': return 'Host Approved'
+    case 'AUTO_APPROVED': return 'Auto-Approved (24h)'
+    case 'CLAIM_FILED': return 'Claim Filed'
+    default: return ''
   }
 }

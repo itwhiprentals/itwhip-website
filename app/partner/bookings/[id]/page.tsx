@@ -105,6 +105,12 @@ interface BookingDetails {
   aiVerificationScore: number | null
   verificationMethod: string | null
   verificationDate: string | null
+  // Host final review fields
+  hostFinalReviewStatus: string | null
+  hostFinalReviewDeadline: string | null
+  depositAmount: number
+  inspectionPhotosStart: Array<{ category: string; url: string }>
+  inspectionPhotosEnd: Array<{ category: string; url: string }>
 }
 
 interface Renter {
@@ -1069,8 +1075,8 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               )}
             </div>
 
-            {/* Handoff Verification Panel — visible for confirmed + active, guest-driven bookings */}
-            {(booking.status === 'CONFIRMED' || booking.status === 'ACTIVE') && isGuestDriven && booking.onboardingCompletedAt && (
+            {/* Handoff Verification Panel — visible for confirmed + active + completed, guest-driven bookings */}
+            {(booking.status === 'CONFIRMED' || booking.status === 'ACTIVE' || booking.status === 'COMPLETED') && isGuestDriven && booking.onboardingCompletedAt && (
               <HandoffPanel
                 bookingId={booking.id}
                 bookingStatus={booking.status}
@@ -1091,6 +1097,11 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 guestArrivalSummary={booking.guestArrivalSummary}
                 guestLocationTrust={booking.guestLocationTrust}
                 pickupLocation={booking.pickupLocation}
+                hostFinalReviewStatus={booking.hostFinalReviewStatus}
+                hostFinalReviewDeadline={booking.hostFinalReviewDeadline}
+                depositAmount={booking.depositAmount}
+                inspectionPhotosStart={booking.inspectionPhotosStart || []}
+                inspectionPhotosEnd={booking.inspectionPhotosEnd || []}
               />
             )}
 

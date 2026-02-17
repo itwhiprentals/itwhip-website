@@ -51,8 +51,12 @@ export async function GET(request: NextRequest) {
         { flaggedForReview: true },
         { verificationStatus: 'PENDING', verificationDeadline: { lte: new Date() } },
         { status: 'DISPUTE_REVIEW' },
-        { riskScore: { gte: 60 } }
+        { riskScore: { gte: 60 } },
+        { hostFinalReviewStatus: 'CLAIM_FILED' }
       ]
+    } else if (tab === 'pending_host_review') {
+      where.hostFinalReviewStatus = 'PENDING_REVIEW'
+      where.status = 'COMPLETED'
     } else if (tab === 'today') {
       const todayStart = new Date()
       todayStart.setHours(0, 0, 0, 0)
@@ -214,6 +218,12 @@ export async function GET(request: NextRequest) {
       verificationStatus: booking.verificationStatus,
       tripStatus: booking.tripStatus,
 
+      // Host Final Review
+      hostFinalReviewStatus: booking.hostFinalReviewStatus || null,
+      hostFinalReviewDeadline: booking.hostFinalReviewDeadline,
+      depositRefunded: booking.depositRefunded,
+      depositRefundedAt: booking.depositRefundedAt,
+
       // Verification
       licenseVerified: booking.licenseVerified,
       selfieVerified: booking.selfieVerified,
@@ -259,7 +269,7 @@ export async function GET(request: NextRequest) {
     }))
 
     // Get stats for dashboard
-    const [pendingVerification, activeBookings, needsAttention, todayBookings, pendingReview] = await Promise.all([
+    const [pendingVerification, activeBookings, needsAttention, todayBookings, pendingReview, pendingHostReview] = await Promise.all([
       prisma.rentalBooking.count({
         where: { verificationStatus: 'PENDING', status: { in: ['PENDING', 'CONFIRMED'] } }
       }),
@@ -286,6 +296,10 @@ export async function GET(request: NextRequest) {
       // Pending Fleet Review (fleetStatus = PENDING with payment authorized)
       prisma.rentalBooking.count({
         where: { fleetStatus: 'PENDING', paymentStatus: 'AUTHORIZED' }
+      }),
+      // Pending Host Final Review (completed trips awaiting host deposit review)
+      prisma.rentalBooking.count({
+        where: { hostFinalReviewStatus: 'PENDING_REVIEW', status: 'COMPLETED' }
       })
     ])
 
@@ -305,7 +319,8 @@ export async function GET(request: NextRequest) {
         needsAttention,
         todayBookings,
         totalBookings: totalCount,
-        pendingReview
+        pendingReview,
+        pendingHostReview
       }
     })
 

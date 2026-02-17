@@ -1,7 +1,7 @@
 // app/fleet/bookings/components/BookingsTable.tsx
 'use client'
 
-import { FleetBooking, formatCurrency, formatDate, getStatusColor, getVerificationColor } from '../types'
+import { FleetBooking, formatCurrency, formatDate, getStatusColor, getVerificationColor, getReviewStatusColor, getReviewStatusLabel } from '../types'
 import {
   IoAlertCircleOutline,
   IoChevronForwardOutline
@@ -119,6 +119,11 @@ export function BookingsTable({ bookings, onSelect, onAction }: BookingsTablePro
                       <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${getVerificationColor(booking.verificationStatus)}`}>
                         {booking.verificationStatus}
                       </span>
+                      {booking.hostFinalReviewStatus && (
+                        <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${getReviewStatusColor(booking.hostFinalReviewStatus)}`}>
+                          {getReviewStatusLabel(booking.hostFinalReviewStatus)}
+                        </span>
+                      )}
                     </div>
                   </td>
 

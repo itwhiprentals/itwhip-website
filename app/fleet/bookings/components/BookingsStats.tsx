@@ -5,7 +5,8 @@ import {
   IoDocumentTextOutline,
   IoCheckmarkCircleOutline,
   IoAlertCircleOutline,
-  IoTodayOutline
+  IoTodayOutline,
+  IoEyeOutline
 } from 'react-icons/io5'
 
 interface BookingsStatsProps {
@@ -14,6 +15,7 @@ interface BookingsStatsProps {
     activeBookings: number
     needsAttention: number
     todayBookings: number
+    pendingHostReview: number
   }
 }
 
@@ -41,6 +43,13 @@ export function BookingsStats({ stats }: BookingsStatsProps) {
       bgColor: 'bg-red-100 dark:bg-red-900/30'
     },
     {
+      label: 'Host Review',
+      value: stats.pendingHostReview,
+      icon: IoEyeOutline,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-100 dark:bg-purple-900/30'
+    },
+    {
       label: "Today's Activity",
       value: stats.todayBookings,
       icon: IoTodayOutline,
@@ -50,7 +59,7 @@ export function BookingsStats({ stats }: BookingsStatsProps) {
   ]
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
       {items.map((item) => (
         <div
           key={item.label}
