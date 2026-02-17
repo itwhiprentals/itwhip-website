@@ -80,6 +80,9 @@ interface SavedBookingDetails {
     taxes: number
     total: number
     deposit: number
+    creditsApplied?: number
+    bonusApplied?: number
+    chargeAmount?: number | null
     breakdown: {
       refuelService: number
       additionalDriver: number
@@ -216,7 +219,127 @@ export default function RentalAgreementModal({
   }
 
   const handlePrint = () => {
-    window.print()
+    const content = contentRef.current
+    if (!content) return
+
+    const printWindow = window.open('', '_blank', 'width=800,height=600')
+    if (!printWindow) {
+      alert('Please allow pop-ups to print the agreement.')
+      return
+    }
+
+    const creditsApplied = bookingDetails?.pricing?.creditsApplied ?? 0
+    const bonusApplied = bookingDetails?.pricing?.bonusApplied ?? 0
+    const hasCreditsOrBonus = creditsApplied > 0 || bonusApplied > 0
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>ItWhip Rental Agreement${guestDetails?.bookingCode ? ` - ${guestDetails.bookingCode}` : ''}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111827; padding: 24px; max-width: 800px; margin: 0 auto; font-size: 12px; line-height: 1.5; }
+          h1 { font-size: 20px; margin-bottom: 4px; }
+          h3 { font-size: 14px; margin-bottom: 8px; }
+          h4 { font-size: 12px; margin-bottom: 6px; }
+          .header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #111; }
+          .header img { height: 40px; width: auto; }
+          .header-text { flex: 1; }
+          .meta { color: #6b7280; font-size: 11px; margin-top: 4px; }
+          .section { margin-bottom: 16px; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; page-break-inside: avoid; }
+          .section-title { font-weight: 600; font-size: 12px; margin-bottom: 8px; }
+          .row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+          .row .label { color: #6b7280; }
+          .row .value { font-weight: 500; }
+          .divider { border-top: 1px solid #d1d5db; margin: 8px 0; }
+          .total-row { font-size: 14px; font-weight: 700; }
+          .credit { color: #16a34a; }
+          .charged-box { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 8px; border-radius: 4px; margin-top: 6px; }
+          .deposit-box { background: #fffbeb; border: 1px solid #fde68a; padding: 8px; border-radius: 4px; margin-top: 6px; }
+          .terms-section { margin-bottom: 12px; }
+          .terms-section h4 { margin-bottom: 4px; }
+          .terms-section p, .terms-section li { font-size: 11px; color: #4b5563; }
+          ul, ol { padding-left: 16px; }
+          li { margin-bottom: 2px; }
+          .footer { text-align: center; color: #9ca3af; font-size: 10px; margin-top: 24px; padding-top: 12px; border-top: 1px solid #d1d5db; }
+          .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+          @media print { body { padding: 12px; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <img src="/logo.png" alt="ItWhip" onerror="this.style.display='none'" />
+          <div class="header-text">
+            <h1>Vehicle Rental Agreement</h1>
+            <div class="meta">ItWhip Technologies, Inc.</div>
+            ${guestDetails?.bookingCode ? `<div class="meta">Booking Reference: ${guestDetails.bookingCode}</div>` : ''}
+            <div class="meta">Generated: ${format(new Date(), 'MMMM d, yyyy')}</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Rental Agreement Parties</div>
+          <div><strong>Vehicle Owner (Host):</strong> ${hostDisplayName}</div>
+          <div><strong>Renter (Guest):</strong> ${guestDisplayName}</div>
+          <div><strong>Platform Facilitator:</strong> ItWhip Technologies, Inc.</div>
+          <div><strong>Governing Law:</strong> State of Arizona</div>
+          <div><strong>Venue:</strong> Maricopa County Superior Court</div>
+        </div>
+
+        ${carDetails && bookingDetails ? `
+        <div class="section">
+          <div class="section-title">Vehicle & Rental Period</div>
+          <div><strong>Vehicle:</strong> ${carDetails.year} ${carDetails.make} ${carDetails.model}</div>
+          <div><strong>Category:</strong> ${carDetails.carType || 'Standard'} (${carDetails.seats} seats)</div>
+          <div><strong>Pickup:</strong> ${format(new Date(bookingDetails.startDate), 'MMMM d, yyyy')} at ${bookingDetails.startTime}</div>
+          <div><strong>Return:</strong> ${format(new Date(bookingDetails.endDate), 'MMMM d, yyyy')} at ${bookingDetails.endTime}</div>
+          <div><strong>Location:</strong> ${bookingDetails.deliveryAddress || 'Phoenix, AZ'}</div>
+          <div><strong>Total Days:</strong> ${bookingDetails.pricing.days}</div>
+        </div>
+        ` : ''}
+
+        <div class="terms-section"><h4>1. Driver Eligibility</h4><p>The renter must be at least ${tierInfo.minAge} years of age and possess a valid driver's license active for a minimum of one year.</p></div>
+        <div class="terms-section"><h4>2. Authorized Use & Restrictions</h4><p>Prohibited: racing, towing, off-road driving, commercial use/rideshare/delivery, hazardous materials, driving outside Arizona without permission, unauthorized operators.</p></div>
+        <div class="terms-section"><h4>3. Renter Responsibilities</h4><p>Return with same fuel level. Maintain vehicle condition. Lock when unattended. Report issues immediately. No smoking/vaping ($250 fee). No unauthorized pets ($100 fee). Pay tolls/parking/violations. 200 miles/day limit ($0.45/mi excess).</p></div>
+        <div class="terms-section"><h4>4. Accident & Emergency</h4><p>Ensure safety, call 911, contact police (A.R.S. §28-667), document with photos, exchange info, report to host/ItWhip, do not admit fault.</p></div>
+        <div class="terms-section"><h4>5. Cancellation Policy</h4><p>72+ hrs: 100% refund | 24-72 hrs: 75% | 12-24 hrs: 50% | &lt;12 hrs: No refund. Service fees non-refundable.</p></div>
+        <div class="terms-section"><h4>6. Platform Facilitator Disclosure</h4><p>This agreement is between ${hostDisplayName} and ${guestDisplayName}. ItWhip Technologies, Inc. is a marketplace facilitator (A.R.S. §42-5001), not a party to this contract.</p></div>
+
+        ${bookingDetails ? `
+        <div class="section">
+          <div class="section-title">Payment Summary</div>
+          <div class="row"><span class="label">Daily Rate ($${bookingDetails.pricing.dailyRate.toFixed(2)}/day × ${bookingDetails.pricing.days} days)</span><span class="value">$${bookingDetails.pricing.basePrice.toFixed(2)}</span></div>
+          ${bookingDetails.pricing.insurancePrice > 0 ? `<div class="row"><span class="label">Trip Protection</span><span class="value">$${bookingDetails.pricing.insurancePrice.toFixed(2)}</span></div>` : ''}
+          ${bookingDetails.pricing.deliveryFee > 0 ? `<div class="row"><span class="label">Delivery Fee</span><span class="value">$${bookingDetails.pricing.deliveryFee.toFixed(2)}</span></div>` : ''}
+          <div class="row"><span class="label">Service Fee</span><span class="value">$${bookingDetails.pricing.serviceFee.toFixed(2)}</span></div>
+          <div class="row"><span class="label">Arizona Tax (${taxRateDisplay})</span><span class="value">$${bookingDetails.pricing.taxes.toFixed(2)}</span></div>
+          ${creditsApplied > 0 ? `<div class="row credit"><span class="label">Credits Applied</span><span class="value">-$${creditsApplied.toFixed(2)}</span></div>` : ''}
+          ${bonusApplied > 0 ? `<div class="row credit"><span class="label">Bonus Applied</span><span class="value">-$${bonusApplied.toFixed(2)}</span></div>` : ''}
+          <div class="divider"></div>
+          <div class="row total-row"><span>Total</span><span>$${bookingDetails.pricing.total.toFixed(2)}</span></div>
+          ${hasCreditsOrBonus ? `
+          <div class="charged-box">
+            <div class="row total-row credit"><span>Charged to Card</span><span>$${(bookingDetails.pricing.chargeAmount != null ? bookingDetails.pricing.chargeAmount : bookingDetails.pricing.total - creditsApplied - bonusApplied).toFixed(2)}</span></div>
+          </div>` : ''}
+          <div class="deposit-box">
+            <div class="row"><span><strong>Security Deposit (Hold)</strong></span><span class="value">$${tierInfo.deposit.toFixed(2)}</span></div>
+            <div style="font-size:10px;color:#6b7280;margin-top:2px;">Refundable per A.R.S. §33-1321(D)</div>
+          </div>
+        </div>
+        ` : ''}
+
+        <div class="footer">
+          <p>This electronic agreement has the same legal validity as a written signature under the Uniform Electronic Transactions Act.</p>
+          <p>Platform services provided by ItWhip Technologies, Inc. | Arizona Marketplace Facilitator</p>
+        </div>
+      </body>
+      </html>
+    `)
+    printWindow.document.close()
+    printWindow.onload = () => {
+      printWindow.print()
+    }
   }
 
   const handleDownload = async () => {
@@ -227,6 +350,19 @@ export default function RentalAgreementModal({
       const margin = 15
       const contentWidth = pageWidth - margin * 2
       let y = 20
+
+      // Load logo
+      let logoBase64: string | null = null
+      try {
+        const response = await fetch('/logo.png')
+        const blob = await response.blob()
+        logoBase64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(blob)
+        })
+      } catch { /* logo optional */ }
 
       const addLine = (text: string, fontSize: number, bold = false, color: [number, number, number] = [0, 0, 0]) => {
         doc.setFontSize(fontSize)
@@ -243,9 +379,22 @@ export default function RentalAgreementModal({
 
       const addGap = (gap = 4) => { y += gap }
 
-      // Header
-      addLine('VEHICLE RENTAL AGREEMENT', 16, true)
-      addLine('ItWhip Technologies, Inc.', 10, false, [100, 100, 100])
+      // Header with logo
+      if (logoBase64) {
+        doc.addImage(logoBase64, 'PNG', margin, y - 4, 14, 14)
+        doc.setFontSize(16)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(0, 0, 0)
+        doc.text('VEHICLE RENTAL AGREEMENT', margin + 18, y + 2)
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(100, 100, 100)
+        doc.text('ItWhip Technologies, Inc.', margin + 18, y + 7)
+        y += 14
+      } else {
+        addLine('VEHICLE RENTAL AGREEMENT', 16, true)
+        addLine('ItWhip Technologies, Inc.', 10, false, [100, 100, 100])
+      }
       addGap(2)
       if (guestDetails?.bookingCode) {
         addLine(`Booking Reference: ${guestDetails.bookingCode}`, 10, false, [80, 80, 80])
@@ -308,8 +457,16 @@ export default function RentalAgreementModal({
         if (p.deliveryFee > 0) addLine(`Delivery Fee: $${p.deliveryFee.toFixed(2)}`, 9)
         addLine(`Service Fee: $${p.serviceFee.toFixed(2)}`, 9)
         addLine(`Arizona TPT Tax (${taxRateDisplay}): $${p.taxes.toFixed(2)}`, 9)
+        const pCredits = p.creditsApplied ?? 0
+        const pBonus = p.bonusApplied ?? 0
+        if (pCredits > 0) addLine(`Credits Applied: -$${pCredits.toFixed(2)}`, 9, false, [22, 163, 74])
+        if (pBonus > 0) addLine(`Bonus Applied: -$${pBonus.toFixed(2)}`, 9, false, [22, 163, 74])
         addGap(2)
         addLine(`TOTAL: $${p.total.toFixed(2)}`, 11, true)
+        if (pCredits > 0 || pBonus > 0) {
+          const actualCharged = p.chargeAmount != null ? p.chargeAmount : p.total - pCredits - pBonus
+          addLine(`CHARGED TO CARD: $${actualCharged.toFixed(2)}`, 10, true, [22, 163, 74])
+        }
         addLine(`Security Deposit (Authorization Hold): $${p.deposit.toFixed(2)}`, 9)
         addLine('Deposit refundable per A.R.S. §33-1321(D)', 8, false, [120, 120, 120])
         addGap(4)
@@ -344,38 +501,8 @@ export default function RentalAgreementModal({
 
   return (
     <>
-      {/* Print Styles */}
+      {/* Print uses a new window — hide print-only elements on screen */}
       <style jsx global>{`
-        @media print {
-          body * {
-            visibility: hidden !important;
-          }
-          .rental-agreement-content,
-          .rental-agreement-content * {
-            visibility: visible !important;
-          }
-          .rental-agreement-content {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            max-height: none !important;
-            overflow: visible !important;
-            background: white !important;
-            color: black !important;
-            padding: 20px !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .print-only {
-            display: block !important;
-            visibility: visible !important;
-          }
-          .page-break {
-            page-break-after: always;
-          }
-        }
         @media screen {
           .print-only {
             display: none;
@@ -454,6 +581,10 @@ export default function RentalAgreementModal({
 
           {/* Print Header (only shows when printing) */}
           <div className="print-only mb-4">
+            <div className="flex items-center justify-center gap-3 mb-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="ItWhip" className="h-10 w-auto" />
+            </div>
             <h1 className="text-2xl font-bold text-center">{t('title')}</h1>
             {guestDetails && (
               <div className="text-center mt-2">
@@ -741,6 +872,20 @@ export default function RentalAgreementModal({
                           <span className="text-gray-600 dark:text-gray-400">{t('arizonaTax')} ({taxRateDisplay})</span>
                           <span className="font-medium text-gray-900 dark:text-white">${bookingDetails.pricing.taxes.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
+
+                        {/* Credits & Bonus Applied */}
+                        {(bookingDetails.pricing.creditsApplied ?? 0) > 0 && (
+                          <div className="flex justify-between text-green-600 dark:text-green-400">
+                            <span>Credits Applied</span>
+                            <span className="font-medium">-${(bookingDetails.pricing.creditsApplied ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                        )}
+                        {(bookingDetails.pricing.bonusApplied ?? 0) > 0 && (
+                          <div className="flex justify-between text-green-600 dark:text-green-400">
+                            <span>Bonus Applied</span>
+                            <span className="font-medium">-${(bookingDetails.pricing.bonusApplied ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Total and Deposit */}
@@ -749,6 +894,19 @@ export default function RentalAgreementModal({
                           <span className="font-bold text-gray-900 dark:text-white">{t('totalAmountPaid')}</span>
                           <span className="font-bold text-gray-900 dark:text-white">${bookingDetails.pricing.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
+
+                        {/* Amount Actually Charged (when credits/bonus applied) */}
+                        {((bookingDetails.pricing.creditsApplied ?? 0) > 0 || (bookingDetails.pricing.bonusApplied ?? 0) > 0) && (
+                          <div className="flex justify-between text-sm sm:text-base bg-green-50 dark:bg-green-900/20 p-2 rounded border border-green-200 dark:border-green-800">
+                            <span className="font-semibold text-green-800 dark:text-green-300">Charged to Card</span>
+                            <span className="font-semibold text-green-800 dark:text-green-300">
+                              ${(bookingDetails.pricing.chargeAmount != null
+                                ? bookingDetails.pricing.chargeAmount
+                                : bookingDetails.pricing.total - (bookingDetails.pricing.creditsApplied ?? 0) - (bookingDetails.pricing.bonusApplied ?? 0)
+                              ).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        )}
 
                         <div className="flex justify-between items-center bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded border border-yellow-200 dark:border-yellow-800">
                           <div>
@@ -850,11 +1008,11 @@ export default function RentalAgreementModal({
                     <IoInformationCircleOutline className="w-3 h-3 mr-1" />
                     {t('privacyPolicy')}
                   </Link>
-                  <Link href="/insurance" className="text-blue-600 dark:text-blue-400 hover:underline flex items-center">
+                  <Link href="/insurance-guide" className="text-blue-600 dark:text-blue-400 hover:underline flex items-center">
                     <IoInformationCircleOutline className="w-3 h-3 mr-1" />
                     {t('insuranceGuide')}
                   </Link>
-                  <Link href="/trust-safety" className="text-blue-600 dark:text-blue-400 hover:underline flex items-center">
+                  <Link href="/support" className="text-blue-600 dark:text-blue-400 hover:underline flex items-center">
                     <IoInformationCircleOutline className="w-3 h-3 mr-1" />
                     {t('trustAndSafety')}
                   </Link>

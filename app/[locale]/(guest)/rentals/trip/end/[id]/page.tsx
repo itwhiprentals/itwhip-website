@@ -15,13 +15,8 @@ import { PaymentConfirm } from './components/PaymentConfirm'
 import { TRIP_CONSTANTS } from '@/app/lib/trip/constants'
 import { validateOdometer, validateFuelLevel, validateInspectionPhotos } from '@/app/lib/trip/validation'
 import { calculateTripCharges } from '@/app/lib/trip/calculations'
-import { 
-  IoArrowBackOutline,
-  IoCarSportOutline,
-  IoWarningOutline,
-  IoCheckmarkCircle,
-  IoTimeOutline
-} from 'react-icons/io5'
+import TripStepProgress from '@/app/components/TripStepProgress'
+import { IoWarningOutline, IoTimeOutline } from 'react-icons/io5'
 
 interface TripEndData {
   photos: Record<string, string>
@@ -62,44 +57,13 @@ export default function TripEndPage() {
     processingMethod: 'hold'
   })
 
-  // Define steps with icons
   const steps = [
-    { 
-      title: 'Final Inspection', 
-      component: PhotoCapture,
-      description: 'Document vehicle condition',
-      icon: '📸'
-    },
-    { 
-      title: 'Mileage', 
-      component: OdometerInput,
-      description: 'Record final odometer',
-      icon: '🚗'
-    },
-    { 
-      title: 'Fuel Level', 
-      component: FuelSelector,
-      description: 'Check fuel gauge',
-      icon: '⛽'
-    },
-    { 
-      title: 'Charges', 
-      component: ChargeCalculator,
-      description: 'Review any fees',
-      icon: '💵'
-    },
-    { 
-      title: 'Disputes', 
-      component: DisputeSelector,
-      description: 'Report any issues',
-      icon: '⚠️'
-    },
-    { 
-      title: 'Complete', 
-      component: PaymentConfirm,
-      description: 'Finalize & settle deposit',
-      icon: '✅'
-    }
+    { title: 'Photos', component: PhotoCapture },
+    { title: 'Mileage', component: OdometerInput },
+    { title: 'Fuel', component: FuelSelector },
+    { title: 'Charges', component: ChargeCalculator },
+    { title: 'Disputes', component: DisputeSelector },
+    { title: 'Complete', component: PaymentConfirm }
   ]
 
   useEffect(() => {
@@ -342,10 +306,10 @@ export default function TripEndPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">{t('loadingTripDetails')}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('loadingTripDetails')}</p>
         </div>
       </div>
     )
@@ -353,14 +317,12 @@ export default function TripEndPage() {
 
   if (!booking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md">
-          <IoWarningOutline className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('unableToLoadTrip')}</h2>
-          <p className="text-gray-600 mb-6">{error || t('bookingNotFound')}</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <div className="text-center">
+          <p className="text-red-600 dark:text-red-400 mb-4">{error || t('bookingNotFound')}</p>
           <button
             onClick={() => router.push('/rentals/dashboard')}
-            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            className="px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100"
           >
             {t('backToDashboard')}
           </button>
@@ -373,123 +335,41 @@ export default function TripEndPage() {
   const isLastStep = currentStep === steps.length - 1
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header Bar */}
-      <div className="bg-white border-b">
-        <div className="max-w-3xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => router.push(`/rentals/dashboard/bookings/${bookingId}`)}
-              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <IoArrowBackOutline className="w-5 h-5 mr-2" />
-              <span className="hidden sm:inline">{t('backToBooking')}</span>
-              <span className="sm:hidden">{t('back')}</span>
-            </button>
-            
-            {getTripDuration() && (
-              <div className="flex items-center text-sm text-gray-600">
-                <IoTimeOutline className="w-4 h-4 mr-1" />
-                <span>{t('tripDuration')}: {getTripDuration()}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="max-w-3xl mx-auto px-4 py-6">
-        {/* Trip Info Header */}
+        {/* Header */}
         <div className="mb-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{t('completeYourTrip')}</h1>
-              <div className="mt-2 space-y-1">
-                <p className="text-gray-700 font-medium">
-                  {booking.car.year} {booking.car.make} {booking.car.model}
-                </p>
-                <p className="text-sm text-gray-600">
-                  Booking Code: {booking.bookingCode}
-                </p>
-                <p className="text-sm text-gray-600">
-                  Security Deposit: ${booking.depositAmount || 500}
-                </p>
-              </div>
-            </div>
-            
-            <div className="text-right">
-              <IoCarSportOutline className="w-8 h-8 text-gray-400" />
-            </div>
-          </div>
-        </div>
-
-        {/* Enhanced Progress Bar */}
-        <div className="mb-8">
-          <div className="relative">
-            {/* Progress Line */}
-            <div className="absolute top-4 left-0 right-0 h-0.5 bg-gray-200">
-              <div 
-                className="h-full bg-green-600 transition-all duration-300"
-                style={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}
-              />
-            </div>
-            
-            {/* Step Indicators */}
-            <div className="relative flex justify-between">
-              {steps.map((step, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col items-center"
-                >
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center font-medium text-sm transition-all ${
-                      index < currentStep
-                        ? 'bg-green-600 text-white'
-                        : index === currentStep
-                        ? 'bg-blue-600 text-white ring-4 ring-blue-100'
-                        : 'bg-white border-2 border-gray-300 text-gray-400'
-                    }`}
-                  >
-                    {index < currentStep ? (
-                      <IoCheckmarkCircle className="w-5 h-5" />
-                    ) : (
-                      <span className="text-xs">{step.icon}</span>
-                    )}
-                  </div>
-                  <div className="mt-2 text-center">
-                    <p className={`text-xs font-medium ${
-                      index === currentStep ? 'text-gray-900' : 'text-gray-500'
-                    }`}>
-                      {step.title}
-                    </p>
-                    <p className="text-xs text-gray-400 hidden sm:block mt-0.5">
-                      {step.description}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Step Counter */}
-        <div className="text-center mb-4">
-          <p className="text-sm font-medium text-gray-700">
-            Step {currentStep + 1} of {steps.length}
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('completeYourTrip')}</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            {booking.car.year} {booking.car.make} {booking.car.model}
           </p>
+          {getTripDuration() && (
+            <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <IoTimeOutline className="w-4 h-4 mr-1" />
+              <span>{t('tripDuration')}: {getTripDuration()}</span>
+            </div>
+          )}
         </div>
+
+        {/* Progress Bar — matching trip start layout */}
+        <TripStepProgress
+          steps={steps.map(s => ({ name: s.title }))}
+          currentStep={currentStep}
+          className="mb-8"
+        />
 
         {/* Error Display */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded-lg">
             <div className="flex items-start">
               <IoWarningOutline className="w-5 h-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-600">{error}</p>
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
             </div>
           </div>
         )}
 
         {/* Current Step Component */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-6 mb-6">
           <CurrentStepComponent
             booking={booking}
             data={tripData}
@@ -513,30 +393,27 @@ export default function TripEndPage() {
             <button
               onClick={currentStep === 0 ? () => router.push(`/rentals/dashboard/bookings/${bookingId}`) : handleBack}
               disabled={submitting}
-              className="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
             >
-              {currentStep === 0 ? 'Cancel' : 'Previous'}
+              {currentStep === 0 ? 'Cancel' : 'Back'}
             </button>
-            
+
             <button
               onClick={handleNext}
               disabled={submitting}
-              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              className="px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors disabled:opacity-50"
             >
-              Continue
-              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+              {submitting ? 'Processing...' : 'Next'}
             </button>
           </div>
         )}
 
-        {/* Legal Notice - Also hide on last step as PaymentConfirm has its own */}
+        {/* Legal Notice */}
         {!isLastStep && (
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-xs text-gray-600 text-center">
-              By proceeding, you agree to the charges calculated based on your trip details. 
-              An itemized statement will be provided per Arizona Revised Statutes §33-1321. 
+          <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+            <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
+              By proceeding, you agree to the charges calculated based on your trip details.
+              An itemized statement will be provided per Arizona Revised Statutes §33-1321.
               You have 48 hours to dispute any charges.
             </p>
           </div>

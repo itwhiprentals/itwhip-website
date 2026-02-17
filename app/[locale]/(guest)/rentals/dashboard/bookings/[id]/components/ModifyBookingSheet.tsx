@@ -128,12 +128,13 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
   const [checkingAvailability, setCheckingAvailability] = useState(false)
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null)
 
-  // Reset state when opening
+  // Reset state only when sheet OPENS (not on every booking refetch)
+  const [wasOpen, setWasOpen] = useState(false)
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !wasOpen) {
+      // Sheet just opened — initialize from booking data
       setNewStartDate(new Date(booking.startDate))
       if (extendOnly) {
-        // Pre-set to current end + 1 day for extension
         const next = new Date(booking.endDate)
         next.setDate(next.getDate() + 1)
         setNewEndDate(next)
@@ -152,7 +153,8 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
       setError(null)
       setIsAvailable(null)
     }
-  }, [isOpen, booking, extendOnly])
+    setWasOpen(isOpen)
+  }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Calculate days
   const days = useMemo(() => {
@@ -217,7 +219,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
     }
   }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Check availability when dates change
+  // Real-time availability check when dates change
   useEffect(() => {
     if (!isOpen || !datesChanged || !newStartDate || !newEndDate) {
       setIsAvailable(null)
@@ -305,15 +307,36 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
     return false
   }, [datesChanged, insuranceTier, deliveryType, addOns, booking])
 
-  // Submit modification
+  // Submit modification — checks availability at submit time (booking race pattern)
   const handleSubmit = async () => {
     if (!newStartDate || !newEndDate || !hasChanges || !newPricing) return
-    if (datesChanged && isAvailable === false) return
 
     setSubmitting(true)
     setError(null)
+    setIsAvailable(null)
 
     try {
+      // Step 1: Check availability at submit time (booking race — someone else may have booked)
+      if (datesChanged) {
+        setCheckingAvailability(true)
+        const params = new URLSearchParams({
+          startDate: formatDate(newStartDate),
+          endDate: formatDate(newEndDate)
+        })
+        const availRes = await fetch(`/api/rentals/bookings/${booking.id}/modify?${params}`)
+        const availData = await availRes.json()
+        setCheckingAvailability(false)
+
+        if (!availData.available) {
+          setIsAvailable(false)
+          setError('These dates are no longer available. Another booking may have been made. Please choose different dates.')
+          setSubmitting(false)
+          return
+        }
+        setIsAvailable(true)
+      }
+
+      // Step 2: Submit the modification
       const res = await fetch(`/api/rentals/bookings/${booking.id}/modify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -343,6 +366,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
       setError('Failed to modify booking')
     } finally {
       setSubmitting(false)
+      setCheckingAvailability(false)
     }
   }
 
@@ -372,7 +396,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
             disabled={!hasChanges || submitting || dateBlocked || checkingAvailability}
             className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submitting ? t('updating') : t('confirmChanges')}
+            {submitting ? t('updating') : hasChanges && priceDiff > 0.01 ? `${t('confirmChanges')} (+$${formatPrice(priceDiff)})` : hasChanges && priceDiff < -0.01 ? `${t('confirmChanges')} (-$${formatPrice(Math.abs(priceDiff))})` : t('confirmChanges')}
           </button>
         </div>
       }
@@ -418,7 +442,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
                 />
               </div>
             )}
-            <div>
+            <div className={extendOnly ? 'text-center' : ''}>
               <label className="text-[10px] font-medium text-gray-600 mb-1 block">
                 {extendOnly ? 'New Return Date' : t('return')}
               </label>
@@ -430,14 +454,14 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
                   : (newStartDate ? new Date(newStartDate.getTime() + 86400000) : today)
                 }
                 dateFormat="MMM d, yyyy"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${extendOnly ? 'text-center' : ''}`}
               />
             </div>
           </div>
 
           {/* Availability status */}
           {datesChanged && (
-            <div className="mt-2">
+            <div className={`mt-2 ${extendOnly ? 'text-center' : ''}`}>
               {checkingAvailability ? (
                 <p className="text-[10px] text-blue-600">{t('checkingAvailability')}</p>
               ) : isAvailable === false ? (

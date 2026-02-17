@@ -403,7 +403,7 @@ export default function BookingDetailsPage() {
   const isTripActive = !!booking.tripStartedAt && !booking.tripEndedAt
 
   return (
-    <div className={`bg-gray-50 dark:bg-gray-950 ${isTripActive ? 'min-h-[calc(100vh-2rem)] pb-6' : 'min-h-screen'}`}>
+    <div className={`bg-gray-50 dark:bg-gray-950 ${isTripActive ? 'pb-4' : 'min-h-screen'}`}>
       {/* Toast Notification */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg animate-in slide-in-from-top-2 ${
@@ -606,7 +606,11 @@ export default function BookingDetailsPage() {
 
         {booking.tripStartedAt && !booking.tripEndedAt && (
           <div className="mt-6">
-            <TripActiveCard booking={booking} onExtend={() => setShowModifyModal(true)} />
+            <TripActiveCard
+              booking={booking}
+              onExtend={() => setShowModifyModal(true)}
+              onViewAgreement={() => setShowAgreement(true)}
+            />
           </div>
         )}
 
@@ -619,28 +623,33 @@ export default function BookingDetailsPage() {
         {/* Main Content Grid — hidden entirely during active trip except messages */}
         {isTripActive ? (
           /* Active trip: collapsible messages */
-          booking.status !== 'CANCELLED' && (
-            <details className="mt-3 group">
-              <summary className="flex items-center justify-between cursor-pointer bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2.5 select-none">
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Messages</span>
-                <svg className="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </summary>
-              <div className="mt-2">
-                <MessagesPanel
-                  bookingId={bookingId}
-                  messages={messages}
-                  loading={messagesLoading}
-                  sending={messageSending}
-                  error={messageError}
-                  onSendMessage={sendMessage}
-                  onFileUpload={handleMessageFileUpload}
-                  uploadingFile={messageUploading}
-                />
-              </div>
-            </details>
-          )
+          <>
+            {booking.status !== 'CANCELLED' && (
+              <details className="mt-3 group">
+                <summary className="flex items-center justify-between cursor-pointer bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2.5 select-none">
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Messages</span>
+                  <svg className="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <div className="mt-2">
+                  <MessagesPanel
+                    bookingId={bookingId}
+                    messages={messages}
+                    loading={messagesLoading}
+                    sending={messageSending}
+                    error={messageError}
+                    onSendMessage={sendMessage}
+                    onFileUpload={handleMessageFileUpload}
+                    uploadingFile={messageUploading}
+                  />
+                </div>
+              </details>
+            )}
+            <p className="text-center text-[10px] text-gray-400 dark:text-gray-500 mt-3">
+              Need help? <a href="tel:602-845-9758" className="font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">602-845-9758</a>
+            </p>
+          </>
         ) : (
           <div className={`grid gap-6 mt-6 ${isPreTripReady ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
             {/* Left Column - Details */}
@@ -738,7 +747,13 @@ export default function BookingDetailsPage() {
             carType: booking.car.type || 'standard',
             seats: booking.car.seats || 4,
             dailyRate: booking.dailyRate,
-            city: booking.onboardingCompletedAt ? booking.pickupLocation : 'Phoenix, AZ'
+            city: booking.car?.city || 'Phoenix',
+            address: booking.car?.address || booking.pickupLocation || 'Phoenix, AZ',
+            host: {
+              name: booking.host?.name || '',
+              profilePhoto: booking.host?.profilePhoto ?? undefined,
+              responseTime: booking.host?.responseTime
+            }
           }}
           bookingDetails={{
             carId: booking.car.id || '',
@@ -748,7 +763,7 @@ export default function BookingDetailsPage() {
             startTime: booking.startTime || '10:00 AM',
             endTime: booking.endTime || '10:00 AM',
             deliveryType: booking.pickupType || 'pickup',
-            deliveryAddress: booking.onboardingCompletedAt ? (booking.pickupLocation || 'Phoenix, AZ') : 'Phoenix, AZ',
+            deliveryAddress: booking.exactAddress || booking.car?.address || booking.pickupLocation || 'Phoenix, AZ',
             insuranceType: booking.insuranceType || 'basic',
             addOns: { refuelService: false, additionalDriver: false, extraMiles: false, vipConcierge: false },
             pricing: {
@@ -761,6 +776,9 @@ export default function BookingDetailsPage() {
               taxes: booking.taxes,
               total: booking.totalAmount,
               deposit: booking.depositAmount,
+              creditsApplied: booking.creditsApplied || 0,
+              bonusApplied: booking.bonusApplied || 0,
+              chargeAmount: booking.chargeAmount ?? null,
               breakdown: { refuelService: 0, additionalDriver: 0, extraMiles: 0, vipConcierge: 0 }
             }
           }}
