@@ -8,6 +8,7 @@ import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import { getCarModelBySlug } from '@/app/lib/data/car-models'
+import { getTranslations } from 'next-intl/server'
 import {
   IoCarSportOutline,
   IoCarOutline,
@@ -21,7 +22,6 @@ import {
   IoCheckmarkCircleOutline,
   IoStarOutline,
   IoSettingsOutline,
-  IoLocationOutline,
   IoShieldCheckmarkOutline
 } from 'react-icons/io5'
 import { MERCHANT_RETURN_POLICY, SHIPPING_DETAILS } from '@/app/lib/seo/return-policy'
@@ -29,7 +29,29 @@ import { getAlternateLanguages, getCanonicalUrl, getOgLocale } from '@/app/lib/s
 
 export const revalidate = 60
 
-// Reference to make data for display names
+// ============================================================================
+// TRANSLATION KEY MAPPING
+// ============================================================================
+
+const MODEL_SLUG_TO_KEY: Record<string, string> = {
+  'tesla/model-y': 'teslaModelY',
+  'tesla/model-3': 'teslaModel3',
+  'bmw/x5': 'bmwX5',
+  'porsche/cayenne': 'porscheCayenne',
+  'mercedes/s-class': 'mercedesSClass',
+  'dodge/hellcat': 'dodgeHellcat',
+  'lamborghini/huracan': 'lamborghiniHuracan',
+  'bentley/bentayga': 'bentleyBentayga',
+  'ferrari/488': 'ferrari488',
+  'ford/mustang-gt': 'fordMustangGt',
+  'jeep/wrangler': 'jeepWrangler',
+  'chevrolet/corvette': 'chevroletCorvette',
+}
+
+// ============================================================================
+// MAKE / MODEL DISPLAY NAMES (brand names — not translated)
+// ============================================================================
+
 const MAKE_DISPLAY_NAMES: Record<string, string> = {
   'tesla': 'Tesla',
   'bmw': 'BMW',
@@ -77,7 +99,6 @@ const MAKE_DISPLAY_NAMES: Record<string, string> = {
   'polestar': 'Polestar'
 }
 
-// Helper to format slug to display name
 function formatDisplayName(slug: string): string {
   return slug
     .split('-')
@@ -85,17 +106,13 @@ function formatDisplayName(slug: string): string {
     .join(' ')
 }
 
-// Helper to get make display name
 function getMakeDisplayName(makeSlug: string): string {
   return MAKE_DISPLAY_NAMES[makeSlug.toLowerCase()] || formatDisplayName(makeSlug)
 }
 
-// Helper to format model slug to display name
 function getModelDisplayName(modelSlug: string): string {
-  // Decode URL-encoded strings (e.g., hurac%C3%A1n → huracán)
   const decodedSlug = decodeURIComponent(modelSlug)
 
-  // Handle common model naming patterns
   const modelMap: Record<string, string> = {
     'model-3': 'Model 3',
     'model-y': 'Model Y',
@@ -152,7 +169,7 @@ function getModelDisplayName(modelSlug: string): string {
     'macan': 'Macan',
     'panamera': 'Panamera',
     'huracan': 'Huracán',
-    'huracán': 'Huracán', // Handle URL-encoded accent
+    'huracán': 'Huracán',
     'urus': 'Urus',
     'aventador': 'Aventador',
     '488': '488',
@@ -198,9 +215,12 @@ function getModelDisplayName(modelSlug: string): string {
     'suburban': 'Suburban'
   }
 
-  // Try both decoded and original slug in lookup
   return modelMap[decodedSlug.toLowerCase()] || modelMap[modelSlug.toLowerCase()] || formatDisplayName(decodedSlug)
 }
+
+// ============================================================================
+// METADATA
+// ============================================================================
 
 interface PageProps {
   params: Promise<{ locale: string; make: string; model: string }>
@@ -208,39 +228,21 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale, make, model } = await params
+  const t = await getTranslations({ locale, namespace: 'RentalModel' })
 
-  // First check if we have predefined SEO data
   const predefinedData = getCarModelBySlug(make, model)
-  if (predefinedData) {
-    return {
-      title: predefinedData.metaTitle,
-      description: predefinedData.metaDescription,
-      keywords: [
-        `rent ${predefinedData.displayName}`,
-        `${predefinedData.displayName} rental Phoenix`,
-        `${predefinedData.make} rental Arizona`,
-      ],
-      openGraph: {
-        title: predefinedData.metaTitle,
-        description: predefinedData.metaDescription,
-        url: getCanonicalUrl(`/rentals/makes/${make}/${model}`, locale),
-        locale: getOgLocale(locale),
-        type: 'website'
-      },
-      alternates: {
-        canonical: getCanonicalUrl(`/rentals/makes/${make}/${model}`, locale),
-        languages: getAlternateLanguages(`/rentals/makes/${make}/${model}`),
-      },
-    }
-  }
+  const tKey = MODEL_SLUG_TO_KEY[`${make}/${model}`]
 
-  // Generate dynamic metadata
   const makeName = getMakeDisplayName(make)
   const modelName = getModelDisplayName(model)
   const displayName = `${makeName} ${modelName}`
 
-  const title = `Rent ${displayName} in Phoenix | ${makeName} Rental | ItWhip`
-  const description = `Rent a ${displayName} in Phoenix, AZ. Book directly from local owners. Competitive daily rates, flexible pickup options, and premium ${makeName} vehicles available now.`
+  const title = tKey
+    ? t(`${tKey}MetaTitle`)
+    : t('genericMetaTitle', { model: displayName, make: makeName })
+  const description = tKey
+    ? t(`${tKey}MetaDescription`)
+    : t('genericMetaDescription', { model: displayName, make: makeName })
 
   return {
     title,
@@ -249,8 +251,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       `rent ${displayName}`,
       `${displayName} rental Phoenix`,
       `${makeName} rental Arizona`,
-      `${displayName} for rent`,
-      `hire ${displayName} Phoenix`
     ],
     openGraph: {
       title,
@@ -266,18 +266,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-export default async function CarModelPage({ params }: PageProps) {
-  const { make, model } = await params
+// ============================================================================
+// PAGE COMPONENT
+// ============================================================================
 
-  // Get display names
+export default async function CarModelPage({ params }: PageProps) {
+  const { locale, make, model } = await params
+  const t = await getTranslations({ locale, namespace: 'RentalModel' })
+
   const makeName = getMakeDisplayName(make)
   const modelName = getModelDisplayName(model)
   const displayName = `${makeName} ${modelName}`
 
-  // Check for predefined rich SEO data
+  // Check for predefined rich SEO data (specs, priceRange stay from code)
   const predefinedData = getCarModelBySlug(make, model)
+  const tKey = MODEL_SLUG_TO_KEY[`${make}/${model}`]
+  const isPredefined = !!tKey
 
-  // Fetch matching cars from database - search by make AND model
+  // Fetch matching cars from database
   const cars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
@@ -318,13 +324,12 @@ export default async function CarModelPage({ params }: PageProps) {
   const totalCars = cars.length
   const minPrice = cars.length > 0 ? Math.min(...cars.map(c => Number(c.dailyRate))) : (predefinedData?.priceRange?.min || 50)
   const maxPrice = cars.length > 0 ? Math.max(...cars.map(c => Number(c.dailyRate))) : (predefinedData?.priceRange?.max || 200)
-  // Calculate average rating only from cars that have ratings
   const carsWithRatings = cars.filter(c => c.rating && c.rating > 0)
   const avgRating = carsWithRatings.length > 0
     ? (carsWithRatings.reduce((acc, c) => acc + (c.rating || 0), 0) / carsWithRatings.length).toFixed(1)
     : null
 
-  // Fetch other model cars from same make (different from current model) for "Other Models" section
+  // Fetch other model cars from same make
   const otherModelCars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
@@ -364,20 +369,53 @@ export default async function CarModelPage({ params }: PageProps) {
     take: 8
   })
 
-  // Calculate priceValidUntil (90 days from now)
+  // ---------- Translated content ----------
+
+  const heroTitle = isPredefined
+    ? t(`${tKey}H1`)
+    : t('heroTitle', { model: displayName })
+  const heroSubtitle = isPredefined
+    ? t(`${tKey}HeroSubtitle`)
+    : t('genericHeroSubtitle', { model: displayName, make: makeName })
+  const carType = isPredefined ? t(`${tKey}CarType`) : null
+
+  const whyRent = isPredefined
+    ? Array.from({ length: 5 }, (_, i) => t(`${tKey}WhyRent${i}`))
+    : Array.from({ length: 5 }, (_, i) => t(`genericWhyRent${i}`, { model: displayName }))
+
+  const perfectFor = isPredefined
+    ? Array.from({ length: 5 }, (_, i) => t(`${tKey}PerfectFor${i}`))
+    : Array.from({ length: 5 }, (_, i) => t(`genericPerfectFor${i}`))
+
+  const features = isPredefined
+    ? Array.from({ length: 6 }, (_, i) => t(`${tKey}Feature${i}`))
+    : null
+
+  const content = isPredefined ? t(`${tKey}Content`) : null
+
+  const faqs = isPredefined
+    ? Array.from({ length: 3 }, (_, i) => ({
+        question: t(`${tKey}Faq${i}Question`),
+        answer: t(`${tKey}Faq${i}Answer`)
+      }))
+    : null
+
+  // ---------- Price valid until (schema) ----------
+
   const priceValidUntilDate = new Date()
   priceValidUntilDate.setDate(priceValidUntilDate.getDate() + 90)
   const priceValidUntil = priceValidUntilDate.toISOString().split('T')[0]
 
-  // JSON-LD Schema
+  // ---------- JSON-LD Schema ----------
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
       {
         '@type': 'Product',
-        name: `${displayName} Rental`,
+        name: t('schemaRentalName', { model: displayName }),
         url: `https://itwhip.com/rentals/makes/${make}/${model}`,
-        description: `Rent a ${displayName} in Phoenix, AZ from local owners.`,
+        description: t('schemaRentalDescription', { model: displayName }),
         image: cars[0]?.photos?.[0]?.url || 'https://itwhip.com/images/placeholder-car.jpg',
         brand: {
           '@type': 'Brand',
@@ -405,34 +443,14 @@ export default async function CarModelPage({ params }: PageProps) {
       {
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://itwhip.com' },
-          { '@type': 'ListItem', position: 2, name: 'Rentals', item: 'https://itwhip.com/rentals' },
-          { '@type': 'ListItem', position: 3, name: `${makeName} Rentals`, item: `https://itwhip.com/rentals/makes/${make}` },
+          { '@type': 'ListItem', position: 1, name: t('breadcrumbHome'), item: 'https://itwhip.com' },
+          { '@type': 'ListItem', position: 2, name: t('breadcrumbRentals'), item: 'https://itwhip.com/rentals' },
+          { '@type': 'ListItem', position: 3, name: t('schemaMakeRentals', { make: makeName }), item: `https://itwhip.com/rentals/makes/${make}` },
           { '@type': 'ListItem', position: 4, name: modelName, item: `https://itwhip.com/rentals/makes/${make}/${model}` }
         ]
       }
     ]
   }
-
-  // Use predefined data if available, otherwise use dynamic content
-  const heroSubtitle = predefinedData?.heroSubtitle ||
-    `Rent a ${displayName} from local owners in Phoenix. Experience premium ${makeName} quality with flexible booking and competitive daily rates.`
-
-  const whyRent = predefinedData?.whyRent || [
-    `Experience the ${displayName} without the commitment of ownership`,
-    `Rent directly from verified local owners in Phoenix`,
-    `Flexible pickup and delivery options throughout Arizona`,
-    `Full insurance coverage included with every rental`,
-    `24/7 roadside assistance for peace of mind`
-  ]
-
-  const perfectFor = predefinedData?.perfectFor || [
-    'Weekend getaways around Arizona',
-    'Special occasions and events',
-    'Business trips requiring reliable transportation',
-    'Test driving before you buy',
-    'Visitors exploring Phoenix and Scottsdale'
-  ]
 
   return (
     <>
@@ -452,10 +470,10 @@ export default async function CarModelPage({ params }: PageProps) {
               <div>
                 <div className="flex items-center gap-2 text-amber-400 text-xs font-medium mb-2 uppercase tracking-wide">
                   <IoCarSportOutline className="w-4 h-4" />
-                  {makeName} {predefinedData?.carType && `• ${predefinedData.carType}`}
+                  {makeName} {carType && `• ${carType}`}
                 </div>
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 text-white">
-                  Rent a <span className="text-amber-400">{displayName}</span> in Phoenix
+                  {heroTitle}
                 </h1>
                 <p className="text-sm sm:text-base text-gray-300 mb-4">
                   {heroSubtitle}
@@ -465,18 +483,18 @@ export default async function CarModelPage({ params }: PageProps) {
                 <div className="flex flex-wrap items-center gap-4 mb-4">
                   {totalCars > 0 && (
                     <div className="inline-flex items-baseline gap-1.5 bg-white/10 backdrop-blur rounded-lg px-3 py-1.5">
-                      <span className="text-gray-400 text-xs">From</span>
+                      <span className="text-gray-400 text-xs">{t('fromLabel')}</span>
                       <span className="text-xl font-bold text-amber-400">${minPrice}</span>
-                      <span className="text-gray-400 text-xs">/day</span>
+                      <span className="text-gray-400 text-xs">{t('perDay')}</span>
                     </div>
                   )}
                   <div className="text-sm text-gray-300">
-                    <span className="font-bold text-white">{totalCars}</span> available now
+                    <span className="font-bold text-white">{totalCars}</span> {t('availableNow')}
                   </div>
-                  {totalCars > 0 && (
+                  {totalCars > 0 && avgRating && (
                     <div className="flex items-center gap-1 text-sm text-gray-300">
                       <IoStarOutline className="w-3.5 h-3.5 text-amber-400" />
-                      <span className="font-bold text-white">{avgRating}</span> avg rating
+                      <span className="font-bold text-white">{avgRating}</span> {t('avgRating')}
                     </div>
                   )}
                 </div>
@@ -488,21 +506,21 @@ export default async function CarModelPage({ params }: PageProps) {
                       <div className="text-center">
                         <IoSpeedometerOutline className="w-5 h-5 mx-auto mb-1 text-amber-400" />
                         <div className="text-xs font-semibold">{predefinedData.specs.horsepower}</div>
-                        <div className="text-[10px] text-gray-400">Power</div>
+                        <div className="text-[10px] text-gray-400">{t('specPower')}</div>
                       </div>
                     )}
                     {predefinedData.specs.acceleration && (
                       <div className="text-center">
                         <IoFlashOutline className="w-5 h-5 mx-auto mb-1 text-amber-400" />
                         <div className="text-xs font-semibold">{predefinedData.specs.acceleration}</div>
-                        <div className="text-[10px] text-gray-400">0-60 mph</div>
+                        <div className="text-[10px] text-gray-400">{t('specZeroToSixty')}</div>
                       </div>
                     )}
                     {predefinedData.specs.seats && (
                       <div className="text-center">
                         <IoPeopleOutline className="w-5 h-5 mx-auto mb-1 text-amber-400" />
                         <div className="text-xs font-semibold">{predefinedData.specs.seats}</div>
-                        <div className="text-[10px] text-gray-400">Seats</div>
+                        <div className="text-[10px] text-gray-400">{t('specSeats')}</div>
                       </div>
                     )}
                   </div>
@@ -512,7 +530,7 @@ export default async function CarModelPage({ params }: PageProps) {
                   href={`/rentals/makes/${make}`}
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg transition-colors"
                 >
-                  Browse All {makeName} Rentals
+                  {t('browseAllMakeRentals', { make: makeName })}
                   <IoChevronForwardOutline className="w-4 h-4" />
                 </Link>
               </div>
@@ -523,43 +541,43 @@ export default async function CarModelPage({ params }: PageProps) {
                   <>
                     <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
                       <IoSettingsOutline className="w-4 h-4 text-amber-400" />
-                      Specifications
+                      {t('specificationsTitle')}
                     </h2>
                     <dl className="space-y-2 text-sm">
                       {predefinedData.specs.engine && (
                         <div className="flex justify-between">
-                          <dt className="text-gray-400 text-xs">Engine</dt>
+                          <dt className="text-gray-400 text-xs">{t('specEngine')}</dt>
                           <dd className="font-medium text-xs">{predefinedData.specs.engine}</dd>
                         </div>
                       )}
                       {predefinedData.specs.range && (
                         <div className="flex justify-between">
-                          <dt className="text-gray-400 text-xs">Range</dt>
+                          <dt className="text-gray-400 text-xs">{t('specRange')}</dt>
                           <dd className="font-medium text-xs">{predefinedData.specs.range}</dd>
                         </div>
                       )}
                       {predefinedData.specs.horsepower && (
                         <div className="flex justify-between">
-                          <dt className="text-gray-400 text-xs">Horsepower</dt>
+                          <dt className="text-gray-400 text-xs">{t('specHorsepower')}</dt>
                           <dd className="font-medium text-xs">{predefinedData.specs.horsepower}</dd>
                         </div>
                       )}
                       {predefinedData.specs.acceleration && (
                         <div className="flex justify-between">
-                          <dt className="text-gray-400 text-xs">Acceleration</dt>
+                          <dt className="text-gray-400 text-xs">{t('specAcceleration')}</dt>
                           <dd className="font-medium text-xs">{predefinedData.specs.acceleration}</dd>
                         </div>
                       )}
                       <div className="flex justify-between">
-                        <dt className="text-gray-400 text-xs">Seating</dt>
-                        <dd className="font-medium text-xs">{predefinedData.specs.seats} passengers</dd>
+                        <dt className="text-gray-400 text-xs">{t('specSeating')}</dt>
+                        <dd className="font-medium text-xs">{t('specPassengers', { count: predefinedData.specs.seats })}</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-gray-400 text-xs">Drivetrain</dt>
+                        <dt className="text-gray-400 text-xs">{t('specDrivetrain')}</dt>
                         <dd className="font-medium text-xs">{predefinedData.specs.drivetrain}</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-gray-400 text-xs">Fuel</dt>
+                        <dt className="text-gray-400 text-xs">{t('specFuel')}</dt>
                         <dd className="font-medium text-xs flex items-center gap-1">
                           {predefinedData.specs.fuelType === 'Electric' && <IoLeafOutline className="w-3 h-3 text-green-400" />}
                           {predefinedData.specs.fuelType}
@@ -571,28 +589,28 @@ export default async function CarModelPage({ params }: PageProps) {
                   <>
                     <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
                       <IoShieldCheckmarkOutline className="w-4 h-4 text-amber-400" />
-                      Why Rent with ItWhip?
+                      {t('whyRentWithItwhip')}
                     </h2>
                     <ul className="space-y-2">
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircleOutline className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                        <span className="text-xs text-gray-300">Verified local owners in Phoenix</span>
+                        <span className="text-xs text-gray-300">{t('whyItwhip0')}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircleOutline className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                        <span className="text-xs text-gray-300">Full insurance coverage included</span>
+                        <span className="text-xs text-gray-300">{t('whyItwhip1')}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircleOutline className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                        <span className="text-xs text-gray-300">24/7 roadside assistance</span>
+                        <span className="text-xs text-gray-300">{t('whyItwhip2')}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircleOutline className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                        <span className="text-xs text-gray-300">Flexible pickup & delivery</span>
+                        <span className="text-xs text-gray-300">{t('whyItwhip3')}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircleOutline className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                        <span className="text-xs text-gray-300">No hidden fees or charges</span>
+                        <span className="text-xs text-gray-300">{t('whyItwhip4')}</span>
                       </li>
                     </ul>
                   </>
@@ -609,13 +627,13 @@ export default async function CarModelPage({ params }: PageProps) {
               <li className="flex items-center gap-1.5">
                 <Link href="/" className="hover:text-amber-600 flex items-center gap-1">
                   <IoHomeOutline className="w-3.5 h-3.5" />
-                  Home
+                  {t('breadcrumbHome')}
                 </Link>
                 <IoChevronForwardOutline className="w-2.5 h-2.5" />
               </li>
               <li className="flex items-center gap-1.5">
                 <Link href="/rentals" className="hover:text-amber-600">
-                  Rentals
+                  {t('breadcrumbRentals')}
                 </Link>
                 <IoChevronForwardOutline className="w-2.5 h-2.5" />
               </li>
@@ -636,10 +654,9 @@ export default async function CarModelPage({ params }: PageProps) {
         <section className="py-6">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-6">
-              {/* Why Rent */}
               <div>
                 <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-                  Why Rent a {displayName}?
+                  {t('whyRentTitle', { model: displayName })}
                 </h2>
                 <ul className="space-y-2">
                   {whyRent.map((reason, i) => (
@@ -651,10 +668,9 @@ export default async function CarModelPage({ params }: PageProps) {
                 </ul>
               </div>
 
-              {/* Perfect For */}
               <div>
                 <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-                  Perfect For
+                  {t('perfectForTitle')}
                 </h2>
                 <ul className="space-y-2">
                   {perfectFor.map((use, i) => (
@@ -667,26 +683,25 @@ export default async function CarModelPage({ params }: PageProps) {
               </div>
             </div>
 
-            {/* Content */}
-            {predefinedData?.content && (
+            {content && (
               <div className="mt-6">
                 <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {predefinedData.content}
+                  {content}
                 </p>
               </div>
             )}
           </div>
         </section>
 
-        {/* Features Grid - only if predefined */}
-        {predefinedData?.features && (
+        {/* Features Grid */}
+        {features && (
           <section className="py-6 bg-white dark:bg-gray-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">
-                Key Features
+                {t('keyFeaturesTitle')}
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-                {predefinedData.features.map((feature, i) => (
+                {features.map((feature, i) => (
                   <div
                     key={i}
                     className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg"
@@ -706,12 +721,15 @@ export default async function CarModelPage({ params }: PageProps) {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  {totalCars > 0 ? `Available ${displayName} Rentals` : `${displayName} Rentals`}
+                  {totalCars > 0
+                    ? t('availableRentalsTitle', { model: displayName })
+                    : t('modelRentalsTitle', { model: displayName })
+                  }
                 </h2>
                 <p className="text-xs text-gray-500 mt-0.5">
                   {totalCars > 0
-                    ? `${totalCars} ${displayName} vehicle${totalCars > 1 ? 's' : ''} available in Phoenix`
-                    : `No ${displayName} vehicles currently available`
+                    ? t('vehiclesAvailable', { count: totalCars, model: displayName })
+                    : t('noVehiclesCurrently', { model: displayName })
                   }
                 </p>
               </div>
@@ -719,7 +737,7 @@ export default async function CarModelPage({ params }: PageProps) {
                 href={`/rentals/makes/${make}`}
                 className="text-xs text-amber-600 hover:text-amber-700 font-medium flex items-center gap-1"
               >
-                View all {makeName}
+                {t('viewAllMake', { make: makeName })}
                 <IoChevronForwardOutline className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -734,24 +752,24 @@ export default async function CarModelPage({ params }: PageProps) {
               <div className="text-center py-10 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                 <IoCarOutline className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2">
-                  No {displayName} Available Right Now
+                  {t('noModelAvailableTitle', { model: displayName })}
                 </h3>
                 <p className="text-sm text-gray-500 mb-5 max-w-md mx-auto">
-                  We don&apos;t currently have any {displayName} vehicles in our fleet, but check back soon or browse other {makeName} models below.
+                  {t('noModelAvailableDescription', { model: displayName, make: makeName })}
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
                   <Link
                     href={`/rentals/makes/${make}`}
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg transition-colors"
                   >
-                    Browse All {makeName}
+                    {t('browseAllMake', { make: makeName })}
                     <IoChevronForwardOutline className="w-4 h-4" />
                   </Link>
                   <Link
                     href="/rentals"
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white text-sm font-semibold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                   >
-                    Browse All Cars
+                    {t('browseAllCars')}
                   </Link>
                 </div>
               </div>
@@ -759,19 +777,19 @@ export default async function CarModelPage({ params }: PageProps) {
           </div>
         </section>
 
-        {/* Other Models from Same Make - show actual cars with CompactCarCard */}
+        {/* Other Models from Same Make */}
         {otherModelCars.length > 0 && (
           <section className="py-8 bg-gray-100 dark:bg-gray-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Other {makeName} Models Available
+                  {t('otherModelsTitle', { make: makeName })}
                 </h2>
                 <Link
                   href={`/rentals/makes/${make}`}
                   className="text-xs text-amber-600 hover:text-amber-700 font-medium flex items-center gap-1"
                 >
-                  View all {makeName}
+                  {t('viewAllMake', { make: makeName })}
                   <IoChevronForwardOutline className="w-3.5 h-3.5" />
                 </Link>
               </div>
@@ -784,16 +802,16 @@ export default async function CarModelPage({ params }: PageProps) {
           </section>
         )}
 
-        {/* FAQs - only if predefined */}
-        {predefinedData?.faqs && predefinedData.faqs.length > 0 && (
+        {/* FAQs */}
+        {faqs && faqs.length > 0 && (
           <section className="py-6 bg-gray-100 dark:bg-gray-800">
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
               <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4 flex items-center gap-2">
                 <IoHelpCircleOutline className="w-4 h-4 text-amber-500" />
-                Frequently Asked Questions
+                {t('faqTitle')}
               </h2>
               <div className="space-y-2">
-                {predefinedData.faqs.map((faq, i) => (
+                {faqs.map((faq, i) => (
                   <details
                     key={i}
                     className="group bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
@@ -817,18 +835,18 @@ export default async function CarModelPage({ params }: PageProps) {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-xl font-bold mb-2">
               {totalCars > 0
-                ? `Ready to Drive a ${displayName}?`
-                : `Looking for a ${makeName}?`
+                ? t('ctaReadyToDrive', { model: displayName })
+                : t('ctaLookingForMake', { make: makeName })
               }
             </h2>
             <p className="text-sm text-white/90 mb-4">
-              Book directly from local owners in Phoenix. Better cars, better prices, better experience.
+              {t('ctaDescription')}
             </p>
             <Link
               href={totalCars > 0 ? `/rentals/search?make=${encodeURIComponent(makeName)}&model=${encodeURIComponent(modelName)}` : `/rentals/makes/${make}`}
               className="inline-flex items-center gap-2 px-6 py-2.5 bg-white text-amber-600 text-sm font-semibold rounded-lg hover:bg-gray-100 transition-colors"
             >
-              {totalCars > 0 ? `Book a ${displayName}` : `Browse ${makeName} Rentals`}
+              {totalCars > 0 ? t('ctaBookModel', { model: displayName }) : t('ctaBrowseMakeRentals', { make: makeName })}
               <IoChevronForwardOutline className="w-4 h-4" />
             </Link>
           </div>

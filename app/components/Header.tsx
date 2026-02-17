@@ -265,7 +265,7 @@ function HeaderInner(_props: HeaderProps = {}) {
     { name: t('myCars'), href: '/host/cars', icon: IoCarOutline },
     { name: t('bookings'), href: '/host/bookings', icon: IoCalendarOutline },
     { name: t('earnings'), href: '/host/earnings', icon: IoWalletOutline },
-    { name: 'Profile', href: '/host/profile', icon: IoPersonOutline },
+    { name: t('profile'), href: '/host/profile', icon: IoPersonOutline },
   ] : []
 
   // Get profile photo - prioritize profilePhoto over avatar

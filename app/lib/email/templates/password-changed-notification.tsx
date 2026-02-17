@@ -101,7 +101,7 @@ export interface PasswordChangedEmailData {
                         This is an automated security notification.
                       </p>
                       <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-                        © 2025 ItWhip. All rights reserved.
+                        © 2026 ItWhip. All rights reserved.
                       </p>
                     </td>
                   </tr>
@@ -137,6 +137,6 @@ export interface PasswordChangedEmailData {
   Need help? Contact info@itwhip.com
   
   ItWhip Technologies, Inc.
-  © 2025 ItWhip. All rights reserved.
+  © 2026 ItWhip. All rights reserved.
     `.trim()
   }

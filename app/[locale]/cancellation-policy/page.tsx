@@ -1,28 +1,29 @@
 // app/cancellation-policy/page.tsx
 import { Metadata } from 'next'
 import CancellationPolicyContent from './CancellationPolicyContent'
+import { getTranslations } from 'next-intl/server'
 
-export const metadata: Metadata = {
-  title: 'Cancellation & Refund Policy | ItWhip Car Rentals Phoenix',
-  description: 'Understand ItWhip\'s cancellation and refund policy for car rentals in Phoenix. Guest cancellation timelines, host policies, refund processing, and trip modifications explained.',
-  keywords: [
-    'car rental cancellation policy',
-    'Phoenix car rental refund',
-    'ItWhip cancellation',
-    'peer to peer car sharing cancellation',
-    'car rental refund timeline',
-    'trip modification policy',
-    'Arizona car rental cancellation'
-  ],
-  openGraph: {
-    title: 'Cancellation & Refund Policy | ItWhip Car Rentals',
-    description: 'Flexible cancellation policies for car rentals in Phoenix. Cancel 24+ hours before for a full refund. Security deposit always released.',
-    type: 'website',
-    url: 'https://itwhip.com/cancellation-policy',
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/cancellation-policy',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('cancellationPolicyTitle'),
+    description: t('cancellationPolicyDescription'),
+    openGraph: {
+      title: t('cancellationPolicyOgTitle'),
+      description: t('cancellationPolicyOgDescription'),
+      url: 'https://itwhip.com/cancellation-policy',
+      type: 'website',
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/cancellation-policy',
+    },
+  }
 }
 
 export default function CancellationPolicyPage() {

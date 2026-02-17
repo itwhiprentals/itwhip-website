@@ -12,9 +12,18 @@ import {
   IoArrowForward
 } from 'react-icons/io5'
 
-export const metadata: Metadata = {
-  title: 'Commission Tiers | Fleet Partner Program | ItWhip',
-  description: 'Learn about our tiered commission structure. Earn more as your fleet grows: 25% → 20% → 15% → 10%.',
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('partnersCommissionTitle'),
+    description: t('partnersCommissionDescription'),
+  }
 }
 
 const commissionTiers = [

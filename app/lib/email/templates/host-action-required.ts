@@ -285,7 +285,7 @@ export function getHostActionRequiredTemplate(data: HostActionRequiredData): Ema
             <a href="https://itwhip.com/host/terms">Host Terms</a> |
             <a href="https://itwhip.com/privacy">Privacy Policy</a><br>
             <span style="font-size: 11px; margin-top: 8px; display: block;">
-              © 2025 ItWhip Technologies. All rights reserved.<br>
+              © 2026 ItWhip Technologies. All rights reserved.<br>
               This is an automated compliance notification.
             </span>
           </div>
@@ -325,7 +325,7 @@ Please do not ignore this message as it may affect your ability to host vehicles
 
 ITWHIP HOST PORTAL
 Maintaining Platform Excellence
-© 2025 ItWhip Technologies. All rights reserved.
+© 2026 ItWhip Technologies. All rights reserved.
   `
   
   return { subject, html, text }

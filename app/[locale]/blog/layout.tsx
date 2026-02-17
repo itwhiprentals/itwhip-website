@@ -3,51 +3,42 @@
 // Organization, LocalBusiness, and WebSite schemas are in app/layout.tsx (DO NOT DUPLICATE)
 
 import { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 
-export const metadata: Metadata = {
-  title: {
-    template: '%s | ItWhip Blog',
-    default: 'ItWhip Blog | P2P Car Rental Insights & Arizona Car Sharing Tips'
-  },
-  description: 'Expert insights on peer-to-peer car rental in Arizona. Tips for hosts earning up to 90%, insurance guides, ESG tracking, and Phoenix car sharing news.',
-  keywords: [
-    'peer to peer car rental blog',
-    'car sharing tips arizona',
-    'turo alternative blog',
-    'p2p car rental guide',
-    'host earnings car sharing',
-    'phoenix car rental tips',
-    'car sharing insurance guide',
-    'esg car rental'
-  ],
-  openGraph: {
-    title: 'ItWhip Blog | P2P Car Rental Insights',
-    description: 'Expert insights on peer-to-peer car rental in Arizona. Tips for hosts, insurance guides, and Phoenix car sharing news.',
-    url: 'https://itwhip.com/blog',
-    siteName: 'ItWhip',
-    locale: 'en_US',
-    type: 'website',
-    images: [
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('blogTitle'),
+    description: t('blogDescription'),
+    openGraph: {
+      title: t('blogOgTitle'),
+      description: t('blogOgDescription'),
+      url: 'https://itwhip.com/blog',
+      siteName: 'ItWhip',
+      type: 'website',
+      images: [
       {
         url: 'https://itwhip.com/og/blog.png',
         width: 1200,
         height: 630,
         alt: 'ItWhip Blog - P2P Car Rental Insights'
       }
-    ]
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'ItWhip Blog | P2P Car Rental Insights',
-    description: 'Expert insights on peer-to-peer car rental in Arizona.',
-    images: ['https://itwhip.com/og/blog.png']
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/blog'
-  },
-  robots: {
-    index: true,
-    follow: true
+    ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: t('blogTwitterTitle'),
+      description: t('blogTwitterDescription'),
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/blog',
+    },
   }
 }
 

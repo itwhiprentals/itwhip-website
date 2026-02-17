@@ -477,7 +477,7 @@ export default function ListYourCarPage() {
             <div className="mb-10 max-w-2xl mx-auto">
               <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
                 <span className="font-medium">{t('rentalDaysLabel')}</span>
-                <span className="font-bold text-purple-600 text-lg">{monthlyDays} days</span>
+                <span className="font-bold text-purple-600 text-lg">{t('calcDaysCount', { count: monthlyDays })}</span>
               </div>
               <input
                 type="range"
@@ -500,7 +500,7 @@ export default function ListYourCarPage() {
                   ${earnings.netMonthly.toLocaleString()}
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Monthly ({currentInsuranceTier.percentage}% tier)
+                  {t('calcMonthlyTier', { percentage: currentInsuranceTier.percentage })}
                 </div>
               </div>
               <div className="bg-purple-50 dark:bg-purple-900/30 rounded-lg p-6 border-2 border-purple-300 dark:border-purple-700 shadow-md">
@@ -508,7 +508,7 @@ export default function ListYourCarPage() {
                   ${earnings.annualEarnings.toLocaleString()}
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Annual earnings
+                  {t('calcAnnualEarnings')}
                 </div>
               </div>
               <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-6 border-2 border-blue-300 dark:border-blue-700 shadow-md">
@@ -516,7 +516,7 @@ export default function ListYourCarPage() {
                   ${earnings.totalBenefit.toLocaleString()}
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                  With ~$8K tax savings
+                  {t('calcTaxSavings')}
                 </div>
               </div>
             </div>

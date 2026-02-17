@@ -595,7 +595,7 @@ export default function PortalLoginPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between">
             <div className="flex items-center space-x-4 text-xs text-gray-500">
-              <span>© 2025 ItWhip Technologies</span>
+              <span>© 2026 ItWhip Technologies</span>
               <Link href="/terms" className="hover:text-gray-700 dark:hover:text-gray-300">Terms</Link>
               <Link href="/privacy" className="hover:text-gray-700 dark:hover:text-gray-300">Privacy</Link>
             </div>

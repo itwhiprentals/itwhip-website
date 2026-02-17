@@ -220,7 +220,7 @@ We apologize for any inconvenience. If you believe this was an error,
 please contact our support team with your booking code #${data.bookingCode}.
 
 ITWHIP - Premium Vehicle Rentals
-© 2025 ItWhip Technologies. All rights reserved.
+© 2026 ItWhip Technologies. All rights reserved.
  `
  
  return { subject, html, text }

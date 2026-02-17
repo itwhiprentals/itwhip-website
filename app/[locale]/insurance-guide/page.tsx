@@ -768,86 +768,86 @@ export default function HostInsurancePage() {
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Liability Coverage ($1M)</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">{t('liabilityTitle')}</h4>
                     <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        Bodily injury to third parties
+                        {t('liabilityPoint1')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        Property damage to others
+                        {t('liabilityPoint2')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        Legal defense costs
+                        {t('liabilityPoint3')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        Medical payments (up to $5K)
+                        {t('liabilityPoint4')}
                       </li>
                     </ul>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Physical Damage (ACV)</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">{t('physicalDamageTitle')}</h4>
                     <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        Collision damage
+                        {t('physicalDamagePoint1')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        Comprehensive (theft, vandalism, weather)
+                        {t('physicalDamagePoint2')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        Hit-and-run damage
+                        {t('physicalDamagePoint3')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        Animal collisions
+                        {t('physicalDamagePoint4')}
                       </li>
                     </ul>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Additional Benefits</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">{t('additionalBenefitsTitle')}</h4>
                     <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        Loss of use compensation ($30-50/day)
+                        {t('additionalBenefitsPoint1')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        24/7 roadside assistance
+                        {t('additionalBenefitsPoint2')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        Towing (up to 50 miles)
+                        {t('additionalBenefitsPoint3')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        Uninsured/underinsured motorist
+                        {t('additionalBenefitsPoint4')}
                       </li>
                     </ul>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Roadside Services</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">{t('roadsideServicesTitle')}</h4>
                     <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        Jump starts
+                        {t('roadsideServicesPoint1')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        Flat tire service
+                        {t('roadsideServicesPoint2')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        Lockout assistance
+                        {t('roadsideServicesPoint3')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        Fuel delivery (up to 3 gallons)
+                        {t('roadsideServicesPoint4')}
                       </li>
                     </ul>
                   </div>
@@ -859,92 +859,92 @@ export default function HostInsurancePage() {
               <div className="bg-red-500 text-white py-3 px-6">
                 <h3 className="font-semibold flex items-center gap-2">
                   <IoCloseCircleOutline className="w-5 h-5" />
-                  What is NOT Covered
+                  {t('whatIsNotCoveredTitle')}
                 </h3>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Mechanical Issues</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">{t('mechanicalIssuesTitle')}</h4>
                     <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                       <li className="flex items-start gap-2">
                         <IoCloseCircleOutline className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                        Mechanical or electrical breakdown
+                        {t('mechanicalIssuesPoint1')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCloseCircleOutline className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                        Normal wear and tear
+                        {t('mechanicalIssuesPoint2')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCloseCircleOutline className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                        Pre-existing damage
+                        {t('mechanicalIssuesPoint3')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCloseCircleOutline className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                        Manufacturing defects
+                        {t('mechanicalIssuesPoint4')}
                       </li>
                     </ul>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Personal Property</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">{t('personalPropertyTitle')}</h4>
                     <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                       <li className="flex items-start gap-2">
                         <IoCloseCircleOutline className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                        Personal belongings in vehicle
+                        {t('personalPropertyPoint1')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCloseCircleOutline className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                        Undocumented aftermarket accessories
+                        {t('personalPropertyPoint2')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCloseCircleOutline className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                        Cash, jewelry, electronics
+                        {t('personalPropertyPoint3')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCloseCircleOutline className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                        Cargo or transported goods
+                        {t('personalPropertyPoint4')}
                       </li>
                     </ul>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Driver Behavior</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">{t('driverBehaviorTitle')}</h4>
                     <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                       <li className="flex items-start gap-2">
                         <IoCloseCircleOutline className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                        Intentional damage
+                        {t('driverBehaviorPoint1')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCloseCircleOutline className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                        DUI/DWI incidents
+                        {t('driverBehaviorPoint2')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCloseCircleOutline className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                        Racing or speed competitions
+                        {t('driverBehaviorPoint3')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCloseCircleOutline className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                        Unauthorized drivers
+                        {t('driverBehaviorPoint4')}
                       </li>
                     </ul>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Prohibited Use</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">{t('prohibitedUseTitle')}</h4>
                     <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                       <li className="flex items-start gap-2">
                         <IoCloseCircleOutline className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                        Off-platform commercial use
+                        {t('prohibitedUsePoint1')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCloseCircleOutline className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                        Rideshare (Uber/Lyft) while rented
+                        {t('prohibitedUsePoint2')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCloseCircleOutline className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                        Illegal activities
+                        {t('prohibitedUsePoint3')}
                       </li>
                       <li className="flex items-start gap-2">
                         <IoCloseCircleOutline className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                        Border crossings without approval
+                        {t('prohibitedUsePoint4')}
                       </li>
                     </ul>
                   </div>
@@ -959,26 +959,26 @@ export default function HostInsurancePage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                How Deductibles Work
+                {t('deductiblesTitle')}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                Your deductible is the amount you pay before coverage kicks in.
+                {t('deductiblesSubtitle')}
               </p>
             </div>
 
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 mb-8">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-                Plain English Explanation
+                {t('plainEnglish')}
               </h3>
               <div className="space-y-4 text-gray-600 dark:text-gray-400">
                 <p>
-                  Think of a deductible as your "skin in the game." If there's $3,000 in damage and you have a $1,500 deductible, you pay the first $1,500 and insurance covers the remaining $1,500.
+                  {t('deductibleExplain')}
                 </p>
                 <p>
-                  <strong className="text-gray-900 dark:text-white">Why do higher tiers have lower deductibles?</strong>
+                  <strong className="text-gray-900 dark:text-white">{t('whyLowerDeductibles')}</strong>
                 </p>
                 <p>
-                  Because you're bringing more insurance to the table. When you have commercial insurance (90% tier), your insurer has already assessed you as a lower risk—so we can offer you a lower deductible.
+                  {t('whyLowerDeductiblesAnswer')}
                 </p>
               </div>
             </div>
@@ -986,26 +986,26 @@ export default function HostInsurancePage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 text-center border-2 border-gray-300">
                 <div className="text-sm font-bold text-gray-500 mb-2">BASIC (40%)</div>
-                <div className="text-4xl font-black text-gray-600 mb-2">$2,500</div>
-                <div className="text-sm text-gray-500">Deductible</div>
+                <div className="text-4xl font-black text-gray-600 mb-2">{t('basicDeductible')}</div>
+                <div className="text-sm text-gray-500">{t('deductibleLabel')}</div>
                 <div className="mt-4 text-xs text-gray-500">
-                  Platform handles all insurance
+                  {t('basicDeductibleNote')}
                 </div>
               </div>
               <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 text-center border-2 border-amber-500">
                 <div className="text-sm font-bold text-amber-500 mb-2">STANDARD (75%)</div>
-                <div className="text-4xl font-black text-amber-600 mb-2">$1,500</div>
-                <div className="text-sm text-gray-500">Deductible</div>
+                <div className="text-4xl font-black text-amber-600 mb-2">{t('standardDeductible')}</div>
+                <div className="text-sm text-gray-500">{t('deductibleLabel')}</div>
                 <div className="mt-4 text-xs text-gray-500">
-                  Your P2P insurance is primary
+                  {t('standardDeductibleNote')}
                 </div>
               </div>
               <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 text-center border-2 border-emerald-500">
                 <div className="text-sm font-bold text-emerald-500 mb-2">PREMIUM (90%)</div>
-                <div className="text-4xl font-black text-emerald-600 mb-2">$1,000</div>
-                <div className="text-sm text-gray-500">Deductible</div>
+                <div className="text-4xl font-black text-emerald-600 mb-2">{t('premiumDeductible')}</div>
+                <div className="text-sm text-gray-500">{t('deductibleLabel')}</div>
                 <div className="mt-4 text-xs text-gray-500">
-                  Your commercial insurance is primary
+                  {t('premiumDeductibleNote')}
                 </div>
               </div>
             </div>
@@ -1013,17 +1013,17 @@ export default function HostInsurancePage() {
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
               <h4 className="font-semibold text-blue-800 dark:text-blue-400 mb-4 flex items-center gap-2">
                 <IoHelpCircleOutline className="w-6 h-6" />
-                40% Tier vs Bringing Your Own Insurance
+                {t('tierComparisonTitle')}
               </h4>
               <div className="space-y-4 text-sm text-gray-600 dark:text-gray-400">
                 <p>
-                  <strong>40% Tier (BASIC):</strong> You don't need any insurance. We provide everything. But you keep less of each rental AND have a higher deductible ($2,500) if something goes wrong.
+                  {t('tierComparisonBasic')}
                 </p>
                 <p>
-                  <strong>75%/90% Tier (STANDARD/PREMIUM):</strong> You bring your own coverage. You keep more money AND have lower deductibles ($1,500 or $1,000). Plus, your insurance likely has better service and faster claims because it's your policy.
+                  {t('tierComparisonTiers')}
                 </p>
                 <p className="mt-4 p-4 bg-white dark:bg-gray-800 rounded-lg">
-                  <strong className="text-gray-900 dark:text-white">Bottom Line:</strong> If you're serious about hosting and plan to rent frequently, getting P2P or commercial insurance almost always pays for itself through higher earnings and lower deductibles.
+                  {t('tierComparisonConclusion')}
                 </p>
               </div>
             </div>
@@ -1035,28 +1035,28 @@ export default function HostInsurancePage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                FNOL & FDCR: Our Claims Process
+                {t('fnolTitle')}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                How we handle incidents from first report to resolution.
+                {t('fnolSubtitle')}
               </p>
             </div>
 
             <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-8 mb-8">
               <h3 className="text-xl font-semibold text-purple-800 dark:text-purple-400 mb-4">
-                What is FNOL?
+                {t('whatIsFnol')}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                <strong>FNOL (First Notice of Loss)</strong> is the insurance industry term for the initial report you make when an incident occurs. It's the official start of the claims process.
+                {t('whatIsFnolText1')}
               </p>
               <p className="text-gray-600 dark:text-gray-400">
-                On ItWhip, we've built an FNOL-ready system that captures all the information insurance carriers need right from the start. This means faster claims processing and fewer back-and-forth requests.
+                {t('whatIsFnolText2')}
               </p>
             </div>
 
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 mb-8">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-                Our Claims Timeline
+                {t('timelineTitle')}
               </h3>
               <div className="space-y-6">
                 <div className="flex gap-4">
@@ -1064,9 +1064,9 @@ export default function HostInsurancePage() {
                     <IoFlashOutline className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">Immediate: Incident Report (FNOL)</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{t('timelineStep1')}</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Guest or host reports incident through the app. Photos, location, and description are captured automatically.
+                      {t('timelineStep1Desc')}
                     </p>
                   </div>
                 </div>
@@ -1075,9 +1075,9 @@ export default function HostInsurancePage() {
                     <IoSearchOutline className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">Within 24 Hours: Initial Review</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{t('timelineStep2')}</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Our team reviews the claim, verifies coverage, and contacts all parties. We gather additional documentation if needed.
+                      {t('timelineStep2Desc')}
                     </p>
                   </div>
                 </div>
@@ -1086,9 +1086,9 @@ export default function HostInsurancePage() {
                     <IoDocumentOutline className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">24-48 Hours: FDCR Documentation</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{t('timelineStep3')}</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      <strong>FDCR (Full Documentation & Claims Report)</strong> is compiled with trip data, mileage forensics, photos, and guest/host statements.
+                      {t('timelineStep3Desc')}
                     </p>
                   </div>
                 </div>
@@ -1097,9 +1097,9 @@ export default function HostInsurancePage() {
                     <IoSettingsOutline className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">48-72 Hours: Resolution</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{t('timelineStep4')}</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Claim approved/denied, repair estimates provided, and payout processed. For complex claims, this may extend to 5-7 days.
+                      {t('timelineStep4Desc')}
                     </p>
                   </div>
                 </div>
@@ -1109,56 +1109,56 @@ export default function HostInsurancePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6">
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
-                  What We Collect for FNOL
+                  {t('fnolCollectTitle')}
                 </h4>
                 <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                   <li className="flex items-start gap-2">
                     <IoCameraOutline className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                    Damage photos with GPS/timestamp metadata
+                    {t('fnolCollectPoint1')}
                   </li>
                   <li className="flex items-start gap-2">
                     <IoDocumentTextOutline className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                    Written incident description
+                    {t('fnolCollectPoint2')}
                   </li>
                   <li className="flex items-start gap-2">
                     <IoCarOutline className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                    Pre-trip and post-trip vehicle condition
+                    {t('fnolCollectPoint3')}
                   </li>
                   <li className="flex items-start gap-2">
                     <IoReceiptOutline className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                    Trip details (dates, mileage, booking info)
+                    {t('fnolCollectPoint4')}
                   </li>
                   <li className="flex items-start gap-2">
                     <IoPeopleOutline className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                    Third-party information (if applicable)
+                    {t('fnolCollectPoint5')}
                   </li>
                 </ul>
               </div>
 
               <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6">
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
-                  FDCR Includes
+                  {t('fdcrIncludesTitle')}
                 </h4>
                 <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                   <li className="flex items-start gap-2">
                     <IoTrendingUpOutline className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                    Mileage Forensics™ usage verification
+                    {t('fdcrIncludesPoint1')}
                   </li>
                   <li className="flex items-start gap-2">
                     <IoShieldCheckmarkOutline className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                    Insurance hierarchy documentation
+                    {t('fdcrIncludesPoint2')}
                   </li>
                   <li className="flex items-start gap-2">
                     <IoTimeOutline className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                    Complete trip timeline
+                    {t('fdcrIncludesPoint3')}
                   </li>
                   <li className="flex items-start gap-2">
                     <IoLeafOutline className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                    Host ESG/compliance status
+                    {t('fdcrIncludesPoint4')}
                   </li>
                   <li className="flex items-start gap-2">
                     <IoLockClosedOutline className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                    Guest verification records
+                    {t('fdcrIncludesPoint5')}
                   </li>
                 </ul>
               </div>
@@ -1171,10 +1171,10 @@ export default function HostInsurancePage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                What Happens If Your Insurance Lapses?
+                {t('lapseTitle')}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                Important information for hosts in the 75% and 90% tiers.
+                {t('lapseSubtitle')}
               </p>
             </div>
 
@@ -1183,10 +1183,10 @@ export default function HostInsurancePage() {
                 <IoAlertCircleOutline className="w-8 h-8 text-red-600 flex-shrink-0" />
                 <div>
                   <h3 className="text-xl font-semibold text-red-800 dark:text-red-400 mb-4">
-                    This Is Serious
+                    {t('lapseSerious')}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    If you're in the 75% or 90% tier and your insurance expires, lapses, or is cancelled—you're no longer eligible for that tier. Here's what happens:
+                    {t('lapseSeriousText')}
                   </p>
                 </div>
               </div>
@@ -1194,42 +1194,42 @@ export default function HostInsurancePage() {
 
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 mb-8">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-                If Your Insurance Lapses
+                {t('ifLapsesTitle')}
               </h3>
               <div className="space-y-6">
                 <div className="flex gap-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
                   <div className="w-10 h-10 bg-yellow-500 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">1</div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">Immediate Tier Downgrade</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{t('ifLapsesStep1')}</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      You'll automatically drop to the 40% BASIC tier until you provide valid insurance again.
+                      {t('ifLapsesStep1Desc')}
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-4 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
                   <div className="w-10 h-10 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">2</div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">Higher Deductible Applies</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{t('ifLapsesStep2')}</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Any claims during the lapse period will be subject to the $2,500 BASIC deductible, not your previous lower amount.
+                      {t('ifLapsesStep2Desc')}
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
                   <div className="w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">3</div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">Earnings Impact</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{t('ifLapsesStep3')}</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      All rentals during the lapse earn at the 40% rate, not your previous tier rate. This applies to any trips that start during the lapse.
+                      {t('ifLapsesStep3Desc')}
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
                   <div className="w-10 h-10 bg-gray-500 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">4</div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">Vehicle May Be Paused</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{t('ifLapsesStep4')}</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      For extended lapses (30+ days), your vehicle listing may be temporarily paused until insurance is restored.
+                      {t('ifLapsesStep4Desc')}
                     </p>
                   </div>
                 </div>
@@ -1240,38 +1240,38 @@ export default function HostInsurancePage() {
               <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6">
                 <h4 className="font-semibold text-green-800 dark:text-green-400 mb-4 flex items-center gap-2">
                   <IoCheckmarkCircle className="w-6 h-6" />
-                  How to Avoid This
+                  {t('howToAvoid')}
                 </h4>
                 <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
-                  <li>• Set calendar reminders for renewal dates</li>
-                  <li>• Enable auto-pay with your insurance carrier</li>
-                  <li>• Update your ItWhip profile when you renew</li>
-                  <li>• Keep digital copies of your documents ready</li>
-                  <li>• Notify us 30 days before expiration</li>
+                  <li>• {t('howToAvoidPoint1')}</li>
+                  <li>• {t('howToAvoidPoint2')}</li>
+                  <li>• {t('howToAvoidPoint3')}</li>
+                  <li>• {t('howToAvoidPoint4')}</li>
+                  <li>• {t('howToAvoidPoint5')}</li>
                 </ul>
               </div>
 
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
                 <h4 className="font-semibold text-blue-800 dark:text-blue-400 mb-4 flex items-center gap-2">
                   <IoRefreshOutline className="w-6 h-6" />
-                  How to Restore Your Tier
+                  {t('howToRestore')}
                 </h4>
                 <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
-                  <li>• Get your insurance reinstated or renewed</li>
-                  <li>• Upload new declaration page to your profile</li>
-                  <li>• Submit for fleet verification</li>
-                  <li>• Once approved, tier restores immediately</li>
-                  <li>• Future rentals earn at your proper rate</li>
+                  <li>• {t('howToRestorePoint1')}</li>
+                  <li>• {t('howToRestorePoint2')}</li>
+                  <li>• {t('howToRestorePoint3')}</li>
+                  <li>• {t('howToRestorePoint4')}</li>
+                  <li>• {t('howToRestorePoint5')}</li>
                 </ul>
               </div>
             </div>
 
             <div className="mt-8 bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6">
               <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
-                We Track Expirations
+                {t('trackingTitle')}
               </h4>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Our system monitors your insurance expiration dates. You'll receive reminders at 60 days, 30 days, 14 days, and 7 days before expiration. We want you to stay in your highest earning tier—it's better for everyone.
+                {t('trackingText')}
               </p>
             </div>
           </div>
@@ -1282,66 +1282,66 @@ export default function HostInsurancePage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                Guest Insurance Options
+                {t('guestTitle')}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                What renters need to know about protection during trips.
+                {t('guestSubtitle')}
               </p>
             </div>
 
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 mb-8">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-                For Guests: You're Already Covered
+                {t('guestAlreadyCovered')}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Every rental on ItWhip includes $1M liability coverage. As a guest, you don't need to bring your own insurance to rent—but you can add it for extra benefits.
+                {t('guestAlreadyCoveredText')}
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
-                    Without Personal Insurance
+                    {t('withoutPersonal')}
                   </h4>
                   <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                     <li className="flex items-start gap-2">
                       <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                      $1M liability coverage included
+                      {t('withoutPersonalPoint1')}
                     </li>
                     <li className="flex items-start gap-2">
                       <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                      Physical damage protection
+                      {t('withoutPersonalPoint2')}
                     </li>
                     <li className="flex items-start gap-2">
                       <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                      24/7 roadside assistance
+                      {t('withoutPersonalPoint3')}
                     </li>
                     <li className="flex items-start gap-2">
                       <IoCloseCircleOutline className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                      Full security deposit required
+                      {t('withoutPersonalPoint4')}
                     </li>
                   </ul>
                 </div>
 
                 <div className="p-6 bg-green-50 dark:bg-green-900/20 rounded-lg">
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
-                    With Personal Insurance Added
+                    {t('withPersonal')}
                   </h4>
                   <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                     <li className="flex items-start gap-2">
                       <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                      All standard coverage included
+                      {t('withPersonalPoint1')}
                     </li>
                     <li className="flex items-start gap-2">
                       <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                      <strong className="text-green-600">50% off security deposit</strong>
+                      <strong className="text-green-600">{t('withPersonalPoint2')}</strong>
                     </li>
                     <li className="flex items-start gap-2">
                       <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                      Your insurance as tertiary backup
+                      {t('withPersonalPoint3')}
                     </li>
                     <li className="flex items-start gap-2">
                       <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                      Faster claim resolution
+                      {t('withPersonalPoint4')}
                     </li>
                   </ul>
                 </div>
@@ -1350,16 +1350,16 @@ export default function HostInsurancePage() {
 
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
               <h4 className="font-semibold text-blue-800 dark:text-blue-400 mb-4">
-                How Guests Add Insurance
+                {t('howGuestsAddInsurance')}
               </h4>
               <ol className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
-                <li>1. Go to your guest profile settings</li>
-                <li>2. Upload your personal auto insurance declaration page</li>
-                <li>3. Our team verifies it covers rental vehicles</li>
-                <li>4. Once approved, you get 50% off all future deposits</li>
+                <li>{t('howGuestsAddStep1')}</li>
+                <li>{t('howGuestsAddStep2')}</li>
+                <li>{t('howGuestsAddStep3')}</li>
+                <li>{t('howGuestsAddStep4')}</li>
               </ol>
               <p className="mt-4 text-sm text-gray-500">
-                Note: Your personal insurance must explicitly cover rental vehicles. Many policies exclude P2P rentals—check with your carrier first.
+                {t('howGuestsAddNote')}
               </p>
             </div>
           </div>
@@ -1370,82 +1370,50 @@ export default function HostInsurancePage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                Frequently Asked Questions
+                {t('faqsTitle')}
               </h2>
             </div>
 
             <div className="space-y-4">
-              <FAQItem 
-                question="Do I need my own car insurance to host on ItWhip?"
-                answer="No. With the BASIC tier (40%), we provide all the insurance coverage. You don't need any of your own. However, if you want to earn more (75% or 90%), you'll need to bring P2P or commercial insurance that covers car sharing."
+              <FAQItem
+                question={t('faqQ1')}
+                answer={t('faqA1')}
               />
-              <FAQItem 
-                question="Will my personal auto insurance cover me while renting on ItWhip?"
-                answer="Almost certainly not. Most personal auto policies explicitly exclude coverage when you're renting your car for money. Using your personal policy for car sharing could actually void your coverage entirely. We strongly recommend either staying in the BASIC tier or getting proper P2P/commercial coverage."
+              <FAQItem
+                question={t('faqQ2')}
+                answer={t('faqA2')}
               />
-              <FAQItem 
-                question="What's the difference between P2P insurance and commercial insurance?"
-                answer={`P2P Insurance: An endorsement or separate policy specifically designed for peer-to-peer car sharing. Offered by some major insurers like State Farm, Farmers, and specialty providers. Usually more affordable than commercial. Qualifies you for the 75% tier.
-
-Commercial Insurance: A full commercial auto policy that covers business use of your vehicle, including rentals. More expensive but comprehensive. Required for the 90% tier. Best for fleet operators or those with multiple vehicles.`}
+              <FAQItem
+                question={t('faqQ3')}
+                answer={`${t('faqA3Part1')}\n\n${t('faqA3Part2')}`}
               />
-              <FAQItem 
-                question="What happens during a claim if I have my own insurance?"
-                answer={`If you're in the 75% or 90% tier with your own insurance:
-                
-1. Your insurance is primary - we file the claim with your carrier first
-2. You pay your policy's deductible (not ours)
-3. If your insurer denies or doesn't fully cover the claim, our platform insurance kicks in as secondary
-4. You then pay our tier deductible ($1,500 or $1,000) for any remaining amount
-
-This layered approach means you're never left without coverage.`}
+              <FAQItem
+                question={t('faqQ4')}
+                answer={`${t('faqA4Step1')}\n\n${t('faqA4Step2')}\n${t('faqA4Step3')}\n${t('faqA4Step4')}\n${t('faqA4Step5')}\n\n${t('faqA4Conclusion')}`}
               />
-              <FAQItem 
-                question="How long does the claims process take?"
-                answer={`Our target timeline:
-                
-• Incident Report (FNOL): Immediate upon submission
-• Initial Review: Within 24 hours
-• FDCR Documentation: 24-48 hours
-• Standard Resolution: 48-72 hours
-• Complex Claims: 5-7 business days
-
-Most straightforward claims (minor damage, clear fault) are resolved within 3 business days.`}
+              <FAQItem
+                question={t('faqQ5')}
+                answer={t('faqA5')}
               />
-              <FAQItem 
-                question="Can I switch tiers at any time?"
-                answer="Yes, but changes only apply to future rentals, not current bookings. To upgrade your tier, simply upload your new insurance documents and wait for fleet verification (1-2 business days). To downgrade, you can update your settings anytime—but remember you'll earn less and have a higher deductible."
+              <FAQItem
+                question={t('faqQ6')}
+                answer={t('faqA6')}
               />
-              <FAQItem 
-                question="What is Mileage Forensics and how does it affect insurance?"
-                answer={`Mileage Forensics™ is our system that tracks odometer readings between trips to verify usage patterns. It helps with insurance by:
-
-• Detecting potential fraud (like unreported personal use)
-• Providing accurate data for claims
-• Verifying hosts are using vehicles according to their declared usage type
-• Giving insurance carriers confidence in our data
-
-This is part of why we can offer competitive coverage—we have the data to back up claims accurately.`}
+              <FAQItem
+                question={t('faqQ7')}
+                answer={`${t('faqA7Part1')}\n\n• ${t('faqA7Point1')}\n• ${t('faqA7Point2')}\n• ${t('faqA7Point3')}\n• ${t('faqA7Point4')}\n\n${t('faqA7Conclusion')}`}
               />
-              <FAQItem 
-                question="Does coverage apply if the guest drives outside Arizona?"
-                answer="Coverage applies anywhere in the continental United States. However, trips to Mexico require advance approval and additional coverage. Trips to Canada are covered but require notification. Any international travel outside these areas is not covered."
+              <FAQItem
+                question={t('faqQ8')}
+                answer={t('faqA8')}
               />
-              <FAQItem 
-                question="What if I have a claim and my insurance lapses during the process?"
-                answer="Claims are evaluated based on your tier status at the time of the incident, not when the claim is resolved. If you had valid 75% or 90% tier insurance when the incident occurred, that coverage applies to the claim—even if your insurance later lapses. However, any new rentals would be at the 40% tier until insurance is restored."
+              <FAQItem
+                question={t('faqQ9')}
+                answer={t('faqA9')}
               />
-              <FAQItem 
-                question="Are luxury and exotic cars covered differently?"
-                answer={`Yes, high-value vehicles ($75K+) have additional requirements:
-
-• Enhanced guest verification (higher age minimum, credit check)
-• Larger security deposits ($2,500-5,000)
-• GPS tracking required during rentals
-• Priority claims handling
-• Factory-authorized repair network only
-
-Coverage limits are the same, but we take extra precautions to protect valuable vehicles.`}
+              <FAQItem
+                question={t('faqQ10')}
+                answer={`${t('faqA10Part1')}\n\n• ${t('faqA10Point1')}\n• ${t('faqA10Point2')}\n• ${t('faqA10Point3')}\n• ${t('faqA10Point4')}\n• ${t('faqA10Point5')}\n\n${t('faqA10Conclusion')}`}
               />
             </div>
           </div>

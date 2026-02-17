@@ -88,7 +88,7 @@ export function TripStartCard({ booking, onTripStarted, onCancel, onModify, onVi
       if (timeUntilTripEnd <= 0) {
         // Trip end date has passed - truly expired
         setTripStatus('expired')
-        setTimeDisplay('Booking expired - Trip period has ended')
+        setTimeDisplay(t('expired'))
       } else if (timeUntilPickup > 0) {
         // Before pickup time - UPCOMING
         setTripStatus('upcoming')
@@ -98,16 +98,16 @@ export function TripStartCard({ booking, onTripStarted, onCancel, onModify, onVi
         if (hours > 24) {
           const days = Math.floor(hours / 24)
           const remainingHours = hours % 24
-          setTimeDisplay(`Trip starts in ${days} day${days > 1 ? 's' : ''}, ${remainingHours} hour${remainingHours !== 1 ? 's' : ''}`)
+          setTimeDisplay(t('startsInDays', { days, hours: remainingHours }))
         } else if (hours > 0) {
-          setTimeDisplay(`Trip starts in ${hours} hour${hours > 1 ? 's' : ''}, ${minutes} minute${minutes !== 1 ? 's' : ''}`)
+          setTimeDisplay(t('startsInHours', { hours, minutes }))
         } else {
-          setTimeDisplay(`Trip starts in ${minutes} minute${minutes !== 1 ? 's' : ''}`)
+          setTimeDisplay(t('startsInMinutes', { minutes }))
         }
       } else if (Math.abs(timeUntilPickup) < 5 * 60 * 1000) {
         // Within 5 minutes of pickup time - READY
         setTripStatus('ready')
-        setTimeDisplay('Ready for pickup')
+        setTimeDisplay(t('readyForPickup'))
       } else if (timeUntilGraceEnd > 0) {
         // Within grace period (pickup time passed, but within 2 hours)
         setTripStatus('grace')
@@ -115,32 +115,32 @@ export function TripStartCard({ booking, onTripStarted, onCancel, onModify, onVi
         const minutesLeft = Math.floor((timeUntilGraceEnd % (1000 * 60 * 60)) / (1000 * 60))
         
         if (hoursLeft > 0) {
-          setTimeDisplay(`Start within ${hoursLeft}h ${minutesLeft}m for best experience`)
+          setTimeDisplay(t('startWithinHoursMinutes', { hours: hoursLeft, minutes: minutesLeft }))
         } else {
-          setTimeDisplay(`Start within ${minutesLeft} minutes for best experience`)
+          setTimeDisplay(t('startWithinMinutes', { minutes: minutesLeft }))
         }
         
         // Calculate remaining trip time
         const tripDays = Math.floor(timeUntilTripEnd / (1000 * 60 * 60 * 24))
         const tripHours = Math.floor((timeUntilTripEnd % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
         if (tripDays > 0) {
-          setRemainingTripTime(`${tripDays} day${tripDays > 1 ? 's' : ''}, ${tripHours} hour${tripHours !== 1 ? 's' : ''} remaining`)
+          setRemainingTripTime(t('remainingDaysHours', { days: tripDays, hours: tripHours }))
         } else {
-          setRemainingTripTime(`${tripHours} hour${tripHours !== 1 ? 's' : ''} remaining`)
+          setRemainingTripTime(t('remainingHours', { hours: tripHours }))
         }
       } else if (timeUntilTripEnd > 0) {
         // Grace period passed but trip not expired - late start allowed
         setTripStatus('late')
         const tripDays = Math.floor(timeUntilTripEnd / (1000 * 60 * 60 * 24))
         const tripHours = Math.floor((timeUntilTripEnd % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-        
+
         if (tripDays > 0) {
-          setTimeDisplay(`Late start - ${tripDays} day${tripDays > 1 ? 's' : ''}, ${tripHours} hour${tripHours !== 1 ? 's' : ''} remaining`)
+          setTimeDisplay(t('lateStartDaysHours', { days: tripDays, hours: tripHours }))
         } else if (tripHours > 0) {
-          setTimeDisplay(`Late start - ${tripHours} hour${tripHours !== 1 ? 's' : ''} remaining`)
+          setTimeDisplay(t('lateStartHours', { hours: tripHours }))
         } else {
           const tripMinutes = Math.floor(timeUntilTripEnd / (1000 * 60))
-          setTimeDisplay(`Late start - ${tripMinutes} minute${tripMinutes !== 1 ? 's' : ''} remaining`)
+          setTimeDisplay(t('lateStartMinutes', { minutes: tripMinutes }))
         }
       }
     }

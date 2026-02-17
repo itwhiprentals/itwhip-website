@@ -1,25 +1,28 @@
 import { Link } from '@/i18n/navigation'
 import { IoChevronForwardOutline, IoHomeOutline } from 'react-icons/io5'
-
-const TYPE_LABELS: Record<string, string> = {
-  suv: 'SUVs',
-  sedan: 'Sedans',
-  luxury: 'Luxury Cars',
-  electric: 'Electric Vehicles',
-  truck: 'Trucks',
-  sports: 'Sports Cars',
-  convertible: 'Convertibles'
-}
+import { getTranslations } from 'next-intl/server'
 
 interface BreadcrumbsProps {
   type?: string
   make?: string
 }
 
-export default function Breadcrumbs({ type, make }: BreadcrumbsProps) {
+export default async function Breadcrumbs({ type, make }: BreadcrumbsProps) {
+  const t = await getTranslations('RentalsCatalog')
+
+  const TYPE_LABELS: Record<string, string> = {
+    suv: t('suvs'),
+    sedan: t('sedans'),
+    luxury: t('luxuryCars'),
+    electric: t('electricVehicles'),
+    truck: t('trucks'),
+    sports: t('sportsCars'),
+    convertible: t('convertibles')
+  }
+
   const breadcrumbs = [
-    { label: 'Home', href: '/' },
-    { label: 'Rentals', href: '/rentals' }
+    { label: t('breadcrumbHome'), href: '/' },
+    { label: t('breadcrumbRentals'), href: '/rentals' }
   ]
 
   // Add type breadcrumb

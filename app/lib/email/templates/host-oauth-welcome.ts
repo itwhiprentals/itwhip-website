@@ -325,7 +325,7 @@ export function getHostOAuthWelcomeTemplate(data: HostOAuthWelcomeData): EmailTe
             <a href="${data.dashboardUrl}">Host Dashboard</a> |
             <a href="https://itwhip.com/host-help">Host Help Center</a><br>
             <span style="font-size: 11px; margin-top: 8px; display: block;">
-              &copy; 2025 ItWhip Technologies. All rights reserved.
+              &copy; 2026 ItWhip Technologies. All rights reserved.
             </span>
           </div>
         </div>

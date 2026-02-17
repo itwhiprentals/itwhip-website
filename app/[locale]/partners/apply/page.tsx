@@ -21,13 +21,22 @@ import {
   IoHeadsetOutline
 } from 'react-icons/io5'
 
-export const metadata: Metadata = {
-  title: 'Become a Fleet Partner | ItWhip',
-  description: 'Partner with ItWhip to list your fleet of rideshare vehicles. Earn more with volume discounts, dedicated support, and instant vehicle approvals.',
-  openGraph: {
-    title: 'Become a Fleet Partner | ItWhip',
-    description: 'Partner with ItWhip to list your fleet of rideshare vehicles. Earn more with volume discounts.',
-    type: 'website',
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('partnersApplyTitle'),
+    description: t('partnersApplyDescription'),
+    openGraph: {
+      title: t('partnersApplyOgTitle'),
+      description: t('partnersApplyOgDescription'),
+      type: 'website',
+    },
   }
 }
 

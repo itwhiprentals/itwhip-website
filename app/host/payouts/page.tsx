@@ -1,7 +1,8 @@
+'use client'
 // app/host/payouts/page.tsx
-import { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import {
@@ -29,22 +30,10 @@ import {
 import { BsBank2 } from 'react-icons/bs'
 import { SiStripe } from 'react-icons/si'
 
-export const metadata: Metadata = {
-  title: 'Host Payouts & Earnings | Stripe Connect | ItWhip',
-  description: 'Get paid fast with ItWhip. Secure Stripe Connect payouts, instant transfers available, and transparent earnings. Hosts earn up to 90% with direct deposit in 2-3 days.',
-  keywords: ['car sharing payouts', 'host earnings payment', 'stripe connect car rental', 'turo payout alternative', 'instant car host payout', 'when do hosts get paid'],
-  openGraph: {
-    title: 'Host Payouts & Earnings | Stripe Connect | ItWhip',
-    description: 'Secure, fast payouts powered by Stripe. Earn up to 90% and get paid within 2-3 business days.',
-    url: 'https://itwhip.com/host/payouts',
-    type: 'website'
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/host/payouts',
-  },
-}
 
 export default function PayoutsPage() {
+  const t = useTranslations('HostPayouts')
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header />
@@ -55,28 +44,27 @@ export default function PayoutsPage() {
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/30 rounded-full text-emerald-200 text-xs font-medium mb-4">
               <IoCashOutline className="w-4 h-4" />
-              Host Resources
+              {t('heroBadge')}
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              <span className="text-yellow-400">Get Paid Fast.</span>{' '}
-              <span className="text-white">Keep More.</span>
+              <span className="text-yellow-400">{t('heroTitleLine1')}</span>{' '}
+              <span className="text-white">{t('heroTitleLine2')}</span>
             </h1>
             <p className="text-xl text-emerald-100 mb-6">
-              Secure payouts powered by Stripe Connect. Direct deposit to your bank in 2-3 business days,
-              or get instant payouts to your debit card. Earn up to 90% of every booking.
+              {t('heroDescription')}
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-lg">
                 <SiStripe className="w-12 h-5 text-white" />
-                <span className="text-sm font-medium">Powered by Stripe</span>
+                <span className="text-sm font-medium">{t('poweredByStripe')}</span>
               </div>
               <div className="flex items-center gap-2 text-emerald-200 text-sm">
                 <IoShieldCheckmarkOutline className="w-5 h-5" />
-                Bank-level security
+                {t('bankLevelSecurity')}
               </div>
               <div className="flex items-center gap-2 text-emerald-200 text-sm">
                 <IoFlashOutline className="w-5 h-5" />
-                Instant payouts available
+                {t('instantPayoutsAvailable')}
               </div>
             </div>
           </div>
@@ -90,16 +78,16 @@ export default function PayoutsPage() {
             <li className="flex items-center gap-1.5">
               <Link href="/" className="hover:text-emerald-600 flex items-center gap-1">
                 <IoHomeOutline className="w-3.5 h-3.5" />
-                Home
+                {t('breadcrumbHome')}
               </Link>
               <IoChevronForwardOutline className="w-2.5 h-2.5" />
             </li>
             <li className="flex items-center gap-1.5">
-              <Link href="/list-your-car" className="hover:text-emerald-600">Host</Link>
+              <Link href="/list-your-car" className="hover:text-emerald-600">{t('breadcrumbHost')}</Link>
               <IoChevronForwardOutline className="w-2.5 h-2.5" />
             </li>
             <li className="text-gray-800 dark:text-gray-200 font-medium">
-              Payouts & Earnings
+              {t('breadcrumbPayouts')}
             </li>
           </ol>
         </nav>
@@ -110,11 +98,10 @@ export default function PayoutsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-              Set Up Your Payout Account
+              {t('setupTitle')}
             </h2>
             <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Complete Stripe Connect onboarding to start receiving payouts. It takes just 5 minutes
-              and your information is protected with bank-level encryption.
+              {t('setupDescription')}
             </p>
           </div>
 
@@ -126,8 +113,8 @@ export default function PayoutsPage() {
                   <SiStripe className="w-7 h-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Stripe Connect Onboarding</h3>
-                  <p className="text-sm text-gray-500">Secure • Fast • Required for payouts</p>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('onboardingTitle')}</h3>
+                  <p className="text-sm text-gray-500">{t('onboardingSubtitle')}</p>
                 </div>
               </div>
 
@@ -142,10 +129,10 @@ export default function PayoutsPage() {
                   </div>
                   <div className="flex-1 pb-4">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-semibold text-gray-900 dark:text-white">Verify Your Identity</h4>
-                      <span className="text-xs text-emerald-600 font-medium">2 min</span>
+                      <h4 className="font-semibold text-gray-900 dark:text-white">{t('step1Title')}</h4>
+                      <span className="text-xs text-emerald-600 font-medium">{t('step1Time')}</span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Provide your legal name, date of birth, and last 4 digits of SSN</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('step1Description')}</p>
                   </div>
                 </div>
 
@@ -159,10 +146,10 @@ export default function PayoutsPage() {
                   </div>
                   <div className="flex-1 pb-4">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-semibold text-gray-900 dark:text-white">Add Business Details</h4>
-                      <span className="text-xs text-emerald-600 font-medium">1 min</span>
+                      <h4 className="font-semibold text-gray-900 dark:text-white">{t('step2Title')}</h4>
+                      <span className="text-xs text-emerald-600 font-medium">{t('step2Time')}</span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Individual or business account type, address verification</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('step2Description')}</p>
                   </div>
                 </div>
 
@@ -176,10 +163,10 @@ export default function PayoutsPage() {
                   </div>
                   <div className="flex-1 pb-4">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-semibold text-gray-900 dark:text-white">Link Your Bank Account</h4>
-                      <span className="text-xs text-emerald-600 font-medium">2 min</span>
+                      <h4 className="font-semibold text-gray-900 dark:text-white">{t('step3Title')}</h4>
+                      <span className="text-xs text-emerald-600 font-medium">{t('step3Time')}</span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Connect via Plaid or enter routing/account numbers manually</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('step3Description')}</p>
                   </div>
                 </div>
 
@@ -192,10 +179,10 @@ export default function PayoutsPage() {
                   </div>
                   <div className="flex-1 pb-4">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-semibold text-gray-900 dark:text-white">Start Earning</h4>
-                      <span className="text-xs text-emerald-600 font-medium">Done!</span>
+                      <h4 className="font-semibold text-gray-900 dark:text-white">{t('step4Title')}</h4>
+                      <span className="text-xs text-emerald-600 font-medium">{t('step4Time')}</span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Once verified, payouts are automatic after each trip</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('step4Description')}</p>
                   </div>
                 </div>
               </div>
@@ -206,11 +193,11 @@ export default function PayoutsPage() {
                   className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#635BFF] text-white font-semibold rounded-lg hover:bg-[#5851e0] transition-colors"
                 >
                   <SiStripe className="w-10 h-4" />
-                  Complete Stripe Setup
+                  {t('completeStripeSetup')}
                   <IoChevronForwardOutline className="w-5 h-5" />
                 </Link>
                 <p className="text-xs text-gray-500 text-center mt-3">
-                  You'll be redirected to Stripe's secure onboarding portal
+                  {t('stripeRedirectNote')}
                 </p>
               </div>
             </div>
@@ -220,41 +207,54 @@ export default function PayoutsPage() {
               <div className="bg-gradient-to-br from-[#635BFF]/10 to-purple-100/50 dark:from-[#635BFF]/20 dark:to-purple-900/20 rounded-lg p-6 border border-[#635BFF]/20">
                 <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <IoShieldCheckmarkOutline className="w-5 h-5 text-[#635BFF]" />
-                  Why We Use Stripe
+                  {t('whyStripeTitle')}
                 </h3>
                 <ul className="space-y-3">
-                  {[
-                    'Trusted by millions of businesses including Lyft, DoorDash, and Instacart',
-                    'PCI-DSS Level 1 certified - the highest level of payment security',
-                    'Your banking details are never stored on ItWhip servers',
-                    'Instant payouts available to eligible debit cards',
-                    'Automatic 1099-K tax reporting for US hosts'
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
-                      <IoCheckmarkCircleOutline className="w-4 h-4 text-[#635BFF] flex-shrink-0 mt-0.5" />
-                      {item}
-                    </li>
-                  ))}
+                  <li className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                    <IoCheckmarkCircleOutline className="w-4 h-4 text-[#635BFF] flex-shrink-0 mt-0.5" />
+                    {t('whyStripe1')}
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                    <IoCheckmarkCircleOutline className="w-4 h-4 text-[#635BFF] flex-shrink-0 mt-0.5" />
+                    {t('whyStripe2')}
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                    <IoCheckmarkCircleOutline className="w-4 h-4 text-[#635BFF] flex-shrink-0 mt-0.5" />
+                    {t('whyStripe3')}
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                    <IoCheckmarkCircleOutline className="w-4 h-4 text-[#635BFF] flex-shrink-0 mt-0.5" />
+                    {t('whyStripe4')}
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                    <IoCheckmarkCircleOutline className="w-4 h-4 text-[#635BFF] flex-shrink-0 mt-0.5" />
+                    {t('whyStripe5')}
+                  </li>
                 </ul>
               </div>
 
               <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border-2 border-gray-200 dark:border-gray-600 shadow-md">
                 <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <IoInformationCircleOutline className="w-5 h-5 text-emerald-600" />
-                  What You'll Need
+                  {t('whatYouNeedTitle')}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
-                  {[
-                    { label: 'Government ID', desc: 'Driver\'s license or passport' },
-                    { label: 'SSN (last 4)', desc: 'For identity verification' },
-                    { label: 'Bank Account', desc: 'Checking or savings' },
-                    { label: 'Home Address', desc: 'For tax documents' }
-                  ].map((item, i) => (
-                    <div key={i} className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                      <p className="font-medium text-gray-900 dark:text-white text-sm">{item.label}</p>
-                      <p className="text-xs text-gray-500">{item.desc}</p>
-                    </div>
-                  ))}
+                  <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <p className="font-medium text-gray-900 dark:text-white text-sm">{t('needItem1Label')}</p>
+                    <p className="text-xs text-gray-500">{t('needItem1Desc')}</p>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <p className="font-medium text-gray-900 dark:text-white text-sm">{t('needItem2Label')}</p>
+                    <p className="text-xs text-gray-500">{t('needItem2Desc')}</p>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <p className="font-medium text-gray-900 dark:text-white text-sm">{t('needItem3Label')}</p>
+                    <p className="text-xs text-gray-500">{t('needItem3Desc')}</p>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <p className="font-medium text-gray-900 dark:text-white text-sm">{t('needItem4Label')}</p>
+                    <p className="text-xs text-gray-500">{t('needItem4Desc')}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -266,7 +266,7 @@ export default function PayoutsPage() {
       <section className="py-12 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 text-center">
-            Payout Timeline
+            {t('timelineTitle')}
           </h2>
           <div className="max-w-4xl mx-auto">
             <div className="grid md:grid-cols-4 gap-4">
@@ -276,10 +276,10 @@ export default function PayoutsPage() {
                   <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
                     <IoCheckmarkCircleOutline className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Trip Ends</h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Guest returns the car</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{t('timelineStep1Title')}</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">{t('timelineStep1Desc')}</p>
                   <span className="inline-block mt-2 text-xs text-emerald-600 font-semibold bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded">
-                    Day 0
+                    {t('timelineStep1Badge')}
                   </span>
                 </div>
                 <div className="hidden md:block absolute top-1/2 -right-2 transform -translate-y-1/2 z-10">
@@ -293,10 +293,10 @@ export default function PayoutsPage() {
                   <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
                     <IoSpeedometerOutline className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Processing</h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Trip verified, earnings calculated</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{t('timelineStep2Title')}</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">{t('timelineStep2Desc')}</p>
                   <span className="inline-block mt-2 text-xs text-emerald-600 font-semibold bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded">
-                    24 hours
+                    {t('timelineStep2Badge')}
                   </span>
                 </div>
                 <div className="hidden md:block absolute top-1/2 -right-2 transform -translate-y-1/2 z-10">
@@ -310,10 +310,10 @@ export default function PayoutsPage() {
                   <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
                     <IoCashOutline className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Payout Sent</h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Funds transferred via Stripe</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{t('timelineStep3Title')}</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">{t('timelineStep3Desc')}</p>
                   <span className="inline-block mt-2 text-xs text-emerald-600 font-semibold bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded">
-                    1-2 days
+                    {t('timelineStep3Badge')}
                   </span>
                 </div>
                 <div className="hidden md:block absolute top-1/2 -right-2 transform -translate-y-1/2 z-10">
@@ -327,10 +327,10 @@ export default function PayoutsPage() {
                   <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
                     <BsBank2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm">In Your Bank</h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Money available to spend</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{t('timelineStep4Title')}</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">{t('timelineStep4Desc')}</p>
                   <span className="inline-block mt-2 text-xs text-emerald-600 font-semibold bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded">
-                    2-3 days
+                    {t('timelineStep4Badge')}
                   </span>
                 </div>
               </div>
@@ -340,10 +340,9 @@ export default function PayoutsPage() {
               <div className="flex items-start gap-3">
                 <IoFlashOutline className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-white text-sm">Instant Payouts Available</h4>
+                  <h4 className="font-semibold text-gray-900 dark:text-white text-sm">{t('instantPayoutBannerTitle')}</h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Eligible hosts can get instant payouts to their debit card for a small fee (1.5% or $0.50 minimum).
-                    Funds arrive within minutes, 24/7.
+                    {t('instantPayoutBannerDesc')}
                   </p>
                 </div>
               </div>
@@ -357,106 +356,155 @@ export default function PayoutsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-              Your Earnings, Transparent
+              {t('earningsTitle')}
             </h2>
             <p className="text-gray-600 dark:text-gray-400">
-              Know exactly what you'll earn before every trip. No hidden fees, no surprises.
+              {t('earningsDescription')}
             </p>
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">
-            {/* Protection Plans - Based on EARNINGS_TIERS in financial-constants.ts */}
-            {[
-              {
-                name: 'Basic',
-                fee: '60%',
-                earnings: '40%',
-                color: 'gray',
-                features: ['Platform-provided per-trip insurance', 'No personal insurance required', 'Standard support', 'Great for getting started'],
-                best: 'New hosts without insurance'
-              },
-              {
-                name: 'Standard',
-                fee: '25%',
-                earnings: '75%',
-                color: 'emerald',
-                popular: true,
-                features: ['Bring your own P2P insurance', 'Verified policy upload', 'Priority support', '24/7 roadside assistance'],
-                best: 'Hosts with P2P coverage'
-              },
-              {
-                name: 'Premium',
-                fee: '10%',
-                earnings: '90%',
-                color: 'purple',
-                features: ['Commercial auto insurance', 'Maximum earnings share', 'Dedicated account manager', 'Expedited claims processing'],
-                best: 'Fleet owners with commercial insurance'
-              }
-            ].map((plan, i) => (
-              <div
-                key={i}
-                className={`relative bg-white dark:bg-gray-800 rounded-lg p-6 border-2 shadow-md hover:shadow-lg transition-shadow ${
-                  plan.popular
-                    ? 'border-emerald-500 dark:border-emerald-400'
-                    : 'border-gray-200 dark:border-gray-700'
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-emerald-600 text-white text-xs font-medium rounded-full">
-                    Most Popular
-                  </div>
-                )}
-                <div className="text-center mb-6">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">{plan.name} Protection</h3>
-                  <div className="mt-4">
-                    <span className="text-4xl font-bold text-emerald-600">{plan.earnings}</span>
-                    <span className="text-gray-500 text-sm ml-1">earnings</span>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-1">{plan.fee} platform fee</p>
+            {/* Basic Protection Plan */}
+            <div
+              className="relative bg-white dark:bg-gray-800 rounded-lg p-6 border-2 shadow-md hover:shadow-lg transition-shadow border-gray-200 dark:border-gray-700"
+            >
+              <div className="text-center mb-6">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('planBasicName')}</h3>
+                <div className="mt-4">
+                  <span className="text-4xl font-bold text-emerald-600">{t('planBasicEarnings')}</span>
+                  <span className="text-gray-500 text-sm ml-1">{t('earningsLabel')}</span>
                 </div>
-                <ul className="space-y-2 mb-6">
-                  {plan.features.map((feature, j) => (
-                    <li key={j} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
-                      <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <p className="text-xs text-gray-500 text-center">
-                    Best for: <span className="font-medium text-gray-700 dark:text-gray-300">{plan.best}</span>
-                  </p>
-                </div>
+                <p className="text-sm text-gray-500 mt-1">{t('planBasicFee')}</p>
               </div>
-            ))}
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  {t('planBasicFeature1')}
+                </li>
+                <li className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  {t('planBasicFeature2')}
+                </li>
+                <li className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  {t('planBasicFeature3')}
+                </li>
+                <li className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  {t('planBasicFeature4')}
+                </li>
+              </ul>
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <p className="text-xs text-gray-500 text-center">
+                  {t('bestForLabel')} <span className="font-medium text-gray-700 dark:text-gray-300">{t('planBasicBestFor')}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Standard Protection Plan */}
+            <div
+              className="relative bg-white dark:bg-gray-800 rounded-lg p-6 border-2 shadow-md hover:shadow-lg transition-shadow border-emerald-500 dark:border-emerald-400"
+            >
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-emerald-600 text-white text-xs font-medium rounded-full">
+                {t('mostPopular')}
+              </div>
+              <div className="text-center mb-6">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('planStandardName')}</h3>
+                <div className="mt-4">
+                  <span className="text-4xl font-bold text-emerald-600">{t('planStandardEarnings')}</span>
+                  <span className="text-gray-500 text-sm ml-1">{t('earningsLabel')}</span>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">{t('planStandardFee')}</p>
+              </div>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  {t('planStandardFeature1')}
+                </li>
+                <li className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  {t('planStandardFeature2')}
+                </li>
+                <li className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  {t('planStandardFeature3')}
+                </li>
+                <li className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  {t('planStandardFeature4')}
+                </li>
+              </ul>
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <p className="text-xs text-gray-500 text-center">
+                  {t('bestForLabel')} <span className="font-medium text-gray-700 dark:text-gray-300">{t('planStandardBestFor')}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Premium Protection Plan */}
+            <div
+              className="relative bg-white dark:bg-gray-800 rounded-lg p-6 border-2 shadow-md hover:shadow-lg transition-shadow border-gray-200 dark:border-gray-700"
+            >
+              <div className="text-center mb-6">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('planPremiumName')}</h3>
+                <div className="mt-4">
+                  <span className="text-4xl font-bold text-emerald-600">{t('planPremiumEarnings')}</span>
+                  <span className="text-gray-500 text-sm ml-1">{t('earningsLabel')}</span>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">{t('planPremiumFee')}</p>
+              </div>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  {t('planPremiumFeature1')}
+                </li>
+                <li className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  {t('planPremiumFeature2')}
+                </li>
+                <li className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  {t('planPremiumFeature3')}
+                </li>
+                <li className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  {t('planPremiumFeature4')}
+                </li>
+              </ul>
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <p className="text-xs text-gray-500 text-center">
+                  {t('bestForLabel')} <span className="font-medium text-gray-700 dark:text-gray-300">{t('planPremiumBestFor')}</span>
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Example Calculation */}
           <div className="mt-10 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-lg p-6 sm:p-8 text-white shadow-lg">
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
               <IoCalculatorOutline className="w-5 h-5" />
-              Example Earnings Calculation
+              {t('exampleCalcTitle')}
             </h3>
             <div className="grid md:grid-cols-4 gap-4 text-center">
               <div className="bg-white/20 rounded-lg p-4 border border-white/30">
-                <p className="text-white text-sm font-medium">Trip Price</p>
-                <p className="text-2xl font-bold">$150</p>
-                <p className="text-xs text-white/80">3-day rental</p>
+                <p className="text-white text-sm font-medium">{t('calcTripPriceLabel')}</p>
+                <p className="text-2xl font-bold">{t('calcTripPriceValue')}</p>
+                <p className="text-xs text-white/80">{t('calcTripPriceNote')}</p>
               </div>
               <div className="bg-white/20 rounded-lg p-4 border border-white/30">
-                <p className="text-white text-sm font-medium">Your Earnings (75%)</p>
-                <p className="text-2xl font-bold">$112.50</p>
-                <p className="text-xs text-white/80">Standard tier (P2P insurance)</p>
+                <p className="text-white text-sm font-medium">{t('calcEarningsLabel')}</p>
+                <p className="text-2xl font-bold">{t('calcEarningsValue')}</p>
+                <p className="text-xs text-white/80">{t('calcEarningsNote')}</p>
               </div>
               <div className="bg-white/20 rounded-lg p-4 border border-white/30">
-                <p className="text-white text-sm font-medium">Platform Fee (25%)</p>
-                <p className="text-2xl font-bold">$37.50</p>
-                <p className="text-xs text-white/80">Payment processing + support</p>
+                <p className="text-white text-sm font-medium">{t('calcFeeLabel')}</p>
+                <p className="text-2xl font-bold">{t('calcFeeValue')}</p>
+                <p className="text-xs text-white/80">{t('calcFeeNote')}</p>
               </div>
               <div className="bg-white/30 rounded-lg p-4 border border-white/40">
-                <p className="text-white text-sm font-medium">Deposited to Bank</p>
-                <p className="text-2xl font-bold text-yellow-300">$112.50</p>
-                <p className="text-xs text-white/80">In 2-3 days</p>
+                <p className="text-white text-sm font-medium">{t('calcDepositLabel')}</p>
+                <p className="text-2xl font-bold text-yellow-300">{t('calcDepositValue')}</p>
+                <p className="text-xs text-white/80">{t('calcDepositNote')}</p>
               </div>
             </div>
           </div>
@@ -467,7 +515,7 @@ export default function PayoutsPage() {
       <section className="py-12 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 text-center">
-            Payout Methods
+            {t('payoutMethodsTitle')}
           </h2>
           <div className="grid md:grid-cols-3 gap-6">
             <div className="p-6 bg-gray-50 dark:bg-gray-700 rounded-lg border-2 border-emerald-500 shadow-md">
@@ -476,17 +524,27 @@ export default function PayoutsPage() {
                   <BsBank2 className="w-6 h-6 text-emerald-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Bank Transfer (ACH)</h3>
-                  <span className="text-xs text-emerald-600 font-medium">Recommended • Free</span>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('bankTransferTitle')}</h3>
+                  <span className="text-xs text-emerald-600 font-medium">{t('bankTransferBadge')}</span>
                 </div>
               </div>
               <ul className="space-y-2">
-                {['2-3 business days', 'No fees ever', 'Works with all US banks', 'Automatic recurring payouts'].map((item, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                    <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500" />
-                    {item}
-                  </li>
-                ))}
+                <li className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500" />
+                  {t('bankTransferFeature1')}
+                </li>
+                <li className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500" />
+                  {t('bankTransferFeature2')}
+                </li>
+                <li className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500" />
+                  {t('bankTransferFeature3')}
+                </li>
+                <li className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-500" />
+                  {t('bankTransferFeature4')}
+                </li>
               </ul>
             </div>
 
@@ -496,17 +554,27 @@ export default function PayoutsPage() {
                   <IoFlashOutline className="w-6 h-6 text-yellow-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Instant Payout</h3>
-                  <span className="text-xs text-yellow-600 font-medium">Minutes • 1.5% fee</span>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('instantPayoutTitle')}</h3>
+                  <span className="text-xs text-yellow-600 font-medium">{t('instantPayoutBadge')}</span>
                 </div>
               </div>
               <ul className="space-y-2">
-                {['Arrives in minutes', 'Available 24/7/365', 'Visa/Mastercard debit cards', 'Min $0.50, max $15 fee'].map((item, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                    <IoCheckmarkCircleOutline className="w-4 h-4 text-yellow-500" />
-                    {item}
-                  </li>
-                ))}
+                <li className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-yellow-500" />
+                  {t('instantPayoutFeature1')}
+                </li>
+                <li className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-yellow-500" />
+                  {t('instantPayoutFeature2')}
+                </li>
+                <li className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-yellow-500" />
+                  {t('instantPayoutFeature3')}
+                </li>
+                <li className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-yellow-500" />
+                  {t('instantPayoutFeature4')}
+                </li>
               </ul>
             </div>
 
@@ -516,17 +584,27 @@ export default function PayoutsPage() {
                   <IoCalendarOutline className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Scheduled Payouts</h3>
-                  <span className="text-xs text-purple-600 font-medium">Weekly/Monthly • Free</span>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('scheduledPayoutTitle')}</h3>
+                  <span className="text-xs text-purple-600 font-medium">{t('scheduledPayoutBadge')}</span>
                 </div>
               </div>
               <ul className="space-y-2">
-                {['Batch multiple trips', 'Choose your schedule', 'Easier bookkeeping', 'Same low fees'].map((item, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                    <IoCheckmarkCircleOutline className="w-4 h-4 text-purple-500" />
-                    {item}
-                  </li>
-                ))}
+                <li className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-purple-500" />
+                  {t('scheduledPayoutFeature1')}
+                </li>
+                <li className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-purple-500" />
+                  {t('scheduledPayoutFeature2')}
+                </li>
+                <li className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-purple-500" />
+                  {t('scheduledPayoutFeature3')}
+                </li>
+                <li className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 text-purple-500" />
+                  {t('scheduledPayoutFeature4')}
+                </li>
               </ul>
             </div>
           </div>
@@ -538,10 +616,10 @@ export default function PayoutsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-              Track Every Dollar
+              {t('dashboardTitle')}
             </h2>
             <p className="text-gray-600 dark:text-gray-400">
-              Your host dashboard shows real-time earnings, pending payouts, and complete transaction history.
+              {t('dashboardDescription')}
             </p>
           </div>
 
@@ -550,61 +628,103 @@ export default function PayoutsPage() {
             <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-white">
                 <div>
-                  <p className="text-emerald-200 text-sm">Available Balance</p>
-                  <p className="text-2xl font-bold">$1,247.50</p>
+                  <p className="text-emerald-200 text-sm">{t('dashboardAvailableBalance')}</p>
+                  <p className="text-2xl font-bold">{t('dashboardAvailableBalanceValue')}</p>
                 </div>
                 <div>
-                  <p className="text-emerald-200 text-sm">Pending</p>
-                  <p className="text-2xl font-bold">$385.00</p>
+                  <p className="text-emerald-200 text-sm">{t('dashboardPending')}</p>
+                  <p className="text-2xl font-bold">{t('dashboardPendingValue')}</p>
                 </div>
                 <div>
-                  <p className="text-emerald-200 text-sm">This Month</p>
-                  <p className="text-2xl font-bold">$3,892.00</p>
+                  <p className="text-emerald-200 text-sm">{t('dashboardThisMonth')}</p>
+                  <p className="text-2xl font-bold">{t('dashboardThisMonthValue')}</p>
                 </div>
                 <div>
-                  <p className="text-emerald-200 text-sm">All Time</p>
-                  <p className="text-2xl font-bold">$24,560.00</p>
+                  <p className="text-emerald-200 text-sm">{t('dashboardAllTime')}</p>
+                  <p className="text-2xl font-bold">{t('dashboardAllTimeValue')}</p>
                 </div>
               </div>
             </div>
 
             {/* Mock Transaction List */}
             <div className="p-6">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Recent Transactions</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('recentTransactions')}</h3>
               <div className="space-y-3">
-                {[
-                  { type: 'Payout', desc: 'Bank transfer to ****4521', amount: '+$385.00', status: 'completed', date: 'Dec 12' },
-                  { type: 'Trip Earnings', desc: 'Tesla Model 3 • 3-day rental', amount: '+$240.00', status: 'pending', date: 'Dec 11' },
-                  { type: 'Trip Earnings', desc: 'Toyota Camry • 5-day rental', amount: '+$145.00', status: 'pending', date: 'Dec 10' },
-                  { type: 'Payout', desc: 'Instant to ****8832', amount: '+$520.00', status: 'completed', date: 'Dec 8' }
-                ].map((tx, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        tx.type === 'Payout' ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-blue-100 dark:bg-blue-900/30'
-                      }`}>
-                        {tx.type === 'Payout' ? (
-                          <BsBank2 className="w-5 h-5 text-emerald-600" />
-                        ) : (
-                          <IoCashOutline className="w-5 h-5 text-blue-600" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white text-sm">{tx.type}</p>
-                        <p className="text-xs text-gray-500">{tx.desc}</p>
-                      </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-100 dark:bg-emerald-900/30">
+                      <BsBank2 className="w-5 h-5 text-emerald-600" />
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-emerald-600">{tx.amount}</p>
-                      <p className="text-xs text-gray-500 flex items-center justify-end gap-1">
-                        {tx.date}
-                        <span className={`inline-block w-1.5 h-1.5 rounded-full ${
-                          tx.status === 'completed' ? 'bg-emerald-500' : 'bg-yellow-500'
-                        }`} />
-                      </p>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white text-sm">{t('tx1Type')}</p>
+                      <p className="text-xs text-gray-500">{t('tx1Desc')}</p>
                     </div>
                   </div>
-                ))}
+                  <div className="text-right">
+                    <p className="font-semibold text-emerald-600">{t('tx1Amount')}</p>
+                    <p className="text-xs text-gray-500 flex items-center justify-end gap-1">
+                      {t('tx1Date')}
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-100 dark:bg-blue-900/30">
+                      <IoCashOutline className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white text-sm">{t('tx2Type')}</p>
+                      <p className="text-xs text-gray-500">{t('tx2Desc')}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-emerald-600">{t('tx2Amount')}</p>
+                    <p className="text-xs text-gray-500 flex items-center justify-end gap-1">
+                      {t('tx2Date')}
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-100 dark:bg-blue-900/30">
+                      <IoCashOutline className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white text-sm">{t('tx3Type')}</p>
+                      <p className="text-xs text-gray-500">{t('tx3Desc')}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-emerald-600">{t('tx3Amount')}</p>
+                    <p className="text-xs text-gray-500 flex items-center justify-end gap-1">
+                      {t('tx3Date')}
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-100 dark:bg-emerald-900/30">
+                      <BsBank2 className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white text-sm">{t('tx4Type')}</p>
+                      <p className="text-xs text-gray-500">{t('tx4Desc')}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-emerald-600">{t('tx4Amount')}</p>
+                    <p className="text-xs text-gray-500 flex items-center justify-end gap-1">
+                      {t('tx4Date')}
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -617,30 +737,34 @@ export default function PayoutsPage() {
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                Tax Reporting Made Easy
+                {t('taxTitle')}
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Stripe automatically generates your 1099-K for US tax reporting. All your earnings,
-                deductions, and transaction history are available for download anytime.
+                {t('taxDescription')}
               </p>
               <ul className="space-y-3">
-                {[
-                  'Automatic 1099-K generation (if over $600)',
-                  'Download transaction history as CSV',
-                  'Track mileage and expenses in-app',
-                  'Integration with tax software'
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
-                    <IoCheckmarkCircleOutline className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    {item}
-                  </li>
-                ))}
+                <li className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  {t('taxFeature1')}
+                </li>
+                <li className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  {t('taxFeature2')}
+                </li>
+                <li className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  {t('taxFeature3')}
+                </li>
+                <li className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
+                  <IoCheckmarkCircleOutline className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  {t('taxFeature4')}
+                </li>
               </ul>
               <Link
                 href="/host/tax-benefits"
                 className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium mt-6"
               >
-                Learn about tax deductions
+                {t('taxDeductionsLink')}
                 <IoChevronForwardOutline className="w-4 h-4" />
               </Link>
             </div>
@@ -648,22 +772,22 @@ export default function PayoutsPage() {
               <div className="flex items-center gap-3 mb-4">
                 <IoDocumentTextOutline className="w-8 h-8 text-emerald-600" />
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">2024 Tax Documents</h3>
-                  <p className="text-sm text-gray-500">Available January 2025</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('taxDocumentsTitle')}</h3>
+                  <p className="text-sm text-gray-500">{t('taxDocumentsAvailable')}</p>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
-                  <span className="text-sm text-gray-700 dark:text-gray-300">1099-K Form</span>
-                  <span className="text-xs text-gray-500">Pending</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{t('taxDoc1099K')}</span>
+                  <span className="text-xs text-gray-500">{t('taxDocPending')}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Annual Earnings Summary</span>
-                  <span className="text-xs text-emerald-600 font-medium">Download</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{t('taxDocAnnualSummary')}</span>
+                  <span className="text-xs text-emerald-600 font-medium">{t('taxDocDownload')}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Transaction History</span>
-                  <span className="text-xs text-emerald-600 font-medium">Download</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{t('taxDocTransactionHistory')}</span>
+                  <span className="text-xs text-emerald-600 font-medium">{t('taxDocDownload')}</span>
                 </div>
               </div>
             </div>
@@ -675,41 +799,58 @@ export default function PayoutsPage() {
       <section className="py-12">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 text-center">
-            Frequently Asked Questions
+            {t('faqTitle')}
           </h2>
           <div className="space-y-4">
-            {[
-              {
-                q: 'When will I receive my first payout?',
-                a: 'After completing Stripe onboarding, your first payout will be initiated within 24 hours of your first completed trip. It takes 2-3 business days to arrive in your bank account.'
-              },
-              {
-                q: 'Can I get paid instantly?',
-                a: 'Yes! Eligible hosts can request instant payouts to their debit card for a 1.5% fee (minimum $0.50, maximum $15). Funds arrive within minutes, available 24/7.'
-              },
-              {
-                q: 'What if a guest damages my car?',
-                a: 'File a claim through your host dashboard. Once approved, damage reimbursements are paid out within 5-7 business days, separate from your regular trip earnings.'
-              },
-              {
-                q: 'Are there any hidden fees?',
-                a: 'No hidden fees. The platform fee depends on your insurance tier: 60% for Basic (we provide insurance), 25% for Standard (your P2P insurance), or just 10% for Premium (your commercial insurance). Higher tiers mean more earnings!'
-              },
-              {
-                q: 'How do I update my bank account?',
-                a: 'Go to Settings > Payout Methods in your host dashboard. You can add a new bank account or debit card anytime. Verification takes 1-2 business days.'
-              }
-            ].map((faq, i) => (
-              <details key={i} className="group bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-600 shadow-md">
-                <summary className="flex items-center justify-between p-4 cursor-pointer list-none">
-                  <span className="font-medium text-gray-900 dark:text-white">{faq.q}</span>
-                  <IoChevronForwardOutline className="w-5 h-5 text-gray-500 group-open:rotate-90 transition-transform" />
-                </summary>
-                <div className="px-4 pb-4">
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">{faq.a}</p>
-                </div>
-              </details>
-            ))}
+            <details className="group bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-600 shadow-md">
+              <summary className="flex items-center justify-between p-4 cursor-pointer list-none">
+                <span className="font-medium text-gray-900 dark:text-white">{t('faq1Question')}</span>
+                <IoChevronForwardOutline className="w-5 h-5 text-gray-500 group-open:rotate-90 transition-transform" />
+              </summary>
+              <div className="px-4 pb-4">
+                <p className="text-gray-600 dark:text-gray-400 text-sm">{t('faq1Answer')}</p>
+              </div>
+            </details>
+
+            <details className="group bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-600 shadow-md">
+              <summary className="flex items-center justify-between p-4 cursor-pointer list-none">
+                <span className="font-medium text-gray-900 dark:text-white">{t('faq2Question')}</span>
+                <IoChevronForwardOutline className="w-5 h-5 text-gray-500 group-open:rotate-90 transition-transform" />
+              </summary>
+              <div className="px-4 pb-4">
+                <p className="text-gray-600 dark:text-gray-400 text-sm">{t('faq2Answer')}</p>
+              </div>
+            </details>
+
+            <details className="group bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-600 shadow-md">
+              <summary className="flex items-center justify-between p-4 cursor-pointer list-none">
+                <span className="font-medium text-gray-900 dark:text-white">{t('faq3Question')}</span>
+                <IoChevronForwardOutline className="w-5 h-5 text-gray-500 group-open:rotate-90 transition-transform" />
+              </summary>
+              <div className="px-4 pb-4">
+                <p className="text-gray-600 dark:text-gray-400 text-sm">{t('faq3Answer')}</p>
+              </div>
+            </details>
+
+            <details className="group bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-600 shadow-md">
+              <summary className="flex items-center justify-between p-4 cursor-pointer list-none">
+                <span className="font-medium text-gray-900 dark:text-white">{t('faq4Question')}</span>
+                <IoChevronForwardOutline className="w-5 h-5 text-gray-500 group-open:rotate-90 transition-transform" />
+              </summary>
+              <div className="px-4 pb-4">
+                <p className="text-gray-600 dark:text-gray-400 text-sm">{t('faq4Answer')}</p>
+              </div>
+            </details>
+
+            <details className="group bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-600 shadow-md">
+              <summary className="flex items-center justify-between p-4 cursor-pointer list-none">
+                <span className="font-medium text-gray-900 dark:text-white">{t('faq5Question')}</span>
+                <IoChevronForwardOutline className="w-5 h-5 text-gray-500 group-open:rotate-90 transition-transform" />
+              </summary>
+              <div className="px-4 pb-4">
+                <p className="text-gray-600 dark:text-gray-400 text-sm">{t('faq5Answer')}</p>
+              </div>
+            </details>
           </div>
         </div>
       </section>
@@ -718,31 +859,30 @@ export default function PayoutsPage() {
       <section className="py-12 bg-gradient-to-r from-emerald-600 to-teal-600">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
           <h2 className="text-2xl sm:text-3xl font-bold mb-4">
-            Ready to Start Earning?
+            {t('ctaTitle')}
           </h2>
           <p className="text-emerald-100 mb-8">
-            List your car today and start receiving payouts within days of your first trip.
-            Earn up to 90% with fast, secure Stripe payments.
+            {t('ctaDescription')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/list-your-car"
               className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-white text-emerald-700 font-semibold rounded-lg hover:bg-emerald-50 transition-colors"
             >
-              List Your Car
+              {t('ctaListYourCar')}
               <IoChevronForwardOutline className="w-5 h-5" />
             </Link>
             <Link
               href="/host/insurance-options"
               className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-emerald-500/30 text-white font-semibold rounded-lg hover:bg-emerald-500/40 transition-colors"
             >
-              Compare Protection Plans
+              {t('ctaCompareProtection')}
             </Link>
           </div>
           <p className="text-center text-sm text-emerald-200 mt-4">
-            Want to estimate your earnings?{' '}
+            {t('ctaEstimatePrompt')}{' '}
             <Link href="/host-earnings" className="text-white hover:text-emerald-100 font-medium underline">
-              Use our earnings calculator →
+              {t('ctaCalculatorLink')}
             </Link>
           </p>
         </div>

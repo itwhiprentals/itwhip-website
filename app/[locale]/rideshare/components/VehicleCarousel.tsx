@@ -5,6 +5,7 @@
 
 import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import {
   IoCarSportOutline,
   IoStarOutline,
@@ -39,6 +40,7 @@ interface VehicleCarouselProps {
 }
 
 export default function VehicleCarousel({ vehicles, partnerSlug, maxVisible = 4 }: VehicleCarouselProps) {
+  const t = useTranslations('Rideshare')
   // Limit to maxVisible cards (2 rows on mobile = 4 cards)
   const displayVehicles = vehicles.slice(0, maxVisible)
 
@@ -47,7 +49,7 @@ export default function VehicleCarousel({ vehicles, partnerSlug, maxVisible = 4 
       <div className="flex items-center justify-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
         <div className="text-center">
           <IoCarOutline className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <p className="text-gray-500 dark:text-gray-400">No vehicles available</p>
+          <p className="text-gray-500 dark:text-gray-400">{t('carouselNoVehicles')}</p>
         </div>
       </div>
     )
@@ -96,7 +98,7 @@ export default function VehicleCarousel({ vehicles, partnerSlug, maxVisible = 4 
               {/* Rideshare Badge */}
               <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 bg-orange-500 text-white text-[10px] font-medium rounded-full">
                 <IoCarSportOutline className="w-3 h-3" />
-                Rideshare
+                {t('carouselRideshareBadge')}
               </div>
 
               {/* Rating Badge */}
@@ -119,7 +121,7 @@ export default function VehicleCarousel({ vehicles, partnerSlug, maxVisible = 4 
                   <span className="text-sm font-bold text-gray-900 dark:text-white">
                     ${vehicle.dailyRate}
                   </span>
-                  <span className="text-[10px] text-gray-500 dark:text-gray-400">/day</span>
+                  <span className="text-[10px] text-gray-500 dark:text-gray-400">/{t('carouselPerDay')}</span>
                 </div>
               </div>
 
@@ -135,7 +137,7 @@ export default function VehicleCarousel({ vehicles, partnerSlug, maxVisible = 4 
                 </p>
                 {vehicle.weeklyRate && (
                   <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                    ${vehicle.weeklyRate}/wk
+                    {t('carouselWeeklyRate', { price: vehicle.weeklyRate })}
                   </span>
                 )}
               </div>

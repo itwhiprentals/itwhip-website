@@ -62,7 +62,7 @@ export async function sendEmailChangeNotification(
                 <tr>
                   <td style="padding: 30px 40px; background-color: #f9fafb; border-radius: 0 0 8px 8px; text-align: center;">
                     <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-                      © 2025 ItWhip. This is an automated security notification.
+                      © 2026 ItWhip. This is an automated security notification.
                     </p>
                   </td>
                 </tr>
@@ -115,7 +115,7 @@ export async function sendEmailChangeNotification(
                 <tr>
                   <td style="padding: 30px 40px; background-color: #f9fafb; border-radius: 0 0 8px 8px; text-align: center;">
                     <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-                      © 2025 ItWhip. This is an automated confirmation email.
+                      © 2026 ItWhip. This is an automated confirmation email.
                     </p>
                   </td>
                 </tr>
@@ -198,7 +198,7 @@ export async function sendPhoneChangeNotification(
                 <tr>
                   <td style="padding: 30px 40px; background-color: #f9fafb; border-radius: 0 0 8px 8px; text-align: center;">
                     <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-                      © 2025 ItWhip. This is an automated security notification.
+                      © 2026 ItWhip. This is an automated security notification.
                     </p>
                   </td>
                 </tr>

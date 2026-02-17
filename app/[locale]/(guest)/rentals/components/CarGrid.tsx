@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Link } from '@/i18n/navigation'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import { IoCarOutline, IoArrowForwardOutline } from 'react-icons/io5'
+import { useTranslations } from 'next-intl'
 
 interface CarGridProps {
   initialCars: any[]
@@ -25,6 +26,7 @@ export default function CarGrid({
   perPage,
   filters
 }: CarGridProps) {
+  const t = useTranslations('RentalsCatalog')
   const [cars, setCars] = useState<any[]>(initialCars)
   const [page, setPage] = useState(currentPage)
   const [isLoading, setIsLoading] = useState(false)
@@ -99,16 +101,16 @@ export default function CarGrid({
       <div className="text-center py-16">
         <IoCarOutline className="w-16 h-16 mx-auto text-gray-400 mb-4" />
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-          No cars found
+          {t('noCarsFound')}
         </h3>
         <p className="text-gray-600 dark:text-gray-400 mb-6">
-          Try adjusting your filters to see more results.
+          {t('noCarsDescription')}
         </p>
         <Link
           href="/rentals"
           className="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors"
         >
-          Clear filters
+          {t('clearFilters')}
         </Link>
       </div>
     )
@@ -118,7 +120,7 @@ export default function CarGrid({
     <div>
       {/* Showing count */}
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-        Showing {cars.length} of {totalCount} cars
+        {t('showingCars', { shown: cars.length, total: totalCount })}
       </p>
 
       {/* Car Grid */}
@@ -147,7 +149,7 @@ export default function CarGrid({
             onClick={loadMore}
             className="inline-flex items-center gap-2 px-8 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg font-medium hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
           >
-            Load more cars
+            {t('loadMoreCars')}
             <IoArrowForwardOutline className="w-5 h-5" />
           </button>
         </div>
@@ -158,7 +160,7 @@ export default function CarGrid({
         <div className="mt-8 text-center">
           <div className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400">
             <div className="w-5 h-5 border-2 border-gray-300 border-t-amber-600 rounded-full animate-spin" />
-            Loading more cars...
+            {t('loadingMoreCars')}
           </div>
         </div>
       )}

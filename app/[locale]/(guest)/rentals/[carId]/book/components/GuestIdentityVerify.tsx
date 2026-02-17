@@ -5,6 +5,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   IoShieldCheckmarkOutline,
   IoCheckmarkCircle,
@@ -35,6 +36,7 @@ export function GuestIdentityVerify({
   onVerificationStarted,
   disabled = false
 }: GuestIdentityVerifyProps) {
+  const t = useTranslations('Booking')
   const [isVerifying, setIsVerifying] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -87,21 +89,21 @@ export function GuestIdentityVerify({
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-green-800 dark:text-green-300">
-                Identity Verified
+                {t('identityVerified')}
               </h3>
               <IoCheckmarkCircle className="text-green-600" />
             </div>
             {verifiedAt && (
               <p className="text-sm text-green-700 dark:text-green-400 mt-1">
-                Verified on {new Date(verifiedAt).toLocaleDateString()}
+                {t('verifiedOn', { date: new Date(verifiedAt).toLocaleDateString() })}
               </p>
             )}
             <div className="flex flex-wrap gap-3 mt-2 text-sm text-green-600 dark:text-green-400">
               <span className="flex items-center gap-1">
-                <IoIdCardOutline /> Driver's License
+                <IoIdCardOutline /> {t('driversLicense')}
               </span>
               <span className="flex items-center gap-1">
-                <IoPersonOutline /> Identity Photo
+                <IoPersonOutline /> {t('identityPhoto')}
               </span>
             </div>
           </div>
@@ -118,10 +120,10 @@ export function GuestIdentityVerify({
           <IoWarningOutline className="text-2xl text-yellow-600 flex-shrink-0" />
           <div className="flex-1">
             <h3 className="font-semibold text-yellow-800 dark:text-yellow-300">
-              Verification Incomplete
+              {t('verificationIncomplete')}
             </h3>
             <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
-              You started verification but didn't complete it. Please continue to book.
+              {t('verificationIncompleteDesc')}
             </p>
             {error && (
               <p className="text-sm text-red-600 mt-2">{error}</p>
@@ -134,11 +136,11 @@ export function GuestIdentityVerify({
               {isVerifying ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Loading...</span>
+                  <span>{t('loading')}</span>
                 </>
               ) : (
                 <>
-                  <span>Continue Verification</span>
+                  <span>{t('continueVerification')}</span>
                   <IoArrowForwardOutline />
                 </>
               )}
@@ -156,24 +158,24 @@ export function GuestIdentityVerify({
         <IoIdCardOutline className="text-2xl text-orange-500 flex-shrink-0" />
         <div className="flex-1">
           <h3 className="font-semibold text-gray-900 dark:text-white">
-            Identity Verification
+            {t('identityVerificationTitle')}
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Required - Verify your driver's license and identity to proceed
+            {t('identityVerificationRequired')}
           </p>
 
           <div className="mt-3 space-y-2 text-sm text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-2">
               <IoIdCardOutline className="text-gray-400" />
-              <span>Photo of Driver's License (front & back)</span>
+              <span>{t('dlPhotoFrontBack')}</span>
             </div>
             <div className="flex items-center gap-2">
               <IoPersonOutline className="text-gray-400" />
-              <span>Selfie to match your ID</span>
+              <span>{t('selfieMatchId')}</span>
             </div>
             <div className="flex items-center gap-2">
               <IoShieldCheckmarkOutline className="text-gray-400" />
-              <span>Instant verification via Stripe</span>
+              <span>{t('instantVerificationStripe')}</span>
             </div>
           </div>
 
@@ -189,12 +191,12 @@ export function GuestIdentityVerify({
             {isVerifying ? (
               <>
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Starting verification...</span>
+                <span>{t('startingVerification')}</span>
               </>
             ) : (
               <>
                 <IoShieldCheckmarkOutline className="text-xl" />
-                <span>Verify My Identity</span>
+                <span>{t('verifyMyIdentity')}</span>
               </>
             )}
           </button>

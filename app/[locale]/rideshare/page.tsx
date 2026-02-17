@@ -1,7 +1,6 @@
 // app/rideshare/page.tsx
 // Rideshare Landing Page - Cloned from Homepage Design
 
-import { Metadata } from 'next'
 import { Link } from '@/i18n/navigation'
 import { prisma } from '@/app/lib/database/prisma'
 import Header from '@/app/components/Header'
@@ -23,28 +22,6 @@ import PartnerSection from './components/PartnerSection'
 import VehicleCarousel from './components/VehicleCarousel'
 import QuickActionsBar from '@/app/rentals-sections/QuickActionsBar'
 import BrowseByMakeSection from './components/BrowseByMakeSection'
-
-export const metadata: Metadata = {
-  title: 'Rideshare Rentals from $249/week | Uber & Lyft Cars Phoenix | ItWhip',
-  description: 'Rent rideshare-approved vehicles in Phoenix from $249/week. Pre-approved for Uber, Lyft, DoorDash & Instacart. Toyota, Honda, Hyundai hybrids with 40-50 MPG. Maintenance included.',
-  keywords: 'rideshare rentals, uber car rental, lyft vehicle rental, doordash car, phoenix rideshare, arizona rideshare vehicles, rideshare car phoenix, uber approved cars',
-  alternates: {
-    canonical: 'https://itwhip.com/rideshare',
-  },
-  openGraph: {
-    title: 'Rideshare Rentals from $249/week | Uber & Lyft Cars Phoenix',
-    description: 'Rent rideshare-approved vehicles in Phoenix. Pre-approved for Uber, Lyft, DoorDash. 40-50 MPG hybrids with maintenance included.',
-    url: 'https://itwhip.com/rideshare',
-    images: ['/rideshare/hero-prius-highway.jpg'],
-    type: 'website',
-    siteName: 'ItWhip',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Rideshare Rentals from $249/week | Phoenix',
-    description: 'Pre-approved for Uber, Lyft, DoorDash. 40-50 MPG hybrids with maintenance included.',
-  }
-}
 
 // JSON-LD Structured Data for SEO
 const breadcrumbSchema = {

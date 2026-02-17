@@ -332,7 +332,7 @@ function generateWelcomeEmail(name: string): string {
                       ItWhip Technologies, Inc.
                     </p>
                     <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-                      © 2025 ItWhip. All rights reserved.
+                      © 2026 ItWhip. All rights reserved.
                     </p>
                   </td>
                 </tr>

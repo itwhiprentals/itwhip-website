@@ -14,15 +14,6 @@ import { MERCHANT_RETURN_POLICY, SHIPPING_DETAILS } from '@/app/lib/seo/return-p
 import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 import { getAlternateLanguages, getCanonicalUrl, getOgLocale } from '@/app/lib/seo/alternates'
 
-const TYPE_LABELS: Record<string, string> = {
-  suv: 'SUVs',
-  sedan: 'Sedans',
-  luxury: 'Luxury Cars',
-  electric: 'Electric Vehicles',
-  truck: 'Trucks',
-  sports: 'Sports Cars',
-  convertible: 'Convertibles'
-}
 
 interface SearchParams {
   type?: string
@@ -43,19 +34,30 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await localeParams
   const t = await getTranslations('SeoMeta')
+  const tc = await getTranslations('RentalsCatalog')
   const params = await searchParams
   const type = params?.type
   const make = params?.make
+
+  const TYPE_LABELS_I18N: Record<string, string> = {
+    suv: tc('suvs'),
+    sedan: tc('sedans'),
+    luxury: tc('luxuryCars'),
+    electric: tc('electricVehicles'),
+    truck: tc('trucks'),
+    sports: tc('sportsCars'),
+    convertible: tc('convertibles')
+  }
 
   let title = t('rentalsTitle')
   let description = t('rentalsDescription')
 
   if (type && make) {
-    const typeLabel = TYPE_LABELS[type.toLowerCase()] || type
+    const typeLabel = TYPE_LABELS_I18N[type.toLowerCase()] || type
     title = t('rentalsTypeMakeTitle', { make, type: typeLabel })
     description = t('rentalsTypeMakeDescription', { make, type: typeLabel })
   } else if (type) {
-    const typeLabel = TYPE_LABELS[type.toLowerCase()] || type
+    const typeLabel = TYPE_LABELS_I18N[type.toLowerCase()] || type
     title = t('rentalsTypeTitle', { type: typeLabel })
     description = t('rentalsTypeDescription', { type: typeLabel })
   } else if (make) {
@@ -275,9 +277,9 @@ export default async function RentalsPage({
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: params?.type
-      ? `${TYPE_LABELS[params.type.toLowerCase()] || params.type} for Rent in Phoenix`
-      : 'Cars for Rent in Phoenix',
-    description: 'Browse rental cars from local Phoenix hosts',
+      ? t('schemaTypeListName', { type: TYPE_LABELS_I18N[params.type.toLowerCase()] || params.type })
+      : t('schemaListName'),
+    description: t('schemaDescription'),
     numberOfItems: totalCount,
     itemListElement: transformedCars.map((car, idx) => ({
       '@type': 'ListItem',
@@ -287,7 +289,7 @@ export default async function RentalsPage({
         name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
         url: `https://itwhip.com/rentals/${car.id}`,
         image: car.photos[0]?.url || 'https://itwhip.com/images/placeholder-car.jpg',
-        description: `Rent a ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} in ${car.city || 'Phoenix'}`,
+        description: t('schemaCarDescription', { year: car.year, make: capitalizeCarMake(car.make), model: normalizeModelName(car.model, car.make), city: car.city || 'Phoenix' }),
         offers: {
           '@type': 'Offer',
           priceCurrency: 'USD',

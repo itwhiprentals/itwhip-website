@@ -23,25 +23,27 @@ import {
   IoWarningOutline
 } from 'react-icons/io5'
 
-export const metadata: Metadata = {
-  title: 'Insurance Support & Help | ItWhip',
-  description: 'Get help with ItWhip insurance questions. Learn about claims, coverage, deductibles, and how to file a claim. Contact our insurance support team.',
-  keywords: [
-    'itwhip insurance help',
-    'car sharing insurance support',
-    'file insurance claim',
-    'rental car coverage questions',
-    'insurance deductible help'
-  ],
-  openGraph: {
-    title: 'Insurance Support & Help | ItWhip',
-    description: 'Get answers to your insurance questions and learn how to file a claim.',
-    url: 'https://itwhip.com/support/insurance',
-    type: 'website'
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/support/insurance',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('supportInsuranceTitle'),
+    description: t('supportInsuranceDescription'),
+    openGraph: {
+      title: t('supportInsuranceOgTitle'),
+      description: t('supportInsuranceOgDescription'),
+      url: 'https://itwhip.com/support/insurance',
+      type: 'website',
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/support/insurance',
+    },
+  }
 }
 
 const COMMON_QUESTION_KEYS = [

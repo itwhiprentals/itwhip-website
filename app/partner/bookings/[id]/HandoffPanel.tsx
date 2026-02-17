@@ -327,7 +327,7 @@ export function HandoffPanel({
     const update = () => {
       const remaining = new Date(hostFinalReviewDeadline).getTime() - Date.now()
       if (remaining <= 0) {
-        setReviewTimeRemaining('Expired')
+        setReviewTimeRemaining(t('reviewExpired'))
         setReviewDone('AUTO_APPROVED')
         return
       }
@@ -377,13 +377,13 @@ export function HandoffPanel({
           <div className="flex items-center gap-2 mb-2">
             <IoShieldCheckmarkOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
             <h3 className="text-sm font-semibold text-green-800 dark:text-green-300">
-              Trip Approved — Deposit Released
+              {t('tripApprovedTitle')}
             </h3>
           </div>
           <p className="text-xs text-green-700 dark:text-green-400">
             {reviewDone === 'AUTO_APPROVED'
-              ? 'Auto-approved after 24-hour review window expired. Deposit has been released to the guest.'
-              : 'You approved this trip. The security deposit has been released to the guest.'}
+              ? t('autoApprovedMessage')
+              : t('manualApprovedMessage')}
           </p>
         </div>
       )
@@ -396,11 +396,11 @@ export function HandoffPanel({
           <div className="flex items-center gap-2 mb-2">
             <IoAlertCircleOutline className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-              Claim Filed — Deposit on Hold
+              {t('claimFiledTitle')}
             </h3>
           </div>
           <p className="text-xs text-amber-700 dark:text-amber-400">
-            You reported an issue with this trip. The security deposit is on hold pending claim review.
+            {t('claimFiledMessage')}
           </p>
         </div>
       )
@@ -421,7 +421,7 @@ export function HandoffPanel({
               <div className="flex items-center gap-2">
                 <IoImagesOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-300">
-                  Post-Trip Review
+                  {t('postTripReviewTitle')}
                 </h3>
               </div>
               {reviewTimeRemaining && (
@@ -433,8 +433,7 @@ export function HandoffPanel({
             </div>
 
             <p className="text-xs text-blue-700 dark:text-blue-400 mb-4">
-              Review the guest&apos;s inspection photos below. Approve to release the
-              {depositAmount ? ` $${depositAmount.toFixed(2)}` : ''} security deposit, or report an issue to file a claim.
+              {t('reviewInstructions', { deposit: depositAmount ? `$${depositAmount.toFixed(2)}` : '' })}
             </p>
 
             {/* Photo grid */}
@@ -443,7 +442,7 @@ export function HandoffPanel({
                 {/* Pre-Trip Photos */}
                 {inspectionPhotosStart.length > 0 && (
                   <div>
-                    <p className="text-xs font-semibold text-blue-800 dark:text-blue-300 mb-1.5 uppercase tracking-wide">Pre-Trip Photos</p>
+                    <p className="text-xs font-semibold text-blue-800 dark:text-blue-300 mb-1.5 uppercase tracking-wide">{t('preTripPhotos')}</p>
                     <div className="grid grid-cols-3 gap-1.5">
                       {inspectionPhotosStart.map((photo, i) => (
                         <button
@@ -464,7 +463,7 @@ export function HandoffPanel({
                 {/* Post-Trip Photos */}
                 {inspectionPhotosEnd.length > 0 && (
                   <div>
-                    <p className="text-xs font-semibold text-blue-800 dark:text-blue-300 mb-1.5 uppercase tracking-wide">Post-Trip Photos</p>
+                    <p className="text-xs font-semibold text-blue-800 dark:text-blue-300 mb-1.5 uppercase tracking-wide">{t('postTripPhotos')}</p>
                     <div className="grid grid-cols-3 gap-1.5">
                       {inspectionPhotosEnd.map((photo, i) => (
                         <button
@@ -485,7 +484,7 @@ export function HandoffPanel({
             ) : (
               <div className="text-center py-4 mb-4 bg-blue-100/50 dark:bg-blue-900/30 rounded-lg">
                 <IoImagesOutline className="w-8 h-8 text-blue-400 mx-auto mb-1" />
-                <p className="text-xs text-blue-600 dark:text-blue-400">No inspection photos available</p>
+                <p className="text-xs text-blue-600 dark:text-blue-400">{t('noPhotosAvailable')}</p>
               </div>
             )}
 
@@ -497,7 +496,7 @@ export function HandoffPanel({
                 className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
               >
                 <IoCheckmarkCircleOutline className="w-4 h-4" />
-                {reviewSubmitting ? 'Processing...' : 'Approve & Release Deposit'}
+                {reviewSubmitting ? t('processing') : t('approveReleaseDeposit')}
               </button>
               <button
                 onClick={() => handleFinalReview('claim')}
@@ -505,7 +504,7 @@ export function HandoffPanel({
                 className="py-2.5 px-4 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
               >
                 <IoAlertCircleOutline className="w-4 h-4" />
-                Report Issue
+                {t('reportIssue')}
               </button>
             </div>
           </div>

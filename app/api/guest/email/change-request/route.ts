@@ -316,7 +316,7 @@ function generateEmailChangeVerificationEmail(
                       ItWhip Technologies, Inc.
                     </p>
                     <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-                      &copy; 2025 ItWhip. All rights reserved.
+                      &copy; 2026 ItWhip. All rights reserved.
                     </p>
                   </td>
                 </tr>
@@ -399,7 +399,7 @@ function generateEmailChangeNotificationEmail(
                       ItWhip Technologies, Inc.
                     </p>
                     <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-                      &copy; 2025 ItWhip. All rights reserved.
+                      &copy; 2026 ItWhip. All rights reserved.
                     </p>
                   </td>
                 </tr>

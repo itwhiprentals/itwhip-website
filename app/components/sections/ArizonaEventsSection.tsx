@@ -26,24 +26,24 @@ export default function ArizonaEventsSection() {
   const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
 
-  // Event data — kept in English as these are proper event names
+  // Event data — event names are proper nouns, descriptions/multipliers use translations
   const events: EventDisplay[] = [
     {
       month: 'JAN',
       name: 'Barrett-Jackson',
-      desc: 'Classic car auction week',
+      desc: t('eventBarrettJacksonDesc'),
       icon: IoTrophyOutline,
-      multiplier: '1.5x rates',
+      multiplier: t('eventRateMultiplier15'),
       fullData: {
         name: 'Barrett-Jackson Collector Car Auction',
         month: 'JAN',
         dates: { start: '2026-01-17', end: '2026-01-25' },
         location: 'Scottsdale',
-        description: 'The world\'s greatest collector car auction brings thousands of automotive enthusiasts to Scottsdale. Luxury and classic cars take center stage, making this the perfect time to rent a premium vehicle and experience Arizona in style.',
+        description: t('eventBarrettJacksonFull'),
         demandLevel: 'high',
         rateMultiplier: 1.5,
         category: 'automotive',
-        tip: 'Premium and luxury vehicles book out fast for Barrett-Jackson week. Reserve your ride 2-3 weeks early for the best selection of convertibles and sports cars.'
+        tip: t('eventBarrettJacksonTip')
       }
     },
     {
@@ -51,125 +51,125 @@ export default function ArizonaEventsSection() {
       name: 'PGA Phoenix Open',
       desc: 'Waste Management Open',
       icon: IoTrophyOutline,
-      multiplier: '1.3x rates',
+      multiplier: t('eventRateMultiplier13'),
       fullData: {
         name: 'WM Phoenix Open',
         month: 'JAN-FEB',
         dates: { start: '2026-02-02', end: '2026-02-08' },
         location: 'Scottsdale',
-        description: 'The "Greatest Show on Grass" draws over 700,000 fans to TPC Scottsdale. The famous 16th hole party atmosphere makes this one of the most attended golf events in the world.',
+        description: t('eventPgaOpenFull'),
         demandLevel: 'high',
         rateMultiplier: 1.3,
         category: 'sports',
-        tip: 'Golf fans often arrive days early. SUVs and comfortable sedans are popular for the commute to TPC Scottsdale. Book ahead to avoid last-minute surge pricing.'
+        tip: t('eventPgaOpenTip')
       }
     },
     {
       month: 'FEB-MAR',
       name: 'Spring Training',
-      desc: '15 MLB teams',
+      desc: t('eventSpringTrainingDesc'),
       icon: IoTrophyOutline,
-      multiplier: '1.4x rates',
+      multiplier: t('eventRateMultiplier14'),
       fullData: {
         name: 'Cactus League Spring Training',
         month: 'FEB-MAR',
         dates: { start: '2026-02-20', end: '2026-03-24' },
         location: 'Phoenix',
-        description: '15 Major League Baseball teams train across the Valley. Fans travel between stadiums in Mesa, Scottsdale, Tempe, Glendale, and Surprise to catch their favorite teams in intimate settings.',
+        description: t('eventSpringTrainingFull'),
         demandLevel: 'high',
         rateMultiplier: 1.4,
         category: 'sports',
-        tip: 'Families visiting multiple stadiums need reliable vehicles with good AC. Book early for the best rates - Spring Training is our busiest season!'
+        tip: t('eventSpringTrainingTip')
       }
     },
     {
       month: 'MAR',
       name: 'Scottsdale Arts Festival',
-      desc: 'Convertible weather',
+      desc: t('eventArtsFestDesc'),
       icon: IoCalendarOutline,
-      multiplier: 'Peak demand',
+      multiplier: t('eventPeakDemand'),
       fullData: {
         name: 'Scottsdale Arts Festival',
         month: 'MAR',
         dates: { start: '2026-03-19', end: '2026-03-22' },
         location: 'Scottsdale',
-        description: 'Arizona\'s premier fine arts festival features 170+ artists in downtown Scottsdale. Perfect weather makes this ideal for exploring Old Town and the surrounding desert in a convertible.',
+        description: t('eventArtsFestFull'),
         demandLevel: 'medium',
         rateMultiplier: 1.2,
         category: 'festival',
-        tip: 'March offers ideal convertible weather in Arizona. Experience the festival and scenic desert drives with the top down!'
+        tip: t('eventArtsFestTip')
       }
     },
     {
       month: 'APR',
       name: 'Phoenix Film Festival',
-      desc: 'Celebrity arrivals',
+      desc: t('eventFilmFestDesc'),
       icon: IoCalendarOutline,
-      multiplier: '1.2x rates',
+      multiplier: t('eventRateMultiplier12'),
       fullData: {
         name: 'Phoenix Film Festival',
         month: 'APR',
         dates: { start: '2026-04-09', end: '2026-04-19' },
         location: 'Phoenix',
-        description: 'Independent filmmakers and industry professionals gather for 11 days of screenings, panels, and networking. A sophisticated crowd appreciates premium transportation.',
+        description: t('eventFilmFestFull'),
         demandLevel: 'medium',
         rateMultiplier: 1.2,
         category: 'entertainment',
-        tip: 'Looking to make an impression? Our hosts offer luxury sedans and premium SUVs perfect for festival events and red carpet moments.'
+        tip: t('eventFilmFestTip')
       }
     },
     {
       month: 'OCT',
       name: 'Arizona State Fair',
-      desc: 'Family travel surge',
+      desc: t('eventStateFairDesc'),
       icon: IoCalendarOutline,
-      multiplier: '1.3x rates',
+      multiplier: t('eventRateMultiplier13'),
       fullData: {
         name: 'Arizona State Fair',
         month: 'OCT',
         dates: { start: '2026-09-18', end: '2026-10-26' },
         location: 'Phoenix',
-        description: 'Six weeks of rides, concerts, food, and entertainment at the Arizona State Fairgrounds. Families from across Arizona and neighboring states make the trip to Phoenix.',
+        description: t('eventStateFairFull'),
         demandLevel: 'medium',
         rateMultiplier: 1.3,
         category: 'festival',
-        tip: 'Families need space! Our hosts offer SUVs and minivans perfect for fair trips. Easy parking at the fairgrounds when you\'re not dealing with rental car shuttles.'
+        tip: t('eventStateFairTip')
       }
     },
     {
       month: 'NOV',
       name: 'Las Vegas F1 Overflow',
-      desc: 'Vegas visitors',
+      desc: t('eventF1Desc'),
       icon: IoTrophyOutline,
-      multiplier: '1.5x rates',
+      multiplier: t('eventRateMultiplier15'),
       fullData: {
         name: 'Las Vegas F1 Grand Prix Weekend',
         month: 'NOV',
         dates: { start: '2026-11-19', end: '2026-11-21' },
         location: 'Phoenix',
-        description: 'The Las Vegas Grand Prix sells out hotels for 100+ miles. Savvy race fans stay in Phoenix and make the scenic 4.5-hour drive. Sky Harbor offers convenient flights too.',
+        description: t('eventF1Full'),
         demandLevel: 'high',
         rateMultiplier: 1.5,
         category: 'sports',
-        tip: 'Stay in Phoenix, drive to Vegas for the race! Our vehicles are road-trip ready with unlimited mileage options. Book your Phoenix-to-Vegas chariot early.'
+        tip: t('eventF1Tip')
       }
     },
     {
       month: 'DEC',
       name: 'Fiesta Bowl',
-      desc: 'College football championship',
+      desc: t('eventFiestaBowlDesc'),
       icon: IoTrophyOutline,
-      multiplier: '1.4x rates',
+      multiplier: t('eventRateMultiplier14'),
       fullData: {
         name: 'College Football Playoff - Fiesta Bowl',
         month: 'DEC',
         dates: { start: '2026-12-31', end: '2027-01-01' },
         location: 'Glendale',
-        description: 'The Fiesta Bowl at State Farm Stadium hosts College Football Playoff games, bringing passionate fan bases from across the country to the West Valley.',
+        description: t('eventFiestaBowlFull'),
         demandLevel: 'high',
         rateMultiplier: 1.4,
         category: 'sports',
-        tip: 'College football fans travel in groups. Our hosts offer SUVs with tailgate-friendly cargo space. Perfect for game day gear and post-game celebrations!'
+        tip: t('eventFiestaBowlTip')
       }
     }
   ]

@@ -212,7 +212,7 @@ function generateEmailChangedConfirmation(name: string, oldEmail: string, newEma
                 <tr>
                   <td style="padding: 30px 40px; background-color: #f9fafb; border-radius: 0 0 8px 8px; text-align: center;">
                     <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-                      &copy; 2025 ItWhip. All rights reserved.
+                      &copy; 2026 ItWhip. All rights reserved.
                     </p>
                   </td>
                 </tr>
@@ -277,7 +277,7 @@ function generateEmailChangedNotice(name: string, newEmail: string): string {
                 <tr>
                   <td style="padding: 30px 40px; background-color: #f9fafb; border-radius: 0 0 8px 8px; text-align: center;">
                     <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-                      &copy; 2025 ItWhip. All rights reserved.
+                      &copy; 2026 ItWhip. All rights reserved.
                     </p>
                   </td>
                 </tr>

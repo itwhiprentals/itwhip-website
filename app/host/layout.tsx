@@ -24,6 +24,11 @@ function pickNamespaces(messages: typeof enMessages) {
     Common: messages.Common,
     Auth: messages.Auth,
     HostSignup: (messages as any).HostSignup,
+    HostPayouts: (messages as any).HostPayouts,
+    HostTaxBenefits: (messages as any).HostTaxBenefits,
+    HostFleetOwners: (messages as any).HostFleetOwners,
+    HostInsuranceOptions: (messages as any).HostInsuranceOptions,
+    HostRequirements: (messages as any).HostRequirements,
   }
 }
 

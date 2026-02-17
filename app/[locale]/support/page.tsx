@@ -25,26 +25,27 @@ import {
   IoAlertCircleOutline
 } from 'react-icons/io5'
 
-export const metadata: Metadata = {
-  title: 'Support Center | Help & FAQs | ItWhip',
-  description: 'Get help with your ItWhip car rental. Find answers to FAQs, contact support, learn about our damage process, insurance, and policies.',
-  keywords: [
-    'itwhip support',
-    'car rental help',
-    'rental car faq',
-    'damage claim',
-    'insurance coverage',
-    'contact itwhip'
-  ],
-  openGraph: {
-    title: 'Support Center | ItWhip',
-    description: 'Get help with your ItWhip car rental. FAQs, damage claims, insurance info, and 24/7 support.',
-    url: 'https://itwhip.com/support',
-    type: 'website'
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/support',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('supportTitle'),
+    description: t('supportDescription'),
+    openGraph: {
+      title: t('supportOgTitle'),
+      description: t('supportOgDescription'),
+      url: 'https://itwhip.com/support',
+      type: 'website',
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/support',
+    },
+  }
 }
 
 const SUPPORT_CATEGORIES = [

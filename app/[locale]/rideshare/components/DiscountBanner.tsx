@@ -4,6 +4,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   IoPricetagOutline,
   IoTimeOutline,
@@ -27,6 +28,7 @@ interface DiscountBannerProps {
 }
 
 export default function DiscountBanner({ discounts, variant = 'inline' }: DiscountBannerProps) {
+  const t = useTranslations('Rideshare')
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
 
   if (discounts.length === 0) return null
@@ -42,10 +44,10 @@ export default function DiscountBanner({ discounts, variant = 'inline' }: Discou
     const now = new Date()
     const diffDays = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
 
-    if (diffDays <= 0) return 'Expires today'
-    if (diffDays === 1) return 'Expires tomorrow'
-    if (diffDays <= 7) return `Expires in ${diffDays} days`
-    return `Expires ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+    if (diffDays <= 0) return t('discountExpiresToday')
+    if (diffDays === 1) return t('discountExpiresTomorrow')
+    if (diffDays <= 7) return t('discountExpiresInDays', { days: diffDays })
+    return t('discountExpiresOnDate', { date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) })
   }
 
   // Inline variant - compact single line
@@ -54,7 +56,7 @@ export default function DiscountBanner({ discounts, variant = 'inline' }: Discou
     return (
       <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full text-sm font-medium">
         <IoPricetagOutline className="w-4 h-4" />
-        <span>{discount.percentage}% OFF</span>
+        <span>{t('discountPercentOff', { percent: discount.percentage })}</span>
         <span className="opacity-80">|</span>
         <span className="font-mono">{discount.code}</span>
         <button
@@ -90,7 +92,7 @@ export default function DiscountBanner({ discounts, variant = 'inline' }: Discou
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white">
-                    {discount.percentage}% OFF
+                    {t('discountPercentOff', { percent: discount.percentage })}
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {discount.title}
@@ -150,11 +152,11 @@ export default function DiscountBanner({ discounts, variant = 'inline' }: Discou
             <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
               <IoPricetagOutline className="w-6 h-6 text-white" />
               <span className="text-white/80 uppercase tracking-wide text-sm font-medium">
-                Limited Time Offer
+                {t('discountLimitedTime')}
               </span>
             </div>
             <h3 className="text-2xl sm:text-3xl font-bold text-white mb-1">
-              Save {discount.percentage}% on Your Rental
+              {t('discountSavePercent', { percent: discount.percentage })}
             </h3>
             <p className="text-white/80">
               {discount.title}
@@ -183,7 +185,7 @@ export default function DiscountBanner({ discounts, variant = 'inline' }: Discou
               )}
             </button>
             <p className="text-center text-white/60 text-xs mt-2">
-              Click to copy code
+              {t('discountClickCopy')}
             </p>
           </div>
         </div>

@@ -466,6 +466,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         path.includes('/partner/forgot') ||
         path.includes('/partner/reset') ||
         path.includes('/host/login') ||
+        path.startsWith('/host/signup') ||
+        path.startsWith('/host/forgot-password') ||
+        path.startsWith('/host/reset-password') ||
+        path.startsWith('/host/payouts') ||
+        path.startsWith('/host/tax-benefits') ||
+        path.startsWith('/host/fleet-owners') ||
+        path.startsWith('/host/insurance-options') ||
+        path.startsWith('/host/requirements') ||
         path === '/' ||
         path.startsWith('/rentals/search') ||
         path.startsWith('/rentals/cities') ||

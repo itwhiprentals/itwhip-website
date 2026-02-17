@@ -2,9 +2,11 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { IoCheckmarkCircle, IoWarning, IoTime, IoGift } from 'react-icons/io5'
 
 function GuestInviteContent() {
+  const t = useTranslations('GuestInvite')
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
 
@@ -17,7 +19,7 @@ function GuestInviteContent() {
   useEffect(() => {
     if (!token) {
       setStatus('error')
-      setMessage('Invalid link')
+      setMessage(t('invalidLink'))
       return
     }
 
@@ -38,10 +40,10 @@ function GuestInviteContent() {
       if (!response.ok) {
         if (response.status === 410) {
           setStatus('expired')
-          setMessage(data.error || 'This link has expired')
+          setMessage(data.error || t('linkExpiredDefault'))
         } else {
           setStatus('error')
-          setMessage(data.error || 'Something went wrong')
+          setMessage(data.error || t('somethingWentWrong'))
         }
         return
       }
@@ -52,8 +54,8 @@ function GuestInviteContent() {
         setCreditAmount(data.creditAmount || 0)
         setCreditType(data.creditType || 'credit')
         setMessage(data.creditApplied
-          ? `Your $${data.creditAmount} credit has been added!`
-          : 'Welcome! Redirecting to your account...'
+          ? t('creditAppliedMessage', { amount: data.creditAmount })
+          : t('welcomeRedirecting')
         )
 
         // Redirect to server-side callback that sets cookies and redirects to dashboard
@@ -65,7 +67,7 @@ function GuestInviteContent() {
     } catch (error) {
       console.error('Guest onboard validation error:', error)
       setStatus('error')
-      setMessage('Failed to validate link. Please try again.')
+      setMessage(t('failedToValidate'))
     }
   }
 
@@ -77,7 +79,7 @@ function GuestInviteContent() {
           <h1 className="text-3xl font-bold text-gray-900">
             It<span className="text-orange-500">Whip</span>
           </h1>
-          <p className="text-gray-500 mt-1">Welcome Gift</p>
+          <p className="text-gray-500 mt-1">{t('welcomeGift')}</p>
         </div>
 
         {/* Status Card */}
@@ -88,10 +90,10 @@ function GuestInviteContent() {
                 <IoGift className="w-8 h-8 text-orange-600 animate-pulse" />
               </div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                Claiming your credit...
+                {t('claimingCredit')}
               </h2>
               <p className="text-gray-500">
-                Setting up your account
+                {t('settingUpAccount')}
               </p>
               <div className="mt-6 flex justify-center">
                 <div className="w-8 h-8 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
@@ -105,11 +107,11 @@ function GuestInviteContent() {
                 <IoCheckmarkCircle className="w-10 h-10 text-green-600" />
               </div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                Welcome{guestName ? `, ${guestName}` : ''}!
+                {guestName ? t('welcomeName', { name: guestName }) : t('welcome')}
               </h2>
               {creditAmount > 0 && (
                 <div className="my-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
-                  <p className="text-sm text-orange-600 font-medium">Credit Added</p>
+                  <p className="text-sm text-orange-600 font-medium">{t('creditAdded')}</p>
                   <p className="text-3xl font-bold text-orange-600">${creditAmount.toFixed(0)}</p>
                 </div>
               )}
@@ -117,7 +119,7 @@ function GuestInviteContent() {
                 {message}
               </p>
               <p className="text-sm text-gray-400 mt-4">
-                Redirecting to your account...
+                {t('redirectingToAccount')}
               </p>
               <div className="mt-4 flex justify-center">
                 <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
@@ -131,19 +133,19 @@ function GuestInviteContent() {
                 <IoTime className="w-10 h-10 text-yellow-600" />
               </div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                Link Expired
+                {t('linkExpired')}
               </h2>
               <p className="text-gray-500 mb-4">
                 {message}
               </p>
               <p className="text-sm text-gray-400 mb-6">
-                Your invitation link has expired after 72 hours. Contact us to receive a new one.
+                {t('linkExpiredDesc')}
               </p>
               <a
                 href="mailto:info@itwhip.com?subject=New%20Guest%20Invite%20Link%20Request&body=Hi%2C%0A%0AMy%20guest%20invitation%20link%20has%20expired.%20Could%20you%20please%20send%20me%20a%20new%20one%3F%0A%0AThank%20you!"
                 className="inline-block px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors"
               >
-                Email Us for New Link
+                {t('emailUsNewLink')}
               </a>
             </div>
           )}
@@ -154,7 +156,7 @@ function GuestInviteContent() {
                 <IoWarning className="w-10 h-10 text-red-600" />
               </div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                Something Went Wrong
+                {t('somethingWentWrong')}
               </h2>
               <p className="text-gray-500 mb-6">
                 {message}
@@ -166,7 +168,7 @@ function GuestInviteContent() {
                 }}
                 className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors"
               >
-                Try Again
+                {t('tryAgain')}
               </button>
             </div>
           )}
@@ -175,7 +177,7 @@ function GuestInviteContent() {
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-sm text-gray-400">
-            Questions? Email us at{' '}
+            {t('questionsEmailUs')}{' '}
             <a href="mailto:info@itwhip.com" className="text-orange-600 hover:underline">
               info@itwhip.com
             </a>
@@ -194,15 +196,14 @@ function LoadingFallback() {
           <h1 className="text-3xl font-bold text-gray-900">
             It<span className="text-orange-500">Whip</span>
           </h1>
-          <p className="text-gray-500 mt-1">Welcome Gift</p>
         </div>
         <div className="bg-white rounded-lg shadow-xl p-8">
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-100 flex items-center justify-center">
               <IoGift className="w-8 h-8 text-orange-600 animate-pulse" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Loading...
+            <h2 className="text-xl font-semibold text-gray-900 mb-2" aria-label="Loading">
+              &nbsp;
             </h2>
             <div className="mt-6 flex justify-center">
               <div className="w-8 h-8 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>

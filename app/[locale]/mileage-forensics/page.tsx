@@ -1,44 +1,43 @@
 // app/mileage-forensics/page.tsx
 import { Metadata } from 'next'
 import MileageForensicsContent from './MileageForensicsContent'
+import { getTranslations } from 'next-intl/server'
 
-export const metadata: Metadata = {
-  title: 'Mileage Forensics\u2122 | GPS-Verified Trip Tracking Phoenix, Scottsdale | ItWhip Arizona',
-  description: 'Fraud-proof mileage tracking for P2P car sharing in Phoenix, Scottsdale, and Tempe. GPS + OBD-II verified trips protect hosts, guests, and insurance rates. Arizona\'s most transparent car sharing platform.',
-  keywords: [
-    'mileage tracking car sharing',
-    'GPS verified trips Phoenix',
-    'fraud prevention car rental Arizona',
-    'OBD tracking rental car',
-    'P2P car sharing protection',
-    'Arizona car sharing mileage',
-    'car rental mileage verification',
-    'trip tracking Phoenix',
-    'vehicle tracking Scottsdale'
-  ],
-  openGraph: {
-    title: 'Mileage Forensics\u2122 | GPS-Verified Trip Tracking | ItWhip Arizona',
-    description: 'GPS + OBD-II verified trip data. Fraud-proof tracking that protects hosts, guests, and insurers in Phoenix, Scottsdale, and Tempe.',
-    url: 'https://itwhip.com/mileage-forensics',
-    siteName: 'ItWhip',
-    type: 'website',
-    images: [
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('mileageForensicsTitle'),
+    description: t('mileageForensicsDescription'),
+    openGraph: {
+      title: t('mileageForensicsOgTitle'),
+      description: t('mileageForensicsOgDescription'),
+      url: 'https://itwhip.com/mileage-forensics',
+      siteName: 'ItWhip',
+      type: 'website',
+      images: [
       {
         url: 'https://itwhip.com/og/mileage-forensics.png',
         width: 1200,
         height: 630,
         alt: 'ItWhip Mileage Forensics - GPS-Verified Trip Tracking'
       }
-    ]
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Mileage Forensics\u2122 | ItWhip Arizona',
-    description: 'GPS + OBD-II verified trip data. Fraud-proof tracking for P2P car sharing.',
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/mileage-forensics',
-  },
+    ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: t('mileageForensicsTwitterTitle'),
+      description: t('mileageForensicsTwitterDescription'),
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/mileage-forensics',
+    },
+  }
 }
 
 export default function MileageForensicsPage() {

@@ -222,7 +222,7 @@ export function getHostVerificationTemplate(data: HostVerificationData): EmailTe
             <a href="https://itwhip.com/host/help">Host Help Center</a> | 
             <a href="https://itwhip.com/host/terms">Host Terms</a><br>
             <span style="font-size: 11px; margin-top: 8px; display: block;">
-              © 2025 ItWhip Technologies. All rights reserved.
+              © 2026 ItWhip Technologies. All rights reserved.
             </span>
           </div>
         </div>
@@ -255,7 +255,7 @@ Need help? Contact our host support team at info@itwhip.com
 
 ITWHIP HOST PORTAL
 Empowering Vehicle Owners in Phoenix
-© 2025 ItWhip Technologies. All rights reserved.
+© 2026 ItWhip Technologies. All rights reserved.
   `
   
   return { subject, html, text }

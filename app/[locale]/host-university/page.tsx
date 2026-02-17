@@ -1,18 +1,28 @@
 import { Metadata } from 'next'
 import HostUniversityContent from './HostUniversityContent'
+import { getTranslations } from 'next-intl/server'
 
-export const metadata: Metadata = {
-  title: 'Host University | ItWhip',
-  description: 'Learn car sharing best practices for ItWhip hosts. Pricing strategies, photography tips, guest management, and how to maximize your earnings.',
-  alternates: {
-    canonical: 'https://itwhip.com/host-university',
-  },
-  openGraph: {
-    title: 'Host University | ItWhip',
-    description: 'Car sharing best practices and training for ItWhip hosts.',
-    url: 'https://itwhip.com/host-university',
-    type: 'website',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('hostUniversityTitle'),
+    description: t('hostUniversityDescription'),
+    openGraph: {
+      title: t('hostUniversityOgTitle'),
+      description: t('hostUniversityOgDescription'),
+      url: 'https://itwhip.com/host-university',
+      type: 'website',
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/host-university',
+    },
+  }
 }
 
 export default function HostUniversityPage() {

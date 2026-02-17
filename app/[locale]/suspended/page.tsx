@@ -6,6 +6,7 @@
 
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState, Suspense } from 'react'
+import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 
 interface SuspensionDetails {
@@ -23,6 +24,7 @@ interface SuspensionDetails {
 }
 
 function SuspendedContent() {
+  const t = useTranslations('Suspended')
   const searchParams = useSearchParams()
   const roleParam = searchParams.get('role') || 'both'
   const [suspensionDetails, setSuspensionDetails] = useState<SuspensionDetails | null>(null)
@@ -50,13 +52,13 @@ function SuspendedContent() {
     const role = suspensionDetails?.affectedRole || roleParam
     switch (role) {
       case 'both':
-        return 'account'
+        return t('roleAccount')
       case 'guest':
-        return 'guest account'
+        return t('roleGuest')
       case 'host':
-        return 'host account'
+        return t('roleHost')
       default:
-        return 'account'
+        return t('roleAccount')
     }
   }
 
@@ -83,7 +85,7 @@ function SuspendedContent() {
             </div>
           </div>
           <h1 className="mt-3 text-center text-2xl font-bold text-white">
-            Account Suspended
+            {t('accountSuspended')}
           </h1>
         </div>
 
@@ -93,19 +95,19 @@ function SuspendedContent() {
             <div className="text-center py-8">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
               <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                Loading suspension details...
+                {t('loadingSuspensionDetails')}
               </p>
             </div>
           ) : suspensionDetails?.hasSuspension ? (
             <div className="space-y-4">
               <p className="text-sm text-gray-700 dark:text-gray-300 text-center">
-                Your <span className="font-semibold">{getRoleText()}</span> has been suspended.
+                {t('yourRoleSuspended', { role: getRoleText() })}
               </p>
 
               {/* Reason */}
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
                 <p className="text-xs font-semibold text-red-900 dark:text-red-200 uppercase mb-1">
-                  Reason
+                  {t('reason')}
                 </p>
                 <p className="text-sm text-red-800 dark:text-red-300">
                   {suspensionDetails.reason}
@@ -125,19 +127,19 @@ function SuspendedContent() {
               {suspensionDetails.isPermanent ? (
                 <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md p-4">
                   <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase mb-1">
-                    Status
+                    {t('statusLabel')}
                   </p>
                   <p className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                    ⚠️ Permanent Suspension
+                    ⚠️ {t('permanentSuspension')}
                   </p>
                   <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-                    Contact support if you believe this is an error.
+                    {t('contactSupportError')}
                   </p>
                 </div>
               ) : suspensionDetails.expiresAt ? (
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-4">
                   <p className="text-xs font-semibold text-blue-900 dark:text-blue-200 uppercase mb-1">
-                    Expires
+                    {t('expires')}
                   </p>
                   <p className="text-sm text-blue-800 dark:text-blue-300">
                     {new Date(suspensionDetails.expiresAt).toLocaleString('en-US', {
@@ -151,7 +153,7 @@ function SuspendedContent() {
               {/* What this means */}
               <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-4">
                 <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase mb-2">
-                  What this means
+                  {t('whatThisMeans')}
                 </p>
                 <ul className="space-y-1.5 text-sm text-gray-600 dark:text-gray-400">
                   {(suspensionDetails.affectedRole === 'both' ||
@@ -159,11 +161,11 @@ function SuspendedContent() {
                     <>
                       <li className="flex items-start">
                         <span className="mr-2">•</span>
-                        <span>You cannot book or rent vehicles</span>
+                        <span>{t('cannotBookRent')}</span>
                       </li>
                       <li className="flex items-start">
                         <span className="mr-2">•</span>
-                        <span>Active bookings may be cancelled</span>
+                        <span>{t('bookingsMayCancelled')}</span>
                       </li>
                     </>
                   )}
@@ -172,17 +174,17 @@ function SuspendedContent() {
                     <>
                       <li className="flex items-start">
                         <span className="mr-2">•</span>
-                        <span>You cannot list or manage vehicles</span>
+                        <span>{t('cannotListManage')}</span>
                       </li>
                       <li className="flex items-start">
                         <span className="mr-2">•</span>
-                        <span>Your listings are hidden from search</span>
+                        <span>{t('listingsHidden')}</span>
                       </li>
                     </>
                   )}
                   <li className="flex items-start">
                     <span className="mr-2">✓</span>
-                    <span>You can still access account settings</span>
+                    <span>{t('canAccessSettings')}</span>
                   </li>
                 </ul>
               </div>
@@ -190,7 +192,7 @@ function SuspendedContent() {
           ) : (
             <div className="text-center py-8">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                No active suspension found. You should be able to access your account normally.
+                {t('noActiveSuspension')}
               </p>
             </div>
           )}
@@ -204,19 +206,19 @@ function SuspendedContent() {
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Contact Support
+              {t('contactSupport')}
             </Link>
             <Link
               href="/"
               className="flex-1 inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
             >
-              Return to Home
+              {t('returnToHome')}
             </Link>
           </div>
 
           {/* Help text */}
           <p className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
-            Need help?{' '}
+            {t('needHelp')}{' '}
             <a
               href="mailto:info@itwhip.com"
               className="text-red-600 dark:text-red-400 hover:underline"
@@ -237,7 +239,7 @@ export default function SuspendedPage() {
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
-            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Loading...</p>
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400" aria-label="Loading">&nbsp;</p>
           </div>
         </div>
       }

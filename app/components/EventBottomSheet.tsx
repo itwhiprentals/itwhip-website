@@ -3,6 +3,7 @@
 
 import { Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
+import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import {
   IoCloseOutline,
@@ -51,6 +52,7 @@ function formatSearchDates(start: string, end: string): { pickupDate: string; re
 }
 
 export default function EventBottomSheet({ event, isOpen, onClose }: EventBottomSheetProps) {
+  const t = useTranslations('Home')
   if (!event) return null
 
   const { pickupDate, returnDate } = formatSearchDates(event.dates.start, event.dates.end)
@@ -58,9 +60,9 @@ export default function EventBottomSheet({ event, isOpen, onClose }: EventBottom
   const cityUrl = `/rentals/search?location=${encodeURIComponent(event.location)}`
 
   const demandBadge = {
-    high: { label: 'High Demand', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-    medium: { label: 'Peak Season', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-    low: { label: 'Moderate', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' }
+    high: { label: t('demandHigh'), color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+    medium: { label: t('demandPeak'), color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+    low: { label: t('demandModerate'), color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' }
   }
 
   const badge = demandBadge[event.demandLevel]
@@ -132,7 +134,7 @@ export default function EventBottomSheet({ event, isOpen, onClose }: EventBottom
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                       <IoLocationOutline className="w-4 h-4 text-amber-500" />
-                      <span>{event.location}, Arizona</span>
+                      <span>{event.location}, {t('eventStateArizona')}</span>
                     </div>
                   </div>
 
@@ -146,11 +148,11 @@ export default function EventBottomSheet({ event, isOpen, onClose }: EventBottom
                     <div className="flex items-center gap-2 mb-1">
                       <IoTrendingUpOutline className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                       <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
-                        {event.rateMultiplier}x Dynamic Pricing
+                        {t('dynamicPricing', { multiplier: event.rateMultiplier })}
                       </span>
                     </div>
                     <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                      Hosts earn more during this event. Early booking recommended.
+                      {t('hostsEarnMore')}
                     </p>
                   </div>
 
@@ -172,7 +174,7 @@ export default function EventBottomSheet({ event, isOpen, onClose }: EventBottom
                     onClick={onClose}
                     className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors"
                   >
-                    Search Cars for These Dates
+                    {t('searchCarsForDates')}
                     <IoArrowForwardOutline className="w-5 h-5" />
                   </Link>
                   <Link
@@ -180,7 +182,7 @@ export default function EventBottomSheet({ event, isOpen, onClose }: EventBottom
                     onClick={onClose}
                     className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                   >
-                    Browse {event.location} Rentals
+                    {t('browseLocationRentals', { location: event.location })}
                   </Link>
                 </div>
               </Dialog.Panel>

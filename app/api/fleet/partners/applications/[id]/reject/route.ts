@@ -154,7 +154,7 @@ export async function POST(
 
               <div class="footer">
                 <strong>ITWHIP FLEET PARTNER PROGRAM</strong><br>
-                &copy; 2025 ItWhip Technologies. All rights reserved.
+                &copy; 2026 ItWhip Technologies. All rights reserved.
               </div>
             </div>
           </body>
@@ -175,7 +175,7 @@ This decision does not prevent you from reapplying in the future. If you believe
 Questions? Contact partners@itwhip.com
 
 ITWHIP FLEET PARTNER PROGRAM
-© 2025 ItWhip Technologies. All rights reserved.
+© 2026 ItWhip Technologies. All rights reserved.
       `
 
       await sendEmail({

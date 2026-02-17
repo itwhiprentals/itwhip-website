@@ -41,7 +41,7 @@ const SECONDARY_PROVIDERS = [
   {
     id: 'zubie',
     name: 'Zubie',
-    monthlyPrice: '$15/mo',
+    monthlyPriceKey: 'zubieMonthlyPrice',
     descriptionKey: 'zubieDescription',
     hasApiIntegration: true,
     strengthKeys: [
@@ -54,7 +54,7 @@ const SECONDARY_PROVIDERS = [
   {
     id: 'moovetrax',
     name: 'MooveTrax',
-    monthlyPrice: '$12/mo',
+    monthlyPriceKey: 'moovetraxMonthlyPrice',
     descriptionKey: 'moovetraxDescription',
     hasApiIntegration: false,
     strengthKeys: [
@@ -67,7 +67,7 @@ const SECONDARY_PROVIDERS = [
   {
     id: 'trackimo',
     name: 'Trackimo',
-    monthlyPrice: '$10/mo',
+    monthlyPriceKey: 'trackimoMonthlyPrice',
     descriptionKey: 'trackimoDescription',
     hasApiIntegration: false,
     strengthKeys: [
@@ -253,7 +253,7 @@ export default async function TrackingPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{provider.monthlyPrice}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t(provider.monthlyPriceKey)}</p>
                     </div>
                   </div>
 

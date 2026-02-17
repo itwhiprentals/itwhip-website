@@ -41,41 +41,32 @@ const faqRichTextTags = {
 }
 
 // Metadata
-export const metadata: Metadata = {
-  title: 'Budget Car Rentals & Rideshare Vehicles in Arizona - Under $100/day | ItWhip',
-  description: 'Find cheap car rentals and rideshare-approved vehicles in Phoenix starting at $29/day. Perfect for Uber, Lyft, DoorDash, Amazon Flex drivers. $1M insurance included.',
-  keywords: [
-    'cheap car rental phoenix',
-    'budget car rental arizona',
-    'uber rental car phoenix',
-    'lyft rental phoenix',
-    'rideshare rental phoenix',
-    'doordash car rental',
-    'amazon flex rental car',
-    'gig economy car rental',
-    'cheap rideshare rental arizona',
-    'budget rental cars phoenix az',
-    'instacart driver car rental',
-    'uber eats rental car phoenix',
-    'affordable car rental phoenix',
-    'economy car rental arizona',
-    'phoenix car rental under $100'
-  ],
-  openGraph: {
-    title: 'Budget & Rideshare Car Rentals - Under $100/day | ItWhip Arizona',
-    description: 'Affordable car rentals for Uber, Lyft, DoorDash, Amazon Flex drivers. $1M insurance included.',
-    url: 'https://itwhip.com/rentals/budget',
-    images: [{ url: 'https://itwhip.com/og/budget-rentals.png', width: 1200, height: 630 }],
-    type: 'website'
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Budget & Rideshare Rentals Under $100/day',
-    description: 'Affordable Arizona car rentals for gig drivers. Uber, Lyft, delivery apps. $1M insurance.',
-    images: ['https://itwhip.com/og/budget-rentals.png']
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/rentals/budget'
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('rentalsBudgetTitle'),
+    description: t('rentalsBudgetDescription'),
+    openGraph: {
+      title: t('rentalsBudgetOgTitle'),
+      description: t('rentalsBudgetOgDescription'),
+      url: 'https://itwhip.com/rentals/budget',
+      type: 'website',
+      images: [{ url: 'https://itwhip.com/og/budget-rentals.png', width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: t('rentalsBudgetTwitterTitle'),
+      description: t('rentalsBudgetTwitterDescription'),
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/rentals/budget',
+    },
   }
 }
 
@@ -377,7 +368,7 @@ export default async function BudgetRentalsPage() {
           }
         }))
       },
-      // FAQPage — use t() (not t.rich()) so rich text tags are stripped to plain text
+      // FAQPage — pass tag handlers as identity functions to get plain text for JSON-LD
       {
         '@type': 'FAQPage',
         '@id': 'https://itwhip.com/rentals/budget#faq',
@@ -386,7 +377,16 @@ export default async function BudgetRentalsPage() {
           name: t(`faq${i}Question`),
           acceptedAnswer: {
             '@type': 'Answer',
-            text: t(`faq${i}Answer`, { carCount, minPrice })
+            text: t(`faq${i}Answer`, {
+              carCount,
+              minPrice,
+              howItWorksLink: (chunks: string) => chunks,
+              insuranceLink: (chunks: string) => chunks,
+              rideshareLink: (chunks: string) => chunks,
+              rentalsLink: (chunks: string) => chunks,
+              weeklyLink: (chunks: string) => chunks,
+              protectionLink: (chunks: string) => chunks,
+            })
           }
         }))
       }

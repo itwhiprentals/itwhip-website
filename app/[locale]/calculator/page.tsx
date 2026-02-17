@@ -40,47 +40,47 @@ export default function CalculatorPage() {
   const insuranceTiers = [
     {
       id: 'basic',
-      name: 'PLATFORM COVERAGE',
+      name: t('tierBasicName'),
       percentage: 40,
       platformFee: 60,
       color: 'gray',
-      insurance: 'We Provide Insurance',
+      insurance: t('tierBasicInsurance'),
       deductible: '$2,500',
-      description: 'No insurance needed. Platform provides all coverage.',
-      best: 'New hosts, occasional renters'
+      description: t('tierBasicDesc'),
+      best: t('tierBasicBest')
     },
     {
       id: 'standard',
-      name: 'P2P COVERAGE',
+      name: t('tierStandardName'),
       percentage: 75,
       platformFee: 25,
       color: 'amber',
-      insurance: 'You Bring P2P Insurance',
+      insurance: t('tierStandardInsurance'),
       deductible: '$1,500',
-      description: 'Bring peer-to-peer insurance (State Farm, etc).',
-      best: 'Active hosts with P2P policies',
+      description: t('tierStandardDesc'),
+      best: t('tierStandardBest'),
       popular: true
     },
     {
       id: 'premium',
-      name: 'COMMERCIAL COVERAGE',
+      name: t('tierPremiumName'),
       percentage: 90,
       platformFee: 10,
       color: 'emerald',
-      insurance: 'You Bring Commercial Insurance',
+      insurance: t('tierPremiumInsurance'),
       deductible: '$1,000',
-      description: 'Bring commercial auto insurance.',
-      best: 'Fleet operators, serious hosts'
+      description: t('tierPremiumDesc'),
+      best: t('tierPremiumBest')
     }
   ]
 
   // Vehicle categories for earnings estimation
   const vehicleCategories = [
-    { id: 'economy', name: 'Economy', examples: 'Civic, Corolla, Sentra', avgDaily: 55, color: 'blue' },
-    { id: 'standard', name: 'Standard', examples: 'Camry, Accord, CRV', avgDaily: 85, color: 'green' },
-    { id: 'luxury', name: 'Luxury', examples: 'BMW 3, Mercedes C, Audi A4', avgDaily: 150, color: 'purple' },
-    { id: 'premium', name: 'Premium', examples: 'Tesla S, Mercedes S, BMW 7', avgDaily: 250, color: 'amber' },
-    { id: 'exotic', name: 'Exotic', examples: 'Lamborghini, Ferrari, McLaren', avgDaily: 500, color: 'red' }
+    { id: 'economy', name: t('vehicleEconomy'), examples: 'Civic, Corolla, Sentra', avgDaily: 55, color: 'blue' },
+    { id: 'standard', name: t('vehicleStandard'), examples: 'Camry, Accord, CRV', avgDaily: 85, color: 'green' },
+    { id: 'luxury', name: t('vehicleLuxury'), examples: 'BMW 3, Mercedes C, Audi A4', avgDaily: 150, color: 'purple' },
+    { id: 'premium', name: t('vehiclePremium'), examples: 'Tesla S, Mercedes S, BMW 7', avgDaily: 250, color: 'amber' },
+    { id: 'exotic', name: t('vehicleExotic'), examples: 'Lamborghini, Ferrari, McLaren', avgDaily: 500, color: 'red' }
   ]
 
   const currentTier = insuranceTiers.find(t => t.id === selectedTier) || insuranceTiers[1]
@@ -186,7 +186,7 @@ export default function CalculatorPage() {
                   >
                     {tier.popular && (
                       <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                        POPULAR
+                        {t('popular')}
                       </div>
                     )}
                     <div className={`text-2xl font-black ${
@@ -227,7 +227,7 @@ export default function CalculatorPage() {
                         }`}
                       >
                         <div className="font-bold">{tier.percentage}%</div>
-                        <div className="text-xs opacity-80">{tier.id === 'basic' ? 'Platform' : tier.id === 'standard' ? 'P2P' : 'Commercial'}</div>
+                        <div className="text-xs opacity-80">{tier.id === 'basic' ? t('platformLabel') : tier.id === 'standard' ? t('p2pLabel') : t('commercialLabel')}</div>
                       </button>
                     ))}
                   </div>
@@ -250,7 +250,7 @@ export default function CalculatorPage() {
                         }`}
                       >
                         <div className="font-semibold">{vehicle.name}</div>
-                        <div className="text-xs opacity-80">${vehicle.avgDaily}/day</div>
+                        <div className="text-xs opacity-80">{t('pricePerDay', { price: vehicle.avgDaily })}</div>
                       </button>
                     ))}
                   </div>
@@ -288,7 +288,7 @@ export default function CalculatorPage() {
                         {t('yourItwhipEarnings')}
                       </h3>
                       <span className="text-xs bg-purple-600 text-white px-2 py-1 rounded-lg">
-                        {currentTier.percentage}% tier
+                        {t('percentTier', { percentage: currentTier.percentage })}
                       </span>
                     </div>
                     <div className="space-y-3">
@@ -322,7 +322,7 @@ export default function CalculatorPage() {
                         {t('traditionalPlatforms')}
                       </h3>
                       <span className="text-xs bg-gray-500 text-white px-2 py-1 rounded-lg">
-                        ~65% typical
+                        {t('typicalRate')}
                       </span>
                     </div>
                     <div className="space-y-3">
@@ -355,10 +355,10 @@ export default function CalculatorPage() {
                   <div className="p-6 bg-gradient-to-r from-green-500 to-green-600 rounded-lg text-white text-center">
                     <div className="text-sm font-medium mb-2">{t('additionalEarnings')}</div>
                     <div className="text-4xl font-bold mb-2">
-                      +${earnings.monthlySavings.toLocaleString()}/month
+                      {t('savingsPerMonth', { amount: earnings.monthlySavings.toLocaleString() })}
                     </div>
                     <div className="text-sm opacity-90">
-                      That's ${earnings.annualSavings.toLocaleString()} more per year
+                      {t('morePerYear', { amount: earnings.annualSavings.toLocaleString() })}
                     </div>
                   </div>
                 )}
@@ -372,7 +372,7 @@ export default function CalculatorPage() {
                     ${earnings.totalBenefit.toLocaleString()}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    Based on {monthlyBookings} days/month + ~$8K estimated tax deductions
+                    {t('projectionBasis', { days: monthlyBookings })}
                   </div>
                 </div>
               </div>
@@ -381,7 +381,7 @@ export default function CalculatorPage() {
               <div className="mt-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                 <p className="text-xs text-center text-gray-600 dark:text-gray-400">
                   <strong>{t('platformFeeIncludes')}</strong> {t('platformFeeIncludesDesc')}
-                  <Link href="/insurance-guide" className="text-purple-600 ml-1">Learn more</Link>
+                  <Link href="/insurance-guide" className="text-purple-600 ml-1">{t('learnMore')}</Link>
                 </p>
               </div>
             </div>
@@ -418,7 +418,7 @@ export default function CalculatorPage() {
                 >
                   {tier.popular && (
                     <div className="absolute -top-3 right-4 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                      MOST POPULAR
+                      {t('mostPopular')}
                     </div>
                   )}
                   <div className={`text-sm font-bold mb-2 ${
@@ -444,11 +444,11 @@ export default function CalculatorPage() {
                   </p>
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Deductible:</span>
+                      <span className="text-gray-500">{t('deductibleLabel')}:</span>
                       <span className="font-medium">{tier.deductible}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Liability:</span>
+                      <span className="text-gray-500">{t('liabilityLabel')}:</span>
                       <span className="font-medium">$1M</span>
                     </div>
                   </div>

@@ -1,3 +1,4 @@
+// app/insurance-guide/layout.tsx
 import { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 
@@ -10,24 +11,25 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: 'SeoMeta' })
 
   return {
-    title: t('corporateTitle'),
-    description: t('corporateDescription'),
+    title: t('insuranceGuideTitle'),
+    description: t('insuranceGuideDescription'),
     openGraph: {
-      title: t('corporateOgTitle'),
-      description: t('corporateOgDescription'),
-      url: 'https://itwhip.com/corporate',
+      title: t('insuranceGuideOgTitle'),
+      description: t('insuranceGuideOgDescription'),
+      url: 'https://itwhip.com/insurance-guide',
+      siteName: 'ItWhip',
       type: 'website',
     },
     alternates: {
-      canonical: 'https://itwhip.com/corporate',
+      canonical: 'https://itwhip.com/insurance-guide',
     },
   }
 }
 
-export default function CorporateLayout({
+export default function InsuranceGuideLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return children
+  return <>{children}</>
 }

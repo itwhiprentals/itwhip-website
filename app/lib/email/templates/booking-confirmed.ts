@@ -275,7 +275,7 @@ View booking details: ${data.dashboardUrl}
 Questions? Contact info@itwhip.com
 
 ITWHIP - Premium Vehicle Rentals
-© 2025 ItWhip Technologies. All rights reserved.
+© 2026 ItWhip Technologies. All rights reserved.
  `
  
  return { subject, html, text }

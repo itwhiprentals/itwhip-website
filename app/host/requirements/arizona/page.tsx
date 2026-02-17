@@ -1,6 +1,7 @@
+'use client'
 // app/host/requirements/arizona/page.tsx
-import { Metadata } from 'next'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import {
@@ -14,22 +15,9 @@ import {
   IoAlertCircleOutline
 } from 'react-icons/io5'
 
-export const metadata: Metadata = {
-  title: 'Arizona Host Requirements | Car Sharing in AZ | ItWhip',
-  description: 'Requirements for hosting your car on ItWhip in Arizona. Vehicle requirements, documentation, insurance, and state-specific regulations for Phoenix hosts.',
-  keywords: ['arizona car sharing requirements', 'phoenix host requirements', 'turo arizona requirements', 'car sharing arizona laws', 'list car on turo arizona'],
-  openGraph: {
-    title: 'Arizona Host Requirements | ItWhip',
-    description: 'Everything you need to know about hosting your car in Arizona.',
-    url: 'https://itwhip.com/host/requirements/arizona',
-    type: 'website'
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/host/requirements/arizona',
-  },
-}
-
 export default function ArizonaRequirementsPage() {
+  const t = useTranslations('HostRequirements')
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header />
@@ -40,13 +28,13 @@ export default function ArizonaRequirementsPage() {
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/30 rounded-full text-orange-200 text-xs font-medium mb-4">
               <IoLocationOutline className="w-4 h-4" />
-              Arizona
+              {t('heroBadge')}
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              Arizona Host Requirements
+              {t('heroTitle')}
             </h1>
             <p className="text-xl text-orange-100 mb-6">
-              Everything you need to list your car in Arizona. Vehicle requirements, documentation, and state-specific guidelines.
+              {t('heroDescription')}
             </p>
           </div>
         </div>
@@ -59,20 +47,20 @@ export default function ArizonaRequirementsPage() {
             <li className="flex items-center gap-1.5">
               <Link href="/" className="hover:text-amber-600 flex items-center gap-1">
                 <IoHomeOutline className="w-3.5 h-3.5" />
-                Home
+                {t('breadcrumbHome')}
               </Link>
               <IoChevronForwardOutline className="w-2.5 h-2.5" />
             </li>
             <li className="flex items-center gap-1.5">
-              <Link href="/list-your-car" className="hover:text-amber-600">Host</Link>
+              <Link href="/list-your-car" className="hover:text-amber-600">{t('breadcrumbHost')}</Link>
               <IoChevronForwardOutline className="w-2.5 h-2.5" />
             </li>
             <li className="flex items-center gap-1.5">
-              <Link href="/host-requirements" className="hover:text-amber-600">Requirements</Link>
+              <Link href="/host-requirements" className="hover:text-amber-600">{t('breadcrumbRequirements')}</Link>
               <IoChevronForwardOutline className="w-2.5 h-2.5" />
             </li>
             <li className="text-gray-800 dark:text-gray-200 font-medium">
-              Arizona
+              {t('breadcrumbArizona')}
             </li>
           </ol>
         </nav>
@@ -83,19 +71,19 @@ export default function ArizonaRequirementsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
             <IoCarOutline className="w-6 h-6 text-orange-600" />
-            Vehicle Requirements
+            {t('vehicleRequirementsTitle')}
           </h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Eligible Vehicles</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('eligibleVehiclesTitle')}</h3>
               <ul className="space-y-3">
                 {[
-                  '2010 or newer (15 years old max)',
-                  'Under 130,000 miles',
-                  'Clean title (no salvage or rebuilt)',
-                  'Valid Arizona registration',
-                  'Passes safety inspection',
-                  'No major mechanical issues'
+                  t('eligibleItem0'),
+                  t('eligibleItem1'),
+                  t('eligibleItem2'),
+                  t('eligibleItem3'),
+                  t('eligibleItem4'),
+                  t('eligibleItem5')
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
@@ -105,15 +93,15 @@ export default function ArizonaRequirementsPage() {
               </ul>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Not Eligible</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('notEligibleTitle')}</h3>
               <ul className="space-y-3">
                 {[
-                  'Salvage or rebuilt titles',
-                  'Commercial vehicles (taxi/rideshare)',
-                  'Vehicles with liens (unless approved)',
-                  'Motorcycles or ATVs',
-                  'RVs over 26 feet',
-                  'Vehicles failing emissions'
+                  t('notEligibleItem0'),
+                  t('notEligibleItem1'),
+                  t('notEligibleItem2'),
+                  t('notEligibleItem3'),
+                  t('notEligibleItem4'),
+                  t('notEligibleItem5')
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
                     <IoAlertCircleOutline className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
@@ -131,21 +119,21 @@ export default function ArizonaRequirementsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
             <IoDocumentTextOutline className="w-6 h-6 text-orange-600" />
-            Required Documentation
+            {t('requiredDocumentationTitle')}
           </h2>
           <div className="grid md:grid-cols-3 gap-6">
             {[
               {
-                title: 'Vehicle Documents',
-                items: ['Arizona vehicle registration', 'Vehicle title (or lien holder approval)', 'Current emissions test (if required in your county)']
+                title: t('vehicleDocumentsTitle'),
+                items: [t('vehicleDocumentsItem0'), t('vehicleDocumentsItem1'), t('vehicleDocumentsItem2')]
               },
               {
-                title: 'Personal Documents',
-                items: ['Valid Arizona driver\'s license', 'Proof of insurance', 'Social Security Number (for payouts)']
+                title: t('personalDocumentsTitle'),
+                items: [t('personalDocumentsItem0'), t('personalDocumentsItem1'), t('personalDocumentsItem2')]
               },
               {
-                title: 'Account Verification',
-                items: ['Phone number verification', 'Email verification', 'Bank account for payouts']
+                title: t('accountVerificationTitle'),
+                items: [t('accountVerificationItem0'), t('accountVerificationItem1'), t('accountVerificationItem2')]
               }
             ].map((category, i) => (
               <div key={i} className="p-5 bg-gray-50 dark:bg-gray-700 rounded-lg">
@@ -169,32 +157,32 @@ export default function ArizonaRequirementsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
             <IoShieldCheckmarkOutline className="w-6 h-6 text-orange-600" />
-            Arizona-Specific Information
+            {t('arizonaSpecificTitle')}
           </h2>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Insurance Requirements</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{t('insuranceRequirementsTitle')}</h3>
                 <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
-                  Arizona requires minimum liability coverage of:
+                  {t('insuranceRequirementsDescription')}
                 </p>
                 <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-                  <li>$25,000 bodily injury per person</li>
-                  <li>$50,000 bodily injury per accident</li>
-                  <li>$15,000 property damage</li>
+                  <li>{t('insuranceCoverageItem0')}</li>
+                  <li>{t('insuranceCoverageItem1')}</li>
+                  <li>{t('insuranceCoverageItem2')}</li>
                 </ul>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
-                  ItWhip provides $1M liability coverage during active rentals.
+                  {t('insuranceCoverageNote')}
                 </p>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Emissions Testing</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{t('emissionsTestingTitle')}</h3>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">
-                  Required in Maricopa County (Phoenix metro) and Pima County (Tucson) for vehicles 6+ years old. Make sure your vehicle has passed its most recent emissions test.
+                  {t('emissionsTestingDescription')}
                 </p>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-3 mt-4">Registration</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-3 mt-4">{t('registrationTitle')}</h3>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">
-                  Vehicle must be registered in Arizona with current tags. Out-of-state vehicles must be registered in AZ within 15 days of establishing residency.
+                  {t('registrationDescription')}
                 </p>
               </div>
             </div>
@@ -206,16 +194,16 @@ export default function ArizonaRequirementsPage() {
       <section className="py-12 bg-white dark:bg-gray-800">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Ready to List Your Car in Arizona?
+            {t('ctaTitle')}
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Join hundreds of Arizona hosts earning money with their vehicles.
+            {t('ctaDescription')}
           </p>
           <Link
             href="/list-your-car"
             className="inline-flex items-center gap-2 px-8 py-3 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors"
           >
-            Get Started
+            {t('ctaButton')}
             <IoChevronForwardOutline className="w-5 h-5" />
           </Link>
         </div>

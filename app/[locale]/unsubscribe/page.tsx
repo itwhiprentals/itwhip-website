@@ -5,8 +5,10 @@
 
 import { useSearchParams } from 'next/navigation'
 import { useState, Suspense } from 'react'
+import { useTranslations } from 'next-intl'
 
 function UnsubscribeContent() {
+  const t = useTranslations('Unsubscribe')
   const searchParams = useSearchParams()
   const email = searchParams.get('email') || ''
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
@@ -15,7 +17,7 @@ function UnsubscribeContent() {
   async function handleUnsubscribe() {
     if (!email) {
       setStatus('error')
-      setMessage('No email address provided.')
+      setMessage(t('noEmailProvided'))
       return
     }
 
@@ -34,11 +36,11 @@ function UnsubscribeContent() {
         setMessage(data.message)
       } else {
         setStatus('error')
-        setMessage(data.error || 'Something went wrong. Please try again.')
+        setMessage(data.error || t('somethingWentWrong'))
       }
     } catch {
       setStatus('error')
-      setMessage('Network error. Please try again.')
+      setMessage(t('networkError'))
     }
   }
 
@@ -69,7 +71,7 @@ function UnsubscribeContent() {
           <>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>&#10003;</div>
             <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#059669', marginBottom: '12px' }}>
-              Unsubscribed
+              {t('unsubscribed')}
             </h2>
             <p style={{ color: '#6b7280', fontSize: '14px', lineHeight: '22px' }}>
               {message}
@@ -78,7 +80,7 @@ function UnsubscribeContent() {
         ) : status === 'error' ? (
           <>
             <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#dc2626', marginBottom: '12px' }}>
-              Error
+              {t('error')}
             </h2>
             <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '20px' }}>
               {message}
@@ -95,20 +97,20 @@ function UnsubscribeContent() {
                 color: '#374151'
               }}
             >
-              Try Again
+              {t('tryAgain')}
             </button>
           </>
         ) : (
           <>
             <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#1f2937', marginBottom: '12px' }}>
-              Unsubscribe from Emails
+              {t('unsubscribeFromEmails')}
             </h2>
             {email && (
               <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>
-                Unsubscribe <strong>{email}</strong> from ItWhip marketing emails?
+                {t('unsubscribeConfirm', { email })}
                 <br />
                 <span style={{ fontSize: '12px' }}>
-                  You will still receive booking confirmations and security alerts.
+                  {t('stillReceiveBookings')}
                 </span>
               </p>
             )}
@@ -126,7 +128,7 @@ function UnsubscribeContent() {
                 fontWeight: 600
               }}
             >
-              {status === 'loading' ? 'Processing...' : 'Unsubscribe'}
+              {status === 'loading' ? t('processing') : t('unsubscribeButton')}
             </button>
           </>
         )}
@@ -143,7 +145,7 @@ export default function UnsubscribePage() {
   return (
     <Suspense fallback={
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        Loading...
+        &nbsp;
       </div>
     }>
       <UnsubscribeContent />

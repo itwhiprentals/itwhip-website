@@ -9,6 +9,7 @@ import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import prisma from '@/app/lib/database/prisma'
 import { generateCarUrl } from '@/app/lib/utils/urls'
 import { getAlternateLanguages, getCanonicalUrl, getOgLocale } from '@/app/lib/seo/alternates'
+import { getTranslations } from 'next-intl/server'
 import CitySearchWrapper from '@/app/[locale]/(guest)/rentals/cities/[city]/CitySearchWrapper'
 import {
   IoLocationOutline,
@@ -35,33 +36,19 @@ import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatter
 export const revalidate = 60
 
 
-// City-specific FAQs
-const CITY_FAQS = (cityName: string, carCount: number, minPrice: number) => [
-  {
-    question: `How do I rent a car in ${cityName}?`,
-    answer: `Renting a car in ${cityName} with ItWhip is simple. Browse our ${carCount}+ available vehicles, select your dates, and book instantly. Choose delivery to your location or pick up from the host. All rentals include $1M liability coverage. <a href="/rentals?location=${encodeURIComponent(cityName)}" class="text-amber-600 hover:underline">Browse ${cityName} cars →</a>`
-  },
-  {
-    question: `What's the cheapest car rental in ${cityName}?`,
-    answer: `Car rentals in ${cityName} start from ${minPrice}/day on ItWhip. We offer a range of vehicles from budget-friendly sedans to luxury SUVs. Book directly from local owners and save up to 35% compared to traditional rental companies. <a href="/rentals?location=${encodeURIComponent(cityName)}&sort=price" class="text-amber-600 hover:underline">View cheapest options →</a>`
-  },
-  {
-    question: `Can I get a rental car delivered in ${cityName}?`,
-    answer: `Yes! Many hosts in ${cityName} offer free delivery to airports, hotels, and homes. Look for the delivery icon when browsing vehicles. Delivery options and fees vary by host.`
-  },
-  {
-    question: `Is insurance included with ${cityName} car rentals?`,
-    answer: `Yes, all ItWhip rentals include $1M liability coverage. You can also add additional protection plans for comprehensive coverage. Guests can bring their own insurance for a 50% deposit discount. <a href="/insurance-guide" class="text-amber-600 hover:underline">Read our full insurance guide →</a>`
-  },
-  {
-    question: `What do I need to rent a car in ${cityName}?`,
-    answer: `To rent a car in ${cityName}, you need: a valid driver's license, to be 21+ years old (25+ for some vehicles), a clean driving record, and a valid payment method. Verification takes just minutes.`
-  },
-  {
-    question: `Does ItWhip track environmental impact?`,
-    answer: `Yes! ItWhip provides ESG (Environmental, Social, Governance) tracking for every rental. See your CO2 savings, support eco-friendly hosts, and get sustainability reports for corporate travel compliance. <a href="/esg-dashboard" class="text-amber-600 hover:underline">Learn about ESG tracking →</a>`
-  }
-]
+// City-specific FAQs — uses t.raw() for answers containing HTML tags
+// (ICU MessageFormat treats <a> as XML tags, so we bypass it and do manual replacement)
+function getCityFaqs(t: any, cityName: string, carCount: number, minPrice: number) {
+  const citySlug = encodeURIComponent(cityName)
+  return Array.from({ length: 6 }, (_, i) => ({
+    question: t(`faq${i}Question`, { city: cityName }),
+    answer: (t.raw(`faq${i}Answer`) as string)
+      .replaceAll('{city}', cityName)
+      .replaceAll('{count}', String(carCount))
+      .replaceAll('{price}', String(minPrice))
+      .replaceAll('{citySlug}', citySlug)
+  }))
+}
 
 // ============================================
 // METADATA GENERATION
@@ -74,11 +61,13 @@ export async function generateMetadata({
   const { locale, city } = await params
   const cityData = getCitySeoData(city)
 
+  const t = await getTranslations({ locale, namespace: 'RentalCity' })
+
   // Return minimal metadata for invalid cities (page will 404)
   if (!cityData) {
     return {
-      title: 'City Not Found | ItWhip',
-      description: 'This city page is not available.',
+      title: t('metaNotFound'),
+      description: t('metaNotFoundDescription'),
       robots: { index: false, follow: false }
     }
   }
@@ -122,12 +111,12 @@ export async function generateMetadata({
   const ogImage = 'https://itwhip.com/og/cities/arizona.png'
 
   const carTypes = topCars.length > 0
-    ? `including ${topCars[0].year} ${topCars[0].make} ${topCars[0].model}`
-    : 'from economy to luxury'
+    ? t('metaCarTypesIncluding', { carInfo: `${topCars[0].year} ${topCars[0].make} ${topCars[0].model}` })
+    : t('metaCarTypesGeneric')
 
   return {
-    title: cityData.metaTitle || `${cityName} Car Rentals from $${minPrice}/day | ${carCount} Cars | ItWhip`,
-    description: cityData.metaDescription || `Rent cars in ${cityName}, Arizona from $${minPrice}/day. ${carCount} peer-to-peer rental cars available ${carTypes}. Book from local owners with free airport delivery. $1M insurance included.`,
+    title: cityData.metaTitle || t('metaTitleFallback', { city: cityName, price: minPrice, count: carCount }),
+    description: cityData.metaDescription || t('metaDescriptionFallback', { city: cityName, price: minPrice, count: carCount, carTypes }),
     keywords: [
       `${cityName} car rental`,
       `rent a car ${cityName}`,
@@ -140,17 +129,17 @@ export async function generateMetadata({
       ...cityData.searchTerms
     ],
     openGraph: {
-      title: `${cityName} Car Rentals from $${minPrice}/day - ${carCount} Available | ItWhip`,
-      description: `Browse ${carCount} rental cars in ${cityName} from $${minPrice}/day. From luxury to economy, find your perfect ride with instant booking and free delivery.`,
+      title: t('ogTitle', { city: cityName, price: minPrice, count: carCount }),
+      description: t('ogDescription', { city: cityName, price: minPrice, count: carCount }),
       url: getCanonicalUrl(`/rentals/cities/${city}`, locale),
       locale: getOgLocale(locale),
-      images: [{ url: ogImage, width: 1200, height: 630, alt: `Car rentals in ${cityName}, Arizona` }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: t('ogImageAlt', { city: cityName }) }],
       type: 'website'
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${cityName} Car Rentals from $${minPrice}/day`,
-      description: `Browse ${carCount} rental cars in ${cityName} from $${minPrice}/day. Instant booking available.`,
+      title: t('twitterTitle', { city: cityName, price: minPrice }),
+      description: t('twitterDescription', { city: cityName, price: minPrice, count: carCount }),
       images: [ogImage]
     },
     alternates: {
@@ -168,10 +157,11 @@ export async function generateMetadata({
 // ============================================
 
 // Hero Section Component
-function HeroSection({ cityName, cityData, minPrice }: {
+function HeroSection({ cityName, cityData, minPrice, t }: {
   cityName: string
   cityData: CitySeoData
   minPrice: number
+  t: any
 }) {
   return (
     <section className="relative h-[280px] sm:h-[320px] lg:h-[360px] overflow-hidden">
@@ -190,43 +180,43 @@ function HeroSection({ cityName, cityData, minPrice }: {
           {/* Location Badge */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-xs font-medium mb-3">
             <IoLocationOutline className="w-3.5 h-3.5" />
-            {cityName}, Arizona
+            {t('locationBadge', { city: cityName })}
           </div>
-          
+
           {/* Main Heading */}
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2 leading-tight">
-            Rent Cars from Local Owners in {cityName}
+            {t('heroTitle', { city: cityName })}
           </h1>
-          
+
           {/* Subheading */}
           <p className="text-sm sm:text-base text-white/80 mb-4 max-w-xl">
-            Rent directly from local owners starting at ${minPrice}/day with $1M insurance included.
+            {t('heroSubtitle', { price: minPrice })}
           </p>
-          
+
           {/* Stats Row */}
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-white/90 text-xs sm:text-sm">
             <div className="flex items-center gap-1.5">
               <IoCashOutline className="w-4 h-4 text-emerald-400" />
-              <span>From <strong>${minPrice}</strong>/day</span>
+              <span>{t('statsFromPrice', { price: minPrice })}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <IoShieldCheckmarkOutline className="w-4 h-4 text-blue-400" />
-              <span><strong>$1M</strong> insurance</span>
+              <span>{t('statsInsurance')}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <IoFlashOutline className="w-4 h-4 text-purple-400" />
-              <span>Instant booking</span>
+              <span>{t('statsInstantBooking')}</span>
             </div>
           </div>
-          
+
           {/* CTA Button */}
           <div className="mt-5">
-            <a 
-              href="#new-listings" 
+            <a
+              href="#new-listings"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors text-sm"
             >
               <IoSearchOutline className="w-4 h-4" />
-              Browse {cityName} Cars
+              {t('browseCityCars', { city: cityName })}
             </a>
           </div>
         </div>
@@ -236,20 +226,20 @@ function HeroSection({ cityName, cityData, minPrice }: {
 }
 
 // Breadcrumb Component
-function Breadcrumbs({ cityName }: { cityName: string }) {
+function CityBreadcrumbs({ cityName, t }: { cityName: string; t: any }) {
   return (
     <nav aria-label="Breadcrumb" className="mb-3">
       <ol className="flex items-center gap-1.5 text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">
         <li className="flex items-center gap-1.5">
           <Link href="/" className="hover:text-amber-600 dark:hover:text-amber-400 flex items-center gap-1">
             <IoHomeOutline className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-            <span className="hidden sm:inline">Home</span>
+            <span className="hidden sm:inline">{t('breadcrumbHome')}</span>
           </Link>
           <IoChevronForwardOutline className="w-2.5 h-2.5" />
         </li>
         <li className="flex items-center gap-1.5">
           <Link href="/rentals/cities" className="hover:text-amber-600 dark:hover:text-amber-400">
-            Cities
+            {t('breadcrumbCities')}
           </Link>
           <IoChevronForwardOutline className="w-2.5 h-2.5" />
         </li>
@@ -285,10 +275,11 @@ function transformCarForCompactCard(car: any, cityName: string) {
 }
 
 // SEO Content Section
-function CityInfoSection({ cityName, cityData, carCount }: {
+function CityInfoSection({ cityName, cityData, carCount, t }: {
   cityName: string
   cityData: CitySeoData
   carCount: number
+  t: any
 }) {
   return (
     <section className="py-6 sm:py-8 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
@@ -297,7 +288,7 @@ function CityInfoSection({ cityName, cityData, carCount }: {
           {/* About Section */}
           <div>
             <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2 sm:mb-3">
-              About {cityName} Car Rentals
+              {t('aboutTitle', { city: cityName })}
             </h2>
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2 sm:mb-3 leading-relaxed whitespace-pre-line">
               {cityData.description}
@@ -320,7 +311,7 @@ function CityInfoSection({ cityName, cityData, carCount }: {
               <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5 sm:p-3">
                 <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 mb-1">
                   <IoAirplaneOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="font-semibold text-[10px] sm:text-xs">Nearest Airport</span>
+                  <span className="font-semibold text-[10px] sm:text-xs">{t('nearestAirport')}</span>
                 </div>
                 <p className="text-[10px] sm:text-xs text-gray-700 dark:text-gray-300 leading-snug">
                   {cityData.airport}
@@ -331,30 +322,30 @@ function CityInfoSection({ cityName, cityData, carCount }: {
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5 sm:p-3">
               <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 mb-1">
                 <IoCarOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="font-semibold text-[10px] sm:text-xs">Available Cars</span>
+                <span className="font-semibold text-[10px] sm:text-xs">{t('availableCars')}</span>
               </div>
               <p className="text-[10px] sm:text-xs text-gray-700 dark:text-gray-300">
-                {carCount}+ vehicles ready
+                {t('vehiclesReady', { count: carCount })}
               </p>
             </div>
 
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5 sm:p-3">
               <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 mb-1">
                 <IoShieldCheckmarkOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="font-semibold text-[10px] sm:text-xs">Insurance</span>
+                <span className="font-semibold text-[10px] sm:text-xs">{t('insurance')}</span>
               </div>
               <p className="text-[10px] sm:text-xs text-gray-700 dark:text-gray-300">
-                $1M liability included
+                {t('insuranceValue')}
               </p>
             </div>
 
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5 sm:p-3">
               <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 mb-1">
                 <IoTimeOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="font-semibold text-[10px] sm:text-xs">Booking</span>
+                <span className="font-semibold text-[10px] sm:text-xs">{t('booking')}</span>
               </div>
               <p className="text-[10px] sm:text-xs text-gray-700 dark:text-gray-300">
-                Instant confirmation
+                {t('instantConfirmation')}
               </p>
             </div>
           </div>
@@ -365,7 +356,7 @@ function CityInfoSection({ cityName, cityData, carCount }: {
           <div>
             <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1.5">
               <IoBusinessOutline className="w-4 h-4 text-amber-600" />
-              Popular Landmarks
+              {t('popularLandmarks')}
             </h3>
             <div className="flex flex-wrap gap-1.5">
               {cityData.landmarks.map((landmark: string, i: number) => (
@@ -380,7 +371,7 @@ function CityInfoSection({ cityName, cityData, carCount }: {
             <div>
               <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1.5">
                 <IoMapOutline className="w-4 h-4 text-amber-600" />
-                Neighborhoods We Serve
+                {t('neighborhoodsWeServe')}
               </h3>
               <div className="flex flex-wrap gap-1.5">
                 {cityData.neighborhoods.map((neighborhood: string, i: number) => (
@@ -397,7 +388,7 @@ function CityInfoSection({ cityName, cityData, carCount }: {
         <div className="mt-5 sm:mt-6">
           <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1.5">
             <IoCarSportOutline className="w-4 h-4 text-amber-600" />
-            Popular Road Trips from {cityName}
+            {t('popularRoadTrips', { city: cityName })}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {cityData.popularRoutes.map((route: string, i: number) => (
@@ -416,20 +407,21 @@ function CityInfoSection({ cityName, cityData, carCount }: {
 }
 
 // FAQ Section
-function FAQSection({ cityName, carCount, minPrice }: { 
+function FAQSection({ cityName, carCount, minPrice, t }: {
   cityName: string
   carCount: number
-  minPrice: number 
+  minPrice: number
+  t: any
 }) {
-  const faqs = CITY_FAQS(cityName, carCount, minPrice)
-  
+  const faqs = getCityFaqs(t, cityName, carCount, minPrice)
+
   return (
     <section className="py-6 sm:py-8 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl">
           <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <IoHelpCircleOutline className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
-            Frequently Asked Questions
+            {t('faqTitle')}
           </h2>
           <div className="space-y-2 sm:space-y-3">
             {faqs.map((faq, i) => (
@@ -449,7 +441,7 @@ function FAQSection({ cityName, carCount, minPrice }: {
 }
 
 // Related Cities Section
-function RelatedCities({ currentCity }: { currentCity: string }) {
+function RelatedCities({ currentCity, t }: { currentCity: string; t: any }) {
   // Get all city slugs from the centralized SEO data
   const allSlugs = Object.keys(CITY_SEO_DATA)
   const currentSlug = currentCity.toLowerCase().replace(/\s+/g, '-')
@@ -459,10 +451,10 @@ function RelatedCities({ currentCity }: { currentCity: string }) {
     <section className="py-5 sm:py-6 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white mb-1">
-          Rent Cars in Other Arizona Cities
+          {t('relatedTitle')}
         </h2>
         <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-3">
-          Explore peer-to-peer car rentals across the Phoenix metro area
+          {t('relatedSubtitle')}
         </p>
         <div className="flex flex-wrap gap-2">
           {otherSlugs.map((slug) => {
@@ -489,7 +481,7 @@ function RelatedCities({ currentCity }: { currentCity: string }) {
             href="/rentals/cities"
             className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-amber-600 hover:text-amber-700 font-medium"
           >
-            View all Arizona cities
+            {t('viewAllCities')}
             <IoChevronForwardOutline className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -504,9 +496,10 @@ function RelatedCities({ currentCity }: { currentCity: string }) {
 export default async function CityPage({
   params
 }: {
-  params: Promise<{ city: string }>
+  params: Promise<{ locale: string; city: string }>
 }) {
-  const { city } = await params
+  const { locale, city } = await params
+  const t = await getTranslations({ locale, namespace: 'RentalCity' })
   const cityData = getCitySeoData(city)
 
   // Return 404 for invalid cities (fixes soft 404 SEO issue)
@@ -560,7 +553,7 @@ export default async function CityPage({
       <>
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
           <Header />
-          <HeroSection cityName={cityName} cityData={cityData} minPrice={45} />
+          <HeroSection cityName={cityName} cityData={cityData} minPrice={45} t={t} />
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
             <div className="text-center mb-8">
@@ -568,15 +561,15 @@ export default async function CityPage({
                 <IoCarOutline className="w-8 h-8 text-amber-600 dark:text-amber-400" />
               </div>
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                No Cars Available in {cityName}
+                {t('noCarsTitle', { city: cityName })}
               </h2>
               <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                We're expanding to {cityName} soon! Browse cars in nearby cities below.
+                {t('noCarsDescription', { city: cityName })}
               </p>
             </div>
           </div>
 
-          <RelatedCities currentCity={cityName} />
+          <RelatedCities currentCity={cityName} t={t} />
           <Footer />
         </div>
       </>
@@ -648,9 +641,9 @@ export default async function CityPage({
       {
         '@type': 'AutoRental',
         '@id': `https://itwhip.com/rentals/cities/${city}#autorental`,
-        name: `ItWhip ${cityName} Car Rentals`,
+        name: t('schemaAutoRentalName', { city: cityName }),
         url: `https://itwhip.com/rentals/cities/${city}`,
-        description: `Rent cars from local owners in ${cityName}, Arizona. ${allCars.length} vehicles available from $${minPrice}/day.`,
+        description: t('schemaAutoRentalDescription', { city: cityName, count: allCars.length, price: minPrice }),
         areaServed: {
           '@type': 'City',
           name: cityName,
@@ -675,8 +668,8 @@ export default async function CityPage({
       {
         '@type': 'LocalBusiness',
         '@id': `https://itwhip.com/rentals/cities/${city}#business`,
-        name: `ItWhip Car Rentals - ${cityName}`,
-        description: `Rent cars from local owners in ${cityName}, Arizona. ${allCars.length} vehicles available.`,
+        name: t('schemaBusinessName', { city: cityName }),
+        description: t('schemaBusinessDescription', { city: cityName, count: allCars.length }),
         url: `https://itwhip.com/rentals/cities/${city}`,
         telephone: '+1-480-555-0100',
         address: {
@@ -703,16 +696,16 @@ export default async function CityPage({
         '@type': 'BreadcrumbList',
         '@id': `https://itwhip.com/rentals/cities/${city}#breadcrumb`,
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://itwhip.com' },
-          { '@type': 'ListItem', position: 2, name: 'Cities', item: 'https://itwhip.com/rentals/cities' },
-          { '@type': 'ListItem', position: 3, name: `${cityName} Car Rentals`, item: `https://itwhip.com/rentals/cities/${city}` }
+          { '@type': 'ListItem', position: 1, name: t('breadcrumbHome'), item: 'https://itwhip.com' },
+          { '@type': 'ListItem', position: 2, name: t('breadcrumbCities'), item: 'https://itwhip.com/rentals/cities' },
+          { '@type': 'ListItem', position: 3, name: `${cityName}`, item: `https://itwhip.com/rentals/cities/${city}` }
         ]
       },
       // ItemList (Car Listings)
       {
         '@type': 'ItemList',
         '@id': `https://itwhip.com/rentals/cities/${city}#carlist`,
-        name: `Car Rentals in ${cityName}`,
+        name: t('schemaCarListName', { city: cityName }),
         numberOfItems: allCars.length,
         itemListElement: allCars.slice(0, 10).map((car, index) => ({
           '@type': 'ListItem',
@@ -721,7 +714,7 @@ export default async function CityPage({
             '@type': 'Product',
             name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
             url: `https://itwhip.com/rentals/${car.id}`,
-            description: `Rent this ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} in ${cityName}`,
+            description: t('schemaCarDescription', { year: car.year, make: capitalizeCarMake(car.make), model: normalizeModelName(car.model, car.make), city: cityName }),
             image: car.photos?.[0]?.url,
             offers: {
               '@type': 'Offer',
@@ -782,7 +775,7 @@ export default async function CityPage({
       {
         '@type': 'FAQPage',
         '@id': `https://itwhip.com/rentals/cities/${city}#faq`,
-        mainEntity: CITY_FAQS(cityName, allCars.length, minPrice).map(faq => ({
+        mainEntity: getCityFaqs(t, cityName, allCars.length, minPrice).map(faq => ({
           '@type': 'Question',
           name: faq.question,
           acceptedAnswer: {
@@ -807,16 +800,17 @@ export default async function CityPage({
         <Header />
         
         {/* Hero Section */}
-        <HeroSection 
-          cityName={cityName} 
-          cityData={cityData} 
-          minPrice={minPrice} 
+        <HeroSection
+          cityName={cityName}
+          cityData={cityData}
+          minPrice={minPrice}
+          t={t}
         />
-        
+
         <div>
           {/* Breadcrumbs */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-            <Breadcrumbs cityName={cityName} />
+            <CityBreadcrumbs cityName={cityName} t={t} />
           </div>
 
           <CitySearchWrapper
@@ -833,10 +827,10 @@ export default async function CityPage({
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <div className="flex items-center gap-3 mb-0.5">
-                          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">New Listings</h2>
-                          <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-semibold rounded-full">{newListings.length} cars</span>
+                          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{t('newListingsTitle')}</h2>
+                          <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-semibold rounded-full">{t('carsCount', { count: newListings.length })}</span>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Recently added cars in {cityName}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{t('newListingsDescription', { city: cityName })}</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
@@ -856,10 +850,10 @@ export default async function CityPage({
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <div className="flex items-center gap-3 mb-0.5">
-                          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Top Rated</h2>
-                          <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold rounded-full">4.5+ stars</span>
+                          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{t('topRatedTitle')}</h2>
+                          <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold rounded-full">{t('topRatedBadge')}</span>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Highest-rated cars by our customers</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{t('topRatedDescription')}</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
@@ -879,10 +873,10 @@ export default async function CityPage({
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <div className="flex items-center gap-3 mb-0.5">
-                          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Luxury & Premium</h2>
-                          <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-semibold rounded-full">{luxuryCars.length} cars</span>
+                          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{t('luxuryTitle')}</h2>
+                          <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-semibold rounded-full">{t('carsCount', { count: luxuryCars.length })}</span>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Premium vehicles for special occasions</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{t('luxuryDescription')}</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
@@ -902,10 +896,10 @@ export default async function CityPage({
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <div className="flex items-center gap-3 mb-0.5">
-                          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Electric & Eco-Friendly</h2>
-                          <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold rounded-full">Zero emissions</span>
+                          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{t('electricTitle')}</h2>
+                          <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold rounded-full">{t('electricBadge')}</span>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Sustainable and efficient vehicles</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{t('electricDescription')}</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
@@ -925,10 +919,10 @@ export default async function CityPage({
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <div className="flex items-center gap-3 mb-0.5">
-                          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Budget-Friendly</h2>
-                          <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-semibold rounded-full">Under $100/day</span>
+                          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{t('budgetTitle')}</h2>
+                          <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-semibold rounded-full">{t('budgetBadge')}</span>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Affordable options for every budget</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{t('budgetDescription')}</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
@@ -941,9 +935,9 @@ export default async function CityPage({
           </CitySearchWrapper>
           
           {/* SEO Content Sections */}
-          <CityInfoSection cityName={cityName} cityData={cityData} carCount={allCars.length} />
-          <FAQSection cityName={cityName} carCount={allCars.length} minPrice={minPrice} />
-          <RelatedCities currentCity={cityName} />
+          <CityInfoSection cityName={cityName} cityData={cityData} carCount={allCars.length} t={t} />
+          <FAQSection cityName={cityName} carCount={allCars.length} minPrice={minPrice} t={t} />
+          <RelatedCities currentCity={cityName} t={t} />
         </div>
         
         <Footer />

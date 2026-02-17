@@ -234,7 +234,7 @@ async function sendSuspensionNotification(
                 <tr>
                   <td style="padding: 30px 40px; background-color: #f9fafb; border-radius: 0 0 8px 8px; text-align: center;">
                     <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-                      © 2025 ItWhip. This is an automated notification.
+                      © 2026 ItWhip. This is an automated notification.
                     </p>
                   </td>
                 </tr>

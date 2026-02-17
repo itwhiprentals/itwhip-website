@@ -23,48 +23,40 @@ import FAQAccordion from './components/FAQAccordion'
 // ============================================
 // METADATA
 // ============================================
-export const metadata: Metadata = {
-  title: 'FAQ | ItWhip - Peer-to-Peer Car Rental Questions Answered',
-  description: 'Answers to common questions about ItWhip peer-to-peer car sharing in Arizona. Learn about insurance tiers, host earnings (up to 90%), Mileage Forensics™, and more.',
-  keywords: [
-    'peer to peer car rental FAQ',
-    'ItWhip questions',
-    'Turo alternative Arizona FAQ',
-    'P2P car sharing insurance',
-    'rent my car questions',
-    'car sharing Arizona help',
-    'Mileage Forensics explained',
-    'host earnings car rental',
-    'Phoenix car rental FAQ'
-  ],
-  openGraph: {
-    title: 'FAQ | ItWhip - Peer-to-Peer Car Rental Questions',
-    description: 'Get answers about ItWhip P2P car sharing. Insurance tiers, host earnings up to 90%, Mileage Forensics™, and Arizona coverage.',
-    url: 'https://itwhip.com/faq',
-    siteName: 'ItWhip',
-    locale: 'en_US',
-    type: 'website',
-    images: [
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('faqTitle'),
+    description: t('faqDescription'),
+    openGraph: {
+      title: t('faqOgTitle'),
+      description: t('faqOgDescription'),
+      url: 'https://itwhip.com/faq',
+      siteName: 'ItWhip',
+      type: 'website',
+      images: [
       {
         url: 'https://itwhip.com/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'ItWhip FAQ - Peer-to-Peer Car Rental'
       }
-    ]
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'FAQ | ItWhip - P2P Car Rental Questions Answered',
-    description: 'Answers about ItWhip car sharing in Arizona. Insurance, earnings, Mileage Forensics™ & more.',
-    images: ['https://itwhip.com/og-image.jpg']
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/faq'
-  },
-  robots: {
-    index: true,
-    follow: true
+    ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: t('faqTwitterTitle'),
+      description: t('faqTwitterDescription'),
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/faq',
+    },
   }
 }
 

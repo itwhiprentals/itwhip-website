@@ -3,6 +3,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { IoWarningOutline, IoLocationOutline, IoCheckmarkCircleOutline, IoShieldCheckmarkOutline, IoChevronDownOutline, IoSendOutline } from 'react-icons/io5'
 
 interface EndTripConfirmSheetProps {
@@ -24,6 +25,7 @@ export function EndTripConfirmSheet({
   gpsStatus,
   gpsDistance,
 }: EndTripConfirmSheetProps) {
+  const t = useTranslations('EndTripConfirm')
   const [guidelinesOpen, setGuidelinesOpen] = useState(false)
   const [notifyingHost, setNotifyingHost] = useState(false)
   const [hostNotified, setHostNotified] = useState(false)
@@ -67,18 +69,18 @@ export function EndTripConfirmSheet({
 
   // Format time remaining
   const formatTimeRemaining = () => {
-    if (isOverdue) return 'Trip has ended'
+    if (isOverdue) return t('tripHasEnded')
     if (hoursRemaining >= 24) {
       const days = Math.floor(hoursRemaining / 24)
       const hrs = Math.floor(hoursRemaining % 24)
-      return `${days} day${days !== 1 ? 's' : ''}${hrs > 0 ? ` ${hrs}h` : ''}`
+      return t('timeRemainingDaysHours', { days, hours: hrs })
     }
     if (hoursRemaining >= 1) {
       const hrs = Math.floor(hoursRemaining)
       const mins = Math.floor((hoursRemaining % 1) * 60)
-      return `${hrs}h ${mins > 0 ? `${mins}m` : ''}`
+      return t('timeRemainingHoursMinutes', { hours: hrs, minutes: mins })
     }
-    return `${Math.floor(hoursRemaining * 60)} minutes`
+    return t('timeRemainingMinutes', { minutes: Math.floor(hoursRemaining * 60) })
   }
 
   // Calculate unused value (informational)
@@ -196,11 +198,11 @@ export function EndTripConfirmSheet({
               )}
               <div>
                 <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                  {isOverdue ? 'Return Vehicle Now' : isEarly ? 'End Trip Early?' : isModerate ? 'End Your Trip?' : 'Ready to Return?'}
+                  {isOverdue ? t('returnVehicleNow') : isEarly ? t('endTripEarly') : isModerate ? t('endYourTrip') : t('readyToReturn')}
                 </h3>
                 {!isOverdue && (
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {formatTimeRemaining()} remaining on your rental
+                    {formatTimeRemaining()} {t('remainingOnRental')}
                   </p>
                 )}
               </div>
@@ -210,7 +212,7 @@ export function EndTripConfirmSheet({
             {isOverdue && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
                 <p className="text-xs font-medium text-red-800 dark:text-red-300">
-                  Your trip has ended. Please return the vehicle immediately to avoid late fees ($50/hr first hour, $25/hr after).
+                  {t('overdueWarning')}
                 </p>
               </div>
             )}
@@ -218,8 +220,7 @@ export function EndTripConfirmSheet({
             {isEarly && (
               <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-4">
                 <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
-                  You still have <span className="font-bold">{formatTimeRemaining()}</span> remaining.
-                  Ending now means losing ~${unusedValue.toFixed(0)} in unused rental time with no refund.
+                  {t('earlyReturnWarning', { time: formatTimeRemaining(), amount: unusedValue.toFixed(0) })}
                 </p>
               </div>
             )}
@@ -227,38 +228,38 @@ export function EndTripConfirmSheet({
             {isModerate && (
               <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-4">
                 <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
-                  You have {formatTimeRemaining()} remaining. No refund will be issued for unused time.
+                  {t('moderateReturnWarning', { time: formatTimeRemaining() })}
                 </p>
               </div>
             )}
 
             {/* Financial Summary */}
             <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
-              <h4 className="text-xs font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">Financial Summary</h4>
+              <h4 className="text-xs font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">{t('financialSummary')}</h4>
 
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Total Paid</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t('totalPaid')}</span>
                   <span className="font-semibold text-gray-900 dark:text-white">${totalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Daily Rate</span>
-                  <span className="text-gray-900 dark:text-white">${dailyRate.toFixed(2)}/day</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t('dailyRate')}</span>
+                  <span className="text-gray-900 dark:text-white">${dailyRate.toFixed(2)}{t('perDay')}</span>
                 </div>
                 {!isOverdue && !isNearEnd && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Unused Time</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t('unusedTime')}</span>
                     <span className="text-gray-900 dark:text-white">~{formatTimeRemaining()}</span>
                   </div>
                 )}
 
                 <div className="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Refund for Unused Time</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t('refundForUnused')}</span>
                     <span className="font-bold text-red-600 dark:text-red-400">$0.00</span>
                   </div>
                   <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
-                    No refunds for early returns per rental agreement
+                    {t('noRefundsEarlyReturn')}
                   </p>
                 </div>
 
@@ -266,12 +267,12 @@ export function EndTripConfirmSheet({
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-1.5">
                       <IoShieldCheckmarkOutline className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                      <span className="text-gray-600 dark:text-gray-400">Security Deposit</span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('securityDeposit')}</span>
                     </div>
                     <span className="font-semibold text-gray-900 dark:text-white">${depositAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                   <p className="text-[10px] text-green-600 dark:text-green-400 mt-1 ml-5">
-                    Returned in full if no damage to vehicle
+                    {t('depositReturnedIfNoDamage')}
                   </p>
                 </div>
               </div>
@@ -279,12 +280,12 @@ export function EndTripConfirmSheet({
 
             {/* Before returning checklist */}
             <div className="mb-4">
-              <h4 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">Before returning:</h4>
+              <h4 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">{t('beforeReturning')}</h4>
               <div className="space-y-1.5">
                 {[
-                  'Remove all personal belongings',
-                  'Return keys to host or lockbox',
-                  'Top up fuel to pickup level',
+                  t('checklistBelongings'),
+                  t('checklistKeys'),
+                  t('checklistFuel'),
                 ].map((item) => (
                   <div key={item} className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded border border-gray-300 dark:border-gray-600 flex items-center justify-center flex-shrink-0">
@@ -300,7 +301,7 @@ export function EndTripConfirmSheet({
             {gpsStatus === 'checking' && (
               <div className="flex items-center gap-2 mb-4 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full flex-shrink-0" />
-                <span className="text-xs text-blue-700 dark:text-blue-300">Checking your location...</span>
+                <span className="text-xs text-blue-700 dark:text-blue-300">{t('checkingLocation')}</span>
               </div>
             )}
 
@@ -309,10 +310,10 @@ export function EndTripConfirmSheet({
                 <IoWarningOutline className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0" />
                 <div>
                   <span className="text-xs font-medium text-red-700 dark:text-red-300">
-                    {distanceText ? `~${distanceText} from drop-off` : 'You appear to be away from the drop-off'}
+                    {distanceText ? t('farFromDropoff', { distance: distanceText }) : t('youAppearAway')}
                   </span>
                   <p className="text-[10px] text-red-600 dark:text-red-400 mt-0.5">
-                    Please return to the drop-off location before ending your trip.
+                    {t('returnToDropoff')}
                   </p>
                 </div>
               </div>
@@ -321,7 +322,7 @@ export function EndTripConfirmSheet({
             {gpsStatus === 'failed' && !hostNotified && (
               <div className="flex items-center gap-2 mb-4 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
                 <IoLocationOutline className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                <span className="text-xs text-amber-700 dark:text-amber-300">Could not verify your location. Please make sure you&apos;re at the return location.</span>
+                <span className="text-xs text-amber-700 dark:text-amber-300">{t('locationFailed')}</span>
               </div>
             )}
 
@@ -337,10 +338,10 @@ export function EndTripConfirmSheet({
                     <IoLocationOutline className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="text-xs font-semibold text-blue-900 dark:text-blue-200">
-                        Notify your host before ending
+                        {t('notifyHostTitle')}
                       </p>
                       <p className="text-[10px] text-blue-700 dark:text-blue-300 mt-0.5">
-                        Your GPS location and address will be sent so the host can verify the drop-off or give instructions.
+                        {t('notifyHostDesc')}
                       </p>
                     </div>
                   </div>
@@ -355,12 +356,12 @@ export function EndTripConfirmSheet({
                     {notifyingHost ? (
                       <>
                         <div className="animate-spin w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full" />
-                        Sending location to host...
+                        {t('sendingLocation')}
                       </>
                     ) : (
                       <>
                         <IoSendOutline className="w-3.5 h-3.5" />
-                        Notify Host &mdash; I&apos;m at Drop-off
+                        {t('notifyHostButton')}
                       </>
                     )}
                   </button>
@@ -370,12 +371,12 @@ export function EndTripConfirmSheet({
                   <div className="flex items-center gap-2">
                     <IoCheckmarkCircleOutline className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
                     <p className="text-xs font-semibold text-green-800 dark:text-green-200">
-                      Host notified — you can now end your trip
+                      {t('hostNotifiedSuccess')}
                     </p>
                   </div>
                   {dropOffAddress && (
                     <p className="text-[10px] text-green-700 dark:text-green-300 mt-1 ml-6 line-clamp-2">
-                      Location sent: {dropOffAddress}
+                      {t('locationSent', { address: dropOffAddress })}
                     </p>
                   )}
                 </>
@@ -388,25 +389,25 @@ export function EndTripConfirmSheet({
                 onClick={() => setGuidelinesOpen(!guidelinesOpen)}
                 className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors"
               >
-                <span className="text-xs font-semibold text-gray-900 dark:text-white">End Trip Guidelines</span>
+                <span className="text-xs font-semibold text-gray-900 dark:text-white">{t('endTripGuidelines')}</span>
                 <IoChevronDownOutline className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${guidelinesOpen ? 'rotate-180' : ''}`} />
               </button>
               {guidelinesOpen && (
                 <div className="px-3 py-3 space-y-3 text-xs text-gray-700 dark:text-gray-300 border-t border-gray-200 dark:border-gray-700">
                   <div>
-                    <p className="font-semibold text-gray-900 dark:text-white mb-1.5">Return Process</p>
+                    <p className="font-semibold text-gray-900 dark:text-white mb-1.5">{t('returnProcess')}</p>
                     <ol className="list-decimal list-inside space-y-1 text-[11px]">
-                      <li>Return to the agreed drop-off location</li>
-                      <li>Park in the designated area</li>
-                      <li>Take photos of all sides, interior, odometer &amp; fuel</li>
-                      <li>Return keys to host or lockbox</li>
-                      <li>Complete &quot;End Trip&quot; in the app and upload photos</li>
+                      <li>{t('returnStep1')}</li>
+                      <li>{t('returnStep2')}</li>
+                      <li>{t('returnStep3')}</li>
+                      <li>{t('returnStep4')}</li>
+                      <li>{t('returnStep5')}</li>
                     </ol>
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900 dark:text-white mb-1.5">Required Photos</p>
+                    <p className="font-semibold text-gray-900 dark:text-white mb-1.5">{t('requiredPhotos')}</p>
                     <div className="grid grid-cols-2 gap-1 text-[11px]">
-                      {['Front', 'Back', 'Driver side', 'Passenger side', 'Interior front', 'Interior back', 'Odometer', 'Fuel gauge'].map(p => (
+                      {[t('photoFront'), t('photoBack'), t('photoDriverSide'), t('photoPassengerSide'), t('photoInteriorFront'), t('photoInteriorBack'), t('photoOdometer'), t('photoFuelGauge')].map(p => (
                         <div key={p} className="flex items-center gap-1">
                           <div className="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500 flex-shrink-0" />
                           <span>{p}</span>
@@ -415,23 +416,23 @@ export function EndTripConfirmSheet({
                     </div>
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900 dark:text-white mb-1.5">Early Return Policy</p>
+                    <p className="font-semibold text-gray-900 dark:text-white mb-1.5">{t('earlyReturnPolicy')}</p>
                     <ul className="space-y-1 text-[11px]">
                       <li className="flex items-start gap-1.5">
                         <span className="text-red-500 flex-shrink-0 mt-0.5">&#x2022;</span>
-                        <span>No refunds for early returns</span>
+                        <span>{t('policyNoRefunds')}</span>
                       </li>
                       <li className="flex items-start gap-1.5">
                         <span className="text-red-500 flex-shrink-0 mt-0.5">&#x2022;</span>
-                        <span>Must contact host before returning early</span>
+                        <span>{t('policyContactHost')}</span>
                       </li>
                       <li className="flex items-start gap-1.5">
                         <span className="text-green-500 flex-shrink-0 mt-0.5">&#x2022;</span>
-                        <span>Full deposit returned if no damage</span>
+                        <span>{t('policyDepositReturned')}</span>
                       </li>
                       <li className="flex items-start gap-1.5">
                         <span className="text-amber-500 flex-shrink-0 mt-0.5">&#x2022;</span>
-                        <span>Host may offer partial credits at discretion</span>
+                        <span>{t('policyCredits')}</span>
                       </li>
                     </ul>
                   </div>
@@ -445,7 +446,7 @@ export function EndTripConfirmSheet({
                 onClick={onClose}
                 className="w-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white py-3 px-4 rounded-lg font-medium text-sm transition-colors border border-gray-200 dark:border-gray-600"
               >
-                Continue Trip
+                {t('continueTrip')}
               </button>
 
               <button
@@ -457,15 +458,15 @@ export function EndTripConfirmSheet({
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                 }`}
               >
-                {hostNotified ? 'End Trip Now' : 'Notify host first to end trip'}
+                {hostNotified ? t('endTripNow') : t('notifyHostFirst')}
               </button>
             </div>
 
             {/* Disclaimer */}
             <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-3">
               {hostNotified
-                ? 'This action cannot be undone. You will proceed to the vehicle inspection process.'
-                : 'You must notify your host before ending the trip. Your location will be shared.'}
+                ? t('disclaimerConfirm')
+                : t('disclaimerNotify')}
             </p>
           </div>
         </div>

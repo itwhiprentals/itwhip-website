@@ -1,18 +1,28 @@
 import { Metadata } from 'next'
 import TermsContent from './TermsContent'
+import { getTranslations } from 'next-intl/server'
 
-export const metadata: Metadata = {
-  title: 'Terms of Service | ItWhip',
-  description: 'Read ItWhip\'s terms of service for peer-to-peer car rentals in Arizona. Understand your rights and responsibilities as a host or guest on our platform.',
-  alternates: {
-    canonical: 'https://itwhip.com/terms',
-  },
-  openGraph: {
-    title: 'Terms of Service | ItWhip',
-    description: 'Read ItWhip\'s terms of service for peer-to-peer car rentals in Arizona.',
-    url: 'https://itwhip.com/terms',
-    type: 'website',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('termsTitle'),
+    description: t('termsDescription'),
+    openGraph: {
+      title: t('termsOgTitle'),
+      description: t('termsOgDescription'),
+      url: 'https://itwhip.com/terms',
+      type: 'website',
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/terms',
+    },
+  }
 }
 
 export default function TermsPage() {

@@ -1,6 +1,8 @@
+'use client'
+
 // app/host/fleet-owners/page.tsx
-import { Metadata } from 'next'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import {
@@ -28,32 +30,169 @@ import {
   IoCheckmarkDoneOutline
 } from 'react-icons/io5'
 
-export const metadata: Metadata = {
-  title: 'Enterprise Fleet Management Platform | Fleet Owners | ItWhip',
-  description: 'Enterprise-grade fleet management with Mileage Forensics™, ESG reporting, and insurance intelligence. Manage 5+ vehicles with dedicated support, bulk tools, and carrier-integrated compliance.',
-  keywords: [
-    'enterprise fleet management',
-    'fleet owner car sharing',
-    'commercial fleet rental',
-    'mileage forensics',
-    'ESG fleet reporting',
-    'insurance intelligence platform',
-    'phoenix fleet rental',
-    'fleet compliance management',
-    'P2P fleet platform'
-  ],
-  openGraph: {
-    title: 'Enterprise Fleet Management Platform | ItWhip',
-    description: 'The only platform where your fleet data becomes your competitive advantage. Mileage Forensics™, ESG reporting, and insurance intelligence built-in.',
-    url: 'https://itwhip.com/host/fleet-owners',
-    type: 'website'
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/host/fleet-owners',
-  },
-}
 
 export default function FleetOwnersPage() {
+  const t = useTranslations('HostFleetOwners')
+
+  const challenges = [
+    {
+      icon: IoWarningOutline,
+      title: t('challengeRegulatoryPressureTitle'),
+      description: t('challengeRegulatoryPressureDescription'),
+      color: 'red'
+    },
+    {
+      icon: IoTrendingUpOutline,
+      title: t('challengeRisingInsuranceCostsTitle'),
+      description: t('challengeRisingInsuranceCostsDescription'),
+      color: 'orange'
+    },
+    {
+      icon: IoAnalyticsOutline,
+      title: t('challengeDataOverloadTitle'),
+      description: t('challengeDataOverloadDescription'),
+      color: 'yellow'
+    },
+    {
+      icon: IoFlashOutline,
+      title: t('challengeElectrificationComplexityTitle'),
+      description: t('challengeElectrificationComplexityDescription'),
+      color: 'blue'
+    }
+  ]
+
+  const insuranceTiers = [
+    {
+      tier: t('insuranceTierBasicName'),
+      percentage: t('insuranceTierBasicPercentage'),
+      color: 'gray',
+      description: t('insuranceTierBasicDescription'),
+      features: [
+        t('insuranceTierBasicFeature0'),
+        t('insuranceTierBasicFeature1'),
+        t('insuranceTierBasicFeature2'),
+        t('insuranceTierBasicFeature3'),
+      ]
+    },
+    {
+      tier: t('insuranceTierStandardName'),
+      percentage: t('insuranceTierStandardPercentage'),
+      color: 'indigo',
+      description: t('insuranceTierStandardDescription'),
+      features: [
+        t('insuranceTierStandardFeature0'),
+        t('insuranceTierStandardFeature1'),
+        t('insuranceTierStandardFeature2'),
+        t('insuranceTierStandardFeature3'),
+      ],
+      popular: true
+    },
+    {
+      tier: t('insuranceTierPremiumName'),
+      percentage: t('insuranceTierPremiumPercentage'),
+      color: 'purple',
+      description: t('insuranceTierPremiumDescription'),
+      features: [
+        t('insuranceTierPremiumFeature0'),
+        t('insuranceTierPremiumFeature1'),
+        t('insuranceTierPremiumFeature2'),
+        t('insuranceTierPremiumFeature3'),
+      ]
+    }
+  ]
+
+  const carrierBenefits = [
+    {
+      title: t('carrierBenefitVerifiedMileageTitle'),
+      description: t('carrierBenefitVerifiedMileageDescription'),
+    },
+    {
+      title: t('carrierBenefitDigitalAuditTrailTitle'),
+      description: t('carrierBenefitDigitalAuditTrailDescription'),
+    },
+    {
+      title: t('carrierBenefitFraudDetectionTitle'),
+      description: t('carrierBenefitFraudDetectionDescription'),
+    },
+    {
+      title: t('carrierBenefitFasterClaimsTitle'),
+      description: t('carrierBenefitFasterClaimsDescription'),
+    }
+  ]
+
+  const fleetBenefits = [
+    {
+      icon: IoPersonOutline,
+      title: t('fleetBenefitDedicatedAccountManagerTitle'),
+      description: t('fleetBenefitDedicatedAccountManagerDescription'),
+    },
+    {
+      icon: IoSettingsOutline,
+      title: t('fleetBenefitBulkManagementToolsTitle'),
+      description: t('fleetBenefitBulkManagementToolsDescription'),
+    },
+    {
+      icon: IoStatsChartOutline,
+      title: t('fleetBenefitAdvancedAnalyticsTitle'),
+      description: t('fleetBenefitAdvancedAnalyticsDescription'),
+    },
+    {
+      icon: IoTrendingUpOutline,
+      title: t('fleetBenefitPreferredPlacementTitle'),
+      description: t('fleetBenefitPreferredPlacementDescription'),
+    },
+    {
+      icon: IoCashOutline,
+      title: t('fleetBenefitVolumeDiscountsTitle'),
+      description: t('fleetBenefitVolumeDiscountsDescription'),
+    },
+    {
+      icon: IoShieldCheckmarkOutline,
+      title: t('fleetBenefitPremiumProtectionTitle'),
+      description: t('fleetBenefitPremiumProtectionDescription'),
+    }
+  ]
+
+  const fleetProgramTiers = [
+    {
+      name: t('fleetTierStarterName'),
+      vehicles: t('fleetTierStarterVehicles'),
+      features: [
+        t('fleetTierStarterFeature0'),
+        t('fleetTierStarterFeature1'),
+        t('fleetTierStarterFeature2'),
+        t('fleetTierStarterFeature3'),
+      ],
+      color: 'gray'
+    },
+    {
+      name: t('fleetTierProfessionalName'),
+      vehicles: t('fleetTierProfessionalVehicles'),
+      features: [
+        t('fleetTierProfessionalFeature0'),
+        t('fleetTierProfessionalFeature1'),
+        t('fleetTierProfessionalFeature2'),
+        t('fleetTierProfessionalFeature3'),
+        t('fleetTierProfessionalFeature4'),
+      ],
+      color: 'indigo',
+      popular: true
+    },
+    {
+      name: t('fleetTierEnterpriseName'),
+      vehicles: t('fleetTierEnterpriseVehicles'),
+      features: [
+        t('fleetTierEnterpriseFeature0'),
+        t('fleetTierEnterpriseFeature1'),
+        t('fleetTierEnterpriseFeature2'),
+        t('fleetTierEnterpriseFeature3'),
+        t('fleetTierEnterpriseFeature4'),
+        t('fleetTierEnterpriseFeature5'),
+      ],
+      color: 'purple'
+    }
+  ]
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header />
@@ -62,52 +201,51 @@ export default function FleetOwnersPage() {
       <section className="bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-900 text-white pt-20 sm:pt-24 pb-16 sm:pb-20 relative overflow-hidden">
         {/* Background grid */}
         <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-10" />
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/30 rounded-full text-indigo-200 text-xs font-medium mb-4">
               <IoRocketOutline className="w-4 h-4" />
-              Enterprise Fleet Platform
+              {t('heroBadge')}
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              <span className="text-yellow-400">Your Fleet Data Is Your</span>{' '}
+              <span className="text-yellow-400">{t('heroTitleLine1')}</span>{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
-                Competitive Advantage
+                {t('heroTitleLine2')}
               </span>
             </h1>
             <p className="text-xl text-indigo-100 mb-6">
-              Enterprise-grade fleet management with Mileage Forensics™, ESG reporting, and insurance intelligence. 
-              The only platform that turns your vehicle data into verified insights for carriers and stakeholders.
+              {t('heroDescription')}
             </p>
             <div className="flex flex-wrap gap-4">
               <Link
                 href="/host/signup"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-white text-indigo-700 font-semibold rounded-lg hover:bg-indigo-50 transition-colors"
               >
-                Apply for Fleet Program
+                {t('heroApplyButton')}
                 <IoChevronForwardOutline className="w-5 h-5" />
               </Link>
               <Link
                 href="/contact"
                 className="inline-flex items-center gap-2 px-6 py-3 border border-white/30 text-white font-semibold rounded-lg hover:bg-white/10 transition-colors"
               >
-                Schedule Fleet Consultation
+                {t('heroConsultationButton')}
               </Link>
             </div>
-            
+
             {/* Trust badges */}
             <div className="flex flex-wrap items-center gap-6 mt-8 pt-8 border-t border-white/10">
               <div className="flex items-center gap-2 text-indigo-200 text-sm">
                 <IoShieldCheckmarkOutline className="w-5 h-5" />
-                <span>Insurance Carrier Integrated</span>
+                <span>{t('trustBadgeInsurance')}</span>
               </div>
               <div className="flex items-center gap-2 text-indigo-200 text-sm">
                 <IoLeafOutline className="w-5 h-5" />
-                <span>ESG Compliant</span>
+                <span>{t('trustBadgeEsg')}</span>
               </div>
               <div className="flex items-center gap-2 text-indigo-200 text-sm">
                 <IoSpeedometerOutline className="w-5 h-5" />
-                <span>Mileage Forensics™</span>
+                <span>{t('trustBadgeMileageForensics')}</span>
               </div>
             </div>
           </div>
@@ -121,16 +259,16 @@ export default function FleetOwnersPage() {
             <li className="flex items-center gap-1.5">
               <Link href="/" className="hover:text-indigo-600 flex items-center gap-1">
                 <IoHomeOutline className="w-3.5 h-3.5" />
-                Home
+                {t('breadcrumbHome')}
               </Link>
               <IoChevronForwardOutline className="w-2.5 h-2.5" />
             </li>
             <li className="flex items-center gap-1.5">
-              <Link href="/list-your-car" className="hover:text-indigo-600">Host</Link>
+              <Link href="/list-your-car" className="hover:text-indigo-600">{t('breadcrumbHost')}</Link>
               <IoChevronForwardOutline className="w-2.5 h-2.5" />
             </li>
             <li className="text-gray-800 dark:text-gray-200 font-medium">
-              Fleet Owners
+              {t('breadcrumbFleetOwners')}
             </li>
           </ol>
         </nav>
@@ -141,41 +279,15 @@ export default function FleetOwnersPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              The 2025 Fleet Challenge
+              {t('challengeSectionTitle')}
             </h2>
             <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Fleet owners are no longer just looking for vehicles—they need a complete mobility ecosystem 
-              that solves electrification, compliance, and data complexity.
+              {t('challengeSectionDescription')}
             </p>
           </div>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                icon: IoWarningOutline,
-                title: 'Regulatory Pressure',
-                description: 'EPA Phase 3, California Clean Fleets, ESG reporting requirements—compliance is mandatory.',
-                color: 'red'
-              },
-              {
-                icon: IoTrendingUpOutline,
-                title: 'Rising Insurance Costs',
-                description: 'Premiums increasing 15-20% annually. Carriers demand verified data, not self-reports.',
-                color: 'orange'
-              },
-              {
-                icon: IoAnalyticsOutline,
-                title: 'Data Overload',
-                description: 'Drowning in telematics data but starving for actionable insights and audit-ready reports.',
-                color: 'yellow'
-              },
-              {
-                icon: IoFlashOutline,
-                title: 'Electrification Complexity',
-                description: 'EV transition requires charging infrastructure, energy management, and range planning.',
-                color: 'blue'
-              }
-            ].map((challenge, i) => (
+            {challenges.map((challenge, i) => (
               <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
                 <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${
                   challenge.color === 'red' ? 'bg-red-100 dark:bg-red-900/30' :
@@ -208,14 +320,13 @@ export default function FleetOwnersPage() {
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 rounded-full text-indigo-700 dark:text-indigo-300 text-xs font-medium mb-4">
               <IoLayersOutline className="w-4 h-4" />
-              What Makes ItWhip Different
+              {t('techEdgeBadge')}
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Your Technology Edge
+              {t('techEdgeTitle')}
             </h2>
             <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              We're not just a car-sharing platform. We're an insurance intelligence company 
-              disguised as a mobility platform.
+              {t('techEdgeDescription')}
             </p>
           </div>
 
@@ -226,18 +337,17 @@ export default function FleetOwnersPage() {
                 <IoSpeedometerOutline className="w-7 h-7 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
-                Mileage Forensics™
+                {t('mileageForensicsTitle')}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Track every mile between rentals. Detect unauthorized usage, verify declarations, 
-                and provide insurers with data they can trust.
+                {t('mileageForensicsDescription')}
               </p>
               <ul className="space-y-2">
                 {[
-                  'Trip 1 ends at 10,000 miles → Trip 2 starts at 11,292 miles',
-                  'Gap of 1,292 miles flagged for review',
-                  'Automatic compliance scoring',
-                  'Insurance-grade audit trail'
+                  t('mileageForensicsItem0'),
+                  t('mileageForensicsItem1'),
+                  t('mileageForensicsItem2'),
+                  t('mileageForensicsItem3'),
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
                     <IoCheckmarkCircleOutline className="w-4 h-4 text-indigo-600 flex-shrink-0 mt-0.5" />
@@ -253,32 +363,32 @@ export default function FleetOwnersPage() {
                 <IoDocumentTextOutline className="w-7 h-7 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
-                Usage Declarations
+                {t('usageDeclarationsTitle')}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Hosts declare how vehicles are used. We verify it. Insurers trust it.
+                {t('usageDeclarationsDescription')}
               </p>
               <div className="space-y-3">
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
                   <div className="flex justify-between items-center">
-                    <span className="font-medium text-gray-900 dark:text-white">Rental Only</span>
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">15 mi max gap</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{t('usageDeclRentalOnlyLabel')}</span>
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">{t('usageDeclRentalOnlyBadge')}</span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Best insurance rates, 100% business deduction</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('usageDeclRentalOnlyNote')}</p>
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-yellow-200 dark:border-yellow-700">
                   <div className="flex justify-between items-center">
-                    <span className="font-medium text-gray-900 dark:text-white">Rental + Personal</span>
-                    <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">500 mi max gap</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{t('usageDeclRentalPersonalLabel')}</span>
+                    <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">{t('usageDeclRentalPersonalBadge')}</span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Mixed use, moderate rates</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('usageDeclRentalPersonalNote')}</p>
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
                   <div className="flex justify-between items-center">
-                    <span className="font-medium text-gray-900 dark:text-white">Commercial</span>
-                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">300 mi max gap</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{t('usageDeclCommercialLabel')}</span>
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{t('usageDeclCommercialBadge')}</span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Business operations, logged trips</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('usageDeclCommercialNote')}</p>
                 </div>
               </div>
             </div>
@@ -289,18 +399,17 @@ export default function FleetOwnersPage() {
                 <IoLeafOutline className="w-7 h-7 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
-                ESG Dashboard
+                {t('esgDashboardTitle')}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Automatic sustainability reporting for corporate compliance. Track carbon footprint, 
-                generate ESG reports, and meet stakeholder requirements.
+                {t('esgDashboardDescription')}
               </p>
               <ul className="space-y-2">
                 {[
-                  'Real-time carbon emissions tracking',
-                  'Automated ESG report generation',
-                  'Corporate travel compliance',
-                  'Sustainability scoring per vehicle'
+                  t('esgDashboardItem0'),
+                  t('esgDashboardItem1'),
+                  t('esgDashboardItem2'),
+                  t('esgDashboardItem3'),
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
                     <IoCheckmarkCircleOutline className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
@@ -312,7 +421,7 @@ export default function FleetOwnersPage() {
                 href="/esg-dashboard"
                 className="inline-flex items-center gap-1 text-sm text-emerald-600 hover:text-emerald-700 mt-4"
               >
-                Learn more about ESG features
+                {t('esgDashboardLearnMore')}
                 <IoChevronForwardOutline className="w-4 h-4" />
               </Link>
             </div>
@@ -323,27 +432,26 @@ export default function FleetOwnersPage() {
                 <IoShieldCheckmarkOutline className="w-7 h-7 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
-                Insurance Intelligence
+                {t('insuranceIntelligenceTitle')}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Verified data that insurance carriers trust. Reduce premiums, speed up claims, 
-                and provide the audit trail carriers demand.
+                {t('insuranceIntelligenceDescription')}
               </p>
               <div className="grid grid-cols-2 gap-4 mt-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">7 days</div>
-                  <div className="text-xs text-gray-500">Claim resolution</div>
+                  <div className="text-2xl font-bold text-purple-600">{t('insuranceIntelligenceClaimValue')}</div>
+                  <div className="text-xs text-gray-500">{t('insuranceIntelligenceClaimLabel')}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">vs 30+</div>
-                  <div className="text-xs text-gray-500">Industry average</div>
+                  <div className="text-2xl font-bold text-purple-600">{t('insuranceIntelligenceIndustryValue')}</div>
+                  <div className="text-xs text-gray-500">{t('insuranceIntelligenceIndustryLabel')}</div>
                 </div>
               </div>
               <Link
                 href="/mileage-forensics"
                 className="inline-flex items-center gap-1 text-sm text-purple-600 hover:text-purple-700 mt-4"
               >
-                Explore Mileage Forensics
+                {t('insuranceIntelligenceExploreLink')}
                 <IoChevronForwardOutline className="w-4 h-4" />
               </Link>
             </div>
@@ -356,53 +464,15 @@ export default function FleetOwnersPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Insurance Tier System
+              {t('insuranceTierSectionTitle')}
             </h2>
             <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Your insurance coverage determines your earnings. More coverage = higher revenue share.
+              {t('insuranceTierSectionDescription')}
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                tier: 'Basic',
-                percentage: '40%',
-                color: 'gray',
-                description: 'Platform insurance only',
-                features: [
-                  'No personal insurance required',
-                  'Platform insurance is primary',
-                  'Basic coverage included',
-                  'Good for getting started'
-                ]
-              },
-              {
-                tier: 'Standard',
-                percentage: '75%',
-                color: 'indigo',
-                description: 'P2P insurance added',
-                features: [
-                  'Your P2P insurance is primary',
-                  'Platform insurance is backup',
-                  'Higher earnings share',
-                  'Most popular choice'
-                ],
-                popular: true
-              },
-              {
-                tier: 'Premium',
-                percentage: '90%',
-                color: 'purple',
-                description: 'Commercial insurance',
-                features: [
-                  'Commercial insurance is primary',
-                  'Maximum earnings share',
-                  'Fleet-grade protection',
-                  'Best for professional fleets'
-                ]
-              }
-            ].map((tier, i) => (
+            {insuranceTiers.map((tier, i) => (
               <div
                 key={i}
                 className={`relative bg-white dark:bg-gray-800 rounded-lg p-6 border-2 shadow-sm hover:shadow-md transition-shadow ${
@@ -413,15 +483,15 @@ export default function FleetOwnersPage() {
               >
                 {tier.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-indigo-600 text-white text-xs font-medium rounded-full">
-                    Most Popular
+                    {t('mostPopularBadge')}
                   </div>
                 )}
                 <div className="text-center mb-6">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                    {tier.tier} Tier
+                    {tier.tier} {t('tierSuffix')}
                   </h3>
                   <div className="text-4xl font-bold text-indigo-600 mb-1">{tier.percentage}</div>
-                  <div className="text-sm text-gray-500">Revenue Share</div>
+                  <div className="text-sm text-gray-500">{t('revenueShareLabel')}</div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{tier.description}</p>
                 </div>
                 <ul className="space-y-3">
@@ -445,34 +515,16 @@ export default function FleetOwnersPage() {
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-indigo-200 text-xs font-medium mb-4">
                 <IoBriefcaseOutline className="w-4 h-4" />
-                For Insurance Carriers
+                {t('carrierSectionBadge')}
               </div>
               <h2 className="text-2xl sm:text-3xl font-bold mb-4">
-                The Data Carriers Actually Need
+                {t('carrierSectionTitle')}
               </h2>
               <p className="text-indigo-100 mb-6">
-                We provide insurance carriers with verified mileage data, digital audit trails, 
-                and fraud detection—not self-reported guesswork.
+                {t('carrierSectionDescription')}
               </p>
               <div className="space-y-4">
-                {[
-                  {
-                    title: 'Verified Mileage',
-                    description: 'Every mile tracked forensically, not self-reported'
-                  },
-                  {
-                    title: 'Digital Audit Trail',
-                    description: 'Complete history from listing to claim resolution'
-                  },
-                  {
-                    title: 'Fraud Detection',
-                    description: 'Automatic flagging of usage anomalies and compliance gaps'
-                  },
-                  {
-                    title: 'Faster Claims',
-                    description: 'Resolve claims in 7 days with verified data'
-                  }
-                ].map((item, i) => (
+                {carrierBenefits.map((item, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <IoCheckmarkDoneOutline className="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5" />
                     <div>
@@ -486,42 +538,42 @@ export default function FleetOwnersPage() {
                 href="/contact"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-white text-indigo-700 font-semibold rounded-lg hover:bg-indigo-50 transition-colors mt-8"
               >
-                Partner With Us
+                {t('carrierPartnerButton')}
                 <IoChevronForwardOutline className="w-5 h-5" />
               </Link>
             </div>
             <div className="bg-white/5 backdrop-blur rounded-lg p-8 border border-white/10">
-              <h3 className="text-lg font-semibold mb-6">Insurance Intelligence Metrics</h3>
+              <h3 className="text-lg font-semibold mb-6">{t('metricsTitle')}</h3>
               <div className="space-y-6">
                 <div>
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="text-indigo-200">Claim Resolution Time</span>
-                    <span className="font-medium">7 days avg</span>
+                    <span className="text-indigo-200">{t('metricsClaimResolutionLabel')}</span>
+                    <span className="font-medium">{t('metricsClaimResolutionValue')}</span>
                   </div>
                   <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                     <div className="h-full w-[23%] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full" />
                   </div>
-                  <div className="text-xs text-indigo-300 mt-1">Industry average: 30+ days</div>
+                  <div className="text-xs text-indigo-300 mt-1">{t('metricsClaimResolutionNote')}</div>
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="text-indigo-200">Data Verification Rate</span>
-                    <span className="font-medium">100%</span>
+                    <span className="text-indigo-200">{t('metricsDataVerificationLabel')}</span>
+                    <span className="font-medium">{t('metricsDataVerificationValue')}</span>
                   </div>
                   <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                     <div className="h-full w-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full" />
                   </div>
-                  <div className="text-xs text-indigo-300 mt-1">Every mile tracked forensically</div>
+                  <div className="text-xs text-indigo-300 mt-1">{t('metricsDataVerificationNote')}</div>
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="text-indigo-200">Fraud Detection Rate</span>
-                    <span className="font-medium">94%</span>
+                    <span className="text-indigo-200">{t('metricsFraudDetectionLabel')}</span>
+                    <span className="font-medium">{t('metricsFraudDetectionValue')}</span>
                   </div>
                   <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                     <div className="h-full w-[94%] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full" />
                   </div>
-                  <div className="text-xs text-indigo-300 mt-1">Automatic anomaly flagging</div>
+                  <div className="text-xs text-indigo-300 mt-1">{t('metricsFraudDetectionNote')}</div>
                 </div>
               </div>
             </div>
@@ -533,41 +585,10 @@ export default function FleetOwnersPage() {
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">
-            Fleet Owner Benefits
+            {t('fleetBenefitsSectionTitle')}
           </h2>
           <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                icon: IoPersonOutline,
-                title: 'Dedicated Account Manager',
-                description: 'Personal support from our fleet team. Direct line for questions, issues, and optimization advice.'
-              },
-              {
-                icon: IoSettingsOutline,
-                title: 'Bulk Management Tools',
-                description: 'Update pricing, availability, and settings across all vehicles at once. Save hours of admin time.'
-              },
-              {
-                icon: IoStatsChartOutline,
-                title: 'Advanced Analytics',
-                description: 'Fleet-wide dashboard showing performance, revenue trends, compliance scores, and optimization opportunities.'
-              },
-              {
-                icon: IoTrendingUpOutline,
-                title: 'Preferred Placement',
-                description: 'Your listings get priority visibility in search results and featured sections.'
-              },
-              {
-                icon: IoCashOutline,
-                title: 'Volume Discounts',
-                description: 'Reduced platform fees based on fleet size. The more you list, the more you save per booking.'
-              },
-              {
-                icon: IoShieldCheckmarkOutline,
-                title: 'Premium Protection',
-                description: 'Access to all insurance tiers including commercial coverage for maximum 90% earnings.'
-              }
-            ].map((benefit, i) => (
+            {fleetBenefits.map((benefit, i) => (
               <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
                 <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mb-4">
                   <benefit.icon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
@@ -588,30 +609,10 @@ export default function FleetOwnersPage() {
       <section className="py-16 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">
-            Fleet Program Tiers
+            {t('fleetProgramTiersSectionTitle')}
           </h2>
           <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                name: 'Starter Fleet',
-                vehicles: '5-10',
-                features: ['Dedicated support', 'Bulk tools', 'Analytics dashboard', 'Standard placement'],
-                color: 'gray'
-              },
-              {
-                name: 'Professional Fleet',
-                vehicles: '11-25',
-                features: ['Priority support', 'Advanced analytics', 'Preferred placement', '5% fee reduction', 'Quarterly reviews'],
-                color: 'indigo',
-                popular: true
-              },
-              {
-                name: 'Enterprise Fleet',
-                vehicles: '26+',
-                features: ['Dedicated account manager', 'Custom integrations', 'Premium placement', '10% fee reduction', 'Monthly strategy calls', 'API access'],
-                color: 'purple'
-              }
-            ].map((tier, i) => (
+            {fleetProgramTiers.map((tier, i) => (
               <div
                 key={i}
                 className={`relative rounded-lg p-6 border-2 shadow-sm hover:shadow-md transition-shadow ${
@@ -622,11 +623,11 @@ export default function FleetOwnersPage() {
               >
                 {tier.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-indigo-600 text-white text-xs font-medium rounded-full">
-                    Most Popular
+                    {t('mostPopularBadge')}
                   </div>
                 )}
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{tier.name}</h3>
-                <div className="text-3xl font-bold text-indigo-600 mb-4">{tier.vehicles} <span className="text-base font-normal text-gray-500">vehicles</span></div>
+                <div className="text-3xl font-bold text-indigo-600 mb-4">{tier.vehicles} <span className="text-base font-normal text-gray-500">{t('vehiclesSuffix')}</span></div>
                 <ul className="space-y-3">
                   {tier.features.map((feature, j) => (
                     <li key={j} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
@@ -645,21 +646,21 @@ export default function FleetOwnersPage() {
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-8">
-            Fleet Program Requirements
+            {t('requirementsSectionTitle')}
           </h2>
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-white dark:bg-gray-800 rounded-lg p-8 border border-gray-200 dark:border-gray-700 shadow-sm">
               <h3 className="font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                 <IoCheckmarkDoneOutline className="w-5 h-5 text-indigo-600" />
-                To Qualify
+                {t('requirementsToQualifyTitle')}
               </h3>
               <ul className="space-y-4">
                 {[
-                  'Minimum 5 active vehicles on the platform',
-                  'Maintain 4.5+ average rating',
-                  '90%+ response rate to inquiries',
-                  'Complete host verification (ID, insurance)',
-                  'Active for 30+ days (new fleets can apply with proof of vehicles)'
+                  t('requirementToQualify0'),
+                  t('requirementToQualify1'),
+                  t('requirementToQualify2'),
+                  t('requirementToQualify3'),
+                  t('requirementToQualify4'),
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
@@ -671,16 +672,16 @@ export default function FleetOwnersPage() {
             <div className="bg-white dark:bg-gray-800 rounded-lg p-8 border border-gray-200 dark:border-gray-700 shadow-sm">
               <h3 className="font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                 <IoRocketOutline className="w-5 h-5 text-indigo-600" />
-                What We Provide
+                {t('requirementsWeProvideTitle')}
               </h3>
               <ul className="space-y-4">
                 {[
-                  'Onboarding assistance for all vehicles',
-                  'Pricing optimization consultation',
-                  'Priority customer support (2-hour SLA)',
-                  'Early access to new features',
-                  'Fleet performance reports (weekly/monthly)',
-                  'Insurance tier optimization guidance'
+                  t('requirementWeProvide0'),
+                  t('requirementWeProvide1'),
+                  t('requirementWeProvide2'),
+                  t('requirementWeProvide3'),
+                  t('requirementWeProvide4'),
+                  t('requirementWeProvide5'),
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-indigo-500 flex-shrink-0 mt-0.5" />
@@ -697,25 +698,24 @@ export default function FleetOwnersPage() {
       <section className="py-16 bg-gradient-to-r from-indigo-600 to-purple-600">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-            Ready to Transform Your Fleet Operations?
+            {t('ctaTitle')}
           </h2>
           <p className="text-indigo-100 mb-8">
-            Join the Fleet Owner program and unlock enterprise-grade technology, dedicated support, 
-            and the insurance intelligence that sets you apart.
+            {t('ctaDescription')}
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link
               href="/host/signup"
               className="inline-flex items-center gap-2 px-8 py-3 bg-white text-indigo-700 font-semibold rounded-lg hover:bg-indigo-50 transition-colors"
             >
-              Apply for Fleet Program
+              {t('ctaApplyButton')}
               <IoChevronForwardOutline className="w-5 h-5" />
             </Link>
             <Link
               href="/contact"
               className="inline-flex items-center gap-2 px-8 py-3 border-2 border-white text-white font-semibold rounded-lg hover:bg-white/10 transition-colors"
             >
-              Schedule Consultation
+              {t('ctaConsultationButton')}
             </Link>
           </div>
         </div>

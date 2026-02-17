@@ -3,25 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
 import { IoCarSportOutline, IoChevronDownOutline } from 'react-icons/io5'
-
-const CAR_TYPES = [
-  { value: '', label: 'All' },
-  { value: 'suv', label: 'SUV' },
-  { value: 'sedan', label: 'Sedan' },
-  { value: 'luxury', label: 'Luxury' },
-  { value: 'electric', label: 'Electric' },
-  { value: 'truck', label: 'Truck' },
-  { value: 'sports', label: 'Sports' },
-  { value: 'convertible', label: 'Convertible' }
-]
-
-const PRICE_RANGES = [
-  { value: '', label: 'Any Price', min: '', max: '' },
-  { value: 'budget', label: 'Budget', min: '0', max: '75' },
-  { value: 'standard', label: 'Standard', min: '75', max: '150' },
-  { value: 'premium', label: 'Premium', min: '150', max: '300' },
-  { value: 'luxury', label: 'Luxury', min: '300', max: '' }
-]
+import { useTranslations } from 'next-intl'
 
 interface CarFiltersProps {
   currentType?: string
@@ -38,8 +20,28 @@ export default function CarFilters({
   makes,
   totalCount
 }: CarFiltersProps) {
+  const t = useTranslations('RentalsCatalog')
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  const CAR_TYPES = [
+    { value: '', label: t('filterAll') },
+    { value: 'suv', label: t('filterSuv') },
+    { value: 'sedan', label: t('filterSedan') },
+    { value: 'luxury', label: t('filterLuxury') },
+    { value: 'electric', label: t('filterElectric') },
+    { value: 'truck', label: t('filterTruck') },
+    { value: 'sports', label: t('filterSports') },
+    { value: 'convertible', label: t('filterConvertible') }
+  ]
+
+  const PRICE_RANGES = [
+    { value: '', label: t('anyPrice'), min: '', max: '' },
+    { value: 'budget', label: t('budgetPrice'), min: '0', max: '75' },
+    { value: 'standard', label: t('standardPrice'), min: '75', max: '150' },
+    { value: 'premium', label: t('premiumPrice'), min: '150', max: '300' },
+    { value: 'luxury', label: t('luxuryPrice'), min: '300', max: '' }
+  ]
 
   const updateFilters = useCallback((updates: Record<string, string>) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -95,7 +97,7 @@ export default function CarFilters({
         <div className="flex items-center gap-2">
           <IoCarSportOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           <span className="text-sm text-gray-600 dark:text-gray-400">
-            <span className="font-semibold text-gray-900 dark:text-white">{totalCount}</span> cars available
+            {t('carsAvailable', { count: totalCount })}
           </span>
         </div>
 
@@ -104,7 +106,7 @@ export default function CarFilters({
             onClick={clearAllFilters}
             className="text-sm text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 font-medium"
           >
-            Clear all filters
+            {t('clearAllFilters')}
           </button>
         )}
       </div>
@@ -138,7 +140,7 @@ export default function CarFilters({
             onChange={(e) => handleMakeChange(e.target.value)}
             className="appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2 pr-10 text-sm font-medium text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 cursor-pointer"
           >
-            <option value="">All Makes</option>
+            <option value="">{t('allMakes')}</option>
             {sortedMakes.map((make) => (
               <option key={make} value={make}>
                 {make}
@@ -194,7 +196,7 @@ export default function CarFilters({
           )}
           {currentPriceRange && (
             <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-sm rounded-lg">
-              {PRICE_RANGES.find(p => p.value === currentPriceRange)?.label || 'Custom Price'}
+              {PRICE_RANGES.find(p => p.value === currentPriceRange)?.label || t('customPrice')}
               <button
                 onClick={() => handlePriceChange('')}
                 className="ml-1 hover:text-amber-600"

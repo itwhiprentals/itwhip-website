@@ -1,37 +1,47 @@
 // app/how-it-works/layout.tsx
 import { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 
-export const metadata: Metadata = {
-  title: 'How It Works | Peer-to-Peer Car Sharing & Rideshare Rentals | ItWhip',
-  description: 'Rent cars from local Phoenix hosts or become a host. Peer-to-peer car sharing and rideshare-ready vehicles. Earn up to 90% or manage a fleet without owning a car.',
-  keywords: [
-    'peer to peer car rental Phoenix',
-    'rideshare rental Phoenix',
-    'Uber rental car Phoenix',
-    'Lyft rental Phoenix',
-    'car sharing Arizona',
-    'Turo alternative Phoenix',
-    'rent car from owner',
-    'rideshare vehicle rental',
-    'gig economy car rental',
-    'fleet manager car sharing',
-    'earn money with car',
-    'list your car for rent'
-  ],
-  openGraph: {
-    title: 'How It Works | Peer-to-Peer Car Sharing & Rideshare | ItWhip',
-    description: 'Rent cars from local Phoenix owners, list your car to earn up to 90%, or become a fleet manager. Rideshare-ready vehicles with full insurance.',
-    url: 'https://itwhip.com/how-it-works',
-    siteName: 'ItWhip',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'How It Works | ItWhip P2P & Rideshare',
-    description: 'P2P car rental in Phoenix. Rent, host, or manage a fleet. Rideshare-ready vehicles available.',
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/how-it-works'
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('howItWorksTitle'),
+    description: t('howItWorksDescription'),
+    keywords: [
+      'peer to peer car rental Phoenix',
+      'rideshare rental Phoenix',
+      'Uber rental car Phoenix',
+      'Lyft rental Phoenix',
+      'car sharing Arizona',
+      'Turo alternative Phoenix',
+      'rent car from owner',
+      'rideshare vehicle rental',
+      'gig economy car rental',
+      'fleet manager car sharing',
+      'earn money with car',
+      'list your car for rent'
+    ],
+    openGraph: {
+      title: t('howItWorksOgTitle'),
+      description: t('howItWorksOgDescription'),
+      url: 'https://itwhip.com/how-it-works',
+      siteName: 'ItWhip',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: t('howItWorksTwitterTitle'),
+      description: t('howItWorksTwitterDescription'),
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/how-it-works'
+    }
   }
 }
 
@@ -217,7 +227,7 @@ export default function HowItWorksLayout({
         'name': 'Is ItWhip available outside Arizona?',
         'acceptedAnswer': {
           '@type': 'Answer',
-          'text': 'Currently, we\'re focused on the Phoenix metro area and Arizona. We operate under Arizona\'s P2P car sharing legislation (A.R.S. § 28-9601). Expansion to other states is planned for 2025.'
+          'text': 'Currently, we\'re focused on the Phoenix metro area and Arizona. We operate under Arizona\'s P2P car sharing legislation (A.R.S. § 28-9601). Expansion to other states is planned for 2026.'
         }
       }
     ]

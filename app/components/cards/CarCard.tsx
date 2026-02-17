@@ -131,12 +131,12 @@ export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
               {showEcoElite && (
                 <div className="group/tooltip relative">
                   <span className="px-2 py-0.5 bg-emerald-500 text-white text-xs font-bold rounded-full flex items-center gap-1">
-                    <IoLeaf className="w-3 h-3" /> Eco Elite
+                    <IoLeaf className="w-3 h-3" /> {t('ecoElite')}
                   </span>
                   <div className="absolute right-0 top-full mt-1 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-10">
                     <div className="bg-black text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap">
-                      Impact Score: {esgScore}/100
-                      <div className="text-[10px] text-gray-300 mt-0.5">CSRD Compliant • Scope 3 Ready</div>
+                      {t('impactScore', { score: esgScore })}
+                      <div className="text-[10px] text-gray-300 mt-0.5">{t('csrdCompliant')}</div>
                       <div className="absolute -top-1 right-4 w-2 h-2 bg-black transform rotate-45"></div>
                     </div>
                   </div>

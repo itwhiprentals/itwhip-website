@@ -249,7 +249,7 @@ export function getHostDocumentRequestTemplate(data: HostDocumentRequestData): E
             <a href="https://itwhip.com/host/terms">Host Terms</a> |
             <a href="https://itwhip.com/host/privacy">Privacy Policy</a><br>
             <span style="font-size: 11px; margin-top: 8px; display: block;">
-              © 2025 ItWhip Technologies. All rights reserved.<br>
+              © 2026 ItWhip Technologies. All rights reserved.<br>
               This is an automated message regarding your host application.
             </span>
           </div>
@@ -288,7 +288,7 @@ Need help? Contact our host support team at ${data.supportEmail || 'info@itwhip.
 
 ITWHIP HOST PORTAL
 Your Partner in Vehicle Sharing
-© 2025 ItWhip Technologies. All rights reserved.
+© 2026 ItWhip Technologies. All rights reserved.
   `
   
   return { subject, html, text }

@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 import { EndTripConfirmSheet } from './EndTripConfirmSheet'
 
@@ -15,6 +16,7 @@ interface TripActiveCardProps {
 
 export function TripActiveCard({ booking, onExtend, onViewAgreement }: TripActiveCardProps) {
   const router = useRouter()
+  const t = useTranslations('TripActiveCard')
   const [duration, setDuration] = useState('')
   const [timeRemaining, setTimeRemaining] = useState('')
   const [hoursRemaining, setHoursRemaining] = useState(0)
@@ -60,9 +62,9 @@ export function TripActiveCard({ booking, onExtend, onViewAgreement }: TripActiv
         const hours = Math.floor(elapsed / (1000 * 60 * 60))
         const minutes = Math.floor((elapsed % (1000 * 60 * 60)) / (1000 * 60))
         if (hours > 0) {
-          setDuration(`${hours}h ${minutes}m`)
+          setDuration(t('durationHoursMinutes', { hours, minutes }))
         } else {
-          setDuration(`${minutes}m`)
+          setDuration(t('durationMinutes', { minutes }))
         }
       }
 
@@ -73,18 +75,18 @@ export function TripActiveCard({ booking, onExtend, onViewAgreement }: TripActiv
       setHoursRemaining(Math.max(0, hrsLeft))
 
       if (remaining <= 0) {
-        setTimeRemaining('Overdue')
+        setTimeRemaining(t('overdue'))
       } else {
         const days = Math.floor(remaining / (1000 * 60 * 60 * 24))
         const hrs = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
         const mins = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60))
 
         if (days > 0) {
-          setTimeRemaining(`${days}d ${hrs}h left`)
+          setTimeRemaining(t('timeRemainingDaysHours', { days, hours: hrs }))
         } else if (hrs > 0) {
-          setTimeRemaining(`${hrs}h ${mins}m left`)
+          setTimeRemaining(t('timeRemainingHoursMinutes', { hours: hrs, minutes: mins }))
         } else {
-          setTimeRemaining(`${mins}m left`)
+          setTimeRemaining(t('timeRemainingMinutes', { minutes: mins }))
         }
       }
     }
@@ -180,12 +182,12 @@ export function TripActiveCard({ booking, onExtend, onViewAgreement }: TripActiv
   // Format return deadline
   const returnDate = combineDateTime(booking.endDate, booking.endTime || '10:00')
   const returnTime = returnDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
-    ' at ' + returnDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+    t('dateAt') + returnDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
 
   // Format pickup time (booking start, not trip started)
   const pickupDate = combineDateTime(booking.startDate, booking.startTime || '10:00')
   const pickupTime = pickupDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
-    ' at ' + pickupDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+    t('dateAt') + pickupDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
 
   // Late pickup detection
   const scheduledPickup = combineDateTime(booking.startDate, booking.startTime || '10:00')
@@ -194,10 +196,10 @@ export function TripActiveCard({ booking, onExtend, onViewAgreement }: TripActiv
   const lateByMs = actualPickup ? actualPickup.getTime() - scheduledPickup.getTime() : 0
   const lateByHours = Math.floor(lateByMs / (1000 * 60 * 60))
   const lateByMinutes = Math.floor((lateByMs % (1000 * 60 * 60)) / (1000 * 60))
-  const lateByText = lateByHours > 0 ? `${lateByHours}h ${lateByMinutes}m late` : `${lateByMinutes}m late`
+  const lateByText = lateByHours > 0 ? t('lateByHoursMinutes', { hours: lateByHours, minutes: lateByMinutes }) : t('lateByMinutes', { minutes: lateByMinutes })
   const actualPickupFormatted = actualPickup
     ? actualPickup.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
-      ' at ' + actualPickup.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+      t('dateAt') + actualPickup.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
     : ''
 
   const carPhoto = booking.car?.photos?.[0]?.url
@@ -234,7 +236,7 @@ export function TripActiveCard({ booking, onExtend, onViewAgreement }: TripActiv
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
                 </svg>
                 <span className="text-[7px] font-extrabold text-white uppercase tracking-[0.1em] mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]">
-                  End Trip
+                  {t('endTrip')}
                 </span>
               </button>
             </div>
@@ -265,7 +267,7 @@ export function TripActiveCard({ booking, onExtend, onViewAgreement }: TripActiv
             onClick={() => window.location.href = 'tel:602-845-9758'}
             className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg border border-white/50 text-white leading-none hover:bg-red-700 transition-colors bg-red-600"
           >
-            Emergency
+            {t('emergency')}
           </button>
         </div>
       </div>
@@ -276,21 +278,21 @@ export function TripActiveCard({ booking, onExtend, onViewAgreement }: TripActiv
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
             {/* Row 1: Days booked + time remaining */}
-            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase">{booking.numberOfDays} day{booking.numberOfDays !== 1 ? 's' : ''} booked</p>
+            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase">{booking.numberOfDays !== 1 ? t('daysBookedPlural', { count: booking.numberOfDays }) : t('daysBooked', { count: booking.numberOfDays })}</p>
             <div className="flex items-center gap-1.5">
               <p className="text-xs text-gray-500 dark:text-gray-400">{timeRemaining}</p>
-              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded border border-green-300 dark:border-green-700 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 leading-none">Trip in Progress</span>
+              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded border border-green-300 dark:border-green-700 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 leading-none">{t('tripInProgress')}</span>
             </div>
             {/* Row 2: Pickup label + date + late badge */}
             <div className="flex items-baseline gap-1.5 mt-3">
-              <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">Pickup</p>
+              <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">{t('pickup')}</p>
               {isLatePickup && (
                 <span className="relative inline-block group cursor-help" style={{ position: 'relative', top: '-2px' }}>
                   <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 leading-none">
-                    Late
+                    {t('late')}
                   </span>
                   <span className="invisible group-hover:visible absolute bottom-full left-0 mb-1.5 px-2.5 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 w-[180px]">
-                    <span className="text-[11px] font-medium text-gray-900 dark:text-gray-100 block">Picked up {lateByText}</span>
+                    <span className="text-[11px] font-medium text-gray-900 dark:text-gray-100 block">{t('pickedUpLate', { time: lateByText })}</span>
                     <span className="text-[10px] text-gray-500 dark:text-gray-400 block mt-0.5">Actual: {actualPickupFormatted}</span>
                     <span className="text-[10px] text-gray-500 dark:text-gray-400 block">Scheduled: {pickupTime}</span>
                     <span className="absolute bottom-0 left-3 translate-y-1/2 rotate-45 w-2 h-2 bg-white dark:bg-gray-800 border-r border-b border-gray-200 dark:border-gray-700" />
@@ -313,15 +315,15 @@ export function TripActiveCard({ booking, onExtend, onViewAgreement }: TripActiv
           <div className="flex-1 min-w-0 pl-4">
             {/* Row 1: Booking code + mileage */}
             <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{booking.bookingCode}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{booking.startMileage ? `${booking.startMileage.toLocaleString()} mi start` : 'Trip active'}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{booking.startMileage ? t('mileageStart', { miles: booking.startMileage.toLocaleString() }) : t('tripActive')}</p>
             {/* Row 2: Return by label + date + extend badge */}
-            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide mt-3">Return By</p>
+            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide mt-3">{t('returnBy')}</p>
             <div className="flex items-baseline gap-1.5 -mt-0.5">
               <p className="text-xs text-gray-500 dark:text-gray-400">{returnTime}</p>
               {canExtend && onExtend && (
                 <span className="relative inline-block cursor-pointer" style={{ position: 'relative', top: '-2px' }} onClick={onExtend}>
                   <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 leading-none hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    Extend
+                    {t('extend')}
                   </span>
                 </span>
               )}
@@ -345,7 +347,7 @@ export function TripActiveCard({ booking, onExtend, onViewAgreement }: TripActiv
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
             </svg>
-            End Trip
+            {t('endTrip')}
           </button>
         ) : (
           null
@@ -356,7 +358,7 @@ export function TripActiveCard({ booking, onExtend, onViewAgreement }: TripActiv
           <div className="flex items-center justify-center gap-4 text-[10px]">
             {onViewAgreement && (
               <button onClick={onViewAgreement} className="font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
-                View Agreement
+                {t('viewAgreement')}
               </button>
             )}
           </div>

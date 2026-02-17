@@ -62,7 +62,7 @@ export async function generateMetadata({
           url: 'https://itwhip.com/og-image.jpg',
           width: 1200,
           height: 630,
-          alt: 'ItWhip - Peer to Peer Car Rental Arizona',
+          alt: t('ogImageAlt'),
         }
       ],
       locale: ogLocaleMap[locale] || 'en_US',

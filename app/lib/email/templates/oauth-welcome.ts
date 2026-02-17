@@ -268,7 +268,7 @@ export function getOAuthWelcomeTemplate(data: OAuthWelcomeData): EmailTemplate {
             <a href="${data.dashboardUrl}">Dashboard</a> |
             <a href="https://itwhip.com/help">Help Center</a><br>
             <span style="font-size: 11px; margin-top: 8px; display: block;">
-              &copy; 2025 ItWhip Technologies. All rights reserved.
+              &copy; 2026 ItWhip Technologies. All rights reserved.
             </span>
           </div>
         </div>

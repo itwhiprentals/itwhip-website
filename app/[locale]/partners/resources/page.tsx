@@ -15,9 +15,18 @@ import {
   IoArrowForward
 } from 'react-icons/io5'
 
-export const metadata: Metadata = {
-  title: 'Partner Resources | Fleet Partner Program | ItWhip',
-  description: 'Access guides, documentation, and resources for ItWhip fleet partners.',
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('partnersResourcesTitle'),
+    description: t('partnersResourcesDescription'),
+  }
 }
 
 const resources = [

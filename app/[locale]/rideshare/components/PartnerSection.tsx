@@ -5,6 +5,7 @@
 
 import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import {
   IoChevronForwardOutline,
   IoStar,
@@ -64,7 +65,7 @@ interface PartnerSectionProps {
 }
 
 // Compact car card for horizontal row
-function CompactCarCard({ vehicle }: { vehicle: Vehicle }) {
+function CompactCarCard({ vehicle, t }: { vehicle: Vehicle; t: ReturnType<typeof useTranslations> }) {
   // Get valid photo URL
   let photoUrl: string | null = null
   if (vehicle.photo) {
@@ -111,7 +112,7 @@ function CompactCarCard({ vehicle }: { vehicle: Vehicle }) {
           {vehicle.model}
         </p>
         <p className="text-xs font-bold text-orange-600 dark:text-orange-400 mt-0.5">
-          ${vehicle.dailyRate}/day
+          {t('compactCardPrice', { price: vehicle.dailyRate })}
         </p>
       </div>
     </Link>
@@ -119,6 +120,7 @@ function CompactCarCard({ vehicle }: { vehicle: Vehicle }) {
 }
 
 export default function PartnerSection({ partner }: PartnerSectionProps) {
+  const t = useTranslations('Rideshare')
   // Get first 5 vehicles for display
   const displayVehicles = partner.vehicles.slice(0, 5)
   const partnerUrl = partner.slug ? `/rideshare/${partner.slug}` : null
@@ -160,7 +162,7 @@ export default function PartnerSection({ partner }: PartnerSectionProps) {
                   {partner.isStripeVerified && (
                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-[10px] font-medium flex-shrink-0">
                       <IoCheckmarkCircle className="w-3 h-3" />
-                      Verified
+                      {t('partnerVerified')}
                     </span>
                   )}
                 </div>
@@ -217,7 +219,7 @@ export default function PartnerSection({ partner }: PartnerSectionProps) {
               href={partnerUrl}
               className="lg:hidden flex-shrink-0 inline-flex items-center gap-1 text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium text-xs"
             >
-              View all
+              {t('partnerViewAll')}
               <IoChevronForwardOutline className="w-3.5 h-3.5" />
             </Link>
           )}
@@ -228,13 +230,13 @@ export default function PartnerSection({ partner }: PartnerSectionProps) {
           <div className="flex gap-3">
             {displayVehicles.length > 0 ? (
               displayVehicles.map((vehicle) => (
-                <CompactCarCard key={vehicle.id} vehicle={vehicle} />
+                <CompactCarCard key={vehicle.id} vehicle={vehicle} t={t} />
               ))
             ) : (
               <div className="flex items-center justify-center py-6 px-8 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div className="text-center">
                   <IoCarOutline className="w-8 h-8 text-gray-400 mx-auto mb-1" />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">No vehicles</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('partnerNoVehicles')}</p>
                 </div>
               </div>
             )}
@@ -247,7 +249,7 @@ export default function PartnerSection({ partner }: PartnerSectionProps) {
             href={partnerUrl}
             className="hidden lg:inline-flex flex-shrink-0 items-center gap-1.5 px-4 py-2 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/30 rounded-lg font-medium text-sm transition-colors group"
           >
-            View all {partner.fleetSize}
+            {t('partnerViewAllCount', { count: partner.fleetSize })}
             <IoChevronForwardOutline className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         )}

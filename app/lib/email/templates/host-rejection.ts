@@ -296,7 +296,7 @@ export function getHostRejectionTemplate(data: HostRejectionData): EmailTemplate
             <a href="https://itwhip.com/host/faq">FAQ</a> |
             <a href="https://itwhip.com/privacy">Privacy Policy</a><br>
             <span style="font-size: 11px; margin-top: 8px; display: block;">
-              © 2025 ItWhip Technologies. All rights reserved.<br>
+              © 2026 ItWhip Technologies. All rights reserved.<br>
               This decision was made in accordance with our host acceptance policies.
             </span>
           </div>
@@ -340,7 +340,7 @@ We value your interest in ItWhip and hope to work with you in the future.
 
 ITWHIP HOST PORTAL
 Committed to Quality and Safety
-© 2025 ItWhip Technologies. All rights reserved.
+© 2026 ItWhip Technologies. All rights reserved.
   `
   
   return { subject, html, text }

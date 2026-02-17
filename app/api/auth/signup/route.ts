@@ -559,7 +559,7 @@ function generateVerificationEmail(name: string, code: string): string {
                 <tr>
                   <td style="padding: 30px 40px; background-color: #f9fafb; border-radius: 0 0 8px 8px; text-align: center;">
                     <p style="margin: 0 0 8px; color: #6b7280; font-size: 14px;">ItWhip Technologies, Inc.</p>
-                    <p style="margin: 0; color: #9ca3af; font-size: 12px;">© 2025 ItWhip. All rights reserved.</p>
+                    <p style="margin: 0; color: #9ca3af; font-size: 12px;">© 2026 ItWhip. All rights reserved.</p>
                   </td>
                 </tr>
               </table>

@@ -1,18 +1,28 @@
 import { Metadata } from 'next'
 import InvestorsContent from './InvestorsContent'
+import { getTranslations } from 'next-intl/server'
 
-export const metadata: Metadata = {
-  title: 'Investor Relations | ItWhip',
-  description: 'Investment opportunities in Arizona\'s leading peer-to-peer car rental platform. Learn about ItWhip\'s growth, market opportunity, and partnership options.',
-  alternates: {
-    canonical: 'https://itwhip.com/investors',
-  },
-  openGraph: {
-    title: 'Investor Relations | ItWhip',
-    description: 'Investment opportunities in Arizona\'s P2P car rental marketplace.',
-    url: 'https://itwhip.com/investors',
-    type: 'website',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('investorsTitle'),
+    description: t('investorsDescription'),
+    openGraph: {
+      title: t('investorsOgTitle'),
+      description: t('investorsOgDescription'),
+      url: 'https://itwhip.com/investors',
+      type: 'website',
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/investors',
+    },
+  }
 }
 
 export default function InvestorsPage() {

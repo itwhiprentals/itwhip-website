@@ -155,7 +155,7 @@ export async function POST(req: NextRequest) {
                             ItWhip Technologies, Inc.
                           </p>
                           <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-                            © 2025 ItWhip. All rights reserved.
+                            © 2026 ItWhip. All rights reserved.
                           </p>
                         </td>
                       </tr>
@@ -182,7 +182,7 @@ You can now sign in with your new password.
 If you didn't make this change, please contact our support team immediately at info@itwhip.com
 
 ItWhip Technologies, Inc.
-© 2025 ItWhip. All rights reserved.
+© 2026 ItWhip. All rights reserved.
         `
       )
       
