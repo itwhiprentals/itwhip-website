@@ -67,7 +67,7 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
       <div key={msg.id}>
         {showDate && (
           <div className="flex items-center justify-center my-2">
-            <span className="text-[10px] text-gray-400 bg-white px-2 py-0.5 rounded-full border border-gray-100">
+            <span className="text-[10px] text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-800 px-2 py-0.5 rounded-full border border-gray-100 dark:border-gray-700">
               {new Date(msg.createdAt).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
             </span>
           </div>
@@ -75,31 +75,31 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
         
         <div className={`flex items-start gap-1.5 ${isGuest ? 'justify-end' : 'justify-start'}`}>
           {!isGuest && (
-            <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 mt-0.5">
               {isHost ? (
-                <span className="text-[10px] font-bold text-gray-600">H</span>
+                <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300">H</span>
               ) : isAdmin ? (
-                <span className="text-[10px] font-bold text-gray-600">A</span>
+                <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300">A</span>
               ) : isSupport ? (
-                <span className="text-[10px] font-bold text-gray-600">S</span>
+                <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300">S</span>
               ) : (
-                <User className="w-3 h-3 text-gray-500" />
+                <User className="w-3 h-3 text-gray-500 dark:text-gray-400" />
               )}
             </div>
           )}
           
           <div className={`max-w-[75%] lg:max-w-[60%]`}>
             {!isGuest && msg.senderName && (
-              <p className="text-[10px] font-medium text-gray-500 mb-0.5 ml-2">
+              <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-0.5 ml-2">
                 {msg.senderName}
               </p>
             )}
             <div className={`inline-block rounded-2xl px-3 py-1.5 ${
-              isGuest 
-                ? 'bg-green-600 text-white' 
-                : 'bg-white border border-gray-200 shadow-sm'
+              isGuest
+                ? 'bg-green-600 text-white'
+                : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 shadow-sm'
             }`}>
-              <p className={`text-sm leading-relaxed ${isGuest ? 'text-white' : 'text-gray-700'}`}>
+              <p className={`text-sm leading-relaxed ${isGuest ? 'text-white' : 'text-gray-700 dark:text-gray-200'}`}>
                 {msg.message}
               </p>
               {msg.attachmentUrl && (
@@ -116,7 +116,7 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
                 </a>
               )}
             </div>
-            <p className={`text-[10px] text-gray-400 mt-0.5 ${isGuest ? 'text-right mr-2' : 'ml-2'}`}>
+            <p className={`text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 ${isGuest ? 'text-right mr-2' : 'ml-2'}`}>
               {formatTime(msg.createdAt)}
               {isGuest && !msg.isRead && (
                 <span className="ml-1">✓</span>
@@ -132,17 +132,17 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
   }
 
   return (
-    <div className="bg-gray-100 rounded-lg border border-gray-300 p-4 sm:p-6">
+    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700 p-4 sm:p-6">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">{t('messages')}</h2>
-        <span className="text-xs text-gray-500">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('messages')}</h2>
+        <span className="text-xs text-gray-500 dark:text-gray-400">
           {messages.length !== 1 ? t('messageCount', { count: messages.length }) : t('messageCountSingular', { count: messages.length })}
         </span>
       </div>
 
-      <div ref={messagesContainerRef} className="border border-gray-200 rounded-lg bg-white h-[400px] lg:h-[450px] overflow-y-auto">
+      <div ref={messagesContainerRef} className="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 h-[400px] lg:h-[450px] overflow-y-auto">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400 p-4">
+          <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 p-4">
             <svg className="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
@@ -158,14 +158,14 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
 
       {showQuickActions && messages.length === 0 && (
         <div className="mt-2 px-1">
-          <p className="text-[10px] text-gray-400 mb-1.5 uppercase tracking-wider">{t('quickMessages')}</p>
+          <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-1.5 uppercase tracking-wider">{t('quickMessages')}</p>
           <div className="flex flex-wrap gap-1.5">
             {[t('quickThankYou'), t('quickPickupTime'), t('quickDocsUploaded'), t('quickPickupLocation'), t('quickExtendRental')].map((action) => (
               <button
                 key={action}
                 onClick={() => handleQuickAction(action)}
                 disabled={sending}
-                className="text-xs px-2.5 py-1 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors text-gray-700 disabled:opacity-50"
+                className="text-xs px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors text-gray-700 dark:text-gray-300 disabled:opacity-50"
               >
                 {action}
               </button>
@@ -188,7 +188,7 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
               }
             }}
             placeholder={t('typeMessage')}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-1 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
+            className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-1 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
             disabled={sending}
           />
         </div>
@@ -196,10 +196,10 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploadingFile}
-          className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+          className="p-2 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
           title={t('attachFile')}
         >
-          <Paperclip className="w-4 h-4 text-gray-500" />
+          <Paperclip className="w-4 h-4 text-gray-500 dark:text-gray-400" />
         </button>
         
         <button
@@ -216,8 +216,8 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
       </div>
 
       {error && (
-        <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-600">{error}</p>
+        <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         </div>
       )}
 

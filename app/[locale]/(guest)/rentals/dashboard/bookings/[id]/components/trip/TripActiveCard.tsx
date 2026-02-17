@@ -223,23 +223,9 @@ export function TripActiveCard({ booking, onExtend }: TripActiveCardProps) {
             className="w-full h-44 sm:h-52 object-cover object-[center_35%]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-          {/* Duration badge on photo */}
+          {/* Trip in Progress badge on photo */}
           <div className="absolute top-3 right-3 bg-green-600 rounded-full px-3 py-1 shadow-lg">
-            <p className="text-white text-xs font-semibold">{duration}</p>
-          </div>
-          {/* Car info on photo */}
-          <div className="absolute bottom-3 left-4 right-4">
-            <div className="flex items-end justify-between">
-              <div>
-                <h2 className="text-white text-lg font-bold drop-shadow-md">
-                  {booking.car.year} {booking.car.make}
-                </h2>
-                <p className="text-white/80 text-sm drop-shadow-md">{booking.car.model}</p>
-              </div>
-              <code className="text-white/90 text-xs font-mono bg-white/20 backdrop-blur-sm px-2 py-1 rounded">
-                {booking.bookingCode}
-              </code>
-            </div>
+            <p className="text-white text-xs font-semibold">Trip in Progress</p>
           </div>
         </div>
       )}
@@ -253,38 +239,31 @@ export function TripActiveCard({ booking, onExtend }: TripActiveCardProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="text-sm font-semibold text-white whitespace-nowrap">Trip in Progress</h3>
+            <div className="min-w-0 leading-tight">
+              <h3 className="text-sm font-semibold text-white whitespace-nowrap">{booking.car.year} {booking.car.make}</h3>
+              <p className="text-xs text-green-100 -mt-0.5">{booking.car.model}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {canExtend && onExtend && (
-              <button
-                onClick={onExtend}
-                className="flex items-center gap-1 px-2.5 py-1 bg-white/20 hover:bg-white/30 rounded-full transition-colors"
-              >
-                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-xs font-medium text-white">Extend</span>
-              </button>
-            )}
-            <span className="text-xs text-green-100">
-              Started at {tripStartTime}
-            </span>
-          </div>
+          <button
+            onClick={() => window.location.href = 'tel:602-845-9758'}
+            className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg border border-white/50 text-white leading-none hover:bg-red-700 transition-colors bg-red-600"
+          >
+            Emergency
+          </button>
         </div>
       </div>
 
       {/* Content */}
-      <div className="px-4 py-3 sm:p-6 dark:bg-gray-900 space-y-3 sm:space-y-4">
+      <div className="px-4 py-3 sm:px-6 sm:py-4 dark:bg-gray-900 space-y-3">
         {/* 3-row layout matching TripStartCard */}
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
-            {/* Row 1: Time remaining + mileage */}
-            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{timeRemaining}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{booking.startMileage ? `${booking.startMileage.toLocaleString()} mi start` : 'Trip active'}</p>
+            {/* Row 1: Days booked + time remaining */}
+            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{booking.numberOfDays} day{booking.numberOfDays !== 1 ? 's' : ''} booked</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{timeRemaining}</p>
             {/* Row 2: Pickup label + date + late badge */}
             <div className="flex items-baseline gap-1.5 mt-3">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Pickup</p>
+              <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">Pickup</p>
               {isLatePickup && (
                 <span className="relative inline-block group cursor-help" style={{ position: 'relative', top: '-2px' }}>
                   <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 leading-none">
@@ -299,11 +278,11 @@ export function TripActiveCard({ booking, onExtend }: TripActiveCardProps) {
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{pickupTime}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 -mt-0.5">{pickupTime}</p>
             {/* Row 3: Pickup location — use car address (actual vehicle location) */}
-            <p className="text-sm text-gray-900 dark:text-gray-100 mt-3">{booking.car?.address || booking.pickupLocation || 'Phoenix, AZ'}</p>
+            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 mt-3">{booking.car?.address || booking.pickupLocation || 'Phoenix, AZ'}</p>
             {booking.car?.city && (
-              <p className="text-xs text-gray-500 dark:text-gray-400">{booking.car.city}, {booking.car.state} {booking.car.zipCode}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 -mt-0.5">{booking.car.city}, {booking.car.state} {booking.car.zipCode}</p>
             )}
           </div>
           <div className="flex-shrink-0">
@@ -312,16 +291,25 @@ export function TripActiveCard({ booking, onExtend }: TripActiveCardProps) {
             </svg>
           </div>
           <div className="flex-1 min-w-0 pl-4">
-            {/* Row 1: Included miles */}
-            <p className="text-xs font-semibold text-green-600 dark:text-green-400">{booking.startMileage ? `${(booking.numberOfDays * 200).toLocaleString()} mi included` : 'Active'}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{booking.numberOfDays} day{booking.numberOfDays !== 1 ? 's' : ''} booked</p>
-            {/* Row 2: Return by label + date */}
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-3">Return By</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{returnTime}</p>
+            {/* Row 1: Booking code + mileage */}
+            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{booking.bookingCode}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{booking.startMileage ? `${booking.startMileage.toLocaleString()} mi start` : 'Trip active'}</p>
+            {/* Row 2: Return by label + date + extend badge */}
+            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide mt-3">Return By</p>
+            <div className="flex items-baseline gap-1.5 -mt-0.5">
+              <p className="text-xs text-gray-500 dark:text-gray-400">{returnTime}</p>
+              {canExtend && onExtend && (
+                <span className="relative inline-block cursor-pointer" style={{ position: 'relative', top: '-2px' }} onClick={onExtend}>
+                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 leading-none hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    Extend
+                  </span>
+                </span>
+              )}
+            </div>
             {/* Row 3: Drop-off location — use car address (return to vehicle location) */}
-            <p className="text-sm text-gray-900 dark:text-gray-100 mt-3">{booking.car?.address || booking.dropoffLocation || booking.pickupLocation || 'Phoenix, AZ'}</p>
+            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 mt-3">{booking.car?.address || booking.dropoffLocation || booking.pickupLocation || 'Phoenix, AZ'}</p>
             {booking.car?.city && (
-              <p className="text-xs text-gray-500 dark:text-gray-400">{booking.car.city}, {booking.car.state} {booking.car.zipCode}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 -mt-0.5">{booking.car.city}, {booking.car.state} {booking.car.zipCode}</p>
             )}
           </div>
         </div>
@@ -494,7 +482,7 @@ export function TripActiveCard({ booking, onExtend }: TripActiveCardProps) {
         )}
 
         {/* Support Contact & Footer */}
-        <div className="pt-3 border-t border-gray-100 dark:border-gray-800 space-y-1.5">
+        <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
           <p className="text-center text-[10px] text-gray-400 dark:text-gray-500">
             Need help? <a href="tel:602-845-9758" className="font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">602-845-9758</a>
           </p>

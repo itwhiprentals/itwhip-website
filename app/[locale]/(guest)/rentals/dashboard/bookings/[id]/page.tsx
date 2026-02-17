@@ -403,7 +403,7 @@ export default function BookingDetailsPage() {
   const isTripActive = !!booking.tripStartedAt && !booking.tripEndedAt
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className={`bg-gray-50 dark:bg-gray-950 ${isTripActive ? 'min-h-[calc(100vh-2rem)] pb-6' : 'min-h-screen'}`}>
       {/* Toast Notification */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg animate-in slide-in-from-top-2 ${
@@ -417,7 +417,7 @@ export default function BookingDetailsPage() {
         </div>
       )}
 
-      <div className={`max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 ${isPreTripReady || isTripActive ? 'py-2 sm:py-3' : 'py-3 sm:py-6'}`}>
+      <div className={`max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 ${isTripActive ? 'pt-2 pb-1 sm:pt-3 sm:pb-2' : isPreTripReady ? 'py-2 sm:py-3' : 'py-3 sm:py-6'}`}>
         {/* Header */}
         <div className={`${isPreTripReady || isTripActive ? 'mb-1' : 'mb-4 sm:mb-6'} ${isPreTripReady || isTripActive ? 'mt-4' : 'mt-4 sm:mt-2'}`}>
           <div className={`flex items-center justify-between ${isPreTripReady || isTripActive ? 'mb-1' : 'mb-3'}`}>
@@ -618,20 +618,28 @@ export default function BookingDetailsPage() {
 
         {/* Main Content Grid — hidden entirely during active trip except messages */}
         {isTripActive ? (
-          /* Active trip: only show messages */
+          /* Active trip: collapsible messages */
           booking.status !== 'CANCELLED' && (
-            <div className="mt-6">
-              <MessagesPanel
-                bookingId={bookingId}
-                messages={messages}
-                loading={messagesLoading}
-                sending={messageSending}
-                error={messageError}
-                onSendMessage={sendMessage}
-                onFileUpload={handleMessageFileUpload}
-                uploadingFile={messageUploading}
-              />
-            </div>
+            <details className="mt-3 group">
+              <summary className="flex items-center justify-between cursor-pointer bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2.5 select-none">
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Messages</span>
+                <svg className="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <div className="mt-2">
+                <MessagesPanel
+                  bookingId={bookingId}
+                  messages={messages}
+                  loading={messagesLoading}
+                  sending={messageSending}
+                  error={messageError}
+                  onSendMessage={sendMessage}
+                  onFileUpload={handleMessageFileUpload}
+                  uploadingFile={messageUploading}
+                />
+              </div>
+            </details>
           )
         ) : (
           <div className={`grid gap-6 mt-6 ${isPreTripReady ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
