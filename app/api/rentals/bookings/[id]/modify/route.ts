@@ -60,6 +60,7 @@ async function getBookingWithAuth(request: NextRequest, bookingId: string) {
       endTime: true,
       bookingCode: true,
       carId: true,
+      tripStartedAt: true,
       refuelService: true,
       additionalDriver: true,
       extraMilesPackage: true,
@@ -103,8 +104,8 @@ async function getBookingWithAuth(request: NextRequest, bookingId: string) {
     return { error: 'Unauthorized', status: 403 }
   }
 
-  if (booking.status !== 'PENDING' && booking.status !== 'CONFIRMED') {
-    return { error: `Can only modify PENDING or CONFIRMED bookings. Current status: ${booking.status}`, status: 400 }
+  if (!['PENDING', 'CONFIRMED', 'ACTIVE'].includes(booking.status)) {
+    return { error: `Cannot modify booking with status: ${booking.status}`, status: 400 }
   }
 
   return { booking }
@@ -179,10 +180,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'End date must be after start date' }, { status: 400 })
     }
 
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    if (startDate < today) {
-      return NextResponse.json({ error: 'Start date cannot be in the past' }, { status: 400 })
+    // Skip past-date check for active trips (start date is already in the past)
+    const isActiveTrip = booking.status === 'ACTIVE' || !!booking.tripStartedAt
+    if (!isActiveTrip) {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      if (startDate < today) {
+        return NextResponse.json({ error: 'Start date cannot be in the past' }, { status: 400 })
+      }
     }
 
     const available = await checkAvailability(booking.carId, startDate, endDate, booking.id)
@@ -229,10 +234,32 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'End date must be after start date' }, { status: 400 })
     }
 
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    if (startDate < today) {
-      return NextResponse.json({ error: 'Start date cannot be in the past' }, { status: 400 })
+    // Active trip guard: only allow end-date extension
+    const isActiveTrip = booking.status === 'ACTIVE' || !!booking.tripStartedAt
+
+    // Skip past-date check for active trips (start date is already in the past)
+    if (!isActiveTrip) {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      if (startDate < today) {
+        return NextResponse.json({ error: 'Start date cannot be in the past' }, { status: 400 })
+      }
+    }
+    if (isActiveTrip) {
+      const currentStart = new Date(booking.startDate).toISOString().split('T')[0]
+      if (startDateStr !== currentStart) {
+        return NextResponse.json({ error: 'Cannot change start date during active trip' }, { status: 400 })
+      }
+      const currentEnd = new Date(booking.endDate).toISOString().split('T')[0]
+      if (endDateStr <= currentEnd) {
+        return NextResponse.json({ error: 'Can only extend end date during active trip' }, { status: 400 })
+      }
+      if (insuranceTier && insuranceTier !== (booking.insuranceSelection || 'BASIC')) {
+        return NextResponse.json({ error: 'Cannot change insurance during active trip' }, { status: 400 })
+      }
+      if (newDeliveryType && newDeliveryType !== (booking.pickupType || 'host')) {
+        return NextResponse.json({ error: 'Cannot change delivery during active trip' }, { status: 400 })
+      }
     }
 
     // Check if dates changed

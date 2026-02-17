@@ -606,7 +606,7 @@ export default function BookingDetailsPage() {
 
         {booking.tripStartedAt && !booking.tripEndedAt && (
           <div className="mt-6">
-            <TripActiveCard booking={booking} />
+            <TripActiveCard booking={booking} onExtend={() => setShowModifyModal(true)} />
           </div>
         )}
 
@@ -691,6 +691,7 @@ export default function BookingDetailsPage() {
             loadBooking()
             setShowModifyModal(false)
           }}
+          extendOnly={isTripActive}
         />
 
         {/* Cancellation Dialog */}

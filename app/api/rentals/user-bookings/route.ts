@@ -179,6 +179,8 @@ export async function GET(request: NextRequest) {
           'state', c.state,
           'zipCode', c."zipCode",
           'estimatedValue', c."estimatedValue",
+          'latitude', c.latitude,
+          'longitude', c.longitude,
           'photos', COALESCE(
             (SELECT json_agg(json_build_object(
               'id', cp.id,
@@ -334,7 +336,9 @@ export async function GET(request: NextRequest) {
           city: booking.car.city,
           state: booking.car.state,
           zipCode: booking.car.zipCode,
-          estimatedValue: booking.car.estimatedValue ? parseFloat(booking.car.estimatedValue) : null
+          estimatedValue: booking.car.estimatedValue ? parseFloat(booking.car.estimatedValue) : null,
+          latitude: booking.car.latitude ? parseFloat(booking.car.latitude) : null,
+          longitude: booking.car.longitude ? parseFloat(booking.car.longitude) : null
         },
         host: booking.host,
         guestName: booking.guestName,

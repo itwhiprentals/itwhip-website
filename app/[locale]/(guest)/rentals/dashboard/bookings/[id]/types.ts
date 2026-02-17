@@ -23,6 +23,8 @@ export interface Booking {
       city?: string
       state?: string
       zipCode?: string
+      latitude?: number | null
+      longitude?: number | null
       dailyRate?: number
       rating?: number
       totalTrips?: number

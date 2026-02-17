@@ -54,6 +54,7 @@ interface ModifyBookingSheetProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
+  extendOnly?: boolean
 }
 
 // ============================================================================
@@ -96,7 +97,8 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
   booking,
   isOpen,
   onClose,
-  onSuccess
+  onSuccess,
+  extendOnly = false
 }) => {
   const t = useTranslations('ModifyBooking')
   // Dates
@@ -130,7 +132,14 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
   useEffect(() => {
     if (isOpen) {
       setNewStartDate(new Date(booking.startDate))
-      setNewEndDate(new Date(booking.endDate))
+      if (extendOnly) {
+        // Pre-set to current end + 1 day for extension
+        const next = new Date(booking.endDate)
+        next.setDate(next.getDate() + 1)
+        setNewEndDate(next)
+      } else {
+        setNewEndDate(new Date(booking.endDate))
+      }
       setInsuranceTier(booking.insuranceSelection || booking.insuranceType || 'BASIC')
       setAddOns({
         refuelService: booking.refuelService || false,
@@ -143,7 +152,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
       setError(null)
       setIsAvailable(null)
     }
-  }, [isOpen, booking])
+  }, [isOpen, booking, extendOnly])
 
   // Calculate days
   const days = useMemo(() => {
@@ -347,8 +356,8 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
     <BottomSheet
       isOpen={isOpen}
       onClose={onClose}
-      title={t('title')}
-      subtitle={t('subtitle')}
+      title={extendOnly ? 'Extend Trip' : t('title')}
+      subtitle={extendOnly ? 'Choose a new return date' : t('subtitle')}
       size="large"
       footer={
         <div className="flex gap-2">
@@ -389,30 +398,37 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
           </div>
 
           {/* Date pickers */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className={`grid gap-3 ${extendOnly ? 'grid-cols-1' : 'grid-cols-2'}`}>
+            {!extendOnly && (
+              <div>
+                <label className="text-[10px] font-medium text-gray-600 mb-1 block">{t('pickup')}</label>
+                <DatePicker
+                  selected={newStartDate}
+                  onChange={(date: Date | null) => {
+                    setNewStartDate(date)
+                    if (date && newEndDate && date >= newEndDate) {
+                      const next = new Date(date)
+                      next.setDate(next.getDate() + 1)
+                      setNewEndDate(next)
+                    }
+                  }}
+                  minDate={today}
+                  dateFormat="MMM d, yyyy"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            )}
             <div>
-              <label className="text-[10px] font-medium text-gray-600 mb-1 block">{t('pickup')}</label>
-              <DatePicker
-                selected={newStartDate}
-                onChange={(date: Date | null) => {
-                  setNewStartDate(date)
-                  if (date && newEndDate && date >= newEndDate) {
-                    const next = new Date(date)
-                    next.setDate(next.getDate() + 1)
-                    setNewEndDate(next)
-                  }
-                }}
-                minDate={today}
-                dateFormat="MMM d, yyyy"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="text-[10px] font-medium text-gray-600 mb-1 block">{t('return')}</label>
+              <label className="text-[10px] font-medium text-gray-600 mb-1 block">
+                {extendOnly ? 'New Return Date' : t('return')}
+              </label>
               <DatePicker
                 selected={newEndDate}
                 onChange={(date: Date | null) => setNewEndDate(date)}
-                minDate={newStartDate ? new Date(newStartDate.getTime() + 86400000) : today}
+                minDate={extendOnly
+                  ? (() => { const d = new Date(booking.endDate); d.setDate(d.getDate() + 1); return d })()
+                  : (newStartDate ? new Date(newStartDate.getTime() + 86400000) : today)
+                }
                 dateFormat="MMM d, yyyy"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
@@ -434,9 +450,9 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
         </div>
 
         {/* ================================================================
-            SECTION 2: INSURANCE TIER
+            SECTION 2: INSURANCE TIER (hidden in extend-only mode)
             ================================================================ */}
-        <div>
+        {!extendOnly && <div>
           <h3 className="text-sm font-semibold text-gray-900 mb-2">{t('insuranceProtection')}</h3>
 
           {loadingQuotes ? (
@@ -504,12 +520,12 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
               })}
             </div>
           )}
-        </div>
+        </div>}
 
         {/* ================================================================
-            SECTION 3: DELIVERY
+            SECTION 3: DELIVERY (hidden in extend-only mode)
             ================================================================ */}
-        <div>
+        {!extendOnly && <div>
           <h3 className="text-sm font-semibold text-gray-900 mb-2">{t('deliveryMethod')}</h3>
 
           <div className="grid grid-cols-2 gap-1.5">
@@ -562,12 +578,12 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
               />
             </div>
           )}
-        </div>
+        </div>}
 
         {/* ================================================================
-            SECTION 4: ENHANCEMENTS / ADD-ONS
+            SECTION 4: ENHANCEMENTS / ADD-ONS (hidden in extend-only mode)
             ================================================================ */}
-        <div>
+        {!extendOnly && <div>
           <h3 className="text-sm font-semibold text-gray-900 mb-2">{t('enhancements')}</h3>
 
           <div className="space-y-1.5">
@@ -610,10 +626,10 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
               )
             })}
           </div>
-        </div>
+        </div>}
 
         {/* ================================================================
-            SECTION 4: PRICE SUMMARY
+            SECTION 5: PRICE SUMMARY
             ================================================================ */}
         {newPricing && (
           <div>
