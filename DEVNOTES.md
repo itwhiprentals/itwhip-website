@@ -2,6 +2,53 @@
 
 ## In Progress (February 2026)
 
+### Twilio SMS + IVR Phone System - Complete ✅ (Feb 18)
+**Full Twilio integration: automated SMS notifications + IVR phone system + fleet admin panel**
+
+Two Twilio numbers:
+- +1 602 609 2577 (Phoenix local) — Outbound SMS, inbound SMS handler
+- +1 855 703 0806 (Toll-free) — IVR phone system
+
+**SMS Notifications (7 triggers):**
+- Booking confirmed (guest + host), Trip started, Trip ended, Booking cancelled
+- Guest approaching host (GPS proximity), Claim filed, Missed in-app message
+- Templates in EN/ES/FR, respects guest smsNotifications preference
+- Fire-and-forget pattern matching existing email notifications
+- 5-minute dedup prevents spam, TCPA opt-out (STOP) auto-handled
+
+**IVR Phone System:**
+- 3-language selection (English/Spanish/French) with Polly voices
+- Caller ID lookup → active trip detection → priority emergency flow
+- Main menu: Booking support (code lookup, host proxy call, pickup details), Insurance & claims, Speak with someone
+- Emergency flow: 911 warning, roadside info SMS, voicemail
+- After-hours voicemail with transcription (M-F 8am-8pm MST)
+- Every prompt promotes Choé AI assistant
+
+**Inbound SMS Handler:**
+- Routes texts to active booking message threads
+- Auto-reply with booking link or Choé redirect
+
+**Service Layer (app/lib/twilio/):**
+- client.ts, sms.ts, sms-templates.ts, sms-triggers.ts, twiml.ts
+- caller-lookup.ts, phone.ts, verify-signature.ts
+
+**Fleet Admin (/fleet/communications):**
+- SMS logs table with type/status badges, booking links, search, filters
+- Call logs table with caller type, voicemail audio player, transcription
+- Stats cards (total, delivered, failed, inbound, voicemails, avg duration)
+
+**Webhook endpoints:**
+- POST /api/webhooks/twilio/sms — Inbound SMS
+- POST /api/webhooks/twilio/sms-status — Delivery status callbacks
+- POST /api/webhooks/twilio/voice — IVR entry + language selection
+- POST /api/webhooks/twilio/voice/menu — All DTMF menu routing
+- POST /api/webhooks/twilio/voice/voicemail — Recording callback
+- POST /api/webhooks/twilio/voice/transcription — Transcription callback
+
+**Post-deploy:** Configure Twilio console webhook URLs for both numbers.
+
+---
+
 ### In-Chat Checkout Pipeline (Choé) - Phases 1-4 Complete ✅ (Feb 7)
 **Full booking pipeline inside Choé AI chat — no redirects**
 
@@ -96,6 +143,27 @@ Slug Reset:
 ---
 
 ## Recent Fixes (February 2026)
+
+### Full Blog i18n — 16 Posts Translated to ES/FR + SEO Fixes - DEPLOYED ✅ (Feb 17)
+**All 16 blog posts translated to Spanish and French with locale-aware SEO**
+
+Architecture:
+- `app/lib/blog.ts` — Locale-aware helpers (getLocalizedPost, getLocalizedPosts, getLocalizedPostBySlug) with English fallback
+- Translation files: `content/translations/blog-{es,fr}-part{1,2}.ts` — full HTML content translations per slug
+- Merge files: `content/translations/blog-{es,fr}.ts` — spread from part files
+
+Blog Page Refactors:
+- Split `page.tsx` into server wrapper + `BlogListingClient.tsx` to keep translation data off client bundle
+- `BlogPostClient.tsx` — 25 hardcoded English strings replaced with `useTranslations('BlogPost')`
+- Locale-aware date formatting via `useFormatter()` throughout blog pages
+
+SEO Fixes:
+- JSON-LD schema: dynamic `inLanguage` (en-US, es-419, fr-FR) instead of hardcoded en-US
+- Locale-aware canonical URLs and alternates in metadata
+- Blog layout schema updated with locale-aware URLs
+- Open Graph locale tags per language
+
+Translation Keys: 25 keys added to BlogPost namespace in en/es/fr message files
 
 ### Handoff Flow Redesign + Trip Start UX Overhaul - DEPLOYED ✅ (Feb 16)
 **Guest live GPS tracking, notify host button, redesigned trip start inspection components**
