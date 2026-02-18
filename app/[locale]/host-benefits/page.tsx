@@ -84,382 +84,104 @@ export default function HostBenefitsPage() {
     }
   ]
 
-  // Comprehensive benefits organized by category - UPDATED TO MATCH TIER SYSTEM
+  // Translated benefit helper
+  const tBenefit = (key: string) => ({
+    title: t(`${key}_title`),
+    description: t(`${key}_desc`),
+    highlight: t(`${key}_highlight`),
+    details: Array.from({length: 4}, (_, i) => t(`${key}_d${i}`))
+  })
+
+  // Comprehensive benefits organized by category
   const benefitCategories = [
     {
       id: 'earnings',
-      name: 'Earnings & Payments',
+      name: t('cat_earnings'),
       icon: IoCashOutline,
       color: 'green',
       benefits: [
-        {
-          title: '40-90% Revenue Share',
-          description: 'Keep more of your rental income based on your insurance tier',
-          details: [
-            '40% PLATFORM COVERAGE — We provide insurance',
-            '75% P2P COVERAGE — You bring P2P insurance',
-            '90% COMMERCIAL COVERAGE — You bring commercial insurance',
-            'Your tier, your choice'
-          ],
-          icon: IoLayersOutline,
-          highlight: 'You control your earnings'
-        },
-        {
-          title: '48-Hour Fast Payments',
-          description: 'Get paid within 2 days of trip completion - fastest in the industry',
-          details: [
-            'Direct deposit to your bank',
-            'No payment processing fees',
-            'Track payments in real-time',
-            'Instant payouts for Top Hosts'
-          ],
-          icon: IoFlashOutline,
-          highlight: '10x faster than competitors'
-        },
-        {
-          title: '$600-10,000+ Monthly Earnings',
-          description: 'Realistic earnings based on vehicle type and rental days',
-          details: [
-            'Economy: $600-1,100/month',
-            'Standard: $900-1,500/month',
-            'Luxury: $1,500-3,000/month',
-            'Exotic: $5,000-10,000+/month'
-          ],
-          icon: IoWalletOutline,
-          highlight: 'Based on 15-20 rental days'
-        },
-        {
-          title: 'Smart Pricing Tools',
-          description: 'Optimize your pricing to maximize revenue',
-          details: [
-            'Market demand analysis',
-            'Competitor rate tracking',
-            'Seasonal adjustments',
-            'Custom pricing rules'
-          ],
-          icon: IoAnalyticsOutline,
-          highlight: 'Maximize your earnings'
-        }
+        { ...tBenefit('earn_0'), icon: IoLayersOutline },
+        { ...tBenefit('earn_1'), icon: IoFlashOutline },
+        { ...tBenefit('earn_2'), icon: IoWalletOutline },
+        { ...tBenefit('earn_3'), icon: IoAnalyticsOutline },
       ]
     },
     {
       id: 'protection',
-      name: 'Protection & Insurance',
+      name: t('cat_protection'),
       icon: IoShieldCheckmarkOutline,
       color: 'blue',
       benefits: [
-        {
-          title: '$1M Liability Coverage',
-          description: 'Comprehensive protection included on every rental',
-          details: [
-            '$1M liability on ALL tiers',
-            'Coverage included in platform fee',
-            'No monthly insurance payments',
-            'Active during every trip'
-          ],
-          icon: IoShieldCheckmarkOutline,
-          highlight: 'Every tier protected'
-        },
-        {
-          title: 'Tiered Deductibles',
-          description: 'Lower deductibles when you bring your own insurance',
-          details: [
-            'PLATFORM COVERAGE: $2,500 deductible',
-            'P2P COVERAGE: $1,500 deductible',
-            'COMMERCIAL COVERAGE: $1,000 deductible',
-            'Bring insurance, lower your risk'
-          ],
-          icon: IoLockClosedOutline,
-          highlight: 'You choose your risk level'
-        },
-        {
-          title: 'Physical Damage Protection',
-          description: 'Your vehicle is protected against damage during rentals',
-          details: [
-            'Collision and comprehensive',
-            'Loss of use compensation ($30-50/day)',
-            'Diminished value coverage available',
-            'Preferred repair network'
-          ],
-          icon: IoConstructOutline,
-          highlight: 'Complete peace of mind'
-        },
-        {
-          title: '48-72 Hour Claims Resolution',
-          description: 'Fast FNOL claims processing when you need it most',
-          details: [
-            'Dedicated claims team',
-            'Preferred repair network',
-            'Direct billing to shops',
-            'Rental credit during repairs'
-          ],
-          icon: IoTimerOutline,
-          highlight: 'Industry-leading speed'
-        }
+        { ...tBenefit('prot_0'), icon: IoShieldCheckmarkOutline },
+        { ...tBenefit('prot_1'), icon: IoLockClosedOutline },
+        { ...tBenefit('prot_2'), icon: IoConstructOutline },
+        { ...tBenefit('prot_3'), icon: IoTimerOutline },
       ]
     },
     {
       id: 'taxes',
-      name: 'Tax Benefits',
+      name: t('cat_taxes'),
       icon: IoReceiptOutline,
       color: 'purple',
       benefits: [
-        {
-          title: '$8,000-25,000 Annual Tax Savings',
-          description: 'Turn your car into a tax-advantaged business',
-          details: [
-            'Vehicle depreciation ($5-15K/year)',
-            'Operating expenses deductible',
-            'Mileage deduction ($0.67/mile)',
-            'Business expense write-offs'
-          ],
-          icon: IoCalculatorOutline,
-          highlight: 'Maximize deductions'
-        },
-        {
-          title: 'Automated Tax Documentation',
-          description: 'We handle all the paperwork for tax season',
-          details: [
-            'Automatic 1099 generation',
-            'Expense categorization',
-            'Mileage tracking',
-            'QuickBooks-ready reports'
-          ],
-          icon: IoDocumentTextOutline,
-          highlight: 'Simplify tax filing'
-        },
-        {
-          title: 'Business Expense Deductions',
-          description: 'Deduct all car-related business expenses',
-          details: [
-            'Cleaning & detailing',
-            'Maintenance & repairs',
-            'Platform fees',
-            'Insurance & registration'
-          ],
-          icon: IoClipboardOutline,
-          highlight: '100% deductible'
-        }
+        { ...tBenefit('tax_0'), icon: IoCalculatorOutline },
+        { ...tBenefit('tax_1'), icon: IoDocumentTextOutline },
+        { ...tBenefit('tax_2'), icon: IoClipboardOutline },
       ]
     },
     {
       id: 'tools',
-      name: 'Technology & Tools',
+      name: t('cat_tools'),
       icon: IoSettingsOutline,
       color: 'indigo',
       benefits: [
-        {
-          title: 'Mileage Forensics™ Tracking',
-          description: 'Know exactly how your vehicle is being used',
-          details: [
-            'GPS-verified trip tracking',
-            'OBD-II odometer integration',
-            'Usage compliance verification',
-            'Insurance integrity reports'
-          ],
-          icon: IoSpeedometerOutline,
-          highlight: 'Fraud-proof tracking'
-        },
-        {
-          title: 'Guest Verification System',
-          description: 'Multi-point screening ensures quality renters',
-          details: [
-            'Government ID verification',
-            'Facial recognition matching',
-            'Driving record analysis',
-            'Background screening'
-          ],
-          icon: IoFingerPrintOutline,
-          highlight: 'Verified guests only'
-        },
-        {
-          title: 'ESG Impact Dashboard',
-          description: 'Track your environmental and social impact',
-          details: [
-            'Carbon offset tracking',
-            'Vehicle quality scoring',
-            'Sustainability metrics',
-            'Community impact stats'
-          ],
-          icon: IoLeafOutline,
-          highlight: 'Make a difference'
-        },
-        {
-          title: 'Smart Calendar Management',
-          description: 'Full control over your availability',
-          details: [
-            'Block dates instantly',
-            'Recurring blackouts',
-            'Minimum trip duration',
-            'Advance notice settings'
-          ],
-          icon: IoCalendarOutline,
-          highlight: 'You stay in control'
-        }
+        { ...tBenefit('tool_0'), icon: IoSpeedometerOutline },
+        { ...tBenefit('tool_1'), icon: IoFingerPrintOutline },
+        { ...tBenefit('tool_2'), icon: IoLeafOutline },
+        { ...tBenefit('tool_3'), icon: IoCalendarOutline },
       ]
     },
     {
       id: 'support',
-      name: 'Support & Service',
+      name: t('cat_support'),
       icon: IoPeopleOutline,
       color: 'orange',
       benefits: [
-        {
-          title: 'We Handle Guest Communication',
-          description: 'Focus on your life while we manage renters',
-          details: [
-            'All guest questions answered',
-            'Booking coordination',
-            'Issue resolution',
-            'Check-in/out management'
-          ],
-          icon: IoMailOutline,
-          highlight: 'Hands-off hosting'
-        },
-        {
-          title: 'Priority Host Support',
-          description: 'Get help when you need it',
-          details: [
-            '1-2 hour typical response',
-            'Dedicated host support team',
-            'In-app messaging',
-            'Phone support for urgent issues'
-          ],
-          icon: IoNotificationsOutline,
-          highlight: 'Real human support'
-        },
-        {
-          title: 'Host Resources & Training',
-          description: 'Learn how to maximize your earnings',
-          details: [
-            'Best practices guide',
-            'Pricing optimization tips',
-            'Photo guidelines',
-            'Success stories'
-          ],
-          icon: IoSchoolOutline,
-          highlight: 'Set up for success'
-        }
+        { ...tBenefit('supp_0'), icon: IoMailOutline },
+        { ...tBenefit('supp_1'), icon: IoNotificationsOutline },
+        { ...tBenefit('supp_2'), icon: IoSchoolOutline },
       ]
     },
     {
       id: 'rewards',
-      name: 'Rewards & Growth',
+      name: t('cat_rewards'),
       icon: IoTrophyOutline,
       color: 'yellow',
       benefits: [
-        {
-          title: 'Host Achievement Tiers',
-          description: 'Unlock rewards as you grow',
-          details: [
-            'Rising Host (5+ trips): Verified badge',
-            'Established Host (15+ trips): Featured placement',
-            'Top Host (30+ trips): Priority support',
-            'Elite Fleet (5+ vehicles): Dedicated manager'
-          ],
-          icon: IoDiamondOutline,
-          highlight: 'Grow with us'
-        },
-        {
-          title: '$250 Referral Bonuses',
-          description: 'Earn for every new host you bring to the platform',
-          details: [
-            '$250 per qualified host',
-            'No limit on referrals',
-            'Bonus for fleet referrals',
-            'Monthly referral contests'
-          ],
-          icon: IoPeopleOutline,
-          highlight: 'Unlimited earnings'
-        },
-        {
-          title: 'Priority Placement',
-          description: 'Top hosts get premium visibility',
-          details: [
-            'Homepage features',
-            'Search result priority',
-            'Badge display',
-            'Marketing inclusion'
-          ],
-          icon: IoStarOutline,
-          highlight: 'More bookings'
-        }
+        { ...tBenefit('rew_0'), icon: IoDiamondOutline },
+        { ...tBenefit('rew_1'), icon: IoPeopleOutline },
+        { ...tBenefit('rew_2'), icon: IoStarOutline },
       ]
     },
     {
       id: 'flexibility',
-      name: 'Flexibility & Control',
+      name: t('cat_flexibility'),
       icon: IoTimeOutline,
       color: 'teal',
       benefits: [
-        {
-          title: 'Multiple Key Exchange Options',
-          description: 'Convenient handoff methods for you and guests',
-          details: [
-            'Remote lockbox delivery',
-            'Keyless entry devices',
-            'Meet & greet service',
-            'Lockbox installation (free for Top Hosts)'
-          ],
-          icon: IoKeyOutline,
-          highlight: 'Convenient options'
-        },
-        {
-          title: 'Set Your Own Rules',
-          description: 'Control who rents and how',
-          details: [
-            'Minimum renter age',
-            'Trip duration limits',
-            'Mileage restrictions',
-            'No-smoking policy'
-          ],
-          icon: IoClipboardOutline,
-          highlight: 'Your car, your rules'
-        },
-        {
-          title: 'Use Your Car Anytime',
-          description: 'Block dates whenever you need your vehicle',
-          details: [
-            'Real-time availability updates',
-            'Recurring blackout dates',
-            'Last-minute blocking',
-            'Holiday scheduling'
-          ],
-          icon: IoCalendarOutline,
-          highlight: 'Always in control'
-        }
+        { ...tBenefit('flex_0'), icon: IoKeyOutline },
+        { ...tBenefit('flex_1'), icon: IoClipboardOutline },
+        { ...tBenefit('flex_2'), icon: IoCalendarOutline },
       ]
     },
     {
       id: 'arizona',
-      name: 'Arizona Compliance',
+      name: t('cat_arizona'),
       icon: IoGlobeOutline,
       color: 'amber',
       benefits: [
-        {
-          title: 'A.R.S. § 28-9601 Compliant',
-          description: 'Fully compliant with Arizona P2P car sharing laws',
-          details: [
-            'Licensed P2P platform',
-            'Proper insurance structure',
-            'Liability protections',
-            'Motor vehicle compliance'
-          ],
-          icon: IoDocumentTextOutline,
-          highlight: 'Legal & protected'
-        },
-        {
-          title: 'Transaction Privilege Tax',
-          description: 'We handle Arizona TPT requirements',
-          details: [
-            'Automatic tax collection',
-            'Proper remittance',
-            'Documentation provided',
-            'Audit-ready records'
-          ],
-          icon: IoReceiptOutline,
-          highlight: 'Hassle-free compliance'
-        }
+        { ...tBenefit('az_0'), icon: IoDocumentTextOutline },
+        { ...tBenefit('az_1'), icon: IoReceiptOutline },
       ]
     }
   ]
@@ -474,12 +196,12 @@ export default function HostBenefitsPage() {
 
   // Key statistics - UPDATED
   const keyStats = [
-    { value: '48hr', label: 'Payment Speed', detail: 'Industry fastest' },
-    { value: '$1M', label: 'Liability', detail: 'Every rental' },
-    { value: '90%', label: 'Max Earnings', detail: 'Commercial tier' },
-    { value: '40%', label: 'Min Earnings', detail: 'Platform tier' },
-    { value: '$8K+', label: 'Tax Savings', detail: 'Annual average' },
-    { value: 'AZ', label: 'Compliant', detail: 'A.R.S. § 28-9601' }
+    { value: '48hr', label: t('stat_0_label'), detail: t('stat_0_detail') },
+    { value: '$1M', label: t('stat_1_label'), detail: t('stat_1_detail') },
+    { value: '90%', label: t('stat_2_label'), detail: t('stat_2_detail') },
+    { value: '40%', label: t('stat_3_label'), detail: t('stat_3_detail') },
+    { value: '$8K+', label: t('stat_4_label'), detail: t('stat_4_detail') },
+    { value: 'AZ', label: t('stat_5_label'), detail: t('stat_5_detail') }
   ]
 
   return (

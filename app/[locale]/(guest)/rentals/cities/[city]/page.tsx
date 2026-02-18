@@ -291,14 +291,14 @@ function CityInfoSection({ cityName, cityData, carCount, t }: {
               {t('aboutTitle', { city: cityName })}
             </h2>
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2 sm:mb-3 leading-relaxed whitespace-pre-line">
-              {cityData.description}
+              {t(`${cityData.slug}_description`)}
             </p>
             {cityData.whyRent.length > 0 && (
               <ul className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed space-y-1">
-                {cityData.whyRent.map((reason: string, i: number) => (
+                {cityData.whyRent.map((_: string, i: number) => (
                   <li key={i} className="flex items-start gap-2">
                     <span className="text-amber-500 mt-0.5">•</span>
-                    <span>{reason}</span>
+                    <span>{t(`${cityData.slug}_whyRent${i}`)}</span>
                   </li>
                 ))}
               </ul>
@@ -391,12 +391,12 @@ function CityInfoSection({ cityName, cityData, carCount, t }: {
             {t('popularRoadTrips', { city: cityName })}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {cityData.popularRoutes.map((route: string, i: number) => (
+            {cityData.popularRoutes.map((_: string, i: number) => (
               <div
                 key={i}
                 className="px-2.5 py-2 sm:px-3 sm:py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-[10px] sm:text-xs text-amber-800 dark:text-amber-300 leading-snug"
               >
-                {route}
+                {t(`${cityData.slug}_route${i}`)}
               </div>
             ))}
           </div>
