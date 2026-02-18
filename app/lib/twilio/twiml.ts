@@ -13,7 +13,7 @@ type Lang = 'en' | 'es' | 'fr'
 // ─── Voice Config ──────────────────────────────────────────────────
 
 const VOICE: Record<Lang, { voice: string; language: string }> = {
-  en: { voice: 'Polly.Joanna', language: 'en-US' },
+  en: { voice: 'Polly.Danielle', language: 'en-US' },
   es: { voice: 'Polly.Mia', language: 'es-MX' },
   fr: { voice: 'Polly.Lea', language: 'fr-FR' },
 }
@@ -53,7 +53,7 @@ export function generateLanguageSelection(): string {
     timeout: GATHER_TIMEOUT,
   })
 
-  gather.say(VOICE.en, 'Thank you for calling ItWhip, Arizona\'s car rental marketplace.')
+  gather.say(VOICE.en, 'Thank you for calling ItWhip, Arizona\'s car rental marketplace. For faster service anytime, chat with Cho-ay, our A.I. assistant, at itwhip.com.')
   gather.pause({ length: 0.5 })
   gather.say(VOICE.en, 'For English, press 1.')
   gather.pause({ length: 0.3 })
@@ -102,12 +102,6 @@ export function generateMainMenu(lang: Lang = 'en'): string {
     timeout: GATHER_TIMEOUT,
   })
 
-  say(gather, t(lang,
-    'For faster service, try Cho-ay, our A.I. assistant, at itwhip.com.',
-    'Para servicio mas rapido, prueba Cho-ay, nuestro asistente de inteligencia artificial, en itwhip.com.',
-    'Pour un service plus rapide, essayez Cho-ay, notre assistant I.A., sur itwhip.com.'
-  ), lang)
-  gather.pause({ length: 0.3 })
   say(gather, t(lang,
     'For booking support, press 1. For insurance and claims, press 2. To speak with someone, press 3.',
     'Para soporte de reservas, oprima 1. Para seguros y reclamos, oprima 2. Para hablar con alguien, oprima 3.',
