@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useFormatter } from 'next-intl'
 import {
   IoCalendarOutline,
   IoLocationOutline,
@@ -91,6 +91,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   const router = useRouter()
   const searchParams = useSearchParams()
   const t = useTranslations('BookingWidget')
+  const format = useFormatter()
   const [isLoading, setIsLoading] = useState(false)
   const [showFloatingPrice, setShowFloatingPrice] = useState(false)
   const [dateError, setDateError] = useState<string | null>(null)
@@ -156,7 +157,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
       if (!available) {
         const formatted = conflictDates.slice(0, 3).map(d => {
           const [y, m, day] = d.split('-').map(Number)
-          return new Date(y, m - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          return format.dateTime(new Date(y, m - 1, day), { month: 'short', day: 'numeric' })
         }).join(', ')
         const extra = conflictDates.length > 3 ? ` +${conflictDates.length - 3} more` : ''
         setDateError(`${t('unavailableDatePrefix')} ${formatted}${extra}`)
@@ -354,13 +355,13 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   ]
 
   const getInsuranceTierName = (tier: string) => {
-    const names: { [key: string]: string } = {
-      MINIMUM: 'Minimum',
-      BASIC: 'Basic',
-      PREMIUM: 'Premium',
-      LUXURY: 'Luxury'
+    switch (tier) {
+      case 'MINIMUM': return t('insuranceTierMinimum')
+      case 'BASIC': return t('insuranceTierBasic')
+      case 'PREMIUM': return t('insuranceTierPremium')
+      case 'LUXURY': return t('insuranceTierLuxury')
+      default: return tier
     }
-    return names[tier] || tier
   }
 
   // ============================================================================
@@ -493,7 +494,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
             <div className="flex items-center justify-center gap-1.5 py-2 px-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
               <IoCalendarOutline className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
               <span className="text-xs font-medium text-amber-800 dark:text-amber-300">
-                {days > 1 ? t('daysSummaryPlural', { days }) : t('daysSummary', { days })} · {new Date(startDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {new Date(endDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                {days > 1 ? t('daysSummaryPlural', { days }) : t('daysSummary', { days })} · {format.dateTime(new Date(startDate + 'T00:00:00'), { month: 'short', day: 'numeric' })} – {format.dateTime(new Date(endDate + 'T00:00:00'), { month: 'short', day: 'numeric' })}
               </span>
             </div>
           )}

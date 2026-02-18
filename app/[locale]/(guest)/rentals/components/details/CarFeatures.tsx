@@ -89,10 +89,119 @@ const featureIcons: { [key: string]: any } = {
   'Tow Hitch': IoCarOutline
 }
 
+// Feature name translation key mapping (English DB values → translation keys)
+const featureKeyMap: Record<string, string> = {
+  'Bluetooth': 'featureBluetooth',
+  'Apple CarPlay': 'featureAppleCarPlay',
+  'Android Auto': 'featureAndroidAuto',
+  'WiFi Hotspot': 'featureWiFiHotspot',
+  'Wireless Charging': 'featureWirelessCharging',
+  'USB Ports': 'featureUSBPorts',
+  'USB Charger': 'featureUSBCharger',
+  'Backup Camera': 'featureBackupCamera',
+  'Blind Spot Monitoring': 'featureBlindSpotMonitoring',
+  'Lane Assist': 'featureLaneAssist',
+  'Adaptive Cruise Control': 'featureAdaptiveCruiseControl',
+  'Cruise Control': 'featureCruiseControl',
+  'Automatic Emergency Braking': 'featureAutomaticEmergencyBraking',
+  'Parking Sensors': 'featureParkingSensors',
+  'Heated Seats': 'featureHeatedSeats',
+  'Cooled Seats': 'featureCooledSeats',
+  'Ventilated Seats': 'featureVentilatedSeats',
+  'Leather Seats': 'featureLeatherSeats',
+  'Sunroof': 'featureSunroof',
+  'Moonroof': 'featureMoonroof',
+  'Power Seats': 'featurePowerSeats',
+  'Heated Steering Wheel': 'featureHeatedSteeringWheel',
+  'Keyless Entry': 'featureKeylessEntry',
+  'Push Button Start': 'featurePushButtonStart',
+  'Remote Start': 'featureRemoteStart',
+  'Power Liftgate': 'featurePowerLiftgate',
+  'Navigation System': 'featureNavigationSystem',
+  'GPS': 'featureGPS',
+  'Premium Audio': 'featurePremiumAudio',
+  'Premium Sound System': 'featurePremiumSoundSystem',
+  'Satellite Radio': 'featureSatelliteRadio',
+  'Aux Input': 'featureAuxInput',
+  'All-Wheel Drive': 'featureAllWheelDrive',
+  'Sport Mode': 'featureSportMode',
+  'Turbo Engine': 'featureTurboEngine',
+  'Hybrid': 'featureHybrid',
+  'Electric': 'featureElectric',
+  'Pet Friendly': 'featurePetFriendly',
+  'Child Seat Compatible': 'featureChildSeatCompatible',
+  'Bike Rack': 'featureBikeRack',
+  'Ski Rack': 'featureSkiRack',
+  'Tow Hitch': 'featureTowHitch',
+  'Third Row Seating': 'featureThirdRowSeating',
+  'Rear View Camera': 'featureRearViewCamera'
+}
+
+// Color translation key mapping
+const colorKeyMap: Record<string, string> = {
+  'black': 'colorBlack',
+  'white': 'colorWhite',
+  'silver': 'colorSilver',
+  'gray': 'colorGray',
+  'grey': 'colorGray',
+  'red': 'colorRed',
+  'blue': 'colorBlue',
+  'green': 'colorGreen',
+  'yellow': 'colorYellow',
+  'orange': 'colorOrange',
+  'brown': 'colorBrown',
+  'gold': 'colorGold',
+  'beige': 'colorBeige',
+  'burgundy': 'colorBurgundy',
+  'navy': 'colorNavy',
+  'purple': 'colorPurple',
+  'tan': 'colorTan',
+  'champagne': 'colorChampagne',
+  'bronze': 'colorBronze',
+  'charcoal': 'colorCharcoal',
+  'maroon': 'colorMaroon'
+}
+
 export default function CarFeatures({ car }: CarFeaturesProps) {
   const t = useTranslations('CarFeatures')
   const [showAllFeatures, setShowAllFeatures] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+
+  // Translation helpers
+  const translateFeature = (feature: string): string => {
+    const key = featureKeyMap[feature]
+    return key ? t(key) : feature
+  }
+
+  const translateTransmission = (transmission?: string): string => {
+    if (!transmission) return t('transmissionAutomatic')
+    switch (transmission.toUpperCase()) {
+      case 'AUTOMATIC': return t('transmissionAutomatic')
+      case 'MANUAL': return t('transmissionManual')
+      case 'SEMI_AUTOMATIC': return t('transmissionSemiAuto')
+      case 'CVT': return t('transmissionCVT')
+      default: return transmission
+    }
+  }
+
+  const translateFuelType = (fuelType?: string): string => {
+    if (!fuelType) return t('fuelRegular')
+    switch (fuelType.toUpperCase()) {
+      case 'REGULAR': return t('fuelRegular')
+      case 'PREMIUM': return t('fuelPremium')
+      case 'DIESEL': return t('fuelDiesel')
+      case 'ELECTRIC': return t('fuelElectric')
+      case 'HYBRID': return t('fuelHybrid')
+      case 'PLUGIN_HYBRID': return t('fuelPluginHybrid')
+      default: return fuelType
+    }
+  }
+
+  const translateColor = (color?: string): string => {
+    if (!color) return ''
+    const key = colorKeyMap[color.toLowerCase()]
+    return key ? t(key) : color
+  }
 
   // Parse features from JSON string
   const features = typeof car.features === 'string'
@@ -174,7 +283,7 @@ export default function CarFeatures({ car }: CarFeaturesProps) {
           </div>
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">{t('transmission')}</p>
-            <p className="font-semibold text-gray-900 dark:text-white capitalize">{car.transmission}</p>
+            <p className="font-semibold text-gray-900 dark:text-white">{translateTransmission(car.transmission)}</p>
           </div>
         </div>
 
@@ -184,7 +293,7 @@ export default function CarFeatures({ car }: CarFeaturesProps) {
           </div>
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">{t('fuel')}</p>
-            <p className="font-semibold text-gray-900 dark:text-white capitalize">{car.fuelType}</p>
+            <p className="font-semibold text-gray-900 dark:text-white">{translateFuelType(car.fuelType)}</p>
           </div>
         </div>
 
@@ -194,7 +303,7 @@ export default function CarFeatures({ car }: CarFeaturesProps) {
           </div>
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">{t('color')}</p>
-            <p className="font-semibold text-gray-900 dark:text-white capitalize">{car.color}</p>
+            <p className="font-semibold text-gray-900 dark:text-white">{translateColor(car.color)}</p>
           </div>
         </div>
       </div>
@@ -264,7 +373,7 @@ export default function CarFeatures({ car }: CarFeaturesProps) {
                     <Icon className="w-5 h-5 text-amber-600" />
                   </div>
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {feature}
+                    {translateFeature(feature)}
                   </span>
                 </div>
               )

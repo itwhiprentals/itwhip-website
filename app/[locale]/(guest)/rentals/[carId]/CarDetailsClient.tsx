@@ -283,6 +283,93 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
     }
   }
 
+  // Color translation helper
+  const tColor = (color?: string | null): string => {
+    if (!color) return ''
+    const colorKeys: Record<string, string> = {
+      'black': 'colorBlack', 'white': 'colorWhite', 'silver': 'colorSilver',
+      'gray': 'colorGray', 'grey': 'colorGray', 'red': 'colorRed',
+      'blue': 'colorBlue', 'green': 'colorGreen', 'yellow': 'colorYellow',
+      'orange': 'colorOrange', 'brown': 'colorBrown', 'gold': 'colorGold',
+      'beige': 'colorBeige', 'burgundy': 'colorBurgundy', 'navy': 'colorNavy',
+      'purple': 'colorPurple', 'tan': 'colorTan', 'champagne': 'colorChampagne',
+      'bronze': 'colorBronze', 'charcoal': 'colorCharcoal', 'maroon': 'colorMaroon'
+    }
+    const key = colorKeys[color.toLowerCase()]
+    return key ? t(key) : color
+  }
+
+  // Feature name translation helper
+  const tFeature = (feature: string): string => {
+    const featureKeys: Record<string, string> = {
+      'Bluetooth': 'featureBluetooth', 'Apple CarPlay': 'featureAppleCarPlay',
+      'Android Auto': 'featureAndroidAuto', 'WiFi Hotspot': 'featureWiFiHotspot',
+      'Wireless Charging': 'featureWirelessCharging', 'USB Ports': 'featureUSBPorts',
+      'USB Charger': 'featureUSBCharger', 'Backup Camera': 'featureBackupCamera',
+      'Blind Spot Monitoring': 'featureBlindSpotMonitoring', 'Lane Assist': 'featureLaneAssist',
+      'Adaptive Cruise Control': 'featureAdaptiveCruiseControl', 'Cruise Control': 'featureCruiseControl',
+      'Automatic Emergency Braking': 'featureAutomaticEmergencyBraking', 'Parking Sensors': 'featureParkingSensors',
+      'Heated Seats': 'featureHeatedSeats', 'Cooled Seats': 'featureCooledSeats',
+      'Ventilated Seats': 'featureVentilatedSeats', 'Leather Seats': 'featureLeatherSeats',
+      'Sunroof': 'featureSunroof', 'Moonroof': 'featureMoonroof',
+      'Power Seats': 'featurePowerSeats', 'Heated Steering Wheel': 'featureHeatedSteeringWheel',
+      'Keyless Entry': 'featureKeylessEntry', 'Push Button Start': 'featurePushButtonStart',
+      'Remote Start': 'featureRemoteStart', 'Power Liftgate': 'featurePowerLiftgate',
+      'Navigation System': 'featureNavigationSystem', 'GPS': 'featureGPS',
+      'Premium Audio': 'featurePremiumAudio', 'Premium Sound System': 'featurePremiumSoundSystem',
+      'Satellite Radio': 'featureSatelliteRadio', 'Aux Input': 'featureAuxInput',
+      'All-Wheel Drive': 'featureAllWheelDrive', 'Sport Mode': 'featureSportMode',
+      'Turbo Engine': 'featureTurboEngine', 'Hybrid': 'featureHybrid',
+      'Electric': 'featureElectric', 'Pet Friendly': 'featurePetFriendly',
+      'Child Seat Compatible': 'featureChildSeatCompatible', 'Bike Rack': 'featureBikeRack',
+      'Ski Rack': 'featureSkiRack', 'Tow Hitch': 'featureTowHitch',
+      'Third Row Seating': 'featureThirdRowSeating', 'Rear View Camera': 'featureRearViewCamera'
+    }
+    const key = featureKeys[feature]
+    return key ? t(key) : feature
+  }
+
+  // Common house rule translation helper
+  const tRule = (rule: string): string => {
+    const lower = rule.toLowerCase().trim()
+
+    // Exact matches
+    const exact: Record<string, string> = {
+      'no smoking': t('ruleNoSmoking'),
+      'no pets allowed': t('ruleNoPets'),
+      'no off-road driving': t('ruleNoOffRoad'),
+      'no racing or track use': t('ruleNoRacing'),
+      'vehicle equipped with gps tracking': t('ruleGPSTracking'),
+      'dash cam recording for safety': t('ruleDashCam'),
+      'return with same fuel level': t('defaultRule3'),
+      "valid driver's license and insurance required": t('defaultRule4'),
+    }
+    if (exact[lower]) return exact[lower]
+
+    // "Must be X+ to book" pattern
+    const ageMatch = lower.match(/must be (\d+)\+? to (?:book|rent)/)
+    if (ageMatch) return t('ruleMustBeAge', { age: ageMatch[1] })
+
+    // "X miles/day included, $Y/mile after" pattern
+    const milesMatch = rule.match(/(\d+)\s*miles?\/day\s*included,?\s*\$(\d+(?:\.\d+)?)\/mile\s*after/)
+    if (milesMatch) return t('ruleMilesIncluded', { miles: milesMatch[1], rate: milesMatch[2] })
+
+    // "$X cleaning fee" pattern
+    const cleaningMatch = rule.match(/\$(\d+)\s*cleaning fee/i)
+    if (cleaningMatch) return t('ruleCleaningFee', { amount: cleaningMatch[1] })
+
+    // "$X/hour late return fee" pattern
+    const lateMatch = rule.match(/\$(\d+)\/hour\s*late\s*return\s*fee/i)
+    if (lateMatch) return t('ruleLateReturnFee', { amount: lateMatch[1] })
+
+    // "$X security deposit" pattern
+    const depositMatch = rule.match(/\$(\d+)\s*security\s*deposit/i)
+    if (depositMatch) return t('ruleSecurityDeposit', { amount: depositMatch[1] })
+
+    // No match — return original (host content)
+    return rule
+  }
+
   const resolvedParams = use(params)
   const urlSlug = resolvedParams.carId
 
@@ -867,7 +954,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                         </h3>
                         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                           <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                          <span className="capitalize">{car.color}</span>
+                          <span>{tColor(car.color)}</span>
                         </div>
                       </div>
                     ) : null}
@@ -917,7 +1004,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                             className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
                           >
                             <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                            <span>{feature}</span>
+                            <span>{tFeature(feature)}</span>
                           </div>
                         ))}
                       </div>
@@ -989,7 +1076,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                       {rules.map((rule: string, index: number) => (
                         <div key={index} className="flex items-start gap-2">
                           <IoCheckmarkCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                          <span className="text-sm text-gray-600 dark:text-gray-400">{rule}</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">{tRule(rule)}</span>
                         </div>
                       ))}
                     </div>
