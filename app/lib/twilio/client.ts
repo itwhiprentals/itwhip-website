@@ -34,5 +34,8 @@ export { client as twilioClient }
 export const TWILIO_LOCAL_NUMBER = process.env.TWILIO_PHONE_NUMBER || '+16026092577'
 export const TWILIO_TOLLFREE_NUMBER = process.env.TWILIO_TOLLFREE_NUMBER || '+18557030806'
 
+// Messaging Service SID — used for outbound SMS (handles 10DLC compliance automatically)
+export const TWILIO_MESSAGING_SERVICE_SID = process.env.TWILIO_MESSAGING_SERVICE_SID || ''
+
 // Base URL for webhooks
 export const WEBHOOK_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://itwhip.com'
