@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from '@/i18n/navigation'
 import { useRouter } from 'next/navigation'
+import { useTranslations, useLocale, useFormatter } from 'next-intl'
 import { type BlogPost } from '@/content/posts'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
@@ -29,10 +30,15 @@ import {
   IoLocationOutline
 } from 'react-icons/io5'
 
+interface AdjacentPost {
+  slug: string
+  title: string
+}
+
 interface Props {
   post: BlogPost
-  prevPost: BlogPost | null
-  nextPost: BlogPost | null
+  prevPost: AdjacentPost | null
+  nextPost: AdjacentPost | null
 }
 
 const categoryConfig: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
@@ -41,10 +47,6 @@ const categoryConfig: Record<string, { icon: React.ReactNode; color: string; bg:
   Insurance: { icon: <IoShieldCheckmarkOutline className="w-4 h-4" />, color: 'text-green-600', bg: 'bg-green-50' },
   ESG: { icon: <IoLeafOutline className="w-4 h-4" />, color: 'text-emerald-600', bg: 'bg-emerald-50' },
   Local: { icon: <IoLocationOutline className="w-4 h-4" />, color: 'text-orange-600', bg: 'bg-orange-50' }
-}
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
 // Extract headings from HTML content for TOC
@@ -73,6 +75,9 @@ function addHeadingIds(html: string): string {
 
 export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
   const router = useRouter()
+  const t = useTranslations('BlogPost')
+  const locale = useLocale()
+  const format = useFormatter()
   const [readProgress, setReadProgress] = useState(0)
   const [timeRemaining, setTimeRemaining] = useState(post.readTime)
   const [copied, setCopied] = useState(false)
@@ -91,10 +96,17 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
     router.push('/rentals')
   }
 
+  // Format date using locale
+  function formatDate(dateString: string): string {
+    return format.dateTime(new Date(dateString), { year: 'numeric', month: 'long', day: 'numeric' })
+  }
+
   const config = categoryConfig[post.category]
   const headings = extractHeadings(post.content)
   const contentWithIds = addHeadingIds(post.content)
-  const shareUrl = `https://itwhip.com/blog/${post.slug}`
+  const canonicalBase = 'https://itwhip.com'
+  const localePath = locale === 'en' ? '' : `/${locale}`
+  const shareUrl = `${canonicalBase}${localePath}/blog/${post.slug}`
   const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(post.title)}`
   const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`
   const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`
@@ -109,11 +121,11 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
       const scrolled = Math.max(0, -rect.top)
       const progress = Math.min(100, (scrolled / totalHeight) * 100)
       setReadProgress(progress)
-      
+
       const remaining = Math.max(0, Math.ceil(post.readTime * (1 - progress / 100)))
       setTimeRemaining(remaining)
     }
-    
+
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [post.readTime])
@@ -195,14 +207,14 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
           <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-3 pb-2 flex items-center justify-between">
             <Link href="/blog" className="flex items-center text-gray-600 hover:text-purple-600 transition text-sm">
               <IoArrowBackOutline className="w-4 h-4 mr-1.5" />
-              <span className="font-medium">Back to Blog</span>
+              <span className="font-medium">{t('backToBlog')}</span>
             </Link>
 
             <div className="flex items-center space-x-1">
               {/* Time Remaining */}
               <span className="hidden sm:flex items-center text-xs text-gray-400 mr-2">
                 <IoTimeOutline className="w-3.5 h-3.5 mr-1" />
-                {timeRemaining > 0 ? `${timeRemaining} min left` : 'Done!'}
+                {timeRemaining > 0 ? t('minLeft', { time: timeRemaining }) : t('done')}
               </span>
 
               {/* TOC Button */}
@@ -210,7 +222,7 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
                 <button
                   onClick={() => setShowToc(!showToc)}
                   className="p-2 text-gray-400 hover:text-gray-600 transition"
-                  aria-label="Table of contents"
+                  aria-label={t('contents')}
                 >
                   <IoListOutline className="w-5 h-5" />
                 </button>
@@ -220,7 +232,7 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
               <button
                 onClick={copyLink}
                 className="p-2 text-gray-400 hover:text-gray-600 transition"
-                aria-label="Copy link"
+                aria-label={t('copyLink')}
               >
                 {copied ? <IoCheckmarkOutline className="w-5 h-5 text-green-500" /> : <IoLinkOutline className="w-5 h-5" />}
               </button>
@@ -247,7 +259,7 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
         {showToc && headings.length > 0 && (
           <div className="fixed top-[110px] md:top-[118px] right-4 w-72 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-[60vh] overflow-y-auto">
             <div className="flex items-center justify-between p-3 border-b border-gray-100 dark:border-gray-800">
-              <span className="font-semibold text-sm text-gray-900 dark:text-white">Contents</span>
+              <span className="font-semibold text-sm text-gray-900 dark:text-white">{t('contents')}</span>
               <button onClick={() => setShowToc(false)} className="text-gray-400 hover:text-gray-600">
                 <IoCloseOutline className="w-5 h-5" />
               </button>
@@ -271,13 +283,13 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
         {/* Article - with margin for fixed header + toolbar (56/64 header + 48 toolbar = 104/112, +16 buffer) */}
         <article className="pt-[120px] md:pt-[128px] pb-10 sm:pb-12 flex-1" ref={articleRef}>
           <div className="max-w-[680px] mx-auto px-4 sm:px-6">
-            
+
             {/* Header */}
             <header className="mb-8 mt-4">
               <div className="flex justify-center mb-5">
                 <div className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-lg text-sm font-medium ${config.bg} ${config.color}`}>
                   {config.icon}
-                  <span>{post.category}</span>
+                  <span>{t(`category${post.category}`)}</span>
                 </div>
               </div>
 
@@ -297,12 +309,12 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
                 <span>·</span>
                 <span>{formatDate(post.publishedAt)}</span>
                 <span>·</span>
-                <span>{post.readTime} min read</span>
+                <span>{t('minRead', { time: post.readTime })}</span>
               </div>
             </header>
 
             {/* Content */}
-            <div 
+            <div
               className="article-body"
               dangerouslySetInnerHTML={{ __html: contentWithIds }}
             />
@@ -327,7 +339,7 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
                 <p className="font-semibold text-sm text-gray-900 dark:text-white">{post.author.name}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{post.author.role}</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Sharing insights on peer-to-peer car rental, host strategies, and the Arizona mobility market.
+                  {t('authorBio')}
                 </p>
               </div>
             </div>
@@ -337,12 +349,12 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
               <div className="flex items-start space-x-3">
                 <IoMailOutline className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="font-semibold text-sm text-gray-900 dark:text-white mb-1">Get weekly insights</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">P2P car rental tips, earnings strategies, and Arizona market updates.</p>
-                  
+                  <p className="font-semibold text-sm text-gray-900 dark:text-white mb-1">{t('newsletterTitle')}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">{t('newsletterDescription')}</p>
+
                   {subscribed ? (
                     <p className="text-sm text-green-600 font-medium flex items-center">
-                      <IoCheckmarkOutline className="w-4 h-4 mr-1" /> You're subscribed!
+                      <IoCheckmarkOutline className="w-4 h-4 mr-1" /> {t('subscribed')}
                     </p>
                   ) : (
                     <form onSubmit={handleSubscribe} className="flex gap-2">
@@ -350,12 +362,12 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="your@email.com"
+                        placeholder={t('emailPlaceholder')}
                         required
                         className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                       />
                       <button type="submit" className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition">
-                        Subscribe
+                        {t('subscribe')}
                       </button>
                     </form>
                   )}
@@ -365,11 +377,11 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
 
             {/* Share */}
             <div className="mt-8 flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Share</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('share')}</span>
               <div className="flex space-x-2">
                 <button onClick={copyLink} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition flex items-center">
                   {copied ? <IoCheckmarkOutline className="w-4 h-4 mr-1" /> : <IoLinkOutline className="w-4 h-4 mr-1" />}
-                  {copied ? 'Copied!' : 'Copy'}
+                  {copied ? t('copied') : t('copy')}
                 </button>
                 <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-800 transition">Twitter</a>
                 <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition">LinkedIn</a>
@@ -381,18 +393,18 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
               {prevPost ? (
                 <Link href={`/blog/${prevPost.slug}`} className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition group">
                   <span className="text-xs text-gray-500 flex items-center mb-1">
-                    <IoChevronBackOutline className="w-3 h-3 mr-1" /> Previous
+                    <IoChevronBackOutline className="w-3 h-3 mr-1" /> {t('previous')}
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 group-hover:text-purple-600 transition">
                     {prevPost.title}
                   </span>
                 </Link>
               ) : <div />}
-              
+
               {nextPost ? (
                 <Link href={`/blog/${nextPost.slug}`} className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition group text-right">
                   <span className="text-xs text-gray-500 flex items-center justify-end mb-1">
-                    Next <IoChevronForwardOutline className="w-3 h-3 ml-1" />
+                    {t('next')} <IoChevronForwardOutline className="w-3 h-3 ml-1" />
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 group-hover:text-purple-600 transition">
                     {nextPost.title}
@@ -403,14 +415,14 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
 
             {/* CTA */}
             <div className="mt-8 p-6 bg-purple-600 rounded-lg text-white text-center">
-              <h3 className="text-lg font-bold mb-2">Ready to get started?</h3>
-              <p className="text-purple-100 text-sm mb-4">Join Arizona's P2P car sharing platform. Hosts earn up to 90%.</p>
+              <h3 className="text-lg font-bold mb-2">{t('ctaTitle')}</h3>
+              <p className="text-purple-100 text-sm mb-4">{t('ctaDescription')}</p>
               <div className="flex justify-center gap-3">
                 <Link href="/list-your-car" className="px-5 py-2.5 bg-white text-purple-600 rounded-lg text-sm font-semibold hover:bg-gray-100 transition">
-                  List Your Car
+                  {t('listYourCar')}
                 </Link>
                 <Link href="/rentals" className="px-5 py-2.5 bg-purple-700 text-white rounded-lg text-sm font-semibold hover:bg-purple-800 transition">
-                  Find a Car
+                  {t('findACar')}
                 </Link>
               </div>
             </div>

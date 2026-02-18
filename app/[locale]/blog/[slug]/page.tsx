@@ -1,9 +1,10 @@
 // app/blog/[slug]/page.tsx
-// Blog post page with all features
+// Blog post page with locale-aware content and SEO
 
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { blogPosts, getPostBySlug } from '@/content/posts'
+import { blogPosts } from '@/content/posts'
+import { getLocalizedPostBySlug } from '@/app/lib/blog'
 import BlogPostClient from './BlogPostClient'
 import { getAlternateLanguages, getCanonicalUrl, getOgLocale } from '@/app/lib/seo/alternates'
 
@@ -24,7 +25,7 @@ const postsWithOgImages = [
 // Generate metadata
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { locale, slug } = await params
-  const post = getPostBySlug(slug)
+  const post = getLocalizedPostBySlug(slug, locale)
   if (!post) return { title: 'Post Not Found | ItWhip Blog' }
 
   // Use custom OG image if exists, otherwise fall back to default
@@ -67,38 +68,48 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   }
 }
 
-// Get next and previous posts
-function getAdjacentPosts(currentSlug: string) {
+// Get next and previous posts (localized)
+function getAdjacentPosts(currentSlug: string, locale: string) {
   const currentIndex = blogPosts.findIndex(p => p.slug === currentSlug)
+  const prev = currentIndex < blogPosts.length - 1 ? blogPosts[currentIndex + 1] : null
+  const next = currentIndex > 0 ? blogPosts[currentIndex - 1] : null
+  // Only pass title/slug for adjacent posts (they're displayed in nav)
   return {
-    prev: currentIndex < blogPosts.length - 1 ? blogPosts[currentIndex + 1] : null,
-    next: currentIndex > 0 ? blogPosts[currentIndex - 1] : null
+    prev: prev ? { slug: prev.slug, title: prev.title } : null,
+    next: next ? { slug: next.slug, title: next.title } : null
   }
 }
 
-export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
-  const post = getPostBySlug(slug)
+// Locale to inLanguage mapping
+function getInLanguage(locale: string): string {
+  const map: Record<string, string> = { en: 'en-US', es: 'es-419', fr: 'fr-FR' }
+  return map[locale] || 'en-US'
+}
+
+export default async function BlogPostPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
+  const { locale, slug } = await params
+  const post = getLocalizedPostBySlug(slug, locale)
   if (!post) notFound()
 
-  const { prev, next } = getAdjacentPosts(slug)
-  
+  const { prev, next } = getAdjacentPosts(slug, locale)
+
   // Use custom OG image if exists, otherwise fall back to default
   const postOgImage = postsWithOgImages.includes(post.slug)
     ? `https://itwhip.com/og/blog/${post.slug}.png`
     : 'https://itwhip.com/og-image.jpg'
 
-  // Schema - Fixed with proper datetime format and complete fields
+  const canonicalUrl = getCanonicalUrl(`/blog/${post.slug}`, locale)
+
+  // Schema with locale-aware URLs and language
   const articleSchema = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: post.title,
     description: post.excerpt,
-    url: `https://itwhip.com/blog/${post.slug}`,
+    url: canonicalUrl,
     datePublished: `${post.publishedAt}T00:00:00-07:00`,
-    dateModified: `${post.publishedAt}T00:00:00-07:00`,
+    dateModified: `${post.updatedAt || post.publishedAt}T00:00:00-07:00`,
     image: postOgImage,
-    // Fixed: Complete author object with url
     author: {
       '@type': 'Person',
       name: post.author.name,
@@ -114,11 +125,11 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
-      url: `https://itwhip.com/blog/${post.slug}`
+      url: canonicalUrl
     },
     keywords: post.keywords.join(', '),
     articleSection: post.category,
-    inLanguage: 'en-US'
+    inLanguage: getInLanguage(locale)
   }
 
   return (
