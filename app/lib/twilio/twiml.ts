@@ -271,17 +271,24 @@ export function generateBookingFound(booking: {
 export function generateConnectToHost(hostPhone: string, lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
 
+  // Promo message while connecting
   say(twiml, t(lang,
-    'Connecting you to your host now. Please hold.',
-    'Conectandote con tu anfitrion. Por favor espera.',
-    'Nous vous connectons à votre hôte. Veuillez patienter.'
+    'Connecting you to your host now. Quick tip: you can also message your host anytime through your ItWhip trip page at itwhip.com.',
+    'Conectandote con tu anfitrion. Consejo: tambien puedes enviar mensajes a tu anfitrion en cualquier momento a traves de tu pagina de viaje en itwhip.com.',
+    'Nous vous connectons à votre hôte. Conseil: vous pouvez aussi envoyer des messages à votre hôte via votre page de trajet sur itwhip.com.'
   ), lang)
 
-  const dial = twiml.dial({ callerId: TWILIO_LOCAL_NUMBER, timeout: 30 })
+  // Hold music while phone rings
+  twiml.play('http://twimlets.com/holdmusic?Bucket=com.twilio.music.ambient')
+
+  const dial = twiml.dial({
+    callerId: TWILIO_LOCAL_NUMBER,
+    timeout: 30,
+    answerOnBridge: true,
+    action: menuUrl('voicemail-prompt', lang),
+  })
   dial.number(hostPhone)
 
-  // If host doesn't answer → voicemail
-  twiml.redirect(menuUrl('voicemail-prompt', lang))
   return twiml.toString()
 }
 
@@ -453,15 +460,23 @@ export function generateSpeakWithSomeone(lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
 
   if (isBusinessHours()) {
+    // Promo message + hold music while connecting
     say(twiml, t(lang,
-      'Connecting you now. Please hold.',
-      'Conectandote ahora. Por favor espera.',
-      'Nous vous connectons maintenant. Veuillez patienter.'
+      'Connecting you to our team now. While you wait, did you know ItWhip offers three tiers of insurance coverage? Visit itwhip.com slash insurance guide for details.',
+      'Conectandote con nuestro equipo. Mientras esperas, sabias que ItWhip ofrece tres niveles de cobertura de seguro? Visita itwhip.com para detalles.',
+      'Nous vous connectons à notre équipe. En attendant, saviez-vous qu\'ItWhip propose trois niveaux de couverture d\'assurance? Visitez itwhip.com pour les détails.'
     ), lang)
-    const dial = twiml.dial({ callerId: TWILIO_LOCAL_NUMBER, timeout: 30 })
+
+    // Hold music while phone rings
+    twiml.play('http://twimlets.com/holdmusic?Bucket=com.twilio.music.ambient')
+
+    const dial = twiml.dial({
+      callerId: TWILIO_LOCAL_NUMBER,
+      timeout: 30,
+      answerOnBridge: true,
+      action: menuUrl('voicemail-prompt', lang),
+    })
     dial.number(process.env.SUPPORT_PHONE_NUMBER || '+16026092577')
-    // If no answer → voicemail
-    twiml.redirect(menuUrl('voicemail-prompt', lang))
   } else {
     twiml.redirect(menuUrl('voicemail-prompt', lang))
   }
