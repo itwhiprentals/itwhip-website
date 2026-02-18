@@ -1,5 +1,6 @@
 // app/(guest)/rentals/tesla-near-me/page.tsx
 import { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import Script from 'next/script'
 import Header from '@/app/components/Header'
@@ -26,29 +27,37 @@ import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatter
 
 export const revalidate = 60
 
-// Static metadata (SEO fallback) - will be enhanced client-side
-export const metadata: Metadata = {
-  title: 'Tesla Rentals Near Me | Model 3, Model Y, Model S | ItWhip',
-  description: 'Rent Tesla electric vehicles near you in Phoenix, Scottsdale, and Arizona. Model 3, Model Y, Model S, and Model X from local owners. Zero emissions, instant torque.',
-  keywords: [
-    'tesla rental near me',
-    'tesla rental phoenix',
-    'rent tesla scottsdale',
-    'model 3 rental arizona',
-    'model y rental phoenix',
-    'electric car rental near me',
-    'ev rental phoenix',
-    'tesla model s rental'
-  ],
-  openGraph: {
-    title: 'Tesla Rentals Near Me | Phoenix & Arizona',
-    description: 'Experience electric driving. Rent Tesla Model 3, Y, S, or X from local owners in Arizona.',
-    url: 'https://itwhip.com/rentals/tesla-near-me',
-    type: 'website'
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/rentals/tesla-near-me',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('rentalsTeslaNearMeTitle'),
+    description: t('rentalsTeslaNearMeDescription'),
+    keywords: [
+      'tesla rental near me',
+      'tesla rental phoenix',
+      'rent tesla scottsdale',
+      'model 3 rental arizona',
+      'model y rental phoenix',
+      'electric car rental near me',
+      'ev rental phoenix',
+      'tesla model s rental'
+    ],
+    openGraph: {
+      title: t('rentalsTeslaNearMeTitle'),
+      description: t('rentalsTeslaNearMeDescription'),
+      url: 'https://itwhip.com/rentals/tesla-near-me',
+      type: 'website'
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/rentals/tesla-near-me',
+    },
+  }
 }
 
 function transformCarForCompactCard(car: any) {

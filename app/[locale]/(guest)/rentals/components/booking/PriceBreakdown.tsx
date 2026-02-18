@@ -2,7 +2,8 @@
 'use client'
 
 import { useState } from 'react'
-import { 
+import { useTranslations } from 'next-intl'
+import {
   IoChevronDownOutline,
   IoChevronUpOutline,
   IoInformationCircleOutline,
@@ -25,43 +26,18 @@ interface PriceBreakdownProps {
   className?: string
 }
 
-interface FeeTooltip {
-  title: string
-  description: string
+const EXTRA_ICONS: Record<string, React.ReactNode> = {
+  gps: <IoLocationOutline className="w-4 h-4" />,
+  child_seat: <IoCarOutline className="w-4 h-4" />,
+  toll_pass: <IoReceiptOutline className="w-4 h-4" />,
+  fuel: <IoCarOutline className="w-4 h-4" />
 }
 
-const FEE_TOOLTIPS: Record<string, FeeTooltip> = {
-  serviceFee: {
-    title: 'Service Fee',
-    description: 'This fee helps us provide 24/7 customer support, secure payments, and maintain the platform.'
-  },
-  taxes: {
-    title: 'Taxes & Fees',
-    description: 'Includes applicable state and local taxes based on your rental location.'
-  },
-  insurance: {
-    title: 'Insurance Protection',
-    description: 'Covers damage to the vehicle with the deductible amount shown. Decline at your own risk.'
-  },
-  youngDriver: {
-    title: 'Young Driver Fee',
-    description: 'Additional fee for drivers under 25 due to increased insurance costs.'
-  },
-  delivery: {
-    title: 'Delivery Fee',
-    description: 'Covers the cost of delivering the vehicle to your specified location and pickup after your rental.'
-  },
-  deposit: {
-    title: 'Security Deposit',
-    description: 'Refundable deposit held on your card. Released within 3-5 business days after successful return.'
-  }
-}
-
-const EXTRA_DETAILS: Record<string, { name: string; price: number; icon: React.ReactNode }> = {
-  gps: { name: 'GPS Navigation', price: 10, icon: <IoLocationOutline className="w-4 h-4" /> },
-  child_seat: { name: 'Child Seat', price: 15, icon: <IoCarOutline className="w-4 h-4" /> },
-  toll_pass: { name: 'Toll Pass', price: 20, icon: <IoReceiptOutline className="w-4 h-4" /> },
-  fuel: { name: 'Prepaid Fuel', price: 45, icon: <IoCarOutline className="w-4 h-4" /> }
+const EXTRA_PRICES: Record<string, number> = {
+  gps: 10,
+  child_seat: 15,
+  toll_pass: 20,
+  fuel: 45
 }
 
 export default function PriceBreakdown({
@@ -72,8 +48,16 @@ export default function PriceBreakdown({
   deliveryFee = 0,
   className = ''
 }: PriceBreakdownProps) {
+  const t = useTranslations('PriceBreakdown')
   const [showDetails, setShowDetails] = useState(false)
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
+
+  const extraNames: Record<string, string> = {
+    gps: t('gpsNavigation'),
+    child_seat: t('childSeat'),
+    toll_pass: t('tollPass'),
+    fuel: t('prepaidFuel')
+  }
 
   // Resolve pricing fields with fallbacks for optional convenience aliases
   const pricingSubtotal = pricing.subtotal ?? pricing.basePrice ?? 0
@@ -92,8 +76,8 @@ export default function PriceBreakdown({
 
   // Calculate extras cost
   const extrasCost = extras.reduce((total, extra) => {
-    const extraDetail = EXTRA_DETAILS[extra]
-    return total + (extraDetail ? extraDetail.price * numberOfDays : 0)
+    const price = EXTRA_PRICES[extra]
+    return total + (price ? price * numberOfDays : 0)
   }, 0)
 
   // Calculate young driver fee if applicable
@@ -104,13 +88,13 @@ export default function PriceBreakdown({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Price Breakdown
+          {t('priceBreakdown')}
         </h3>
         <button
           onClick={() => setShowDetails(!showDetails)}
           className="flex items-center text-sm text-amber-600 hover:text-amber-700"
         >
-          {showDetails ? 'Hide' : 'Show'} details
+          {showDetails ? t('hideDetails') : t('showDetails')}
           {showDetails ? (
             <IoChevronUpOutline className="w-4 h-4 ml-1" />
           ) : (
@@ -126,7 +110,7 @@ export default function PriceBreakdown({
           <div className="flex items-center">
             <IoCarOutline className="w-5 h-5 text-gray-400 mr-2" />
             <span className="text-gray-700 dark:text-gray-300">
-              Daily rate × {numberOfDays} {numberOfDays === 1 ? 'day' : 'days'}
+              {t('dailyRate', { count: numberOfDays })}
             </span>
           </div>
           <span className="font-medium text-gray-900 dark:text-white">
@@ -140,7 +124,11 @@ export default function PriceBreakdown({
             <div className="flex items-center">
               <IoCheckmarkCircleOutline className="w-5 h-5 mr-2" />
               <span>
-                {numberOfDays >= 28 ? 'Monthly' : numberOfDays >= 7 ? 'Weekly' : 'Multi-day'} discount
+                {numberOfDays >= 28
+                  ? t('monthlyDiscount')
+                  : numberOfDays >= 7
+                  ? t('weeklyDiscount')
+                  : t('multiDayDiscount')}
               </span>
             </div>
             <span className="font-medium">
@@ -159,7 +147,7 @@ export default function PriceBreakdown({
                   <IoShieldCheckmarkOutline className="w-5 h-5 text-blue-500 mr-2" />
                   <div className="flex items-center">
                     <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {insurance === 'basic' ? 'Basic' : 'Premium'} Insurance
+                      {insurance === 'basic' ? t('basicInsurance') : t('premiumInsurance')}
                     </span>
                     <button
                       onMouseEnter={() => setActiveTooltip('insurance')}
@@ -170,9 +158,9 @@ export default function PriceBreakdown({
                       {activeTooltip === 'insurance' && (
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10">
                           <div className="font-semibold mb-1">
-                            {FEE_TOOLTIPS.insurance.title}
+                            {t('insuranceTooltipTitle')}
                           </div>
-                          <div>{FEE_TOOLTIPS.insurance.description}</div>
+                          <div>{t('insuranceTooltipDesc')}</div>
                           <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900"></div>
                         </div>
                       )}
@@ -187,19 +175,19 @@ export default function PriceBreakdown({
 
             {/* Extras */}
             {extras.length > 0 && extras.map((extra) => {
-              const extraDetail = EXTRA_DETAILS[extra]
-              if (!extraDetail) return null
-              
+              const price = EXTRA_PRICES[extra]
+              if (!price) return null
+
               return (
                 <div key={extra} className="flex justify-between items-center">
                   <div className="flex items-center">
-                    {extraDetail.icon}
+                    {EXTRA_ICONS[extra]}
                     <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
-                      {extraDetail.name}
+                      {extraNames[extra] || extra}
                     </span>
                   </div>
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    ${(extraDetail.price * numberOfDays).toFixed(2)}
+                    ${(price * numberOfDays).toFixed(2)}
                   </span>
                 </div>
               )
@@ -212,7 +200,7 @@ export default function PriceBreakdown({
                   <IoLocationOutline className="w-5 h-5 text-purple-500 mr-2" />
                   <div className="flex items-center">
                     <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Delivery to your location
+                      {t('deliveryToLocation')}
                     </span>
                     <button
                       onMouseEnter={() => setActiveTooltip('delivery')}
@@ -223,9 +211,9 @@ export default function PriceBreakdown({
                       {activeTooltip === 'delivery' && (
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10">
                           <div className="font-semibold mb-1">
-                            {FEE_TOOLTIPS.delivery.title}
+                            {t('deliveryTooltipTitle')}
                           </div>
-                          <div>{FEE_TOOLTIPS.delivery.description}</div>
+                          <div>{t('deliveryTooltipDesc')}</div>
                           <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900"></div>
                         </div>
                       )}
@@ -245,7 +233,7 @@ export default function PriceBreakdown({
                   <IoAddCircleOutline className="w-5 h-5 text-orange-500 mr-2" />
                   <div className="flex items-center">
                     <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Young driver fee
+                      {t('youngDriverFee')}
                     </span>
                     <button
                       onMouseEnter={() => setActiveTooltip('youngDriver')}
@@ -256,9 +244,9 @@ export default function PriceBreakdown({
                       {activeTooltip === 'youngDriver' && (
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10">
                           <div className="font-semibold mb-1">
-                            {FEE_TOOLTIPS.youngDriver.title}
+                            {t('youngDriverTooltipTitle')}
                           </div>
-                          <div>{FEE_TOOLTIPS.youngDriver.description}</div>
+                          <div>{t('youngDriverTooltipDesc')}</div>
                           <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900"></div>
                         </div>
                       )}
@@ -276,7 +264,7 @@ export default function PriceBreakdown({
         {/* Service Fee */}
         <div className="flex justify-between items-center">
           <div className="flex items-center">
-            <span className="text-gray-600 dark:text-gray-400">Service fee</span>
+            <span className="text-gray-600 dark:text-gray-400">{t('serviceFee')}</span>
             <button
               onMouseEnter={() => setActiveTooltip('serviceFee')}
               onMouseLeave={() => setActiveTooltip(null)}
@@ -286,9 +274,9 @@ export default function PriceBreakdown({
               {activeTooltip === 'serviceFee' && (
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10">
                   <div className="font-semibold mb-1">
-                    {FEE_TOOLTIPS.serviceFee.title}
+                    {t('serviceFeeTooltipTitle')}
                   </div>
-                  <div>{FEE_TOOLTIPS.serviceFee.description}</div>
+                  <div>{t('serviceFeeTooltipDesc')}</div>
                   <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900"></div>
                 </div>
               )}
@@ -302,7 +290,7 @@ export default function PriceBreakdown({
         {/* Taxes */}
         <div className="flex justify-between items-center">
           <div className="flex items-center">
-            <span className="text-gray-600 dark:text-gray-400">Taxes</span>
+            <span className="text-gray-600 dark:text-gray-400">{t('taxes')}</span>
             <button
               onMouseEnter={() => setActiveTooltip('taxes')}
               onMouseLeave={() => setActiveTooltip(null)}
@@ -312,9 +300,9 @@ export default function PriceBreakdown({
               {activeTooltip === 'taxes' && (
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10">
                   <div className="font-semibold mb-1">
-                    {FEE_TOOLTIPS.taxes.title}
+                    {t('taxesTooltipTitle')}
                   </div>
-                  <div>{FEE_TOOLTIPS.taxes.description}</div>
+                  <div>{t('taxesTooltipDesc')}</div>
                   <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900"></div>
                 </div>
               )}
@@ -330,14 +318,14 @@ export default function PriceBreakdown({
       <div className="mt-4 pt-4 border-t dark:border-gray-700">
         <div className="flex justify-between items-baseline">
           <span className="text-lg font-semibold text-gray-900 dark:text-white">
-            Total
+            {t('total')}
           </span>
           <div className="text-right">
             <div className="text-2xl font-bold text-amber-600">
               ${(pricingTotal + insuranceCost + extrasCost + deliveryFee).toFixed(2)}
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              ${((pricingTotal + insuranceCost + extrasCost + deliveryFee) / numberOfDays).toFixed(2)}/day
+              {t('perDay', { amount: `$${((pricingTotal + insuranceCost + extrasCost + deliveryFee) / numberOfDays).toFixed(2)}` })}
             </div>
           </div>
         </div>
@@ -349,11 +337,10 @@ export default function PriceBreakdown({
           <IoInformationCircleOutline className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 mr-2 flex-shrink-0" />
           <div className="text-sm">
             <div className="font-medium text-blue-900 dark:text-blue-300 mb-1">
-              Security Deposit
+              {t('securityDeposit')}
             </div>
             <div className="text-blue-800 dark:text-blue-400">
-              A refundable deposit of <span className="font-semibold">$500</span> will be held on your card 
-              and released within 3-5 business days after successful vehicle return.
+              {t('securityDepositDesc', { amount: '$500' })}
             </div>
           </div>
         </div>
@@ -364,26 +351,26 @@ export default function PriceBreakdown({
         <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
           <div className="text-sm">
             <div className="font-medium text-green-900 dark:text-green-300 mb-2">
-              What's Included:
+              {t('whatsIncluded')}
             </div>
             <div className="space-y-1">
               <div className="flex items-center text-green-800 dark:text-green-400">
                 <IoCheckmarkCircleOutline className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span>24/7 roadside assistance</span>
+                <span>{t('roadsideAssistance')}</span>
               </div>
               <div className="flex items-center text-green-800 dark:text-green-400">
                 <IoCheckmarkCircleOutline className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span>{numberOfDays * 200} miles included ({200 * numberOfDays / numberOfDays}/day)</span>
+                <span>{t('milesIncluded', { total: numberOfDays * 200, perDay: 200 })}</span>
               </div>
               <div className="flex items-center text-green-800 dark:text-green-400">
                 <IoCheckmarkCircleOutline className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span>Basic cleaning fee</span>
+                <span>{t('basicCleaningFee')}</span>
               </div>
               {insurance !== 'none' && (
                 <div className="flex items-center text-green-800 dark:text-green-400">
                   <IoCheckmarkCircleOutline className="w-4 h-4 mr-2 flex-shrink-0" />
                   <span>
-                    {insurance === 'basic' ? '$1000' : '$0'} deductible insurance
+                    {t('deductibleInsurance', { amount: insurance === 'basic' ? '$1000' : '$0' })}
                   </span>
                 </div>
               )}
@@ -405,6 +392,7 @@ export function PriceBreakdownSimple({
   numberOfDays: number
   className?: string
 }) {
+  const t = useTranslations('PriceBreakdown')
   const simpleSubtotal = pricing.subtotal ?? pricing.basePrice ?? 0
   const simpleDiscount = pricing.discount ?? 0
   const simpleServiceFee = pricing.serviceFee ?? pricing.serviceFeeAmount ?? 0
@@ -415,7 +403,7 @@ export function PriceBreakdownSimple({
     <div className={`space-y-2 ${className}`}>
       <div className="flex justify-between text-sm">
         <span className="text-gray-600 dark:text-gray-400">
-          ${(simpleSubtotal / numberOfDays).toFixed(0)} × {numberOfDays} days
+          {t('rateTimesDays', { rate: (simpleSubtotal / numberOfDays).toFixed(0), count: numberOfDays })}
         </span>
         <span className="text-gray-700 dark:text-gray-300">
           ${simpleSubtotal.toFixed(2)}
@@ -424,20 +412,20 @@ export function PriceBreakdownSimple({
 
       {simpleDiscount > 0 && (
         <div className="flex justify-between text-sm text-green-600">
-          <span>Discount</span>
+          <span>{t('discount')}</span>
           <span>-${simpleDiscount.toFixed(2)}</span>
         </div>
       )}
 
       <div className="flex justify-between text-sm">
-        <span className="text-gray-600 dark:text-gray-400">Service fee</span>
+        <span className="text-gray-600 dark:text-gray-400">{t('serviceFee')}</span>
         <span className="text-gray-700 dark:text-gray-300">
           ${simpleServiceFee.toFixed(2)}
         </span>
       </div>
 
       <div className="flex justify-between text-sm">
-        <span className="text-gray-600 dark:text-gray-400">Taxes</span>
+        <span className="text-gray-600 dark:text-gray-400">{t('taxes')}</span>
         <span className="text-gray-700 dark:text-gray-300">
           ${simpleTaxes.toFixed(2)}
         </span>
@@ -445,7 +433,7 @@ export function PriceBreakdownSimple({
 
       <div className="pt-2 border-t dark:border-gray-700">
         <div className="flex justify-between">
-          <span className="font-semibold">Total</span>
+          <span className="font-semibold">{t('total')}</span>
           <span className="font-bold text-amber-600">
             ${simpleTotal.toFixed(2)}
           </span>

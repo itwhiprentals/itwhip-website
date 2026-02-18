@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { 
   IoCarSportOutline, 
   IoCheckmarkCircle, 
@@ -30,6 +31,7 @@ import '@/app/styles/date-input-fixes.css'
 
 export default function RidesPage() {
   const router = useRouter()
+  const t = useTranslations('RidesPage')
   const [bookingCode, setBookingCode] = useState('')
   const [isValidated, setIsValidated] = useState(false)
   const [isValidating, setIsValidating] = useState(false)
@@ -139,10 +141,10 @@ export default function RidesPage() {
           {/* Title and subtitle moved up with tighter spacing */}
           <div className="text-center mb-6">
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-1 drop-shadow-2xl">
-              Instant Luxury Rides
+              {t('heroTitle')}
             </h1>
             <p className="text-sm sm:text-base md:text-lg text-gray-200 drop-shadow-lg">
-              Skip the surge. Fixed prices, always.
+              {t('heroSubtitle')}
             </p>
           </div>
 
@@ -154,12 +156,12 @@ export default function RidesPage() {
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-sm font-medium text-white flex items-center space-x-2">
                     <IoTicketOutline className="w-4 h-4" />
-                    <span>Booking Reference</span>
+                    <span>{t('bookingReference')}</span>
                   </label>
                   {isValidated && (
                     <div className="flex items-center space-x-1 text-green-400">
                       <IoCheckmarkCircle className="w-4 h-4" />
-                      <span className="text-xs font-medium">Verified</span>
+                      <span className="text-xs font-medium">{t('verified')}</span>
                     </div>
                   )}
                 </div>
@@ -168,7 +170,7 @@ export default function RidesPage() {
                     type="text"
                     value={bookingCode}
                     onChange={(e) => handleCodeInput(e.target.value)}
-                    placeholder="Enter hotel or event confirmation"
+                    placeholder={t('bookingCodePlaceholder')}
                     className={`w-full px-4 py-2.5 bg-white/10 border rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 transition-all uppercase tracking-wider text-sm ${
                       isValidated 
                         ? 'border-green-500/50 bg-green-500/10 focus:ring-green-500' 
@@ -190,7 +192,7 @@ export default function RidesPage() {
                 </div>
                 {!isValidated && (
                   <p className="text-xs text-gray-300 mt-2">
-                    Required for member rates • Hotel booking, event ticket, or reservation code
+                    {t('bookingCodeHelp')}
                   </p>
                 )}
               </div>
@@ -199,7 +201,7 @@ export default function RidesPage() {
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div>
                   <label className="text-xs font-medium text-gray-300 mb-1 block">
-                    Date
+                    {t('dateLabel')}
                   </label>
                   <div className="relative flex">
                     <IoCalendarOutline className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none z-10" />
@@ -228,7 +230,7 @@ export default function RidesPage() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-300 mb-1 block">
-                    Time
+                    {t('timeLabel')}
                   </label>
                   <div className="relative flex">
                     <IoTimeOutline className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none z-10" />
@@ -258,7 +260,7 @@ export default function RidesPage() {
                   }`} />
                   <input
                     type="text"
-                    placeholder={isValidated ? "Pickup location" : "Unlock with booking code"}
+                    placeholder={isValidated ? t('pickupPlaceholder') : t('unlockWithBookingCode')}
                     value={pickupLocation}
                     onChange={(e) => setPickupLocation(e.target.value)}
                     disabled={!isValidated}
@@ -275,7 +277,7 @@ export default function RidesPage() {
                   }`} />
                   <input
                     type="text"
-                    placeholder={isValidated ? "Where to?" : "Unlock with booking code"}
+                    placeholder={isValidated ? t('dropoffPlaceholder') : t('unlockWithBookingCode')}
                     value={dropoffLocation}
                     onChange={(e) => setDropoffLocation(e.target.value)}
                     disabled={!isValidated}
@@ -294,7 +296,7 @@ export default function RidesPage() {
                       : 'bg-white/10 text-gray-400 cursor-not-allowed'
                   }`}
                 >
-                  {isValidated ? 'Book Instant Ride' : 'Enter Booking Code First'}
+                  {isValidated ? t('bookInstantRide') : t('enterBookingCodeFirst')}
                 </button>
               </div>
 
@@ -308,16 +310,16 @@ export default function RidesPage() {
                     }}
                     className="px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-sm text-white hover:bg-white/20 transition"
                   >
-                    Airport → Hotel
+                    {t('airportToHotel')}
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       setPickupLocation('Your Hotel')
                       setDropoffLocation('Sky Harbor Airport')
                     }}
                     className="px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-sm text-white hover:bg-white/20 transition"
                   >
-                    Hotel → Airport
+                    {t('hotelToAirport')}
                   </button>
                 </div>
               )}
@@ -328,15 +330,15 @@ export default function RidesPage() {
                   <div className="flex items-center justify-center space-x-4 text-xs text-gray-300">
                     <div className="flex items-center space-x-1">
                       <IoCheckmarkCircle className="w-3 h-3 text-green-400" />
-                      <span>Member rate applied</span>
+                      <span>{t('memberRateApplied')}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <IoShieldCheckmarkOutline className="w-3 h-3 text-blue-400" />
-                      <span>Price locked</span>
+                      <span>{t('priceLocked')}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <IoSparklesOutline className="w-3 h-3 text-amber-400" />
-                      <span>Luxury guaranteed</span>
+                      <span>{t('luxuryGuaranteed')}</span>
                     </div>
                   </div>
                 </div>
@@ -348,15 +350,15 @@ export default function RidesPage() {
           <div className="flex flex-wrap justify-center items-center gap-4 mt-6 text-sm text-white">
             <div className="flex items-center space-x-2">
               <IoCheckmarkCircle className="w-4 h-4 text-green-400" />
-              <span>No surge pricing</span>
+              <span>{t('noSurgePricing')}</span>
             </div>
             <div className="flex items-center space-x-2">
               <IoCheckmarkCircle className="w-4 h-4 text-green-400" />
-              <span>Luxury vehicles only</span>
+              <span>{t('luxuryVehiclesOnly')}</span>
             </div>
             <div className="flex items-center space-x-2">
               <IoCheckmarkCircle className="w-4 h-4 text-green-400" />
-              <span>Flight tracking</span>
+              <span>{t('flightTracking')}</span>
             </div>
           </div>
         </div>
@@ -368,10 +370,10 @@ export default function RidesPage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white">
-                Book Hotels with Instant Rides
+                {t('hotelsTitle')}
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Get your booking code & unlock member rates
+                {t('hotelsSubtitle')}
               </p>
             </div>
             <div className="flex space-x-2">
@@ -404,7 +406,7 @@ export default function RidesPage() {
                 originalPrice: 550,
                 rating: 4.9,
                 savings: 47,
-                benefit: 'FREE AIRPORT RIDE'
+                benefitKey: 'freeAirportRide'
               },
               {
                 name: 'The Phoenician',
@@ -414,7 +416,7 @@ export default function RidesPage() {
                 originalPrice: 475,
                 rating: 4.9,
                 savings: 52,
-                benefit: '$29 FIXED RIDES'
+                benefitKey: 'fixedRides29'
               },
               {
                 name: 'Fairmont Princess',
@@ -424,7 +426,7 @@ export default function RidesPage() {
                 originalPrice: 420,
                 rating: 4.8,
                 savings: 41,
-                benefit: 'MEMBER BENEFITS'
+                benefitKey: 'memberBenefits'
               }
             ].map((hotel, idx) => (
               <div 
@@ -441,10 +443,10 @@ export default function RidesPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
                   <div className="absolute top-3 left-3 px-2 py-1 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full shadow-lg flex items-center space-x-1">
                     <IoStarOutline className="w-3 h-3 text-white" />
-                    <span className="text-xs font-black text-white">PREMIUM PARTNER</span>
+                    <span className="text-xs font-black text-white">{t('premiumPartner')}</span>
                   </div>
                   <div className="absolute top-3 right-3 px-2 py-1 bg-green-500 text-white text-xs font-black rounded-full shadow-lg">
-                    {hotel.benefit}
+                    {t(hotel.benefitKey)}
                   </div>
                   <div className="absolute bottom-3 left-3">
                     <h3 className="text-lg md:text-xl font-bold text-white drop-shadow-lg">{hotel.name}</h3>
@@ -455,10 +457,10 @@ export default function RidesPage() {
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <p className="text-xs text-gray-500 line-through">${hotel.originalPrice}</p>
-                      <p className="text-2xl font-black text-gray-900 dark:text-white">${hotel.price}<span className="text-sm font-normal">/night</span></p>
+                      <p className="text-2xl font-black text-gray-900 dark:text-white">${hotel.price}<span className="text-sm font-normal">{t('perNight')}</span></p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-green-600 dark:text-green-400 font-bold">Save ${hotel.savings} on rides</p>
+                      <p className="text-xs text-green-600 dark:text-green-400 font-bold">{t('saveOnRides', { savings: hotel.savings })}</p>
                       <div className="flex items-center space-x-1">
                         {[...Array(5)].map((_, i) => (
                           <IoStarOutline key={i} className="w-3 h-3 text-yellow-400 fill-current" />
@@ -470,7 +472,7 @@ export default function RidesPage() {
                   <button 
                     className="w-full mt-3 py-2 bg-amber-500 text-white rounded-lg font-bold text-sm hover:bg-amber-600 transition"
                   >
-                    Book & Get Free Ride
+                    {t('bookAndGetFreeRide')}
                   </button>
                 </div>
               </div>
@@ -485,10 +487,10 @@ export default function RidesPage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white">
-                Need a Car for Your Trip?
+                {t('rentalTitle')}
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Skip the rental counter • Free delivery to your hotel
+                {t('rentalSubtitle')}
               </p>
             </div>
             <div className="flex space-x-2">
@@ -555,10 +557,10 @@ export default function RidesPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
                   <div className="absolute top-3 left-3 px-2 py-1 bg-purple-500 text-white rounded-full shadow-lg flex items-center space-x-1">
                     <IoKeyOutline className="w-3 h-3" />
-                    <span className="text-xs font-black">INSTANT BOOK</span>
+                    <span className="text-xs font-black">{t('instantBook')}</span>
                   </div>
                   <div className="absolute top-3 right-3 px-2 py-1 bg-green-500 text-white text-xs font-black rounded-full shadow-lg">
-                    SAVE ${car.savings}/DAY
+                    {t('savePerDay', { savings: car.savings })}
                   </div>
                   <div className="absolute bottom-3 left-3">
                     <h3 className="text-lg md:text-xl font-bold text-white drop-shadow-lg">{car.name}</h3>
@@ -569,17 +571,17 @@ export default function RidesPage() {
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <p className="text-xs text-gray-500 line-through">${car.originalPrice}</p>
-                      <p className="text-2xl font-black text-gray-900 dark:text-white">${car.price}<span className="text-sm font-normal">/day</span></p>
+                      <p className="text-2xl font-black text-gray-900 dark:text-white">${car.price}<span className="text-sm font-normal">{t('perDay')}</span></p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-purple-600 dark:text-purple-400 font-bold">{car.feature}</p>
-                      <p className="text-xs text-green-600 dark:text-green-400">Free delivery</p>
+                      <p className="text-xs text-green-600 dark:text-green-400">{t('freeDelivery')}</p>
                     </div>
                   </div>
                   <button 
                     className="w-full mt-3 py-2 bg-purple-500 text-white rounded-lg font-bold text-sm hover:bg-purple-600 transition"
                   >
-                    Reserve Now
+                    {t('reserveNow')}
                   </button>
                 </div>
               </div>
@@ -593,10 +595,10 @@ export default function RidesPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Real-Time Price Comparison
+              {t('priceComparisonTitle')}
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Sky Harbor to Scottsdale (Live Pricing)
+              {t('priceComparisonSubtitle')}
             </p>
           </div>
 
@@ -604,21 +606,21 @@ export default function RidesPage() {
             {/* Uber */}
             <div className="bg-white dark:bg-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
               <div className="text-center">
-                <div className="text-gray-500 dark:text-gray-400 mb-2 text-sm">Uber</div>
+                <div className="text-gray-500 dark:text-gray-400 mb-2 text-sm">{t('uber')}</div>
                 <div className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
                   {liveComparison.uberPrice}
                 </div>
                 <div className="text-sm text-red-600 dark:text-red-400 font-medium">
-                  Surge: {liveComparison.surge}
+                  {t('surge', { surge: liveComparison.surge })}
                 </div>
                 <div className="mt-4 space-y-1 text-xs text-gray-500 dark:text-gray-400">
                   <div className="flex items-center justify-center">
                     <span className="w-2 h-2 bg-red-400 rounded-full mr-2" />
-                    Surge pricing active
+                    {t('surgePricingActive')}
                   </div>
                   <div className="flex items-center justify-center">
                     <span className="w-2 h-2 bg-gray-400 rounded-full mr-2" />
-                    Random driver
+                    {t('randomDriver')}
                   </div>
                 </div>
               </div>
@@ -627,21 +629,21 @@ export default function RidesPage() {
             {/* Lyft */}
             <div className="bg-white dark:bg-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
               <div className="text-center">
-                <div className="text-gray-500 dark:text-gray-400 mb-2 text-sm">Lyft</div>
+                <div className="text-gray-500 dark:text-gray-400 mb-2 text-sm">{t('lyft')}</div>
                 <div className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
                   {liveComparison.lyftPrice}
                 </div>
                 <div className="text-sm text-red-600 dark:text-red-400 font-medium">
-                  Prime time: {liveComparison.surge}
+                  {t('primeTime', { surge: liveComparison.surge })}
                 </div>
                 <div className="mt-4 space-y-1 text-xs text-gray-500 dark:text-gray-400">
                   <div className="flex items-center justify-center">
                     <span className="w-2 h-2 bg-red-400 rounded-full mr-2" />
-                    Dynamic pricing
+                    {t('dynamicPricing')}
                   </div>
                   <div className="flex items-center justify-center">
                     <span className="w-2 h-2 bg-gray-400 rounded-full mr-2" />
-                    Standard vehicle
+                    {t('standardVehicle')}
                   </div>
                 </div>
               </div>
@@ -650,24 +652,24 @@ export default function RidesPage() {
             {/* ItWhip */}
             <div className="bg-amber-500 rounded-lg p-6 text-white relative overflow-hidden">
               <div className="absolute top-2 right-2 px-2 py-1 bg-green-500 text-white text-xs font-bold rounded">
-                MEMBER RATE
+                {t('memberRate')}
               </div>
               <div className="text-center relative z-10">
-                <div className="text-amber-100 mb-2 text-sm">ItWhip</div>
+                <div className="text-amber-100 mb-2 text-sm">{t('itwhip')}</div>
                 <div className="text-3xl md:text-4xl font-bold mb-2">
                   {liveComparison.ourPrice}
                 </div>
                 <div className="text-sm text-amber-100 font-medium">
-                  Fixed price always
+                  {t('fixedPriceAlways')}
                 </div>
                 <div className="mt-4 space-y-1 text-xs">
                   <div className="flex items-center justify-center">
                     <IoCheckmarkCircle className="w-4 h-4 text-white mr-2" />
-                    No surge ever
+                    {t('noSurgeEver')}
                   </div>
                   <div className="flex items-center justify-center">
                     <IoCheckmarkCircle className="w-4 h-4 text-white mr-2" />
-                    Luxury vehicle
+                    {t('luxuryVehicle')}
                   </div>
                 </div>
               </div>

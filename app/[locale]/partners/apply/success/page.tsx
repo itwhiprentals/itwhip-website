@@ -2,6 +2,7 @@
 // Partner Application Success Page
 
 import { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
@@ -13,9 +14,18 @@ import {
   IoArrowForward
 } from 'react-icons/io5'
 
-export const metadata: Metadata = {
-  title: 'Application Submitted | ItWhip Fleet Partner Program',
-  description: 'Your Fleet Partner application has been submitted successfully.',
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('partnersApplySuccessTitle'),
+    description: t('partnersApplySuccessDescription'),
+  }
 }
 
 const nextSteps = [

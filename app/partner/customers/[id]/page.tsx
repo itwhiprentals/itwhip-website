@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 
 import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
@@ -135,6 +135,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   const { id } = use(params)
   const router = useRouter()
   const locale = useLocale()
+  const t = useTranslations('PartnerCustomerDetail')
 
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -217,17 +218,17 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
     const diffMonths = Math.floor(diffDays / 30)
     const diffYears = Math.floor(diffDays / 365)
 
-    if (diffMins < 1) return 'just now'
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays === 1) return '1 day ago'
-    if (diffDays < 7) return `${diffDays} days ago`
-    if (diffWeeks === 1) return '1 week ago'
-    if (diffWeeks < 5) return `${diffWeeks} weeks ago`
-    if (diffMonths === 1) return '1 month ago'
-    if (diffMonths < 12) return `${diffMonths} months ago`
-    if (diffYears === 1) return '1 year ago'
-    return `${diffYears} years ago`
+    if (diffMins < 1) return t('justNow')
+    if (diffMins < 60) return t('minutesAgo', { count: diffMins })
+    if (diffHours < 24) return t('hoursAgo', { count: diffHours })
+    if (diffDays === 1) return t('daysAgo', { count: 1 })
+    if (diffDays < 7) return t('daysAgo', { count: diffDays })
+    if (diffWeeks === 1) return t('weeksAgo', { count: 1 })
+    if (diffWeeks < 5) return t('weeksAgo', { count: diffWeeks })
+    if (diffMonths === 1) return t('monthsAgo', { count: 1 })
+    if (diffMonths < 12) return t('monthsAgo', { count: diffMonths })
+    if (diffYears === 1) return t('yearsAgo', { count: 1 })
+    return t('yearsAgo', { count: diffYears })
   }
 
   const getStatusColor = (status: string) => {
@@ -289,17 +290,17 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
         <div className="text-center py-12">
           <IoWarningOutline className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            Customer not found
+            {t('customerNotFound')}
           </h2>
           <p className="text-gray-500 dark:text-gray-400 mb-4">
-            This customer may have been removed or you don't have access.
+            {t('customerNotFoundDescription')}
           </p>
           <Link
             href="/partner/customers"
             className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium text-sm transition-colors"
           >
             <IoArrowBackOutline className="w-5 h-5" />
-            Back to Customers
+            {t('backToCustomers')}
           </Link>
         </div>
       </div>
@@ -319,7 +320,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           </button>
           <div className="flex-1 min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">{customer.name}</h1>
-            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Customer since {formatDate(customer.memberSince)}</p>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{t('customerSince', { date: formatDate(customer.memberSince) })}</p>
           </div>
         </div>
       </div>
@@ -352,7 +353,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                   </p>
                 )}
                 <p className="text-xs text-gray-400 mt-0.5">
-                  Member since {formatDate(customer.memberSince)}
+                  {t('memberSince', { date: formatDate(customer.memberSince) })}
                 </p>
               </div>
             </div>
@@ -362,40 +363,40 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               {customer.verification.status === 'verified' && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-full text-xs font-medium text-green-700 dark:text-green-400">
                   <IoShieldCheckmarkOutline className="w-3.5 h-3.5" />
-                  Verified
+                  {t('verified')}
                 </span>
               )}
               {customer.stats.completedWithHost >= 5 && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-full text-xs font-medium text-purple-700 dark:text-purple-400">
                   <IoStar className="w-3.5 h-3.5" />
-                  Frequent Renter
+                  {t('frequentRenter')}
                 </span>
               )}
               {customer.stats.activeWithHost > 0 && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-full text-xs font-medium text-blue-700 dark:text-blue-400">
                   <IoCarOutline className="w-3.5 h-3.5" />
-                  Active Rental
+                  {t('activeRental')}
                 </span>
               )}
               {reviewerProfile && reviewerProfile.stats.averageRating >= 4.5 && reviewerProfile.stats.totalReviews >= 2 && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-full text-xs font-medium text-yellow-700 dark:text-yellow-400">
                   <IoStar className="w-3.5 h-3.5" />
-                  Top Rated
+                  {t('topRated')}
                 </span>
               )}
             </div>
 
             {/* With You Stats */}
             <div>
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">With You</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">{t('withYou')}</p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
                   <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{customer.stats.bookingsWithHost}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Bookings</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('bookings')}</p>
                 </div>
                 <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
                   <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{reviews.length}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Reviews</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('reviews')}</p>
                 </div>
               </div>
             </div>
@@ -407,12 +408,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           {/* Bookings */}
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white">Booking History ({bookings.length})</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white">{t('bookingHistory', { count: bookings.length })}</h3>
             </div>
             {bookings.length === 0 ? (
               <div className="p-8 text-center">
                 <IoCalendarOutline className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-500 dark:text-gray-400">No bookings yet</p>
+                <p className="text-gray-500 dark:text-gray-400">{t('noBookingsYet')}</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -447,7 +448,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                         </span>
                         {!booking.isWithYou && booking.hostName && (
                           <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 truncate">
-                            · via {booking.hostName}
+                            · {t('viaHost', { hostName: booking.hostName })}
                           </span>
                         )}
                       </div>
@@ -462,7 +463,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                         </span>
                         {booking.isWithYou && (
                           <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400">
-                            Your Vehicle
+                            {t('yourVehicle')}
                           </span>
                         )}
                       </div>
@@ -482,7 +483,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           {reviews.length > 0 && (
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="font-semibold text-gray-900 dark:text-white">Reviews for Your Vehicles ({reviews.length})</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white">{t('reviewsForYourVehicles', { count: reviews.length })}</h3>
               </div>
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {reviews.map((review) => (
@@ -517,9 +518,9 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Platform Review History</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('platformReviewHistory')}</h3>
                   <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
-                    <span>{reviewerProfile.stats.totalReviews} reviews</span>
+                    <span>{t('reviewCount', { count: reviewerProfile.stats.totalReviews })}</span>
                     {reviewerProfile.stats.averageRating > 0 && (
                       <span className="flex items-center gap-1">
                         <IoStar className="w-3.5 h-3.5 text-yellow-400" />
@@ -562,7 +563,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                         )}
                         {review.hostResponse && (
                           <div className="mt-2 ml-3 pl-3 border-l-2 border-blue-300 dark:border-blue-600">
-                            <p className="text-xs font-medium text-blue-600 dark:text-blue-400">Host Response</p>
+                            <p className="text-xs font-medium text-blue-600 dark:text-blue-400">{t('hostResponse')}</p>
                             <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{review.hostResponse}</p>
                           </div>
                         )}
@@ -578,7 +579,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           {charges.length > 0 && (
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="font-semibold text-gray-900 dark:text-white">Additional Charges</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white">{t('additionalCharges')}</h3>
               </div>
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {charges.map((charge) => (

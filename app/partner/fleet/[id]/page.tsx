@@ -4,6 +4,7 @@
 
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -84,6 +85,7 @@ const formatVehicleName = (text: string) => {
 export default function PartnerFleetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
+  const t = useTranslations('PartnerVehicleDetail')
 
   const [vehicle, setVehicle] = useState<VehicleData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -104,10 +106,10 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
         if (data.success) {
           setVehicle(data.vehicle)
         } else {
-          setError(data.error || 'Failed to load vehicle')
+          setError(data.error || t('failedToLoadVehicle'))
         }
       } catch (err) {
-        setError('Failed to load vehicle')
+        setError(t('failedToLoadVehicle'))
       } finally {
         setIsLoading(false)
       }
@@ -129,10 +131,10 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
       if (data.success) {
         setVehicle(prev => prev ? { ...prev, isActive: data.isActive } : null)
       } else {
-        setError(data.error || 'Failed to toggle status')
+        setError(data.error || t('failedToToggleStatus'))
       }
     } catch (err) {
-      setError('Failed to toggle status')
+      setError(t('failedToToggleStatus'))
     }
   }
 
@@ -151,11 +153,11 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
       if (data.success) {
         router.push('/partner/fleet')
       } else {
-        setError(data.error || 'Failed to delete vehicle')
+        setError(data.error || t('failedToDeleteVehicle'))
         setShowDeleteConfirm(false)
       }
     } catch (err) {
-      setError('Failed to delete vehicle')
+      setError(t('failedToDeleteVehicle'))
       setShowDeleteConfirm(false)
     } finally {
       setIsDeleting(false)
@@ -177,7 +179,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
           <IoWarningOutline className="w-12 h-12 sm:w-16 sm:h-16 text-red-500 mx-auto mb-4" />
           <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
           <Link href="/partner/fleet" className="text-purple-600 hover:underline">
-            Back to Fleet
+            {t('backToFleet')}
           </Link>
         </div>
       </div>
@@ -203,7 +205,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                 <h1 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
                   {vehicle.year} {formatVehicleName(vehicle.make)} {formatVehicleName(vehicle.model)}
                 </h1>
-                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">{vehicle.trim || 'Standard'}</p>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">{vehicle.trim || t('standard')}</p>
               </div>
             </div>
 
@@ -214,7 +216,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                   ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                   : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
               }`}>
-                {vehicle.isActive ? 'Active' : 'Inactive'}
+                {vehicle.isActive ? t('active') : t('inactive')}
               </span>
 
               <Link
@@ -222,7 +224,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                 className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 text-sm"
               >
                 <IoCreateOutline className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="hidden sm:inline">Edit</span>
+                <span className="hidden sm:inline">{t('edit')}</span>
               </Link>
             </div>
           </div>
@@ -243,9 +245,9 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
         <div className="max-w-6xl mx-auto px-3 sm:px-4">
           <div className="flex gap-1 overflow-x-auto scrollbar-hide -mb-px">
             {[
-              { id: 'info' as const, label: 'Info', icon: IoInformationCircleOutline },
-              { id: 'share' as const, label: 'Share', icon: IoShareSocialOutline },
-              { id: 'actions' as const, label: 'Actions', icon: IoSettingsOutline },
+              { id: 'info' as const, label: t('tabInfo'), icon: IoInformationCircleOutline },
+              { id: 'share' as const, label: t('tabShare'), icon: IoShareSocialOutline },
+              { id: 'actions' as const, label: t('tabActions'), icon: IoSettingsOutline },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -293,7 +295,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                       : 'bg-green-500 text-white'
                   }`}>
                     {fuelBadge === 'electric' ? <IoFlash className="w-4 h-4" /> : <IoLeaf className="w-4 h-4" />}
-                    {fuelBadge === 'electric' ? 'Electric' : 'Hybrid'}
+                    {fuelBadge === 'electric' ? t('electric') : t('hybrid')}
                   </div>
                 )}
               </div>
@@ -311,7 +313,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                     >
                       <Image
                         src={photo.url}
-                        alt={`Photo ${index + 1}`}
+                        alt={t('photoNumber', { number: index + 1 })}
                         fill
                         className="object-cover"
                       />
@@ -325,7 +327,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
             <div className="mt-3 sm:mt-4 grid grid-cols-3 gap-1.5 sm:gap-4">
               <div className="bg-white dark:bg-gray-800 rounded-lg p-2 sm:p-4 text-center shadow-sm border border-gray-200 dark:border-gray-700">
                 <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{vehicle.totalTrips}</p>
-                <p className="text-[10px] sm:text-sm text-gray-500">Trips</p>
+                <p className="text-[10px] sm:text-sm text-gray-500">{t('trips')}</p>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-lg p-2 sm:p-4 text-center shadow-sm border border-gray-200 dark:border-gray-700">
                 {vehicle.totalTrips > 0 ? (
@@ -334,18 +336,18 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                       <IoStar className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-yellow-500" />
                       <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{vehicle.rating.toFixed(1)}</p>
                     </div>
-                    <p className="text-[10px] sm:text-sm text-gray-500">Rating</p>
+                    <p className="text-[10px] sm:text-sm text-gray-500">{t('rating')}</p>
                   </>
                 ) : (
                   <>
                     <p className="text-lg sm:text-2xl font-bold text-gray-400 dark:text-gray-500">—</p>
-                    <p className="text-[10px] sm:text-sm text-gray-400">No Reviews</p>
+                    <p className="text-[10px] sm:text-sm text-gray-400">{t('noReviews')}</p>
                   </>
                 )}
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-lg p-2 sm:p-4 text-center shadow-sm border border-gray-200 dark:border-gray-700">
                 <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{vehicle.photos.length}</p>
-                <p className="text-[10px] sm:text-sm text-gray-500">Photos</p>
+                <p className="text-[10px] sm:text-sm text-gray-500">{t('photos')}</p>
               </div>
             </div>
           </div>
@@ -356,27 +358,27 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
             {/* Pricing */}
             <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between mb-2 sm:mb-4">
-                <h2 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white">Pricing</h2>
+                <h2 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white">{t('pricing')}</h2>
                 <Link
                   href={`/partner/fleet/${id}/edit`}
                   className="text-xs text-purple-600 hover:text-purple-700 flex items-center gap-1"
                 >
                   <IoCreateOutline className="w-3.5 h-3.5" />
-                  Edit
+                  {t('edit')}
                 </Link>
               </div>
               <div className="grid grid-cols-3 gap-2 sm:gap-4">
                 <div className="text-center p-2 sm:p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                   <p className="text-lg sm:text-2xl font-bold text-purple-600">${vehicle.dailyRate}</p>
-                  <p className="text-[10px] sm:text-xs text-gray-500">per day</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500">{t('perDay')}</p>
                 </div>
                 <div className="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <p className="text-base sm:text-xl font-semibold text-gray-900 dark:text-white">${vehicle.weeklyRate || '—'}</p>
-                  <p className="text-[10px] sm:text-xs text-gray-500">per week</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500">{t('perWeek')}</p>
                 </div>
                 <div className="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <p className="text-base sm:text-xl font-semibold text-gray-900 dark:text-white">${vehicle.monthlyRate || '—'}</p>
-                  <p className="text-[10px] sm:text-xs text-gray-500">per month</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500">{t('perMonth')}</p>
                 </div>
               </div>
             </div>
@@ -386,14 +388,14 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
               <div className="flex items-center justify-between mb-2 sm:mb-4">
                 <div className="flex items-center gap-2">
                   <IoShieldCheckmark className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                  <h2 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white">Vehicle Details</h2>
+                  <h2 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white">{t('vehicleDetails')}</h2>
                 </div>
                 <Link
                   href={`/partner/fleet/${id}/edit`}
                   className="text-xs text-purple-600 hover:text-purple-700 flex items-center gap-1"
                 >
                   <IoCreateOutline className="w-3.5 h-3.5" />
-                  Edit
+                  {t('edit')}
                 </Link>
               </div>
 
@@ -401,41 +403,41 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
               <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
                 <p className="text-[10px] sm:text-xs text-gray-500 mb-1.5 flex items-center gap-1">
                   <IoShieldCheckmark className="w-3 h-3 text-green-600" />
-                  VIN Verified - Cannot be changed
+                  {t('vinVerified')}
                 </p>
                 <p className="font-mono text-xs sm:text-sm text-gray-900 dark:text-white break-all">{vehicle.vin}</p>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 sm:gap-4">
                 <div>
-                  <p className="text-xs text-gray-500">Color</p>
+                  <p className="text-xs text-gray-500">{t('color')}</p>
                   <p className="text-sm text-gray-900 dark:text-white capitalize">{vehicle.color}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Transmission</p>
+                  <p className="text-xs text-gray-500">{t('transmission')}</p>
                   <p className="text-sm text-gray-900 dark:text-white capitalize">{vehicle.transmission}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Fuel Type</p>
+                  <p className="text-xs text-gray-500">{t('fuelType')}</p>
                   <p className="text-sm text-gray-900 dark:text-white capitalize">{vehicle.fuelType}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Doors</p>
+                  <p className="text-xs text-gray-500">{t('doors')}</p>
                   <p className="text-sm text-gray-900 dark:text-white">{vehicle.doors}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Seats</p>
+                  <p className="text-xs text-gray-500">{t('seats')}</p>
                   <p className="text-sm text-gray-900 dark:text-white">{vehicle.seats}</p>
                 </div>
                 {vehicle.currentMileage && (
                   <div>
-                    <p className="text-xs text-gray-500">Mileage</p>
-                    <p className="text-sm text-gray-900 dark:text-white">{vehicle.currentMileage.toLocaleString()} mi</p>
+                    <p className="text-xs text-gray-500">{t('mileage')}</p>
+                    <p className="text-sm text-gray-900 dark:text-white">{vehicle.currentMileage.toLocaleString()} {t('mi')}</p>
                   </div>
                 )}
                 {vehicle.licensePlate && (
                   <div>
-                    <p className="text-xs text-gray-500">License Plate</p>
+                    <p className="text-xs text-gray-500">{t('licensePlate')}</p>
                     <p className="text-sm text-gray-900 dark:text-white">{vehicle.licensePlate}</p>
                   </div>
                 )}
@@ -446,7 +448,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
             <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2 mb-2 sm:mb-4">
                 <IoLocationOutline className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
-                <h2 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white">Location</h2>
+                <h2 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white">{t('location')}</h2>
               </div>
               <p className="text-xs sm:text-base text-gray-900 dark:text-white">
                 {vehicle.address && `${vehicle.address}, `}
@@ -456,7 +458,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
 
             {/* Delivery Options */}
             <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h2 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-4">Delivery Options</h2>
+              <h2 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-4">{t('deliveryOptions')}</h2>
               <div className="space-y-1.5 sm:space-y-2">
                 <div className="flex items-center gap-2">
                   {vehicle.airportPickup ? (
@@ -465,7 +467,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                     <IoCloseCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   )}
                   <span className={`text-xs sm:text-base ${vehicle.airportPickup ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
-                    Airport Pickup
+                    {t('airportPickup')}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -475,7 +477,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                     <IoCloseCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   )}
                   <span className={`text-xs sm:text-base ${vehicle.hotelDelivery ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
-                    Hotel Delivery
+                    {t('hotelDelivery')}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -485,11 +487,11 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                     <IoCloseCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   )}
                   <span className={`text-xs sm:text-base ${vehicle.homeDelivery ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
-                    Home Delivery
+                    {t('homeDelivery')}
                   </span>
                 </div>
                 {vehicle.deliveryFee > 0 && (
-                  <p className="text-[10px] sm:text-sm text-gray-500 mt-1.5 sm:mt-2">Delivery fee: ${vehicle.deliveryFee}</p>
+                  <p className="text-[10px] sm:text-sm text-gray-500 mt-1.5 sm:mt-2">{t('deliveryFee', { fee: vehicle.deliveryFee })}</p>
                 )}
               </div>
             </div>
@@ -497,7 +499,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
             {/* Features */}
             {vehicle.features && vehicle.features.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                <h2 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-4">Features</h2>
+                <h2 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-4">{t('features')}</h2>
                 <div className="flex flex-wrap gap-1 sm:gap-2">
                   {vehicle.features.map((feature, index) => (
                     <span
@@ -514,7 +516,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
             {/* Description */}
             {vehicle.description && (
               <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                <h2 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-4">Description</h2>
+                <h2 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-4">{t('description')}</h2>
                 <p className="text-xs sm:text-base text-gray-700 dark:text-gray-300">{vehicle.description}</p>
               </div>
             )}
@@ -532,7 +534,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
           {activeTab === 'share' && (
             <div className="space-y-4">
               <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Share & Preview</h2>
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('shareAndPreview')}</h2>
                 <div className="space-y-3">
                   <Link
                     href={`/rentals/${vehicle.id}`}
@@ -540,18 +542,18 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                     className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
                   >
                     <IoOpenOutline className="w-5 h-5" />
-                    Preview Public Listing
+                    {t('previewPublicListing')}
                   </Link>
                   <button
                     onClick={() => {
                       const url = `${window.location.origin}/rentals/${vehicle.id}`
                       navigator.clipboard.writeText(url)
-                      alert('Link copied to clipboard!')
+                      alert(t('linkCopied'))
                     }}
                     className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg text-sm font-medium transition-colors"
                   >
                     <IoCopyOutline className="w-5 h-5" />
-                    Copy Listing Link
+                    {t('copyListingLink')}
                   </button>
                   <button
                     onClick={() => {
@@ -560,33 +562,33 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                         navigator.share({ title: `${vehicle.year} ${formatVehicleName(vehicle.make)} ${formatVehicleName(vehicle.model)}`, url })
                       } else {
                         navigator.clipboard.writeText(url)
-                        alert('Link copied to clipboard!')
+                        alert(t('linkCopied'))
                       }
                     }}
                     className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
                   >
                     <IoShareSocialOutline className="w-5 h-5" />
-                    Share Listing
+                    {t('shareListing')}
                   </button>
                 </div>
               </div>
 
               <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Links</h2>
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('quickLinks')}</h2>
                 <div className="grid grid-cols-2 gap-3">
                   <Link
                     href={`/partner/fleet/${id}/bookings`}
                     className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg text-sm font-medium transition-colors"
                   >
                     <IoCalendarOutline className="w-4 h-4" />
-                    Bookings
+                    {t('bookings')}
                   </Link>
                   <Link
                     href={`/partner/fleet/${id}/earnings`}
                     className="flex items-center justify-center gap-2 px-4 py-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg text-sm font-medium transition-colors"
                   >
                     <IoCashOutline className="w-4 h-4" />
-                    Earnings
+                    {t('earnings')}
                   </Link>
                 </div>
               </div>
@@ -596,7 +598,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
           {/* Actions Tab */}
           {activeTab === 'actions' && (
             <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Vehicle Status</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('vehicleStatus')}</h2>
               <div className="space-y-3">
                 <button
                   onClick={handleToggleActive}
@@ -610,17 +612,17 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                   {vehicle.isActive ? (
                     <>
                       <IoToggleOutline className="w-5 h-5" />
-                      Deactivate Vehicle
+                      {t('deactivateVehicle')}
                     </>
                   ) : (
                     <>
                       <IoToggle className="w-5 h-5" />
-                      Activate Vehicle
+                      {t('activateVehicle')}
                     </>
                   )}
                 </button>
                 {vehicle.hasActiveBooking && (
-                  <p className="text-xs text-gray-500 text-center">Cannot deactivate while booking is active</p>
+                  <p className="text-xs text-gray-500 text-center">{t('cannotDeactivate')}</p>
                 )}
 
                 <button
@@ -631,7 +633,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                   }`}
                 >
                   <IoTrashOutline className="w-5 h-5" />
-                  Delete Vehicle
+                  {t('deleteVehicle')}
                 </button>
               </div>
             </div>
@@ -643,23 +645,23 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Delete Vehicle?</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('deleteVehicleTitle')}</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Are you sure you want to delete this {vehicle.year} {formatVehicleName(vehicle.make)} {formatVehicleName(vehicle.model)}? This action cannot be undone.
+              {t('deleteVehicleConfirm', { vehicle: `${vehicle.year} ${formatVehicleName(vehicle.make)} ${formatVehicleName(vehicle.model)}` })}
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50"
               >
-                {isDeleting ? 'Deleting...' : 'Delete'}
+                {isDeleting ? t('deleting') : t('delete')}
               </button>
             </div>
           </div>

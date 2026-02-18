@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import {
   IoNotificationsOutline,
@@ -77,6 +78,7 @@ const typeConfig = {
 }
 
 export default function PartnerNotificationsPage() {
+  const t = useTranslations('PartnerNotifications')
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [counts, setCounts] = useState<Counts>({
     total: 0, unread: 0, booking: 0, review: 0,
@@ -116,10 +118,10 @@ export default function PartnerNotificationsPage() {
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
 
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins} min ago`
-    if (diffHours < 24) return `${diffHours} hours ago`
-    if (diffDays < 7) return `${diffDays} days ago`
+    if (diffMins < 1) return t('justNow')
+    if (diffMins < 60) return t('minutesAgo', { count: diffMins })
+    if (diffHours < 24) return t('hoursAgo', { count: diffHours })
+    if (diffDays < 7) return t('daysAgo', { count: diffDays })
     return date.toLocaleDateString()
   }
 
@@ -136,9 +138,9 @@ export default function PartnerNotificationsPage() {
 
       let key: string
       if (date.getTime() === today.getTime()) {
-        key = 'Today'
+        key = t('today')
       } else if (date.getTime() === yesterday.getTime()) {
-        key = 'Yesterday'
+        key = t('yesterday')
       } else {
         key = date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })
       }
@@ -151,13 +153,13 @@ export default function PartnerNotificationsPage() {
   }
 
   const filterButtons = [
-    { key: null, label: 'All', count: counts.total },
-    { key: 'booking', label: 'Bookings', count: counts.booking },
-    { key: 'review', label: 'Reviews', count: counts.review },
-    { key: 'message', label: 'Messages', count: counts.message },
-    { key: 'maintenance', label: 'Maintenance', count: counts.maintenance },
-    { key: 'claim', label: 'Claims', count: counts.claim },
-    { key: 'payout', label: 'Payouts', count: counts.payout }
+    { key: null, label: t('filterAll'), count: counts.total },
+    { key: 'booking', label: t('filterBookings'), count: counts.booking },
+    { key: 'review', label: t('filterReviews'), count: counts.review },
+    { key: 'message', label: t('filterMessages'), count: counts.message },
+    { key: 'maintenance', label: t('filterMaintenance'), count: counts.maintenance },
+    { key: 'claim', label: t('filterClaims'), count: counts.claim },
+    { key: 'payout', label: t('filterPayouts'), count: counts.payout }
   ]
 
   if (loading) {
@@ -184,10 +186,10 @@ export default function PartnerNotificationsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <IoNotificationsOutline className="w-7 h-7" />
-            Notifications
+            {t('title')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {counts.unread > 0 ? `${counts.unread} unread` : 'All caught up!'}
+            {counts.unread > 0 ? t('unreadCount', { count: counts.unread }) : t('allCaughtUp')}
           </p>
         </div>
 
@@ -196,7 +198,7 @@ export default function PartnerNotificationsPage() {
           className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
         >
           <IoRefreshOutline className="w-5 h-5" />
-          Refresh
+          {t('refresh')}
         </button>
       </div>
 
@@ -233,10 +235,10 @@ export default function PartnerNotificationsPage() {
         <div className="bg-white dark:bg-gray-800 rounded-xl p-12 text-center">
           <IoNotificationsOutline className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
           <p className="text-gray-500 dark:text-gray-400 text-lg">
-            {filter ? `No ${filter} notifications` : 'No notifications yet'}
+            {filter ? t('noFilteredNotifications', { filter }) : t('noNotificationsYet')}
           </p>
           <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
-            Activity will appear here as it happens
+            {t('activityWillAppear')}
           </p>
         </div>
       ) : (
@@ -302,13 +304,13 @@ export default function PartnerNotificationsPage() {
                             {notification.type === 'message' && notification.metadata.isUrgent && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs rounded-full">
                                 <IoAlertCircleOutline className="w-3 h-3" />
-                                Urgent
+                                {t('urgent')}
                               </span>
                             )}
                             {notification.type === 'maintenance' && notification.metadata.isOverdue && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs rounded-full">
                                 <IoAlertCircleOutline className="w-3 h-3" />
-                                Overdue
+                                {t('overdue')}
                               </span>
                             )}
                             {notification.type === 'payout' && notification.metadata.amount && (

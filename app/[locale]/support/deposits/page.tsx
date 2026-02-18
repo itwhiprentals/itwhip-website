@@ -19,25 +19,18 @@ import {
   IoRefreshOutline
 } from 'react-icons/io5'
 
-export const metadata: Metadata = {
-  title: 'Security Deposits Explained | ItWhip Support',
-  description: 'Learn about ItWhip security deposits - how they work, when they\'re charged, refund timelines, and how to reduce your deposit with verified insurance.',
-  keywords: [
-    'security deposit car rental',
-    'rental car deposit',
-    'itwhip deposit',
-    'car rental hold',
-    'deposit refund'
-  ],
-  openGraph: {
-    title: 'Security Deposits | ItWhip Support',
-    description: 'Everything you need to know about security deposits on ItWhip rentals.',
-    url: 'https://itwhip.com/support/deposits',
-    type: 'website'
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/support/deposits',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('supportDepositsTitle'),
+    description: t('supportDepositsDescription'),
+  }
 }
 
 const DEPOSIT_TIERS = [

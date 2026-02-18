@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react'
 import { IoClose, IoStar, IoCheckmarkCircle } from 'react-icons/io5'
+import { useTranslations } from 'next-intl'
 import GuestReviewForm from './GuestReviewForm'
 import GuestReviewSuccess from './GuestReviewSuccess'
 import GuestReviewDisplay from './GuestReviewDisplay'
@@ -32,11 +33,12 @@ interface GuestReviewModalProps {
 
 type ModalState = 'loading' | 'form' | 'success' | 'existing' | 'error' | 'ineligible'
 
-export default function GuestReviewModal({ 
-  booking, 
+export default function GuestReviewModal({
+  booking,
   guestToken,
-  onClose 
+  onClose
 }: GuestReviewModalProps) {
+  const t = useTranslations('GuestReview')
   const [isOpen, setIsOpen] = useState(false)
   const [modalState, setModalState] = useState<ModalState>('loading')
   const [existingReview, setExistingReview] = useState<any>(null)
@@ -87,26 +89,26 @@ export default function GuestReviewModal({
   const checkEligibility = () => {
     // Check if trip has ended
     if (!booking.tripEndedAt) {
-      return { 
-        eligible: false, 
-        reason: 'You can only review after completing your trip.' 
+      return {
+        eligible: false,
+        reason: t('eligibilityTripNotEnded')
       }
     }
 
     // Check trip status
     const eligibleStatuses = ['COMPLETED', 'ENDED_PENDING_REVIEW']
     if (booking.tripStatus && !eligibleStatuses.includes(booking.tripStatus)) {
-      return { 
-        eligible: false, 
-        reason: 'This booking is not eligible for review.' 
+      return {
+        eligible: false,
+        reason: t('eligibilityNotEligible')
       }
     }
 
     // Check if fraudulent
     if (booking.fraudulent) {
-      return { 
-        eligible: false, 
-        reason: 'Account under review. Please contact support.' 
+      return {
+        eligible: false,
+        reason: t('eligibilityAccountReview')
       }
     }
 
@@ -114,11 +116,11 @@ export default function GuestReviewModal({
     const daysSinceEnd = Math.floor(
       (Date.now() - new Date(booking.tripEndedAt).getTime()) / (1000 * 60 * 60 * 24)
     )
-    
+
     if (daysSinceEnd > 30) {
-      return { 
-        eligible: false, 
-        reason: 'The review period has expired (30 days after trip completion).' 
+      return {
+        eligible: false,
+        reason: t('eligibilityExpired')
       }
     }
 
@@ -146,11 +148,11 @@ export default function GuestReviewModal({
         setSubmittedReview(data.data)
         setModalState('success')
       } else {
-        setError(data.error || 'Failed to submit review')
+        setError(data.error || t('submitError'))
       }
     } catch (error) {
       console.error('Error submitting review:', error)
-      setError('Failed to submit review. Please try again.')
+      setError(t('submitErrorRetry'))
     } finally {
       setIsSubmitting(false)
     }
@@ -184,7 +186,7 @@ export default function GuestReviewModal({
   // Calculate average rating if existing review has category ratings
   const getAverageRating = (review: any) => {
     if (!review) return 0
-    
+
     const ratings = [
       review.rating,
       review.cleanliness,
@@ -193,9 +195,9 @@ export default function GuestReviewModal({
       review.convenience,
       review.value
     ].filter(r => r !== null && r !== undefined)
-    
-    return ratings.length > 0 
-      ? ratings.reduce((a, b) => a + b, 0) / ratings.length 
+
+    return ratings.length > 0
+      ? ratings.reduce((a, b) => a + b, 0) / ratings.length
       : review.rating
   }
 
@@ -209,22 +211,22 @@ export default function GuestReviewModal({
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                  Your Review
+                  {t('yourReview')}
                 </h4>
                 <div className="flex items-center gap-1">
                   <IoCheckmarkCircle className="w-4 h-4 text-green-600" />
-                  <span className="text-xs text-green-600">Submitted</span>
+                  <span className="text-xs text-green-600">{t('submitted')}</span>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2 mb-2">
                 <div className="flex">
                   {[...Array(5)].map((_, i) => (
                     <IoStar
                       key={i}
                       className={`w-4 h-4 ${
-                        i < existingReview.rating 
-                          ? 'text-amber-400 fill-current' 
+                        i < existingReview.rating
+                          ? 'text-amber-400 fill-current'
                           : 'text-gray-300'
                       }`}
                     />
@@ -234,34 +236,34 @@ export default function GuestReviewModal({
                   {new Date(existingReview.createdAt).toLocaleDateString()}
                 </span>
               </div>
-              
+
               {existingReview.title && (
                 <p className="font-medium text-sm text-gray-900 dark:text-white mb-1">
                   {existingReview.title}
                 </p>
               )}
-              
+
               <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
                 {existingReview.comment}
               </p>
-              
+
               <button
                 onClick={openModal}
                 className="mt-3 text-sm text-amber-600 hover:text-amber-700 font-medium"
               >
-                View Full Review
+                {t('viewFullReview')}
               </button>
             </div>
           ) : (
             // Show review prompt
             <div>
               <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                Rate Your Experience
+                {t('rateYourExperience')}
               </h4>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                How was your trip with the {booking.car.year} {booking.car.make} {booking.car.model}?
+                {t('howWasYourTrip', { year: booking.car.year, make: booking.car.make, model: booking.car.model })}
               </p>
-              
+
               {/* Star Preview */}
               <div className="flex items-center gap-2 mb-3">
                 <div className="flex">
@@ -276,12 +278,12 @@ export default function GuestReviewModal({
                   ))}
                 </div>
               </div>
-              
+
               <button
                 onClick={openModal}
                 className="w-full px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors"
               >
-                Leave a Review
+                {t('leaveAReview')}
               </button>
             </div>
           )}
@@ -295,7 +297,7 @@ export default function GuestReviewModal({
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {modalState === 'existing' ? 'Your Review' : 'Leave a Review'}
+                {modalState === 'existing' ? t('yourReview') : t('leaveAReview')}
               </h2>
               <button
                 onClick={closeModal}
@@ -349,7 +351,7 @@ export default function GuestReviewModal({
                     <IoClose className="w-8 h-8 text-gray-400" />
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    Unable to Leave Review
+                    {t('unableToLeaveReview')}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-6">
                     {eligibilityError}
@@ -358,7 +360,7 @@ export default function GuestReviewModal({
                     onClick={closeModal}
                     className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600"
                   >
-                    Close
+                    {t('close')}
                   </button>
                 </div>
               )}

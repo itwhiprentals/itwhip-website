@@ -12,9 +12,18 @@ import {
   IoHomeOutline
 } from 'react-icons/io5'
 
-export const metadata: Metadata = {
-  title: 'Insurance Coverage Explained | Support | ItWhip',
-  description: 'Understand the insurance coverage included with every ItWhip rental. Learn about liability, comprehensive, and collision protection options.',
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('supportInsuranceCoverageTitle'),
+    description: t('supportInsuranceCoverageDescription'),
+  }
 }
 
 const coverageTypes = [

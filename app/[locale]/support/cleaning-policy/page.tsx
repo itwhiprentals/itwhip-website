@@ -20,25 +20,18 @@ import {
   IoTrashOutline
 } from 'react-icons/io5'
 
-export const metadata: Metadata = {
-  title: 'Cleaning Policy & Fees | ItWhip Support',
-  description: 'Understand ItWhip cleaning standards - what\'s expected when returning a rental, cleaning fees, pet policies, and smoking rules.',
-  keywords: [
-    'car rental cleaning policy',
-    'rental car cleaning fee',
-    'smoking in rental car',
-    'pet policy car rental',
-    'cleaning charges'
-  ],
-  openGraph: {
-    title: 'Cleaning Policy | ItWhip Support',
-    description: 'Return guidelines and cleaning standards for ItWhip rentals.',
-    url: 'https://itwhip.com/support/cleaning-policy',
-    type: 'website'
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/support/cleaning-policy',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('supportCleaningPolicyTitle'),
+    description: t('supportCleaningPolicyDescription'),
+  }
 }
 
 const CLEANING_FEES = [

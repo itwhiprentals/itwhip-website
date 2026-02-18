@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
@@ -79,6 +79,7 @@ interface HostCar {
 
 export default function PartnerRequestsPage() {
   const locale = useLocale()
+  const t = useTranslations('PartnerRequests')
 
   const [requests, setRequests] = useState<ReservationRequest[]>([])
   const [myCars, setMyCars] = useState<HostCar[]>([])
@@ -160,18 +161,18 @@ export default function PartnerRequestsPage() {
         fetchRequests()
         setExpandedRequest(requestId)
       } else {
-        alert(data.error || 'Failed to claim request')
+        alert(data.error || t('failedToClaim'))
       }
     } catch (error) {
       console.error('Failed to claim request:', error)
-      alert('Failed to claim request')
+      alert(t('failedToClaim'))
     } finally {
       setClaimingRequest(null)
     }
   }
 
   const withdrawClaim = async (requestId: string) => {
-    if (!confirm('Are you sure you want to withdraw your claim?')) return
+    if (!confirm(t('confirmWithdraw'))) return
 
     try {
       const response = await fetch(`/api/partner/requests/${requestId}/claim`, {
@@ -182,11 +183,11 @@ export default function PartnerRequestsPage() {
       if (data.success) {
         fetchRequests()
       } else {
-        alert(data.error || 'Failed to withdraw claim')
+        alert(data.error || t('failedToWithdraw'))
       }
     } catch (error) {
       console.error('Failed to withdraw claim:', error)
-      alert('Failed to withdraw claim')
+      alert(t('failedToWithdraw'))
     }
   }
 
@@ -203,13 +204,13 @@ export default function PartnerRequestsPage() {
         fetchRequests()
         setAssigningCar(null)
         setSelectedCarId('')
-        alert('Car assigned successfully! The booking will be finalized shortly.')
+        alert(t('carAssignedAlert'))
       } else {
-        alert(data.error || 'Failed to assign car')
+        alert(data.error || t('failedToAssignCar'))
       }
     } catch (error) {
       console.error('Failed to assign car:', error)
-      alert('Failed to assign car')
+      alert(t('failedToAssignCar'))
     }
   }
 
@@ -240,7 +241,7 @@ export default function PartnerRequestsPage() {
   }
 
   const formatDate = (dateStr?: string) => {
-    if (!dateStr) return 'TBD'
+    if (!dateStr) return t('tbd')
     return new Date(dateStr).toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric'
@@ -252,7 +253,7 @@ export default function PartnerRequestsPage() {
     const expires = new Date(expiresAt)
     const diff = expires.getTime() - now.getTime()
 
-    if (diff <= 0) return { expired: true, text: 'Expired' }
+    if (diff <= 0) return { expired: true, text: t('expired') }
 
     const minutes = Math.floor(diff / 60000)
     const seconds = Math.floor((diff % 60000) / 1000)
@@ -280,7 +281,7 @@ export default function PartnerRequestsPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-center h-64">
-            <div className="text-gray-500">Loading requests...</div>
+            <div className="text-gray-500">{t('loading')}</div>
           </div>
         </div>
       </div>
@@ -301,16 +302,16 @@ export default function PartnerRequestsPage() {
             </Link>
             <div className="flex-1">
               <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Open Requests
+                {t('title')}
               </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Browse and claim rental requests from guests
+                {t('subtitle')}
               </p>
             </div>
             <button
               onClick={fetchRequests}
               className="p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              title="Refresh"
+              title={t('refresh')}
             >
               <IoRefreshOutline className="w-5 h-5 text-gray-500" />
             </button>
@@ -322,19 +323,19 @@ export default function PartnerRequestsPage() {
               <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {stats.openCount}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Available</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">{t('statAvailable')}</div>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
               <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                 {stats.myActiveClaimCount}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">My Active Claims</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">{t('statMyActiveClaims')}</div>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
               <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {stats.myClaimsCount}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Total Claims</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">{t('statTotalClaims')}</div>
             </div>
           </div>
 
@@ -344,7 +345,7 @@ export default function PartnerRequestsPage() {
               <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by vehicle or location..."
+                placeholder={t('searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
@@ -359,7 +360,7 @@ export default function PartnerRequestsPage() {
                     : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700'
                 }`}
               >
-                Available
+                {t('filterAvailable')}
               </button>
               <button
                 onClick={() => setFilter('my_claims')}
@@ -369,7 +370,7 @@ export default function PartnerRequestsPage() {
                     : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700'
                 }`}
               >
-                My Claims
+                {t('filterMyClaims')}
               </button>
             </div>
           </div>
@@ -382,12 +383,12 @@ export default function PartnerRequestsPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-12 text-center border border-gray-200 dark:border-gray-700">
             <IoDocumentTextOutline className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {filter === 'my_claims' ? 'No claims yet' : 'No open requests'}
+              {filter === 'my_claims' ? t('noClaimsYet') : t('noOpenRequests')}
             </h3>
             <p className="text-gray-500 dark:text-gray-400">
               {filter === 'my_claims'
-                ? 'Claim a request to start earning'
-                : 'Check back later for new rental requests'}
+                ? t('claimToStartEarning')
+                : t('checkBackLater')}
             </p>
           </div>
         ) : (
@@ -420,14 +421,14 @@ export default function PartnerRequestsPage() {
                       <div className="flex items-center gap-2">
                         <IoTimeOutline className={`w-4 h-4 ${claimTimer.urgent ? 'text-red-600' : 'text-yellow-600'}`} />
                         <span className={`text-sm font-medium ${claimTimer.urgent ? 'text-red-700' : 'text-yellow-700'}`}>
-                          Select a car within {claimTimer.text}
+                          {t('selectCarWithin', { time: claimTimer.text })}
                         </span>
                       </div>
                       <button
                         onClick={() => setExpandedRequest(request.id)}
                         className="text-sm text-orange-600 hover:text-orange-700 font-medium"
                       >
-                        Assign Car
+                        {t('assignCar')}
                       </button>
                     </div>
                   )}
@@ -455,18 +456,18 @@ export default function PartnerRequestsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center flex-wrap gap-2 mb-1">
                           <h3 className="font-semibold text-gray-900 dark:text-white">
-                            {request.vehicleMake || request.vehicleType || 'Any Vehicle'}
+                            {request.vehicleMake || request.vehicleType || t('anyVehicle')}
                             {request.vehicleModel && ` ${request.vehicleModel}`}
                           </h3>
                           {hasMyClaim && (
                             <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300">
-                              Your Claim
+                              {t('yourClaim')}
                             </span>
                           )}
                           {priorityBadge && (
                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${priorityBadge}`}>
                               {request.priority === 'URGENT' && <IoFlashOutline className="w-3 h-3 inline mr-1" />}
-                              {request.priority}
+                              {t(`priority${request.priority.charAt(0)}${request.priority.slice(1).toLowerCase()}`)}
                             </span>
                           )}
                         </div>
@@ -488,8 +489,8 @@ export default function PartnerRequestsPage() {
                           {request.offeredRate && (
                             <span className="flex items-center gap-1 font-medium text-green-600 dark:text-green-400">
                               <IoCashOutline className="w-4 h-4" />
-                              ${request.offeredRate}/day
-                              {request.isNegotiable && <span className="text-xs font-normal text-gray-500">(negotiable)</span>}
+                              {t('ratePerDay', { rate: request.offeredRate })}
+                              {request.isNegotiable && <span className="text-xs font-normal text-gray-500">{t('negotiable')}</span>}
                             </span>
                           )}
                         </div>
@@ -517,13 +518,13 @@ export default function PartnerRequestsPage() {
                             ) : (
                               <>
                                 <IoHandRightOutline className="w-4 h-4 inline mr-1" />
-                                Claim
+                                {t('claim')}
                               </>
                             )}
                           </button>
                         ) : (
                           <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadge(request.myClaim?.status || request.status)}`}>
-                            {request.myClaim?.status?.replace('_', ' ') || request.status.replace('_', ' ')}
+                            {t(`status_${(request.myClaim?.status || request.status)}`)}
                           </span>
                         )}
                         {isExpanded ? (
@@ -539,20 +540,20 @@ export default function PartnerRequestsPage() {
                   {isExpanded && claimPendingCar && (
                     <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-900/50">
                       <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                        Select a vehicle to fulfill this request
+                        {t('selectVehicleToFulfill')}
                       </h4>
 
                       {myCars.length === 0 ? (
                         <div className="text-center py-4">
                           <IoCarOutline className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                           <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                            You don't have any active vehicles
+                            {t('noActiveVehicles')}
                           </p>
                           <Link
                             href="/partner/fleet/add"
                             className="text-orange-600 hover:text-orange-700 text-sm font-medium"
                           >
-                            Add a vehicle
+                            {t('addVehicle')}
                           </Link>
                         </div>
                       ) : (
@@ -582,7 +583,7 @@ export default function PartnerRequestsPage() {
                                     {car.year} {car.make} {car.model}
                                   </div>
                                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                                    Your rate: ${car.dailyRate}/day
+                                    {t('yourRate', { rate: car.dailyRate })}
                                   </div>
                                 </div>
                                 {selectedCarId === car.id && (
@@ -602,13 +603,13 @@ export default function PartnerRequestsPage() {
                               disabled={!selectedCarId}
                               className="flex-1 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              Confirm Selection
+                              {t('confirmSelection')}
                             </button>
                             <button
                               onClick={() => withdrawClaim(request.id)}
                               className="px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                             >
-                              Withdraw
+                              {t('withdraw')}
                             </button>
                           </div>
                         </div>
@@ -621,14 +622,14 @@ export default function PartnerRequestsPage() {
                     <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-green-50 dark:bg-green-900/20">
                       <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
                         <IoCheckmarkCircleOutline className="w-5 h-5" />
-                        <span className="font-medium">Car assigned successfully</span>
+                        <span className="font-medium">{t('carAssignedSuccess')}</span>
                       </div>
                       <p className="text-sm text-green-600 dark:text-green-400 mt-1">
                         {request.myClaim.car.year} {request.myClaim.car.make} {request.myClaim.car.model}
-                        {request.myClaim.offeredRate && ` @ $${request.myClaim.offeredRate}/day`}
+                        {request.myClaim.offeredRate && ` @ ${t('ratePerDay', { rate: request.myClaim.offeredRate })}`}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                        The admin will finalize the booking and notify you when it's confirmed.
+                        {t('adminWillFinalize')}
                       </p>
                     </div>
                   )}
@@ -638,28 +639,28 @@ export default function PartnerRequestsPage() {
                     <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-900/50">
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span className="text-gray-500 dark:text-gray-400">Guest:</span>
+                          <span className="text-gray-500 dark:text-gray-400">{t('guest')}</span>
                           <span className="ml-2 text-gray-900 dark:text-white">{request.guestName}</span>
                         </div>
                         <div>
-                          <span className="text-gray-500 dark:text-gray-400">Duration:</span>
-                          <span className="ml-2 text-gray-900 dark:text-white">{request.durationDays || 'TBD'} days</span>
+                          <span className="text-gray-500 dark:text-gray-400">{t('duration')}</span>
+                          <span className="ml-2 text-gray-900 dark:text-white">{request.durationDays ? t('daysCount', { count: request.durationDays }) : t('tbd')}</span>
                         </div>
                         {request.totalBudget && (
                           <div>
-                            <span className="text-gray-500 dark:text-gray-400">Total Budget:</span>
+                            <span className="text-gray-500 dark:text-gray-400">{t('totalBudget')}</span>
                             <span className="ml-2 text-gray-900 dark:text-white">${request.totalBudget}</span>
                           </div>
                         )}
                         <div>
-                          <span className="text-gray-500 dark:text-gray-400">Views:</span>
+                          <span className="text-gray-500 dark:text-gray-400">{t('views')}</span>
                           <span className="ml-2 text-gray-900 dark:text-white">{request.viewCount}</span>
                         </div>
                       </div>
 
                       {request.guestNotes && (
                         <div className="mt-3 p-2 bg-white dark:bg-gray-800 rounded text-sm">
-                          <span className="text-gray-500 dark:text-gray-400">Notes: </span>
+                          <span className="text-gray-500 dark:text-gray-400">{t('notes')} </span>
                           <span className="text-gray-700 dark:text-gray-300">{request.guestNotes}</span>
                         </div>
                       )}
@@ -670,7 +671,7 @@ export default function PartnerRequestsPage() {
                           disabled={claimingRequest === request.id}
                           className="w-full mt-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
                         >
-                          {claimingRequest === request.id ? 'Claiming...' : 'Claim This Request'}
+                          {claimingRequest === request.id ? t('claiming') : t('claimThisRequest')}
                         </button>
                       )}
                     </div>
@@ -684,13 +685,13 @@ export default function PartnerRequestsPage() {
         {/* Info Box */}
         <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
           <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
-            How it works
+            {t('howItWorks')}
           </h4>
           <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1">
-            <li>1. Browse available requests and claim one you can fulfill</li>
-            <li>2. You have 30 minutes to select a car from your fleet</li>
-            <li>3. Once confirmed, the admin will finalize the booking</li>
-            <li>4. First come, first served - claim quickly!</li>
+            <li>{t('howStep1')}</li>
+            <li>{t('howStep2')}</li>
+            <li>{t('howStep3')}</li>
+            <li>{t('howStep4')}</li>
           </ul>
         </div>
       </div>

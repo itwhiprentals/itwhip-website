@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 
 interface Booking {
   id: string
@@ -48,6 +49,7 @@ export default function BookingDetailsPage({
 }) {
   const router = useRouter()
   const resolvedParams = use(params)
+  const t = useTranslations('BookingDetails')
   const [booking, setBooking] = useState<Booking | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -70,7 +72,7 @@ export default function BookingDetailsPage({
   }
 
   const handleCancelBooking = async () => {
-    if (!confirm('Are you sure you want to cancel this booking?')) return
+    if (!confirm(t('confirmCancel'))) return
 
     try {
       const response = await fetch(`/api/rentals/bookings/${resolvedParams.bookingId}/cancel`, {
@@ -78,9 +80,9 @@ export default function BookingDetailsPage({
       })
       if (!response.ok) throw new Error('Failed to cancel booking')
       await fetchBooking()
-      alert('Booking cancelled successfully')
+      alert(t('bookingCancelledSuccess'))
     } catch (err) {
-      alert('Failed to cancel booking')
+      alert(t('failedToCancelBooking'))
     }
   }
 
@@ -96,10 +98,10 @@ export default function BookingDetailsPage({
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Booking Not Found</h2>
-          <p className="text-gray-600 mb-6">{error || 'This booking does not exist or you do not have access to it.'}</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('bookingNotFound')}</h2>
+          <p className="text-gray-600 mb-6">{error || t('bookingNotFoundDescription')}</p>
           <Link href="/rentals/search" className="text-purple-600 hover:underline">
-            Search for Cars
+            {t('searchForCars')}
           </Link>
         </div>
       </div>
@@ -128,16 +130,16 @@ export default function BookingDetailsPage({
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Booking #{booking.bookingCode}</h1>
-              <p className="text-gray-600 mt-2">Booked by {booking.guestName}</p>
+              <h1 className="text-3xl font-bold text-gray-900">{t('bookingTitle', { bookingCode: booking.bookingCode })}</h1>
+              <p className="text-gray-600 mt-2">{t('bookedBy', { guestName: booking.guestName })}</p>
             </div>
             <div className="flex gap-2">
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColor}`}>
-                {booking.status}
+                {t(`status_${booking.status}` as any)}
               </span>
               {booking.verificationStatus !== 'NOT_REQUIRED' && (
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${verificationStatusColor}`}>
-                  Verification: {booking.verificationStatus}
+                  {t('verificationLabel')}: {t(`verification_${booking.verificationStatus}` as any)}
                 </span>
               )}
             </div>
@@ -146,7 +148,7 @@ export default function BookingDetailsPage({
 
         {/* Car Details */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Vehicle Details</h2>
+          <h2 className="text-xl font-semibold mb-4">{t('vehicleDetails')}</h2>
           <div className="grid md:grid-cols-2 gap-6">
             {booking.car.photos?.[0] && (
               <div className="relative h-48 rounded-lg overflow-hidden">
@@ -164,17 +166,17 @@ export default function BookingDetailsPage({
               </h3>
               <div className="mt-4 space-y-2">
                 <p className="text-gray-600">
-                  <span className="font-medium">Pick-up:</span> {new Date(booking.startDate).toLocaleDateString()} at {booking.startTime}
+                  <span className="font-medium">{t('pickUp')}</span> {new Date(booking.startDate).toLocaleDateString()} at {booking.startTime}
                 </p>
                 <p className="text-gray-600">
-                  <span className="font-medium">Return:</span> {new Date(booking.endDate).toLocaleDateString()} at {booking.endTime}
+                  <span className="font-medium">{t('returnLabel')}</span> {new Date(booking.endDate).toLocaleDateString()} at {booking.endTime}
                 </p>
                 <p className="text-gray-600">
-                  <span className="font-medium">Location:</span> {booking.pickupLocation}
+                  <span className="font-medium">{t('location')}</span> {booking.pickupLocation}
                 </p>
                 {booking.pickupType === 'DELIVERY' && booking.deliveryAddress && (
                   <p className="text-gray-600">
-                    <span className="font-medium">Delivery to:</span> {booking.deliveryAddress}
+                    <span className="font-medium">{t('deliveryTo')}</span> {booking.deliveryAddress}
                   </p>
                 )}
               </div>
@@ -184,18 +186,18 @@ export default function BookingDetailsPage({
 
         {/* Host Information */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Host Information</h2>
+          <h2 className="text-xl font-semibold mb-4">{t('hostInformation')}</h2>
           <div className="space-y-2">
             <p className="text-gray-600">
-              <span className="font-medium">Name:</span> {booking.host.name}
+              <span className="font-medium">{t('nameLabel')}</span> {booking.host.name}
             </p>
             {booking.host.phone && (
               <p className="text-gray-600">
-                <span className="font-medium">Phone:</span> {booking.host.phone}
+                <span className="font-medium">{t('phoneLabel')}</span> {booking.host.phone}
               </p>
             )}
             <p className="text-gray-600">
-              <span className="font-medium">Email:</span> {booking.host.email}
+              <span className="font-medium">{t('emailLabel')}</span> {booking.host.email}
             </p>
           </div>
         </div>
@@ -203,25 +205,25 @@ export default function BookingDetailsPage({
         {/* Verification Status */}
         {booking.verificationStatus === 'PENDING' && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold text-yellow-900 mb-2">Verification Required</h2>
+            <h2 className="text-xl font-semibold text-yellow-900 mb-2">{t('verificationRequired')}</h2>
             <p className="text-yellow-700 mb-4">
-              Please upload your documents to complete the booking verification.
+              {t('verificationRequiredDescription')}
             </p>
             <Link
               href={`/rentals/manage/${resolvedParams.bookingId}/verify`}
               className="inline-block bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 transition-colors"
             >
-              Upload Documents
+              {t('uploadDocuments')}
             </Link>
           </div>
         )}
 
         {/* Payment Summary */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Payment Summary</h2>
+          <h2 className="text-xl font-semibold mb-4">{t('paymentSummary')}</h2>
           <div className="space-y-2">
             <div className="flex justify-between py-2 border-b">
-              <span className="text-gray-600">Total Amount</span>
+              <span className="text-gray-600">{t('totalAmount')}</span>
               <span className="font-semibold">${booking.totalAmount.toFixed(2)}</span>
             </div>
           </div>
@@ -235,14 +237,14 @@ export default function BookingDetailsPage({
                 onClick={handleCancelBooking}
                 className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
-                Cancel Booking
+                {t('cancelBooking')}
               </button>
             )}
             <Link
               href="/rentals/search"
               className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
             >
-              Browse More Cars
+              {t('browseMoreCars')}
             </Link>
           </div>
         </div>

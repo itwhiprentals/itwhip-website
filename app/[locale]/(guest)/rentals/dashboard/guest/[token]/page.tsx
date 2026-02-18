@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { IoCheckmarkCircle, IoWarning, IoCarSport } from 'react-icons/io5'
+import { useTranslations } from 'next-intl'
 
 export default function GuestBookingLandingPage() {
+  const t = useTranslations('GuestBookingLanding')
   const params = useParams()
   const token = params.token as string
 
@@ -16,7 +18,7 @@ export default function GuestBookingLandingPage() {
   useEffect(() => {
     if (!token) {
       setStatus('error')
-      setMessage('Invalid link')
+      setMessage(t('invalidLink'))
       return
     }
 
@@ -36,7 +38,7 @@ export default function GuestBookingLandingPage() {
 
       if (!response.ok) {
         setStatus('error')
-        setMessage(data.error || 'Something went wrong')
+        setMessage(data.error || t('somethingWentWrong'))
         return
       }
 
@@ -44,7 +46,7 @@ export default function GuestBookingLandingPage() {
         setStatus('success')
         setGuestName(data.guestName || '')
         setBookingCode(data.bookingCode || '')
-        setMessage('Your email has been verified. Redirecting to your account...')
+        setMessage(t('emailVerified'))
 
         // Redirect to server-side callback that sets cookies and redirects to dashboard
         setTimeout(() => {
@@ -54,7 +56,7 @@ export default function GuestBookingLandingPage() {
     } catch (error) {
       console.error('Guest booking validation error:', error)
       setStatus('error')
-      setMessage('Failed to validate link. Please try again.')
+      setMessage(t('failedToValidate'))
     }
   }
 
@@ -66,7 +68,7 @@ export default function GuestBookingLandingPage() {
           <h1 className="text-3xl font-bold text-gray-900">
             It<span className="text-orange-500">Whip</span>
           </h1>
-          <p className="text-gray-500 mt-1">Booking Access</p>
+          <p className="text-gray-500 mt-1">{t('bookingAccess')}</p>
         </div>
 
         {/* Status Card */}
@@ -77,10 +79,10 @@ export default function GuestBookingLandingPage() {
                 <IoCarSport className="w-8 h-8 text-orange-600 animate-pulse" />
               </div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                Verifying your booking...
+                {t('verifyingBooking')}
               </h2>
               <p className="text-gray-500">
-                Setting up your account
+                {t('settingUpAccount')}
               </p>
               <div className="mt-6 flex justify-center">
                 <div className="w-8 h-8 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
@@ -94,11 +96,11 @@ export default function GuestBookingLandingPage() {
                 <IoCheckmarkCircle className="w-10 h-10 text-green-600" />
               </div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                Welcome{guestName ? `, ${guestName}` : ''}!
+                {guestName ? t('welcomeWithName', { guestName }) : t('welcome')}
               </h2>
               {bookingCode && (
                 <div className="my-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
-                  <p className="text-sm text-orange-600 font-medium">Booking</p>
+                  <p className="text-sm text-orange-600 font-medium">{t('booking')}</p>
                   <p className="text-lg font-bold text-orange-600">{bookingCode}</p>
                 </div>
               )}
@@ -106,7 +108,7 @@ export default function GuestBookingLandingPage() {
                 {message}
               </p>
               <p className="text-sm text-gray-400 mt-4">
-                Redirecting to your dashboard...
+                {t('redirectingToDashboard')}
               </p>
               <div className="mt-4 flex justify-center">
                 <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
@@ -120,7 +122,7 @@ export default function GuestBookingLandingPage() {
                 <IoWarning className="w-10 h-10 text-red-600" />
               </div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                Something Went Wrong
+                {t('somethingWentWrongTitle')}
               </h2>
               <p className="text-gray-500 mb-6">
                 {message}
@@ -132,7 +134,7 @@ export default function GuestBookingLandingPage() {
                 }}
                 className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors"
               >
-                Try Again
+                {t('tryAgain')}
               </button>
             </div>
           )}
@@ -141,7 +143,7 @@ export default function GuestBookingLandingPage() {
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-sm text-gray-400">
-            Questions? Email us at{' '}
+            {t('questionsEmail')}{' '}
             <a href="mailto:info@itwhip.com" className="text-orange-600 hover:underline">
               info@itwhip.com
             </a>

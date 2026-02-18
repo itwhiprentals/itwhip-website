@@ -5,6 +5,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import {
   IoLockClosedOutline,
   IoEyeOutline,
@@ -17,6 +18,7 @@ import {
 } from 'react-icons/io5'
 
 function PartnerResetPasswordForm() {
+  const t = useTranslations('PartnerResetPassword')
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -34,7 +36,7 @@ function PartnerResetPasswordForm() {
   useEffect(() => {
     if (!token) {
       setTokenValid(false)
-      setError('Invalid or missing reset token')
+      setError(t('invalidOrMissingToken'))
       return
     }
 
@@ -53,11 +55,11 @@ function PartnerResetPasswordForm() {
 
     const levels = [
       { strength: 0, text: '', color: '' },
-      { strength: 1, text: 'Weak', color: 'text-red-600' },
-      { strength: 2, text: 'Fair', color: 'text-orange-600' },
-      { strength: 3, text: 'Good', color: 'text-yellow-600' },
-      { strength: 4, text: 'Strong', color: 'text-green-600' },
-      { strength: 5, text: 'Very Strong', color: 'text-green-700' }
+      { strength: 1, text: t('strengthWeak'), color: 'text-red-600' },
+      { strength: 2, text: t('strengthFair'), color: 'text-orange-600' },
+      { strength: 3, text: t('strengthGood'), color: 'text-yellow-600' },
+      { strength: 4, text: t('strengthStrong'), color: 'text-green-600' },
+      { strength: 5, text: t('strengthVeryStrong'), color: 'text-green-700' }
     ]
 
     return levels[strength]
@@ -70,22 +72,22 @@ function PartnerResetPasswordForm() {
     setError('')
 
     if (!password || !confirmPassword) {
-      setError('Please fill in all fields')
+      setError(t('errorAllFieldsRequired'))
       return
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters')
+      setError(t('errorPasswordTooShort'))
       return
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
+      setError(t('errorPasswordsMismatch'))
       return
     }
 
     if (!token) {
-      setError('Invalid reset token')
+      setError(t('errorInvalidToken'))
       return
     }
 
@@ -130,7 +132,7 @@ function PartnerResetPasswordForm() {
                   ItWhip
                 </span>
                 <span className="ml-2 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded">
-                  Partner Portal
+                  {t('partnerPortal')}
                 </span>
               </Link>
             </div>
@@ -141,9 +143,9 @@ function PartnerResetPasswordForm() {
           <div className="max-w-md w-full text-center">
             <div className="bg-red-50 border border-red-200 rounded-lg p-8 mb-6">
               <IoWarningOutline className="w-16 h-16 text-red-600 mx-auto mb-4" />
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Invalid Reset Link</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">{t('invalidResetLink')}</h2>
               <p className="text-gray-600 mb-4">
-                This password reset link is invalid or has expired. Please contact support for a new link.
+                {t('invalidResetLinkDescription')}
               </p>
             </div>
 
@@ -152,7 +154,7 @@ function PartnerResetPasswordForm() {
               className="inline-flex items-center text-orange-600 hover:text-orange-700 font-medium transition-colors"
             >
               <IoArrowBackOutline className="w-5 h-5 mr-2" />
-              Contact Partner Support
+              {t('contactPartnerSupport')}
             </a>
           </div>
         </div>
@@ -171,7 +173,7 @@ function PartnerResetPasswordForm() {
                   ItWhip
                 </span>
                 <span className="ml-2 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded">
-                  Partner Portal
+                  {t('partnerPortal')}
                 </span>
               </Link>
             </div>
@@ -182,9 +184,9 @@ function PartnerResetPasswordForm() {
           <div className="max-w-md w-full text-center">
             <div className="bg-green-50 border border-green-200 rounded-lg p-8">
               <IoCheckmarkCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Password Set Successfully!</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('passwordSetSuccess')}</h2>
               <p className="text-gray-600 mb-6">
-                Your password has been created. Redirecting to partner login...
+                {t('passwordSetSuccessDescription')}
               </p>
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
             </div>
@@ -204,7 +206,7 @@ function PartnerResetPasswordForm() {
                 ItWhip
               </span>
               <span className="ml-2 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded">
-                Partner Portal
+                {t('partnerPortal')}
               </span>
             </Link>
           </div>
@@ -219,10 +221,10 @@ function PartnerResetPasswordForm() {
                 <IoBriefcaseOutline className="w-8 h-8 text-orange-600" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Welcome to ItWhip Partners!
+                {t('welcomeToPartners')}
               </h1>
               <p className="text-gray-600 text-sm">
-                Create your password to access the Partner Dashboard
+                {t('createPasswordDescription')}
               </p>
             </div>
 
@@ -238,7 +240,7 @@ function PartnerResetPasswordForm() {
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Create Password
+                  {t('createPassword')}
                 </label>
                 <div className="relative">
                   <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -248,7 +250,7 @@ function PartnerResetPasswordForm() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-10 pr-12 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-colors"
-                    placeholder="At least 6 characters"
+                    placeholder={t('passwordPlaceholder')}
                     required
                   />
                   <button
@@ -265,14 +267,14 @@ function PartnerResetPasswordForm() {
                 </div>
                 {password && (
                   <p className={`text-xs mt-2 ${passwordStrength.color}`}>
-                    Password strength: {passwordStrength.text}
+                    {t('passwordStrength')} {passwordStrength.text}
                   </p>
                 )}
               </div>
 
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm Password
+                  {t('confirmPassword')}
                 </label>
                 <div className="relative">
                   <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -282,7 +284,7 @@ function PartnerResetPasswordForm() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="w-full pl-10 pr-12 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-colors"
-                    placeholder="Confirm your password"
+                    placeholder={t('confirmPasswordPlaceholder')}
                     required
                   />
                   <button
@@ -307,10 +309,10 @@ function PartnerResetPasswordForm() {
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2" />
-                    Setting Password...
+                    {t('settingPassword')}
                   </>
                 ) : (
-                  'Set Password & Continue'
+                  t('setPasswordContinue')
                 )}
               </button>
             </form>
@@ -319,7 +321,7 @@ function PartnerResetPasswordForm() {
               <div className="flex items-start text-xs text-gray-600">
                 <IoShieldCheckmarkOutline className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5 text-gray-400" />
                 <p>
-                  For security, this link expires in 24 hours and can only be used once.
+                  {t('securityInfo')}
                 </p>
               </div>
             </div>
@@ -327,9 +329,9 @@ function PartnerResetPasswordForm() {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">
-              Need help? Contact{' '}
+              {t('needHelpContact')}{' '}
               <a href="mailto:info@itwhip.com" className="text-orange-600 hover:text-orange-700">
-                info@itwhip.com
+                {t('supportEmail')}
               </a>
             </p>
           </div>

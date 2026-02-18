@@ -27,6 +27,7 @@ import {
   IoShieldCheckmark,
   IoShieldOutline
 } from 'react-icons/io5'
+import { useTranslations } from 'next-intl'
 import { AddressAutocomplete, AddressResult } from '@/app/components/shared/AddressAutocomplete'
 import { CAR_COLORS } from '@/app/host/cars/[id]/edit/types'
 import { getVehicleFeatures, groupFeaturesByCategory } from '@/app/lib/data/vehicle-features'
@@ -105,6 +106,7 @@ const TABS = [
 export default function PartnerFleetEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
+  const t = useTranslations('PartnerVehicleEdit')
 
   const [activeTab, setActiveTab] = useState('details')
   const [vehicle, setVehicle] = useState<VehicleData | null>(null)
@@ -129,10 +131,10 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
           setFormData(data.vehicle)
           setPhotos(data.vehicle.photos || [])
         } else {
-          setError(data.error || 'Failed to load vehicle')
+          setError(data.error || t('failedToLoadVehicle'))
         }
       } catch (err) {
-        setError('Failed to load vehicle')
+        setError(t('failedToLoadVehicle'))
       } finally {
         setIsLoading(false)
       }
@@ -183,15 +185,15 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
       const data = await res.json()
 
       if (data.success) {
-        setSuccessMessage('Changes saved successfully')
+        setSuccessMessage(t('changesSavedSuccessfully'))
         setVehicle({ ...vehicle, ...formData } as VehicleData)
         setHasChanges(false)
         setTimeout(() => setSuccessMessage(''), 3000)
       } else {
-        setError(data.error || 'Failed to save changes')
+        setError(data.error || t('failedToSaveChanges'))
       }
     } catch (err) {
-      setError('Failed to save changes')
+      setError(t('failedToSaveChanges'))
     } finally {
       setIsSaving(false)
     }
@@ -212,10 +214,10 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
         setSuccessMessage(data.message)
         setTimeout(() => setSuccessMessage(''), 3000)
       } else {
-        setError(data.error || 'Failed to toggle status')
+        setError(data.error || t('failedToToggleStatus'))
       }
     } catch (err) {
-      setError('Failed to toggle status')
+      setError(t('failedToToggleStatus'))
     }
   }
 
@@ -333,7 +335,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
           <IoWarningOutline className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
           <Link href="/partner/fleet" className="text-purple-600 hover:underline">
-            Back to Fleet
+            {t('backToFleet')}
           </Link>
         </div>
       </div>
@@ -366,7 +368,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                 <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
                   {vehicle.year} {vehicle.make} {vehicle.model}
                 </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{vehicle.trim || 'Standard'}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{vehicle.trim || t('standard')}</p>
               </div>
             </div>
 
@@ -380,17 +382,17 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                     ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                     : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
                 } ${vehicle.hasActiveBooking ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title={vehicle.hasActiveBooking ? 'Cannot toggle while booking is active' : ''}
+                title={vehicle.hasActiveBooking ? t('cannotToggle') : ''}
               >
                 {formData.isActive ? (
                   <>
                     <IoToggle className="w-6 h-6" />
-                    Active
+                    {t('active')}
                   </>
                 ) : (
                   <>
                     <IoToggleOutline className="w-6 h-6" />
-                    Inactive
+                    {t('inactive')}
                   </>
                 )}
               </button>
@@ -404,12 +406,12 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                 {isSaving ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Saving...
+                    {t('saving')}
                   </>
                 ) : (
                   <>
                     <IoSaveOutline className="w-5 h-5" />
-                    Save Changes
+                    {t('saveChanges')}
                   </>
                 )}
               </button>
@@ -429,7 +431,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                 }`}
               >
                 <tab.icon className="w-5 h-5" />
-                {tab.label}
+                {t(`tab_${tab.id}`)}
               </button>
             ))}
           </div>
@@ -465,28 +467,28 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <IoShieldCheckmark className="w-5 h-5 text-green-600" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white">VIN Verified Details</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('vinVerifiedDetails')}</h3>
                 </div>
                 <span className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
-                  Locked
+                  {t('locked')}
                 </span>
               </div>
 
               <div className="grid md:grid-cols-4 gap-4">
                 <div>
-                  <p className="text-xs text-gray-500">VIN</p>
+                  <p className="text-xs text-gray-500">{t('vin')}</p>
                   <p className="font-mono text-sm text-gray-900 dark:text-white">{vehicle.vin}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Make</p>
+                  <p className="text-xs text-gray-500">{t('make')}</p>
                   <p className="text-gray-900 dark:text-white">{vehicle.make}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Model</p>
+                  <p className="text-xs text-gray-500">{t('model')}</p>
                   <p className="text-gray-900 dark:text-white">{vehicle.model}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Year</p>
+                  <p className="text-xs text-gray-500">{t('year')}</p>
                   <p className="text-gray-900 dark:text-white">{vehicle.year}</p>
                 </div>
               </div>
@@ -494,9 +496,9 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
 
             {/* Service Type - Rental vs Rideshare vs Driver */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Service Type</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">{t('serviceType')}</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Choose how this vehicle will be listed. This affects where it appears and booking requirements.
+                {t('serviceTypeDescription')}
               </p>
               <div className="grid md:grid-cols-3 gap-4">
                 {/* Rental Option */}
@@ -535,28 +537,28 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                         ? 'text-purple-700 dark:text-purple-300'
                         : 'text-gray-900 dark:text-white'
                     }`}>
-                      Rental
+                      {t('rental')}
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    For personal & business short-term rentals
+                    {t('rentalDescription')}
                   </p>
                   <ul className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
                     <li className="flex items-center gap-1.5">
                       <span className="w-1 h-1 bg-purple-500 rounded-full" />
-                      Flexible 1+ day bookings
+                      {t('rentalBullet1')}
                     </li>
                     <li className="flex items-center gap-1.5">
                       <span className="w-1 h-1 bg-purple-500 rounded-full" />
-                      Listed on /rentals marketplace
+                      {t('rentalBullet2')}
                     </li>
                     <li className="flex items-center gap-1.5">
                       <span className="w-1 h-1 bg-purple-500 rounded-full" />
-                      Guest verification required
+                      {t('rentalBullet3')}
                     </li>
                     <li className="flex items-center gap-1.5">
                       <span className="w-1 h-1 bg-purple-500 rounded-full" />
-                      Mileage limits apply
+                      {t('rentalBullet4')}
                     </li>
                   </ul>
                   {formData.vehicleType === 'RENTAL' && (
@@ -602,31 +604,31 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                         ? 'text-orange-700 dark:text-orange-300'
                         : 'text-gray-900 dark:text-white'
                     }`}>
-                      Rideshare
+                      {t('rideshare')}
                     </span>
                     <span className="px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full">
-                      GIG
+                      {t('gig')}
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    For Uber, Lyft, DoorDash drivers
+                    {t('rideshareDescription')}
                   </p>
                   <ul className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
                     <li className="flex items-center gap-1.5">
                       <span className="w-1 h-1 bg-orange-500 rounded-full" />
-                      Minimum 3-day rental
+                      {t('rideshareBullet1')}
                     </li>
                     <li className="flex items-center gap-1.5">
                       <span className="w-1 h-1 bg-orange-500 rounded-full" />
-                      Listed on /rideshare/[your-slug]
+                      {t('rideshareBullet2')}
                     </li>
                     <li className="flex items-center gap-1.5">
                       <span className="w-1 h-1 bg-orange-500 rounded-full" />
-                      Weekly & monthly rates
+                      {t('rideshareBullet3')}
                     </li>
                     <li className="flex items-center gap-1.5">
                       <span className="w-1 h-1 bg-orange-500 rounded-full" />
-                      Unlimited mileage
+                      {t('rideshareBullet4')}
                     </li>
                   </ul>
                   {formData.vehicleType === 'RIDESHARE' && (
@@ -642,7 +644,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                 >
                   <div className="absolute top-3 right-3">
                     <span className="px-2 py-0.5 bg-gray-500 text-white text-xs font-medium rounded-full">
-                      Coming Soon
+                      {t('comingSoon')}
                     </span>
                   </div>
                   <div className="flex items-center gap-3 mb-3">
@@ -650,28 +652,28 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                       <IoCarOutline className="w-6 h-6 text-gray-400" />
                     </div>
                     <span className="font-semibold text-gray-400">
-                      Chauffeur
+                      {t('chauffeur')}
                     </span>
                   </div>
                   <p className="text-sm text-gray-400 mb-3">
-                    Vehicle with professional driver
+                    {t('chauffeurDescription')}
                   </p>
                   <ul className="text-xs text-gray-400 space-y-1">
                     <li className="flex items-center gap-1.5">
                       <span className="w-1 h-1 bg-gray-400 rounded-full" />
-                      Hourly & daily rates
+                      {t('chauffeurBullet1')}
                     </li>
                     <li className="flex items-center gap-1.5">
                       <span className="w-1 h-1 bg-gray-400 rounded-full" />
-                      Driver assignment required
+                      {t('chauffeurBullet2')}
                     </li>
                     <li className="flex items-center gap-1.5">
                       <span className="w-1 h-1 bg-gray-400 rounded-full" />
-                      Premium service offering
+                      {t('chauffeurBullet3')}
                     </li>
                     <li className="flex items-center gap-1.5">
                       <span className="w-1 h-1 bg-gray-400 rounded-full" />
-                      Events & VIP transport
+                      {t('chauffeurBullet4')}
                     </li>
                   </ul>
                 </div>
@@ -681,16 +683,14 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
               {formData.vehicleType === 'RIDESHARE' && (
                 <div className="mt-4 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
                   <p className="text-sm text-orange-700 dark:text-orange-300">
-                    <strong>Rideshare Mode:</strong> This vehicle will be listed for gig economy drivers with a 3-day minimum rental.
-                    Weekly and monthly rates are emphasized. Mileage is unlimited.
+                    <strong>{t('rideshareModeBannerTitle')}</strong> {t('rideshareModeBannerText')}
                   </p>
                 </div>
               )}
               {formData.vehicleType === 'RENTAL' && (
                 <div className="mt-4 p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
                   <p className="text-sm text-purple-700 dark:text-purple-300">
-                    <strong>Rental Mode:</strong> This vehicle will be listed on the main /rentals marketplace.
-                    Guest identity verification is required. Daily mileage limits apply with overage charges.
+                    <strong>{t('rentalModeBannerTitle')}</strong> {t('rentalModeBannerText')}
                   </p>
                 </div>
               )}
@@ -698,12 +698,12 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
 
             {/* Editable Details */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Vehicle Details</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('vehicleDetails')}</h3>
 
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Color
+                    {t('color')}
                   </label>
                   <select
                     value={formData.color || ''}
@@ -718,7 +718,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    License Plate
+                    {t('licensePlate')}
                   </label>
                   <input
                     type="text"
@@ -730,7 +730,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Current Mileage
+                    {t('currentMileage')}
                   </label>
                   <input
                     type="number"
@@ -743,13 +743,13 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
 
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Description
+                  {t('description')}
                 </label>
                 <textarea
                   value={formData.description || ''}
                   onChange={(e) => handleChange('description', e.target.value)}
                   rows={3}
-                  placeholder="Describe your vehicle..."
+                  placeholder={t('descriptionPlaceholder')}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white"
                 />
               </div>
@@ -757,7 +757,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
 
             {/* Location */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Vehicle Location</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('vehicleLocation')}</h3>
 
               <AddressAutocomplete
                 value={formData.address || ''}
@@ -780,10 +780,10 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
         {activeTab === 'photos' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white">Vehicle Photos</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white">{t('vehiclePhotos')}</h3>
               <label className="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 cursor-pointer flex items-center gap-2">
                 <IoAddOutline className="w-5 h-5" />
-                {uploadingPhoto ? 'Uploading...' : 'Add Photos'}
+                {uploadingPhoto ? t('uploading') : t('addPhotos')}
                 <input
                   type="file"
                   accept="image/*"
@@ -802,15 +802,15 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                 : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800'
             }`}>
               <p className={`text-sm ${photos.length >= 3 ? 'text-green-700 dark:text-green-300' : 'text-amber-700 dark:text-amber-300'}`}>
-                {photos.length} photo{photos.length !== 1 ? 's' : ''} uploaded
-                {photos.length < 3 && ` (${3 - photos.length} more recommended)`}
+                {t('photosUploaded', { count: photos.length })}
+                {photos.length < 3 && ` (${t('moreRecommended', { count: 3 - photos.length })})`}
               </p>
             </div>
 
             {photos.length === 0 ? (
               <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
                 <IoImageOutline className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 dark:text-gray-400">No photos uploaded yet</p>
+                <p className="text-gray-600 dark:text-gray-400">{t('noPhotosYet')}</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -818,7 +818,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                   <div key={photo.id} className="relative group aspect-[4/3]">
                     <Image
                       src={photo.url}
-                      alt="Vehicle"
+                      alt={t('vehiclePhotoAlt')}
                       fill
                       className="object-cover rounded-lg"
                     />
@@ -826,7 +826,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                       <button
                         onClick={() => handleSetHero(photo.id)}
                         className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-lg"
-                        title="Set as main photo"
+                        title={t('setAsMainPhoto')}
                       >
                         {photo.isHero ? (
                           <IoStar className="w-5 h-5 text-yellow-500" />
@@ -837,14 +837,14 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                       <button
                         onClick={() => handleDeletePhoto(photo.id)}
                         className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-lg"
-                        title="Delete photo"
+                        title={t('deletePhoto')}
                       >
                         <IoTrashOutline className="w-5 h-5 text-red-500" />
                       </button>
                     </div>
                     {photo.isHero && (
                       <div className="absolute bottom-2 left-2 px-2 py-1 bg-purple-600 text-white text-xs rounded">
-                        Main Photo
+                        {t('mainPhoto')}
                       </div>
                     )}
                   </div>
@@ -874,7 +874,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                     ? 'text-orange-700 dark:text-orange-300'
                     : 'text-purple-700 dark:text-purple-300'
                 }`}>
-                  {formData.vehicleType === 'RIDESHARE' ? 'Rideshare Pricing' : 'Rental Pricing'}
+                  {formData.vehicleType === 'RIDESHARE' ? t('ridesharePricing') : t('rentalPricing')}
                 </span>
               </div>
               <p className={`text-sm mt-1 ${
@@ -883,20 +883,20 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                   : 'text-purple-600 dark:text-purple-400'
               }`}>
                 {formData.vehicleType === 'RIDESHARE'
-                  ? 'Weekly and monthly rates are emphasized for gig drivers. Mileage is unlimited.'
-                  : 'Daily rate is primary. Mileage limits and overage charges apply.'
+                  ? t('ridesharePricingDescription')
+                  : t('rentalPricingDescription')
                 }
               </p>
             </div>
 
             {/* Rates Section */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Rates</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('rates')}</h3>
 
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Daily Rate *
+                    {t('dailyRate')}
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-gray-500">$</span>
@@ -909,13 +909,13 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    {formData.vehicleType === 'RIDESHARE' ? 'Base rate (3-day min)' : 'Starting from 1 day'}
+                    {formData.vehicleType === 'RIDESHARE' ? t('baseRate3DayMin') : t('startingFrom1Day')}
                   </p>
                 </div>
 
                 <div className={formData.vehicleType === 'RIDESHARE' ? 'ring-2 ring-orange-300 dark:ring-orange-700 rounded-lg p-2 -m-2' : ''}>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Weekly Rate {formData.vehicleType === 'RIDESHARE' && <span className="text-orange-500">★</span>}
+                    {t('weeklyRate')} {formData.vehicleType === 'RIDESHARE' && <span className="text-orange-500">★</span>}
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-gray-500">$</span>
@@ -929,14 +929,14 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
                     {formData.vehicleType === 'RIDESHARE'
-                      ? 'Popular for gig drivers'
-                      : `Suggested: $${Math.round((formData.dailyRate || 0) * 6.5)}`}
+                      ? t('popularForGigDrivers')
+                      : t('suggestedPrice', { price: Math.round((formData.dailyRate || 0) * 6.5) })}
                   </p>
                 </div>
 
                 <div className={formData.vehicleType === 'RIDESHARE' ? 'ring-2 ring-orange-300 dark:ring-orange-700 rounded-lg p-2 -m-2' : ''}>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Monthly Rate {formData.vehicleType === 'RIDESHARE' && <span className="text-orange-500">★</span>}
+                    {t('monthlyRate')} {formData.vehicleType === 'RIDESHARE' && <span className="text-orange-500">★</span>}
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-gray-500">$</span>
@@ -950,8 +950,8 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
                     {formData.vehicleType === 'RIDESHARE'
-                      ? 'Best value for drivers'
-                      : `Suggested: $${Math.round((formData.dailyRate || 0) * 25)}`}
+                      ? t('bestValueForDrivers')
+                      : t('suggestedPrice', { price: Math.round((formData.dailyRate || 0) * 25) })}
                   </p>
                 </div>
               </div>
@@ -959,11 +959,11 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
               {/* Mileage Policy - Only for Rentals */}
               {formData.vehicleType === 'RENTAL' && (
                 <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">Mileage Policy</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">{t('mileagePolicy')}</h4>
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Included Miles per Day
+                        {t('includedMilesPerDay')}
                       </label>
                       <input
                         type="number"
@@ -973,11 +973,11 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                         max="500"
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Standard: 200 miles/day</p>
+                      <p className="text-xs text-gray-500 mt-1">{t('standardMilesPerDay')}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Overage Rate (per mile)
+                        {t('overageRate')}
                       </label>
                       <div className="relative">
                         <span className="absolute left-3 top-2.5 text-gray-500">$</span>
@@ -991,7 +991,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                           className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white"
                         />
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">Standard: $0.45/mile</p>
+                      <p className="text-xs text-gray-500 mt-1">{t('standardOverageRate')}</p>
                     </div>
                   </div>
                 </div>
@@ -1003,9 +1003,9 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                   <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                     <IoCheckmarkCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
                     <div>
-                      <p className="font-medium text-green-700 dark:text-green-300">Unlimited Mileage Included</p>
+                      <p className="font-medium text-green-700 dark:text-green-300">{t('unlimitedMileageIncluded')}</p>
                       <p className="text-sm text-green-600 dark:text-green-400">
-                        Rideshare rentals include unlimited miles - perfect for gig drivers.
+                        {t('unlimitedMileageDescription')}
                       </p>
                     </div>
                   </div>
@@ -1015,7 +1015,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
 
             {/* Delivery Options */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Delivery Options</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('deliveryOptions')}</h3>
 
               <div className="space-y-3">
                 <label className="flex items-center gap-3 cursor-pointer">
@@ -1025,7 +1025,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                     onChange={(e) => handleChange('airportPickup', e.target.checked)}
                     className="w-5 h-5 text-purple-600 rounded focus:ring-purple-600"
                   />
-                  <span className="text-gray-700 dark:text-gray-300">Airport Pickup Available</span>
+                  <span className="text-gray-700 dark:text-gray-300">{t('airportPickupAvailable')}</span>
                 </label>
 
                 <label className="flex items-center gap-3 cursor-pointer">
@@ -1035,7 +1035,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                     onChange={(e) => handleChange('hotelDelivery', e.target.checked)}
                     className="w-5 h-5 text-purple-600 rounded focus:ring-purple-600"
                   />
-                  <span className="text-gray-700 dark:text-gray-300">Hotel Delivery Available</span>
+                  <span className="text-gray-700 dark:text-gray-300">{t('hotelDeliveryAvailable')}</span>
                 </label>
 
                 <label className="flex items-center gap-3 cursor-pointer">
@@ -1045,13 +1045,13 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                     onChange={(e) => handleChange('homeDelivery', e.target.checked)}
                     className="w-5 h-5 text-purple-600 rounded focus:ring-purple-600"
                   />
-                  <span className="text-gray-700 dark:text-gray-300">Home Delivery Available</span>
+                  <span className="text-gray-700 dark:text-gray-300">{t('homeDeliveryAvailable')}</span>
                 </label>
               </div>
 
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Delivery Fee
+                  {t('deliveryFee')}
                 </label>
                 <div className="relative max-w-xs">
                   <span className="absolute left-3 top-2.5 text-gray-500">$</span>
@@ -1071,19 +1071,19 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
         {/* Features Tab */}
         {activeTab === 'features' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Vehicle Features</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('vehicleFeatures')}</h3>
 
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Select the features available on your vehicle.
+              {t('selectFeatures')}
             </p>
 
             <div className="space-y-6">
               {Object.entries(groupedFeatures).map(([category, categoryFeatures]) => (
                 <div key={category}>
                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 capitalize">
-                    {category === 'safety' ? 'Safety' :
-                     category === 'comfort' ? 'Comfort & Interior' :
-                     category === 'technology' ? 'Technology' : 'Utility'}
+                    {category === 'safety' ? t('categorySafety') :
+                     category === 'comfort' ? t('categoryComfort') :
+                     category === 'technology' ? t('categoryTechnology') : t('categoryUtility')}
                   </h4>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {categoryFeatures.map(feature => {
@@ -1126,8 +1126,8 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                   <IoShieldOutline className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Vehicle Insurance</h3>
-                  <p className="text-sm text-gray-500">Configure insurance coverage for this vehicle</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('vehicleInsurance')}</h3>
+                  <p className="text-sm text-gray-500">{t('configureInsurance')}</p>
                 </div>
               </div>
 
@@ -1135,8 +1135,8 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
               <div className="space-y-4">
                 <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer">
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Vehicle Has Its Own Insurance</p>
-                    <p className="text-sm text-gray-500">This vehicle has a commercial or rideshare insurance policy</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{t('vehicleHasOwnInsurance')}</p>
+                    <p className="text-sm text-gray-500">{t('vehicleHasOwnInsuranceDescription')}</p>
                   </div>
                   <input
                     type="checkbox"
@@ -1160,7 +1160,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Insurance Provider
+                          {t('insuranceProvider')}
                         </label>
                         <input
                           type="text"
@@ -1172,14 +1172,14 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                             })
                             handleChange('insuranceProvider' as any, e.target.value)
                           }}
-                          placeholder="e.g., State Farm, Progressive"
+                          placeholder={t('insuranceProviderPlaceholder')}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-white"
                         />
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Policy Number
+                          {t('policyNumber')}
                         </label>
                         <input
                           type="text"
@@ -1191,7 +1191,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                             })
                             handleChange('insurancePolicyNumber' as any, e.target.value)
                           }}
-                          placeholder="Policy number"
+                          placeholder={t('policyNumberPlaceholder')}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-white"
                         />
                       </div>
@@ -1199,7 +1199,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Policy Expiry Date
+                        {t('policyExpiryDate')}
                       </label>
                       <input
                         type="date"
@@ -1212,9 +1212,9 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                     {/* Use for Rentals Toggle */}
                     <label className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg cursor-pointer">
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-white">Use This Insurance for Rentals</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{t('useInsuranceForRentals')}</p>
                         <p className="text-sm text-gray-500">
-                          Cover guests with this vehicle's insurance during rentals
+                          {t('useInsuranceForRentalsDescription')}
                         </p>
                       </div>
                       <input
@@ -1237,7 +1237,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
 
             {/* Insurance Status Card */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Insurance Status</h4>
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-4">{t('insuranceStatus')}</h4>
 
               <div className="grid md:grid-cols-2 gap-4">
                 {/* Vehicle Insurance Status */}
@@ -1257,13 +1257,13 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                         ? 'text-green-700 dark:text-green-300'
                         : 'text-gray-600 dark:text-gray-400'
                     }`}>
-                      Vehicle Coverage
+                      {t('vehicleCoverage')}
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {formData.insuranceInfo?.hasOwnInsurance && formData.insuranceInfo?.useForRentals
-                      ? `Covered by ${formData.insuranceInfo?.provider || 'vehicle insurance'}`
-                      : 'No vehicle insurance configured for rentals'
+                      ? t('coveredBy', { provider: formData.insuranceInfo?.provider || t('vehicleInsuranceFallback') })
+                      : t('noVehicleInsuranceConfigured')
                     }
                   </p>
                 </div>
@@ -1272,12 +1272,12 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                 <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
                   <div className="flex items-center gap-2 mb-2">
                     <IoShieldCheckmark className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                    <span className="font-medium text-blue-700 dark:text-blue-300">Partner Insurance</span>
+                    <span className="font-medium text-blue-700 dark:text-blue-300">{t('partnerInsurance')}</span>
                   </div>
                   <p className="text-sm text-blue-600 dark:text-blue-400">
-                    Configure partner-level insurance in{' '}
+                    {t('configurePartnerInsurance')}{' '}
                     <Link href="/partner/insurance" className="underline hover:no-underline">
-                      Insurance Settings
+                      {t('insuranceSettings')}
                     </Link>
                   </p>
                 </div>
@@ -1289,9 +1289,9 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                   <div className="flex items-start gap-3">
                     <IoWarningOutline className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium text-amber-700 dark:text-amber-300">No Vehicle Insurance</p>
+                      <p className="font-medium text-amber-700 dark:text-amber-300">{t('noVehicleInsurance')}</p>
                       <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
-                        Without vehicle-level insurance, guests will need to provide their own insurance or use the platform's guest insurance option during booking.
+                        {t('noVehicleInsuranceWarning')}
                       </p>
                     </div>
                   </div>
@@ -1305,13 +1305,13 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
         {activeTab === 'availability' && (
           <div className="space-y-6">
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Availability Settings</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('availabilitySettings')}</h3>
 
               <div className="space-y-4">
                 <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Instant Book</p>
-                    <p className="text-sm text-gray-500">Guests can book without requesting approval</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{t('instantBook')}</p>
+                    <p className="text-sm text-gray-500">{t('instantBookDescription')}</p>
                   </div>
                   <input
                     type="checkbox"
@@ -1324,7 +1324,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                 <div className="grid md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Advance Notice (hours)
+                      {t('advanceNotice')}
                     </label>
                     <input
                       type="number"
@@ -1338,7 +1338,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Min Trip Duration (days)
+                      {t('minTripDuration')}
                     </label>
                     <input
                       type="number"
@@ -1352,7 +1352,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Max Trip Duration (days)
+                      {t('maxTripDuration')}
                     </label>
                     <input
                       type="number"
@@ -1369,26 +1369,26 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
 
             {/* Vehicle Stats */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Vehicle Stats</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('vehicleStats')}</h3>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-center">
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{vehicle.totalTrips}</p>
-                  <p className="text-sm text-gray-500">Total Trips</p>
+                  <p className="text-sm text-gray-500">{t('totalTrips')}</p>
                 </div>
                 <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-center">
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{vehicle.rating.toFixed(1)}</p>
-                  <p className="text-sm text-gray-500">Rating</p>
+                  <p className="text-sm text-gray-500">{t('rating')}</p>
                 </div>
                 <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-center">
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{photos.length}</p>
-                  <p className="text-sm text-gray-500">Photos</p>
+                  <p className="text-sm text-gray-500">{t('photos')}</p>
                 </div>
                 <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-center">
                   <p className={`text-2xl font-bold ${formData.isActive ? 'text-green-600' : 'text-gray-500'}`}>
-                    {formData.isActive ? 'Active' : 'Inactive'}
+                    {formData.isActive ? t('active') : t('inactive')}
                   </p>
-                  <p className="text-sm text-gray-500">Status</p>
+                  <p className="text-sm text-gray-500">{t('status')}</p>
                 </div>
               </div>
             </div>

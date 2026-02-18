@@ -5,7 +5,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
+import { useTranslations } from 'next-intl'
+import {
   IoClose,
   IoPersonOutline,
   IoCardOutline,
@@ -217,7 +218,8 @@ export default function ProfileModal({
   onUpdate
 }: ProfileModalProps) {
   const router = useRouter()
-  
+  const t = useTranslations('ProfileModal')
+
   // State
   const [activeTab, setActiveTab] = useState<TabType>('profile')
   const [profileData, setProfileData] = useState<UserProfile>(MOCK_USER)
@@ -229,12 +231,12 @@ export default function ProfileModal({
 
   // Tab configuration
   const tabs = [
-    { id: 'profile' as TabType, label: 'Profile', icon: IoPersonOutline },
-    { id: 'preferences' as TabType, label: 'Preferences', icon: IoSettingsOutline },
-    { id: 'payment' as TabType, label: 'Payment', icon: IoCardOutline },
-    { id: 'travel' as TabType, label: 'Travel', icon: IoAirplaneOutline },
-    { id: 'security' as TabType, label: 'Security', icon: IoShieldCheckmark },
-    { id: 'stats' as TabType, label: 'Stats', icon: IoStarOutline }
+    { id: 'profile' as TabType, label: t('tabProfile'), icon: IoPersonOutline },
+    { id: 'preferences' as TabType, label: t('tabPreferences'), icon: IoSettingsOutline },
+    { id: 'payment' as TabType, label: t('tabPayment'), icon: IoCardOutline },
+    { id: 'travel' as TabType, label: t('tabTravel'), icon: IoAirplaneOutline },
+    { id: 'security' as TabType, label: t('tabSecurity'), icon: IoShieldCheckmark },
+    { id: 'stats' as TabType, label: t('tabStats'), icon: IoStarOutline }
   ]
 
   // Handle escape key
@@ -244,12 +246,12 @@ export default function ProfileModal({
         handleClose()
       }
     }
-    
+
     if (isOpen) {
       document.addEventListener('keydown', handleEscape)
       document.body.style.overflow = 'hidden'
     }
-    
+
     return () => {
       document.removeEventListener('keydown', handleEscape)
       document.body.style.overflow = 'unset'
@@ -259,7 +261,7 @@ export default function ProfileModal({
   // Handle close
   const handleClose = () => {
     if (isSaving) return
-    
+
     setIsClosing(true)
     setTimeout(() => {
       onClose()
@@ -273,24 +275,24 @@ export default function ProfileModal({
   // Handle save
   const handleSave = async () => {
     setIsSaving(true)
-    
+
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
+
       // Update profile data
       const updatedProfile = { ...profileData, ...editedData }
       setProfileData(updatedProfile)
-      
+
       // Call update callback
       if (onUpdate) {
         onUpdate(updatedProfile)
       }
-      
+
       // Show success
       setShowSuccess(true)
       setTimeout(() => setShowSuccess(false), 3000)
-      
+
       // Exit edit mode
       setIsEditing(false)
       setEditedData({})
@@ -319,6 +321,26 @@ export default function ProfileModal({
     }
   }
 
+  // Get tier display name
+  const getTierName = (status: string) => {
+    switch (status) {
+      case 'platinum': return t('tierPlatinum')
+      case 'gold': return t('tierGold')
+      case 'silver': return t('tierSilver')
+      default: return t('tierBronze')
+    }
+  }
+
+  // Get next tier name
+  const getNextTierName = (status: string) => {
+    switch (status) {
+      case 'gold': return t('tierPlatinum')
+      case 'silver': return t('tierGold')
+      case 'bronze': return t('tierSilver')
+      default: return t('tierPlatinum')
+    }
+  }
+
   if (!isOpen) return null
 
   // Render tab content
@@ -332,7 +354,7 @@ export default function ProfileModal({
               <div className="relative">
                 <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center">
                   {profileData.avatar ? (
-                    <img src={profileData.avatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                    <img src={profileData.avatar} alt={t('avatar')} className="w-full h-full rounded-full object-cover" />
                   ) : (
                     <IoPersonOutline className="w-10 h-10 text-gray-500" />
                   )}
@@ -341,22 +363,22 @@ export default function ProfileModal({
                   <IoCamera className="w-4 h-4" />
                 </button>
               </div>
-              
+
               <div className="flex-1">
                 <div className="flex items-center space-x-2">
                   <h3 className="text-xl font-semibold text-gray-900">{profileData.name}</h3>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getLoyaltyColor(profileData.loyaltyStatus)}`}>
-                    {profileData.loyaltyStatus.toUpperCase()}
+                    {getTierName(profileData.loyaltyStatus).toUpperCase()}
                   </span>
                 </div>
                 <p className="text-sm text-gray-600 mt-1">{profileData.email}</p>
                 <p className="text-sm text-gray-600">{profileData.phone}</p>
                 <div className="flex items-center mt-2 text-sm text-gray-500">
                   <IoCalendarOutline className="w-4 h-4 mr-1" />
-                  <span>Member since {profileData.memberSince.toLocaleDateString()}</span>
+                  <span>{t('memberSince', { date: profileData.memberSince.toLocaleDateString() })}</span>
                 </div>
               </div>
-              
+
               {!isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
@@ -371,7 +393,7 @@ export default function ProfileModal({
             <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Loyalty Points</p>
+                  <p className="text-sm font-medium text-gray-700">{t('loyaltyPoints')}</p>
                   <p className="text-2xl font-bold text-gray-900 mt-1">
                     {profileData.points.toLocaleString()}
                   </p>
@@ -379,11 +401,11 @@ export default function ProfileModal({
                 <IoStarOutline className="w-8 h-8 text-yellow-500" />
               </div>
               <div className="mt-3 flex items-center text-sm text-gray-600">
-                <span>Next tier: {profileData.loyaltyStatus === 'gold' ? 'Platinum' : 'Gold'}</span>
-                <span className="ml-2">({(20000 - profileData.points).toLocaleString()} points needed)</span>
+                <span>{t('nextTier', { tier: getNextTierName(profileData.loyaltyStatus) })}</span>
+                <span className="ml-2">{t('pointsNeeded', { points: (20000 - profileData.points).toLocaleString() })}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                <div 
+                <div
                   className="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full"
                   style={{ width: `${(profileData.points / 20000) * 100}%` }}
                 />
@@ -394,7 +416,7 @@ export default function ProfileModal({
             {isEditing ? (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('name')}</label>
                   <input
                     type="text"
                     value={editedData.name || profileData.name}
@@ -403,7 +425,7 @@ export default function ProfileModal({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('email')}</label>
                   <input
                     type="email"
                     value={editedData.email || profileData.email}
@@ -412,7 +434,7 @@ export default function ProfileModal({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('phone')}</label>
                   <input
                     type="tel"
                     value={editedData.phone || profileData.phone}
@@ -447,10 +469,10 @@ export default function ProfileModal({
           <div className="space-y-6">
             {/* Notification preferences */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Notifications</h4>
+              <h4 className="font-medium text-gray-900 mb-3">{t('notifications')}</h4>
               <div className="space-y-3">
                 <label className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">Email notifications</span>
+                  <span className="text-sm text-gray-700">{t('emailNotifications')}</span>
                   <input
                     type="checkbox"
                     checked={profileData.preferences.notifications.email}
@@ -463,7 +485,7 @@ export default function ProfileModal({
                   />
                 </label>
                 <label className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">Push notifications</span>
+                  <span className="text-sm text-gray-700">{t('pushNotifications')}</span>
                   <input
                     type="checkbox"
                     checked={profileData.preferences.notifications.push}
@@ -476,7 +498,7 @@ export default function ProfileModal({
                   />
                 </label>
                 <label className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">SMS notifications</span>
+                  <span className="text-sm text-gray-700">{t('smsNotifications')}</span>
                   <input
                     type="checkbox"
                     checked={profileData.preferences.notifications.sms}
@@ -489,7 +511,7 @@ export default function ProfileModal({
                   />
                 </label>
                 <label className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">Marketing emails</span>
+                  <span className="text-sm text-gray-700">{t('marketingEmails')}</span>
                   <input
                     type="checkbox"
                     checked={profileData.preferences.notifications.marketing}
@@ -506,10 +528,10 @@ export default function ProfileModal({
 
             {/* Travel preferences */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Travel Preferences</h4>
+              <h4 className="font-medium text-gray-900 mb-3">{t('travelPreferences')}</h4>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Seat Preference</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('seatPreference')}</label>
                   <select
                     value={profileData.preferences.travel.seatPreference}
                     onChange={(e) => {
@@ -519,14 +541,14 @@ export default function ProfileModal({
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                   >
-                    <option value="window">Window</option>
-                    <option value="aisle">Aisle</option>
-                    <option value="middle">Middle</option>
-                    <option value="none">No preference</option>
+                    <option value="window">{t('seatWindow')}</option>
+                    <option value="aisle">{t('seatAisle')}</option>
+                    <option value="middle">{t('seatMiddle')}</option>
+                    <option value="none">{t('noPreference')}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Meal Preference</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('mealPreference')}</label>
                   <select
                     value={profileData.preferences.travel.mealPreference}
                     onChange={(e) => {
@@ -536,16 +558,16 @@ export default function ProfileModal({
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                   >
-                    <option value="regular">Regular</option>
-                    <option value="vegetarian">Vegetarian</option>
-                    <option value="vegan">Vegan</option>
-                    <option value="halal">Halal</option>
-                    <option value="kosher">Kosher</option>
-                    <option value="none">No preference</option>
+                    <option value="regular">{t('mealRegular')}</option>
+                    <option value="vegetarian">{t('mealVegetarian')}</option>
+                    <option value="vegan">{t('mealVegan')}</option>
+                    <option value="halal">{t('mealHalal')}</option>
+                    <option value="kosher">{t('mealKosher')}</option>
+                    <option value="none">{t('noPreference')}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Room Preference</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('roomPreference')}</label>
                   <select
                     value={profileData.preferences.travel.roomPreference}
                     onChange={(e) => {
@@ -555,10 +577,10 @@ export default function ProfileModal({
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                   >
-                    <option value="high-floor">High floor</option>
-                    <option value="low-floor">Low floor</option>
-                    <option value="quiet">Quiet area</option>
-                    <option value="none">No preference</option>
+                    <option value="high-floor">{t('roomHighFloor')}</option>
+                    <option value="low-floor">{t('roomLowFloor')}</option>
+                    <option value="quiet">{t('roomQuiet')}</option>
+                    <option value="none">{t('noPreference')}</option>
                   </select>
                 </div>
               </div>
@@ -566,10 +588,10 @@ export default function ProfileModal({
 
             {/* App preferences */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">App Settings</h4>
+              <h4 className="font-medium text-gray-900 mb-3">{t('appSettings')}</h4>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Theme</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('theme')}</label>
                   <select
                     value={profileData.preferences.theme}
                     onChange={(e) => {
@@ -579,13 +601,13 @@ export default function ProfileModal({
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                   >
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                    <option value="auto">Auto</option>
+                    <option value="light">{t('themeLight')}</option>
+                    <option value="dark">{t('themeDark')}</option>
+                    <option value="auto">{t('themeAuto')}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('currency')}</label>
                   <select
                     value={profileData.preferences.currency}
                     onChange={(e) => {
@@ -612,10 +634,10 @@ export default function ProfileModal({
             {/* Payment methods */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-gray-900">Payment Methods</h4>
+                <h4 className="font-medium text-gray-900">{t('paymentMethods')}</h4>
                 <button className="text-green-600 hover:text-green-700 text-sm font-medium">
                   <IoAddCircleOutline className="w-5 h-5 inline mr-1" />
-                  Add New
+                  {t('addNew')}
                 </button>
               </div>
               <div className="space-y-3">
@@ -632,7 +654,7 @@ export default function ProfileModal({
                     </div>
                     <div className="flex items-center space-x-2">
                       {method.isDefault && (
-                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Default</span>
+                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">{t('default')}</span>
                       )}
                       <button className="p-1 text-gray-400 hover:text-red-600">
                         <IoTrashOutline className="w-4 h-4" />
@@ -646,10 +668,10 @@ export default function ProfileModal({
             {/* Billing addresses */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-gray-900">Billing Addresses</h4>
+                <h4 className="font-medium text-gray-900">{t('billingAddresses')}</h4>
                 <button className="text-green-600 hover:text-green-700 text-sm font-medium">
                   <IoAddCircleOutline className="w-5 h-5 inline mr-1" />
-                  Add New
+                  {t('addNew')}
                 </button>
               </div>
               <div className="space-y-3">
@@ -658,7 +680,7 @@ export default function ProfileModal({
                     <div className="flex items-center">
                       <IoLocationOutline className="w-5 h-5 text-gray-600 mr-3" />
                       <div>
-                        <p className="font-medium text-gray-900 capitalize">{address.type} Address</p>
+                        <p className="font-medium text-gray-900 capitalize">{t('addressType', { type: address.type })}</p>
                         <p className="text-sm text-gray-600">
                           {address.line1}, {address.city}, {address.state} {address.zip}
                         </p>
@@ -666,7 +688,7 @@ export default function ProfileModal({
                     </div>
                     <div className="flex items-center space-x-2">
                       {address.isDefault && (
-                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Default</span>
+                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">{t('default')}</span>
                       )}
                       <button className="p-1 text-gray-400 hover:text-red-600">
                         <IoTrashOutline className="w-4 h-4" />
@@ -685,10 +707,10 @@ export default function ProfileModal({
             {/* Travel documents */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-gray-900">Travel Documents</h4>
+                <h4 className="font-medium text-gray-900">{t('travelDocuments')}</h4>
                 <button className="text-green-600 hover:text-green-700 text-sm font-medium">
                   <IoAddCircleOutline className="w-5 h-5 inline mr-1" />
-                  Add Document
+                  {t('addDocument')}
                 </button>
               </div>
               <div className="space-y-3">
@@ -699,7 +721,7 @@ export default function ProfileModal({
                       <div>
                         <p className="font-medium text-gray-900 capitalize">{doc.type}</p>
                         <p className="text-sm text-gray-600">
-                          {doc.number} • Expires {doc.expiryDate.toLocaleDateString()}
+                          {doc.number} • {t('expires', { date: doc.expiryDate.toLocaleDateString() })}
                         </p>
                       </div>
                     </div>
@@ -713,13 +735,13 @@ export default function ProfileModal({
 
             {/* Frequent traveler programs */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Frequent Traveler Programs</h4>
+              <h4 className="font-medium text-gray-900 mb-3">{t('frequentTravelerPrograms')}</h4>
               <div className="space-y-2">
                 <button className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <IoAirplaneOutline className="w-5 h-5 text-gray-600 mr-3" />
-                      <span className="text-sm text-gray-700">Add airline program</span>
+                      <span className="text-sm text-gray-700">{t('addAirlineProgram')}</span>
                     </div>
                     <IoChevronForward className="w-4 h-4 text-gray-400" />
                   </div>
@@ -728,7 +750,7 @@ export default function ProfileModal({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <IoBedOutline className="w-5 h-5 text-gray-600 mr-3" />
-                      <span className="text-sm text-gray-700">Add hotel program</span>
+                      <span className="text-sm text-gray-700">{t('addHotelProgram')}</span>
                     </div>
                     <IoChevronForward className="w-4 h-4 text-gray-400" />
                   </div>
@@ -737,7 +759,7 @@ export default function ProfileModal({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <IoCarOutline className="w-5 h-5 text-gray-600 mr-3" />
-                      <span className="text-sm text-gray-700">Add car rental program</span>
+                      <span className="text-sm text-gray-700">{t('addCarRentalProgram')}</span>
                     </div>
                     <IoChevronForward className="w-4 h-4 text-gray-400" />
                   </div>
@@ -752,12 +774,12 @@ export default function ProfileModal({
           <div className="space-y-6">
             {/* Password */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Password</h4>
+              <h4 className="font-medium text-gray-900 mb-3">{t('password')}</h4>
               <button className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Change password</p>
-                    <p className="text-xs text-gray-500 mt-1">Last changed 3 months ago</p>
+                    <p className="text-sm font-medium text-gray-700">{t('changePassword')}</p>
+                    <p className="text-xs text-gray-500 mt-1">{t('lastChanged', { time: t('threeMonthsAgo') })}</p>
                   </div>
                   <IoChevronForward className="w-4 h-4 text-gray-400" />
                 </div>
@@ -766,17 +788,17 @@ export default function ProfileModal({
 
             {/* Two-factor authentication */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Two-Factor Authentication</h4>
+              <h4 className="font-medium text-gray-900 mb-3">{t('twoFactorAuth')}</h4>
               <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <div className="flex items-start">
                   <IoAlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 mr-2" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-yellow-900">Not enabled</p>
+                    <p className="text-sm font-medium text-yellow-900">{t('twoFactorNotEnabled')}</p>
                     <p className="text-sm text-yellow-700 mt-1">
-                      Add an extra layer of security to your account
+                      {t('twoFactorDescription')}
                     </p>
                     <button className="mt-2 text-sm font-medium text-yellow-900 hover:text-yellow-800">
-                      Enable 2FA →
+                      {t('enableTwoFactor')} →
                     </button>
                   </div>
                 </div>
@@ -785,14 +807,14 @@ export default function ProfileModal({
 
             {/* Login activity */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Recent Activity</h4>
+              <h4 className="font-medium text-gray-900 mb-3">{t('recentActivity')}</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center justify-between py-2">
                   <div>
                     <p className="text-gray-700">Phoenix, AZ</p>
                     <p className="text-xs text-gray-500">Chrome on Mac • 2 hours ago</p>
                   </div>
-                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Current</span>
+                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">{t('current')}</span>
                 </div>
                 <div className="flex items-center justify-between py-2">
                   <div>
@@ -814,13 +836,13 @@ export default function ProfileModal({
               <button className="w-full text-left p-3 hover:bg-gray-50 rounded-lg transition-colors">
                 <div className="flex items-center text-gray-700">
                   <IoLogOutOutline className="w-5 h-5 mr-3" />
-                  <span className="text-sm">Sign out of all devices</span>
+                  <span className="text-sm">{t('signOutAllDevices')}</span>
                 </div>
               </button>
               <button className="w-full text-left p-3 hover:bg-red-50 rounded-lg transition-colors">
                 <div className="flex items-center text-red-600">
                   <IoTrashOutline className="w-5 h-5 mr-3" />
-                  <span className="text-sm">Delete account</span>
+                  <span className="text-sm">{t('deleteAccount')}</span>
                 </div>
               </button>
             </div>
@@ -832,26 +854,26 @@ export default function ProfileModal({
           <div className="space-y-6">
             {/* Lifetime stats */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Lifetime Statistics</h4>
+              <h4 className="font-medium text-gray-900 mb-3">{t('lifetimeStatistics')}</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-600">Total Bookings</p>
+                  <p className="text-xs text-gray-600">{t('totalBookings')}</p>
                   <p className="text-xl font-bold text-gray-900 mt-1">{profileData.stats.totalBookings}</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-600">Total Spent</p>
+                  <p className="text-xs text-gray-600">{t('totalSpent')}</p>
                   <p className="text-xl font-bold text-gray-900 mt-1">
                     ${profileData.stats.totalSpent.toLocaleString()}
                   </p>
                 </div>
                 <div className="bg-green-50 rounded-lg p-3">
-                  <p className="text-xs text-green-600">Total Saved</p>
+                  <p className="text-xs text-green-600">{t('totalSaved')}</p>
                   <p className="text-xl font-bold text-green-600 mt-1">
                     ${profileData.stats.totalSaved.toLocaleString()}
                   </p>
                 </div>
                 <div className="bg-blue-50 rounded-lg p-3">
-                  <p className="text-xs text-blue-600">Carbon Offset</p>
+                  <p className="text-xs text-blue-600">{t('carbonOffset')}</p>
                   <p className="text-xl font-bold text-blue-600 mt-1">
                     {profileData.stats.carbonOffset}kg
                   </p>
@@ -861,33 +883,33 @@ export default function ProfileModal({
 
             {/* Service breakdown */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Service Usage</h4>
+              <h4 className="font-medium text-gray-900 mb-3">{t('serviceUsage')}</h4>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <IoCarOutline className="w-5 h-5 text-gray-600 mr-3" />
-                    <span className="text-sm text-gray-700">Rides Completed</span>
+                    <span className="text-sm text-gray-700">{t('ridesCompleted')}</span>
                   </div>
                   <span className="font-medium text-gray-900">{profileData.stats.ridesCompleted}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <IoBedOutline className="w-5 h-5 text-gray-600 mr-3" />
-                    <span className="text-sm text-gray-700">Hotel Nights</span>
+                    <span className="text-sm text-gray-700">{t('hotelNights')}</span>
                   </div>
                   <span className="font-medium text-gray-900">{profileData.stats.nightsStayed}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <IoAirplaneOutline className="w-5 h-5 text-gray-600 mr-3" />
-                    <span className="text-sm text-gray-700">Flights Taken</span>
+                    <span className="text-sm text-gray-700">{t('flightsTaken')}</span>
                   </div>
                   <span className="font-medium text-gray-900">{profileData.stats.flightsTaken}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <IoRestaurantOutline className="w-5 h-5 text-gray-600 mr-3" />
-                    <span className="text-sm text-gray-700">Meals Ordered</span>
+                    <span className="text-sm text-gray-700">{t('mealsOrdered')}</span>
                   </div>
                   <span className="font-medium text-gray-900">{profileData.stats.mealsOrdered}</span>
                 </div>
@@ -896,9 +918,9 @@ export default function ProfileModal({
 
             {/* Year overview */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">This Year</h4>
+              <h4 className="font-medium text-gray-900 mb-3">{t('thisYear')}</h4>
               <div className="h-32 bg-gray-100 rounded-lg flex items-center justify-center">
-                <p className="text-sm text-gray-500">Activity chart coming soon</p>
+                <p className="text-sm text-gray-500">{t('activityChartComingSoon')}</p>
               </div>
             </div>
           </div>
@@ -912,13 +934,13 @@ export default function ProfileModal({
   return (
     <>
       {/* Backdrop */}
-      <div 
+      <div
         className={`fixed inset-0 bg-black transition-opacity duration-300 z-40 ${
           isClosing ? 'opacity-0' : 'bg-opacity-50'
         }`}
         onClick={handleClose}
       />
-      
+
       {/* Modal */}
       <div className="fixed inset-0 overflow-y-auto z-50">
         <div className="flex min-h-full items-center justify-center p-4">
@@ -928,7 +950,7 @@ export default function ProfileModal({
             {/* Header */}
             <div className="px-6 py-4 bg-gradient-to-r from-green-500 to-blue-500 text-white">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">My Profile</h2>
+                <h2 className="text-xl font-semibold">{t('myProfile')}</h2>
                 <button
                   onClick={handleClose}
                   className="text-white hover:text-gray-200 transition-colors"
@@ -974,9 +996,9 @@ export default function ProfileModal({
                   className="flex items-center text-gray-600 hover:text-red-600 transition-colors"
                 >
                   <IoLogOutOutline className="w-5 h-5 mr-2" />
-                  <span className="text-sm font-medium">Sign Out</span>
+                  <span className="text-sm font-medium">{t('signOut')}</span>
                 </button>
-                
+
                 <div className="flex space-x-3">
                   {isEditing && (
                     <>
@@ -987,22 +1009,22 @@ export default function ProfileModal({
                         }}
                         className="px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors text-sm font-medium"
                       >
-                        Cancel
+                        {t('cancel')}
                       </button>
                       <button
                         onClick={handleSave}
                         disabled={isSaving}
                         className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium disabled:bg-gray-400"
                       >
-                        {isSaving ? 'Saving...' : 'Save Changes'}
+                        {isSaving ? t('saving') : t('saveChanges')}
                       </button>
                     </>
                   )}
-                  
+
                   {showSuccess && (
                     <div className="flex items-center text-green-600">
                       <IoCheckmarkCircle className="w-5 h-5 mr-2" />
-                      <span className="text-sm">Saved successfully!</span>
+                      <span className="text-sm">{t('savedSuccessfully')}</span>
                     </div>
                   )}
                 </div>

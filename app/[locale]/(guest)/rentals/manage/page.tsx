@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import Image from 'next/image'
 import { format, isPast, isFuture, isToday, differenceInDays } from 'date-fns'
 import { 
@@ -60,6 +61,7 @@ interface RentalBooking {
 type TabType = 'upcoming' | 'active' | 'past' | 'cancelled'
 
 export default function ManageRentalsPage() {
+  const t = useTranslations('ManageRentals')
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabType>('upcoming')
   const [bookings, setBookings] = useState<RentalBooking[]>([])
@@ -83,7 +85,7 @@ export default function ManageRentalsPage() {
   }
 
   const handleCancelBooking = async (bookingId: string) => {
-    if (!confirm('Are you sure you want to cancel this booking?')) return
+    if (!confirm(t('confirmCancel'))) return
 
     try {
       const response = await fetch('/api/rentals/book', {
@@ -168,10 +170,10 @@ export default function ManageRentalsPage() {
                 </button>
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    My Rentals
+                    {t('title')}
                   </h1>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Manage your car rental bookings
+                    {t('subtitle')}
                   </p>
                 </div>
               </div>
@@ -182,7 +184,7 @@ export default function ManageRentalsPage() {
                   transition-colors font-medium flex items-center space-x-2"
               >
                 <IoCarOutline className="w-5 h-5" />
-                <span>Book New Car</span>
+                <span>{t('bookNewCar')}</span>
               </Link>
             </div>
           </div>
@@ -194,10 +196,10 @@ export default function ManageRentalsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8 overflow-x-auto">
             {[
-              { id: 'upcoming', label: 'Upcoming', count: filterBookings('upcoming').length },
-              { id: 'active', label: 'Active', count: filterBookings('active').length },
-              { id: 'past', label: 'Past', count: filterBookings('past').length },
-              { id: 'cancelled', label: 'Cancelled', count: filterBookings('cancelled').length }
+              { id: 'upcoming', label: t('tabUpcoming'), count: filterBookings('upcoming').length },
+              { id: 'active', label: t('tabActive'), count: filterBookings('active').length },
+              { id: 'past', label: t('tabPast'), count: filterBookings('past').length },
+              { id: 'cancelled', label: t('tabCancelled'), count: filterBookings('cancelled').length }
             ].map(tab => (
               <button
                 key={tab.id}
@@ -227,20 +229,20 @@ export default function ManageRentalsPage() {
           <div className="text-center py-12">
             <IoCarOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              No {activeTab} rentals
+              {t('noRentals', { tab: activeTab })}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {activeTab === 'upcoming' && "You don't have any upcoming rentals."}
-              {activeTab === 'active' && "You don't have any active rentals."}
-              {activeTab === 'past' && "You haven't completed any rentals yet."}
-              {activeTab === 'cancelled' && "You haven't cancelled any rentals."}
+              {activeTab === 'upcoming' && t('emptyUpcoming')}
+              {activeTab === 'active' && t('emptyActive')}
+              {activeTab === 'past' && t('emptyPast')}
+              {activeTab === 'cancelled' && t('emptyCancelled')}
             </p>
             <Link
               href="/rentals"
               className="inline-flex items-center px-4 py-2 bg-amber-600 text-white rounded-lg 
                 hover:bg-amber-700 transition-colors font-medium"
             >
-              Browse Available Cars
+              {t('browseAvailableCars')}
             </Link>
           </div>
         ) : (
@@ -290,7 +292,7 @@ export default function ManageRentalsPage() {
                               {booking.car.year} {booking.car.make} {booking.car.model}
                             </h3>
                             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                              Booking #{booking.bookingCode}
+                              {t('bookingCode', { code: booking.bookingCode })}
                             </p>
                           </div>
                           
@@ -314,13 +316,13 @@ export default function ManageRentalsPage() {
                                     hover:bg-gray-100 dark:hover:bg-gray-700"
                                 >
                                   <IoDocumentTextOutline className="inline w-4 h-4 mr-2" />
-                                  View Details
+                                  {t('viewDetails')}
                                 </Link>
                                 {booking.status === 'ACTIVE' && (
                                   <button className="w-full text-left px-4 py-2 text-sm text-gray-700 
                                     dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                     <IoKeyOutline className="inline w-4 h-4 mr-2" />
-                                    Digital Key
+                                    {t('digitalKey')}
                                   </button>
                                 )}
                                 {booking.status === 'CONFIRMED' && daysUntilStart > 1 && (
@@ -330,7 +332,7 @@ export default function ManageRentalsPage() {
                                       dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                                   >
                                     <IoAlertCircleOutline className="inline w-4 h-4 mr-2" />
-                                    Cancel Booking
+                                    {t('cancelBooking')}
                                   </button>
                                 )}
                                 {booking.status === 'COMPLETED' && (
@@ -340,7 +342,7 @@ export default function ManageRentalsPage() {
                                       hover:bg-gray-100 dark:hover:bg-gray-700"
                                   >
                                     <IoRefreshOutline className="inline w-4 h-4 mr-2" />
-                                    Book Again
+                                    {t('bookAgain')}
                                   </Link>
                                 )}
                               </div>
@@ -355,7 +357,7 @@ export default function ManageRentalsPage() {
                             <IoCalendarOutline className="w-5 h-5 text-gray-400 mt-0.5" />
                             <div>
                               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                Pickup
+                                {t('pickup')}
                               </p>
                               <p className="text-sm text-gray-600 dark:text-gray-400">
                                 {format(startDate, 'EEE, MMM d, yyyy')}
@@ -371,13 +373,13 @@ export default function ManageRentalsPage() {
                             <IoCalendarOutline className="w-5 h-5 text-gray-400 mt-0.5" />
                             <div>
                               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                Return
+                                {t('return')}
                               </p>
                               <p className="text-sm text-gray-600 dark:text-gray-400">
                                 {format(endDate, 'EEE, MMM d, yyyy')}
                               </p>
                               <p className="text-sm text-gray-600 dark:text-gray-400">
-                                {booking.endTime} • Same location
+                                {booking.endTime} • {t('sameLocation')}
                               </p>
                             </div>
                           </div>
@@ -407,7 +409,7 @@ export default function ManageRentalsPage() {
                                 {booking.host.name}
                               </p>
                               <p className="text-xs text-gray-600 dark:text-gray-400">
-                                Host • Responds in ~{booking.host.responseTime || 30} min
+                                {t('hostResponseTime', { time: booking.host.responseTime || 30 })}
                               </p>
                             </div>
                           </div>
@@ -442,9 +444,9 @@ export default function ManageRentalsPage() {
                             dark:border-amber-800 rounded-lg">
                             <p className="text-sm text-amber-800 dark:text-amber-300 flex items-center">
                               <IoTimeOutline className="w-4 h-4 mr-2" />
-                              {daysUntilStart === 0 
-                                ? 'Your rental starts today!'
-                                : `Your rental starts in ${daysUntilStart} day${daysUntilStart > 1 ? 's' : ''}`
+                              {daysUntilStart === 0
+                                ? t('rentalStartsToday')
+                                : t('rentalStartsIn', { days: daysUntilStart })
                               }
                             </p>
                           </div>
@@ -455,12 +457,12 @@ export default function ManageRentalsPage() {
                           <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg 
                             flex items-center justify-between">
                             <p className="text-sm text-gray-600 dark:text-gray-400">
-                              How was your experience?
+                              {t('howWasExperience')}
                             </p>
                             <button className="px-3 py-1.5 bg-amber-600 text-white text-sm rounded-lg 
                               hover:bg-amber-700 transition-colors flex items-center space-x-1">
                               <IoStarOutline className="w-4 h-4" />
-                              <span>Leave Review</span>
+                              <span>{t('leaveReview')}</span>
                             </button>
                           </div>
                         )}

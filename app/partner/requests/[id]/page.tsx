@@ -4,7 +4,7 @@
 
 'use client'
 
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
@@ -117,7 +117,7 @@ export default function RequestDetailPage() {
   void params?.id
 
   const locale = useLocale()
-
+  const t = useTranslations('PartnerRequestDetail')
 
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<RequestData | null>(null)
@@ -147,7 +147,7 @@ export default function RequestDetailPage() {
       const result = await response.json()
 
       if (!response.ok) {
-        setError(result.error || 'Failed to load request')
+        setError(result.error || t('failedToLoadRequest'))
         return
       }
 
@@ -155,11 +155,11 @@ export default function RequestDetailPage() {
       setError(null)
     } catch (err) {
       console.error('Failed to fetch request:', err)
-      setError('Failed to load request details')
+      setError(t('failedToLoadRequestDetails'))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     fetchRequest()
@@ -168,7 +168,7 @@ export default function RequestDetailPage() {
   // Countdown timer
   useEffect(() => {
     if (!data?.timeRemaining || data.timeRemaining.expired) {
-      setTimeDisplay(data?.timeRemaining?.expired ? 'Expired' : '')
+      setTimeDisplay(data?.timeRemaining?.expired ? t('expired') : '')
       return
     }
 
@@ -180,7 +180,7 @@ export default function RequestDetailPage() {
       const diff = expires.getTime() - now.getTime()
 
       if (diff <= 0) {
-        setTimeDisplay('Expired')
+        setTimeDisplay(t('expired'))
         return
       }
 
@@ -197,7 +197,7 @@ export default function RequestDetailPage() {
     updateTimer()
     const interval = setInterval(updateTimer, 1000)
     return () => clearInterval(interval)
-  }, [data?.timeRemaining, data?.request?.expiresAt])
+  }, [data?.timeRemaining, data?.request?.expiresAt, t])
 
   const handleStartOnboarding = async () => {
     setStartingOnboarding(true)
@@ -211,11 +211,11 @@ export default function RequestDetailPage() {
         setShowOnboarding(true)
         fetchRequest()
       } else {
-        alert(result.error || 'Failed to start onboarding')
+        alert(result.error || t('failedToStartOnboarding'))
       }
     } catch (err) {
       console.error('Failed to start onboarding:', err)
-      alert('Failed to start onboarding')
+      alert(t('failedToStartOnboarding'))
     } finally {
       setStartingOnboarding(false)
     }
@@ -252,11 +252,11 @@ export default function RequestDetailPage() {
         // Already connected
         fetchRequest()
       } else {
-        alert(data.error || 'Failed to connect with Stripe')
+        alert(data.error || t('failedToConnectStripe'))
       }
     } catch (err) {
       console.error('Stripe Connect error:', err)
-      alert('Failed to connect with Stripe')
+      alert(t('failedToConnectStripe'))
     } finally {
       setConnectingPayout(false)
     }
@@ -273,7 +273,7 @@ export default function RequestDetailPage() {
   }
 
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return 'TBD'
+    if (!dateStr) return t('tbd')
     return new Date(dateStr).toLocaleDateString(locale, {
       weekday: 'short',
       month: 'short',
@@ -308,14 +308,14 @@ export default function RequestDetailPage() {
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
             <IoAlertCircleOutline className="w-12 h-12 text-red-500 mx-auto mb-3" />
             <h2 className="text-lg font-semibold text-red-700 dark:text-red-400 mb-2">
-              {error || 'Request not found'}
+              {error || t('requestNotFound')}
             </h2>
             <Link
               href="/partner/dashboard"
               className="inline-flex items-center gap-2 text-red-600 hover:text-red-700 dark:text-red-400"
             >
               <IoArrowBackOutline className="w-4 h-4" />
-              Back to Dashboard
+              {t('backToDashboard')}
             </Link>
           </div>
         </div>
@@ -374,10 +374,10 @@ export default function RequestDetailPage() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                   <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
-                    Request Booking Details
+                    {t('requestBookingDetails')}
                   </h1>
                   <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
-                    {hasDeclined ? 'DECLINED' : isExpired ? 'EXPIRED' : hasPendingCounterOffer ? 'COUNTER PENDING' : 'PENDING'}
+                    {hasDeclined ? t('statusDeclined') : isExpired ? t('statusExpired') : hasPendingCounterOffer ? t('statusCounterPending') : t('statusPending')}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 mt-0.5 sm:mt-1">
@@ -407,20 +407,20 @@ export default function RequestDetailPage() {
                     className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium flex items-center gap-2"
                   >
                     <IoArrowForwardOutline className="w-4 h-4" />
-                    Continue Adding Your Car
+                    {t('continueAddingCar')}
                   </Link>
                   <button
                     onClick={() => setShowDecline(true)}
                     className="px-4 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
-                    Decline
+                    {t('decline')}
                   </button>
                 </>
               )}
               <button
                 onClick={fetchRequest}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                title="Refresh"
+                title={t('refresh')}
               >
                 <IoRefreshOutline className="w-5 h-5 text-gray-500" />
               </button>
@@ -432,13 +432,13 @@ export default function RequestDetailPage() {
             <div className="mt-2 sm:mt-3 flex items-center gap-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
               <IoTimeOutline className="w-4 h-4 flex-shrink-0" />
               <span className="text-xs sm:text-sm flex-1">
-                <strong>Reservation expires:</strong>{' '}
+                <strong>{t('reservationExpires')}</strong>{' '}
                 {isExpiringSoon ? (
                   <span className="text-red-600 dark:text-red-400">
-                    {timeDisplay} remaining - List your car now or this request will be auto-cancelled
+                    {t('expiringUrgent', { timeDisplay })}
                   </span>
                 ) : (
-                  <span>{timeDisplay} remaining to list your car</span>
+                  <span>{t('expiringNormal', { timeDisplay })}</span>
                 )}
               </span>
             </div>
@@ -449,8 +449,8 @@ export default function RequestDetailPage() {
             <div className="mt-2 sm:mt-3 flex items-center gap-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-2">
               <IoTimeOutline className="w-4 h-4 flex-shrink-0" />
               <span className="text-xs sm:text-sm">
-                <strong>Counter-offer pending:</strong>{' '}
-                Your ${prospect.counterOfferAmount}/day counter-offer is being reviewed. We&apos;ll notify you within 2 hours.
+                <strong>{t('counterOfferPending')}</strong>{' '}
+                {t('counterOfferReviewing', { amount: prospect.counterOfferAmount })}
               </span>
             </div>
           )}
@@ -464,13 +464,13 @@ export default function RequestDetailPage() {
                   className="flex-1 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 text-sm"
                 >
                   <IoArrowForwardOutline className="w-4 h-4" />
-                  Continue Adding Your Car
+                  {t('continueAddingCar')}
                 </Link>
                 <button
                   onClick={() => setShowDecline(true)}
                   className="px-3 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-50 dark:hover:bg-red-900/20 text-sm"
                 >
-                  Decline
+                  {t('decline')}
                 </button>
               </>
             )}
@@ -505,19 +505,19 @@ export default function RequestDetailPage() {
                       <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                         {host.cars.length > 0
                           ? `${host.cars[0].year} ${host.cars[0].make} ${host.cars[0].model}`
-                          : request.vehicleInfo || 'Vehicle'}
+                          : request.vehicleInfo || t('vehicle')}
                       </h3>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         hasCarListed
                           ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
                           : 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
                       }`}>
-                        {hasCarListed ? 'READY' : 'AWAITING SETUP'}
+                        {hasCarListed ? t('ready') : t('awaitingSetup')}
                       </span>
                     </div>
                     {!hasCarListed && (
                       <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                        Add photos and set your rate to receive this booking
+                        {t('addPhotosAndRate')}
                       </p>
                     )}
                     {hasCarListed && (
@@ -526,7 +526,7 @@ export default function RequestDetailPage() {
                           href={`/partner/fleet/${host.cars[0]?.id}`}
                           className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
                         >
-                          View Vehicle →
+                          {t('viewVehicle')}
                         </Link>
                       </div>
                     )}
@@ -545,14 +545,14 @@ export default function RequestDetailPage() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 dark:text-white">
-                        {request.guestName || 'Guest'}
+                        {request.guestName || t('guest')}
                       </h3>
                       {request.guestRating && (
                         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                           <IoStarOutline className="w-4 h-4 text-yellow-500 fill-current" />
                           <span className="font-medium">{request.guestRating.toFixed(1)}</span>
                           {request.guestTrips && (
-                            <span>({request.guestTrips} trips)</span>
+                            <span>({request.guestTrips} {t('trips')})</span>
                           )}
                         </div>
                       )}
@@ -574,7 +574,7 @@ export default function RequestDetailPage() {
                         </div>
                       ) : (
                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                          🔒 Full contact details after you list your car
+                          {t('contactDetailsLocked')}
                         </p>
                       )}
                     </div>
@@ -587,18 +587,18 @@ export default function RequestDetailPage() {
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center gap-2 mb-4">
                 <IoCalendarOutline className="w-5 h-5 text-gray-400" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">Rental Period</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white">{t('rentalPeriod')}</h3>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Pickup</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('pickup')}</p>
                   <p className="font-medium text-gray-900 dark:text-white">
                     {formatDate(request.startDate)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Return</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('return')}</p>
                   <p className="font-medium text-gray-900 dark:text-white">
                     {formatDate(request.endDate)}
                   </p>
@@ -610,17 +610,17 @@ export default function RequestDetailPage() {
                   <div className="flex items-center gap-2">
                     <IoLocationOutline className="w-5 h-5 text-gray-400" />
                     <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Pickup Location</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{t('pickupLocation')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">
                         {request.pickupCity || 'Phoenix'}, {request.pickupState || 'AZ'}
                       </p>
                       <p className="text-xs text-gray-400 dark:text-gray-500">
-                        Guest will come to your location
+                        {t('guestWillComeToYou')}
                       </p>
                     </div>
                   </div>
                   <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    {durationDays} {durationDays === 1 ? 'day' : 'days'}
+                    {t('durationDays', { count: durationDays })}
                   </span>
                 </div>
               </div>
@@ -635,14 +635,14 @@ export default function RequestDetailPage() {
               >
                 <div className="flex items-center gap-2">
                   <IoShieldOutline className="w-5 h-5 text-gray-400" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Guest Verification</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('guestVerification')}</h3>
                   {hasCarListed ? (
                     <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
-                      Pending
+                      {t('pending')}
                     </span>
                   ) : (
                     <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400">
-                      🔒 List car first
+                      {t('listCarFirst')}
                     </span>
                   )}
                 </div>
@@ -661,15 +661,15 @@ export default function RequestDetailPage() {
                   <div className="flex flex-wrap gap-2">
                     <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm rounded-lg">
                       <IoShieldCheckmarkOutline className="w-4 h-4" />
-                      Identity Verified
+                      {t('identityVerified')}
                     </span>
                     <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm rounded-lg">
                       <IoCardOutline className="w-4 h-4" />
-                      Payment on File
+                      {t('paymentOnFile')}
                     </span>
                   </div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Guest will complete full verification before pickup.
+                    {t('guestWillCompleteVerification')}
                   </p>
                 </div>
               )}
@@ -683,13 +683,13 @@ export default function RequestDetailPage() {
               >
                 <div className="flex items-center gap-2">
                   <IoDocumentTextOutline className="w-5 h-5 text-gray-400" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Rental Agreement</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('rentalAgreement')}</h3>
                   <span className={`px-2 py-0.5 text-xs rounded-full ${
                     onboardingProgress.agreementUploaded
                       ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                       : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                   }`}>
-                    {onboardingProgress.agreementUploaded ? 'Uploaded' : 'Not Uploaded'}
+                    {onboardingProgress.agreementUploaded ? t('uploaded') : t('notUploaded')}
                   </span>
                 </div>
                 {expandedSections.agreement ? (
@@ -704,11 +704,11 @@ export default function RequestDetailPage() {
                   {/* Host's Agreement - with AI validation */}
                   <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900 dark:text-white">Your Rental Agreement</h4>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">Optional</span>
+                      <h4 className="font-medium text-gray-900 dark:text-white">{t('yourRentalAgreement')}</h4>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{t('optional')}</span>
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                      Upload your existing rental agreement. Our AI will validate it automatically.
+                      {t('uploadAgreementDesc')}
                     </p>
 
                     <AgreementUpload
@@ -724,10 +724,10 @@ export default function RequestDetailPage() {
                           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 text-sm font-medium"
                         >
                           <IoSendOutline className="w-4 h-4" />
-                          Test E-Sign Experience
+                          {t('testESignExperience')}
                         </button>
                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                          Preview what guests will see when signing your agreement
+                          {t('previewGuestSigning')}
                         </p>
                       </div>
                     )}
@@ -736,11 +736,11 @@ export default function RequestDetailPage() {
                   {/* ItWhip Agreement */}
                   <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900 dark:text-white">ItWhip Standard Agreement</h4>
-                      <span className="text-xs text-purple-600 dark:text-purple-400">Required</span>
+                      <h4 className="font-medium text-gray-900 dark:text-white">{t('itwhipStandardAgreement')}</h4>
+                      <span className="text-xs text-purple-600 dark:text-purple-400">{t('required')}</span>
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                      Standard terms protecting both you and the guest.
+                      {t('standardTermsDesc')}
                     </p>
                     <div className="flex gap-2">
                       <button
@@ -748,13 +748,13 @@ export default function RequestDetailPage() {
                         className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-sm"
                       >
                         <IoEyeOutline className="w-4 h-4" />
-                        Preview Agreement
+                        {t('previewAgreement')}
                       </button>
                     </div>
                   </div>
 
                   <p className="text-xs text-gray-400 dark:text-gray-500">
-                    Guest will sign both agreements before pickup (after you list your car)
+                    {t('guestWillSignBoth')}
                   </p>
                 </div>
               )}
@@ -771,7 +771,7 @@ export default function RequestDetailPage() {
               >
                 <div className="flex items-center gap-2">
                   <IoWalletOutline className="w-5 h-5 text-gray-400" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Pricing</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('pricing')}</h3>
                 </div>
                 {expandedSections.pricing ? (
                   <IoChevronUpOutline className="w-5 h-5 text-gray-400" />
@@ -784,19 +784,19 @@ export default function RequestDetailPage() {
                 <div className="px-6 pb-6 space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">
-                      {formatCurrency(dailyRate)} × {durationDays} days
+                      {formatCurrency(dailyRate)} × {t('durationDays', { count: durationDays })}
                     </span>
                     <span className="text-gray-900 dark:text-white">{formatCurrency(totalAmount)}</span>
                   </div>
 
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Platform fee (10%)</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t('platformFee')}</span>
                     <span className="text-gray-500 dark:text-gray-400">-{formatCurrency(platformFee)}</span>
                   </div>
 
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
                     <div className="flex justify-between items-center">
-                      <span className="font-semibold text-gray-900 dark:text-white">Your Earnings</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{t('yourEarnings')}</span>
                       <span className="text-xl font-bold text-green-600 dark:text-green-400">
                         {formatCurrency(hostEarnings)}
                       </span>
@@ -805,7 +805,7 @@ export default function RequestDetailPage() {
 
                   {prospect.counterOfferStatus === 'APPROVED' && (
                     <p className="text-xs text-green-600 dark:text-green-400">
-                      ✓ Counter-offer approved
+                      {t('counterOfferApproved')}
                     </p>
                   )}
 
@@ -815,7 +815,7 @@ export default function RequestDetailPage() {
                       className="w-full mt-3 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 flex items-center justify-center gap-2 text-sm font-medium"
                     >
                       <IoHandLeftOutline className="w-4 h-4" />
-                      Request Different Rate
+                      {t('requestDifferentRate')}
                     </button>
                   )}
                 </div>
@@ -825,7 +825,7 @@ export default function RequestDetailPage() {
             {/* Connect Payout - Single Quick Action */}
             {!isExpired && !hasDeclined && !hasCompleted && (
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Connect Payout</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('connectPayout')}</h3>
                 <button
                   onClick={handleConnectPayoutDirect}
                   disabled={connectingPayout || hasPendingCounterOffer || onboardingProgress.payoutConnected}
@@ -838,10 +838,10 @@ export default function RequestDetailPage() {
                   ) : (
                     <IoWalletOutline className="w-5 h-5" />
                   )}
-                  {connectingPayout ? 'Connecting...' : onboardingProgress.payoutConnected ? 'Payout Connected ✓' : 'Connect Payout Account'}
+                  {connectingPayout ? t('connecting') : onboardingProgress.payoutConnected ? t('payoutConnected') : t('connectPayoutAccount')}
                 </button>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-                  Required to receive payments for bookings
+                  {t('requiredToReceivePayments')}
                 </p>
               </div>
             )}
@@ -853,7 +853,7 @@ export default function RequestDetailPage() {
           <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <IoAlertCircleOutline className="w-5 h-5 text-orange-500" />
-              What&apos;s Needed to Receive This Booking
+              {t('whatsNeeded')}
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -864,7 +864,7 @@ export default function RequestDetailPage() {
                   : 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
               }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">List Your Car</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('listYourCar')}</span>
                   {onboardingProgress.carPhotosUploaded && onboardingProgress.ratesConfigured ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
                   ) : (
@@ -873,8 +873,8 @@ export default function RequestDetailPage() {
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {onboardingProgress.carPhotosUploaded && onboardingProgress.ratesConfigured
-                    ? 'Car listed successfully'
-                    : 'Add photos and set your rate'}
+                    ? t('carListedSuccessfully')
+                    : t('addPhotosAndRate')}
                 </p>
                 {!(onboardingProgress.carPhotosUploaded && onboardingProgress.ratesConfigured) && (
                   <Link
@@ -882,7 +882,7 @@ export default function RequestDetailPage() {
                     className="w-full mt-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg flex items-center justify-center gap-1"
                   >
                     <IoCarOutline className="w-3 h-3" />
-                    Add Car
+                    {t('addCar')}
                   </Link>
                 )}
               </div>
@@ -894,7 +894,7 @@ export default function RequestDetailPage() {
                   : 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
               }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Rental Agreement</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('rentalAgreement')}</span>
                   {onboardingProgress.agreementUploaded ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
                   ) : (
@@ -902,7 +902,7 @@ export default function RequestDetailPage() {
                   )}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {onboardingProgress.agreementUploaded ? 'Agreement uploaded & tested' : 'Upload PDF and test e-sign'}
+                  {onboardingProgress.agreementUploaded ? t('agreementUploadedTested') : t('uploadPdfAndTest')}
                 </p>
                 {!onboardingProgress.agreementUploaded && (
                   <button
@@ -919,7 +919,7 @@ export default function RequestDetailPage() {
                     className="w-full mt-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg flex items-center justify-center gap-1"
                   >
                     <IoDocumentTextOutline className="w-3 h-3" />
-                    Upload Agreement
+                    {t('uploadAgreement')}
                   </button>
                 )}
               </div>
@@ -931,7 +931,7 @@ export default function RequestDetailPage() {
                   : 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
               }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Connect Payout</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('connectPayout')}</span>
                   {onboardingProgress.payoutConnected ? (
                     <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
                   ) : (
@@ -939,7 +939,7 @@ export default function RequestDetailPage() {
                   )}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {onboardingProgress.payoutConnected ? 'Bank connected' : 'Connect to receive payments'}
+                  {onboardingProgress.payoutConnected ? t('bankConnected') : t('connectToReceivePayments')}
                 </p>
                 {!onboardingProgress.payoutConnected && (
                   <button
@@ -952,7 +952,7 @@ export default function RequestDetailPage() {
                     ) : (
                       <IoWalletOutline className="w-3 h-3" />
                     )}
-                    {connectingPayout ? 'Connecting...' : 'Connect Payout'}
+                    {connectingPayout ? t('connecting') : t('connectPayout')}
                   </button>
                 )}
               </div>
@@ -961,8 +961,7 @@ export default function RequestDetailPage() {
             {/* Important Note */}
             <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
               <p className="text-sm text-blue-700 dark:text-blue-300">
-                <strong>Note:</strong> Your car will NOT be published publicly. Only this guest will be able to book it.
-                You can choose to make it public later if you want to receive more bookings.
+                <strong>{t('noteLabel')}</strong> {t('noteCarNotPublic')}
               </p>
             </div>
           </div>
@@ -974,7 +973,7 @@ export default function RequestDetailPage() {
             <IoChatbubbleOutline className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Questions? We&apos;re here to help.
+                {t('questionsHereToHelp')}
               </p>
               <div className="flex flex-wrap gap-3 mt-2">
                 <a
@@ -1020,7 +1019,7 @@ export default function RequestDetailPage() {
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <IoDocumentOutline className="w-5 h-5 text-blue-600" />
-                Test E-Sign Experience
+                {t('testESignExperience')}
               </h2>
               <button
                 onClick={() => setShowTestPdfModal(false)}
@@ -1034,7 +1033,7 @@ export default function RequestDetailPage() {
               {/* What will be sent */}
               <div className="space-y-3">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  This test will send you an email with:
+                  {t('testWillSendEmail')}
                 </p>
                 <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
                   <div className="flex items-center gap-3">
@@ -1042,8 +1041,8 @@ export default function RequestDetailPage() {
                       <IoDocumentTextOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-white text-sm">Your Rental Agreement</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">The PDF you uploaded</p>
+                      <p className="font-medium text-gray-900 dark:text-white text-sm">{t('yourRentalAgreement')}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('thePdfYouUploaded')}</p>
                     </div>
                   </div>
                 </div>
@@ -1053,8 +1052,8 @@ export default function RequestDetailPage() {
                       <IoDocumentTextOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-white text-sm">ItWhip Standard Agreement</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Required platform terms</p>
+                      <p className="font-medium text-gray-900 dark:text-white text-sm">{t('itwhipStandardAgreement')}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('requiredPlatformTerms')}</p>
                     </div>
                   </div>
                 </div>
@@ -1065,7 +1064,7 @@ export default function RequestDetailPage() {
                 <div className="flex items-center gap-2">
                   <IoMailOutline className="w-5 h-5 text-gray-500" />
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Test email will be sent to:</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('testEmailSentTo')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{host.email}</p>
                   </div>
                 </div>
@@ -1074,7 +1073,7 @@ export default function RequestDetailPage() {
               {/* Info Box */}
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  <strong>Preview what your guests see:</strong> You'll receive an email just like your guests will, with a link to review and sign both agreements.
+                  <strong>{t('previewWhatGuestsSee')}</strong> {t('previewWhatGuestsSeeDesc')}
                 </p>
               </div>
             </div>
@@ -1085,7 +1084,7 @@ export default function RequestDetailPage() {
                 onClick={() => setShowTestPdfModal(false)}
                 className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={async () => {
@@ -1097,15 +1096,15 @@ export default function RequestDetailPage() {
                     const result = await response.json()
 
                     if (!response.ok) {
-                      alert(result.error || 'Failed to send test email')
+                      alert(result.error || t('failedToSendTestEmail'))
                       return
                     }
 
                     setShowTestPdfModal(false)
-                    alert(`Test e-sign email sent to ${result.sentTo}! Check your inbox.`)
+                    alert(t('testEmailSentSuccess', { sentTo: result.sentTo }))
                   } catch (err) {
                     console.error('Test e-sign error:', err)
-                    alert('Failed to send test email')
+                    alert(t('failedToSendTestEmail'))
                   } finally {
                     setSendingTestPdf(false)
                   }
@@ -1116,12 +1115,12 @@ export default function RequestDetailPage() {
                 {sendingTestPdf ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                    Sending...
+                    {t('sending')}
                   </>
                 ) : (
                   <>
                     <IoSendOutline className="w-4 h-4" />
-                    Send Test Email
+                    {t('sendTestEmail')}
                   </>
                 )}
               </button>
@@ -1138,7 +1137,7 @@ export default function RequestDetailPage() {
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <IoDocumentTextOutline className="w-5 h-5 text-purple-600" />
-                Vehicle Rental Agreement
+                {t('vehicleRentalAgreement')}
               </h2>
               <button
                 onClick={() => setShowAgreementPreview(false)}
@@ -1151,64 +1150,64 @@ export default function RequestDetailPage() {
             {/* Agreement Content */}
             <div className="p-6">
               <div className="text-center mb-6">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Vehicle Rental Agreement</h3>
-                <p className="text-sm text-gray-500 mt-1">Request: #{data.prospect.id.slice(0, 8).toUpperCase()}</p>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('vehicleRentalAgreement')}</h3>
+                <p className="text-sm text-gray-500 mt-1">{t('requestNumber', { id: data.prospect.id.slice(0, 8).toUpperCase() })}</p>
               </div>
 
               <div className="space-y-4">
                 {/* Parties */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Renter (Guest)</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{data.request.guestName || 'Guest'}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('renterGuest')}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{data.request.guestName || t('guest')}</p>
                   </div>
                   <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Vehicle Owner (Partner)</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('vehicleOwnerPartner')}</p>
                     <p className="font-semibold text-gray-900 dark:text-white">{data.host.name}</p>
                   </div>
                 </div>
 
                 {/* Vehicle */}
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Vehicle</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('vehicle')}</p>
                   <p className="font-semibold text-gray-900 dark:text-white">
-                    {data.request.vehicleInfo || 'Vehicle details pending'}
+                    {data.request.vehicleInfo || t('vehicleDetailsPending')}
                   </p>
                 </div>
 
                 {/* Dates */}
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4 grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Pickup Date</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('pickupDate')}</p>
                     <p className="font-semibold text-gray-900 dark:text-white">
-                      {data.request.startDate ? new Date(data.request.startDate).toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}
+                      {data.request.startDate ? new Date(data.request.startDate).toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : t('tbd')}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Return Date</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('returnDate')}</p>
                     <p className="font-semibold text-gray-900 dark:text-white">
-                      {data.request.endDate ? new Date(data.request.endDate).toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}
+                      {data.request.endDate ? new Date(data.request.endDate).toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : t('tbd')}
                     </p>
                   </div>
                 </div>
 
                 {/* Location */}
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Pickup Location</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('pickupLocation')}</p>
                   <p className="font-semibold text-gray-900 dark:text-white">
-                    {data.request.pickupCity && data.request.pickupState ? `${data.request.pickupCity}, ${data.request.pickupState}` : 'Location TBD'}
+                    {data.request.pickupCity && data.request.pickupState ? `${data.request.pickupCity}, ${data.request.pickupState}` : t('locationTbd')}
                   </p>
                 </div>
 
                 {/* Duration & Rate */}
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4 grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Days</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{data.request.durationDays || 0} days</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('totalDays')}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{t('durationDays', { count: data.request.durationDays || 0 })}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Daily Rate</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">${data.request.offeredRate || 0}/day</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('dailyRate')}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{t('ratePerDay', { rate: data.request.offeredRate || 0 })}</p>
                   </div>
                 </div>
 
@@ -1216,7 +1215,7 @@ export default function RequestDetailPage() {
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                   <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600 dark:text-gray-400">Total Rental Amount</span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('totalRentalAmount')}</span>
                       <span className="text-xl font-bold text-purple-600 dark:text-purple-400">
                         ${data.request.totalAmount?.toLocaleString() || 0}
                       </span>
@@ -1226,11 +1225,10 @@ export default function RequestDetailPage() {
 
                 {/* Legal */}
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4 text-sm text-gray-500 dark:text-gray-400 space-y-2">
-                  <p><strong>Governing Law:</strong> State of Arizona</p>
-                  <p><strong>Venue:</strong> Maricopa County Superior Court</p>
+                  <p><strong>{t('governingLaw')}</strong> {t('governingLawValue')}</p>
+                  <p><strong>{t('venue')}</strong> {t('venueValue')}</p>
                   <p className="text-xs mt-4">
-                    By signing this agreement, both parties agree to the terms and conditions outlined herein.
-                    This agreement is facilitated by ItWhip as a platform service.
+                    {t('bySigningAgreement')}
                   </p>
                 </div>
               </div>
@@ -1242,7 +1240,7 @@ export default function RequestDetailPage() {
                 onClick={() => setShowAgreementPreview(false)}
                 className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
               >
-                Close
+                {t('close')}
               </button>
               <a
                 href="https://itwhip.com/rentals/cmjutqr7k0001ju04qwg6ds9a/book"
@@ -1251,7 +1249,7 @@ export default function RequestDetailPage() {
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
               >
                 <IoDocumentTextOutline className="w-4 h-4" />
-                View Full Agreement
+                {t('viewFullAgreement')}
               </a>
             </div>
           </div>

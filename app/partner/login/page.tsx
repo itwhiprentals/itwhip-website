@@ -21,8 +21,10 @@ import {
   IoAlertCircleOutline
 } from 'react-icons/io5'
 import OAuthButtons from '@/app/components/auth/OAuthButtons'
+import { useTranslations } from 'next-intl'
 
 function PartnerLoginForm() {
+  const t = useTranslations('PartnerLogin')
   const router = useRouter()
   const searchParams = useSearchParams()
   const inviteToken = searchParams.get('token')
@@ -44,7 +46,7 @@ function PartnerLoginForm() {
 
     // Handle OAuth errors
     if (oauthError === 'no_account') {
-      setError('No partner account found with this email. Please sign up first.')
+      setError(t('oauthNoAccount'))
     }
   }, [oauthError])
 
@@ -88,11 +90,11 @@ function PartnerLoginForm() {
         }
         return
       } else {
-        setError(data.error || 'Invalid email or password')
+        setError(data.error || t('invalidEmailOrPassword'))
       }
     } catch (err) {
       console.error('Login error:', err)
-      setError('An error occurred. Please try again.')
+      setError(t('genericError'))
     } finally {
       setLoading(false)
     }
@@ -106,7 +108,7 @@ function PartnerLoginForm() {
         className="absolute top-6 left-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
       >
         <IoArrowBackOutline className="w-5 h-5" />
-        <span className="text-sm font-medium">Back to Home</span>
+        <span className="text-sm font-medium">{t('backToHome')}</span>
       </Link>
 
       {/* Theme Toggle */}
@@ -117,12 +119,12 @@ function PartnerLoginForm() {
         {isDark ? (
           <>
             <IoSunnyOutline className="w-5 h-5" />
-            <span className="text-sm font-medium">Light</span>
+            <span className="text-sm font-medium">{t('light')}</span>
           </>
         ) : (
           <>
             <IoMoonOutline className="w-5 h-5" />
-            <span className="text-sm font-medium">Dark</span>
+            <span className="text-sm font-medium">{t('dark')}</span>
           </>
         )}
       </button>
@@ -147,10 +149,10 @@ function PartnerLoginForm() {
             />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mt-4">
-            Fleet Partner Portal
+            {t('fleetPartnerPortal')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Sign in to manage your fleet
+            {t('signInToManageFleet')}
           </p>
         </div>
 
@@ -162,7 +164,7 @@ function PartnerLoginForm() {
               <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2">
                 <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
                 <p className="text-sm text-green-600 dark:text-green-400">
-                  Account created successfully! Please sign in.
+                  {t('accountCreatedSuccess')}
                 </p>
               </div>
             )}
@@ -171,7 +173,7 @@ function PartnerLoginForm() {
             {inviteToken && !justRegistered && (
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                 <p className="text-sm text-blue-600 dark:text-blue-400">
-                  Sign in to view and respond to your invitation.
+                  {t('signInToViewInvitation')}
                 </p>
               </div>
             )}
@@ -182,10 +184,10 @@ function PartnerLoginForm() {
                 <IoAlertCircleOutline className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-red-600 dark:text-red-400">
                   {statusParam === 'rejected'
-                    ? 'Your partner application was rejected. Please contact support for details.'
+                    ? t('statusRejected')
                     : statusParam === 'suspended'
-                    ? 'Your account has been suspended. Please contact support.'
-                    : 'There was an issue with your account. Please contact support.'}
+                    ? t('statusSuspended')
+                    : t('statusGenericIssue')}
                 </p>
               </div>
             )}
@@ -209,7 +211,7 @@ function PartnerLoginForm() {
             {/* Email Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email Address
+                {t('emailAddress')}
               </label>
               <div className="relative">
                 <IoMailOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -217,7 +219,7 @@ function PartnerLoginForm() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="partner@company.com"
+                  placeholder={t('emailPlaceholder')}
                   required
                   className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                 />
@@ -227,7 +229,7 @@ function PartnerLoginForm() {
             {/* Password Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Password
+                {t('password')}
               </label>
               <div className="relative">
                 <IoLockClosedOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -235,7 +237,7 @@ function PartnerLoginForm() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder={t('passwordPlaceholder')}
                   required
                   className="w-full pl-10 pr-12 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                 />
@@ -259,7 +261,7 @@ function PartnerLoginForm() {
                 href="/partner/forgot-password"
                 className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
               >
-                Forgot password?
+                {t('forgotPassword')}
               </Link>
             </div>
 
@@ -272,11 +274,11 @@ function PartnerLoginForm() {
               {loading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Signing in...
+                  {t('signingIn')}
                 </>
               ) : (
                 <>
-                  Sign In
+                  {t('signIn')}
                   <IoArrowForwardOutline className="w-5 h-5" />
                 </>
               )}
@@ -290,7 +292,7 @@ function PartnerLoginForm() {
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-4 bg-white dark:bg-gray-800 text-gray-500">
-                Not a partner yet?
+                {t('notAPartnerYet')}
               </span>
             </div>
           </div>
@@ -300,26 +302,26 @@ function PartnerLoginForm() {
             href={inviteToken ? `/partners/apply/start?token=${inviteToken}` : '/partners/apply/start'}
             className="w-full flex items-center justify-center gap-2 py-3 border-2 border-orange-600 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 font-semibold rounded-lg transition-colors"
           >
-            {inviteToken ? 'Create Account Instead' : 'Become a Partner'}
+            {inviteToken ? t('createAccountInstead') : t('becomeAPartner')}
           </Link>
         </div>
 
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            By signing in, you agree to our{' '}
-            <Link href="/terms" className="text-orange-600 hover:underline">Terms of Service</Link>
-            {' '}and{' '}
-            <Link href="/privacy" className="text-orange-600 hover:underline">Privacy Policy</Link>
+            {t('agreeToTerms')}{' '}
+            <Link href="/terms" className="text-orange-600 hover:underline">{t('termsOfService')}</Link>
+            {' '}{t('and')}{' '}
+            <Link href="/privacy" className="text-orange-600 hover:underline">{t('privacyPolicy')}</Link>
           </p>
         </div>
 
         {/* Support Link */}
         <div className="text-center mt-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Need help?{' '}
+            {t('needHelp')}{' '}
             <a href="mailto:partners@itwhip.com" className="text-orange-600 hover:underline">
-              Contact Partner Support
+              {t('contactPartnerSupport')}
             </a>
           </p>
         </div>

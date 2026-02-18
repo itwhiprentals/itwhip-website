@@ -1,5 +1,6 @@
 // app/(guest)/rentals/near-me/page.tsx
 import { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import Script from 'next/script'
 import Header from '@/app/components/Header'
@@ -30,42 +31,51 @@ export const revalidate = 60
 // ============================================
 // METADATA
 // ============================================
-export const metadata: Metadata = {
-  title: 'Car Rentals Near Me | Phoenix & Arizona | ItWhip',
-  description: 'Find rental cars near your location in Phoenix, Scottsdale, Tempe, Mesa, and across Arizona. Peer-to-peer car rentals with delivery. From $45/day with $1M insurance.',
-  keywords: [
-    'car rental near me',
-    'car rental phoenix',
-    'rent a car near me',
-    'cheap car rental near me',
-    'car rental arizona',
-    'car rental scottsdale',
-    'car rental tempe',
-    'car rental mesa',
-    'peer to peer car rental',
-    'turo alternative phoenix'
-  ],
-  openGraph: {
-    title: 'Car Rentals Near Me | Phoenix & Arizona | ItWhip',
-    description: 'Find the perfect rental car near your location in Arizona. Browse peer-to-peer car rentals with instant booking and free delivery.',
-    url: 'https://itwhip.com/rentals/near-me',
-    images: [{
-      url: 'https://itwhip.com/og/near-me.png',
-      width: 1200,
-      height: 630,
-      alt: 'Car rentals near me in Arizona'
-    }],
-    type: 'website'
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Car Rentals Near Me | Arizona',
-    description: 'Find rental cars near you in Phoenix, Scottsdale, and across Arizona.',
-    images: ['https://itwhip.com/og/near-me.png']
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/rentals/near-me',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('rentalsNearMeTitle'),
+    description: t('rentalsNearMeDescription'),
+    keywords: [
+      'car rental near me',
+      'car rental phoenix',
+      'rent a car near me',
+      'cheap car rental near me',
+      'car rental arizona',
+      'car rental scottsdale',
+      'car rental tempe',
+      'car rental mesa',
+      'peer to peer car rental',
+      'turo alternative phoenix'
+    ],
+    openGraph: {
+      title: t('rentalsNearMeTitle'),
+      description: t('rentalsNearMeDescription'),
+      url: 'https://itwhip.com/rentals/near-me',
+      images: [{
+        url: 'https://itwhip.com/og/near-me.png',
+        width: 1200,
+        height: 630,
+        alt: 'Car rentals near me in Arizona'
+      }],
+      type: 'website'
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: t('rentalsNearMeTitle'),
+      description: t('rentalsNearMeDescription'),
+      images: ['https://itwhip.com/og/near-me.png']
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/rentals/near-me',
+    },
+  }
 }
 
 // ============================================

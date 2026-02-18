@@ -30,19 +30,28 @@ import {
 
 export const revalidate = 60
 
-export const metadata: Metadata = {
-  title: 'Corporate Car Rentals Phoenix | Business Travel | ItWhip',
-  description: 'Corporate car rentals in Phoenix for business travelers. Premium vehicles, expense receipts, volume discounts, ESG reporting. Serving Fortune 500 companies.',
-  keywords: ['corporate car rental phoenix', 'business travel rentals', 'company car rental', 'executive car rental', 'corporate fleet phoenix'],
-  openGraph: {
-    title: 'Corporate Car Rentals Phoenix | Business Travel | ItWhip',
-    description: 'Streamlined corporate travel. Premium vehicles, simplified billing, ESG compliance.',
-    url: 'https://itwhip.com/rentals/corporate-travel',
-    type: 'website'
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/rentals/corporate-travel',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('rentalsCorporateTravelTitle'),
+    description: t('rentalsCorporateTravelDescription'),
+    keywords: ['corporate car rental phoenix', 'business travel rentals', 'company car rental', 'executive car rental', 'corporate fleet phoenix'],
+    openGraph: {
+      title: t('rentalsCorporateTravelTitle'),
+      description: t('rentalsCorporateTravelDescription'),
+      url: 'https://itwhip.com/rentals/corporate-travel',
+      type: 'website'
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/rentals/corporate-travel',
+    },
+  }
 }
 
 function transformCarForCompactCard(car: any) {

@@ -1,10 +1,20 @@
 // app/(guest)/hotels/layout.tsx
 
 import { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 
-export const metadata: Metadata = {
-  title: 'Hotels - ItWhip',
-  description: 'Book Phoenix hotels with instant ride benefits. Premium properties with integrated luxury transportation.',
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('hotelsLayoutTitle'),
+    description: t('hotelsLayoutDescription'),
+  }
 }
 
 export default function HotelsLayout({

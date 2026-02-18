@@ -13,9 +13,18 @@ import {
   IoHomeOutline
 } from 'react-icons/io5'
 
-export const metadata: Metadata = {
-  title: 'Payment Methods | Support | ItWhip',
-  description: 'Learn about accepted payment methods on ItWhip. Credit cards, debit cards, and security deposits explained.',
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('supportPaymentsTitle'),
+    description: t('supportPaymentsDescription'),
+  }
 }
 
 const acceptedKeys = [

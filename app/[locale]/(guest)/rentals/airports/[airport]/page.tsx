@@ -3,6 +3,7 @@ import { Metadata } from 'next'
 import { Link } from '@/i18n/navigation'
 import Script from 'next/script'
 import { notFound } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
@@ -42,9 +43,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, airport } = await params
   const airportData = getAirportBySlug(airport)
+  const t = await getTranslations({ locale, namespace: 'AirportPage' })
 
   if (!airportData) {
-    return { title: 'Airport Not Found - ItWhip' }
+    return { title: t('metaNotFound') }
   }
 
   const carCount = await prisma.rentalCar.count({
@@ -69,7 +71,7 @@ export async function generateMetadata({
       ...airportData.nearbyAreas.map(area => `${area} car rental`)
     ],
     openGraph: {
-      title: `${airportData.name} Car Rentals - ${carCount} Available | ItWhip`,
+      title: t('metaOgTitle', { name: airportData.name, count: carCount }),
       description: airportData.metaDescription,
       url: getCanonicalUrl(`/rentals/airports/${airport}`, locale),
       locale: getOgLocale(locale),
@@ -77,13 +79,13 @@ export async function generateMetadata({
         url: 'https://itwhip.com/og/airports/arizona-airport.png',
         width: 1200,
         height: 630,
-        alt: `Car rentals at ${airportData.fullName}`
+        alt: t('metaOgImageAlt', { fullName: airportData.fullName })
       }],
       type: 'website'
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${airportData.name} Car Rentals`,
+      title: t('metaTwitterTitle', { name: airportData.name }),
       description: airportData.metaDescription,
       images: ['https://itwhip.com/og/airports/arizona-airport.png']
     },
@@ -123,10 +125,11 @@ function transformCarForCompactCard(car: any) {
 // ============================================
 
 // Hero Section
-function HeroSection({ airportData, carCount, minPrice }: {
+function HeroSection({ airportData, carCount, minPrice, t }: {
   airportData: AirportData
   carCount: number
   minPrice: number
+  t: any
 }) {
   return (
     <section className="relative h-[280px] sm:h-[320px] lg:h-[380px] overflow-hidden">
@@ -162,19 +165,19 @@ function HeroSection({ airportData, carCount, minPrice }: {
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-white/90 text-xs sm:text-sm">
             <div className="flex items-center gap-1.5">
               <IoCarOutline className="w-4 h-4 text-amber-400" />
-              <span><strong>{carCount}</strong> cars available</span>
+              <span>{t('heroCarsAvailable', { count: carCount })}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <IoCashOutline className="w-4 h-4 text-emerald-400" />
-              <span>From <strong>${minPrice}</strong>/day</span>
+              <span>{t('heroFromPrice', { price: minPrice })}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <IoShieldCheckmarkOutline className="w-4 h-4 text-blue-400" />
-              <span><strong>$1M</strong> insurance</span>
+              <span>{t('heroInsurance')}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <IoFlashOutline className="w-4 h-4 text-purple-400" />
-              <span>Curbside delivery</span>
+              <span>{t('heroCurbsideDelivery')}</span>
             </div>
           </div>
 
@@ -185,7 +188,7 @@ function HeroSection({ airportData, carCount, minPrice }: {
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors text-sm"
             >
               <IoCarOutline className="w-4 h-4" />
-              Browse {airportData.code} Cars
+              {t('heroBrowseCars', { code: airportData.code })}
             </a>
           </div>
         </div>
@@ -195,25 +198,25 @@ function HeroSection({ airportData, carCount, minPrice }: {
 }
 
 // Breadcrumbs
-function Breadcrumbs({ airportData }: { airportData: AirportData }) {
+function Breadcrumbs({ airportData, t }: { airportData: AirportData; t: any }) {
   return (
     <nav aria-label="Breadcrumb" className="mb-3">
       <ol className="flex items-center gap-1.5 text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">
         <li className="flex items-center gap-1.5">
           <Link href="/" className="hover:text-amber-600 dark:hover:text-amber-400 flex items-center gap-1">
             <IoHomeOutline className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-            <span className="hidden sm:inline">Home</span>
+            <span className="hidden sm:inline">{t('breadcrumbHome')}</span>
           </Link>
           <IoChevronForwardOutline className="w-2.5 h-2.5" />
         </li>
         <li className="flex items-center gap-1.5">
           <Link href="/rentals" className="hover:text-amber-600 dark:hover:text-amber-400">
-            Rentals
+            {t('breadcrumbRentals')}
           </Link>
           <IoChevronForwardOutline className="w-2.5 h-2.5" />
         </li>
         <li className="flex items-center gap-1.5">
-          <span className="text-gray-600 dark:text-gray-300">Airports</span>
+          <span className="text-gray-600 dark:text-gray-300">{t('breadcrumbAirports')}</span>
           <IoChevronForwardOutline className="w-2.5 h-2.5" />
         </li>
         <li className="text-gray-800 dark:text-gray-200 font-medium">
@@ -225,27 +228,27 @@ function Breadcrumbs({ airportData }: { airportData: AirportData }) {
 }
 
 // How Pickup Works Section
-function HowPickupWorks({ airportData }: { airportData: AirportData }) {
+function HowPickupWorks({ airportData, t }: { airportData: AirportData; t: any }) {
   const steps = [
     {
       icon: IoCarOutline,
-      title: 'Browse & Book',
-      description: 'Choose from our selection of cars with airport pickup at ' + airportData.code
+      title: t('stepBrowseBookTitle'),
+      description: t('stepBrowseBookDesc', { code: airportData.code })
     },
     {
       icon: IoAirplaneOutline,
-      title: 'Land & Text',
-      description: 'When you land, text your host through the ItWhip app'
+      title: t('stepLandTextTitle'),
+      description: t('stepLandTextDesc')
     },
     {
       icon: IoNavigateOutline,
-      title: 'Meet Curbside',
-      description: 'Your host brings the car to you at arrivals - no shuttles needed'
+      title: t('stepMeetCurbsideTitle'),
+      description: t('stepMeetCurbsideDesc')
     },
     {
       icon: IoCheckmarkCircleOutline,
-      title: 'Quick Handoff',
-      description: 'Quick vehicle walkthrough, sign digitally, and you\'re on your way'
+      title: t('stepQuickHandoffTitle'),
+      description: t('stepQuickHandoffDesc')
     }
   ]
 
@@ -254,7 +257,7 @@ function HowPickupWorks({ airportData }: { airportData: AirportData }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
           <IoAirplaneOutline className="w-5 h-5 text-amber-600" />
-          How {airportData.code} Pickup Works
+          {t('howPickupWorksHeading', { code: airportData.code })}
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {steps.map((step, index) => (
@@ -274,7 +277,7 @@ function HowPickupWorks({ airportData }: { airportData: AirportData }) {
 }
 
 // Airport Info Section
-function AirportInfoSection({ airportData }: { airportData: AirportData }) {
+function AirportInfoSection({ airportData, t }: { airportData: AirportData; t: any }) {
   return (
     <section className="py-6 sm:py-8 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -282,7 +285,7 @@ function AirportInfoSection({ airportData }: { airportData: AirportData }) {
           {/* About Section */}
           <div>
             <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2 sm:mb-3">
-              About {airportData.fullName}
+              {t('aboutAirport', { fullName: airportData.fullName })}
             </h2>
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
               {airportData.description}
@@ -294,7 +297,7 @@ function AirportInfoSection({ airportData }: { airportData: AirportData }) {
             <div className="bg-white dark:bg-gray-800 rounded-lg p-2.5 sm:p-3 border border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 mb-1">
                 <IoAirplaneOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="font-semibold text-[10px] sm:text-xs">Airport Code</span>
+                <span className="font-semibold text-[10px] sm:text-xs">{t('airportCode')}</span>
               </div>
               <p className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">
                 {airportData.code}
@@ -304,7 +307,7 @@ function AirportInfoSection({ airportData }: { airportData: AirportData }) {
             <div className="bg-white dark:bg-gray-800 rounded-lg p-2.5 sm:p-3 border border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 mb-1">
                 <IoLocationOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="font-semibold text-[10px] sm:text-xs">Terminals</span>
+                <span className="font-semibold text-[10px] sm:text-xs">{t('terminals')}</span>
               </div>
               <p className="text-[10px] sm:text-xs text-gray-700 dark:text-gray-300">
                 {airportData.terminals.join(', ')}
@@ -314,20 +317,20 @@ function AirportInfoSection({ airportData }: { airportData: AirportData }) {
             <div className="bg-white dark:bg-gray-800 rounded-lg p-2.5 sm:p-3 border border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 mb-1">
                 <IoNavigateOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="font-semibold text-[10px] sm:text-xs">Pickup Locations</span>
+                <span className="font-semibold text-[10px] sm:text-xs">{t('pickupLocations')}</span>
               </div>
               <p className="text-[10px] sm:text-xs text-gray-700 dark:text-gray-300">
-                {airportData.pickupLocations.length} options
+                {t('pickupLocationsCount', { count: airportData.pickupLocations.length })}
               </p>
             </div>
 
             <div className="bg-white dark:bg-gray-800 rounded-lg p-2.5 sm:p-3 border border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 mb-1">
                 <IoTimeOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="font-semibold text-[10px] sm:text-xs">Pickup Time</span>
+                <span className="font-semibold text-[10px] sm:text-xs">{t('pickupTime')}</span>
               </div>
               <p className="text-[10px] sm:text-xs text-gray-700 dark:text-gray-300">
-                5-15 minutes
+                {t('pickupTimeValue')}
               </p>
             </div>
           </div>
@@ -337,7 +340,7 @@ function AirportInfoSection({ airportData }: { airportData: AirportData }) {
         <div className="mt-5 sm:mt-6">
           <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1.5">
             <IoLocationOutline className="w-4 h-4 text-amber-600" />
-            Pickup Locations at {airportData.code}
+            {t('pickupLocationsAt', { code: airportData.code })}
           </h3>
           <div className="flex flex-wrap gap-2">
             {airportData.pickupLocations.map((location, i) => (
@@ -352,7 +355,7 @@ function AirportInfoSection({ airportData }: { airportData: AirportData }) {
         <div className="mt-5 sm:mt-6">
           <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1.5">
             <IoNavigateOutline className="w-4 h-4 text-amber-600" />
-            Nearby Areas
+            {t('nearbyAreas')}
           </h3>
           <div className="flex flex-wrap gap-2">
             {airportData.nearbyAreas.map((area, i) => (
@@ -371,7 +374,7 @@ function AirportInfoSection({ airportData }: { airportData: AirportData }) {
         <div className="mt-5 sm:mt-6">
           <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1.5">
             <IoCheckmarkCircleOutline className="w-4 h-4 text-amber-600" />
-            Pickup Tips
+            {t('pickupTips')}
           </h3>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {airportData.tips.map((tip, i) => (
@@ -388,14 +391,14 @@ function AirportInfoSection({ airportData }: { airportData: AirportData }) {
 }
 
 // FAQ Section
-function FAQSection({ airportData }: { airportData: AirportData }) {
+function FAQSection({ airportData, t }: { airportData: AirportData; t: any }) {
   return (
     <section className="py-6 sm:py-8 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl">
           <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <IoHelpCircleOutline className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
-            {airportData.code} Car Rental FAQs
+            {t('faqHeading', { code: airportData.code })}
           </h2>
           <div className="space-y-2 sm:space-y-3">
             {airportData.faqs.map((faq, i) => (
@@ -417,7 +420,7 @@ function FAQSection({ airportData }: { airportData: AirportData }) {
 }
 
 // Related Airports Section
-function RelatedAirports({ currentSlug }: { currentSlug: string }) {
+function RelatedAirports({ currentSlug, t }: { currentSlug: string; t: any }) {
   const otherAirports = Object.entries(AIRPORT_DATA)
     .filter(([slug]) => slug !== currentSlug)
 
@@ -427,10 +430,10 @@ function RelatedAirports({ currentSlug }: { currentSlug: string }) {
     <section className="py-5 sm:py-6 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white mb-1">
-          Other Arizona Airports
+          {t('otherAirportsHeading')}
         </h2>
         <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-3">
-          Car rentals at other Arizona airports
+          {t('otherAirportsSubtitle')}
         </p>
         <div className="flex flex-wrap gap-2">
           {otherAirports.map(([slug, data]) => (
@@ -466,6 +469,8 @@ export default async function AirportPage({
   if (!airportData) {
     notFound()
   }
+
+  const t = await getTranslations('AirportPage')
 
   // Fetch cars with airport pickup
   const cars = await prisma.rentalCar.findMany({
@@ -696,12 +701,13 @@ export default async function AirportPage({
           airportData={airportData}
           carCount={carCount}
           minPrice={minPrice}
+          t={t}
         />
 
         <div>
           {/* Breadcrumbs */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-            <Breadcrumbs airportData={airportData} />
+            <Breadcrumbs airportData={airportData} t={t} />
           </div>
 
           {/* All Available Cars */}
@@ -711,14 +717,14 @@ export default async function AirportPage({
                 <div>
                   <div className="flex items-center gap-3 mb-0.5">
                     <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                      Cars with {airportData.code} Pickup
+                      {t('carsWithPickup', { code: airportData.code })}
                     </h2>
                     <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-semibold rounded-full">
-                      {carCount} available
+                      {t('availableCount', { count: carCount })}
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Skip the rental counter - get curbside delivery at {airportData.name}
+                    {t('skipRentalCounter', { name: airportData.name })}
                   </p>
                 </div>
               </div>
@@ -733,16 +739,16 @@ export default async function AirportPage({
                 <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                   <IoCarOutline className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    No Cars Currently Available
+                    {t('noCarsTitle')}
                   </h3>
                   <p className="text-gray-500 dark:text-gray-400 mb-4">
-                    Check back soon or browse all available cars.
+                    {t('noCarsDescription')}
                   </p>
                   <Link
                     href="/rentals/search"
                     className="inline-flex items-center gap-2 bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-600 transition"
                   >
-                    Browse All Cars
+                    {t('browseAllCars')}
                     <IoChevronForwardOutline className="w-4 h-4" />
                   </Link>
                 </div>
@@ -758,10 +764,10 @@ export default async function AirportPage({
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                   <div className="flex items-center gap-3 mb-3">
                     <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                      Luxury & Premium
+                      {t('luxuryPremium')}
                     </h2>
                     <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-semibold rounded-full">
-                      {luxuryCars.length} cars
+                      {t('carsCount', { count: luxuryCars.length })}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
@@ -782,10 +788,10 @@ export default async function AirportPage({
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                   <div className="flex items-center gap-3 mb-3">
                     <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                      SUVs for Arizona Adventures
+                      {t('suvsForAdventures')}
                     </h2>
                     <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold rounded-full">
-                      {suvCars.length} SUVs
+                      {t('suvsCount', { count: suvCars.length })}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
@@ -806,10 +812,10 @@ export default async function AirportPage({
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                   <div className="flex items-center gap-3 mb-3">
                     <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                      Budget-Friendly Options
+                      {t('budgetFriendly')}
                     </h2>
                     <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-semibold rounded-full">
-                      Under $100/day
+                      {t('under100PerDay')}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
@@ -823,16 +829,16 @@ export default async function AirportPage({
           )}
 
           {/* How Pickup Works */}
-          <HowPickupWorks airportData={airportData} />
+          <HowPickupWorks airportData={airportData} t={t} />
 
           {/* Airport Info */}
-          <AirportInfoSection airportData={airportData} />
+          <AirportInfoSection airportData={airportData} t={t} />
 
           {/* FAQs */}
-          <FAQSection airportData={airportData} />
+          <FAQSection airportData={airportData} t={t} />
 
           {/* Related Airports */}
-          <RelatedAirports currentSlug={airport} />
+          <RelatedAirports currentSlug={airport} t={t} />
         </div>
 
         <Footer />

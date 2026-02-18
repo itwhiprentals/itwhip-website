@@ -1,17 +1,27 @@
 import { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 
-export const metadata: Metadata = {
-  title: 'Live Fleet Demo | ItWhip+ Vehicle Tracking',
-  description: 'Experience the ItWhip+ fleet tracking dashboard in action. Live GPS, remote commands, geofencing, speed alerts, and Mileage Forensics. No signup required.',
-  openGraph: {
-    title: 'Live Fleet Demo | ItWhip+ Vehicle Tracking',
-    description: 'Experience the ItWhip+ fleet tracking dashboard. Live GPS, remote commands, and real-time alerts.',
-    url: 'https://itwhip.com/tracking/demo',
-    type: 'website',
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/tracking/demo',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('trackingDemoTitle'),
+    description: t('trackingDemoDescription'),
+    openGraph: {
+      title: t('trackingDemoTitle'),
+      description: t('trackingDemoDescription'),
+      url: 'https://itwhip.com/tracking/demo',
+      type: 'website',
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/tracking/demo',
+    },
+  }
 }
 
 export default function TrackingDemoLayout({

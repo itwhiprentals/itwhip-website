@@ -1,5 +1,6 @@
 // app/(guest)/rentals/airport-near-me/page.tsx
 import { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import Script from 'next/script'
 import Header from '@/app/components/Header'
@@ -21,26 +22,35 @@ import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatter
 
 export const revalidate = 60
 
-export const metadata: Metadata = {
-  title: 'Airport Car Rentals Near Me | Phoenix PHX, Mesa AZA | ItWhip',
-  description: 'Find airport car rentals near you in Phoenix. Skip the counter at PHX Sky Harbor, Mesa Gateway, and Scottsdale Airport. Curbside delivery, free pickup available.',
-  keywords: [
-    'airport car rental near me',
-    'airport car rental phoenix',
-    'phx airport car rental',
-    'mesa gateway car rental',
-    'sky harbor car rental',
-    'airport pickup car rental arizona'
-  ],
-  openGraph: {
-    title: 'Airport Car Rentals Near Me | Phoenix Airports',
-    description: 'Skip the rental counter. Get your car delivered curbside at Phoenix airports. Free delivery from many hosts.',
-    url: 'https://itwhip.com/rentals/airport-near-me',
-    type: 'website'
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/rentals/airport-near-me',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('rentalsAirportNearMeTitle'),
+    description: t('rentalsAirportNearMeDescription'),
+    keywords: [
+      'airport car rental near me',
+      'airport car rental phoenix',
+      'phx airport car rental',
+      'mesa gateway car rental',
+      'sky harbor car rental',
+      'airport pickup car rental arizona'
+    ],
+    openGraph: {
+      title: t('rentalsAirportNearMeTitle'),
+      description: t('rentalsAirportNearMeDescription'),
+      url: 'https://itwhip.com/rentals/airport-near-me',
+      type: 'website'
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/rentals/airport-near-me',
+    },
+  }
 }
 
 function transformCarForCompactCard(car: any) {

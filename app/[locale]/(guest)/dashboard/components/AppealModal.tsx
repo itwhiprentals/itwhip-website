@@ -2,6 +2,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 interface AppealModalProps {
   isOpen: boolean
@@ -11,6 +12,7 @@ interface AppealModalProps {
 }
 
 export default function AppealModal({ isOpen, onClose, guestId, onSuccess }: AppealModalProps) {
+  const t = useTranslations('AppealModal')
   const [reason, setReason] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -18,7 +20,7 @@ export default function AppealModal({ isOpen, onClose, guestId, onSuccess }: App
 
   const handleSubmit = async () => {
     if (!reason.trim()) {
-      alert('Please provide a reason for your appeal')
+      alert(t('provideReason'))
       return
     }
 
@@ -33,17 +35,17 @@ export default function AppealModal({ isOpen, onClose, guestId, onSuccess }: App
       })
 
       if (response.ok) {
-        alert('Appeal submitted successfully. Our team will review it within 24-48 hours.')
+        alert(t('appealSuccess'))
         setReason('')
         onSuccess()
         onClose()
       } else {
         const data = await response.json()
-        alert(data.error || 'Failed to submit appeal')
+        alert(data.error || t('appealFailed'))
       }
     } catch (error) {
       console.error('Appeal submission error:', error)
-      alert('Failed to submit appeal. Please try again.')
+      alert(t('appealFailedRetry'))
     } finally {
       setSubmitting(false)
     }
@@ -53,11 +55,11 @@ export default function AppealModal({ isOpen, onClose, guestId, onSuccess }: App
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full p-6">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-          Submit Appeal
+          {t('submitAppeal')}
         </h2>
-        
+
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Please explain why you believe this action should be reconsidered. Our team will review your appeal within 24-48 hours.
+          {t('appealDescription')}
         </p>
 
         <textarea
@@ -65,7 +67,7 @@ export default function AppealModal({ isOpen, onClose, guestId, onSuccess }: App
           onChange={(e) => setReason(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white mb-4"
           rows={6}
-          placeholder="Explain your situation and why you're appealing..."
+          placeholder={t('appealPlaceholder')}
           disabled={submitting}
         />
 
@@ -75,14 +77,14 @@ export default function AppealModal({ isOpen, onClose, guestId, onSuccess }: App
             disabled={submitting}
             className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
           >
-            Cancel
+            {t('cancel')}
           </button>
           <button
             onClick={handleSubmit}
             disabled={submitting || !reason.trim()}
             className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submitting ? 'Submitting...' : 'Submit Appeal'}
+            {submitting ? t('submitting') : t('submitAppeal')}
           </button>
         </div>
       </div>

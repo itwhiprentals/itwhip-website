@@ -3,7 +3,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { 
+import { useTranslations } from 'next-intl'
+import {
  IoCarSportOutline,
  IoTimeOutline,
  IoCheckmarkCircle,
@@ -38,6 +39,7 @@ interface RentalBooking {
 }
 
 export default function BookingsListPage() {
+ const t = useTranslations('GuestBookingsList')
  const router = useRouter()
  const [bookings, setBookings] = useState<RentalBooking[]>([])
  const [loading, setLoading] = useState(true)
@@ -131,7 +133,7 @@ export default function BookingsListPage() {
      <div className="min-h-screen flex items-center justify-center">
        <div className="text-center">
          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-         <p className="text-gray-600 dark:text-gray-400">Loading your bookings...</p>
+         <p className="text-gray-600 dark:text-gray-400">{t('loadingBookings')}</p>
        </div>
      </div>
    )
@@ -151,17 +153,17 @@ export default function BookingsListPage() {
            </button>
            <div className="flex-1 min-w-0">
              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">
-               My Rental Bookings
+               {t('myRentalBookings')}
              </h1>
              <p className="text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
-               View and manage all your car rental reservations
+               {t('viewAndManage')}
              </p>
            </div>
            <button
              onClick={() => router.push('/rentals/search')}
              className="px-3 sm:px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm sm:text-base whitespace-nowrap"
            >
-             New Booking
+             {t('newBooking')}
            </button>
          </div>
        </div>
@@ -175,7 +177,7 @@ export default function BookingsListPage() {
            <IoSearchOutline className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
            <input
              type="text"
-             placeholder="Search by booking code, car, or host..."
+             placeholder={t('searchPlaceholder')}
              value={searchTerm}
              onChange={(e) => setSearchTerm(e.target.value)}
              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
@@ -195,7 +197,7 @@ export default function BookingsListPage() {
                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                  }`}
                >
-                 {f === 'needs-action' ? 'Needs Action' : f.charAt(0).toUpperCase() + f.slice(1)}
+                 {{ all: t('filterAll'), upcoming: t('filterUpcoming'), active: t('filterActive'), completed: t('filterCompleted'), 'needs-action': t('filterNeedsAction') }[f]}
                  {f === 'needs-action' && needsActionCount > 0 && (
                    <span className="ml-1.5 bg-yellow-500 text-white text-xs rounded-full px-1.5 py-0.5">
                      {needsActionCount}
@@ -214,14 +216,14 @@ export default function BookingsListPage() {
              <div className="flex items-center">
                <IoWarningOutline className="w-5 h-5 text-yellow-600 mr-3" />
                <p className="text-yellow-800 dark:text-yellow-200">
-                 You have {needsActionCount} booking{needsActionCount > 1 ? 's' : ''} requiring verification
+                 {t('verificationAlert', { count: needsActionCount })}
                </p>
              </div>
              <button
                onClick={() => setFilter('needs-action')}
                className="text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 font-medium"
              >
-               View Now
+               {t('viewNow')}
              </button>
            </div>
          </div>
@@ -232,21 +234,21 @@ export default function BookingsListPage() {
          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
            <IoCarSportOutline className="w-16 h-16 mx-auto text-gray-400 mb-4" />
            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-             No bookings found
+             {t('noBookingsFound')}
            </h3>
            <p className="text-gray-600 dark:text-gray-400 mb-6">
-             {searchTerm 
-               ? `No bookings match "${searchTerm}"`
-               : filter === 'all' 
-               ? "You don't have any bookings yet"
-               : `No ${filter} bookings`}
+             {searchTerm
+               ? t('noBookingsMatch', { searchTerm })
+               : filter === 'all'
+               ? t('noBookingsYet')
+               : t('noFilteredBookings', { filter })}
            </p>
            {filter === 'all' && (
              <button
                onClick={() => router.push('/rentals/search')}
                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
              >
-               Browse Available Cars
+               {t('browseAvailableCars')}
              </button>
            )}
          </div>
@@ -281,7 +283,7 @@ export default function BookingsListPage() {
                      <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                        getStatusColor(booking.status, booking.verificationStatus)
                      }`}>
-                       {booking.verificationStatus?.toUpperCase() === 'PENDING' ? 'Verify Now' : booking.status}
+                       {booking.verificationStatus?.toUpperCase() === 'PENDING' ? t('verifyNow') : booking.status}
                      </span>
                    </div>
                  </div>
@@ -301,7 +303,7 @@ export default function BookingsListPage() {
                  {booking.verificationStatus?.toUpperCase() === 'PENDING' && (
                    <div className="mt-2 flex items-center text-xs text-yellow-600 dark:text-yellow-400">
                      <IoWarningOutline className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
-                     <span className="truncate">Upload documents to confirm</span>
+                     <span className="truncate">{t('uploadDocumentsToConfirm')}</span>
                    </div>
                  )}
                </div>
@@ -326,7 +328,7 @@ export default function BookingsListPage() {
                          {booking.car.model}
                        </p>
                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                         Booking Code: {booking.bookingCode}
+                         {t('bookingCode', { code: booking.bookingCode })}
                        </p>
 
                        <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
@@ -336,20 +338,20 @@ export default function BookingsListPage() {
                          </div>
                          <div className="flex items-center text-gray-600 dark:text-gray-400">
                            <IoTimeOutline className="w-4 h-4 mr-2 flex-shrink-0" />
-                           {booking.numberOfDays} day{booking.numberOfDays > 1 ? 's' : ''}
+                           {t('daysCount', { count: booking.numberOfDays })}
                          </div>
                          <div className="text-gray-600 dark:text-gray-400">
-                           Host: {booking.host.name}
+                           {t('host', { name: booking.host.name })}
                          </div>
                          <div className="text-gray-600 dark:text-gray-400">
-                           Booked: {new Date(booking.createdAt).toLocaleDateString()}
+                           {t('booked', { date: new Date(booking.createdAt).toLocaleDateString() })}
                          </div>
                        </div>
 
                        {booking.verificationStatus?.toUpperCase() === 'PENDING' && (
                          <div className="mt-3 flex items-center text-sm text-yellow-600 dark:text-yellow-400">
                            <IoWarningOutline className="w-4 h-4 mr-1" />
-                           Verification required - Upload documents to confirm
+                           {t('verificationRequired')}
                          </div>
                        )}
                      </div>
@@ -361,7 +363,7 @@ export default function BookingsListPage() {
                          ${booking.totalAmount.toFixed(2)}
                        </p>
                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                         ${booking.car.dailyRate}/day
+                         {t('perDay', { rate: booking.car.dailyRate })}
                        </p>
                      </div>
 
@@ -370,7 +372,7 @@ export default function BookingsListPage() {
                        <span className={`ml-2 px-3 py-1 rounded-full text-sm font-medium ${
                          getStatusColor(booking.status, booking.verificationStatus)
                        }`}>
-                         {booking.verificationStatus?.toUpperCase() === 'PENDING' ? 'Verify Now' : booking.status}
+                         {booking.verificationStatus?.toUpperCase() === 'PENDING' ? t('verifyNow') : booking.status}
                        </span>
                      </div>
                    </div>

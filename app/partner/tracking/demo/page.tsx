@@ -5,6 +5,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -229,6 +230,7 @@ const DEMO_RENTERS = {
 }
 
 export default function TrackingDemoPage() {
+  const t = useTranslations('TrackingDemo')
   const [vehicles, setVehicles] = useState<DemoVehicle[]>(DEMO_VEHICLES)
   const [alerts, setAlerts] = useState(DEMO_ALERTS)
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null)
@@ -513,9 +515,9 @@ export default function TrackingDemoPage() {
     const diffMins = Math.floor(diffMs / 60000)
     const diffHours = Math.floor(diffMs / 3600000)
 
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffMins < 1) return t('justNow')
+    if (diffMins < 60) return t('minutesAgo', { count: diffMins })
+    if (diffHours < 24) return t('hoursAgo', { count: diffHours })
     return date.toLocaleDateString()
   }
 
@@ -585,7 +587,7 @@ export default function TrackingDemoPage() {
                   className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
                 >
                   <IoArrowBackOutline className="w-4 h-4" />
-                  <span className="text-sm font-medium hidden sm:inline">Back</span>
+                  <span className="text-sm font-medium hidden sm:inline">{t('back')}</span>
                 </Link>
                 <div className="flex items-center gap-2 sm:gap-3">
                   <Image
@@ -601,11 +603,11 @@ export default function TrackingDemoPage() {
                   <div>
                     <h1 className="text-base sm:text-lg font-bold flex items-center gap-2">
                       <span className="text-amber-200">ItWhip+</span><sup className="text-[10px] text-amber-300">™</sup>
-                      <span className="text-white/90">in Action</span>
-                      <span className="px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs bg-amber-500/30 border border-amber-400/50 rounded-lg hidden sm:inline">LIVE DEMO</span>
+                      <span className="text-white/90">{t('inAction')}</span>
+                      <span className="px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs bg-amber-500/30 border border-amber-400/50 rounded-lg hidden sm:inline">{t('liveDemo')}</span>
                     </h1>
                     <p className="text-xs sm:text-sm text-white/80 hidden sm:block">
-                      <span className="text-amber-200">OBD</span> + <span className="text-amber-200">API</span> = Unified Dashboard • <span className="text-green-400">Free</span>
+                      <span className="text-amber-200">OBD</span> + <span className="text-amber-200">API</span> = {t('unifiedDashboard')} • <span className="text-green-400">{t('free')}</span>
                     </p>
                   </div>
                 </div>
@@ -613,18 +615,18 @@ export default function TrackingDemoPage() {
               {/* Live indicator - visible on mobile next to logo */}
               <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 bg-white/20 rounded-lg sm:hidden">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-xs sm:text-sm">Live</span>
+                <span className="text-xs sm:text-sm">{t('live')}</span>
               </div>
             </div>
             {/* Right side - Desktop only location + Live indicator */}
             <div className="hidden sm:flex items-center gap-4">
               <div className="text-right">
-                <p className="text-xs text-white/60">ItWhip+ Demo Fleet</p>
+                <p className="text-xs text-white/60">{t('demoFleet')}</p>
                 <p className="text-sm font-semibold">Phoenix, Arizona</p>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 bg-white/20 rounded-lg">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-sm">Live</span>
+                <span className="text-sm">{t('live')}</span>
               </div>
             </div>
           </div>
@@ -638,18 +640,18 @@ export default function TrackingDemoPage() {
           <div className="flex items-center justify-between gap-2 mb-2">
             <h2 className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide flex items-center gap-1">
               <span className="text-amber-600 dark:text-amber-400">ItWhip+</span><sup className="text-[8px] text-amber-500">™</sup>
-              <span className="hidden xs:inline">Feature Suite</span>
+              <span className="hidden xs:inline">{t('featureSuite')}</span>
             </h2>
             <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
               <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-medium bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded border border-amber-300 dark:border-amber-500/30 whitespace-nowrap">
                 🔌 OBD + 🌐 API
               </span>
-              <span className="text-[10px] sm:text-xs text-green-600 dark:text-green-400 font-bold whitespace-nowrap">Free</span>
+              <span className="text-[10px] sm:text-xs text-green-600 dark:text-green-400 font-bold whitespace-nowrap">{t('free')}</span>
             </div>
           </div>
           {/* Subtitle Row */}
           <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-3 sm:mb-4">
-            8 features unified • <span className="text-amber-600 dark:text-amber-400 font-medium">Mileage Forensics™</span> exclusive to ItWhip+
+            {t('featuresUnified')} • <span className="text-amber-600 dark:text-amber-400 font-medium">Mileage Forensics™</span> {t('exclusiveToItWhip')}
           </p>
           <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-8 gap-1.5 sm:gap-2">
             {PROVIDER_FEATURES.map((feature) => (
@@ -662,7 +664,7 @@ export default function TrackingDemoPage() {
               >
                 {feature.id === 'mileage' && (
                   <span className="absolute -top-1 -right-1 px-1 py-0.5 bg-amber-500 text-white text-[8px] font-bold rounded shadow-sm">
-                    EXCLUSIVE
+                    {t('exclusive')}
                   </span>
                 )}
                 <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white mx-auto mb-0.5 sm:mb-1 group-hover:scale-110 transition-transform" />
@@ -680,7 +682,7 @@ export default function TrackingDemoPage() {
               <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2 text-sm sm:text-base">
                 <IoMapOutline className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
                 <span className="text-amber-600 dark:text-amber-400">ItWhip+</span>
-                <span>Fleet Map</span>
+                <span>{t('fleetMap')}</span>
               </h2>
               <div className="flex items-center gap-2 sm:gap-3">
                 <button
@@ -692,11 +694,11 @@ export default function TrackingDemoPage() {
                   }`}
                 >
                   <IoEllipseOutline className="w-3 h-3 inline mr-1" />
-                  <span className="hidden sm:inline">Geofences</span>
+                  <span className="hidden sm:inline">{t('geofences')}</span>
                 </button>
                 <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-gray-500 dark:text-gray-400">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  Live
+                  {t('live')}
                 </div>
               </div>
             </div>
@@ -713,7 +715,7 @@ export default function TrackingDemoPage() {
                 <div className="h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-500">
                   <div className="text-center">
                     <IoMapOutline className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-sm sm:text-base">Map requires Mapbox configuration</p>
+                    <p className="text-sm sm:text-base">{t('mapRequiresMapbox')}</p>
                   </div>
                 </div>
               )}
@@ -725,24 +727,24 @@ export default function TrackingDemoPage() {
             {/* Fleet Stats */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4 shadow-sm">
               <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-2">
-                <span className="text-amber-600 dark:text-amber-400">ItWhip+</span> Fleet Status
+                <span className="text-amber-600 dark:text-amber-400">ItWhip+</span> {t('fleetStatus')}
               </h3>
               <div className="grid grid-cols-4 lg:grid-cols-2 gap-2 sm:gap-3">
                 <div className="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{vehicles.length}</p>
-                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Total</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('total')}</p>
                 </div>
                 <div className="text-center p-2 sm:p-3 bg-blue-50 dark:bg-blue-500/10 rounded-lg border border-blue-200 dark:border-blue-500/20">
                   <p className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{vehicles.filter(v => v.status === 'moving').length}</p>
-                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Moving</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('moving')}</p>
                 </div>
                 <div className="text-center p-2 sm:p-3 bg-green-50 dark:bg-green-500/10 rounded-lg border border-green-200 dark:border-green-500/20">
                   <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">{vehicles.filter(v => v.status === 'parked').length}</p>
-                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Parked</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('parked')}</p>
                 </div>
                 <div className="text-center p-2 sm:p-3 bg-red-50 dark:bg-red-500/10 rounded-lg border border-red-200 dark:border-red-500/20">
                   <p className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400">{vehicles.filter(v => v.isDisabled).length}</p>
-                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Disabled</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('disabled')}</p>
                 </div>
               </div>
             </div>
@@ -757,10 +759,10 @@ export default function TrackingDemoPage() {
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
                   </span>
                   <h3 className="text-xs font-semibold text-gray-700 dark:text-white uppercase tracking-wide">
-                    ItWhip+ Alerts
+                    {t('itwhipAlerts')}
                   </h3>
                   <span className="px-1.5 py-0.5 text-[8px] font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded">
-                    UNIFIED
+                    {t('unified')}
                   </span>
                 </div>
                 <span className="px-2 py-0.5 text-xs font-bold bg-amber-500 text-white rounded-full">
@@ -769,7 +771,7 @@ export default function TrackingDemoPage() {
               </div>
               {/* Provider aggregation row */}
               <div className="flex items-center gap-1 mb-3 pb-2 border-b border-amber-100 dark:border-amber-500/20">
-                <span className="text-[9px] text-gray-500 dark:text-gray-400">Aggregating from:</span>
+                <span className="text-[9px] text-gray-500 dark:text-gray-400">{t('aggregatingFrom')}</span>
                 {LIVE_ALERT_PROVIDERS.slice(0, 2).map(provider => (
                   <span key={provider} className="px-1.5 py-0.5 text-[8px] font-medium rounded border-2 border-amber-300 dark:border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10">
                     {provider === 'Bouncie' ? '🔌 Bouncie' : '🌐 Smartcar'}
@@ -831,7 +833,7 @@ export default function TrackingDemoPage() {
                               </span>
                               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-cyan-300 dark:border-cyan-400/50 text-[9px] font-medium text-cyan-600 dark:text-cyan-400">
                                 <IoSnowOutline className="w-3 h-3" />
-                                A/C Off
+                                {t('acOff')}
                               </span>
                             </>
                           )}
@@ -839,14 +841,14 @@ export default function TrackingDemoPage() {
                           {alert.type === 'geofence' && (
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-yellow-300 dark:border-yellow-400/50 text-[9px] font-medium text-yellow-600 dark:text-yellow-400">
                               <IoMapOutline className="w-3 h-3" />
-                              {alert.message.includes('Sky Harbor') ? 'Airport Zone' : alert.message.includes('exited') ? 'Outside Zone' : 'Metro Boundary'}
+                              {alert.message.includes('Sky Harbor') ? t('airportZone') : alert.message.includes('exited') ? t('outsideZone') : t('metroBoundary')}
                             </span>
                           )}
                           {/* Kill switch badge */}
                           {alert.type === 'killswitch' && (
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-red-400 dark:border-red-400 text-[9px] font-bold text-red-700 dark:text-red-400">
                               <IoLockClosedOutline className="w-3 h-3" />
-                              DISABLED
+                              {t('disabledBadge')}
                             </span>
                           )}
                           {/* Tap for details hint */}
@@ -862,20 +864,21 @@ export default function TrackingDemoPage() {
             {/* Quick Actions */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4 shadow-sm">
               <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-2">
-                <span className="text-amber-600 dark:text-amber-400">ItWhip+</span> Actions
+                <span className="text-amber-600 dark:text-amber-400">ItWhip+</span> {t('actions')}
               </h3>
               <div className="space-y-2">
                 <button className="w-full flex items-center gap-3 p-2.5 sm:p-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left">
                   <IoDownloadOutline className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-                  <span className="text-sm">Export Trip Report</span>
+                  <span className="text-sm">{t('exportTripReport')}</span>
                 </button>
                 <button className="w-full flex items-center gap-3 p-2.5 sm:p-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left">
                   <IoStatsChartOutline className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                   <span className="text-sm">Mileage Forensics™</span>
+
                 </button>
                 <button className="w-full flex items-center gap-3 p-2.5 sm:p-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left">
                   <IoNotificationsOutline className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-                  <span className="text-sm">Alert Settings</span>
+                  <span className="text-sm">{t('alertSettings')}</span>
                 </button>
               </div>
             </div>
@@ -887,9 +890,9 @@ export default function TrackingDemoPage() {
           <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <h2 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base flex items-center gap-2">
               <span className="text-amber-600 dark:text-amber-400">ItWhip+</span>
-              <span>Vehicle Control</span>
+              <span>{t('vehicleControl')}</span>
             </h2>
-            <span className="text-xs text-gray-500 dark:text-gray-400">Unified remote commands via OBD + API</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">{t('unifiedRemoteCommands')}</span>
           </div>
 
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -923,7 +926,7 @@ export default function TrackingDemoPage() {
                         <p className="font-medium text-gray-900 dark:text-white text-sm sm:text-base truncate">
                           {vehicle.year} {vehicle.make} {vehicle.model}
                           {vehicle.isDisabled && (
-                            <span className="ml-2 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs bg-red-100 dark:bg-red-500/30 text-red-600 dark:text-red-400 rounded-lg">DISABLED</span>
+                            <span className="ml-2 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs bg-red-100 dark:bg-red-500/30 text-red-600 dark:text-red-400 rounded-lg">{t('disabledBadge')}</span>
                           )}
                         </p>
                         <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1 truncate">
@@ -955,10 +958,10 @@ export default function TrackingDemoPage() {
                       </div>
                       <span className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded-lg ${getStatusColor(vehicle.status)}`}>
                         {vehicle.isDisabled
-                          ? 'Disabled'
+                          ? t('disabled')
                           : vehicle.status === 'moving' && vehicle.speed
                           ? `${vehicle.speed} mph`
-                          : vehicle.status.charAt(0).toUpperCase() + vehicle.status.slice(1)}
+                          : vehicle.status === 'moving' ? t('moving') : vehicle.status === 'parked' ? t('parked') : vehicle.status.charAt(0).toUpperCase() + vehicle.status.slice(1)}
                       </span>
                       {vehicle.guest && (
                         <div className="text-right hidden md:block">
@@ -982,7 +985,7 @@ export default function TrackingDemoPage() {
                         <div className="text-center p-2 sm:p-3 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm">
                           <IoSpeedometerOutline className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 mx-auto mb-1" />
                           <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">{vehicle.odometer.toLocaleString()}</p>
-                          <p className="text-[10px] sm:text-xs text-gray-500">Odometer</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500">{t('odometer')}</p>
                         </div>
                         <div className="text-center p-2 sm:p-3 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm">
                           {vehicle.isElectric ? (
@@ -991,31 +994,31 @@ export default function TrackingDemoPage() {
                             <IoFlashOutline className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 mx-auto mb-1" />
                           )}
                           <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">{vehicle.isElectric ? vehicle.batteryLevel : vehicle.fuelLevel}%</p>
-                          <p className="text-[10px] sm:text-xs text-gray-500">{vehicle.isElectric ? 'Battery' : 'Fuel'}</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500">{vehicle.isElectric ? t('battery') : t('fuel')}</p>
                         </div>
                         <div className="text-center p-2 sm:p-3 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm">
                           <IoThermometerOutline className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 mx-auto mb-1" />
                           <p className={`text-xs sm:text-sm font-medium ${vehicle.interiorTemp > 100 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
                             {vehicle.interiorTemp}°F
                           </p>
-                          <p className="text-[10px] sm:text-xs text-gray-500">Interior</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500">{t('interior')}</p>
                         </div>
                         <div className="text-center p-2 sm:p-3 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm hidden sm:block">
                           <IoSunnyOutline className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 mx-auto mb-1" />
                           <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">{vehicle.exteriorTemp}°F</p>
-                          <p className="text-[10px] sm:text-xs text-gray-500">Outside</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500">{t('outside')}</p>
                         </div>
                         <div className="text-center p-2 sm:p-3 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm hidden sm:block">
                           <IoTimeOutline className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 mx-auto mb-1" />
                           <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">{formatRelativeTime(vehicle.lastUpdate)}</p>
-                          <p className="text-[10px] sm:text-xs text-gray-500">Last Update</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500">{t('lastUpdate')}</p>
                         </div>
                       </div>
 
                       {/* Remote Control Buttons */}
                       <div className="mb-4">
                         <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2 sm:mb-3">
-                          Remote Commands
+                          {t('remoteCommands')}
                         </p>
                         <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 sm:gap-2">
                           {/* Lock/Unlock */}
@@ -1038,7 +1041,7 @@ export default function TrackingDemoPage() {
                               <IoLockOpenOutline className="w-5 h-5 sm:w-6 sm:h-6" />
                             )}
                             <span className="text-[10px] sm:text-xs font-medium">
-                              {isLocking === vehicle.id ? '...' : vehicle.isLocked ? 'Unlock' : 'Lock'}
+                              {isLocking === vehicle.id ? '...' : vehicle.isLocked ? t('unlock') : t('lock')}
                             </span>
                           </button>
 
@@ -1060,7 +1063,7 @@ export default function TrackingDemoPage() {
                               <IoPowerOutline className={`w-5 h-5 sm:w-6 sm:h-6 ${vehicle.engineRunning ? 'animate-pulse' : ''}`} />
                             )}
                             <span className="text-[10px] sm:text-xs font-medium">
-                              {isStartingEngine === vehicle.id ? '...' : vehicle.engineRunning ? 'Stop' : 'Start'}
+                              {isStartingEngine === vehicle.id ? '...' : vehicle.engineRunning ? t('stop') : t('start')}
                             </span>
                           </button>
 
@@ -1082,7 +1085,7 @@ export default function TrackingDemoPage() {
                               <IoSnowOutline className={`w-5 h-5 sm:w-6 sm:h-6 ${vehicle.acOn ? 'animate-pulse' : ''}`} />
                             )}
                             <span className="text-[10px] sm:text-xs font-medium">
-                              {isPreCooling === vehicle.id ? '...' : vehicle.acOn ? 'AC On' : 'Cool'}
+                              {isPreCooling === vehicle.id ? '...' : vehicle.acOn ? t('acOnLabel') : t('cool')}
                             </span>
                           </button>
 
@@ -1102,7 +1105,7 @@ export default function TrackingDemoPage() {
                               <IoVolumeHighOutline className="w-5 h-5 sm:w-6 sm:h-6" />
                             )}
                             <span className="text-[10px] sm:text-xs font-medium">
-                              {isHonking === vehicle.id ? '...' : 'Honk'}
+                              {isHonking === vehicle.id ? '...' : t('honk')}
                             </span>
                           </button>
 
@@ -1118,7 +1121,7 @@ export default function TrackingDemoPage() {
                               <IoLocateOutline className="w-5 h-5 sm:w-6 sm:h-6" />
                             )}
                             <span className="text-[10px] sm:text-xs font-medium">
-                              {isLocating === vehicle.id ? '...' : 'Locate'}
+                              {isLocating === vehicle.id ? '...' : t('locate')}
                             </span>
                           </button>
 
@@ -1128,7 +1131,7 @@ export default function TrackingDemoPage() {
                             className="flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all border border-gray-300 dark:border-gray-600"
                           >
                             <IoPulseOutline className="w-5 h-5 sm:w-6 sm:h-6" />
-                            <span className="text-[10px] sm:text-xs font-medium">Track</span>
+                            <span className="text-[10px] sm:text-xs font-medium">{t('track')}</span>
                           </button>
 
                           {/* Kill Switch */}
@@ -1147,7 +1150,7 @@ export default function TrackingDemoPage() {
                               <IoFlashOffOutline className="w-5 h-5 sm:w-6 sm:h-6" />
                             )}
                             <span className="text-[10px] sm:text-xs font-medium">
-                              {isKilling === vehicle.id ? '...' : vehicle.isDisabled ? 'Off' : 'Kill'}
+                              {isKilling === vehicle.id ? '...' : vehicle.isDisabled ? t('off') : t('kill')}
                             </span>
                           </button>
                         </div>
@@ -1157,17 +1160,17 @@ export default function TrackingDemoPage() {
                       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700">
                         <button className="flex-1 flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors">
                           <IoMapOutline className="w-4 h-4" />
-                          View Trip History
+                          {t('viewTripHistory')}
                         </button>
                         {vehicle.guest && (
                           <button className="flex-1 flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                             <IoChatbubbleOutline className="w-4 h-4" />
-                            Message Guest
+                            {t('messageGuest')}
                           </button>
                         )}
                         <button className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                           <IoDownloadOutline className="w-4 h-4" />
-                          Export
+                          {t('export')}
                         </button>
                       </div>
                     </div>
@@ -1182,14 +1185,14 @@ export default function TrackingDemoPage() {
         <div className="mt-4 sm:mt-6 bg-gradient-to-r from-orange-100 to-amber-100 dark:from-orange-500/20 dark:to-amber-500/20 rounded-lg border border-orange-300 dark:border-orange-500/30 p-4 sm:p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1">Ready to track your fleet?</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Connect a tracking provider to start monitoring your vehicles in real-time.</p>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1">{t('readyToTrack')}</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('connectProviderDescription')}</p>
             </div>
             <Link
               href="/partner/tracking"
               className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
             >
-              Connect a Provider
+              {t('connectProvider')}
               <IoChevronForwardOutline className="w-4 h-4" />
             </Link>
           </div>
@@ -1234,10 +1237,10 @@ export default function TrackingDemoPage() {
                 </span>
                 <div>
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {selectedAlert.type === 'speed' ? 'Speed Alert' :
-                     selectedAlert.type === 'geofence' ? 'Geofence Alert' :
-                     selectedAlert.type === 'temp' ? 'Temperature Alert' :
-                     selectedAlert.type === 'killswitch' ? 'Kill Switch Alert' : 'Alert'}
+                    {selectedAlert.type === 'speed' ? t('speedAlert') :
+                     selectedAlert.type === 'geofence' ? t('geofenceAlert') :
+                     selectedAlert.type === 'temp' ? t('temperatureAlert') :
+                     selectedAlert.type === 'killswitch' ? t('killSwitchAlert') : t('alert')}
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{formatRelativeTime(selectedAlert.timestamp)}</p>
                 </div>
@@ -1275,7 +1278,7 @@ export default function TrackingDemoPage() {
 
               {/* Provider Support */}
               <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <p className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 font-semibold mb-2">This alert type supported by</p>
+                <p className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 font-semibold mb-2">{t('alertSupportedBy')}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {(ALERT_PROVIDER_SUPPORT[selectedAlert.type]?.providers || ALERT_PROVIDER_SUPPORT.info.providers).map(provider => (
                     <span key={provider} className="px-2 py-1 text-xs font-medium rounded border border-green-300 dark:border-green-600 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30">
@@ -1295,7 +1298,7 @@ export default function TrackingDemoPage() {
                 return (
                   <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                     <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                      <p className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 font-semibold">Renter Information</p>
+                      <p className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 font-semibold">{t('renterInformation')}</p>
                     </div>
                     <div className="p-3 space-y-3">
                       <div className="flex items-center gap-3">
@@ -1306,7 +1309,7 @@ export default function TrackingDemoPage() {
                           <p className="font-semibold text-gray-900 dark:text-white">{renter.name}</p>
                           <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
                             <IoShieldCheckmarkOutline className="w-3 h-3" />
-                            License Verified
+                            {t('licenseVerified')}
                           </div>
                         </div>
                       </div>
@@ -1332,7 +1335,7 @@ export default function TrackingDemoPage() {
                 return (
                   <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                     <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                      <p className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 font-semibold">Vehicle Snapshot</p>
+                      <p className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 font-semibold">{t('vehicleSnapshot')}</p>
                     </div>
                     <div className="p-3 space-y-3">
                       <div className="flex items-center justify-between">
@@ -1348,17 +1351,17 @@ export default function TrackingDemoPage() {
                         <div className="text-center p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
                           <IoSpeedometerOutline className="w-4 h-4 text-gray-400 mx-auto mb-1" />
                           <p className="text-xs font-bold text-gray-900 dark:text-white">{vehicle.speed || 0}</p>
-                          <p className="text-[9px] text-gray-500 dark:text-gray-400">mph</p>
+                          <p className="text-[9px] text-gray-500 dark:text-gray-400">{t('mph')}</p>
                         </div>
                         <div className="text-center p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
                           <IoThermometerOutline className="w-4 h-4 text-orange-400 mx-auto mb-1" />
                           <p className="text-xs font-bold text-gray-900 dark:text-white">{vehicle.interiorTemp}°</p>
-                          <p className="text-[9px] text-gray-500 dark:text-gray-400">interior</p>
+                          <p className="text-[9px] text-gray-500 dark:text-gray-400">{t('interiorLabel')}</p>
                         </div>
                         <div className="text-center p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
                           <IoBatteryFullOutline className="w-4 h-4 text-green-400 mx-auto mb-1" />
                           <p className="text-xs font-bold text-gray-900 dark:text-white">{vehicle.fuelLevel}%</p>
-                          <p className="text-[9px] text-gray-500 dark:text-gray-400">fuel</p>
+                          <p className="text-[9px] text-gray-500 dark:text-gray-400">{t('fuelLabel')}</p>
                         </div>
                         <div className="text-center p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
                           {vehicle.isLocked ? (
@@ -1366,8 +1369,8 @@ export default function TrackingDemoPage() {
                           ) : (
                             <IoLockOpenOutline className="w-4 h-4 text-red-400 mx-auto mb-1" />
                           )}
-                          <p className="text-xs font-bold text-gray-900 dark:text-white">{vehicle.isLocked ? 'Yes' : 'No'}</p>
-                          <p className="text-[9px] text-gray-500 dark:text-gray-400">locked</p>
+                          <p className="text-xs font-bold text-gray-900 dark:text-white">{vehicle.isLocked ? t('yes') : t('no')}</p>
+                          <p className="text-[9px] text-gray-500 dark:text-gray-400">{t('locked')}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
@@ -1386,21 +1389,21 @@ export default function TrackingDemoPage() {
                 return (
                   <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                     <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                      <p className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 font-semibold">Trip Details</p>
+                      <p className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 font-semibold">{t('tripDetails')}</p>
                     </div>
                     <div className="p-3">
                       <div className="grid grid-cols-3 gap-2 text-center">
                         <div>
-                          <p className="text-[10px] text-gray-500 dark:text-gray-400">Booking ID</p>
+                          <p className="text-[10px] text-gray-500 dark:text-gray-400">{t('bookingId')}</p>
                           <p className="text-xs font-semibold text-gray-900 dark:text-white">{renter.bookingId}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] text-gray-500 dark:text-gray-400">Trip Dates</p>
+                          <p className="text-[10px] text-gray-500 dark:text-gray-400">{t('tripDates')}</p>
                           <p className="text-xs font-semibold text-gray-900 dark:text-white">{renter.tripStart.slice(5)} → {renter.tripEnd.slice(5)}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] text-gray-500 dark:text-gray-400">Days Left</p>
-                          <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">{renter.daysRemaining} days</p>
+                          <p className="text-[10px] text-gray-500 dark:text-gray-400">{t('daysLeft')}</p>
+                          <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">{t('daysCount', { count: renter.daysRemaining })}</p>
                         </div>
                       </div>
                     </div>
@@ -1411,20 +1414,20 @@ export default function TrackingDemoPage() {
               {/* Send Message */}
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                 <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                  <p className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 font-semibold">Send Message to Driver</p>
+                  <p className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 font-semibold">{t('sendMessageToDriver')}</p>
                 </div>
                 <div className="p-3">
                   {messageSent ? (
                     <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/30 rounded-lg">
                       <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500" />
-                      <p className="text-sm text-green-700 dark:text-green-300">Message sent successfully!</p>
+                      <p className="text-sm text-green-700 dark:text-green-300">{t('messageSentSuccess')}</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
                       <textarea
                         value={alertMessage}
                         onChange={(e) => setAlertMessage(e.target.value)}
-                        placeholder="Type a message to the driver..."
+                        placeholder={t('typeMessagePlaceholder')}
                         className="w-full p-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
                         rows={2}
                       />
@@ -1439,7 +1442,7 @@ export default function TrackingDemoPage() {
                         className="w-full py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
                       >
                         <IoChatbubbleOutline className="w-4 h-4" />
-                        Send Message
+                        {t('sendMessage')}
                       </button>
                     </div>
                   )}
@@ -1453,25 +1456,25 @@ export default function TrackingDemoPage() {
                 <button
                   onClick={() => {
                     // Simulate snapshot
-                    alert('Snapshot saved to trip records')
+                    alert(t('snapshotSaved'))
                   }}
                   className="flex flex-col items-center gap-1 p-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                 >
                   <IoDownloadOutline className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                  <span className="text-[10px] font-medium text-gray-600 dark:text-gray-300">Snapshot</span>
+                  <span className="text-[10px] font-medium text-gray-600 dark:text-gray-300">{t('snapshot')}</span>
                 </button>
                 <button
                   className="flex flex-col items-center gap-1 p-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                 >
                   <IoMapOutline className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                  <span className="text-[10px] font-medium text-gray-600 dark:text-gray-300">View Map</span>
+                  <span className="text-[10px] font-medium text-gray-600 dark:text-gray-300">{t('viewMap')}</span>
                 </button>
                 <a
                   href={`tel:${DEMO_RENTERS[selectedAlert.vehicle as keyof typeof DEMO_RENTERS]?.phone || ''}`}
                   className="flex flex-col items-center gap-1 p-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
                 >
                   <IoCallOutline className="w-5 h-5 text-white" />
-                  <span className="text-[10px] font-medium text-white">Call Now</span>
+                  <span className="text-[10px] font-medium text-white">{t('callNow')}</span>
                 </a>
               </div>
             </div>

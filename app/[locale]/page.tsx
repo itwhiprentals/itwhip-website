@@ -2,17 +2,29 @@
 // Server Component - SSR for SEO with car links in initial HTML
 
 import { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import HomeClient from '@/app/components/home/HomeClient'
 import { getESGCars, getP2PCars } from '@/app/lib/server/fetchHomeData'
 
 // Force dynamic rendering - fresh cars on every page load
 export const dynamic = 'force-dynamic'
 
-// Homepage-specific metadata (inherits title, description, OG from root layout)
-export const metadata: Metadata = {
-  alternates: {
-    canonical: 'https://itwhip.com',
-  },
+// Homepage-specific metadata with i18n
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('homeTitle'),
+    description: t('homeDescription'),
+    alternates: {
+      canonical: 'https://itwhip.com',
+    },
+  }
 }
 
 export default async function HomePage() {

@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
@@ -78,65 +78,66 @@ interface Renter {
   photo: string | null
 }
 
-const CLAIM_TYPE_LABELS: Record<string, string> = {
-  ACCIDENT: 'Accident',
-  THEFT: 'Theft',
-  VANDALISM: 'Vandalism',
-  CLEANING: 'Cleaning',
-  MECHANICAL: 'Mechanical',
-  WEATHER: 'Weather Damage',
-  OTHER: 'Other'
-}
-
-const CLAIM_STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  PENDING: {
-    label: 'Pending',
-    color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
-    icon: <IoTimeOutline className="w-4 h-4" />
-  },
-  UNDER_REVIEW: {
-    label: 'Under Review',
-    color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
-    icon: <IoTimeOutline className="w-4 h-4" />
-  },
-  APPROVED: {
-    label: 'Approved',
-    color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
-    icon: <IoCheckmarkCircleOutline className="w-4 h-4" />
-  },
-  DENIED: {
-    label: 'Denied',
-    color: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
-    icon: <IoCloseCircleOutline className="w-4 h-4" />
-  },
-  PAID: {
-    label: 'Paid',
-    color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
-    icon: <IoCheckmarkCircleOutline className="w-4 h-4" />
-  },
-  DISPUTED: {
-    label: 'Disputed',
-    color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
-    icon: <IoWarningOutline className="w-4 h-4" />
-  },
-  RESOLVED: {
-    label: 'Resolved',
-    color: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
-    icon: <IoCheckmarkCircleOutline className="w-4 h-4" />
-  },
-  CANCELLED: {
-    label: 'Cancelled',
-    color: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
-    icon: <IoCloseCircleOutline className="w-4 h-4" />
-  }
-}
-
 export default function ClaimDetailPage() {
   const router = useRouter()
   const params = useParams()
   const claimId = params?.id as string
 
   const locale = useLocale()
+  const t = useTranslations('PartnerClaimDetail')
+
+  const CLAIM_TYPE_LABELS: Record<string, string> = {
+    ACCIDENT: t('typeAccident'),
+    THEFT: t('typeTheft'),
+    VANDALISM: t('typeVandalism'),
+    CLEANING: t('typeCleaning'),
+    MECHANICAL: t('typeMechanical'),
+    WEATHER: t('typeWeather'),
+    OTHER: t('typeOther')
+  }
+
+  const CLAIM_STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+    PENDING: {
+      label: t('statusPending'),
+      color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
+      icon: <IoTimeOutline className="w-4 h-4" />
+    },
+    UNDER_REVIEW: {
+      label: t('statusUnderReview'),
+      color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+      icon: <IoTimeOutline className="w-4 h-4" />
+    },
+    APPROVED: {
+      label: t('statusApproved'),
+      color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+      icon: <IoCheckmarkCircleOutline className="w-4 h-4" />
+    },
+    DENIED: {
+      label: t('statusDenied'),
+      color: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+      icon: <IoCloseCircleOutline className="w-4 h-4" />
+    },
+    PAID: {
+      label: t('statusPaid'),
+      color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+      icon: <IoCheckmarkCircleOutline className="w-4 h-4" />
+    },
+    DISPUTED: {
+      label: t('statusDisputed'),
+      color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
+      icon: <IoWarningOutline className="w-4 h-4" />
+    },
+    RESOLVED: {
+      label: t('statusResolved'),
+      color: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
+      icon: <IoCheckmarkCircleOutline className="w-4 h-4" />
+    },
+    CANCELLED: {
+      label: t('statusCancelled'),
+      color: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
+      icon: <IoCloseCircleOutline className="w-4 h-4" />
+    }
+  }
 
 
   const [claim, setClaim] = useState<ClaimDetail | null>(null)
@@ -203,7 +204,7 @@ export default function ClaimDetailPage() {
     return (
       <div className="p-6 lg:p-8">
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          <p className="text-red-800 dark:text-red-200">{error || 'Claim not found'}</p>
+          <p className="text-red-800 dark:text-red-200">{error || t('claimNotFound')}</p>
         </div>
       </div>
     )
@@ -220,16 +221,16 @@ export default function ClaimDetailPage() {
           className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 mb-4"
         >
           <IoArrowBackOutline className="w-5 h-5" />
-          <span>Back to Claims</span>
+          <span>{t('backToClaims')}</span>
         </button>
 
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              {CLAIM_TYPE_LABELS[claim.type] || claim.type} Claim
+              {t('claimTitle', { type: CLAIM_TYPE_LABELS[claim.type] || claim.type })}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Filed on {formatDate(claim.createdAt)}
+              {t('filedOn', { date: formatDate(claim.createdAt) })}
             </p>
           </div>
           <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full ${statusConfig.color}`}>
@@ -244,36 +245,36 @@ export default function ClaimDetailPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Claim Details */}
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Claim Details</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('claimDetails')}</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Description</label>
+                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('description')}</label>
                 <p className="mt-1 text-gray-900 dark:text-white">{claim.description}</p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Incident Date</label>
+                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('incidentDate')}</label>
                 <p className="mt-1 text-gray-900 dark:text-white">{formatDate(claim.incidentDate)}</p>
               </div>
 
               {claim.estimatedCost && (
                 <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Estimated Cost</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('estimatedCost')}</label>
                   <p className="mt-1 text-gray-900 dark:text-white">{formatCurrency(claim.estimatedCost)}</p>
                 </div>
               )}
 
               {claim.approvedAmount && (
                 <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Approved Amount</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('approvedAmount')}</label>
                   <p className="mt-1 text-gray-900 dark:text-white">{formatCurrency(claim.approvedAmount)}</p>
                 </div>
               )}
 
               {claim.paidAmount && (
                 <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Paid Amount</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('paidAmount')}</label>
                   <p className="mt-1 text-gray-900 dark:text-white">{formatCurrency(claim.paidAmount)}</p>
                 </div>
               )}
@@ -285,7 +286,7 @@ export default function ClaimDetailPage() {
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <IoImageOutline className="w-5 h-5" />
-                Damage Photos ({claim.photos.length})
+                {t('damagePhotos', { count: claim.photos.length })}
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {claim.photos.map((photo) => (
@@ -296,7 +297,7 @@ export default function ClaimDetailPage() {
                   >
                     <img
                       src={photo.url}
-                      alt="Damage photo"
+                      alt={t('damagePhotoAlt')}
                       className="w-full h-full object-cover"
                     />
                   </button>
@@ -310,7 +311,7 @@ export default function ClaimDetailPage() {
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <IoChatbubbleOutline className="w-5 h-5" />
-                Messages ({claim.messages.length})
+                {t('messages', { count: claim.messages.length })}
               </h2>
               <div className="space-y-4">
                 {claim.messages.map((message) => (
@@ -338,7 +339,7 @@ export default function ClaimDetailPage() {
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <IoCarOutline className="w-5 h-5" />
-                Vehicle
+                {t('vehicle')}
               </h2>
               {vehicle.photo && (
                 <img
@@ -351,19 +352,19 @@ export default function ClaimDetailPage() {
                 <p className="font-medium text-gray-900 dark:text-white">{vehicle.name}</p>
                 {vehicle.licensePlate && (
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    License: {vehicle.licensePlate}
+                    {t('license', { plate: vehicle.licensePlate })}
                   </p>
                 )}
                 {vehicle.vin && (
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    VIN: {vehicle.vin}
+                    {t('vin', { vin: vehicle.vin })}
                   </p>
                 )}
                 <Link
                   href={`/partner/fleet/${vehicle.id}`}
                   className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400"
                 >
-                  View Vehicle Details →
+                  {t('viewVehicleDetails')}
                 </Link>
               </div>
             </div>
@@ -374,17 +375,17 @@ export default function ClaimDetailPage() {
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <IoPersonOutline className="w-5 h-5" />
-                Renter
+                {t('renter')}
               </h2>
               <div className="space-y-2">
                 {renter.photo && (
                   <img
                     src={renter.photo}
-                    alt={renter.name || 'Renter'}
+                    alt={renter.name || t('renter')}
                     className="w-12 h-12 rounded-full mb-2"
                   />
                 )}
-                <p className="font-medium text-gray-900 dark:text-white">{renter.name || 'Unknown'}</p>
+                <p className="font-medium text-gray-900 dark:text-white">{renter.name || t('unknown')}</p>
                 {renter.email && (
                   <p className="text-sm text-gray-600 dark:text-gray-400">{renter.email}</p>
                 )}
@@ -400,25 +401,25 @@ export default function ClaimDetailPage() {
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <IoReceiptOutline className="w-5 h-5" />
-                Booking
+                {t('booking')}
               </h2>
               <div className="space-y-2">
                 {booking.bookingCode && (
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Code: {booking.bookingCode}
+                    {t('bookingCode', { code: booking.bookingCode })}
                   </p>
                 )}
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {formatDate(booking.startDate)} - {formatDate(booking.endDate)}
+                  {t('bookingDates', { start: formatDate(booking.startDate), end: formatDate(booking.endDate) })}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Total: {formatCurrency(booking.totalAmount)}
+                  {t('bookingTotal', { amount: formatCurrency(booking.totalAmount) })}
                 </p>
                 <Link
                   href={`/partner/bookings/${booking.id}`}
                   className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400"
                 >
-                  View Booking Details →
+                  {t('viewBookingDetails')}
                 </Link>
               </div>
             </div>
@@ -435,7 +436,7 @@ export default function ClaimDetailPage() {
           <div className="relative max-w-4xl max-h-screen">
             <img
               src={selectedPhoto}
-              alt="Full size"
+              alt={t('fullSizePhoto')}
               className="max-w-full max-h-screen object-contain"
             />
             <button

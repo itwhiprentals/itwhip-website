@@ -14,9 +14,18 @@ import {
   IoHomeOutline
 } from 'react-icons/io5'
 
-export const metadata: Metadata = {
-  title: 'How to Book a Car | Support | ItWhip',
-  description: 'Learn how to book a rental car on ItWhip. Step-by-step guide for searching, selecting, and confirming your car rental.',
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('supportBookingTitle'),
+    description: t('supportBookingDescription'),
+  }
 }
 
 const steps = [

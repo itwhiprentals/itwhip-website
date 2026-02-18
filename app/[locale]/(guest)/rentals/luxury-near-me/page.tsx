@@ -1,5 +1,6 @@
 // app/(guest)/rentals/luxury-near-me/page.tsx
 import { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import Script from 'next/script'
 import Header from '@/app/components/Header'
@@ -21,27 +22,36 @@ import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatter
 
 export const revalidate = 60
 
-export const metadata: Metadata = {
-  title: 'Luxury Car Rentals Near Me | Phoenix & Scottsdale | ItWhip',
-  description: 'Find luxury car rentals near you in Phoenix & Scottsdale. BMW, Mercedes, Porsche, and more. Premium vehicles from local owners with $1M insurance included.',
-  keywords: [
-    'luxury car rental near me',
-    'luxury car rental phoenix',
-    'luxury car rental scottsdale',
-    'rent bmw phoenix',
-    'rent mercedes arizona',
-    'porsche rental phoenix',
-    'premium car rental near me'
-  ],
-  openGraph: {
-    title: 'Luxury Car Rentals Near Me | Phoenix & Arizona',
-    description: 'Rent luxury vehicles from local owners. BMW, Mercedes, Porsche & more with free delivery.',
-    url: 'https://itwhip.com/rentals/luxury-near-me',
-    type: 'website'
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/rentals/luxury-near-me',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('rentalsLuxuryNearMeTitle'),
+    description: t('rentalsLuxuryNearMeDescription'),
+    keywords: [
+      'luxury car rental near me',
+      'luxury car rental phoenix',
+      'luxury car rental scottsdale',
+      'rent bmw phoenix',
+      'rent mercedes arizona',
+      'porsche rental phoenix',
+      'premium car rental near me'
+    ],
+    openGraph: {
+      title: t('rentalsLuxuryNearMeTitle'),
+      description: t('rentalsLuxuryNearMeDescription'),
+      url: 'https://itwhip.com/rentals/luxury-near-me',
+      type: 'website'
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/rentals/luxury-near-me',
+    },
+  }
 }
 
 function transformCarForCompactCard(car: any) {

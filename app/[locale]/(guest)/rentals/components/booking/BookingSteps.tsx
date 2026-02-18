@@ -2,7 +2,8 @@
 'use client'
 
 import React from 'react'
-import { 
+import { useTranslations } from 'next-intl'
+import {
   IoCarOutline,
   IoPersonOutline,
   IoCardOutline,
@@ -22,34 +23,36 @@ interface Step {
   icon: React.ReactNode
 }
 
-const steps: Step[] = [
-  {
-    id: 1,
-    name: 'Trip Details',
-    description: 'Review your selection',
-    icon: <IoCarOutline className="w-6 h-6" />
-  },
-  {
-    id: 2,
-    name: 'Verification',
-    description: 'Verify your identity',
-    icon: <IoPersonOutline className="w-6 h-6" />
-  },
-  {
-    id: 3,
-    name: 'Payment',
-    description: 'Secure payment',
-    icon: <IoCardOutline className="w-6 h-6" />
-  },
-  {
-    id: 4,
-    name: 'Confirmation',
-    description: 'Booking complete',
-    icon: <IoCheckmarkCircleOutline className="w-6 h-6" />
-  }
-]
-
 export default function BookingSteps({ currentStep }: BookingStepsProps) {
+  const t = useTranslations('BookingSteps')
+
+  const steps: Step[] = [
+    {
+      id: 1,
+      name: t('tripDetails'),
+      description: t('tripDetailsDesc'),
+      icon: <IoCarOutline className="w-6 h-6" />
+    },
+    {
+      id: 2,
+      name: t('verification'),
+      description: t('verificationDesc'),
+      icon: <IoPersonOutline className="w-6 h-6" />
+    },
+    {
+      id: 3,
+      name: t('payment'),
+      description: t('paymentDesc'),
+      icon: <IoCardOutline className="w-6 h-6" />
+    },
+    {
+      id: 4,
+      name: t('confirmation'),
+      description: t('confirmationDesc'),
+      icon: <IoCheckmarkCircleOutline className="w-6 h-6" />
+    }
+  ]
+
   return (
     <div className="w-full">
       {/* Desktop View */}
@@ -57,7 +60,7 @@ export default function BookingSteps({ currentStep }: BookingStepsProps) {
         <div className="flex items-center justify-between relative">
           {/* Progress Line Background */}
           <div className="absolute left-0 top-1/2 w-full h-1 bg-gray-200 dark:bg-gray-700 -translate-y-1/2">
-            <div 
+            <div
               className="h-full bg-gradient-to-r from-green-500 to-amber-500 transition-all duration-700 ease-out"
               style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
             />
@@ -115,7 +118,7 @@ export default function BookingSteps({ currentStep }: BookingStepsProps) {
                       : 'text-gray-400 dark:text-gray-600'
                   }
                 `}>
-                  {step.id < currentStep ? 'Completed' : step.description}
+                  {step.id < currentStep ? t('completed') : step.description}
                 </div>
               </div>
             </div>
@@ -138,12 +141,12 @@ export default function BookingSteps({ currentStep }: BookingStepsProps) {
                 {steps[currentStep - 1].name}
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-400">
-                Step {currentStep} of {steps.length}
+                {t('stepOf', { current: currentStep, total: steps.length })}
               </div>
             </div>
           </div>
           <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {Math.round(((currentStep - 1) / (steps.length - 1)) * 100)}% complete
+            {t('percentComplete', { percent: Math.round(((currentStep - 1) / (steps.length - 1)) * 100) })}
           </div>
         </div>
 
@@ -216,7 +219,7 @@ export default function BookingSteps({ currentStep }: BookingStepsProps) {
                       : 'text-gray-400 dark:text-gray-600'
                   }
                 `}>
-                  {step.id < currentStep ? 'Completed' : step.description}
+                  {step.id < currentStep ? t('completed') : step.description}
                 </div>
               </div>
               {step.id < currentStep && (
@@ -255,6 +258,35 @@ export function BookingStepsMinimal({ currentStep }: BookingStepsProps) {
 
 // Vertical Steps Component (for sidebars)
 export function BookingStepsVertical({ currentStep }: BookingStepsProps) {
+  const t = useTranslations('BookingSteps')
+
+  const steps: Step[] = [
+    {
+      id: 1,
+      name: t('tripDetails'),
+      description: t('tripDetailsDesc'),
+      icon: <IoCarOutline className="w-6 h-6" />
+    },
+    {
+      id: 2,
+      name: t('verification'),
+      description: t('verificationDesc'),
+      icon: <IoPersonOutline className="w-6 h-6" />
+    },
+    {
+      id: 3,
+      name: t('payment'),
+      description: t('paymentDesc'),
+      icon: <IoCardOutline className="w-6 h-6" />
+    },
+    {
+      id: 4,
+      name: t('confirmation'),
+      description: t('confirmationDesc'),
+      icon: <IoCheckmarkCircleOutline className="w-6 h-6" />
+    }
+  ]
+
   return (
     <div className="space-y-4">
       {steps.map((step, index) => (
@@ -321,7 +353,7 @@ export function BookingStepsVertical({ currentStep }: BookingStepsProps) {
                   : 'text-gray-400 dark:text-gray-600'
               }
             `}>
-              {step.id < currentStep ? 'Completed' : step.description}
+              {step.id < currentStep ? t('completed') : step.description}
             </div>
           </div>
         </div>

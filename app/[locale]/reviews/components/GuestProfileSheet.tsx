@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import { getFirstNameOnly, formatReviewerName } from '@/app/lib/utils/namePrivacy'
 import {
   IoCloseOutline,
@@ -88,6 +89,7 @@ interface GuestProfileSheetProps {
 
 export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfileSheetProps) {
   const router = useRouter()
+  const t = useTranslations('GuestProfileSheet')
   const [expandedReviews, setExpandedReviews] = useState<string[]>([])
   const [expandedHostResponses, setExpandedHostResponses] = useState<string[]>([])
   const [expandedSupportResponses, setExpandedSupportResponses] = useState<string[]>([])
@@ -209,7 +211,7 @@ export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfi
           {/* Modal Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-              Guest Profile
+              {t('guestProfile')}
             </h2>
             <button
               onClick={onClose}
@@ -253,7 +255,7 @@ export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfi
                         className="w-3.5 h-3.5 text-green-600"
                         title="Documents + Insurance Verified"
                       />
-                      <span className="text-xs text-green-600">Verified</span>
+                      <span className="text-xs text-green-600">{t('verified')}</span>
                     </div>
                   )}
                 </div>
@@ -276,7 +278,7 @@ export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfi
 
                   <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                     <IoCalendarOutline className="w-3.5 h-3.5" />
-                    <span>Member since {formatMemberSince(profileData?.memberSince || guest.memberSince)}</span>
+                    <span>{t('memberSince', { date: formatMemberSince(profileData?.memberSince || guest.memberSince) })}</span>
                   </div>
                 </div>
 
@@ -287,7 +289,7 @@ export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfi
                       {profileData?.tripCount ?? guest.tripCount ?? 0}
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Trips
+                      {t('trips')}
                     </div>
                   </div>
 
@@ -296,7 +298,7 @@ export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfi
                       {profileData?.reviewCount ?? 0}
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Reviews
+                      {t('reviews')}
                     </div>
                   </div>
 
@@ -306,7 +308,7 @@ export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfi
                       {averageRating > 0 && <IoStar className="w-3.5 h-3.5 text-amber-400" />}
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Avg Rating
+                      {t('avgRating')}
                     </div>
                   </div>
                 </div>
@@ -315,7 +317,7 @@ export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfi
                 {profileData?.recentReviews && profileData.recentReviews.length > 0 && (
                   <div>
                     <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                      Recent Reviews
+                      {t('recentReviews')}
                     </h4>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {profileData.recentReviews.map(review => {
@@ -392,12 +394,12 @@ export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfi
                                   >
                                     {isExpanded ? (
                                       <>
-                                        Show less
+                                        {t('showLess')}
                                         <IoChevronUpOutline className="w-2.5 h-2.5" />
                                       </>
                                     ) : (
                                       <>
-                                        Read more
+                                        {t('readMore')}
                                         <IoChevronDownOutline className="w-2.5 h-2.5" />
                                       </>
                                     )}
@@ -413,7 +415,7 @@ export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfi
                                   {review.host?.profilePhoto ? (
                                     <img
                                       src={review.host.profilePhoto}
-                                      alt={review.host.name || 'Host'}
+                                      alt={review.host.name || t('host')}
                                       className="w-3 h-3 rounded-full object-cover"
                                     />
                                   ) : (
@@ -424,7 +426,7 @@ export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfi
                                     </div>
                                   )}
                                   <p className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                                    {getFirstNameOnly(review.host?.name || 'Host')}
+                                    {getFirstNameOnly(review.host?.name || t('host'))}
                                   </p>
                                   {review.hostRespondedAt && (
                                     <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -442,12 +444,12 @@ export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfi
                                   >
                                     {isHostExpanded ? (
                                       <>
-                                        Show less
+                                        {t('showLess')}
                                         <IoChevronUpOutline className="w-2.5 h-2.5" />
                                       </>
                                     ) : (
                                       <>
-                                        Read more
+                                        {t('readMore')}
                                         <IoChevronDownOutline className="w-2.5 h-2.5" />
                                       </>
                                     )}
@@ -462,7 +464,7 @@ export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfi
                                 <div className="flex items-center gap-1 mb-0.5">
                                   <IoShieldCheckmarkOutline className="w-3 h-3 text-green-600 dark:text-green-400" />
                                   <p className="text-xs font-medium text-green-600 dark:text-green-400">
-                                    Support
+                                    {t('support')}
                                   </p>
                                   {review.supportRespondedAt && (
                                     <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -480,12 +482,12 @@ export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfi
                                   >
                                     {isSupportExpanded ? (
                                       <>
-                                        Show less
+                                        {t('showLess')}
                                         <IoChevronUpOutline className="w-2.5 h-2.5" />
                                       </>
                                     ) : (
                                       <>
-                                        Read more
+                                        {t('readMore')}
                                         <IoChevronDownOutline className="w-2.5 h-2.5" />
                                       </>
                                     )}

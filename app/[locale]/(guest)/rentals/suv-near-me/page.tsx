@@ -1,5 +1,6 @@
 // app/(guest)/rentals/suv-near-me/page.tsx
 import { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import Script from 'next/script'
 import Header from '@/app/components/Header'
@@ -21,27 +22,36 @@ import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatter
 
 export const revalidate = 60
 
-export const metadata: Metadata = {
-  title: 'SUV Rentals Near Me | Phoenix & Arizona | ItWhip',
-  description: 'Find SUV rentals near you in Phoenix, Scottsdale & Arizona. Spacious vehicles for families and adventures. From local owners with $1M insurance.',
-  keywords: [
-    'suv rental near me',
-    'suv rental phoenix',
-    'rent suv arizona',
-    'family car rental near me',
-    '7 seater rental phoenix',
-    'jeep rental near me',
-    'large car rental arizona'
-  ],
-  openGraph: {
-    title: 'SUV Rentals Near Me | Phoenix & Arizona',
-    description: 'Rent spacious SUVs from local owners. Perfect for families, road trips, and Arizona adventures.',
-    url: 'https://itwhip.com/rentals/suv-near-me',
-    type: 'website'
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/rentals/suv-near-me',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('rentalsSuvNearMeTitle'),
+    description: t('rentalsSuvNearMeDescription'),
+    keywords: [
+      'suv rental near me',
+      'suv rental phoenix',
+      'rent suv arizona',
+      'family car rental near me',
+      '7 seater rental phoenix',
+      'jeep rental near me',
+      'large car rental arizona'
+    ],
+    openGraph: {
+      title: t('rentalsSuvNearMeTitle'),
+      description: t('rentalsSuvNearMeDescription'),
+      url: 'https://itwhip.com/rentals/suv-near-me',
+      type: 'website'
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/rentals/suv-near-me',
+    },
+  }
 }
 
 function transformCarForCompactCard(car: any) {

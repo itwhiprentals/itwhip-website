@@ -2,7 +2,9 @@
 
 'use client'
 
-import { 
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
+import {
   IoStar,
   IoCheckmarkCircle,
   IoCalendarOutline,
@@ -54,13 +56,15 @@ interface GuestReviewDisplayProps {
 }
 
 export default function GuestReviewDisplay({ review, onClose }: GuestReviewDisplayProps) {
+  const t = useTranslations('GuestReview')
+
   // Category ratings data
   const categoryRatings = [
-    { key: 'cleanliness', label: 'Cleanliness', value: review.cleanliness },
-    { key: 'accuracy', label: 'Accuracy', value: review.accuracy },
-    { key: 'communication', label: 'Communication', value: review.communication },
-    { key: 'convenience', label: 'Convenience', value: review.convenience },
-    { key: 'value', label: 'Value', value: review.value }
+    { key: 'cleanliness', label: t('categoryCleanliness'), value: review.cleanliness },
+    { key: 'accuracy', label: t('categoryAccuracy'), value: review.accuracy },
+    { key: 'communication', label: t('categoryCommunication'), value: review.communication },
+    { key: 'convenience', label: t('categoryConvenience'), value: review.convenience },
+    { key: 'value', label: t('categoryValue'), value: review.value }
   ].filter(cat => cat.value !== null && cat.value !== undefined)
 
   // Star rating component
@@ -99,21 +103,21 @@ export default function GuestReviewDisplay({ review, onClose }: GuestReviewDispl
               </div>
             )}
           </div>
-          
+
           {/* Reviewer Info */}
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-semibold text-gray-900 dark:text-white">
-                {review.reviewerProfile?.name || 'You'}
+                {review.reviewerProfile?.name || t('you')}
               </h3>
               {review.isVerified && (
                 <span className="flex items-center gap-1 text-xs text-green-600">
                   <IoCheckmarkCircle className="w-3.5 h-3.5" />
-                  Verified Trip
+                  {t('verifiedTrip')}
                 </span>
               )}
             </div>
-            
+
             <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
               <StarRating rating={review.rating} />
               <span>•</span>
@@ -157,7 +161,7 @@ export default function GuestReviewDisplay({ review, onClose }: GuestReviewDispl
       {categoryRatings.length > 0 && (
         <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
           <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
-            Detailed Ratings
+            {t('detailedRatings')}
           </h4>
           <div className="space-y-2">
             {categoryRatings.map((category) => (
@@ -192,7 +196,7 @@ export default function GuestReviewDisplay({ review, onClose }: GuestReviewDispl
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm font-medium text-blue-900 dark:text-blue-300">
-                  {review.host?.name} (Host)
+                  {review.host?.name} {t('hostTag')}
                 </span>
                 {review.hostRespondedAt && (
                   <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -218,7 +222,7 @@ export default function GuestReviewDisplay({ review, onClose }: GuestReviewDispl
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm font-medium text-green-900 dark:text-green-300">
-                  ItWhip Support
+                  {t('itwhipSupport')}
                 </span>
                 {review.supportRespondedAt && (
                   <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -238,7 +242,7 @@ export default function GuestReviewDisplay({ review, onClose }: GuestReviewDispl
       {review.helpfulCount > 0 && (
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
           <IoChatbubbleOutline className="w-4 h-4" />
-          <span>{review.helpfulCount} {review.helpfulCount === 1 ? 'person' : 'people'} found this helpful</span>
+          <span>{t('helpfulCount', { count: review.helpfulCount })}</span>
         </div>
       )}
 
@@ -248,17 +252,17 @@ export default function GuestReviewDisplay({ review, onClose }: GuestReviewDispl
           <IoInformationCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-blue-800 dark:text-blue-300 space-y-2">
             <p>
-              <strong>Your review is public</strong> and helps other guests make informed decisions.
+              <strong>{t('reviewIsPublic')}</strong>
             </p>
             <p>
-              Reviews cannot be edited after submission. If you need to update or remove your review due to special circumstances, please contact our support team.
+              {t('reviewCannotEdit')}
             </p>
-            <a 
-              href="/support" 
+            <Link
+              href="/support"
               className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline font-medium"
             >
-              Contact Support
-            </a>
+              {t('contactSupport')}
+            </Link>
           </div>
         </div>
       </div>
@@ -269,7 +273,7 @@ export default function GuestReviewDisplay({ review, onClose }: GuestReviewDispl
           onClick={onClose}
           className="w-full px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
         >
-          Close
+          {t('close')}
         </button>
       </div>
     </div>

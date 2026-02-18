@@ -3,6 +3,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import {
   IoMailOutline,
   IoArrowBackOutline,
@@ -13,6 +14,7 @@ import {
 } from 'react-icons/io5'
 
 export default function PartnerForgotPasswordPage() {
+  const t = useTranslations('PartnerForgotPassword')
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -24,13 +26,13 @@ export default function PartnerForgotPasswordPage() {
     setSuccess(false)
 
     if (!email) {
-      setError('Please enter your email address')
+      setError(t('errorEmailRequired'))
       return
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
-      setError('Please enter a valid email address')
+      setError(t('errorEmailInvalid'))
       return
     }
 
@@ -71,7 +73,7 @@ export default function PartnerForgotPasswordPage() {
                 ItWhip
               </span>
               <span className="ml-2 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded">
-                Partner Portal
+                {t('partnerPortal')}
               </span>
             </Link>
           </div>
@@ -86,7 +88,7 @@ export default function PartnerForgotPasswordPage() {
             className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-8 transition-colors"
           >
             <IoArrowBackOutline className="w-5 h-5 mr-2" />
-            Back to Partner Login
+            {t('backToPartnerLogin')}
           </Link>
 
           <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-8">
@@ -96,10 +98,10 @@ export default function PartnerForgotPasswordPage() {
                 <IoMailOutline className="w-8 h-8 text-orange-600" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Reset Password
+                {t('resetPassword')}
               </h1>
               <p className="text-gray-600 text-sm">
-                Enter your email to receive reset instructions
+                {t('enterEmailForInstructions')}
               </p>
             </div>
 
@@ -110,10 +112,10 @@ export default function PartnerForgotPasswordPage() {
                   <IoCheckmarkCircle className="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-green-800 text-sm font-medium mb-1">
-                      Check your email
+                      {t('checkYourEmail')}
                     </p>
                     <p className="text-green-700 text-xs">
-                      If an account exists with this email, you will receive password reset instructions.
+                      {t('resetEmailSent')}
                     </p>
                   </div>
                 </div>
@@ -134,7 +136,7 @@ export default function PartnerForgotPasswordPage() {
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
+                  {t('emailAddress')}
                 </label>
                 <div className="relative">
                   <IoMailOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -144,7 +146,7 @@ export default function PartnerForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-colors"
-                    placeholder="Enter your email"
+                    placeholder={t('emailPlaceholder')}
                     required
                     disabled={isLoading}
                   />
@@ -159,10 +161,10 @@ export default function PartnerForgotPasswordPage() {
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2" />
-                    Sending...
+                    {t('sending')}
                   </>
                 ) : (
-                  'Send Reset Link'
+                  t('sendResetLink')
                 )}
               </button>
             </form>
@@ -172,8 +174,7 @@ export default function PartnerForgotPasswordPage() {
               <div className="flex items-start text-xs text-gray-600">
                 <IoInformationCircleOutline className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5 text-gray-400" />
                 <p>
-                  For security, we'll send reset instructions to your email if an account exists.
-                  The link expires in 1 hour.
+                  {t('securityInfo')}
                 </p>
               </div>
             </div>
@@ -184,7 +185,7 @@ export default function PartnerForgotPasswordPage() {
                 href="/partner/login"
                 className="text-sm text-orange-600 hover:text-orange-700 font-medium transition-colors"
               >
-                Remember your password? Sign in
+                {t('rememberPassword')}
               </Link>
             </div>
           </div>
@@ -199,16 +200,16 @@ export default function PartnerForgotPasswordPage() {
               </div>
               <div className="ml-4 flex-1">
                 <h3 className="text-base font-semibold text-gray-900 mb-1">
-                  Looking to rent a car?
+                  {t('lookingToRent')}
                 </h3>
                 <p className="text-sm text-gray-600 mb-3">
-                  Guest accounts use a different login system.
+                  {t('guestAccountInfo')}
                 </p>
                 <Link
                   href="/auth/forgot-password"
                   className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors group"
                 >
-                  Go to Guest Reset
+                  {t('goToGuestReset')}
                   <svg
                     className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform"
                     fill="none"
@@ -224,12 +225,12 @@ export default function PartnerForgotPasswordPage() {
 
           {/* Additional Help */}
           <div className="mt-6 text-center text-xs text-gray-500">
-            Need help?{' '}
+            {t('needHelp')}{' '}
             <a
               href="mailto:info@itwhip.com"
               className="text-orange-600 hover:text-orange-700 font-medium transition-colors"
             >
-              Contact Support
+              {t('contactSupport')}
             </a>
           </div>
         </div>

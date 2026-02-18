@@ -3,8 +3,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { formatPrivateName, isCompanyName, formatReviewerName } from '@/app/lib/utils/namePrivacy'
-import { 
+import {
   IoCloseOutline,
   IoStarOutline,
   IoStar,
@@ -109,6 +110,7 @@ function getRatingValue(rating: any): number {
 
 export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfileModalProps) {
   const router = useRouter()
+  const t = useTranslations('HostProfileModal')
   const [loading, setLoading] = useState(true)
   const [hostData, setHostData] = useState<HostModalData | null>(null)
   const [activeTab, setActiveTab] = useState<'cars' | 'reviews'>('cars')
@@ -125,17 +127,17 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
     try {
       setLoading(true)
       setError(null)
-      
+
       const response = await fetch(`/api/rentals/hosts/${hostId}`)
       if (!response.ok) {
         throw new Error('Failed to fetch host data')
       }
-      
+
       const data = await response.json()
       setHostData(data.data)
     } catch (error) {
       console.error('Error fetching host data:', error)
-      setError('Failed to load host information')
+      setError(t('failedToLoad'))
     } finally {
       setLoading(false)
     }
@@ -147,8 +149,8 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
   }
 
   const toggleReviewExpansion = (reviewId: string) => {
-    setExpandedReviews(prev => 
-      prev.includes(reviewId) 
+    setExpandedReviews(prev =>
+      prev.includes(reviewId)
         ? prev.filter(id => id !== reviewId)
         : [...prev, reviewId]
     )
@@ -156,16 +158,16 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
 
   const getHostBadge = () => {
     if (!hostData?.badge) return null
-    
+
     switch(hostData.badge) {
       case 'elite_host':
-        return { type: 'elite_host', label: 'Elite Host', color: 'purple', icon: IoDiamondOutline }
+        return { type: 'elite_host', label: t('eliteHost'), color: 'purple', icon: IoDiamondOutline }
       case 'super_host':
-        return { type: 'super_host', label: 'Super Host', color: 'amber', icon: IoTrophyOutline }
+        return { type: 'super_host', label: t('superHost'), color: 'amber', icon: IoTrophyOutline }
       case 'all_star':
-        return { type: 'all_star', label: 'All-Star Host', color: 'blue', icon: IoStar }
+        return { type: 'all_star', label: t('allStarHost'), color: 'blue', icon: IoStar }
       case 'top_rated':
-        return { type: 'top_rated', label: 'Top Rated', color: 'green', icon: IoRibbonOutline }
+        return { type: 'top_rated', label: t('topRated'), color: 'green', icon: IoRibbonOutline }
       default:
         return null
     }
@@ -184,10 +186,10 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
 
   const formatResponseTime = (minutes: number) => {
     if (minutes < 60) {
-      return `${minutes} min`
+      return t('minuteShort', { count: minutes })
     }
     const hours = Math.floor(minutes / 60)
-    return `${hours} ${hours === 1 ? 'hour' : 'hours'}`
+    return hours === 1 ? t('hourSingular', { count: hours }) : t('hourPlural', { count: hours })
   }
 
   if (!isOpen) return null
@@ -204,7 +206,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
         {/* Modal Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-            Host Profile
+            {t('hostProfile')}
           </h2>
           <button
             onClick={onClose}
@@ -227,7 +229,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                 onClick={fetchHostData}
                 className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
               >
-                Try Again
+                {t('tryAgain')}
               </button>
             </div>
           ) : hostData ? (
@@ -255,7 +257,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-lg font-bold text-gray-900 dark:text-white">
@@ -275,7 +277,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                         ) : null
                       })()}
                     </div>
-                    
+
                     <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                       <div className="flex items-center gap-1">
                         <IoLocationOutline className="w-3 h-3" />
@@ -283,7 +285,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                       </div>
                       <div className="flex items-center gap-1">
                         <IoCalendarOutline className="w-3 h-3" />
-                        <span>Joined {formatMemberSince(hostData.memberSince)}</span>
+                        <span>{t('joined', { date: formatMemberSince(hostData.memberSince) })}</span>
                       </div>
                     </div>
                   </div>
@@ -297,16 +299,16 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-center gap-1">
                       <IoStar className="w-2 h-2 text-amber-400" />
-                      Rating
+                      {t('rating')}
                     </div>
                   </div>
-                  
+
                   <div className="text-center p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <div className="text-sm font-bold text-gray-900 dark:text-white">
                       {tripCount}
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Trips
+                      {t('trips')}
                     </div>
                   </div>
 
@@ -315,7 +317,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                       {hostData.totalCars}
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Cars
+                      {t('cars')}
                     </div>
                   </div>
 
@@ -324,7 +326,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                       {Math.round(hostData.stats.responseRate)}%
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Response
+                      {t('response')}
                     </div>
                   </div>
                 </div>
@@ -333,11 +335,11 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                 <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mt-3 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
                   <div className="flex items-center gap-1">
                     <IoTimeOutline className="w-3 h-3" />
-                    <span>Responds in ~{formatResponseTime(hostData.stats.responseTime)}</span>
+                    <span>{t('respondsIn', { time: formatResponseTime(hostData.stats.responseTime) })}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <IoChatbubbleOutline className="w-3 h-3" />
-                    <span>Available after booking</span>
+                    <span>{t('availableAfterBooking')}</span>
                   </div>
                 </div>
               </div>
@@ -353,7 +355,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                     }`}
                   >
-                    Cars ({hostData.cars.length})
+                    {t('carsTab', { count: hostData.cars.length })}
                   </button>
                   <button
                     onClick={() => setActiveTab('reviews')}
@@ -363,7 +365,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                     }`}
                   >
-                    Reviews ({hostData.recentReviews.length})
+                    {t('reviewsTab', { count: hostData.recentReviews.length })}
                   </button>
                 </div>
               </div>
@@ -377,7 +379,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                         // Use only totalTrips since that's what the host API returns
                         const carTripCount = car.totalTrips || 0
                         const carRatingValue = typeof car.rating === 'number' ? car.rating : 5.0
-                        
+
                         return (
                           <button
                             key={car.id}
@@ -385,8 +387,8 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                             className="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer text-left"
                           >
                             {car.photoUrl && (
-                              <img 
-                                src={car.photoUrl} 
+                              <img
+                                src={car.photoUrl}
                                 alt={`${car.make} ${car.model}`}
                                 className="w-16 h-12 object-cover rounded-lg"
                               />
@@ -397,7 +399,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                               </h4>
                               <div className="flex items-center gap-3 mt-1">
                                 <span className="text-sm font-medium text-amber-600">
-                                  ${car.dailyRate}/day
+                                  {t('perDay', { rate: car.dailyRate })}
                                 </span>
                                 <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                                   <IoStar className="w-3 h-3 text-amber-400" />
@@ -405,7 +407,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                                 </div>
                                 <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                                   <IoCarOutline className="w-3 h-3" />
-                                  <span>{carTripCount} trips</span>
+                                  <span>{t('tripCount', { count: carTripCount })}</span>
                                 </div>
                               </div>
                             </div>
@@ -414,7 +416,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                       })
                     ) : (
                       <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-                        No cars available
+                        {t('noCarsAvailable')}
                       </div>
                     )}
                   </div>
@@ -425,9 +427,9 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                         const isExpanded = expandedReviews.includes(review.id)
                         const commentLength = review.comment?.length || 0
                         const isLongComment = commentLength > 150
-                        const displayComment = !review.comment ? '' : 
+                        const displayComment = !review.comment ? '' :
                           (isExpanded || !isLongComment ? review.comment : review.comment.substring(0, 150) + '...')
-                        
+
                         return (
                           <div key={review.id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                             <div className="flex items-start gap-3 mb-2">
@@ -465,13 +467,13 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                                     {review.car.year} {review.car.make} {review.car.model}
                                   </p>
                                 )}
-                                
+
                                 {review.comment && (
                                   <>
                                     <p className="text-sm text-gray-700 dark:text-gray-300">
                                       {displayComment}
                                     </p>
-                                    
+
                                     {isLongComment && (
                                       <button
                                         onClick={() => toggleReviewExpansion(review.id)}
@@ -479,12 +481,12 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                                       >
                                         {isExpanded ? (
                                           <>
-                                            Show less
+                                            {t('showLess')}
                                             <IoChevronUpOutline className="w-3 h-3" />
                                           </>
                                         ) : (
                                           <>
-                                            Read more
+                                            {t('readMore')}
                                             <IoChevronDownOutline className="w-3 h-3" />
                                           </>
                                         )}
@@ -492,18 +494,18 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                                     )}
                                   </>
                                 )}
-                                
+
                                 {/* Host Response */}
                                 {review.hostResponse && (
                                   <div className="mt-2 pl-3 border-l-2 border-blue-400">
                                     <div className="flex items-center gap-1 mb-1">
                                       <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                                        Host Response
+                                        {t('hostResponse')}
                                       </span>
                                       {review.hostRespondedAt && (
                                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                                          • {new Date(review.hostRespondedAt).toLocaleDateString('en-US', { 
-                                            month: 'short', 
+                                          • {new Date(review.hostRespondedAt).toLocaleDateString('en-US', {
+                                            month: 'short',
                                             day: 'numeric'
                                           })}
                                         </span>
@@ -514,19 +516,19 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                                     </p>
                                   </div>
                                 )}
-                                
+
                                 {/* Support Response */}
                                 {review.supportResponse && (
                                   <div className="mt-2 pl-3 border-l-2 border-green-400">
                                     <div className="flex items-center gap-1 mb-1">
                                       <IoShieldCheckmarkOutline className="w-3 h-3 text-green-600 dark:text-green-400" />
                                       <span className="text-xs font-medium text-green-600 dark:text-green-400">
-                                        ItWhip Support
+                                        {t('itwhipSupport')}
                                       </span>
                                       {review.supportRespondedAt && (
                                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                                          • {new Date(review.supportRespondedAt).toLocaleDateString('en-US', { 
-                                            month: 'short', 
+                                          • {new Date(review.supportRespondedAt).toLocaleDateString('en-US', {
+                                            month: 'short',
                                             day: 'numeric'
                                           })}
                                         </span>
@@ -537,12 +539,12 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                                     </p>
                                   </div>
                                 )}
-                                
+
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                  {new Date(review.createdAt).toLocaleDateString('en-US', { 
+                                  {new Date(review.createdAt).toLocaleDateString('en-US', {
                                     month: 'long',
                                     day: 'numeric',
-                                    year: 'numeric' 
+                                    year: 'numeric'
                                   })}
                                 </p>
                               </div>
@@ -552,7 +554,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                       })
                     ) : (
                       <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-                        No reviews yet
+                        {t('noReviewsYet')}
                       </div>
                     )}
                   </div>

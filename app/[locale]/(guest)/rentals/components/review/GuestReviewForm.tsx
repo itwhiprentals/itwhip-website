@@ -3,8 +3,9 @@
 'use client'
 
 import { useState } from 'react'
-import { 
-  IoStar, 
+import { useTranslations } from 'next-intl'
+import {
+  IoStar,
   IoStarOutline,
   IoInformationCircle
 } from 'react-icons/io5'
@@ -36,12 +37,13 @@ interface CategoryRatings {
   value?: number
 }
 
-export default function GuestReviewForm({ 
-  booking, 
-  onSubmit, 
-  onCancel, 
-  isSubmitting 
+export default function GuestReviewForm({
+  booking,
+  onSubmit,
+  onCancel,
+  isSubmitting
 }: GuestReviewFormProps) {
+  const t = useTranslations('GuestReview')
   // Form state
   const [rating, setRating] = useState<number>(0)
   const [hoverRating, setHoverRating] = useState<number>(0)
@@ -58,11 +60,11 @@ export default function GuestReviewForm({
 
   // Rating categories
   const categories = [
-    { key: 'cleanliness', label: 'Cleanliness', description: 'How clean was the vehicle?' },
-    { key: 'accuracy', label: 'Accuracy', description: 'Did the car match the listing?' },
-    { key: 'communication', label: 'Communication', description: 'How was the host communication?' },
-    { key: 'convenience', label: 'Convenience', description: 'How easy was pickup/dropoff?' },
-    { key: 'value', label: 'Value', description: 'Was it worth the price?' }
+    { key: 'cleanliness', label: t('categoryCleanliness'), description: t('categoryCleanlinessDesc') },
+    { key: 'accuracy', label: t('categoryAccuracy'), description: t('categoryAccuracyDesc') },
+    { key: 'communication', label: t('categoryCommunication'), description: t('categoryCommunicationDesc') },
+    { key: 'convenience', label: t('categoryConvenience'), description: t('categoryConvenienceDesc') },
+    { key: 'value', label: t('categoryValue'), description: t('categoryValueDesc') }
   ]
 
   // Validate form
@@ -70,15 +72,15 @@ export default function GuestReviewForm({
     const newErrors: Record<string, string> = {}
 
     if (rating === 0) {
-      newErrors.rating = 'Please select a rating'
+      newErrors.rating = t('errorSelectRating')
     }
 
     if (comment.trim().length < minCommentLength) {
-      newErrors.comment = `Review must be at least ${minCommentLength} characters`
+      newErrors.comment = t('errorMinChars', { min: minCommentLength })
     }
 
     if (comment.trim().length > maxCommentLength) {
-      newErrors.comment = `Review must be less than ${maxCommentLength} characters`
+      newErrors.comment = t('errorMaxChars', { max: maxCommentLength })
     }
 
     setErrors(newErrors)
@@ -104,12 +106,12 @@ export default function GuestReviewForm({
   }
 
   // Star rating component
-  const StarRating = ({ 
-    value, 
-    onChange, 
+  const StarRating = ({
+    value,
+    onChange,
     size = 'large',
-    label 
-  }: { 
+    label
+  }: {
     value: number
     onChange: (rating: number) => void
     size?: 'small' | 'large'
@@ -145,11 +147,11 @@ export default function GuestReviewForm({
         </div>
         {size === 'large' && value > 0 && (
           <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
-            {value === 5 && 'Excellent'}
-            {value === 4 && 'Good'}
-            {value === 3 && 'Average'}
-            {value === 2 && 'Poor'}
-            {value === 1 && 'Terrible'}
+            {value === 5 && t('ratingExcellent')}
+            {value === 4 && t('ratingGood')}
+            {value === 3 && t('ratingAverage')}
+            {value === 2 && t('ratingPoor')}
+            {value === 1 && t('ratingTerrible')}
           </span>
         )}
       </div>
@@ -165,10 +167,10 @@ export default function GuestReviewForm({
             {booking.car.year} {booking.car.make} {booking.car.model}
           </p>
           <p>
-            Hosted by {booking.host.name}
+            {t('hostedBy', { name: booking.host.name })}
           </p>
           <p className="text-xs mt-1">
-            Trip: {new Date(booking.tripStartedAt).toLocaleDateString()} - {new Date(booking.tripEndedAt).toLocaleDateString()}
+            {t('tripDates', { start: new Date(booking.tripStartedAt).toLocaleDateString(), end: new Date(booking.tripEndedAt).toLocaleDateString() })}
           </p>
         </div>
       </div>
@@ -176,7 +178,7 @@ export default function GuestReviewForm({
       {/* Overall Rating */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-          Overall Rating <span className="text-red-500">*</span>
+          {t('overallRating')} <span className="text-red-500">*</span>
         </label>
         <div className="flex justify-center">
           <StarRating
@@ -202,14 +204,14 @@ export default function GuestReviewForm({
         <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Rate Specific Aspects (Optional)
+              {t('rateSpecificAspects')}
             </h4>
             <button
               type="button"
               onClick={() => setShowCategories(false)}
               className="text-xs text-gray-500 hover:text-gray-700"
             >
-              Skip
+              {t('skip')}
             </button>
           </div>
           {categories.map(({ key, label, description }) => (
@@ -231,13 +233,13 @@ export default function GuestReviewForm({
       {/* Review Title (Optional) */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Review Title (Optional)
+          {t('reviewTitleLabel')}
         </label>
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Sum up your experience in a few words"
+          placeholder={t('reviewTitlePlaceholder')}
           maxLength={100}
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
         />
@@ -246,7 +248,7 @@ export default function GuestReviewForm({
       {/* Review Comment */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Your Review <span className="text-red-500">*</span>
+          {t('yourReviewLabel')} <span className="text-red-500">*</span>
         </label>
         <textarea
           value={comment}
@@ -254,7 +256,7 @@ export default function GuestReviewForm({
             setComment(e.target.value)
             setErrors({ ...errors, comment: '' })
           }}
-          placeholder="Tell others about your experience with this car and host..."
+          placeholder={t('reviewPlaceholder')}
           rows={5}
           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-gray-800 dark:text-white ${
             errors.comment ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
@@ -264,10 +266,10 @@ export default function GuestReviewForm({
           <div className="text-xs text-gray-500 dark:text-gray-400">
             {remainingChars > 0 ? (
               <span className="text-amber-600">
-                {remainingChars} more characters needed
+                {t('moreCharsNeeded', { count: remainingChars })}
               </span>
             ) : (
-              <span>{comment.length} / {maxCommentLength} characters</span>
+              <span>{t('charCount', { count: comment.length, max: maxCommentLength })}</span>
             )}
           </div>
           {errors.comment && (
@@ -281,12 +283,12 @@ export default function GuestReviewForm({
         <div className="flex gap-2">
           <IoInformationCircle className="w-5 h-5 text-gray-600 dark:text-gray-400 flex-shrink-0 mt-0.5" />
           <div className="text-xs text-gray-900 dark:text-gray-100 space-y-1">
-            <p className="font-medium">Review Guidelines:</p>
+            <p className="font-medium">{t('guidelinesTitle')}</p>
             <ul className="list-disc list-inside space-y-0.5">
-              <li>Be honest and constructive</li>
-              <li>Focus on your actual experience</li>
-              <li>Mention both positives and areas for improvement</li>
-              <li>Keep it respectful and professional</li>
+              <li>{t('guideline1')}</li>
+              <li>{t('guideline2')}</li>
+              <li>{t('guideline3')}</li>
+              <li>{t('guideline4')}</li>
             </ul>
           </div>
         </div>
@@ -299,7 +301,7 @@ export default function GuestReviewForm({
           disabled={isSubmitting}
           className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
         >
-          {isSubmitting ? 'Submitting...' : 'Submit Review'}
+          {isSubmitting ? t('submitting') : t('submitReview')}
         </button>
         <button
           type="button"
@@ -307,7 +309,7 @@ export default function GuestReviewForm({
           disabled={isSubmitting}
           className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          Cancel
+          {t('cancel')}
         </button>
       </div>
     </form>

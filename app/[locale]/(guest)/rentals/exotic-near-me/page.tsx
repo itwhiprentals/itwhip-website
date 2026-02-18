@@ -1,5 +1,6 @@
 // app/(guest)/rentals/exotic-near-me/page.tsx
 import { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import Script from 'next/script'
 import Header from '@/app/components/Header'
@@ -21,27 +22,36 @@ import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatter
 
 export const revalidate = 60
 
-export const metadata: Metadata = {
-  title: 'Exotic Car Rentals Near Me | Lamborghini, Ferrari, Porsche | ItWhip',
-  description: 'Rent exotic supercars near you in Phoenix & Scottsdale. Lamborghini, Ferrari, McLaren, Porsche and more from local owners. Experience your dream car.',
-  keywords: [
-    'exotic car rental near me',
-    'supercar rental phoenix',
-    'lamborghini rental phoenix',
-    'ferrari rental scottsdale',
-    'exotic car rental arizona',
-    'rent lamborghini near me',
-    'mclaren rental phoenix'
-  ],
-  openGraph: {
-    title: 'Exotic Car Rentals Near Me | Phoenix & Arizona',
-    description: 'Drive your dream car. Lamborghini, Ferrari, and more exotic supercars from local owners.',
-    url: 'https://itwhip.com/rentals/exotic-near-me',
-    type: 'website'
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/rentals/exotic-near-me',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('rentalsExoticNearMeTitle'),
+    description: t('rentalsExoticNearMeDescription'),
+    keywords: [
+      'exotic car rental near me',
+      'supercar rental phoenix',
+      'lamborghini rental phoenix',
+      'ferrari rental scottsdale',
+      'exotic car rental arizona',
+      'rent lamborghini near me',
+      'mclaren rental phoenix'
+    ],
+    openGraph: {
+      title: t('rentalsExoticNearMeTitle'),
+      description: t('rentalsExoticNearMeDescription'),
+      url: 'https://itwhip.com/rentals/exotic-near-me',
+      type: 'website'
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/rentals/exotic-near-me',
+    },
+  }
 }
 
 function transformCarForCompactCard(car: any) {

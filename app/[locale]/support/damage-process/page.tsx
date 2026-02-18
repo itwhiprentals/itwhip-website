@@ -21,26 +21,18 @@ import {
   IoCashOutline
 } from 'react-icons/io5'
 
-export const metadata: Metadata = {
-  title: 'Damage Process | How to Report & Resolve | ItWhip',
-  description: 'Learn how to report vehicle damage, file a claim, and understand the resolution process at ItWhip. Fair and transparent damage handling for guests and hosts.',
-  keywords: [
-    'car rental damage',
-    'report damage',
-    'damage claim',
-    'rental car accident',
-    'itwhip damage process',
-    'vehicle damage resolution'
-  ],
-  openGraph: {
-    title: 'Damage Process | ItWhip',
-    description: 'Step-by-step guide to reporting and resolving vehicle damage on ItWhip.',
-    url: 'https://itwhip.com/support/damage-process',
-    type: 'website'
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/support/damage-process',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('supportDamageProcessTitle'),
+    description: t('supportDamageProcessDescription'),
+  }
 }
 
 const DAMAGE_STEPS = [

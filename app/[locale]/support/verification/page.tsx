@@ -14,9 +14,18 @@ import {
   IoHomeOutline
 } from 'react-icons/io5'
 
-export const metadata: Metadata = {
-  title: 'Account Verification | Support | ItWhip',
-  description: 'Learn how to verify your ItWhip account. Complete identity, license, and phone verification to start renting.',
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('supportVerificationTitle'),
+    description: t('supportVerificationDescription'),
+  }
 }
 
 const verificationSteps = [

@@ -1,5 +1,6 @@
 // app/(guest)/rentals/weekend/page.tsx
 import { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import prisma from '@/app/lib/database/prisma'
 import UseCasePage from '@/app/[locale]/(guest)/rentals/components/UseCasePage'
 import { getUseCaseBySlug } from '@/app/lib/data/use-cases'
@@ -8,18 +9,27 @@ export const revalidate = 60
 
 const useCaseData = getUseCaseBySlug('weekend')!
 
-export const metadata: Metadata = {
-  title: useCaseData.metaTitle,
-  description: useCaseData.metaDescription,
-  openGraph: {
-    title: useCaseData.metaTitle,
-    description: useCaseData.metaDescription,
-    url: 'https://itwhip.com/rentals/weekend',
-    type: 'website'
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/rentals/weekend',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('rentalsWeekendTitle'),
+    description: t('rentalsWeekendDescription'),
+    openGraph: {
+      title: t('rentalsWeekendTitle'),
+      description: t('rentalsWeekendDescription'),
+      url: 'https://itwhip.com/rentals/weekend',
+      type: 'website'
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/rentals/weekend',
+    },
+  }
 }
 
 export default async function WeekendPage() {

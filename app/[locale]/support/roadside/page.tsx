@@ -14,9 +14,18 @@ import {
   IoHomeOutline
 } from 'react-icons/io5'
 
-export const metadata: Metadata = {
-  title: 'Roadside Assistance | Support | ItWhip',
-  description: 'Get 24/7 roadside assistance for your ItWhip rental. Flat tires, dead batteries, lockouts, and towing covered.',
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('supportRoadsideTitle'),
+    description: t('supportRoadsideDescription'),
+  }
 }
 
 const serviceKeys = [

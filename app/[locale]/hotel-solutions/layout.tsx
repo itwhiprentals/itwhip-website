@@ -1,18 +1,28 @@
 import { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 
-export const metadata: Metadata = {
-  title: 'Hotel Car Delivery Phoenix | Free Drop-off Service | ItWhip',
-  description: 'Partner with ItWhip for seamless hotel car delivery in Phoenix & Scottsdale. Free drop-off, 24/7 support, zero logistics headaches. Delight your guests today.',
-  keywords: ['hotel car delivery phoenix', 'hotel car rental partnership', 'concierge car service', 'scottsdale hotel cars', 'guest transportation solutions'],
-  openGraph: {
-    title: 'Hotel Car Delivery Phoenix | Free Drop-off Service | ItWhip',
-    description: 'Partner with ItWhip for seamless hotel car delivery. Free drop-off, 24/7 support, zero logistics headaches.',
-    url: 'https://itwhip.com/hotel-solutions',
-    type: 'website',
-  },
-  alternates: {
-    canonical: 'https://itwhip.com/hotel-solutions',
-  },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'SeoMeta' })
+
+  return {
+    title: t('hotelSolutionsTitle'),
+    description: t('hotelSolutionsDescription'),
+    keywords: ['hotel car delivery phoenix', 'hotel car rental partnership', 'concierge car service', 'scottsdale hotel cars', 'guest transportation solutions'],
+    openGraph: {
+      title: t('hotelSolutionsTitle'),
+      description: t('hotelSolutionsDescription'),
+      url: 'https://itwhip.com/hotel-solutions',
+      type: 'website',
+    },
+    alternates: {
+      canonical: 'https://itwhip.com/hotel-solutions',
+    },
+  }
 }
 
 export default function HotelSolutionsLayout({
