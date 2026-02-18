@@ -214,11 +214,22 @@ export async function POST(
    }
    // ========== END ACTIVITY TRACKING ==========
 
-   // Send notification to host
+   // Send notifications to host and guest (fire-and-forget)
    if (booking.host.email) {
-     // Queue email notification (implement your email service)
      console.log(`Notifying host ${booking.host.email} about trip start`)
    }
+   import('@/app/lib/twilio/sms-triggers').then(({ sendTripStartedSms }) => {
+     sendTripStartedSms({
+       bookingCode: booking.bookingCode,
+       guestPhone: booking.guestPhone,
+       guestId: booking.reviewerProfileId,
+       hostPhone: booking.host.phone,
+       guestName: booking.guestName,
+       car: booking.car,
+       bookingId: booking.id,
+       hostId: booking.hostId,
+     }).catch(e => console.error('[Trip Start] SMS failed:', e))
+   }).catch(() => {})
 
    return NextResponse.json({
      success: true,

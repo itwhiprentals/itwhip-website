@@ -1850,6 +1850,9 @@ model RentalBooking {
   requestClaim               RequestClaim?
   // Converted from prospect (if booking came from recruitment)
   convertedFromProspect      HostProspect?         @relation("prospect_to_booking")
+  // Twilio communication logs
+  smsLogs                    SmsLog[]
+  callLogs                   CallLog[]
 
   @@index([adminCompletedById])
   @@index([agreementStatus])
@@ -5352,4 +5355,65 @@ model EmailPreference {
   createdAt      DateTime @default(now())
 
   @@map("email_preferences")
+}
+
+// Twilio SMS log — tracks every outbound and inbound SMS
+model SmsLog {
+  id           String          @id @default(cuid())
+  to           String
+  from         String
+  body         String          @db.Text
+  status       String          @default("queued") // queued, sending, sent, delivered, failed, undelivered
+  type         String          // BOOKING_CONFIRMED, TRIP_STARTED, TRIP_ENDED, etc.
+  twilioSid    String?         @unique
+  errorCode    String?
+  errorMessage String?
+  bookingId    String?
+  hostId       String?
+  guestId      String?
+  locale       String          @default("en")
+  segments     Int             @default(1)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  deliveredAt  DateTime?
+
+  booking      RentalBooking?  @relation(fields: [bookingId], references: [id])
+
+  @@index([bookingId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([twilioSid])
+  @@index([to])
+  @@map("sms_logs")
+}
+
+// Twilio Call log — tracks every inbound IVR call
+model CallLog {
+  id              String          @id @default(cuid())
+  direction       String          @default("INBOUND") // INBOUND, OUTBOUND
+  from            String
+  to              String
+  callSid         String          @unique
+  status          String          @default("initiated") // initiated, ringing, in-progress, completed, busy, no-answer, failed
+  duration        Int?            // seconds
+  recordingUrl    String?
+  recordingSid    String?
+  transcription   String?         @db.Text
+  callerType      String?         // guest, host, unknown
+  callerId        String?         // ReviewerProfile.id or RentalHost.id
+  bookingId       String?
+  menuPath        String?         // navigation path e.g. "main>1>booking"
+  language        String          @default("en")
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  endedAt         DateTime?
+
+  booking         RentalBooking?  @relation(fields: [bookingId], references: [id])
+
+  @@index([callSid])
+  @@index([from])
+  @@index([bookingId])
+  @@index([createdAt])
+  @@index([callerType, callerId])
+  @@map("call_logs")
 }

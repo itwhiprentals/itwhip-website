@@ -251,6 +251,17 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // SMS to guest about claim (fire-and-forget)
+    import('@/app/lib/twilio/sms-triggers').then(({ sendClaimFiledSms }) => {
+      sendClaimFiledSms({
+        bookingCode: (booking as any).bookingCode,
+        guestPhone: (booking as any).guestPhone,
+        guestId: (booking as any).reviewerProfileId,
+        claimType: type,
+        bookingId: booking.id,
+      }).catch(e => console.error('[Claims] SMS failed:', e))
+    }).catch(() => {})
+
     return NextResponse.json({
       success: true,
       claim: {

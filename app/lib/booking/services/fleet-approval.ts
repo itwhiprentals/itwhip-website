@@ -102,14 +102,22 @@ export async function approveBooking(params: {
   notes?: string
 }): Promise<FleetReviewResult> {
   try {
-    // Get booking
+    // Get booking with guest/host data for notifications
     const booking = await prisma.rentalBooking.findUnique({
       where: { id: params.bookingId },
       select: {
         id: true,
+        bookingCode: true,
         fleetStatus: true,
         paymentIntentId: true,
         hostId: true,
+        guestPhone: true,
+        guestName: true,
+        reviewerProfileId: true,
+        startDate: true,
+        endDate: true,
+        car: { select: { year: true, make: true, model: true } },
+        host: { select: { name: true, phone: true } },
       },
     })
 
@@ -134,8 +142,22 @@ export async function approveBooking(params: {
       },
     })
 
-    // TODO: Send notification to host (email + in-app)
-    // await sendHostNotification(booking.hostId, params.bookingId)
+    // Send SMS notifications (fire-and-forget)
+    import('@/app/lib/twilio/sms-triggers').then(({ sendBookingConfirmedSms }) => {
+      sendBookingConfirmedSms({
+        bookingCode: booking.bookingCode,
+        guestPhone: booking.guestPhone,
+        guestName: booking.guestName,
+        guestId: booking.reviewerProfileId,
+        hostPhone: booking.host.phone,
+        hostName: booking.host.name,
+        car: booking.car,
+        startDate: booking.startDate,
+        endDate: booking.endDate,
+        bookingId: booking.id,
+        hostId: booking.hostId,
+      }).catch(e => console.error('[fleet-approval] SMS failed:', e))
+    }).catch(() => {})
 
     return {
       success: true,

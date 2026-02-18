@@ -875,6 +875,21 @@ export async function POST(
         console.log(`[Trip End] Sending trip summary to guest ${booking.guestEmail}`)
         // TODO: Send email to guest
       }
+
+      // SMS notifications (fire-and-forget)
+      import('@/app/lib/twilio/sms-triggers').then(({ sendTripEndedSms }) => {
+        sendTripEndedSms({
+          bookingCode: booking.bookingCode,
+          guestPhone: booking.guestPhone,
+          guestName: booking.guestName,
+          guestId: booking.reviewerProfileId,
+          hostPhone: booking.host.phone,
+          car: booking.car,
+          totalAmount: Number(charges.total || 0),
+          bookingId: booking.id,
+          hostId: booking.hostId,
+        }).catch(e => console.error('[Trip End] SMS failed:', e))
+      }).catch(() => {})
     } catch (notificationError) {
       console.error('[Trip End] Notification error (non-blocking):', notificationError)
     }

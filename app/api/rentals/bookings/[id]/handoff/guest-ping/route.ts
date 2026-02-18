@@ -27,6 +27,9 @@ export async function POST(
         id: true,
         renterId: true,
         guestEmail: true,
+        guestName: true,
+        bookingCode: true,
+        hostId: true,
         status: true,
         tripStartedAt: true,
         handoffStatus: true,
@@ -34,8 +37,16 @@ export async function POST(
         guestLiveLongitude: true,
         guestLiveDistance: true,
         guestLiveUpdatedAt: true,
+        host: {
+          select: {
+            phone: true,
+          }
+        },
         car: {
           select: {
+            year: true,
+            make: true,
+            model: true,
             latitude: true,
             longitude: true,
             address: true,
@@ -142,6 +153,21 @@ export async function POST(
       where: { id: bookingId },
       data: updateData,
     })
+
+    // Notify host when guest enters approach zone (dedup prevents spam)
+    if (withinRange && booking.host?.phone) {
+      const etaMinutes = Math.max(1, Math.ceil(distanceMeters / 500))
+      import('@/app/lib/twilio/sms-triggers').then(({ sendGuestApproachingSms }) => {
+        sendGuestApproachingSms({
+          guestName: booking.guestName || 'Guest',
+          etaMinutes,
+          hostPhone: booking.host!.phone,
+          car: booking.car,
+          bookingId: booking.id,
+          hostId: booking.hostId,
+        }).catch(e => console.error('[Guest Ping] SMS failed:', e))
+      }).catch(() => {})
+    }
 
     return NextResponse.json({
       distance: distanceMeters,

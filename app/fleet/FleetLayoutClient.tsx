@@ -238,6 +238,12 @@ function InternalLayoutContent({
                     )}
                   </Link>
                   <Link
+                    href="/fleet/communications"
+                    className="px-2.5 py-1.5 rounded-md text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors whitespace-nowrap font-medium"
+                  >
+                    Comms
+                  </Link>
+                  <Link
                     href="/fleet/settings"
                     className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
                   >
@@ -397,6 +403,13 @@ function InternalLayoutContent({
                         {langBadge > 9 ? '9+' : langBadge}
                       </span>
                     )}
+                  </Link>
+                  <Link
+                    href="/fleet/communications"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2 rounded-md text-sm text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 font-medium"
+                  >
+                    Comms
                   </Link>
                   <Link
                     href="/fleet/settings"

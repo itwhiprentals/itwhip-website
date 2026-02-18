@@ -166,6 +166,8 @@ export async function POST(
         renterId: true,
         guestEmail: true,
         guestName: true,
+        guestPhone: true,
+        reviewerProfileId: true,
         hostId: true,
         bookingCode: true,
         car: {
@@ -178,7 +180,8 @@ export async function POST(
               select: {
                 id: true,
                 email: true,
-                name: true
+                name: true,
+                phone: true
               }
             }
           }
@@ -290,6 +293,32 @@ export async function POST(
       console.error('Failed to send email notification:', emailError)
       // Don't fail the request if email fails
     }
+
+    // SMS notification for new messages (fire-and-forget, dedup prevents spam)
+    import('@/app/lib/twilio/sms-triggers').then(({ sendMissedMessageSms }) => {
+      // Guest sent message → SMS host
+      if ((senderType === 'guest' || senderType === 'renter') && booking.car.host?.phone) {
+        sendMissedMessageSms({
+          recipientPhone: booking.car.host.phone,
+          recipientId: booking.car.host.id,
+          recipientType: 'host',
+          senderName,
+          bookingCode: booking.bookingCode,
+          bookingId: booking.id,
+        }).catch(e => console.error('[Messages] SMS to host failed:', e))
+      }
+      // Host/admin sent message → SMS guest
+      if ((senderType === 'host' || senderType === 'admin' || senderType === 'support') && booking.guestPhone) {
+        sendMissedMessageSms({
+          recipientPhone: booking.guestPhone,
+          recipientId: booking.reviewerProfileId || undefined,
+          recipientType: 'guest',
+          senderName,
+          bookingCode: booking.bookingCode,
+          bookingId: booking.id,
+        }).catch(e => console.error('[Messages] SMS to guest failed:', e))
+      }
+    }).catch(() => {})
 
     return NextResponse.json({
       success: true,

@@ -41,6 +41,8 @@ export async function POST(
         endDate: true,
         bookingCode: true,
         guestName: true,
+        guestPhone: true,
+        reviewerProfileId: true,
         hostId: true,
         creditsApplied: true,
         bonusApplied: true,
@@ -48,8 +50,8 @@ export async function POST(
         depositFromWallet: true,
         depositFromCard: true,
         securityDeposit: true,
-        car: { select: { make: true, model: true } },
-        host: { select: { name: true, email: true } }
+        car: { select: { year: true, make: true, model: true } },
+        host: { select: { name: true, email: true, phone: true } }
       }
     })
 
@@ -360,6 +362,20 @@ export async function POST(
         cancelledBy: 'guest',
       }).catch(() => {})
     }
+
+    // SMS notifications (fire-and-forget)
+    import('@/app/lib/twilio/sms-triggers').then(({ sendBookingCancelledSms }) => {
+      sendBookingCancelledSms({
+        bookingCode: booking.bookingCode,
+        guestPhone: booking.guestPhone,
+        guestName: booking.guestName,
+        guestId: booking.reviewerProfileId,
+        hostPhone: booking.host?.phone,
+        car: booking.car,
+        bookingId: booking.id,
+        hostId: booking.hostId,
+      }).catch(e => console.error('[Cancel] SMS failed:', e))
+    }).catch(() => {})
 
     console.log(`[Cancel ${booking.bookingCode}] SUMMARY: ${cancellation.label} | refund=$${distribution.cardRefund} | penalty=$${cancellation.penaltyAmount} | credits=$${distribution.creditsRestored} | deposit=$${depositFromWallet} | PI=${cancelledBooking.paymentIntentId || 'none'}`)
 
