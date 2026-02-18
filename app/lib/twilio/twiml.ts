@@ -43,6 +43,14 @@ function t(lang: Lang, en: string, es: string, fr: string): string {
   return lang === 'es' ? es : lang === 'fr' ? fr : en
 }
 
+// ─── Goodbye (used after completed dial) ─────────────────────────
+
+export function generateGoodbye(lang: Lang = 'en'): string {
+  const twiml = new VoiceResponse()
+  goodbye(twiml, lang)
+  return twiml.toString()
+}
+
 // ─── SMS Sent Confirmation (opt-in flow) ─────────────────────────
 
 export function generateSmsSent(lang: Lang = 'en', returnMenu: string = 'visitor'): string {
@@ -144,9 +152,9 @@ export function generateVisitorMenu(lang: Lang = 'en', tries: number = 0): strin
   })
 
   say(gather, t(lang,
-    'To learn about renting with ItWhip, press 1. If you have a booking code, press 2. To speak with someone, press 3.',
-    'Para conocer como rentar con ItWhip, oprima 1. Si tienes un codigo de reserva, oprima 2. Para hablar con alguien, oprima 3.',
-    'Pour en savoir plus sur la location avec ItWhip, appuyez sur 1. Si vous avez un code de réservation, appuyez sur 2. Pour parler à quelqu\'un, appuyez sur 3.'
+    'To learn more about ItWhip and rent or list cars on the platform, press 1. If you have a booking code, press 2. To speak with someone, press 3.',
+    'Para saber mas sobre ItWhip y rentar o publicar autos en la plataforma, oprima 1. Si tienes un codigo de reserva, oprima 2. Para hablar con alguien, oprima 3.',
+    'Pour en savoir plus sur ItWhip et louer ou inscrire des voitures sur la plateforme, appuyez sur 1. Si vous avez un code de réservation, appuyez sur 2. Pour parler à quelqu\'un, appuyez sur 3.'
   ), lang)
 
   // No input → repeat with tries+1
@@ -473,9 +481,9 @@ export function generateSpeakWithSomeone(lang: Lang = 'en'): string {
   if (isBusinessHours()) {
     // Promo message while connecting (caller hears this, then standard ringing)
     say(twiml, t(lang,
-      'Connecting you to our team now. While you wait, did you know ItWhip offers three tiers of insurance coverage? Visit itwhip.com slash insurance guide for details.',
-      'Conectandote con nuestro equipo. Mientras esperas, sabias que ItWhip ofrece tres niveles de cobertura de seguro? Visita itwhip.com para detalles.',
-      'Nous vous connectons à notre équipe. En attendant, saviez-vous qu\'ItWhip propose trois niveaux de couverture d\'assurance? Visitez itwhip.com pour les détails.'
+      'Connecting you to our team now. Just so you know, our A.I. assistant coyee can book everything for you in just a few chats. Tell it what you want at itwhip.com slash coyee. We also offer three tiers of insurance coverage. Visit itwhip.com slash insurance guide for details.',
+      'Conectandote con nuestro equipo. Solo para que sepas, nuestro asistente de inteligencia artificial coyee puede reservar todo por ti en solo unos chats. Dile lo que necesitas en itwhip.com slash coyee. Tambien ofrecemos tres niveles de cobertura de seguro. Visita itwhip.com slash insurance guide para detalles.',
+      'Nous vous connectons à notre équipe. Sachez que notre assistant I.A. coyee peut tout réserver pour vous en quelques messages. Dites-lui ce que vous voulez sur itwhip.com slash coyee. Nous proposons aussi trois niveaux de couverture d\'assurance. Visitez itwhip.com slash insurance guide pour les détails.'
     ), lang)
 
     const dial = twiml.dial({

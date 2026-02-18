@@ -25,6 +25,7 @@ import {
   generatePickupDetails,
   generateInvalidInput,
   generateSmsSent,
+  generateGoodbye,
 } from '@/app/lib/twilio/twiml'
 
 function xml(twiml: string): NextResponse {
@@ -332,10 +333,19 @@ export async function POST(request: NextRequest) {
         }
         break
 
-      // ─── Voicemail Prompt ───────────────────────────────
-      case 'voicemail-prompt':
-        twiml = generateVoicemailPrompt(lang)
+      // ─── Voicemail Prompt / Dial Callback ────────────────
+      case 'voicemail-prompt': {
+        // If this is a dial callback, check if the call was answered
+        const dialStatus = params.DialCallStatus
+        if (dialStatus === 'completed') {
+          // Host/team answered and call ended normally → goodbye
+          twiml = generateGoodbye(lang)
+        } else {
+          // No answer, busy, failed, or direct navigation → voicemail
+          twiml = generateVoicemailPrompt(lang)
+        }
         break
+      }
 
       // ─── Speak with Someone ─────────────────────────────
       case 'speak': {
