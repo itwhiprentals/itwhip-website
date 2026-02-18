@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useFormatter } from 'next-intl'
 import { formatPrivateName, isCompanyName, formatReviewerName } from '@/app/lib/utils/namePrivacy'
 import {
   IoCloseOutline,
@@ -111,6 +111,7 @@ function getRatingValue(rating: any): number {
 export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfileModalProps) {
   const router = useRouter()
   const t = useTranslations('HostProfileModal')
+  const format = useFormatter()
   const [loading, setLoading] = useState(true)
   const [hostData, setHostData] = useState<HostModalData | null>(null)
   const [activeTab, setActiveTab] = useState<'cars' | 'reviews'>('cars')
@@ -175,13 +176,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
 
   const formatMemberSince = (dateString: string) => {
     const date = new Date(dateString)
-    const monthNames = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ]
-    const month = monthNames[date.getMonth()]
-    const year = date.getFullYear()
-    return `${month} ${year}`
+    return format.dateTime(date, { month: 'short', year: 'numeric' })
   }
 
   const formatResponseTime = (minutes: number) => {
@@ -504,10 +499,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                                       </span>
                                       {review.hostRespondedAt && (
                                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                                          • {new Date(review.hostRespondedAt).toLocaleDateString('en-US', {
-                                            month: 'short',
-                                            day: 'numeric'
-                                          })}
+                                          • {format.dateTime(new Date(review.hostRespondedAt), { month: 'short', day: 'numeric' })}
                                         </span>
                                       )}
                                     </div>
@@ -527,10 +519,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                                       </span>
                                       {review.supportRespondedAt && (
                                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                                          • {new Date(review.supportRespondedAt).toLocaleDateString('en-US', {
-                                            month: 'short',
-                                            day: 'numeric'
-                                          })}
+                                          • {format.dateTime(new Date(review.supportRespondedAt), { month: 'short', day: 'numeric' })}
                                         </span>
                                       )}
                                     </div>
@@ -541,11 +530,7 @@ export default function HostProfileModal({ hostId, isOpen, onClose }: HostProfil
                                 )}
 
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                  {new Date(review.createdAt).toLocaleDateString('en-US', {
-                                    month: 'long',
-                                    day: 'numeric',
-                                    year: 'numeric'
-                                  })}
+                                  {format.dateTime(new Date(review.createdAt), { month: 'long', day: 'numeric', year: 'numeric' })}
                                 </p>
                               </div>
                             </div>

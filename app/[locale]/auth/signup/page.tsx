@@ -39,9 +39,10 @@ export default function SignupPage() {
       <div className="pt-4">
         <a
           href="/host/signup"
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-black hover:bg-gray-900 text-white font-medium rounded-lg transition-colors border border-gray-700 text-sm"
+          className="w-full flex flex-col items-center justify-center gap-0.5 px-4 py-3 bg-black hover:bg-gray-900 text-white rounded-lg transition-colors border border-gray-700 text-sm text-center"
         >
-          {t('wantToHost')}
+          <span className="text-gray-300 text-xs">{t('wantToHostQuestion')}</span>
+          <span className="font-medium">{t('wantToHostAction')}</span>
         </a>
       </div>
     </AuthPageLayout>

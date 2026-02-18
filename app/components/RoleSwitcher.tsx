@@ -5,6 +5,7 @@
 // Design: ( Guest < O | ≡ ) or just ( O ) for single-role users
 
 import { useState, useRef, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { useAuth } from '@/app/contexts/AuthContext'
 
 interface RoleSwitcherProps {
@@ -23,6 +24,7 @@ export default function RoleSwitcher({
   isMobileMenuOpen = false,
   onToggleMobileMenu
 }: RoleSwitcherProps) {
+  const t = useTranslations('RoleSwitcher')
   const {
     hasBothProfiles,
     currentRole,
@@ -171,13 +173,13 @@ export default function RoleSwitcher({
             active:bg-gray-200 dark:active:bg-gray-600
             ${showHamburger ? 'rounded-l-lg' : 'rounded-lg'}
           `}
-          aria-label={`Currently in ${isHost ? 'Host' : 'Guest'} mode. Click to switch roles.`}
+          aria-label={t('switchRolesAria', { role: isHost ? t('host') : t('guest') })}
           aria-expanded={isOpen}
           aria-haspopup="true"
         >
           {/* Role label with spinner when switching */}
           <span className="leading-none flex items-center gap-1">
-            {isHost ? 'Host' : 'Guest'}
+            {isHost ? t('host') : t('guest')}
             {isSwitching && (
               <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
@@ -228,7 +230,7 @@ export default function RoleSwitcher({
             `}
           >
             <span className={`w-2 h-2 rounded-full ${currentRole === 'guest' ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
-            Guest
+            {t('guest')}
           </button>
           <button
             onClick={() => handleSwitch('host')}
@@ -243,7 +245,7 @@ export default function RoleSwitcher({
             `}
           >
             <span className={`w-2 h-2 rounded-full ${currentRole === 'host' ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
-            Host
+            {t('host')}
           </button>
         </div>
       )}

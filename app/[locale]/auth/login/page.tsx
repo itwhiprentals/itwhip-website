@@ -142,9 +142,10 @@ function LoginContent() {
       <div className="pt-4">
         <a
           href="/host/login"
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-black hover:bg-gray-900 text-white font-medium rounded-lg transition-colors border border-gray-700 text-sm"
+          className="w-full flex flex-col items-center justify-center gap-0.5 px-4 py-3 bg-black hover:bg-gray-900 text-white rounded-lg transition-colors border border-gray-700 text-sm text-center"
         >
-          {t('areYouHost')}
+          <span className="text-gray-300 text-xs">{t('areYouHostQuestion')}</span>
+          <span className="font-medium">{t('areYouHostAction')}</span>
         </a>
       </div>
     </AuthPageLayout>

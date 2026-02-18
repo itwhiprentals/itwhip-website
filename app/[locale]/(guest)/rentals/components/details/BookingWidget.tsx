@@ -634,7 +634,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                           </div>
                         </div>
                         <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                          {quote.dailyPremium === 0 ? t('included') : `$${quote.dailyPremium.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/day`}
+                          {quote.dailyPremium === 0 ? t('included') : t('perDayPrice', { price: quote.dailyPremium.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}
                         </span>
                       </div>
                     </label>

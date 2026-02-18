@@ -132,42 +132,42 @@ export default function CareersPage() {
   const benefits = [
     {
       icon: IoMedicalOutline,
-      title: 'Health & Wellness',
-      items: ['100% covered health insurance', 'Dental and vision', 'Mental health support', 'Gym membership']
+      title: t('benefitHealthTitle'),
+      items: [t('benefitHealth1'), t('benefitHealth2'), t('benefitHealth3'), t('benefitHealth4')]
     },
     {
       icon: IoRocketOutline,
-      title: 'Growth & Equity',
-      items: ['Stock options for all', 'Career development budget', 'Conference attendance', 'Internal mobility']
+      title: t('benefitGrowthTitle'),
+      items: [t('benefitGrowth1'), t('benefitGrowth2'), t('benefitGrowth3'), t('benefitGrowth4')]
     },
     {
       icon: IoHomeOutline,
-      title: 'Work-Life Balance',
-      items: ['Flexible work hours', 'Remote options available', 'Unlimited PTO', 'Paid parental leave']
+      title: t('benefitWorkLifeTitle'),
+      items: [t('benefitWorkLife1'), t('benefitWorkLife2'), t('benefitWorkLife3'), t('benefitWorkLife4')]
     },
     {
       icon: IoHeartOutline,
-      title: 'Perks & Culture',
-      items: ['Free ItWhip rides', 'Team events & offsites', 'Catered lunches', 'Modern Phoenix office']
+      title: t('benefitPerksTitle'),
+      items: [t('benefitPerks1'), t('benefitPerks2'), t('benefitPerks3'), t('benefitPerks4')]
     }
   ]
 
   const values = [
     {
-      title: 'Customer Obsessed',
-      description: 'Every decision starts with "how does this help our riders and hotel partners?"'
+      title: t('valueCustomerTitle'),
+      description: t('valueCustomerDesc')
     },
     {
-      title: 'Move Fast',
-      description: 'We ship quickly, learn from feedback, and iterate. Perfect is the enemy of good.'
+      title: t('valueMoveTitle'),
+      description: t('valueMoveDesc')
     },
     {
-      title: 'Own the Outcome',
-      description: 'We take responsibility for our work and its impact on the business.'
+      title: t('valueOwnTitle'),
+      description: t('valueOwnDesc')
     },
     {
-      title: 'Transparent Always',
-      description: 'We share information openly, give direct feedback, and communicate honestly.'
+      title: t('valueTransparentTitle'),
+      description: t('valueTransparentDesc')
     }
   ]
 
@@ -264,7 +264,7 @@ export default function CareersPage() {
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('rapidGrowth')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  487 hotel partners and growing 30% monthly
+                  {t('rapidGrowthDesc')}
                 </p>
               </div>
 
@@ -274,7 +274,7 @@ export default function CareersPage() {
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('realImpact')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Saving riders millions in surge pricing daily
+                  {t('realImpactDesc')}
                 </p>
               </div>
 
@@ -284,7 +284,7 @@ export default function CareersPage() {
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('greatTeam')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Ex-Uber, Google, and Marriott talent
+                  {t('greatTeamDesc')}
                 </p>
               </div>
 
@@ -294,7 +294,7 @@ export default function CareersPage() {
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('fundedStable')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Series A funded, 3+ years runway
+                  {t('fundedStableDesc')}
                 </p>
               </div>
             </div>
@@ -385,7 +385,7 @@ export default function CareersPage() {
                           {department}
                         </h3>
                         <span className="text-sm text-gray-500">
-                          ({data.positions.length} opening{data.positions.length !== 1 ? 's' : ''})
+                          ({t('openingsCount', { count: data.positions.length })})
                         </span>
                       </div>
 
@@ -415,12 +415,12 @@ export default function CareersPage() {
                                   </span>
                                   <span className="flex items-center">
                                     <IoBriefcaseOutline className="w-4 h-4 mr-1" />
-                                    {job.type.replace('_', ' ')}
+                                    {t(`jobType_${job.type}`)}
                                   </span>
                                   {job.applicantCount > 0 && (
                                     <span className="flex items-center">
                                       <IoPeopleOutline className="w-4 h-4 mr-1" />
-                                      {job.applicantCount} applicants
+                                      {t('applicantsCount', { count: job.applicantCount })}
                                     </span>
                                   )}
                                 </div>

@@ -5,7 +5,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useFormatter } from 'next-intl'
 import { IoCalendarOutline } from 'react-icons/io5'
 import CalendarModal from '@/app/[locale]/(guest)/components/hero/search-components/CalendarModal'
 
@@ -23,14 +23,7 @@ interface DateRangePickerProps {
   onEndTimeChange: (time: string) => void
 }
 
-function formatDisplayDate(dateStr: string): string {
-  if (!dateStr) return 'Select date'
-  const [year, month, day] = dateStr.split('-').map(Number)
-  const date = new Date(year, month - 1, day)
-  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-}
-
-function TimeSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function TimeSelect({ value, onChange, format }: { value: string; onChange: (v: string) => void; format: ReturnType<typeof useFormatter> }) {
   return (
     <select
       value={value}
@@ -39,11 +32,10 @@ function TimeSelect({ value, onChange }: { value: string; onChange: (v: string) 
     >
       {Array.from({ length: 24 }, (_, i) => {
         const hour = i.toString().padStart(2, '0')
-        const ampm = i < 12 ? 'AM' : 'PM'
-        const displayHour = i === 0 ? 12 : i > 12 ? i - 12 : i
+        const display = format.dateTime(new Date(2000, 0, 1, i, 0), { hour: 'numeric', minute: '2-digit' })
         return (
           <option key={hour} value={`${hour}:00`}>
-            {displayHour}:00 {ampm}
+            {display}
           </option>
         )
       })}
@@ -65,8 +57,16 @@ export default function DateRangePicker({
   onEndTimeChange,
 }: DateRangePickerProps) {
   const t = useTranslations('DateRangePicker')
+  const format = useFormatter()
   const [showPickupCalendar, setShowPickupCalendar] = useState(false)
   const [showReturnCalendar, setShowReturnCalendar] = useState(false)
+
+  const formatDisplayDate = (dateStr: string): string => {
+    if (!dateStr) return t('selectDate')
+    const [year, month, day] = dateStr.split('-').map(Number)
+    const date = new Date(year, month - 1, day)
+    return format.dateTime(date, { weekday: 'short', month: 'short', day: 'numeric' })
+  }
 
   return (
     <>
@@ -85,7 +85,7 @@ export default function DateRangePicker({
             <IoCalendarOutline className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
             <span className="truncate">{formatDisplayDate(startDate)}</span>
           </button>
-          <TimeSelect value={startTime} onChange={onStartTimeChange} />
+          <TimeSelect value={startTime} onChange={onStartTimeChange} format={format} />
         </div>
       </div>
 
@@ -104,7 +104,7 @@ export default function DateRangePicker({
             <IoCalendarOutline className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
             <span className="truncate">{formatDisplayDate(endDate)}</span>
           </button>
-          <TimeSelect value={endTime} onChange={onEndTimeChange} />
+          <TimeSelect value={endTime} onChange={onEndTimeChange} format={format} />
         </div>
       </div>
 

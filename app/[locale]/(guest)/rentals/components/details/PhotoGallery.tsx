@@ -210,7 +210,7 @@ export default function PhotoGallery({ photos, carName, onViewModeChange }: Phot
             </div>
 
             {/* Tap to view all indicator - subtle hint */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 sm:hidden bg-black/40 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 sm:hidden bg-black/40 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs whitespace-nowrap">
               {t('tapToViewAllPhotos')}
             </div>
           </div>

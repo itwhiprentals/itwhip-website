@@ -93,6 +93,7 @@ export default function MobileMenu({
     id: string
     label: string
     icon: React.ComponentType<{ className?: string }>
+    color: string
     badge?: { text: string; color: string }
     items: {
       href: string
@@ -106,6 +107,7 @@ export default function MobileMenu({
       id: 'browse',
       label: t('browseCars'),
       icon: IoCarOutline,
+      color: 'blue',
       items: [
         { href: '/', label: tHeader('allCars'), icon: IoCarOutline },
         { href: '/rentals/search?category=luxury', label: tHeader('luxury'), icon: IoDiamondOutline },
@@ -119,9 +121,10 @@ export default function MobileMenu({
       id: 'rentals',
       label: t('rentalOptions'),
       icon: IoCalendarOutline,
+      color: 'amber',
       items: [
-        { href: '/rentals/daily', label: tHeader('bookings').replace('Bookings', 'Daily Rentals') || 'Daily Rentals', icon: IoCalendarOutline },
-        { href: '/rentals/long-term', label: 'Long-Term Rentals', icon: IoDocumentTextOutline },
+        { href: '/rentals/daily', label: t('dailyRentals'), icon: IoCalendarOutline },
+        { href: '/rentals/long-term', label: t('longTermRentals'), icon: IoDocumentTextOutline },
         { href: '/rentals/weekend', label: t('weekendRentals'), icon: IoCarSportOutline },
         { href: '/reviews', label: tHeader('reviews'), icon: IoStarOutline },
         { href: '/insurance-guide', label: t('insuranceOptions'), icon: IoShieldCheckmarkOutline }
@@ -131,11 +134,12 @@ export default function MobileMenu({
       id: 'host',
       label: t('forHosts'),
       icon: IoKeyOutline,
+      color: 'purple',
       badge: { text: t('earn'), color: 'from-green-500 to-emerald-500' },
       items: [
         { href: '/list-your-car', label: tHeader('listYourCar'), icon: IoSparklesOutline, highlight: true },
-        { href: '/host/fleet-owners', label: 'Fleet Owners', icon: IoCarOutline },
-        { href: '/host/payouts', label: 'Payouts & Earnings', icon: IoWalletOutline },
+        { href: '/host/fleet-owners', label: t('fleetOwners'), icon: IoCarOutline },
+        { href: '/host/payouts', label: t('payoutsEarnings'), icon: IoWalletOutline },
         { href: '/host/insurance-options', label: t('insuranceOptions'), icon: IoShieldCheckmarkOutline },
         { href: '/host-requirements', label: t('hostRequirements'), icon: IoDocumentTextOutline },
         { href: '/host/tax-benefits', label: t('taxBenefits'), icon: IoCalculatorOutline }
@@ -143,13 +147,14 @@ export default function MobileMenu({
     },
     {
       id: 'support',
-      label: 'Support',
+      label: t('support'),
       icon: IoHelpCircleOutline,
+      color: 'green',
       items: [
         { href: '/support', label: tHeader('helpCenter'), icon: IoHelpCircleOutline },
-        { href: '/support/insurance', label: 'Insurance Support', icon: IoShieldCheckmarkOutline },
+        { href: '/support/insurance', label: t('insuranceSupport'), icon: IoShieldCheckmarkOutline },
         { href: '/how-it-works', label: tHeader('howItWorks'), icon: IoHelpCircleOutline },
-        { href: '/cancellation-policy', label: 'Cancellation Policy', icon: IoDocumentTextOutline },
+        { href: '/cancellation-policy', label: t('cancellationPolicy'), icon: IoDocumentTextOutline },
         { href: '/contact', label: tHeader('contact'), icon: IoMailOutline }
       ]
     },
@@ -157,6 +162,7 @@ export default function MobileMenu({
       id: 'company',
       label: tHeader('company'),
       icon: IoBusinessOutline,
+      color: 'gray',
       items: [
         { href: '/about', label: tHeader('about'), icon: IoBusinessOutline },
         { href: '/corporate', label: tHeader('corporateRentals'), icon: IoBusinessOutline },
@@ -173,7 +179,7 @@ export default function MobileMenu({
     { name: t('messages'), href: '/messages', icon: IoChatbubbleOutline },
     { name: t('profile'), href: '/profile', icon: IoPersonOutline },
     { name: t('paymentMethods'), href: '/profile?tab=payment', icon: IoCardOutline },
-    { name: tHeader('reviews'), href: '/profile?tab=reviews', icon: IoStarOutline },
+    { name: tHeader('reviews'), href: '/reviews', icon: IoStarOutline },
   ]
 
   // Reset profile image error when user changes
@@ -590,7 +596,7 @@ export default function MobileMenu({
                 href="/"
                 onClick={handleNavClick}
                 className={`
-                  w-full flex items-center space-x-3 py-3 transition-colors
+                  w-full flex items-center space-x-3 py-3 px-1 transition-colors
                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-lg
                   ${isActiveLink('/')
                     ? 'text-blue-600 dark:text-blue-400'
@@ -598,14 +604,14 @@ export default function MobileMenu({
                 `}
                 aria-current={isActiveLink('/') ? 'page' : undefined}
               >
-                <div className={`transition-colors ${
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                   isActiveLink('/')
-                    ? 'text-blue-600 dark:text-blue-400'
-                    : 'text-gray-500 dark:text-gray-400'
+                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                 }`}>
-                  <IoHomeOutline className="w-5 h-5" aria-hidden="true" />
+                  <IoHomeOutline className="w-4.5 h-4.5" aria-hidden="true" />
                 </div>
-                <span className="font-medium text-gray-900 dark:text-white">
+                <span className="font-medium text-gray-900 dark:text-white text-[15px]">
                   {t('home')}
                 </span>
               </Link>
@@ -614,22 +620,36 @@ export default function MobileMenu({
             {navigationSections.map((section) => {
               const Icon = section.icon
               const isExpanded = expandedSection === section.id
+              const iconBg: Record<string, string> = {
+                blue: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
+                amber: 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400',
+                purple: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
+                green: 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400',
+                gray: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
+              }
+              const accentBorder: Record<string, string> = {
+                blue: 'border-l-blue-500',
+                amber: 'border-l-amber-500',
+                purple: 'border-l-purple-500',
+                green: 'border-l-green-500',
+                gray: 'border-l-gray-400',
+              }
 
               return (
-                <div key={section.id} className="border-b border-gray-100 dark:border-gray-900">
+                <div key={section.id} className={`border-b border-gray-100 dark:border-gray-900 transition-all duration-200 ${isExpanded ? `border-l-2 ${accentBorder[section.color]} bg-gray-50/50 dark:bg-gray-900/30` : 'border-l-2 border-l-transparent'}`}>
                   <button
                     onClick={() => toggleSection(section.id)}
-                    className="w-full flex items-center justify-between py-3
-                      hover:text-blue-600 dark:hover:text-blue-400 transition-colors
+                    className="w-full flex items-center justify-between py-3 px-1
+                      transition-colors
                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-lg"
                     aria-expanded={isExpanded}
                     aria-controls={`${section.id}-menu`}
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="text-gray-500 dark:text-gray-400">
-                        <Icon className="w-5 h-5" aria-hidden="true" />
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${iconBg[section.color]}`}>
+                        <Icon className="w-4.5 h-4.5" aria-hidden="true" />
                       </div>
-                      <span className="font-medium text-gray-900 dark:text-white">
+                      <span className="font-medium text-gray-900 dark:text-white text-[15px]">
                         {section.label}
                       </span>
                       {section.badge && (
@@ -643,7 +663,7 @@ export default function MobileMenu({
                     </div>
                     <IoChevronDownOutline
                       className={`
-                        w-5 h-5 text-gray-400 transition-transform duration-200
+                        w-4 h-4 text-gray-400 transition-transform duration-300 ease-out
                         ${isExpanded ? 'rotate-180' : ''}
                       `}
                       aria-hidden="true"
@@ -653,11 +673,11 @@ export default function MobileMenu({
                   <div
                     id={`${section.id}-menu`}
                     className={`
-                      overflow-hidden transition-all duration-200 ease-in-out
+                      overflow-hidden transition-all duration-300 ease-out
                       ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}
                     `}
                   >
-                    <div className="pb-3 pl-12 space-y-1">
+                    <div className="pb-3 pl-[52px] space-y-0.5">
                       {section.items.map((item) => {
                         const ItemIcon = item.icon
 
@@ -667,14 +687,14 @@ export default function MobileMenu({
                             href={item.href}
                             onClick={handleNavClick}
                             className={`
-                              flex items-center gap-2 py-2 text-sm transition-colors
+                              flex items-center gap-2.5 py-2 text-sm transition-colors
                               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-lg px-2
                               ${item.highlight
                                 ? 'text-blue-600 dark:text-blue-400 font-medium'
-                                : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'}
+                                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/50'}
                             `}
                           >
-                            {ItemIcon && <ItemIcon className="w-4 h-4" aria-hidden="true" />}
+                            {ItemIcon && <ItemIcon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />}
                             <div className="flex items-center justify-between flex-1">
                               <span>{item.label}</span>
                               {item.badge && (
