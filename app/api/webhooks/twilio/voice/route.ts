@@ -2,7 +2,12 @@
 // Main IVR entry point — Twilio calls this when someone dials 855 or 602
 // Handles TWO types of POST:
 //   1. Initial call (no Digits) → language selection
-//   2. Gather result (Digits=1/2/3) → route to language-specific menu
+//   2. Gather result (Digits=1/2/3) → route to appropriate menu based on caller identity
+//
+// Routing logic after language selection:
+//   - Active trip caller → Active Trip Menu (emergency priority)
+//   - Known customer (guest/host in DB) → Customer Menu
+//   - Unknown caller (visitor) → Visitor Menu
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
@@ -11,7 +16,8 @@ import { lookupCaller, type CallerIdentity } from '@/app/lib/twilio/caller-looku
 import {
   generateLanguageSelection,
   generateActiveTripMenu,
-  generateMainMenu,
+  generateCustomerMenu,
+  generateVisitorMenu,
 } from '@/app/lib/twilio/twiml'
 
 type Lang = 'en' | 'es' | 'fr'
@@ -40,7 +46,6 @@ export async function POST(request: NextRequest) {
 
     // ─── Initial call (no language selected yet) ──────────────────
     if (!lang) {
-      // Log new call (only on first POST, not on gather result)
       prisma.callLog.create({
         data: {
           from: from || 'unknown',
@@ -55,9 +60,8 @@ export async function POST(request: NextRequest) {
       return xml(generateLanguageSelection())
     }
 
-    // ─── Language selected → route to menu ────────────────────────
+    // ─── Language selected → identify caller → route ──────────────
 
-    // Caller lookup (non-blocking — don't let it break the menu)
     let caller: CallerIdentity | null = null
     try {
       caller = from ? await lookupCaller(from) : null
@@ -65,7 +69,7 @@ export async function POST(request: NextRequest) {
       console.error('[IVR] Caller lookup failed (continuing):', e)
     }
 
-    // Update call log with caller info + language
+    // Update call log
     if (callSid) {
       prisma.callLog.updateMany({
         where: { callSid },
@@ -80,15 +84,21 @@ export async function POST(request: NextRequest) {
       }).catch(() => {})
     }
 
-    // Route to active trip menu or standard menu
+    // Route based on caller identity:
+    // 1. Active trip → emergency priority menu
     if (caller?.activeBooking) {
       return xml(generateActiveTripMenu(caller.name || 'there', caller.activeBooking.carName, lang))
     }
 
-    return xml(generateMainMenu(lang))
+    // 2. Known customer (guest or host in DB) → customer menu
+    if (caller && caller.type !== 'unknown') {
+      return xml(generateCustomerMenu(lang))
+    }
+
+    // 3. Unknown caller (visitor) → visitor menu
+    return xml(generateVisitorMenu(lang))
   } catch (error) {
-    // Safety net — always return valid TwiML so Twilio never gets a 500
     console.error('[IVR] Unhandled error:', error)
-    return xml(generateMainMenu('en'))
+    return xml(generateVisitorMenu('en'))
   }
 }

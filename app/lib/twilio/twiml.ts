@@ -1,7 +1,9 @@
 // app/lib/twilio/twiml.ts
 // TwiML generators for IVR phone system
-// Uses Twilio VoiceResponse to build XML responses for each menu level
 // Supports 3 languages: English, Spanish (Latin American), French (formal)
+//
+// Retry policy: Every menu repeats MAX 2 times. After 2nd timeout → goodbye + hangup.
+// Emergency exception: after retries → voicemail instead of hangup.
 
 import twilio from 'twilio'
 import { TWILIO_LOCAL_NUMBER, WEBHOOK_BASE_URL } from './client'
@@ -19,8 +21,10 @@ const VOICE: Record<Lang, { voice: string; language: string }> = {
 }
 
 const GATHER_TIMEOUT = 8
+const MAX_RETRIES = 2
 
-// All TwiML action URLs point to real Next.js route handlers
+// ─── URL Helpers ───────────────────────────────────────────────────
+
 function voiceUrl(path?: string): string {
   return `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice${path || ''}`
 }
@@ -29,19 +33,30 @@ function menuUrl(menu: string, lang: Lang, extra?: string): string {
   return `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/menu?menu=${menu}&lang=${lang}${extra || ''}`
 }
 
-// ─── Helper: Say with voice ────────────────────────────────────────
+// ─── Say / Localize Helpers ────────────────────────────────────────
 
 function say(twiml: twilio.twiml.VoiceResponse | ReturnType<twilio.twiml.VoiceResponse['gather']>, text: string, lang: Lang = 'en') {
   twiml.say(VOICE[lang], text)
 }
 
-// ─── Localized text helper ─────────────────────────────────────────
-
 function t(lang: Lang, en: string, es: string, fr: string): string {
   return lang === 'es' ? es : lang === 'fr' ? fr : en
 }
 
-// ─── 1.0: Language Selection (Entry Point) ─────────────────────────
+// ─── Goodbye + Hangup (shared) ────────────────────────────────────
+
+function goodbye(twiml: twilio.twiml.VoiceResponse, lang: Lang) {
+  say(twiml, t(lang,
+    'Thank you for calling ItWhip. For help anytime, visit itwhip.com. Goodbye.',
+    'Gracias por llamar a ItWhip. Para ayuda en cualquier momento, visita itwhip.com. Hasta luego.',
+    'Merci d\'avoir appelé ItWhip. Pour de l\'aide à tout moment, visitez itwhip.com. Au revoir.'
+  ), lang)
+  twiml.hangup()
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 1.0: LANGUAGE SELECTION (Entry Point — everyone hears this first)
+// ════════════════════════════════════════════════════════════════════
 
 export function generateLanguageSelection(): string {
   const twiml = new VoiceResponse()
@@ -53,7 +68,7 @@ export function generateLanguageSelection(): string {
     timeout: GATHER_TIMEOUT,
   })
 
-  gather.say(VOICE.en, 'Thank you for calling ItWhip, Arizona\'s car rental marketplace. For faster service anytime, chat with Cho-ay, our A.I. assistant, at itwhip.com.')
+  gather.say(VOICE.en, 'Thank you for calling ItWhip, Arizona\'s car rental marketplace. For faster service anytime, chat with Cowi, our A.I. assistant, at itwhip.com.')
   gather.pause({ length: 0.5 })
   gather.say(VOICE.en, 'For English, press 1.')
   gather.pause({ length: 0.3 })
@@ -61,14 +76,16 @@ export function generateLanguageSelection(): string {
   gather.pause({ length: 0.3 })
   gather.say(VOICE.fr, 'Pour le français, appuyez sur le 3.')
 
-  // No input → voicemail
-  say(twiml, 'We didn\'t receive your selection. Please leave a message after the beep.', 'en')
-  twiml.redirect(menuUrl('voicemail-prompt', 'en'))
-
+  // No input → goodbye
+  goodbye(twiml, 'en')
   return twiml.toString()
 }
 
-// ─── 1.5: Active Trip Override ─────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// 1.5: ACTIVE TRIP OVERRIDE (caller with active rental)
+// ════════════════════════════════════════════════════════════════════
+// "Hi {name}, I see you have an active rental of a {car}.
+//  Is this an emergency? Press 1 yes, 2 other assistance."
 
 export function generateActiveTripMenu(name: string, carName: string, lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
@@ -86,33 +103,107 @@ export function generateActiveTripMenu(name: string, carName: string, lang: Lang
     `Bonjour ${name}, je vois que vous avez une location active d'un ${carName}. Est-ce une urgence? Pour oui, appuyez sur 1. Pour autre assistance, appuyez sur 2.`
   ), lang)
 
-  twiml.redirect(menuUrl('main', lang))
+  // No input → voicemail (active trip callers likely need help)
+  twiml.redirect(menuUrl('voicemail-prompt', lang))
   return twiml.toString()
 }
 
-// ─── 2.0: Main Menu ───────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// 2.0: VISITOR MAIN MENU (default — unknown callers)
+// ════════════════════════════════════════════════════════════════════
+// "To learn about renting with ItWhip, press 1.
+//  If you have a booking code, press 2.
+//  To speak with someone, press 3."
 
-export function generateMainMenu(lang: Lang = 'en'): string {
+export function generateVisitorMenu(lang: Lang = 'en', tries: number = 0): string {
   const twiml = new VoiceResponse()
+
+  if (tries >= MAX_RETRIES) {
+    goodbye(twiml, lang)
+    return twiml.toString()
+  }
 
   const gather = twiml.gather({
     numDigits: 1,
-    action: menuUrl('main', lang),
+    action: menuUrl('visitor', lang),
     method: 'POST',
     timeout: GATHER_TIMEOUT,
   })
 
   say(gather, t(lang,
-    'For booking support, press 1. For insurance and claims, press 2. To speak with someone, press 3.',
-    'Para soporte de reservas, oprima 1. Para seguros y reclamos, oprima 2. Para hablar con alguien, oprima 3.',
-    'Pour le support de réservation, appuyez sur 1. Pour les assurances et réclamations, appuyez sur 2. Pour parler à quelqu\'un, appuyez sur 3.'
+    'To learn about renting with ItWhip, press 1. If you have a booking code, press 2. To speak with someone, press 3.',
+    'Para conocer como rentar con ItWhip, oprima 1. Si tienes un codigo de reserva, oprima 2. Para hablar con alguien, oprima 3.',
+    'Pour en savoir plus sur la location avec ItWhip, appuyez sur 1. Si vous avez un code de réservation, appuyez sur 2. Pour parler à quelqu\'un, appuyez sur 3.'
   ), lang)
 
-  twiml.redirect(menuUrl('main', lang))
+  // No input → repeat with tries+1
+  twiml.redirect(menuUrl('visitor', lang, `&tries=${tries + 1}`))
   return twiml.toString()
 }
 
-// ─── 3.0: Booking Code Entry ──────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// 2.1: ABOUT ITWHIP (visitor → press 1)
+// ════════════════════════════════════════════════════════════════════
+// "ItWhip connects you with local car owners in Phoenix for affordable rentals.
+//  Browse cars and book at itwhip.com or chat with Cowi."
+
+export function generateAboutItWhip(lang: Lang = 'en'): string {
+  const twiml = new VoiceResponse()
+
+  const gather = twiml.gather({
+    numDigits: 1,
+    action: menuUrl('about-action', lang),
+    method: 'POST',
+    timeout: GATHER_TIMEOUT,
+  })
+
+  say(gather, t(lang,
+    'ItWhip connects you with local car owners in Phoenix for affordable, flexible rentals. Browse cars, compare prices, and book instantly at itwhip.com. Or chat with Cowi, our A.I. assistant, anytime for help finding the perfect car. We\'ve texted you the link. To speak with someone, press 1. To hear this again, press 2.',
+    'ItWhip te conecta con dueños de autos locales en Phoenix para rentas accesibles y flexibles. Busca autos, compara precios y reserva al instante en itwhip.com. O habla con Cowi, nuestro asistente de inteligencia artificial, para ayuda encontrando el auto perfecto. Te enviamos el enlace por mensaje de texto. Para hablar con alguien, oprima 1. Para escuchar esto de nuevo, oprima 2.',
+    'ItWhip vous connecte avec des propriétaires de voitures locaux à Phoenix pour des locations abordables et flexibles. Parcourez les voitures, comparez les prix et réservez instantanément sur itwhip.com. Ou parlez avec Cowi, notre assistant I.A., pour trouver la voiture parfaite. Nous vous avons envoyé le lien par SMS. Pour parler à quelqu\'un, appuyez sur 1. Pour réécouter, appuyez sur 2.'
+  ), lang)
+
+  // No input → goodbye
+  goodbye(twiml, lang)
+  return twiml.toString()
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 3.0: CUSTOMER MAIN MENU (identified callers only)
+// ════════════════════════════════════════════════════════════════════
+// "Welcome back. For booking support, press 1.
+//  For insurance and claims, press 2. To speak with someone, press 3."
+
+export function generateCustomerMenu(lang: Lang = 'en', tries: number = 0): string {
+  const twiml = new VoiceResponse()
+
+  if (tries >= MAX_RETRIES) {
+    goodbye(twiml, lang)
+    return twiml.toString()
+  }
+
+  const gather = twiml.gather({
+    numDigits: 1,
+    action: menuUrl('customer', lang),
+    method: 'POST',
+    timeout: GATHER_TIMEOUT,
+  })
+
+  say(gather, t(lang,
+    'Welcome back. For booking support, press 1. For insurance and claims, press 2. To speak with someone, press 3.',
+    'Bienvenido de vuelta. Para soporte de reservas, oprima 1. Para seguros y reclamos, oprima 2. Para hablar con alguien, oprima 3.',
+    'Bon retour. Pour le support de réservation, appuyez sur 1. Pour les assurances et réclamations, appuyez sur 2. Pour parler à quelqu\'un, appuyez sur 3.'
+  ), lang)
+
+  // No input → repeat with tries+1
+  twiml.redirect(menuUrl('customer', lang, `&tries=${tries + 1}`))
+  return twiml.toString()
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 4.0: BOOKING CODE ENTRY
+// ════════════════════════════════════════════════════════════════════
+// "Enter your 6-digit booking code followed by pound. Or press star to skip."
 
 export function generateBookingCodeEntry(lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
@@ -130,11 +221,16 @@ export function generateBookingCodeEntry(lang: Lang = 'en'): string {
     'Veuillez entrer votre code de réservation à 6 chiffres suivi du signe dièse. Ou appuyez sur étoile pour passer.'
   ), lang)
 
-  twiml.redirect(menuUrl('booking-code', lang))
+  // No input → goodbye
+  goodbye(twiml, lang)
   return twiml.toString()
 }
 
-// ─── 3.1: Booking Found ───────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// 4.1: BOOKING FOUND
+// ════════════════════════════════════════════════════════════════════
+// "I found your booking. {car} reserved for {dates} with {host}."
+// "Connect to host press 1. Pickup details press 2. Main menu press 3."
 
 export function generateBookingFound(booking: {
   bookingCode: string
@@ -163,11 +259,14 @@ export function generateBookingFound(booking: {
     'Pour contacter votre hôte, appuyez sur 1. Pour les détails de prise en charge, appuyez sur 2. Pour revenir au menu principal, appuyez sur 3.'
   ), lang)
 
-  twiml.redirect(menuUrl('main', lang))
+  // No input → goodbye
+  goodbye(twiml, lang)
   return twiml.toString()
 }
 
-// ─── 3.2: Connect to Host ─────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// 4.2: CONNECT TO HOST
+// ════════════════════════════════════════════════════════════════════
 
 export function generateConnectToHost(hostPhone: string, lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
@@ -181,11 +280,14 @@ export function generateConnectToHost(hostPhone: string, lang: Lang = 'en'): str
   const dial = twiml.dial({ callerId: TWILIO_LOCAL_NUMBER, timeout: 30 })
   dial.number(hostPhone)
 
-  twiml.redirect(menuUrl('main', lang))
+  // If host doesn't answer → voicemail
+  twiml.redirect(menuUrl('voicemail-prompt', lang))
   return twiml.toString()
 }
 
-// ─── 3.3: Pickup Details ──────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// 4.3: PICKUP DETAILS
+// ════════════════════════════════════════════════════════════════════
 
 export function generatePickupDetails(booking: {
   address: string
@@ -196,7 +298,7 @@ export function generatePickupDetails(booking: {
 
   const gather = twiml.gather({
     numDigits: 1,
-    action: menuUrl('main', lang),
+    action: menuUrl('customer', lang),
     method: 'POST',
     timeout: GATHER_TIMEOUT,
   })
@@ -207,11 +309,14 @@ export function generatePickupDetails(booking: {
     `Votre prise en charge est au ${booking.address} le ${booking.date} à ${booking.time}. Nous vous avons aussi envoyé ces détails par SMS. Pour revenir au menu principal, appuyez sur 1.`
   ), lang)
 
-  twiml.redirect(menuUrl('main', lang))
+  // No input → goodbye
+  goodbye(twiml, lang)
   return twiml.toString()
 }
 
-// ─── 3.4: Booking Not Found ──────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// 4.4: BOOKING NOT FOUND
+// ════════════════════════════════════════════════════════════════════
 
 export function generateBookingNotFound(lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
@@ -224,16 +329,19 @@ export function generateBookingNotFound(lang: Lang = 'en'): string {
   })
 
   say(gather, t(lang,
-    'I couldn\'t find that booking code. I\'ve texted you a link to manage your bookings online. To try again, press 1. To return to the main menu, press 2.',
-    'No encontre ese codigo de reserva. Te enviamos un enlace por mensaje de texto para administrar tus reservas en linea. Para intentar de nuevo, oprima 1. Para volver al menu principal, oprima 2.',
-    'Je n\'ai pas trouvé ce code de réservation. Nous vous avons envoyé un lien par SMS pour gérer vos réservations en ligne. Pour réessayer, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
+    'I couldn\'t find that booking code. To try again, press 1. To return to the main menu, press 2.',
+    'No encontre ese codigo de reserva. Para intentar de nuevo, oprima 1. Para volver al menu principal, oprima 2.',
+    'Je n\'ai pas trouvé ce code de réservation. Pour réessayer, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
   ), lang)
 
-  twiml.redirect(menuUrl('main', lang))
+  // No input → goodbye
+  goodbye(twiml, lang)
   return twiml.toString()
 }
 
-// ─── 3.5: Booking Skip (General Help) ─────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// 4.5: BOOKING SKIP (pressed * to skip code)
+// ════════════════════════════════════════════════════════════════════
 
 export function generateBookingSkip(lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
@@ -246,19 +354,28 @@ export function generateBookingSkip(lang: Lang = 'en'): string {
   })
 
   say(gather, t(lang,
-    'For help with a new booking, visit itwhip.com or chat with Cho-ay, our A.I. assistant. To leave a voicemail for our team, press 1. To return to the main menu, press 2.',
-    'Para ayuda con una nueva reserva, visita itwhip.com o habla con Cho-ay, nuestro asistente de inteligencia artificial. Para dejar un mensaje de voz, oprima 1. Para volver al menu principal, oprima 2.',
-    'Pour de l\'aide avec une nouvelle réservation, visitez itwhip.com ou parlez avec Cho-ay, notre assistant I.A. Pour laisser un message vocal, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
+    'For help with a new booking, visit itwhip.com or chat with Cowi, our A.I. assistant. To leave a voicemail for our team, press 1. To return to the main menu, press 2.',
+    'Para ayuda con una nueva reserva, visita itwhip.com o habla con Cowi, nuestro asistente de inteligencia artificial. Para dejar un mensaje de voz, oprima 1. Para volver al menu principal, oprima 2.',
+    'Pour de l\'aide avec une nouvelle réservation, visitez itwhip.com ou parlez avec Cowi, notre assistant I.A. Pour laisser un message vocal, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
   ), lang)
 
-  twiml.redirect(menuUrl('main', lang))
+  // No input → goodbye
+  goodbye(twiml, lang)
   return twiml.toString()
 }
 
-// ─── 4.0: Insurance & Claims Menu ─────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// 5.0: INSURANCE & CLAIMS MENU
+// ════════════════════════════════════════════════════════════════════
+// "Insurance coverage press 1. Report damage press 2. Claim status press 3. Main menu press 4."
 
-export function generateInsuranceMenu(lang: Lang = 'en'): string {
+export function generateInsuranceMenu(lang: Lang = 'en', tries: number = 0): string {
   const twiml = new VoiceResponse()
+
+  if (tries >= MAX_RETRIES) {
+    goodbye(twiml, lang)
+    return twiml.toString()
+  }
 
   const gather = twiml.gather({
     numDigits: 1,
@@ -273,33 +390,39 @@ export function generateInsuranceMenu(lang: Lang = 'en'): string {
     'Pour des questions sur la couverture d\'assurance, appuyez sur 1. Pour signaler des dommages au véhicule, appuyez sur 2. Pour vérifier l\'état d\'une réclamation, appuyez sur 3. Pour revenir au menu principal, appuyez sur 4.'
   ), lang)
 
-  twiml.redirect(menuUrl('main', lang))
+  // No input → repeat with tries+1
+  twiml.redirect(menuUrl('insurance', lang, `&tries=${tries + 1}`))
   return twiml.toString()
 }
 
-// ─── 4.1: Insurance Info ──────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// 5.1: INSURANCE INFO
+// ════════════════════════════════════════════════════════════════════
 
 export function generateInsuranceInfo(lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
 
   const gather = twiml.gather({
     numDigits: 1,
-    action: menuUrl('main', lang),
+    action: menuUrl('customer', lang),
     method: 'POST',
     timeout: GATHER_TIMEOUT,
   })
 
   say(gather, t(lang,
-    'ItWhip offers three tiers of insurance coverage: Basic at 40 percent, Standard at 75 percent, and Premium at 90 percent. For full details, visit itwhip.com slash insurance guide. I\'ve also texted you the link. To return to the main menu, press 1.',
+    'ItWhip offers three tiers of insurance coverage: Basic at 40 percent, Standard at 75 percent, and Premium at 90 percent. For full details, visit itwhip.com slash insurance guide. We\'ve also texted you the link. To return to the main menu, press 1.',
     'ItWhip ofrece tres niveles de cobertura de seguro: Basico al 40 por ciento, Estandar al 75 por ciento y Premium al 90 por ciento. Para detalles completos, visita itwhip.com slash insurance guide. Tambien te enviamos el enlace por mensaje de texto. Para volver al menu principal, oprima 1.',
     'ItWhip propose trois niveaux de couverture d\'assurance: Basique à 40 pour cent, Standard à 75 pour cent et Premium à 90 pour cent. Pour tous les détails, visitez itwhip.com slash insurance guide. Nous vous avons aussi envoyé le lien par SMS. Pour revenir au menu principal, appuyez sur 1.'
   ), lang)
 
-  twiml.redirect(menuUrl('main', lang))
+  // No input → goodbye
+  goodbye(twiml, lang)
   return twiml.toString()
 }
 
-// ─── 4.2: Report Damage ──────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// 5.2: REPORT DAMAGE
+// ════════════════════════════════════════════════════════════════════
 
 export function generateReportDamage(lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
@@ -312,16 +435,19 @@ export function generateReportDamage(lang: Lang = 'en'): string {
   })
 
   say(gather, t(lang,
-    'To report vehicle damage, please use your ItWhip account online or chat with Cho-ay at itwhip.com. This allows you to upload photos and documentation. I\'ve texted you the link. To leave a voicemail about damage instead, press 1. To return to the main menu, press 2.',
-    'Para reportar danos al vehiculo, por favor usa tu cuenta de ItWhip en linea o habla con Cho-ay en itwhip.com. Esto te permite subir fotos y documentacion. Te enviamos el enlace por mensaje de texto. Para dejar un mensaje de voz sobre el dano, oprima 1. Para volver al menu principal, oprima 2.',
-    'Pour signaler des dommages au véhicule, veuillez utiliser votre compte ItWhip en ligne ou parler avec Cho-ay sur itwhip.com. Cela vous permet de télécharger des photos et documents. Nous vous avons envoyé le lien par SMS. Pour laisser un message vocal, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
+    'To report vehicle damage, please use your ItWhip account online or chat with Cowi at itwhip.com. This allows you to upload photos and documentation. We\'ve texted you the link. To leave a voicemail about damage instead, press 1. To return to the main menu, press 2.',
+    'Para reportar danos al vehiculo, por favor usa tu cuenta de ItWhip en linea o habla con Cowi en itwhip.com. Esto te permite subir fotos y documentacion. Te enviamos el enlace por mensaje de texto. Para dejar un mensaje de voz sobre el dano, oprima 1. Para volver al menu principal, oprima 2.',
+    'Pour signaler des dommages au véhicule, veuillez utiliser votre compte ItWhip en ligne ou parler avec Cowi sur itwhip.com. Cela vous permet de télécharger des photos et documents. Nous vous avons envoyé le lien par SMS. Pour laisser un message vocal, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
   ), lang)
 
-  twiml.redirect(menuUrl('main', lang))
+  // No input → goodbye
+  goodbye(twiml, lang)
   return twiml.toString()
 }
 
-// ─── 5.0: Speak With Someone / Voicemail ──────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// 6.0: SPEAK WITH SOMEONE / VOICEMAIL
+// ════════════════════════════════════════════════════════════════════
 
 export function generateSpeakWithSomeone(lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
@@ -334,6 +460,7 @@ export function generateSpeakWithSomeone(lang: Lang = 'en'): string {
     ), lang)
     const dial = twiml.dial({ callerId: TWILIO_LOCAL_NUMBER, timeout: 30 })
     dial.number(process.env.SUPPORT_PHONE_NUMBER || '+16026092577')
+    // If no answer → voicemail
     twiml.redirect(menuUrl('voicemail-prompt', lang))
   } else {
     twiml.redirect(menuUrl('voicemail-prompt', lang))
@@ -342,13 +469,17 @@ export function generateSpeakWithSomeone(lang: Lang = 'en'): string {
   return twiml.toString()
 }
 
+// ════════════════════════════════════════════════════════════════════
+// 6.1: VOICEMAIL PROMPT
+// ════════════════════════════════════════════════════════════════════
+
 export function generateVoicemailPrompt(lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
 
   say(twiml, t(lang,
-    'Our office is currently closed. Our hours are Monday through Friday, 8 A.M. to 8 P.M. Arizona time. Please leave your name, phone number, and a brief message after the beep, and we\'ll return your call on the next business day. For instant help anytime, visit itwhip.com slash Cho-ay.',
-    'Nuestra oficina esta cerrada. Nuestro horario es de lunes a viernes, de 8 de la manana a 8 de la noche, hora de Arizona. Por favor deja tu nombre, numero de telefono y un breve mensaje despues del tono, y te llamaremos el siguiente dia habil. Para ayuda instantanea, visita itwhip.com slash Cho-ay.',
-    'Notre bureau est actuellement fermé. Nos heures sont du lundi au vendredi, de 8 heures à 20 heures, heure de l\'Arizona. Veuillez laisser votre nom, numéro de téléphone et un bref message après le bip, et nous vous rappellerons le prochain jour ouvrable. Pour de l\'aide instantanée, visitez itwhip.com slash Cho-ay.'
+    'Our office is currently closed. Our hours are Monday through Friday, 8 A.M. to 8 P.M. Arizona time. Please leave your name, phone number, and a brief message after the beep, and we\'ll return your call on the next business day. For instant help anytime, visit itwhip.com and chat with Cowi.',
+    'Nuestra oficina esta cerrada. Nuestro horario es de lunes a viernes, de 8 de la manana a 8 de la noche, hora de Arizona. Por favor deja tu nombre, numero de telefono y un breve mensaje despues del tono, y te llamaremos el siguiente dia habil. Para ayuda instantanea, visita itwhip.com y habla con Cowi.',
+    'Notre bureau est actuellement fermé. Nos heures sont du lundi au vendredi, de 8 heures à 20 heures, heure de l\'Arizona. Veuillez laisser votre nom, numéro de téléphone et un bref message après le bip, et nous vous rappellerons le prochain jour ouvrable. Pour de l\'aide instantanée, visitez itwhip.com et parlez avec Cowi.'
   ), lang)
 
   twiml.record({
@@ -371,10 +502,23 @@ export function generateVoicemailPrompt(lang: Lang = 'en'): string {
   return twiml.toString()
 }
 
-// ─── 6.0: Emergency Flow ──────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// 7.0: EMERGENCY FLOW (active trip → press 1)
+// ════════════════════════════════════════════════════════════════════
 
-export function generateEmergencyMenu(lang: Lang = 'en'): string {
+export function generateEmergencyMenu(lang: Lang = 'en', tries: number = 0): string {
   const twiml = new VoiceResponse()
+
+  // Emergency callers → voicemail instead of hangup (they need help)
+  if (tries >= MAX_RETRIES) {
+    say(twiml, t(lang,
+      'Let me connect you to our voicemail so we can help you.',
+      'Permiteme conectarte con nuestro buzon de voz para que podamos ayudarte.',
+      'Permettez-moi de vous connecter à notre messagerie vocale pour que nous puissions vous aider.'
+    ), lang)
+    twiml.redirect(menuUrl('voicemail-prompt', lang))
+    return twiml.toString()
+  }
 
   const gather = twiml.gather({
     numDigits: 1,
@@ -389,9 +533,14 @@ export function generateEmergencyMenu(lang: Lang = 'en'): string {
     'Si vous êtes en danger immédiat, veuillez raccrocher et appeler le 9 1 1. Pour l\'assistance routière ou un problème de véhicule, appuyez sur 1. Pour parler à quelqu\'un immédiatement, appuyez sur 2.'
   ), lang)
 
-  twiml.redirect(menuUrl('main', lang))
+  // No input → repeat with tries+1
+  twiml.redirect(menuUrl('emergency', lang, `&tries=${tries + 1}`))
   return twiml.toString()
 }
+
+// ════════════════════════════════════════════════════════════════════
+// 7.1: ROADSIDE INFO
+// ════════════════════════════════════════════════════════════════════
 
 export function generateRoadsideInfo(lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
@@ -404,40 +553,21 @@ export function generateRoadsideInfo(lang: Lang = 'en'): string {
   })
 
   say(gather, t(lang,
-    'I\'ve texted you our roadside assistance guide with emergency steps. A team member will also be notified. To leave a voicemail with details, press 1. To return to the main menu, press 2.',
+    'We\'ve texted you our roadside assistance guide with emergency steps. A team member will also be notified. To leave a voicemail with details, press 1. To return to the main menu, press 2.',
     'Te enviamos por mensaje de texto nuestra guia de asistencia en carretera con los pasos de emergencia. Un miembro del equipo tambien sera notificado. Para dejar un mensaje de voz con detalles, oprima 1. Para volver al menu principal, oprima 2.',
     'Nous vous avons envoyé par SMS notre guide d\'assistance routière avec les étapes d\'urgence. Un membre de l\'équipe sera également notifié. Pour laisser un message vocal avec les détails, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
   ), lang)
 
-  twiml.redirect(menuUrl('main', lang))
+  // No input → goodbye
+  goodbye(twiml, lang)
   return twiml.toString()
 }
 
-// ─── 9.0: No Input / Invalid ──────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// 9.0: INVALID INPUT
+// ════════════════════════════════════════════════════════════════════
 
-export function generateNoInput(retries: number, lang: Lang = 'en'): string {
-  const twiml = new VoiceResponse()
-
-  if (retries >= 3) {
-    say(twiml, t(lang,
-      'Let me connect you to our voicemail so we can help you.',
-      'Permiteme conectarte con nuestro buzon de voz para que podamos ayudarte.',
-      'Permettez-moi de vous connecter à notre messagerie vocale pour que nous puissions vous aider.'
-    ), lang)
-    twiml.redirect(menuUrl('voicemail-prompt', lang))
-  } else {
-    say(twiml, t(lang,
-      'I didn\'t receive your selection. Let\'s try again.',
-      'No recibi tu seleccion. Intentemos de nuevo.',
-      'Je n\'ai pas reçu votre sélection. Réessayons.'
-    ), lang)
-    twiml.redirect(menuUrl('main', lang))
-  }
-
-  return twiml.toString()
-}
-
-export function generateInvalidInput(lang: Lang = 'en'): string {
+export function generateInvalidInput(lang: Lang = 'en', returnMenu: string = 'visitor'): string {
   const twiml = new VoiceResponse()
 
   say(twiml, t(lang,
@@ -446,11 +576,13 @@ export function generateInvalidInput(lang: Lang = 'en'): string {
     'Ce n\'est pas une option valide. Veuillez réessayer.'
   ), lang)
 
-  twiml.redirect(menuUrl('main', lang))
+  twiml.redirect(menuUrl(returnMenu, lang))
   return twiml.toString()
 }
 
-// ─── Business Hours Check ──────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// BUSINESS HOURS CHECK
+// ════════════════════════════════════════════════════════════════════
 
 export function isBusinessHours(): boolean {
   // Arizona doesn't observe DST — always UTC-7 (MST)

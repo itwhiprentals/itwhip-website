@@ -1,13 +1,15 @@
 // app/api/webhooks/twilio/voice/menu/route.ts
-// DTMF handler — routes Press 1/2/3/4 from main menu and submenus
-// All menu navigation happens here via ?lang=&menu= query params
+// DTMF handler — routes key presses from all IVR menus
+// All menu navigation via ?menu=&lang=&tries= query params
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyTwilioWebhook, parseTwilioBody } from '@/app/lib/twilio/verify-signature'
 import { lookupBookingByCode } from '@/app/lib/twilio/caller-lookup'
 import {
-  generateMainMenu,
+  generateVisitorMenu,
+  generateAboutItWhip,
+  generateCustomerMenu,
   generateBookingCodeEntry,
   generateBookingFound,
   generateBookingNotFound,
@@ -21,16 +23,25 @@ import {
   generateRoadsideInfo,
   generateConnectToHost,
   generatePickupDetails,
-  generateNoInput,
   generateInvalidInput,
 } from '@/app/lib/twilio/twiml'
+
+function xml(twiml: string): NextResponse {
+  return new NextResponse(twiml, {
+    status: 200,
+    headers: { 'Content-Type': 'text/xml' },
+  })
+}
 
 export async function POST(request: NextRequest) {
   try {
     const params = await parseTwilioBody(request)
     const signature = request.headers.get('x-twilio-signature')
 
-    if (!verifyTwilioWebhook('/api/webhooks/twilio/voice/menu', params, signature)) {
+    // Must include query params — Twilio signs against the full URL
+    const reqUrl = new URL(request.url)
+    const fullPath = reqUrl.pathname + reqUrl.search
+    if (!verifyTwilioWebhook(fullPath, params, signature)) {
       console.error('[IVR Menu] Invalid Twilio signature')
       return new NextResponse('Forbidden', { status: 403 })
     }
@@ -38,11 +49,12 @@ export async function POST(request: NextRequest) {
     const { Digits: digits, CallSid: callSid } = params
     const url = new URL(request.url)
     const lang = (url.searchParams.get('lang') || 'en') as 'en' | 'es' | 'fr'
-    const menu = url.searchParams.get('menu') || 'main'
+    const menu = url.searchParams.get('menu') || 'visitor'
+    const tries = parseInt(url.searchParams.get('tries') || '0', 10)
 
     // Update call log with menu path
     if (callSid) {
-      await prisma.callLog.updateMany({
+      prisma.callLog.updateMany({
         where: { callSid },
         data: {
           menuPath: `${menu}>${digits || 'none'}`,
@@ -54,8 +66,39 @@ export async function POST(request: NextRequest) {
     let twiml: string
 
     switch (menu) {
-      // ─── Main Menu ──────────────────────────────────────
-      case 'main':
+      // ─── Visitor Main Menu ──────────────────────────────
+      case 'visitor':
+        switch (digits) {
+          case '1': // Learn about ItWhip
+            twiml = generateAboutItWhip(lang)
+            break
+          case '2': // I have a booking code
+            twiml = generateBookingCodeEntry(lang)
+            break
+          case '3': // Speak with someone
+            twiml = generateSpeakWithSomeone(lang)
+            break
+          default:
+            twiml = generateVisitorMenu(lang, tries)
+        }
+        break
+
+      // ─── About ItWhip Actions ───────────────────────────
+      case 'about-action':
+        switch (digits) {
+          case '1': // Speak with someone
+            twiml = generateSpeakWithSomeone(lang)
+            break
+          case '2': // Hear again
+            twiml = generateAboutItWhip(lang)
+            break
+          default:
+            twiml = generateVisitorMenu(lang)
+        }
+        break
+
+      // ─── Customer Main Menu ─────────────────────────────
+      case 'customer':
         switch (digits) {
           case '1': // Booking support
             twiml = generateBookingCodeEntry(lang)
@@ -67,7 +110,7 @@ export async function POST(request: NextRequest) {
             twiml = generateSpeakWithSomeone(lang)
             break
           default:
-            twiml = generateInvalidInput(lang)
+            twiml = generateCustomerMenu(lang, tries)
         }
         break
 
@@ -77,25 +120,25 @@ export async function POST(request: NextRequest) {
           case '1': // Emergency
             twiml = generateEmergencyMenu(lang)
             break
-          case '2': // Standard menu
-            twiml = generateMainMenu(lang)
+          case '2': // Standard customer menu
+            twiml = generateCustomerMenu(lang)
             break
           default:
-            twiml = generateInvalidInput(lang)
+            twiml = generateInvalidInput(lang, 'customer')
         }
         break
 
       // ─── Emergency Menu ─────────────────────────────────
       case 'emergency':
         switch (digits) {
-          case '1': // Roadside assistance info
+          case '1': // Roadside assistance
             twiml = generateRoadsideInfo(lang)
             break
           case '2': // Speak with someone immediately
             twiml = generateSpeakWithSomeone(lang)
             break
           default:
-            twiml = generateInvalidInput(lang)
+            twiml = generateEmergencyMenu(lang, tries)
         }
         break
 
@@ -157,10 +200,10 @@ export async function POST(request: NextRequest) {
             break
           }
           case '3': // Back to main menu
-            twiml = generateMainMenu(lang)
+            twiml = generateCustomerMenu(lang)
             break
           default:
-            twiml = generateInvalidInput(lang)
+            twiml = generateInvalidInput(lang, 'customer')
         }
         break
       }
@@ -174,28 +217,28 @@ export async function POST(request: NextRequest) {
           case '2': // Report damage
             twiml = generateReportDamage(lang)
             break
-          case '3': // Check claim status → link to website
+          case '3': // Check claim status
             twiml = generateReportDamage(lang)
             break
           case '4': // Back to main
-            twiml = generateMainMenu(lang)
+            twiml = generateCustomerMenu(lang)
             break
           default:
-            twiml = generateInvalidInput(lang)
+            twiml = generateInsuranceMenu(lang, tries)
         }
         break
 
-      // ─── Booking Not Found Actions ────────────────────────
+      // ─── Booking Not Found Actions ──────────────────────
       case 'booking-not-found':
         switch (digits) {
           case '1': // Try again
             twiml = generateBookingCodeEntry(lang)
             break
           case '2': // Main menu
-            twiml = generateMainMenu(lang)
+            twiml = generateVisitorMenu(lang)
             break
           default:
-            twiml = generateMainMenu(lang)
+            twiml = generateVisitorMenu(lang)
         }
         break
 
@@ -209,25 +252,18 @@ export async function POST(request: NextRequest) {
         if (digits === '1') {
           twiml = generateVoicemailPrompt(lang)
         } else {
-          twiml = generateMainMenu(lang)
+          twiml = generateVisitorMenu(lang)
         }
         break
       }
 
       default:
-        twiml = generateMainMenu(lang)
+        twiml = generateVisitorMenu(lang)
     }
 
-    return new NextResponse(twiml, {
-      status: 200,
-      headers: { 'Content-Type': 'text/xml' },
-    })
+    return xml(twiml)
   } catch (error) {
     console.error('[IVR Menu] Error:', error)
-    const twiml = generateMainMenu('en')
-    return new NextResponse(twiml, {
-      status: 200,
-      headers: { 'Content-Type': 'text/xml' },
-    })
+    return xml(generateVisitorMenu('en'))
   }
 }

@@ -14,9 +14,9 @@ const VOICES: Record<string, { voice: string; language: string }> = {
 }
 
 const THANKS: Record<string, string> = {
-  en: 'Thank you. Your message has been recorded. For immediate help, visit itwhip.com and chat with Choé, our AI booking assistant. Goodbye.',
-  es: 'Gracias. Su mensaje ha sido grabado. Para ayuda inmediata, visite itwhip.com y hable con Choé, nuestra asistente de reservas. Adiós.',
-  fr: 'Merci. Votre message a été enregistré. Pour une aide immédiate, visitez itwhip.com et parlez avec Choé, notre assistant de réservation. Au revoir.',
+  en: 'Thank you. Your message has been recorded. For immediate help, visit itwhip.com and chat with Cowi, our AI booking assistant. Goodbye.',
+  es: 'Gracias. Su mensaje ha sido grabado. Para ayuda inmediata, visite itwhip.com y hable con Cowi, nuestra asistente de reservas. Adiós.',
+  fr: 'Merci. Votre message a été enregistré. Pour une aide immédiate, visitez itwhip.com et parlez avec Cowi, notre assistant de réservation. Au revoir.',
 }
 
 export async function POST(request: NextRequest) {
@@ -24,7 +24,10 @@ export async function POST(request: NextRequest) {
     const params = await parseTwilioBody(request)
     const signature = request.headers.get('x-twilio-signature')
 
-    if (!verifyTwilioWebhook('/api/webhooks/twilio/voice/voicemail', params, signature)) {
+    // Must include query params — Twilio signs against the full URL
+    const reqUrl = new URL(request.url)
+    const fullPath = reqUrl.pathname + reqUrl.search
+    if (!verifyTwilioWebhook(fullPath, params, signature)) {
       console.error('[Voicemail] Invalid Twilio signature')
       return new NextResponse('Forbidden', { status: 403 })
     }
