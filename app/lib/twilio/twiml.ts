@@ -43,6 +43,19 @@ function t(lang: Lang, en: string, es: string, fr: string): string {
   return lang === 'es' ? es : lang === 'fr' ? fr : en
 }
 
+// ─── SMS Sent Confirmation (opt-in flow) ─────────────────────────
+
+export function generateSmsSent(lang: Lang = 'en', returnMenu: string = 'visitor'): string {
+  const twiml = new VoiceResponse()
+  say(twiml, t(lang,
+    'Done! We\'ve sent you a text message.',
+    'Listo! Te hemos enviado un mensaje de texto.',
+    'C\'est fait! Nous vous avons envoyé un SMS.'
+  ), lang)
+  twiml.redirect(menuUrl(returnMenu, lang))
+  return twiml.toString()
+}
+
 // ─── Goodbye + Hangup (shared) ────────────────────────────────────
 
 function goodbye(twiml: twilio.twiml.VoiceResponse, lang: Lang) {
@@ -158,9 +171,9 @@ export function generateAboutItWhip(lang: Lang = 'en'): string {
   })
 
   say(gather, t(lang,
-    'ItWhip connects you with local car owners in Phoenix for affordable, flexible rentals. Browse cars, compare prices, and book instantly at itwhip.com. Or chat with coyee, our A.I. assistant, anytime for help finding the perfect car. We\'ve texted you the link. To speak with someone, press 1. To hear this again, press 2.',
-    'ItWhip te conecta con dueños de autos locales en Phoenix para rentas accesibles y flexibles. Busca autos, compara precios y reserva al instante en itwhip.com. O habla con coyee, nuestro asistente de inteligencia artificial, para ayuda encontrando el auto perfecto. Te enviamos el enlace por mensaje de texto. Para hablar con alguien, oprima 1. Para escuchar esto de nuevo, oprima 2.',
-    'ItWhip vous connecte avec des propriétaires de voitures locaux à Phoenix pour des locations abordables et flexibles. Parcourez les voitures, comparez les prix et réservez instantanément sur itwhip.com. Ou parlez avec coyee, notre assistant I.A., pour trouver la voiture parfaite. Nous vous avons envoyé le lien par SMS. Pour parler à quelqu\'un, appuyez sur 1. Pour réécouter, appuyez sur 2.'
+    'ItWhip connects you with local car owners in Phoenix for affordable, flexible rentals. Browse cars, compare prices, and book instantly at itwhip.com. Or chat with coyee, our A.I. assistant, anytime for help finding the perfect car. To receive a text with links, press 1. To speak with someone, press 2. To hear this again, press 3.',
+    'ItWhip te conecta con dueños de autos locales en Phoenix para rentas accesibles y flexibles. Busca autos, compara precios y reserva al instante en itwhip.com. O habla con coyee, nuestro asistente de inteligencia artificial, para ayuda encontrando el auto perfecto. Para recibir un mensaje de texto con los enlaces, oprima 1. Para hablar con alguien, oprima 2. Para escuchar esto de nuevo, oprima 3.',
+    'ItWhip vous connecte avec des propriétaires de voitures locaux à Phoenix pour des locations abordables et flexibles. Parcourez les voitures, comparez les prix et réservez instantanément sur itwhip.com. Ou parlez avec coyee, notre assistant I.A., pour trouver la voiture parfaite. Pour recevoir un SMS avec les liens, appuyez sur 1. Pour parler à quelqu\'un, appuyez sur 2. Pour réécouter, appuyez sur 3.'
   ), lang)
 
   // No input → goodbye
@@ -271,15 +284,12 @@ export function generateBookingFound(booking: {
 export function generateConnectToHost(hostPhone: string, lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
 
-  // Promo message while connecting
+  // Promo message while connecting (caller hears this, then standard ringing)
   say(twiml, t(lang,
     'Connecting you to your host now. Quick tip: you can also message your host anytime through your ItWhip trip page at itwhip.com.',
     'Conectandote con tu anfitrion. Consejo: tambien puedes enviar mensajes a tu anfitrion en cualquier momento a traves de tu pagina de viaje en itwhip.com.',
     'Nous vous connectons à votre hôte. Conseil: vous pouvez aussi envoyer des messages à votre hôte via votre page de trajet sur itwhip.com.'
   ), lang)
-
-  // Hold music while phone rings
-  twiml.play('http://twimlets.com/holdmusic?Bucket=com.twilio.music.ambient')
 
   const dial = twiml.dial({
     callerId: TWILIO_LOCAL_NUMBER,
@@ -300,20 +310,21 @@ export function generatePickupDetails(booking: {
   address: string
   date: string
   time: string
+  bookingCode?: string
 }, lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
 
   const gather = twiml.gather({
     numDigits: 1,
-    action: menuUrl('customer', lang),
+    action: menuUrl('pickup-action', lang, booking.bookingCode ? `&code=${booking.bookingCode}` : ''),
     method: 'POST',
     timeout: GATHER_TIMEOUT,
   })
 
   say(gather, t(lang,
-    `Your pickup is at ${booking.address} on ${booking.date} at ${booking.time}. We've also texted you these details. To return to the main menu, press 1.`,
-    `Tu recogida es en ${booking.address} el ${booking.date} a las ${booking.time}. Tambien te enviamos estos detalles por mensaje de texto. Para volver al menu principal, oprima 1.`,
-    `Votre prise en charge est au ${booking.address} le ${booking.date} à ${booking.time}. Nous vous avons aussi envoyé ces détails par SMS. Pour revenir au menu principal, appuyez sur 1.`
+    `Your pickup is at ${booking.address} on ${booking.date} at ${booking.time}. To receive these details by text, press 1. To return to the main menu, press 2.`,
+    `Tu recogida es en ${booking.address} el ${booking.date} a las ${booking.time}. Para recibir estos detalles por mensaje de texto, oprima 1. Para volver al menu principal, oprima 2.`,
+    `Votre prise en charge est au ${booking.address} le ${booking.date} à ${booking.time}. Pour recevoir ces détails par SMS, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.`
   ), lang)
 
   // No input → goodbye
@@ -411,15 +422,15 @@ export function generateInsuranceInfo(lang: Lang = 'en'): string {
 
   const gather = twiml.gather({
     numDigits: 1,
-    action: menuUrl('customer', lang),
+    action: menuUrl('insurance-info-action', lang),
     method: 'POST',
     timeout: GATHER_TIMEOUT,
   })
 
   say(gather, t(lang,
-    'ItWhip offers three tiers of insurance coverage: Basic at 40 percent, Standard at 75 percent, and Premium at 90 percent. For full details, visit itwhip.com slash insurance guide. We\'ve also texted you the link. To return to the main menu, press 1.',
-    'ItWhip ofrece tres niveles de cobertura de seguro: Basico al 40 por ciento, Estandar al 75 por ciento y Premium al 90 por ciento. Para detalles completos, visita itwhip.com slash insurance guide. Tambien te enviamos el enlace por mensaje de texto. Para volver al menu principal, oprima 1.',
-    'ItWhip propose trois niveaux de couverture d\'assurance: Basique à 40 pour cent, Standard à 75 pour cent et Premium à 90 pour cent. Pour tous les détails, visitez itwhip.com slash insurance guide. Nous vous avons aussi envoyé le lien par SMS. Pour revenir au menu principal, appuyez sur 1.'
+    'ItWhip offers three tiers of insurance coverage: Basic at 40 percent, Standard at 75 percent, and Premium at 90 percent. For full details, visit itwhip.com slash insurance guide. To receive a text with this info, press 1. To return to the main menu, press 2.',
+    'ItWhip ofrece tres niveles de cobertura de seguro: Basico al 40 por ciento, Estandar al 75 por ciento y Premium al 90 por ciento. Para detalles completos, visita itwhip.com slash insurance guide. Para recibir un mensaje de texto con esta informacion, oprima 1. Para volver al menu principal, oprima 2.',
+    'ItWhip propose trois niveaux de couverture d\'assurance: Basique à 40 pour cent, Standard à 75 pour cent et Premium à 90 pour cent. Pour tous les détails, visitez itwhip.com slash insurance guide. Pour recevoir un SMS avec ces informations, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
   ), lang)
 
   // No input → goodbye
@@ -436,15 +447,15 @@ export function generateReportDamage(lang: Lang = 'en'): string {
 
   const gather = twiml.gather({
     numDigits: 1,
-    action: menuUrl('speak', lang),
+    action: menuUrl('damage-action', lang),
     method: 'POST',
     timeout: GATHER_TIMEOUT,
   })
 
   say(gather, t(lang,
-    'To report vehicle damage, please use your ItWhip account online or chat with coyee at itwhip.com. This allows you to upload photos and documentation. We\'ve texted you the link. To leave a voicemail about damage instead, press 1. To return to the main menu, press 2.',
-    'Para reportar danos al vehiculo, por favor usa tu cuenta de ItWhip en linea o habla con coyee en itwhip.com. Esto te permite subir fotos y documentacion. Te enviamos el enlace por mensaje de texto. Para dejar un mensaje de voz sobre el dano, oprima 1. Para volver al menu principal, oprima 2.',
-    'Pour signaler des dommages au véhicule, veuillez utiliser votre compte ItWhip en ligne ou parler avec coyee sur itwhip.com. Cela vous permet de télécharger des photos et documents. Nous vous avons envoyé le lien par SMS. Pour laisser un message vocal, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
+    'To report vehicle damage, please use your ItWhip account online or chat with coyee at itwhip.com. This allows you to upload photos and documentation. To receive a text with the link, press 1. To leave a voicemail about damage, press 2. To return to the main menu, press 3.',
+    'Para reportar danos al vehiculo, por favor usa tu cuenta de ItWhip en linea o habla con coyee en itwhip.com. Esto te permite subir fotos y documentacion. Para recibir un mensaje de texto con el enlace, oprima 1. Para dejar un mensaje de voz sobre el dano, oprima 2. Para volver al menu principal, oprima 3.',
+    'Pour signaler des dommages au véhicule, veuillez utiliser votre compte ItWhip en ligne ou parler avec coyee sur itwhip.com. Cela vous permet de télécharger des photos et documents. Pour recevoir un SMS avec le lien, appuyez sur 1. Pour laisser un message vocal, appuyez sur 2. Pour revenir au menu principal, appuyez sur 3.'
   ), lang)
 
   // No input → goodbye
@@ -460,15 +471,12 @@ export function generateSpeakWithSomeone(lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
 
   if (isBusinessHours()) {
-    // Promo message + hold music while connecting
+    // Promo message while connecting (caller hears this, then standard ringing)
     say(twiml, t(lang,
       'Connecting you to our team now. While you wait, did you know ItWhip offers three tiers of insurance coverage? Visit itwhip.com slash insurance guide for details.',
       'Conectandote con nuestro equipo. Mientras esperas, sabias que ItWhip ofrece tres niveles de cobertura de seguro? Visita itwhip.com para detalles.',
       'Nous vous connectons à notre équipe. En attendant, saviez-vous qu\'ItWhip propose trois niveaux de couverture d\'assurance? Visitez itwhip.com pour les détails.'
     ), lang)
-
-    // Hold music while phone rings
-    twiml.play('http://twimlets.com/holdmusic?Bucket=com.twilio.music.ambient')
 
     const dial = twiml.dial({
       callerId: TWILIO_LOCAL_NUMBER,
@@ -562,15 +570,15 @@ export function generateRoadsideInfo(lang: Lang = 'en'): string {
 
   const gather = twiml.gather({
     numDigits: 1,
-    action: menuUrl('speak', lang),
+    action: menuUrl('roadside-action', lang),
     method: 'POST',
     timeout: GATHER_TIMEOUT,
   })
 
   say(gather, t(lang,
-    'We\'ve texted you our roadside assistance guide with emergency steps. A team member will also be notified. To leave a voicemail with details, press 1. To return to the main menu, press 2.',
-    'Te enviamos por mensaje de texto nuestra guia de asistencia en carretera con los pasos de emergencia. Un miembro del equipo tambien sera notificado. Para dejar un mensaje de voz con detalles, oprima 1. Para volver al menu principal, oprima 2.',
-    'Nous vous avons envoyé par SMS notre guide d\'assistance routière avec les étapes d\'urgence. Un membre de l\'équipe sera également notifié. Pour laisser un message vocal avec les détails, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
+    'A team member will be notified. To receive our roadside assistance guide by text, press 1. To leave a voicemail with details, press 2. To return to the main menu, press 3.',
+    'Un miembro del equipo sera notificado. Para recibir nuestra guia de asistencia en carretera por mensaje de texto, oprima 1. Para dejar un mensaje de voz con detalles, oprima 2. Para volver al menu principal, oprima 3.',
+    'Un membre de l\'équipe sera notifié. Pour recevoir notre guide d\'assistance routière par SMS, appuyez sur 1. Pour laisser un message vocal avec les détails, appuyez sur 2. Pour revenir au menu principal, appuyez sur 3.'
   ), lang)
 
   // No input → goodbye
