@@ -2,6 +2,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import Image from 'next/image'
 import {
   IoStar,
@@ -62,6 +63,7 @@ function getDisplayName(name: string | null): string {
 }
 
 export default function HostCard({ host }: HostCardProps) {
+  const t = useTranslations('HostCard')
   const [isSheetOpen, setIsSheetOpen] = useState(false)
 
   const displayName = getDisplayName(host.name)
@@ -119,7 +121,7 @@ export default function HostCard({ host }: HostCardProps) {
                   </span>
                 </div>
                 <span className="text-xs text-gray-500">
-                  ({host.totalTrips} trips)
+                  ({t('tripCount', { count: host.totalTrips })})
                 </span>
               </div>
             </div>
@@ -134,12 +136,12 @@ export default function HostCard({ host }: HostCardProps) {
 
           {/* Stats */}
           <div className="mt-4 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-            <span>{host.totalTrips} trips</span>
+            <span>{t('tripCount', { count: host.totalTrips })}</span>
             {host.responseRate && (
-              <span>{Math.round(host.responseRate)}% response rate</span>
+              <span>{t('responseRate', { rate: Math.round(host.responseRate) })}</span>
             )}
             {host.joinedAt && (
-              <span>Since {new Date(host.joinedAt).getFullYear()}</span>
+              <span>{t('since', { year: new Date(host.joinedAt).getFullYear() })}</span>
             )}
           </div>
 
@@ -147,17 +149,17 @@ export default function HostCard({ host }: HostCardProps) {
           <div className="mt-4 flex flex-wrap gap-2">
             {host.rating && host.rating >= 4.9 && (
               <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-medium rounded">
-                Top Rated
+                {t('topRated')}
               </span>
             )}
             {host.isVerified && (
               <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-medium rounded">
-                Verified
+                {t('verified')}
               </span>
             )}
             {(host.responseRate ?? 0) >= 90 && (
               <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">
-                Fast Responder
+                {t('fastResponder')}
               </span>
             )}
           </div>

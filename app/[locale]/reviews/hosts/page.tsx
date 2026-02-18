@@ -23,16 +23,18 @@ import HostCard from './HostCard'
 // Rating Breakdown Component - Compact
 function RatingBreakdown({
   distribution,
-  total
+  total,
+  title
 }: {
   distribution: { rating: number; _count: { rating: number } }[]
   total: number
+  title: string
 }) {
   const ratings = [5, 4, 3, 2, 1]
 
   return (
     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 space-y-2">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Rating Breakdown</h3>
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">{title}</h3>
       {ratings.map(star => {
         const count = distribution.find(d => d.rating === star)?._count?.rating || 0
         const percentage = total > 0 ? Math.round((count / total) * 100) : 0
@@ -100,6 +102,7 @@ interface PageProps {
 }
 
 export default async function HostReviewsPage({ searchParams }: PageProps) {
+  const t = await getTranslations('HostReviews')
   const params = await searchParams
   const sortBy = params.sort || 'rating'
 
@@ -220,15 +223,15 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
             <div className="text-center mb-6">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-100 dark:bg-purple-900/30 rounded-full text-purple-700 dark:text-purple-400 text-xs font-medium mb-3">
                 <IoPersonOutline className="w-3.5 h-3.5" />
-                Verified Host Reviews
+                {t('verifiedHostReviews')}
               </div>
 
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2">
-                {totalHosts}+ Top-Rated Hosts in Phoenix
+                {t('heroTitle', { count: totalHosts })}
               </h1>
 
               <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
-                Meet our verified hosts with excellent reviews, responsive communication, and well-maintained vehicles.
+                {t('heroDescription')}
               </p>
             </div>
 
@@ -236,30 +239,30 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-6">
               <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
                 <div className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400">{avgRating}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Average Rating</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{t('averageRating')}</div>
               </div>
               <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
                 <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{reviewCount.toLocaleString()}+</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Host Reviews</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{t('hostReviewsStat')}</div>
               </div>
               <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
                 <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{totalHosts}+</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Verified Hosts</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{t('verifiedHosts')}</div>
               </div>
               <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
                 <div className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">{totalTrips.toLocaleString()}+</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Trips Completed</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{t('tripsCompleted')}</div>
               </div>
             </div>
 
             {/* Rating Breakdown - Compact */}
             <div className="max-w-md mx-auto mb-6">
-              <RatingBreakdown distribution={ratingDistribution} total={reviewCount} />
+              <RatingBreakdown distribution={ratingDistribution} total={reviewCount} title={t('ratingBreakdown')} />
             </div>
 
             {/* Google Reviews Badge */}
             <div className="text-center mb-4">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">See what people are saying about us</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{t('googleSeeWhat')}</p>
               <a
                 href="https://www.google.com/search?q=ItWhip+Phoenix+AZ"
                 target="_blank"
@@ -281,7 +284,7 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
                       ))}
                     </div>
                   </div>
-                  <span className="text-[10px] text-gray-500 dark:text-zinc-400">6 Google Reviews</span>
+                  <span className="text-[10px] text-gray-500 dark:text-zinc-400">{t('googleReviewCount')}</span>
                 </div>
                 <IoOpenOutline className="w-3.5 h-3.5 text-gray-400 dark:text-zinc-500" />
               </a>
@@ -292,9 +295,9 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
               <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3 flex items-start gap-2">
                 <IoShieldCheckmarkOutline className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">Verified Hosts</p>
+                  <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">{t('verifiedNoticeTitle')}</p>
                   <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-0.5">
-                    All hosts complete background checks and identity verification.
+                    {t('verifiedNoticeDesc')}
                   </p>
                 </div>
               </div>
@@ -309,16 +312,16 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
               <li className="flex items-center gap-1.5">
                 <Link href="/" className="hover:text-amber-600 flex items-center gap-1">
                   <IoHomeOutline className="w-3.5 h-3.5" />
-                  Home
+                  {t('breadcrumbHome')}
                 </Link>
                 <IoChevronForwardOutline className="w-2.5 h-2.5" />
               </li>
               <li className="flex items-center gap-1.5">
-                <Link href="/reviews" className="hover:text-amber-600">Reviews</Link>
+                <Link href="/reviews" className="hover:text-amber-600">{t('breadcrumbReviews')}</Link>
                 <IoChevronForwardOutline className="w-2.5 h-2.5" />
               </li>
               <li className="text-gray-800 dark:text-gray-200 font-medium">
-                Hosts
+                {t('breadcrumbHosts')}
               </li>
             </ol>
           </nav>
@@ -332,31 +335,31 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
                 href="/reviews"
                 className="px-4 py-3 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
-                All Reviews
+                {t('tabAllReviews')}
               </Link>
               <Link
                 href="/reviews/hosts"
                 className="px-4 py-3 text-purple-600 border-b-2 border-purple-600 font-medium"
               >
-                Host Reviews ({hosts.length})
+                {t('tabHostReviews', { count: hosts.length })}
               </Link>
               <Link
                 href="/reviews/cars"
                 className="px-4 py-3 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
-                Car Reviews
+                {t('tabCarReviews')}
               </Link>
             </div>
 
             {/* Sort Bar */}
             <div className="flex flex-wrap items-center gap-3 mb-8 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Sort by:</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">{t('sortBy')}</span>
               <div className="flex gap-1 flex-wrap">
                 {[
-                  { value: 'rating', label: 'Highest Rated' },
-                  { value: 'trips', label: 'Most Trips' },
-                  { value: 'response', label: 'Best Response' },
-                  { value: 'newest', label: 'Newest' },
+                  { value: 'rating', label: t('sortHighestRated') },
+                  { value: 'trips', label: t('sortMostTrips') },
+                  { value: 'response', label: t('sortBestResponse') },
+                  { value: 'newest', label: t('sortNewest') },
                 ].map((option) => (
                   <Link
                     key={option.value}
@@ -376,7 +379,7 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
                   href="/reviews/hosts"
                   className="ml-auto text-sm text-purple-600 hover:text-purple-700 dark:hover:text-purple-500"
                 >
-                  Clear
+                  {t('clear')}
                 </Link>
               )}
             </div>
@@ -387,29 +390,29 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
         <section className="py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 text-center">
-              Why Our Hosts Stand Out
+              {t('whyHostsTitle')}
             </h2>
             <div className="grid md:grid-cols-4 gap-6">
               {[
                 {
                   icon: IoShieldCheckmarkOutline,
-                  title: 'Verified Identity',
-                  description: 'All hosts complete background checks and identity verification.'
+                  title: t('feature1Title'),
+                  description: t('feature1Desc')
                 },
                 {
                   icon: IoCheckmarkCircleOutline,
-                  title: 'Quality Standards',
-                  description: 'Vehicles meet strict cleanliness and maintenance requirements.'
+                  title: t('feature2Title'),
+                  description: t('feature2Desc')
                 },
                 {
                   icon: IoStar,
-                  title: 'Excellent Reviews',
-                  description: 'Our featured hosts maintain 4.5+ star ratings from guests.'
+                  title: t('feature3Title'),
+                  description: t('feature3Desc')
                 },
                 {
                   icon: IoCarOutline,
-                  title: 'Well-Maintained Cars',
-                  description: 'Regular inspections ensure vehicles are safe and reliable.'
+                  title: t('feature4Title'),
+                  description: t('feature4Desc')
                 }
               ].map((item, i) => (
                 <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 text-center">
@@ -428,7 +431,7 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
         <section className="py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              Featured Hosts
+              {t('featuredHosts')}
             </h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {hosts.map((host) => (
@@ -440,10 +443,10 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
               <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg">
                 <IoPersonOutline className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  No hosts found
+                  {t('noHostsFound')}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Check back soon for featured hosts.
+                  {t('noHostsDesc')}
                 </p>
               </div>
             )}
@@ -454,24 +457,24 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
         <section className="py-12 bg-white dark:bg-gray-800">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Want to Become a Host?
+              {t('ctaTitle')}
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Join our community of trusted hosts and start earning money with your vehicle.
+              {t('ctaDescription')}
             </p>
             <div className="flex items-center justify-center gap-4 flex-wrap">
               <Link
                 href="/list-your-car"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition"
               >
-                List Your Car
+                {t('listYourCar')}
                 <IoChevronForwardOutline className="w-5 h-5" />
               </Link>
               <Link
                 href="/reviews"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition"
               >
-                Read All Reviews
+                {t('readAllReviews')}
               </Link>
             </div>
           </div>

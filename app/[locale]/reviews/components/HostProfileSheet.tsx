@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations, useFormatter } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { formatPrivateName, formatReviewerName, isCompanyName } from '@/app/lib/utils/namePrivacy'
 import {
@@ -88,22 +89,24 @@ interface HostProfileSheetProps {
 }
 
 // Helper to get badge info
-function getBadgeInfo(badge: string | null | undefined) {
+function getBadgeInfo(badge: string | null | undefined, t: (key: string) => string) {
   switch (badge) {
     case 'super_host':
-      return { label: 'Superhost', icon: IoTrophyOutline, color: 'text-amber-500' }
+      return { label: t('badgeSuperhost'), icon: IoTrophyOutline, color: 'text-amber-500' }
     case 'elite_host':
-      return { label: 'Elite Host', icon: IoDiamondOutline, color: 'text-purple-500' }
+      return { label: t('badgeEliteHost'), icon: IoDiamondOutline, color: 'text-purple-500' }
     case 'top_rated':
-      return { label: 'Top Rated', icon: IoRibbonOutline, color: 'text-blue-500' }
+      return { label: t('badgeTopRated'), icon: IoRibbonOutline, color: 'text-blue-500' }
     case 'all_star':
-      return { label: 'All-Star', icon: IoStar, color: 'text-amber-500' }
+      return { label: t('badgeAllStar'), icon: IoStar, color: 'text-amber-500' }
     default:
       return null
   }
 }
 
 export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfileSheetProps) {
+  const t = useTranslations('HostProfileSheet')
+  const format = useFormatter()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [hostData, setHostData] = useState<HostData | null>(null)
@@ -164,19 +167,12 @@ export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfil
   const formatMemberSince = (dateString: string | null) => {
     if (!dateString) return 'N/A'
     const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      month: 'long',
-      year: 'numeric'
-    })
+    return format.dateTime(date, { month: 'long', year: 'numeric' })
   }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
+    return format.dateTime(date, { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
   const getRatingValue = (rating: number | { average?: number; count?: number }): number => {
@@ -188,7 +184,7 @@ export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfil
 
   const displayName = hostData ? formatPrivateName(hostData.name, hostData.isCompany) : 'Host'
   const hostInitial = displayName.charAt(0).toUpperCase()
-  const badgeInfo = hostData?.badge ? getBadgeInfo(hostData.badge) : null
+  const badgeInfo = hostData?.badge ? getBadgeInfo(hostData.badge, t) : null
   const rating = hostData ? getRatingValue(hostData.rating) : 0
   const tripCount = hostData?.trips || hostData?.totalTrips || 0
 
@@ -206,7 +202,7 @@ export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfil
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-              Host Profile
+              {t('hostProfile')}
             </h2>
             <button
               onClick={onClose}
@@ -258,7 +254,7 @@ export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfil
                         className="w-3.5 h-3.5 text-green-600"
                         title="Verified Host"
                       />
-                      <span className="text-xs text-green-600">Verified</span>
+                      <span className="text-xs text-green-600">{t('verified')}</span>
                     </div>
                   )}
                 </div>
@@ -276,13 +272,13 @@ export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfil
 
                   <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                     <IoCalendarOutline className="w-3.5 h-3.5" />
-                    <span>Host since {formatMemberSince(hostData.memberSince)}</span>
+                    <span>{t('hostSince', { date: formatMemberSince(hostData.memberSince) })}</span>
                   </div>
 
                   {hostData.stats?.responseTime && (
                     <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                       <IoTimeOutline className="w-3.5 h-3.5" />
-                      <span>Responds within {hostData.stats.responseTime} hour{hostData.stats.responseTime !== 1 ? 's' : ''}</span>
+                      <span>{t('respondsWithin', { count: hostData.stats.responseTime })}</span>
                     </div>
                   )}
                 </div>
@@ -294,7 +290,7 @@ export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfil
                       {tripCount}
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Trips
+                      {t('trips')}
                     </div>
                   </div>
 
@@ -304,7 +300,7 @@ export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfil
                       {rating > 0 && <IoStar className="w-3.5 h-3.5 text-amber-400" />}
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Rating
+                      {t('rating')}
                     </div>
                   </div>
 
@@ -313,7 +309,7 @@ export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfil
                       {hostData.totalCars || hostData.cars?.length || 0}
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Cars
+                      {t('cars')}
                     </div>
                   </div>
                 </div>
@@ -338,7 +334,7 @@ export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfil
                     }`}
                   >
                     <IoCarOutline className="w-3.5 h-3.5 inline mr-1" />
-                    Cars ({hostData.cars?.length || 0})
+                    {t('tabCars', { count: hostData.cars?.length || 0 })}
                   </button>
                   <button
                     onClick={() => setActiveTab('reviews')}
@@ -349,7 +345,7 @@ export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfil
                     }`}
                   >
                     <IoChatbubbleOutline className="w-3.5 h-3.5 inline mr-1" />
-                    Reviews ({hostData.recentReviews?.length || 0})
+                    {t('tabReviews', { count: hostData.recentReviews?.length || 0 })}
                   </button>
                 </div>
 
@@ -379,7 +375,7 @@ export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfil
                               {car.year} {car.make} {car.model}
                             </p>
                             <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                              <span>${car.dailyRate}/day</span>
+                              <span>{t('perDay', { rate: car.dailyRate })}</span>
                               <span>•</span>
                               {car.rating && car.rating > 0 ? (
                                 <span className="flex items-center gap-0.5">
@@ -388,11 +384,11 @@ export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfil
                                 </span>
                               ) : (
                                 <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] rounded-full font-medium">
-                                  New
+                                  {t('new')}
                                 </span>
                               )}
                               <span>•</span>
-                              <span>{car.trips || car.totalTrips || 0} trips</span>
+                              <span>{t('tripCount', { count: car.trips || car.totalTrips || 0 })}</span>
                             </div>
                           </div>
                         </div>
@@ -465,12 +461,12 @@ export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfil
                                 >
                                   {isExpanded ? (
                                     <>
-                                      Show less
+                                      {t('showLess')}
                                       <IoChevronUpOutline className="w-2.5 h-2.5" />
                                     </>
                                   ) : (
                                     <>
-                                      Read more
+                                      {t('readMore')}
                                       <IoChevronDownOutline className="w-2.5 h-2.5" />
                                     </>
                                   )}
@@ -491,19 +487,19 @@ export default function HostProfileSheet({ hostId, isOpen, onClose }: HostProfil
                 {/* Empty states */}
                 {activeTab === 'cars' && (!hostData.cars || hostData.cars.length === 0) && (
                   <div className="text-center py-4 text-xs text-gray-500 dark:text-gray-400">
-                    No cars listed yet
+                    {t('noCarsYet')}
                   </div>
                 )}
 
                 {activeTab === 'reviews' && (!hostData.recentReviews || hostData.recentReviews.length === 0) && (
                   <div className="text-center py-4 text-xs text-gray-500 dark:text-gray-400">
-                    No reviews yet
+                    {t('noReviewsYet')}
                   </div>
                 )}
               </div>
             ) : (
               <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                Unable to load host profile
+                {t('unableToLoad')}
               </div>
             )}
           </div>

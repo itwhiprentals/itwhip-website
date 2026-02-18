@@ -2,6 +2,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations, useFormatter } from 'next-intl'
 import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
 import {
@@ -63,23 +64,16 @@ interface ReviewCardProps {
   review: Review
 }
 
-// Helper to format date
-function formatDate(date: Date | string): string {
-  const d = new Date(date)
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  return `${months[d.getMonth()]} ${d.getFullYear()}`
-}
-
-// Helper to get time ago
-function getTimeAgo(date: Date | string): string {
+// Helper to get time ago (with translations)
+function getTimeAgo(date: Date | string, t: (key: string, values?: Record<string, unknown>) => string): string {
   const d = new Date(date)
   const now = new Date()
   const diffInDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
 
-  if (diffInDays < 7) return 'This week'
-  if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} week${Math.floor(diffInDays / 7) > 1 ? 's' : ''} ago`
-  if (diffInDays < 365) return `${Math.floor(diffInDays / 30)} month${Math.floor(diffInDays / 30) > 1 ? 's' : ''} ago`
-  return `${Math.floor(diffInDays / 365)} year${Math.floor(diffInDays / 365) > 1 ? 's' : ''} ago`
+  if (diffInDays < 7) return t('thisWeek')
+  if (diffInDays < 30) return t('weeksAgo', { count: Math.floor(diffInDays / 7) })
+  if (diffInDays < 365) return t('monthsAgo', { count: Math.floor(diffInDays / 30) })
+  return t('yearsAgo', { count: Math.floor(diffInDays / 365) })
 }
 
 // Helper to generate car URL
@@ -107,8 +101,15 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export default function ReviewCard({ review }: ReviewCardProps) {
+  const t = useTranslations('ReviewCard')
+  const format = useFormatter()
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isHostProfileOpen, setIsHostProfileOpen] = useState(false)
+
+  const formatDate = (date: Date | string) => {
+    const d = new Date(date)
+    return format.dateTime(d, { month: 'short', year: 'numeric' })
+  }
 
   const guestName = formatReviewerName(review.reviewerProfile?.name)
   const guestInitial = guestName.charAt(0).toUpperCase()
@@ -148,9 +149,9 @@ export default function ReviewCard({ review }: ReviewCardProps) {
               </div>
               {review.reviewerProfile?.memberSince && (
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Member since {formatDate(review.reviewerProfile.memberSince)}
+                  {t('memberSince', { date: formatDate(review.reviewerProfile.memberSince) })}
                   {review.reviewerProfile?.tripCount && review.reviewerProfile.tripCount > 0 && (
-                    <span> ({review.reviewerProfile.tripCount} trips)</span>
+                    <span> ({t('tripCount', { count: review.reviewerProfile.tripCount })})</span>
                   )}
                 </p>
               )}
@@ -162,11 +163,11 @@ export default function ReviewCard({ review }: ReviewCardProps) {
         <div className="flex items-center gap-3 mb-3">
           <StarRating rating={review.rating} />
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            ({getTimeAgo(review.createdAt)})
+            ({getTimeAgo(review.createdAt, t)})
           </span>
           {review.isVerified && (
             <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full">
-              🌱 Eco-Friendly
+              {t('ecoFriendly')}
             </span>
           )}
         </div>
@@ -226,10 +227,10 @@ export default function ReviewCard({ review }: ReviewCardProps) {
               <div className="flex items-center gap-1.5 mt-1">
                 <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded">
                   <IoCheckmarkOutline className="w-3 h-3" />
-                  Ride Completed
+                  {t('rideCompleted')}
                 </span>
                 <span className="text-[10px] text-gray-400 dark:text-gray-500">
-                  {getTimeAgo(review.createdAt)}
+                  {getTimeAgo(review.createdAt, t)}
                 </span>
               </div>
             </div>
@@ -243,7 +244,7 @@ export default function ReviewCard({ review }: ReviewCardProps) {
           <div className="mt-4 pl-4 border-l-2 border-amber-500 bg-amber-50 dark:bg-amber-900/10 rounded-r-lg p-4">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-sm text-gray-900 dark:text-white">
-                Response from{' '}
+                {t('responseFrom')}{' '}
                 {review.host?.id ? (
                   <button
                     onClick={() => setIsHostProfileOpen(true)}
@@ -257,7 +258,7 @@ export default function ReviewCard({ review }: ReviewCardProps) {
               </span>
               {review.hostRespondedAt && (
                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                  ({getTimeAgo(review.hostRespondedAt)})
+                  ({getTimeAgo(review.hostRespondedAt, t)})
                 </span>
               )}
             </div>
