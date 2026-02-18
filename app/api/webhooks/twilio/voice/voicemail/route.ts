@@ -8,7 +8,7 @@ import { prisma } from '@/app/lib/database/prisma'
 import { verifyTwilioWebhook, parseTwilioBody } from '@/app/lib/twilio/verify-signature'
 
 const VOICES: Record<string, { voice: string; language: string }> = {
-  en: { voice: 'Polly.Danielle', language: 'en-US' },
+  en: { voice: 'Polly.Danielle-Neural', language: 'en-US' },
   es: { voice: 'Polly.Mia', language: 'es-MX' },
   fr: { voice: 'Polly.Lea', language: 'fr-FR' },
 }

@@ -13,7 +13,7 @@ type Lang = 'en' | 'es' | 'fr'
 // ─── Voice Config ──────────────────────────────────────────────────
 
 const VOICE: Record<Lang, { voice: string; language: string }> = {
-  en: { voice: 'Polly.Danielle', language: 'en-US' },
+  en: { voice: 'Polly.Danielle-Neural', language: 'en-US' },
   es: { voice: 'Polly.Mia', language: 'es-MX' },
   fr: { voice: 'Polly.Lea', language: 'fr-FR' },
 }
