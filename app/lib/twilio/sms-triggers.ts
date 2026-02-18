@@ -320,3 +320,37 @@ export async function sendEmergencyInfoSms(data: EmergencyData): Promise<void> {
     locale,
   })
 }
+
+// ─── IVR SMS Triggers ─────────────────────────────────────────────
+// Sent when the IVR tells the caller "we've texted you the link"
+
+type Locale = 'en' | 'es' | 'fr'
+
+export async function sendIvrAboutSms(phone: string, locale: Locale = 'en'): Promise<void> {
+  const body = templates.ivrAboutItWhip(locale)
+  await sendSms(phone, body, { type: 'IVR_SMS', locale })
+}
+
+export async function sendIvrInsuranceSms(phone: string, locale: Locale = 'en'): Promise<void> {
+  const body = templates.ivrInsuranceInfo(locale)
+  await sendSms(phone, body, { type: 'IVR_SMS', locale })
+}
+
+export async function sendIvrReportDamageSms(phone: string, locale: Locale = 'en'): Promise<void> {
+  const body = templates.ivrReportDamage(locale)
+  await sendSms(phone, body, { type: 'IVR_SMS', locale })
+}
+
+export async function sendIvrPickupDetailsSms(
+  phone: string,
+  data: { address: string; date: string; time: string; bookingCode: string },
+  locale: Locale = 'en'
+): Promise<void> {
+  const body = templates.ivrPickupDetails(data, locale)
+  await sendSms(phone, body, { type: 'IVR_SMS', locale })
+}
+
+export async function sendIvrRoadsideSms(phone: string, locale: Locale = 'en'): Promise<void> {
+  const body = templates.ivrRoadsideGeneral(locale)
+  await sendSms(phone, body, { type: 'IVR_SMS', locale })
+}

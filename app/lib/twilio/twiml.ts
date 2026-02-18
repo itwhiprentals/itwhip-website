@@ -17,7 +17,7 @@ type Lang = 'en' | 'es' | 'fr'
 const VOICE: Record<Lang, { voice: string; language: string }> = {
   en: { voice: 'Polly.Danielle-Neural', language: 'en-US' },
   es: { voice: 'Polly.Mia', language: 'es-MX' },
-  fr: { voice: 'Polly.Lea', language: 'fr-FR' },
+  fr: { voice: 'Polly.Lea-Neural', language: 'fr-FR' },
 }
 
 const GATHER_TIMEOUT = 8
@@ -68,7 +68,7 @@ export function generateLanguageSelection(): string {
     timeout: GATHER_TIMEOUT,
   })
 
-  gather.say(VOICE.en, 'Thank you for calling ItWhip, Arizona\'s car rental marketplace. For faster service anytime, chat with Cowi, our A.I. assistant, at itwhip.com.')
+  gather.say(VOICE.en, 'Thank you for calling ItWhip, Arizona\'s car rental marketplace. For faster service anytime, chat with coyee, our A.I. assistant, at itwhip.com.')
   gather.pause({ length: 0.5 })
   gather.say(VOICE.en, 'For English, press 1.')
   gather.pause({ length: 0.3 })
@@ -145,7 +145,7 @@ export function generateVisitorMenu(lang: Lang = 'en', tries: number = 0): strin
 // 2.1: ABOUT ITWHIP (visitor → press 1)
 // ════════════════════════════════════════════════════════════════════
 // "ItWhip connects you with local car owners in Phoenix for affordable rentals.
-//  Browse cars and book at itwhip.com or chat with Cowi."
+//  Browse cars and book at itwhip.com or chat with coyee."
 
 export function generateAboutItWhip(lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
@@ -158,9 +158,9 @@ export function generateAboutItWhip(lang: Lang = 'en'): string {
   })
 
   say(gather, t(lang,
-    'ItWhip connects you with local car owners in Phoenix for affordable, flexible rentals. Browse cars, compare prices, and book instantly at itwhip.com. Or chat with Cowi, our A.I. assistant, anytime for help finding the perfect car. We\'ve texted you the link. To speak with someone, press 1. To hear this again, press 2.',
-    'ItWhip te conecta con dueños de autos locales en Phoenix para rentas accesibles y flexibles. Busca autos, compara precios y reserva al instante en itwhip.com. O habla con Cowi, nuestro asistente de inteligencia artificial, para ayuda encontrando el auto perfecto. Te enviamos el enlace por mensaje de texto. Para hablar con alguien, oprima 1. Para escuchar esto de nuevo, oprima 2.',
-    'ItWhip vous connecte avec des propriétaires de voitures locaux à Phoenix pour des locations abordables et flexibles. Parcourez les voitures, comparez les prix et réservez instantanément sur itwhip.com. Ou parlez avec Cowi, notre assistant I.A., pour trouver la voiture parfaite. Nous vous avons envoyé le lien par SMS. Pour parler à quelqu\'un, appuyez sur 1. Pour réécouter, appuyez sur 2.'
+    'ItWhip connects you with local car owners in Phoenix for affordable, flexible rentals. Browse cars, compare prices, and book instantly at itwhip.com. Or chat with coyee, our A.I. assistant, anytime for help finding the perfect car. We\'ve texted you the link. To speak with someone, press 1. To hear this again, press 2.',
+    'ItWhip te conecta con dueños de autos locales en Phoenix para rentas accesibles y flexibles. Busca autos, compara precios y reserva al instante en itwhip.com. O habla con coyee, nuestro asistente de inteligencia artificial, para ayuda encontrando el auto perfecto. Te enviamos el enlace por mensaje de texto. Para hablar con alguien, oprima 1. Para escuchar esto de nuevo, oprima 2.',
+    'ItWhip vous connecte avec des propriétaires de voitures locaux à Phoenix pour des locations abordables et flexibles. Parcourez les voitures, comparez les prix et réservez instantanément sur itwhip.com. Ou parlez avec coyee, notre assistant I.A., pour trouver la voiture parfaite. Nous vous avons envoyé le lien par SMS. Pour parler à quelqu\'un, appuyez sur 1. Pour réécouter, appuyez sur 2.'
   ), lang)
 
   // No input → goodbye
@@ -354,9 +354,9 @@ export function generateBookingSkip(lang: Lang = 'en'): string {
   })
 
   say(gather, t(lang,
-    'For help with a new booking, visit itwhip.com or chat with Cowi, our A.I. assistant. To leave a voicemail for our team, press 1. To return to the main menu, press 2.',
-    'Para ayuda con una nueva reserva, visita itwhip.com o habla con Cowi, nuestro asistente de inteligencia artificial. Para dejar un mensaje de voz, oprima 1. Para volver al menu principal, oprima 2.',
-    'Pour de l\'aide avec une nouvelle réservation, visitez itwhip.com ou parlez avec Cowi, notre assistant I.A. Pour laisser un message vocal, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
+    'For help with a new booking, visit itwhip.com or chat with coyee, our A.I. assistant. To leave a voicemail for our team, press 1. To return to the main menu, press 2.',
+    'Para ayuda con una nueva reserva, visita itwhip.com o habla con coyee, nuestro asistente de inteligencia artificial. Para dejar un mensaje de voz, oprima 1. Para volver al menu principal, oprima 2.',
+    'Pour de l\'aide avec une nouvelle réservation, visitez itwhip.com ou parlez avec coyee, notre assistant I.A. Pour laisser un message vocal, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
   ), lang)
 
   // No input → goodbye
@@ -435,9 +435,9 @@ export function generateReportDamage(lang: Lang = 'en'): string {
   })
 
   say(gather, t(lang,
-    'To report vehicle damage, please use your ItWhip account online or chat with Cowi at itwhip.com. This allows you to upload photos and documentation. We\'ve texted you the link. To leave a voicemail about damage instead, press 1. To return to the main menu, press 2.',
-    'Para reportar danos al vehiculo, por favor usa tu cuenta de ItWhip en linea o habla con Cowi en itwhip.com. Esto te permite subir fotos y documentacion. Te enviamos el enlace por mensaje de texto. Para dejar un mensaje de voz sobre el dano, oprima 1. Para volver al menu principal, oprima 2.',
-    'Pour signaler des dommages au véhicule, veuillez utiliser votre compte ItWhip en ligne ou parler avec Cowi sur itwhip.com. Cela vous permet de télécharger des photos et documents. Nous vous avons envoyé le lien par SMS. Pour laisser un message vocal, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
+    'To report vehicle damage, please use your ItWhip account online or chat with coyee at itwhip.com. This allows you to upload photos and documentation. We\'ve texted you the link. To leave a voicemail about damage instead, press 1. To return to the main menu, press 2.',
+    'Para reportar danos al vehiculo, por favor usa tu cuenta de ItWhip en linea o habla con coyee en itwhip.com. Esto te permite subir fotos y documentacion. Te enviamos el enlace por mensaje de texto. Para dejar un mensaje de voz sobre el dano, oprima 1. Para volver al menu principal, oprima 2.',
+    'Pour signaler des dommages au véhicule, veuillez utiliser votre compte ItWhip en ligne ou parler avec coyee sur itwhip.com. Cela vous permet de télécharger des photos et documents. Nous vous avons envoyé le lien par SMS. Pour laisser un message vocal, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
   ), lang)
 
   // No input → goodbye
@@ -477,9 +477,9 @@ export function generateVoicemailPrompt(lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
 
   say(twiml, t(lang,
-    'Our office is currently closed. Our hours are Monday through Friday, 8 A.M. to 8 P.M. Arizona time. Please leave your name, phone number, and a brief message after the beep, and we\'ll return your call on the next business day. For instant help anytime, visit itwhip.com and chat with Cowi.',
-    'Nuestra oficina esta cerrada. Nuestro horario es de lunes a viernes, de 8 de la manana a 8 de la noche, hora de Arizona. Por favor deja tu nombre, numero de telefono y un breve mensaje despues del tono, y te llamaremos el siguiente dia habil. Para ayuda instantanea, visita itwhip.com y habla con Cowi.',
-    'Notre bureau est actuellement fermé. Nos heures sont du lundi au vendredi, de 8 heures à 20 heures, heure de l\'Arizona. Veuillez laisser votre nom, numéro de téléphone et un bref message après le bip, et nous vous rappellerons le prochain jour ouvrable. Pour de l\'aide instantanée, visitez itwhip.com et parlez avec Cowi.'
+    'Our office is currently closed. Our hours are Monday through Friday, 8 A.M. to 8 P.M. Arizona time. Please leave your name, phone number, and a brief message after the beep, and we\'ll return your call on the next business day. For instant help anytime, visit itwhip.com and chat with coyee.',
+    'Nuestra oficina esta cerrada. Nuestro horario es de lunes a viernes, de 8 de la manana a 8 de la noche, hora de Arizona. Por favor deja tu nombre, numero de telefono y un breve mensaje despues del tono, y te llamaremos el siguiente dia habil. Para ayuda instantanea, visita itwhip.com y habla con coyee.',
+    'Notre bureau est actuellement fermé. Nos heures sont du lundi au vendredi, de 8 heures à 20 heures, heure de l\'Arizona. Veuillez laisser votre nom, numéro de téléphone et un bref message après le bip, et nous vous rappellerons le prochain jour ouvrable. Pour de l\'aide instantanée, visitez itwhip.com et parlez avec coyee.'
   ), lang)
 
   twiml.record({

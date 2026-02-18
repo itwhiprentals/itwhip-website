@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       return new NextResponse('Forbidden', { status: 403 })
     }
 
-    const { Digits: digits, CallSid: callSid } = params
+    const { Digits: digits, CallSid: callSid, From: callerPhone } = params
     const url = new URL(request.url)
     const lang = (url.searchParams.get('lang') || 'en') as 'en' | 'es' | 'fr'
     const menu = url.searchParams.get('menu') || 'visitor'
@@ -71,6 +71,12 @@ export async function POST(request: NextRequest) {
         switch (digits) {
           case '1': // Learn about ItWhip
             twiml = generateAboutItWhip(lang)
+            // SMS the visitor with signup/browse links
+            if (callerPhone) {
+              import('@/app/lib/twilio/sms-triggers').then(({ sendIvrAboutSms }) => {
+                sendIvrAboutSms(callerPhone, lang).catch(e => console.error('[IVR SMS]', e))
+              }).catch(() => {})
+            }
             break
           case '2': // I have a booking code
             twiml = generateBookingCodeEntry(lang)
@@ -133,6 +139,12 @@ export async function POST(request: NextRequest) {
         switch (digits) {
           case '1': // Roadside assistance
             twiml = generateRoadsideInfo(lang)
+            // SMS roadside guide
+            if (callerPhone) {
+              import('@/app/lib/twilio/sms-triggers').then(({ sendIvrRoadsideSms }) => {
+                sendIvrRoadsideSms(callerPhone, lang).catch(e => console.error('[IVR SMS]', e))
+              }).catch(() => {})
+            }
             break
           case '2': // Speak with someone immediately
             twiml = generateSpeakWithSomeone(lang)
@@ -194,6 +206,12 @@ export async function POST(request: NextRequest) {
               const time = bk.startTime || '10:00 AM'
 
               twiml = generatePickupDetails({ address, date, time }, lang)
+              // SMS pickup details
+              if (callerPhone) {
+                import('@/app/lib/twilio/sms-triggers').then(({ sendIvrPickupDetailsSms }) => {
+                  sendIvrPickupDetailsSms(callerPhone, { address, date, time, bookingCode }, lang).catch(e => console.error('[IVR SMS]', e))
+                }).catch(() => {})
+              }
             } else {
               twiml = generateBookingNotFound(lang)
             }
@@ -213,12 +231,30 @@ export async function POST(request: NextRequest) {
         switch (digits) {
           case '1': // Insurance questions
             twiml = generateInsuranceInfo(lang)
+            // SMS insurance guide
+            if (callerPhone) {
+              import('@/app/lib/twilio/sms-triggers').then(({ sendIvrInsuranceSms }) => {
+                sendIvrInsuranceSms(callerPhone, lang).catch(e => console.error('[IVR SMS]', e))
+              }).catch(() => {})
+            }
             break
           case '2': // Report damage
             twiml = generateReportDamage(lang)
+            // SMS damage reporting link
+            if (callerPhone) {
+              import('@/app/lib/twilio/sms-triggers').then(({ sendIvrReportDamageSms }) => {
+                sendIvrReportDamageSms(callerPhone, lang).catch(e => console.error('[IVR SMS]', e))
+              }).catch(() => {})
+            }
             break
           case '3': // Check claim status
             twiml = generateReportDamage(lang)
+            // SMS damage reporting link
+            if (callerPhone) {
+              import('@/app/lib/twilio/sms-triggers').then(({ sendIvrReportDamageSms }) => {
+                sendIvrReportDamageSms(callerPhone, lang).catch(e => console.error('[IVR SMS]', e))
+              }).catch(() => {})
+            }
             break
           case '4': // Back to main
             twiml = generateCustomerMenu(lang)

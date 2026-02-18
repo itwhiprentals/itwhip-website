@@ -187,3 +187,63 @@ export function emergencyRoadsideInfo(data: {
   }
   return templates[locale]
 }
+
+// ─── IVR: About ItWhip (visitor signup link) ────────────────────
+
+export function ivrAboutItWhip(locale: Locale = 'en'): string {
+  const templates: Record<Locale, string> = {
+    en: `Welcome to ItWhip! Browse cars and book your next ride in Phoenix:\nitwhip.com/rentals/search\n\nOr chat with Choe, our AI assistant:\nitwhip.com/choe`,
+    es: `Bienvenido a ItWhip! Busca autos y reserva tu proximo viaje en Phoenix:\nitwhip.com/es/rentals/search\n\nO habla con Choe, nuestro asistente IA:\nitwhip.com/es/choe`,
+    fr: `Bienvenue sur ItWhip! Parcourez les voitures et reservez a Phoenix:\nitwhip.com/fr/rentals/search\n\nOu parlez avec Choe, notre assistant IA:\nitwhip.com/fr/choe`,
+  }
+  return templates[locale]
+}
+
+// ─── IVR: Insurance Info Link ───────────────────────────────────
+
+export function ivrInsuranceInfo(locale: Locale = 'en'): string {
+  const templates: Record<Locale, string> = {
+    en: `ItWhip Insurance Guide:\n- Basic: 40% coverage\n- Standard: 75% coverage\n- Premium: 90% coverage\nFull details: itwhip.com/support/insurance-guide`,
+    es: `Guia de Seguros ItWhip:\n- Basico: 40% cobertura\n- Estandar: 75% cobertura\n- Premium: 90% cobertura\nDetalles: itwhip.com/es/support/insurance-guide`,
+    fr: `Guide Assurance ItWhip:\n- Basique: 40% couverture\n- Standard: 75% couverture\n- Premium: 90% couverture\nDetails: itwhip.com/fr/support/insurance-guide`,
+  }
+  return templates[locale]
+}
+
+// ─── IVR: Report Damage Link ────────────────────────────────────
+
+export function ivrReportDamage(locale: Locale = 'en'): string {
+  const templates: Record<Locale, string> = {
+    en: `Report vehicle damage on ItWhip:\n1. Log into your account\n2. Go to your trip page\n3. Use the "Report Issue" button\n\nThis lets you upload photos & docs.\nitwhip.com`,
+    es: `Reporta danos al vehiculo en ItWhip:\n1. Inicia sesion en tu cuenta\n2. Ve a tu pagina de viaje\n3. Usa el boton "Reportar Problema"\n\nEsto te permite subir fotos y documentos.\nitwhip.com`,
+    fr: `Signalez des dommages sur ItWhip:\n1. Connectez-vous a votre compte\n2. Allez sur votre page de trajet\n3. Utilisez le bouton "Signaler un probleme"\n\nCela vous permet d'envoyer photos et documents.\nitwhip.com`,
+  }
+  return templates[locale]
+}
+
+// ─── IVR: Pickup Details ────────────────────────────────────────
+
+export function ivrPickupDetails(data: {
+  address: string
+  date: string
+  time: string
+  bookingCode: string
+}, locale: Locale = 'en'): string {
+  const templates: Record<Locale, string> = {
+    en: `Your ItWhip Pickup Details:\nDate: ${data.date}\nTime: ${data.time}\nLocation: ${data.address}\n\nTrip page: itwhip.com/trip/${data.bookingCode}`,
+    es: `Detalles de tu Recogida ItWhip:\nFecha: ${data.date}\nHora: ${data.time}\nUbicacion: ${data.address}\n\nPagina del viaje: itwhip.com/trip/${data.bookingCode}`,
+    fr: `Details de Prise en Charge ItWhip:\nDate: ${data.date}\nHeure: ${data.time}\nLieu: ${data.address}\n\nPage du trajet: itwhip.com/trip/${data.bookingCode}`,
+  }
+  return templates[locale]
+}
+
+// ─── IVR: Roadside Assistance (no booking code) ────────────────
+
+export function ivrRoadsideGeneral(locale: Locale = 'en'): string {
+  const templates: Record<Locale, string> = {
+    en: `ItWhip Roadside Assistance:\n1. If in danger, call 911\n2. Move to a safe location\n3. Take photos of any damage\n4. Contact your host via the app\n\nFull guide: itwhip.com/support/roadside\nEmergency: (855) 703-0806`,
+    es: `Asistencia en Carretera ItWhip:\n1. Si hay peligro, llama al 911\n2. Ve a un lugar seguro\n3. Toma fotos de cualquier dano\n4. Contacta a tu anfitrion por la app\n\nGuia: itwhip.com/es/support/roadside\nEmergencia: (855) 703-0806`,
+    fr: `Assistance Routiere ItWhip:\n1. En cas de danger, appelez le 911\n2. Placez-vous en securite\n3. Prenez des photos des dommages\n4. Contactez votre hote via l'app\n\nGuide: itwhip.com/fr/support/roadside\nUrgence: (855) 703-0806`,
+  }
+  return templates[locale]
+}

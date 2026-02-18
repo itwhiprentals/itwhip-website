@@ -10,13 +10,13 @@ import { verifyTwilioWebhook, parseTwilioBody } from '@/app/lib/twilio/verify-si
 const VOICES: Record<string, { voice: string; language: string }> = {
   en: { voice: 'Polly.Danielle-Neural', language: 'en-US' },
   es: { voice: 'Polly.Mia', language: 'es-MX' },
-  fr: { voice: 'Polly.Lea', language: 'fr-FR' },
+  fr: { voice: 'Polly.Lea-Neural', language: 'fr-FR' },
 }
 
 const THANKS: Record<string, string> = {
-  en: 'Thank you. Your message has been recorded. For immediate help, visit itwhip.com and chat with Cowi, our AI booking assistant. Goodbye.',
-  es: 'Gracias. Su mensaje ha sido grabado. Para ayuda inmediata, visite itwhip.com y hable con Cowi, nuestra asistente de reservas. Adiós.',
-  fr: 'Merci. Votre message a été enregistré. Pour une aide immédiate, visitez itwhip.com et parlez avec Cowi, notre assistant de réservation. Au revoir.',
+  en: 'Thank you. Your message has been recorded. For immediate help, visit itwhip.com and chat with coyee, our AI booking assistant. Goodbye.',
+  es: 'Gracias. Su mensaje ha sido grabado. Para ayuda inmediata, visite itwhip.com y hable con coyee, nuestra asistente de reservas. Adiós.',
+  fr: 'Merci. Votre message a été enregistré. Pour une aide immédiate, visitez itwhip.com et parlez avec coyee, notre assistant de réservation. Au revoir.',
 }
 
 export async function POST(request: NextRequest) {
