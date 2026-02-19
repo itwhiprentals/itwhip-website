@@ -306,8 +306,8 @@ export function generateConnectToHost(roomName: string, lang: Lang = 'en'): stri
     action: menuUrl('voicemail-prompt', lang),
   })
   dial.conference({
-    waitUrl: 'http://twimlets.com/holdmusic?Bucket=com.twilio.music.classical',
-    waitMethod: 'GET',
+    waitUrl: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/wait-music?lang=${lang}&n=0`,
+    waitMethod: 'POST',
     startConferenceOnEnter: false,
     endConferenceOnExit: true,
     beep: 'false',
@@ -567,13 +567,13 @@ export function generateSpeakWithSomeone(roomName: string, lang: Lang = 'en'): s
       'Nous vous connectons à notre équipe. Sachez que notre assistant I.A. Coyi peut tout réserver pour vous en quelques messages sur notre site web. Veuillez patienter.'
     ), lang)
 
-    // Caller enters conference with hold music
+    // Caller enters conference with hold music + promo messages
     const dial = twiml.dial({
       action: menuUrl('voicemail-prompt', lang),
     })
     dial.conference({
-      waitUrl: 'http://twimlets.com/holdmusic?Bucket=com.twilio.music.classical',
-      waitMethod: 'GET',
+      waitUrl: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/wait-music?lang=${lang}&n=0`,
+      waitMethod: 'POST',
       startConferenceOnEnter: false,
       endConferenceOnExit: true,
       beep: 'false',
