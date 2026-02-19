@@ -6,7 +6,7 @@
 // Emergency exception: after retries → voicemail instead of hangup.
 
 import twilio from 'twilio'
-import { TWILIO_LOCAL_NUMBER, WEBHOOK_BASE_URL } from './client'
+import { WEBHOOK_BASE_URL } from './client'
 
 const VoiceResponse = twilio.twiml.VoiceResponse
 
@@ -289,23 +289,29 @@ export function generateBookingFound(booking: {
 // 4.2: CONNECT TO HOST
 // ════════════════════════════════════════════════════════════════════
 
-export function generateConnectToHost(hostPhone: string, lang: Lang = 'en'): string {
+export function generateConnectToHost(roomName: string, lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
 
-  // Promo message while connecting (caller hears this, then standard ringing)
+  // Brief message before hold music starts
   say(twiml, t(lang,
-    'Connecting you to your host now. Quick tip: you can also message your host anytime through your ItWhip trip page at itwhip.com.',
-    'Conectandote con tu anfitrion. Consejo: tambien puedes enviar mensajes a tu anfitrion en cualquier momento a traves de tu pagina de viaje en itwhip.com.',
-    'Nous vous connectons à votre hôte. Conseil: vous pouvez aussi envoyer des messages à votre hôte via votre page de trajet sur itwhip.com.'
+    'Connecting you to your host now. Please hold while we reach them.',
+    'Conectandote con tu anfitrion. Por favor espera mientras lo contactamos.',
+    'Nous vous connectons à votre hôte. Veuillez patienter.'
   ), lang)
 
+  // Caller enters conference with hold music + promo messages
+  // When host joins, music stops and they talk
+  // If host doesn't answer, conference ends → action URL → voicemail
   const dial = twiml.dial({
-    callerId: TWILIO_LOCAL_NUMBER,
-    timeout: 30,
-    answerOnBridge: true,
     action: menuUrl('voicemail-prompt', lang),
   })
-  dial.number(hostPhone)
+  dial.conference({
+    waitUrl: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/wait-music?lang=${lang}&n=0`,
+    waitMethod: 'POST',
+    startConferenceOnEnter: false,
+    endConferenceOnExit: true,
+    beep: 'false',
+  }, roomName)
 
   return twiml.toString()
 }
@@ -475,24 +481,28 @@ export function generateReportDamage(lang: Lang = 'en'): string {
 // 6.0: SPEAK WITH SOMEONE / VOICEMAIL
 // ════════════════════════════════════════════════════════════════════
 
-export function generateSpeakWithSomeone(lang: Lang = 'en'): string {
+export function generateSpeakWithSomeone(roomName: string, lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
 
   if (isBusinessHours()) {
-    // Promo message while connecting (caller hears this, then standard ringing)
+    // Brief message before hold music starts
     say(twiml, t(lang,
-      'Connecting you to our team now. Just so you know, our A.I. assistant coyee can book everything for you in just a few chats. Tell it what you want at itwhip.com slash coyee. We also offer three tiers of insurance coverage. Visit itwhip.com slash insurance guide for details.',
-      'Conectandote con nuestro equipo. Solo para que sepas, nuestro asistente de inteligencia artificial coyee puede reservar todo por ti en solo unos chats. Dile lo que necesitas en itwhip.com slash coyee. Tambien ofrecemos tres niveles de cobertura de seguro. Visita itwhip.com slash insurance guide para detalles.',
-      'Nous vous connectons à notre équipe. Sachez que notre assistant I.A. coyee peut tout réserver pour vous en quelques messages. Dites-lui ce que vous voulez sur itwhip.com slash coyee. Nous proposons aussi trois niveaux de couverture d\'assurance. Visitez itwhip.com slash insurance guide pour les détails.'
+      'Connecting you to our team now. Just so you know, our A.I. assistant coyee can book everything for you in just a few chats at itwhip.com slash coyee. Please hold.',
+      'Conectandote con nuestro equipo. Solo para que sepas, nuestro asistente de inteligencia artificial coyee puede reservar todo por ti en solo unos chats en itwhip.com slash coyee. Por favor espera.',
+      'Nous vous connectons à notre équipe. Sachez que notre assistant I.A. coyee peut tout réserver pour vous en quelques messages sur itwhip.com slash coyee. Veuillez patienter.'
     ), lang)
 
+    // Caller enters conference with hold music + promo messages
     const dial = twiml.dial({
-      callerId: TWILIO_LOCAL_NUMBER,
-      timeout: 30,
-      answerOnBridge: true,
       action: menuUrl('voicemail-prompt', lang),
     })
-    dial.number(process.env.SUPPORT_PHONE_NUMBER || '+16026092577')
+    dial.conference({
+      waitUrl: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/wait-music?lang=${lang}&n=0`,
+      waitMethod: 'POST',
+      startConferenceOnEnter: false,
+      endConferenceOnExit: true,
+      beep: 'false',
+    }, roomName)
   } else {
     twiml.redirect(menuUrl('voicemail-prompt', lang))
   }

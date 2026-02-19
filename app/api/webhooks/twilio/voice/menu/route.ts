@@ -28,11 +28,27 @@ import {
   generateGoodbye,
 } from '@/app/lib/twilio/twiml'
 
+type Lang = 'en' | 'es' | 'fr'
+
+const SUPPORT_PHONE = process.env.SUPPORT_PHONE_NUMBER || '+16026092577'
+
 function xml(twiml: string): NextResponse {
   return new NextResponse(twiml, {
     status: 200,
     headers: { 'Content-Type': 'text/xml' },
   })
+}
+
+/**
+ * Fire an outbound call to join someone into a conference room.
+ * Non-blocking — uses dynamic import + fire-and-forget.
+ */
+function connectViaConference(phone: string, roomName: string, callerCallSid: string, lang: Lang) {
+  import('@/app/lib/twilio/conference').then(({ dialIntoConference }) => {
+    dialIntoConference(phone, roomName, callerCallSid, lang).catch(e =>
+      console.error('[IVR Conference] Dial failed:', e)
+    )
+  }).catch(() => {})
 }
 
 export async function POST(request: NextRequest) {
@@ -50,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     const { Digits: digits, CallSid: callSid, From: callerPhone } = params
     const url = new URL(request.url)
-    const lang = (url.searchParams.get('lang') || 'en') as 'en' | 'es' | 'fr'
+    const lang = (url.searchParams.get('lang') || 'en') as Lang
     const menu = url.searchParams.get('menu') || 'visitor'
     const tries = parseInt(url.searchParams.get('tries') || '0', 10)
 
@@ -65,6 +81,9 @@ export async function POST(request: NextRequest) {
       }).catch(() => {})
     }
 
+    // Helper: generate unique conference room name
+    const makeRoom = () => `call-${callSid || 'unknown'}-${Date.now()}`
+
     let twiml: string
 
     switch (menu) {
@@ -77,9 +96,12 @@ export async function POST(request: NextRequest) {
           case '2': // I have a booking code
             twiml = generateBookingCodeEntry(lang)
             break
-          case '3': // Speak with someone
-            twiml = generateSpeakWithSomeone(lang)
+          case '3': { // Speak with someone
+            const room = makeRoom()
+            connectViaConference(SUPPORT_PHONE, room, callSid, lang)
+            twiml = generateSpeakWithSomeone(room, lang)
             break
+          }
           default:
             twiml = generateVisitorMenu(lang, tries)
         }
@@ -96,9 +118,12 @@ export async function POST(request: NextRequest) {
             }
             twiml = generateSmsSent(lang, 'visitor')
             break
-          case '2': // Speak with someone
-            twiml = generateSpeakWithSomeone(lang)
+          case '2': { // Speak with someone
+            const room = makeRoom()
+            connectViaConference(SUPPORT_PHONE, room, callSid, lang)
+            twiml = generateSpeakWithSomeone(room, lang)
             break
+          }
           case '3': // Hear again
             twiml = generateAboutItWhip(lang)
             break
@@ -116,9 +141,12 @@ export async function POST(request: NextRequest) {
           case '2': // Insurance & claims
             twiml = generateInsuranceMenu(lang)
             break
-          case '3': // Speak with someone
-            twiml = generateSpeakWithSomeone(lang)
+          case '3': { // Speak with someone
+            const room = makeRoom()
+            connectViaConference(SUPPORT_PHONE, room, callSid, lang)
+            twiml = generateSpeakWithSomeone(room, lang)
             break
+          }
           default:
             twiml = generateCustomerMenu(lang, tries)
         }
@@ -144,9 +172,12 @@ export async function POST(request: NextRequest) {
           case '1': // Roadside assistance
             twiml = generateRoadsideInfo(lang)
             break
-          case '2': // Speak with someone immediately
-            twiml = generateSpeakWithSomeone(lang)
+          case '2': { // Speak with someone immediately
+            const room = makeRoom()
+            connectViaConference(SUPPORT_PHONE, room, callSid, lang)
+            twiml = generateSpeakWithSomeone(room, lang)
             break
+          }
           default:
             twiml = generateEmergencyMenu(lang, tries)
         }
@@ -188,9 +219,14 @@ export async function POST(request: NextRequest) {
           case '1': { // Connect to host
             const bk = await lookupBookingByCode(bookingCode)
             if (bk?.host?.phone) {
-              twiml = generateConnectToHost(bk.host.phone, lang)
+              const room = makeRoom()
+              connectViaConference(bk.host.phone, room, callSid, lang)
+              twiml = generateConnectToHost(room, lang)
             } else {
-              twiml = generateSpeakWithSomeone(lang)
+              // No host phone — connect to support instead
+              const room = makeRoom()
+              connectViaConference(SUPPORT_PHONE, room, callSid, lang)
+              twiml = generateSpeakWithSomeone(room, lang)
             }
             break
           }
@@ -333,12 +369,12 @@ export async function POST(request: NextRequest) {
         }
         break
 
-      // ─── Voicemail Prompt / Dial Callback ────────────────
+      // ─── Voicemail Prompt / Conference Callback ──────────
       case 'voicemail-prompt': {
-        // If this is a dial callback, check if the call was answered
+        // Conference/Dial callback — check if the call was actually answered
         const dialStatus = params.DialCallStatus
         if (dialStatus === 'completed') {
-          // Host/team answered and call ended normally → goodbye
+          // Call connected and ended normally → goodbye
           twiml = generateGoodbye(lang)
         } else {
           // No answer, busy, failed, or direct navigation → voicemail

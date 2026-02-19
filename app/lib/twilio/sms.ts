@@ -2,7 +2,7 @@
 // Core SMS sending service with SmsLog tracking and duplicate protection
 
 import { prisma } from '@/app/lib/database/prisma'
-import { twilioClient, TWILIO_LOCAL_NUMBER, TWILIO_MESSAGING_SERVICE_SID, WEBHOOK_BASE_URL } from './client'
+import { twilioClient, TWILIO_TOLLFREE_NUMBER, TWILIO_MESSAGING_SERVICE_SID, WEBHOOK_BASE_URL } from './client'
 import { normalizePhone } from './phone'
 
 // ─── Types ─────────────────────────────────────────────────────────
@@ -80,7 +80,7 @@ export async function sendSms(
   const logRecord = await prisma.smsLog.create({
     data: {
       to: normalizedTo,
-      from: TWILIO_LOCAL_NUMBER,
+      from: TWILIO_TOLLFREE_NUMBER,
       body,
       type: opts.type,
       status: 'queued',
@@ -110,7 +110,7 @@ export async function sendSms(
       statusCallback: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/sms-status`,
       ...(TWILIO_MESSAGING_SERVICE_SID
         ? { messagingServiceSid: TWILIO_MESSAGING_SERVICE_SID }
-        : { from: TWILIO_LOCAL_NUMBER }),
+        : { from: TWILIO_TOLLFREE_NUMBER }),
     })
 
     // Update log with Twilio SID and status
