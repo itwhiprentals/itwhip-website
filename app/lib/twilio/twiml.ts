@@ -553,33 +553,31 @@ export function generateClaimNotFound(lang: Lang = 'en'): string {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// 6.0: SPEAK WITH SOMEONE — FLEX TASKROUTER
+// 6.0: SPEAK WITH SOMEONE / VOICEMAIL
 // ════════════════════════════════════════════════════════════════════
-// Enqueues the caller into Flex's TaskRouter workflow.
-// Agent accepts in the Flex web UI → caller is connected.
-// If no agent available → action URL → voicemail.
 
-const FLEX_WORKFLOW_SID = process.env.FLEX_WORKFLOW_SID || 'WW56b274fdcdba138247670f3965de229f'
-
-export function generateSpeakWithSomeone(lang: Lang = 'en'): string {
+export function generateSpeakWithSomeone(roomName: string, lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
 
-  // Brief message before hold music starts
+  // Always attempt to connect — 24/7 availability
+  // If no answer, conference ends → action URL → voicemail
   say(twiml, t(lang,
     'Connecting you to our team now. Just so you know, our A.I. assistant Coyi can book everything for you in just a few chats on our website. Please hold.',
     'Conectandote con nuestro equipo. Solo para que sepas, nuestro asistente de inteligencia artificial Coyi puede reservar todo por ti en solo unos chats en nuestro sitio web. Por favor espera.',
     'Nous vous connectons à notre équipe. Sachez que notre assistant I.A. Coyi peut tout réserver pour vous en quelques messages sur notre site web. Veuillez patienter.'
   ), lang)
 
-  // Enqueue into Flex TaskRouter — agent sees call in Flex UI
-  // Caller hears hold music + promo messages while waiting
-  const enqueue = twiml.enqueue({
-    workflowSid: FLEX_WORKFLOW_SID,
-    waitUrl: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/wait-music?lang=${lang}&n=0`,
-    waitUrlMethod: 'POST',
+  // Caller enters conference with hold music + promo messages
+  const dial = twiml.dial({
     action: menuUrl('voicemail-prompt', lang),
   })
-  enqueue.task({}, JSON.stringify({ type: 'inbound_call', lang }))
+  dial.conference({
+    waitUrl: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/wait-music?lang=${lang}&n=0`,
+    waitMethod: 'POST',
+    startConferenceOnEnter: false,
+    endConferenceOnExit: true,
+    beep: 'false',
+  }, roomName)
 
   return twiml.toString()
 }
