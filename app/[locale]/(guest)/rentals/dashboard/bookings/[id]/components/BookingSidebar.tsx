@@ -1,6 +1,6 @@
 // app/(guest)/rentals/dashboard/bookings/[id]/components/BookingSidebar.tsx
 
-import React, { useRef } from 'react'
+import React, { useRef, useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { Booking } from '../types'
 import {
@@ -222,14 +222,73 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
           </div>
         </div>
 
-        {(booking.status === 'ACTIVE' || (booking.status === 'CONFIRMED' && hoursUntilPickup <= TIME_THRESHOLDS.SHOW_FULL_DETAILS_HOURS)) && (
-          <button className="w-full mt-3 sm:mt-4 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors flex items-center justify-center gap-1.5 sm:gap-2">
-            <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            {t('contactHost', { phone: booking.host.phone })}
-          </button>
+        {(booking.status === 'ACTIVE' || booking.status === 'CONFIRMED') && booking.tripStatus !== 'COMPLETED' && (
+          <CallHostButton bookingId={booking.id} t={t} />
         )}
 
       </div>
+    </div>
+  )
+}
+
+// Masked "Call Host" button — calls through ItWhip number
+function CallHostButton({ bookingId, t }: { bookingId: string; t: ReturnType<typeof useTranslations> }) {
+  const [calling, setCalling] = useState(false)
+  const [callStatus, setCallStatus] = useState<'idle' | 'calling' | 'connected' | 'error'>('idle')
+
+  const handleCallHost = useCallback(async () => {
+    if (calling) return
+    setCalling(true)
+    setCallStatus('calling')
+
+    try {
+      const res = await fetch('/api/twilio/masked-call', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ bookingId }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Call failed')
+      }
+
+      setCallStatus('connected')
+      setTimeout(() => setCallStatus('idle'), 5000)
+    } catch (err: any) {
+      console.error('[Call Host]', err)
+      setCallStatus('error')
+      setTimeout(() => setCallStatus('idle'), 3000)
+    } finally {
+      setCalling(false)
+    }
+  }, [bookingId, calling])
+
+  return (
+    <div className="mt-3 sm:mt-4">
+      <button
+        onClick={handleCallHost}
+        disabled={calling}
+        className={`w-full px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-1.5 sm:gap-2 ${
+          callStatus === 'connected'
+            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+            : callStatus === 'error'
+            ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+            : 'bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50'
+        }`}
+      >
+        <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        {callStatus === 'calling' ? t('callingHost') :
+         callStatus === 'connected' ? t('callConnecting') :
+         callStatus === 'error' ? t('callFailed') :
+         t('callHost')}
+      </button>
+      {callStatus === 'connected' && (
+        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 text-center">
+          {t('callHostHint')}
+        </p>
+      )}
     </div>
   )
 }

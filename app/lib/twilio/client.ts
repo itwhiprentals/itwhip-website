@@ -37,5 +37,11 @@ export const TWILIO_TOLLFREE_NUMBER = process.env.TWILIO_TOLLFREE_NUMBER || '+18
 // Messaging Service SID — used for outbound SMS (handles 10DLC compliance automatically)
 export const TWILIO_MESSAGING_SERVICE_SID = process.env.TWILIO_MESSAGING_SERVICE_SID || ''
 
+// Voice SDK — API Key for generating AccessTokens (browser phone)
+export const TWILIO_API_KEY_SID = process.env.TWILIO_API_KEY_SID || ''
+export const TWILIO_API_KEY_SECRET = process.env.TWILIO_API_KEY_SECRET || ''
+export const TWILIO_TWIML_APP_SID = process.env.TWILIO_TWIML_APP_SID || ''
+export const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || ''
+
 // Base URL for webhooks
 export const WEBHOOK_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://itwhip.com'

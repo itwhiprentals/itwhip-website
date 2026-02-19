@@ -107,6 +107,18 @@ function connectViaConference(phone: string, roomName: string, callerCallSid: st
   }).catch(() => {})
 }
 
+/**
+ * Connect to fleet admin via browser client first, cell phone fallback.
+ * Used for "speak with someone" — rings the PhoneWidget, falls back to cell.
+ */
+function connectAgentToConference(roomName: string, callerCallSid: string, lang: Lang) {
+  import('@/app/lib/twilio/conference').then(({ dialClientIntoConference }) => {
+    dialClientIntoConference(roomName, callerCallSid, lang, SUPPORT_PHONE).catch(e =>
+      console.error('[IVR Conference] Browser dial failed:', e)
+    )
+  }).catch(() => {})
+}
+
 export async function POST(request: NextRequest) {
   try {
     const params = await parseTwilioBody(request)
@@ -154,7 +166,7 @@ export async function POST(request: NextRequest) {
             break
           case '3': { // Speak with someone
             const room = makeRoom()
-            connectViaConference(SUPPORT_PHONE, room, callSid, lang)
+            connectAgentToConference(room, callSid, lang)
             twiml = generateSpeakWithSomeone(room, lang)
             break
           }
@@ -176,7 +188,7 @@ export async function POST(request: NextRequest) {
             break
           case '2': { // Speak with someone
             const room = makeRoom()
-            connectViaConference(SUPPORT_PHONE, room, callSid, lang)
+            connectAgentToConference(room, callSid, lang)
             twiml = generateSpeakWithSomeone(room, lang)
             break
           }
@@ -199,7 +211,7 @@ export async function POST(request: NextRequest) {
             break
           case '3': { // Speak with someone
             const room = makeRoom()
-            connectViaConference(SUPPORT_PHONE, room, callSid, lang)
+            connectAgentToConference(room, callSid, lang)
             twiml = generateSpeakWithSomeone(room, lang)
             break
           }
@@ -230,7 +242,7 @@ export async function POST(request: NextRequest) {
             break
           case '2': { // Speak with someone immediately
             const room = makeRoom()
-            connectViaConference(SUPPORT_PHONE, room, callSid, lang)
+            connectAgentToConference(room, callSid, lang)
             twiml = generateSpeakWithSomeone(room, lang)
             break
           }
@@ -281,7 +293,7 @@ export async function POST(request: NextRequest) {
             } else {
               // No host phone — connect to support instead
               const room = makeRoom()
-              connectViaConference(SUPPORT_PHONE, room, callSid, lang)
+              connectAgentToConference(room, callSid, lang)
               twiml = generateSpeakWithSomeone(room, lang)
             }
             break
@@ -442,7 +454,7 @@ export async function POST(request: NextRequest) {
         switch (digits) {
           case '1': { // Speak with someone about the claim
             const room = makeRoom()
-            connectViaConference(SUPPORT_PHONE, room, callSid, lang)
+            connectAgentToConference(room, callSid, lang)
             twiml = generateSpeakWithSomeone(room, lang)
             break
           }

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ThemeProvider, ThemeToggle } from './providers/theme-provider'
+import PhoneWidgetWrapper from './components/PhoneWidgetWrapper'
 
 function InternalLayoutContent({
   children,
@@ -449,6 +450,7 @@ function InternalLayoutContent({
         </footer>
 
       </div>
+      <PhoneWidgetWrapper />
     </ThemeProvider>
   )
 }

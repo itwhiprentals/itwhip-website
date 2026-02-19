@@ -52,6 +52,49 @@ export async function dialIntoConference(
 }
 
 /**
+ * Dial the browser client (fleet-agent) into a conference room.
+ * Falls back to cell phone if browser doesn't answer within 15s.
+ * Non-blocking — fires and returns immediately.
+ */
+export async function dialClientIntoConference(
+  roomName: string,
+  callerCallSid: string,
+  lang: Lang = 'en',
+  fallbackPhone?: string
+): Promise<string | null> {
+  if (!twilioClient) {
+    console.error('[Conference] Twilio client not initialized')
+    return null
+  }
+
+  try {
+    const call = await twilioClient.calls.create({
+      to: 'client:fleet-agent',
+      from: TWILIO_LOCAL_NUMBER,
+      url: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/join-conference?room=${encodeURIComponent(roomName)}&lang=${lang}`,
+      method: 'POST',
+      timeout: 15,
+      // No AMD for browser client
+      statusCallback: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/conference-status?room=${encodeURIComponent(roomName)}&callerSid=${callerCallSid}&lang=${lang}${fallbackPhone ? `&fallback=${encodeURIComponent(fallbackPhone)}` : ''}`,
+      statusCallbackEvent: ['completed', 'busy', 'no-answer', 'failed', 'canceled'],
+      statusCallbackMethod: 'POST',
+    })
+
+    console.log(`[Conference] Dialing browser client into room ${roomName}: ${call.sid}`)
+    return call.sid
+  } catch (error) {
+    console.error('[Conference] Failed to dial browser client:', error)
+    // Fallback to cell phone if browser dial fails immediately
+    if (fallbackPhone) {
+      console.log(`[Conference] Falling back to cell phone ${fallbackPhone}`)
+      return dialIntoConference(fallbackPhone, roomName, callerCallSid, lang)
+    }
+    await endConference(roomName)
+    return null
+  }
+}
+
+/**
  * End a conference by friendly name — forces all participants out.
  * Used when the outbound call to host/support fails or goes unanswered.
  */
