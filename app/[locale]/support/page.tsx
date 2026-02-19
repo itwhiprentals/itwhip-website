@@ -217,11 +217,11 @@ export default async function SupportPage() {
                   info@itwhip.com
                 </a>
                 <a
-                  href="tel:+14805550100"
+                  href="tel:+18557030806"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-sm font-medium"
                 >
                   <IoCallOutline className="w-5 h-5" />
-                  (480) 555-0100
+                  (855) 703-0806
                 </a>
               </div>
             </div>
@@ -394,7 +394,7 @@ export default async function SupportPage() {
                 {t('contactSupport')}
               </Link>
               <a
-                href="tel:+14805550100"
+                href="tel:+18557030806"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold rounded-lg transition-colors border border-gray-300 dark:border-gray-600"
               >
                 <IoCallOutline className="w-5 h-5" />

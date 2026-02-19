@@ -114,7 +114,7 @@ const autoRentalSchema = {
   name: 'ItWhip Rideshare Vehicle Rentals',
   description: 'Rideshare-approved vehicle rentals in Phoenix from $249/week. Pre-approved for Uber, Lyft, DoorDash with maintenance included.',
   url: 'https://itwhip.com/rideshare',
-  telephone: '+1-305-399-9069',
+  telephone: '+1-602-845-9758',
   address: {
     '@type': 'PostalAddress',
     streetAddress: '1 N 1st St',

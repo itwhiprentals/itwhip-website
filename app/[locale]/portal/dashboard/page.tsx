@@ -1826,7 +1826,7 @@ function PortalDashboardContent() {
               <div className="order-1 sm:order-2 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                 <button className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition text-sm">
                   <IoCallOutline className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span>(480) 555-0199</span>
+                  <span>(855) 703-0806</span>
                 </button>
                 <button className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-bold hover:from-amber-600 hover:to-amber-700 transition shadow-lg text-sm">
                   <IoMailOutline className="w-4 h-4 sm:w-5 sm:h-5" />

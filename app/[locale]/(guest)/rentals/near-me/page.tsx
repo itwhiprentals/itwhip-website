@@ -178,7 +178,7 @@ export default async function NearMePage() {
         name: 'ItWhip Car Rentals - Arizona',
         description: 'Peer-to-peer car rentals in Phoenix, Scottsdale, and across Arizona. Rent from local owners with $1M insurance included.',
         url: 'https://itwhip.com/rentals/near-me',
-        telephone: '+1-480-555-0100',
+        telephone: '+1-855-703-0806',
         address: {
           '@type': 'PostalAddress',
           addressLocality: 'Phoenix',

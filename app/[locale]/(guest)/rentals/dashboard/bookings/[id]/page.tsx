@@ -941,7 +941,7 @@ export default function BookingDetailsPage() {
               </details>
             )}
             <p className="text-center text-[10px] text-gray-400 dark:text-gray-500 mt-3">
-              Need help? <a href="tel:602-845-9758" className="font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">602-845-9758</a>
+              Need help? <a href="tel:+18557030806" className="font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">(855) 703-0806</a>
             </p>
           </>
         ) : (

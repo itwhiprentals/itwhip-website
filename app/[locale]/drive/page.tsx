@@ -519,7 +519,7 @@ export default function DrivePage() {
               >
                 {t('applyNow5Min')}
               </button>
-              <a href="tel:+14805550188" className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-white/10 backdrop-blur border border-white/20 text-white rounded-lg font-semibold hover:bg-white/20 transition">
+              <a href="tel:+18557030806" className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-white/10 backdrop-blur border border-white/20 text-white rounded-lg font-semibold hover:bg-white/20 transition">
                 {t('callPhone')}
               </a>
             </div>

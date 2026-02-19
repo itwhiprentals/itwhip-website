@@ -1442,7 +1442,7 @@ export default function HostProtectionPage() {
               <h3 className="text-xl font-semibold text-red-900 dark:text-red-400 mb-2">
                 24/7 Emergency Hotline
               </h3>
-              <p className="text-2xl font-bold text-red-600 mb-2">1-800-ITWHIP</p>
+              <p className="text-2xl font-bold text-red-600 mb-2">1-855-703-0806</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 For accidents, theft, or urgent safety issues
               </p>

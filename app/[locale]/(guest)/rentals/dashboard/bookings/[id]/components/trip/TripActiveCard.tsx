@@ -264,7 +264,7 @@ export function TripActiveCard({ booking, onExtend, onViewAgreement }: TripActiv
             </div>
           </div>
           <button
-            onClick={() => window.location.href = 'tel:602-845-9758'}
+            onClick={() => window.location.href = 'tel:+16026092577'}
             className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg border border-white/50 text-white leading-none hover:bg-red-700 transition-colors bg-red-600"
           >
             {t('emergency')}

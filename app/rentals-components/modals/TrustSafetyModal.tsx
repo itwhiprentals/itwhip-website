@@ -427,10 +427,10 @@ export default function TrustSafetyModal({
                         <strong>911:</strong> Life-threatening emergencies
                       </p>
                       <p className="text-xs text-red-800">
-                        <strong>1-800-ITWHIP-1:</strong> Urgent support (24/7)
+                        <strong>1-855-703-0806:</strong> Urgent support (24/7)
                       </p>
                       <p className="text-xs text-red-800">
-                        <strong>1-800-ITWHIP-2:</strong> Roadside assistance
+                        <strong>1-602-609-2577:</strong> Roadside assistance
                       </p>
                     </div>
                   </div>

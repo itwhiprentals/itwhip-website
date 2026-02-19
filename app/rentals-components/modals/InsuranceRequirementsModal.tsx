@@ -342,7 +342,7 @@ export default function InsuranceRequirementsModal({
                   <li className="flex items-start">
                     <span className="bg-purple-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 flex-shrink-0 text-xs">4</span>
                     <div>
-                      <strong>Contact ItWhip:</strong> Call our 24/7 claims line at 1-800-ITWHIP-1
+                      <strong>Contact ItWhip:</strong> Call our 24/7 claims line at 1-855-703-0806
                     </div>
                   </li>
                   <li className="flex items-start">
@@ -418,11 +418,11 @@ export default function InsuranceRequirementsModal({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-center">
                   <div>
                     <p className="text-xs font-medium text-purple-800 mb-1">Emergency Claims</p>
-                    <p className="text-xs sm:text-sm font-bold text-purple-900">1-800-ITWHIP-1</p>
+                    <p className="text-xs sm:text-sm font-bold text-purple-900">1-855-703-0806</p>
                   </div>
                   <div>
                     <p className="text-xs font-medium text-purple-800 mb-1">Roadside Assistance</p>
-                    <p className="text-xs sm:text-sm font-bold text-purple-900">1-800-ITWHIP-2</p>
+                    <p className="text-xs sm:text-sm font-bold text-purple-900">1-602-609-2577</p>
                   </div>
                   <div>
                     <p className="text-xs font-medium text-purple-800 mb-1">General Support</p>

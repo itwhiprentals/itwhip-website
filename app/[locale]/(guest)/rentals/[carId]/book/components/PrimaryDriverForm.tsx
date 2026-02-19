@@ -268,7 +268,7 @@ export function PrimaryDriverForm({
                     ? 'border-red-500 dark:border-red-500'
                     : 'border-gray-300 dark:border-gray-600'
               }`}
-              placeholder="(602)-555-0100"
+              placeholder="(855) 703-0806"
               required
             />
             {driverPhone && !userProfile?.phone && (

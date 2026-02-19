@@ -482,7 +482,7 @@ export default function BookPage() {
                 <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                   <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                     <IoInformationCircleOutline className="w-5 h-5" />
-                    <p>Need help? Call (602) 555-0100</p>
+                    <p>Need help? Call (855) 703-0806</p>
                   </div>
                 </div>
               </div>

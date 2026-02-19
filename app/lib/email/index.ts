@@ -433,7 +433,7 @@ export async function sendTripStartedEmail(
               <p>Please ensure the vehicle is returned on time to avoid late fees.</p>
             </div>
             
-            <p><strong>Emergency Contact:</strong> (602) 555-0100</p>
+            <p><strong>Emergency Contact:</strong> (602) 609-2577</p>
             
             <p>Enjoy your trip!</p>
             
@@ -460,7 +460,7 @@ export async function sendTripStartedEmail(
       
       Please ensure the vehicle is returned on time to avoid late fees.
       
-      Emergency Contact: (602) 555-0100
+      Emergency Contact: (602) 609-2577
       
       Enjoy your trip!
     `

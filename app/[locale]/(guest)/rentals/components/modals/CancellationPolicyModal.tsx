@@ -547,7 +547,7 @@ export default function CancellationPolicyModal({
                 </p>
                 <div className="space-y-2">
                   <p className="text-xs text-gray-700 dark:text-gray-200">
-                    <strong>Phone:</strong> 1-800-ITWHIP-1 (Priority for same-day trips)
+                    <strong>Phone:</strong> 1-855-703-0806 (Priority for same-day trips)
                   </p>
                   <p className="text-xs text-gray-700 dark:text-gray-200">
                     <strong>Email:</strong> info@itwhip.com

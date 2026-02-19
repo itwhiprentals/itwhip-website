@@ -439,7 +439,7 @@ export default function ROICalculator() {
 
           <div class="footer">
             <p><strong>Confidential Analysis Prepared for Your Hotel</strong></p>
-            <p>ItWhip Technologies Inc. | partner@itwhip.com | 1-800-ITWHIP-1</p>
+            <p>ItWhip Technologies Inc. | partner@itwhip.com | 1-855-703-0806</p>
             <p>This analysis is based on conservative estimates. Most hotels exceed projections by 15-20%.</p>
           </div>
         </body>

@@ -48,8 +48,8 @@ const claimsTimeline = [
 
 const emergencyContacts = [
   { number: '911', desc: 'emergency911Desc' },
-  { number: '1-800-ITWHIP-1', desc: 'urgentSupportDesc' },
-  { number: '1-800-ITWHIP-2', desc: 'roadsideAssistanceDesc' },
+  { number: '1-855-703-0806', desc: 'urgentSupportDesc' },
+  { number: '1-602-609-2577', desc: 'roadsideAssistanceDesc' },
 ] as const
 
 const platformCards = [

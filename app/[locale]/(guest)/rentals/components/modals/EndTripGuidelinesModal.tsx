@@ -484,7 +484,7 @@ export default function EndTripGuidelinesModal({
                       <div className="ml-3 flex-1">
                         <h4 className="text-sm font-semibold text-gray-900">Contact ItWhip Support</h4>
                         <p className="text-xs text-gray-600 mt-1">
-                          Call: 1-800-ITWHIP-1 (24/7 emergency line)
+                          Call: 1-855-703-0806 (24/7 emergency line)
                         </p>
                       </div>
                     </div>
@@ -546,7 +546,7 @@ export default function EndTripGuidelinesModal({
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-gray-900">ItWhip 24/7 Emergency</p>
-                      <p className="text-sm font-bold text-gray-900">1-800-ITWHIP-1</p>
+                      <p className="text-sm font-bold text-gray-900">1-855-703-0806</p>
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-gray-900">Non-Emergency Support</p>

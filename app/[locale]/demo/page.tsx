@@ -278,7 +278,7 @@ export default function DemoPage() {
                         className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 
                           rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white 
                           focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                        placeholder="(602) 555-0100"
+                        placeholder="(855) 703-0806"
                       />
                     </div>
                   </div>
@@ -538,11 +538,11 @@ export default function DemoPage() {
                 </h3>
                 
                 <div className="space-y-3">
-                  <a href="tel:602-555-0100" 
-                    className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400 
+                  <a href="tel:+18557030806"
+                    className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400
                       hover:text-gray-900 dark:hover:text-white transition">
                     <IoCallOutline className="w-5 h-5" />
-                    <span>(602) 555-0100</span>
+                    <span>(855) 703-0806</span>
                   </a>
                   
                   <a href="mailto:info@itwhip.com" 

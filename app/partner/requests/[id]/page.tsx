@@ -977,10 +977,10 @@ export default function RequestDetailPage() {
               </p>
               <div className="flex flex-wrap gap-3 mt-2">
                 <a
-                  href="tel:+13053999069"
+                  href="tel:+16028459758"
                   className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"
                 >
-                  (305) 399-9069
+                  (602) 845-9758
                 </a>
                 <a
                   href="mailto:info@itwhip.com"

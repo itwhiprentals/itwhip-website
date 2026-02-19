@@ -671,7 +671,7 @@ export default async function CityPage({
         name: t('schemaBusinessName', { city: cityName }),
         description: t('schemaBusinessDescription', { city: cityName, count: allCars.length }),
         url: `https://itwhip.com/rentals/cities/${city}`,
-        telephone: '+1-480-555-0100',
+        telephone: '+1-855-703-0806',
         address: {
           '@type': 'PostalAddress',
           addressLocality: cityName,

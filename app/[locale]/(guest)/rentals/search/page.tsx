@@ -446,7 +446,7 @@ function LocalBusinessSchema({ location }: { location: string }) {
     name: 'ItWhip Car Rentals',
     description: `Peer-to-peer car rental marketplace in ${location}. Rent cars directly from local owners at competitive prices.`,
     url: 'https://itwhip.com',
-    telephone: '+1-480-555-0123',
+    telephone: '+1-855-703-0806',
     address: {
       '@type': 'PostalAddress',
       addressLocality: location.split(',')[0].trim(),

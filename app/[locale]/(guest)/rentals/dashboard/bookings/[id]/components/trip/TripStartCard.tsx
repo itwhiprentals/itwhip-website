@@ -408,7 +408,7 @@ export function TripStartCard({ booking, onTripStarted, onCancel, onModify, onVi
         {/* Support Contact & Footer Links */}
         <div className="pt-3 border-t border-gray-100 dark:border-gray-800 space-y-1.5">
           <p className="text-center text-[10px] text-gray-400 dark:text-gray-500">
-            {t('needHelp')} <a href="tel:602-845-9758" className="font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">602-845-9758</a>
+            {t('needHelp')} <a href="tel:+18557030806" className="font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">(855) 703-0806</a>
           </p>
           <div className="flex items-center justify-center gap-3">
             {onViewAgreement && (

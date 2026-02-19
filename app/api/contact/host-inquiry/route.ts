@@ -219,7 +219,7 @@ export async function POST(request: NextRequest) {
           
           <p style="color: #666; font-size: 14px;">
             If you have any questions in the meantime, feel free to reply to this email or 
-            call us at (602) 555-0100.
+            call us at (855) 703-0806.
           </p>
           
           <p style="color: #666; font-size: 14px;">

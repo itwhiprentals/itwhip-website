@@ -277,7 +277,7 @@ export function getClaimReminderGuestTemplate(data: ClaimReminderGuestData): Ema
             <p style="color: #6b7280; font-size: 13px; margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
               <strong>URGENT SUPPORT</strong><br>
               Email: <a href="mailto:info@itwhip.com" style="color: #dc2626; font-weight: 700;">info@itwhip.com</a><br>
-              Phone: <a href="tel:+16025550100" style="color: #dc2626; font-weight: 700;">(602) 555-0100</a> (Available 24/7)
+              Phone: <a href="tel:+18557030806" style="color: #dc2626; font-weight: 700;">(855) 703-0806</a> (Available 24/7)
             </p>
           </div>
 
@@ -330,7 +330,7 @@ TO RESPOND, YOU NEED TO PROVIDE:
 
 URGENT SUPPORT (Available 24/7):
 Email: info@itwhip.com
-Phone: (602) 555-0100
+Phone: (855) 703-0806
 
 Don't let the deadline pass - respond now or contact us immediately if you have questions.
 

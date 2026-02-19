@@ -524,7 +524,7 @@ export default async function AirportPage({
         name: `ItWhip Car Rentals - ${airportData.fullName}`,
         description: airportData.description,
         url: `https://itwhip.com/rentals/airports/${airport}`,
-        telephone: '+1-480-555-0100',
+        telephone: '+1-855-703-0806',
         address: {
           '@type': 'PostalAddress',
           addressLocality: airportData.nearbyAreas[0] || 'Phoenix',

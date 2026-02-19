@@ -145,7 +145,7 @@ export default async function DamageProcessPage() {
                   <IoChevronForwardOutline className="w-4 h-4" />
                 </a>
                 <a
-                  href="tel:+14805550100"
+                  href="tel:+18557030806"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-sm font-medium"
                 >
                   <IoCallOutline className="w-5 h-5" />
@@ -318,7 +318,7 @@ export default async function DamageProcessPage() {
                 </div>
               </div>
               <a
-                href="tel:+14805550100"
+                href="tel:+18557030806"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
               >
                 <IoCallOutline className="w-5 h-5" />

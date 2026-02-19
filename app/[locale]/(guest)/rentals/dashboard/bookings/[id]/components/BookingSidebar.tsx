@@ -44,7 +44,7 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
 
   const handleEmergency = () => {
     if (confirm('Call ItWhip Support? For life-threatening emergencies, please call 911.')) {
-      window.location.href = 'tel:+16025551234'
+      window.location.href = 'tel:+18557030806'
     }
   }
 

@@ -1724,11 +1724,11 @@ export default function CorporatePage() {
                   {t('getROIAnalysis')}
                 </button>
                 <button 
-                  onClick={() => window.location.href = 'tel:+1-844-ITWHIP'}
+                  onClick={() => window.location.href = 'tel:+18557030806'}
                   className="px-8 py-3 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 border border-gray-200 dark:border-gray-700 flex items-center justify-center"
                 >
                   <IoCallOutline className="w-5 h-5 mr-2" />
-                  1-844-ITWHIP
+                  1-855-703-0806
                 </button>
               </div>
             </div>

@@ -214,8 +214,8 @@ export default function InsuranceRequirementsModal({
                 <h4 className="text-sm font-medium text-purple-900 mb-3 text-center">{t('supportAvailable')}</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-center">
                   {[
-                    { label: 'emergencyClaims', value: '1-800-ITWHIP-1' },
-                    { label: 'roadsideAssistanceLabel', value: '1-800-ITWHIP-2' },
+                    { label: 'emergencyClaims', value: '1-855-703-0806' },
+                    { label: 'roadsideAssistanceLabel', value: '1-602-609-2577' },
                     { label: 'generalSupport', value: 'info@itwhip.com' },
                   ].map(({ label, value }) => (
                     <div key={label}>

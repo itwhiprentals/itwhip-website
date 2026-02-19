@@ -425,8 +425,8 @@ export default async function InsuranceSupportPage() {
                 <IoCallOutline className="w-8 h-8 text-blue-500 mx-auto mb-3" />
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{t('contactPhoneTitle')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('contactPhoneDesc')}</p>
-                <a href="tel:+14805551234" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
-                  (480) 555-1234
+                <a href="tel:+18557030806" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+                  (855) 703-0806
                 </a>
                 <p className="text-xs text-gray-500 mt-1">{t('contactPhoneHours')}</p>
               </div>
@@ -504,7 +504,7 @@ export default async function InsuranceSupportPage() {
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <a
-                href="tel:+14805551234"
+                href="tel:+18557030806"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <IoCallOutline className="w-5 h-5" />

@@ -164,11 +164,11 @@ const organizationSchema = {
     postalCode: '85004',
     addressCountry: 'US'
   },
-  telephone: '+1-305-399-9069',
+  telephone: '+1-602-845-9758',
   contactPoint: {
     '@type': 'ContactPoint',
     contactType: 'customer service',
-    telephone: '+1-305-399-9069',
+    telephone: '+1-602-845-9758',
     email: 'info@itwhip.com',
     url: 'https://itwhip.com/contact',
     availableLanguage: ['English', 'Spanish', 'French']
@@ -200,7 +200,7 @@ const autoRentalSchema = {
   url: 'https://itwhip.com',
   priceRange: '$$',
   image: 'https://itwhip.com/og-image.jpg',
-  telephone: '+1-305-399-9069',
+  telephone: '+1-602-845-9758',
   address: {
     '@type': 'PostalAddress',
     streetAddress: '1 N 1st St',
