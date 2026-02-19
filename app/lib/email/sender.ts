@@ -4,7 +4,16 @@ import { EmailResponse } from './types'
 import { Resend } from 'resend'
 import crypto from 'crypto'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy-initialized so build-time module loading doesn't throw when env var is absent
+let _resend: InstanceType<typeof Resend> | null = null
+function getResend(): InstanceType<typeof Resend> {
+  if (!_resend) {
+    const key = process.env.RESEND_API_KEY
+    if (!key) throw new Error('RESEND_API_KEY not configured')
+    _resend = new Resend(key)
+  }
+  return _resend
+}
 
 const EMAIL_FROM = process.env.EMAIL_FROM || 'ItWhip Rentals <info@itwhip.com>'
 const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO || 'info@itwhip.com'
@@ -41,7 +50,7 @@ export async function sendEmail(
   try {
     console.log(`[${requestId}] Sending email via Resend to ${to}`)
 
-    const result = await resend.emails.send({
+    const result = await getResend().emails.send({
       from: EMAIL_FROM,
       to,
       subject,
@@ -91,7 +100,7 @@ export async function testConnection(requestId?: string): Promise<boolean> {
   }
 
   try {
-    const result = await resend.domains.list()
+    const result = await getResend().domains.list()
     if (result.error) {
       console.error(`[${reqId}] Resend connection test failed:`, result.error)
       return false
