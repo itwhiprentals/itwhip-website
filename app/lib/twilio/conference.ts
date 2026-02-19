@@ -32,7 +32,9 @@ export async function dialIntoConference(
       from: TWILIO_LOCAL_NUMBER,
       url: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/join-conference?room=${encodeURIComponent(roomName)}&lang=${lang}`,
       method: 'POST',
-      timeout: 30,
+      timeout: 25,
+      // AMD: detect voicemail so we don't connect caller to personal VM
+      machineDetection: 'Enable',
       statusCallback: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/conference-status?room=${encodeURIComponent(roomName)}&callerSid=${callerCallSid}&lang=${lang}`,
       statusCallbackEvent: ['completed', 'busy', 'no-answer', 'failed', 'canceled'],
       statusCallbackMethod: 'POST',

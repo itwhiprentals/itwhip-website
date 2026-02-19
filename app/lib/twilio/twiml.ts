@@ -68,9 +68,9 @@ export function generateSmsSent(lang: Lang = 'en', returnMenu: string = 'visitor
 
 function goodbye(twiml: twilio.twiml.VoiceResponse, lang: Lang) {
   say(twiml, t(lang,
-    'Thank you for calling ItWhip. For help anytime, visit itwhip.com. Goodbye.',
-    'Gracias por llamar a ItWhip. Para ayuda en cualquier momento, visita itwhip.com. Hasta luego.',
-    'Merci d\'avoir appelé ItWhip. Pour de l\'aide à tout moment, visitez itwhip.com. Au revoir.'
+    'Thank you for calling ItWhip. For help anytime, visit our website or chat with Coyi. Goodbye.',
+    'Gracias por llamar a ItWhip. Para ayuda en cualquier momento, visita nuestro sitio web o habla con Coyi. Hasta luego.',
+    'Merci d\'avoir appelé ItWhip. Pour de l\'aide à tout moment, visitez notre site web ou parlez avec Coyi. Au revoir.'
   ), lang)
   twiml.hangup()
 }
@@ -89,7 +89,7 @@ export function generateLanguageSelection(): string {
     timeout: GATHER_TIMEOUT,
   })
 
-  gather.say(VOICE.en, 'Thank you for calling ItWhip, Arizona\'s car rental marketplace. For faster service anytime, chat with Choé, our A.I. assistant, at itwhip.com.')
+  gather.say(VOICE.en, 'Thank you for calling ItWhip, Arizona\'s car rental marketplace. For faster help anytime, chat with Coyi, our A.I. assistant, on our website.')
   gather.pause({ length: 0.5 })
   gather.say(VOICE.en, 'For English, press 1.')
   gather.pause({ length: 0.3 })
@@ -166,7 +166,7 @@ export function generateVisitorMenu(lang: Lang = 'en', tries: number = 0): strin
 // 2.1: ABOUT ITWHIP (visitor → press 1)
 // ════════════════════════════════════════════════════════════════════
 // "ItWhip connects you with local car owners in Phoenix for affordable rentals.
-//  Browse cars and book at itwhip.com or chat with Choé."
+//  Browse cars and book at itwhip.com or chat with Coyi."
 
 export function generateAboutItWhip(lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
@@ -179,9 +179,9 @@ export function generateAboutItWhip(lang: Lang = 'en'): string {
   })
 
   say(gather, t(lang,
-    'ItWhip connects you with local car owners in Phoenix for affordable, flexible rentals. Browse cars, compare prices, and book instantly at itwhip.com. Or chat with Choé, our A.I. assistant, anytime for help finding the perfect car. To receive a text with links, press 1. To speak with someone, press 2. To hear this again, press 3.',
-    'ItWhip te conecta con dueños de autos locales en Phoenix para rentas accesibles y flexibles. Busca autos, compara precios y reserva al instante en itwhip.com. O habla con Choé, nuestro asistente de inteligencia artificial, para ayuda encontrando el auto perfecto. Para recibir un mensaje de texto con los enlaces, oprima 1. Para hablar con alguien, oprima 2. Para escuchar esto de nuevo, oprima 3.',
-    'ItWhip vous connecte avec des propriétaires de voitures locaux à Phoenix pour des locations abordables et flexibles. Parcourez les voitures, comparez les prix et réservez instantanément sur itwhip.com. Ou parlez avec Choé, notre assistant I.A., pour trouver la voiture parfaite. Pour recevoir un SMS avec les liens, appuyez sur 1. Pour parler à quelqu\'un, appuyez sur 2. Pour réécouter, appuyez sur 3.'
+    'ItWhip connects you with local car owners in Phoenix for affordable, flexible rentals. Browse cars, compare prices, and book instantly on our website. Or chat with Coyi, our A.I. assistant, anytime for help finding the perfect car. To receive a text with links, press 1. To speak with someone, press 2. To hear this again, press 3.',
+    'ItWhip te conecta con dueños de autos locales en Phoenix para rentas accesibles y flexibles. Busca autos, compara precios y reserva al instante en nuestro sitio web. O habla con Coyi, nuestro asistente de inteligencia artificial, para ayuda encontrando el auto perfecto. Para recibir un mensaje de texto con los enlaces, oprima 1. Para hablar con alguien, oprima 2. Para escuchar esto de nuevo, oprima 3.',
+    'ItWhip vous connecte avec des propriétaires de voitures locaux à Phoenix pour des locations abordables et flexibles. Parcourez les voitures, comparez les prix et réservez instantanément sur notre site web. Ou parlez avec Coyi, notre assistant I.A., pour trouver la voiture parfaite. Pour recevoir un SMS avec les liens, appuyez sur 1. Pour parler à quelqu\'un, appuyez sur 2. Pour réécouter, appuyez sur 3.'
   ), lang)
 
   // No input → goodbye
@@ -306,8 +306,8 @@ export function generateConnectToHost(roomName: string, lang: Lang = 'en'): stri
     action: menuUrl('voicemail-prompt', lang),
   })
   dial.conference({
-    waitUrl: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/wait-music?lang=${lang}&n=0`,
-    waitMethod: 'POST',
+    waitUrl: 'http://twimlets.com/holdmusic?Bucket=com.twilio.music.classical',
+    waitMethod: 'GET',
     startConferenceOnEnter: false,
     endConferenceOnExit: true,
     beep: 'false',
@@ -386,9 +386,9 @@ export function generateBookingSkip(lang: Lang = 'en'): string {
   })
 
   say(gather, t(lang,
-    'For help with a new booking, visit itwhip.com or chat with Choé, our A.I. assistant. To leave a voicemail for our team, press 1. To return to the main menu, press 2.',
-    'Para ayuda con una nueva reserva, visita itwhip.com o habla con Choé, nuestro asistente de inteligencia artificial. Para dejar un mensaje de voz, oprima 1. Para volver al menu principal, oprima 2.',
-    'Pour de l\'aide avec une nouvelle réservation, visitez itwhip.com ou parlez avec Choé, notre assistant I.A. Pour laisser un message vocal, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
+    'For help with a new booking, visit our website or chat with Coyi, our A.I. assistant. To leave a voicemail for our team, press 1. To return to the main menu, press 2.',
+    'Para ayuda con una nueva reserva, visita nuestro sitio web o habla con Coyi, nuestro asistente de inteligencia artificial. Para dejar un mensaje de voz, oprima 1. Para volver al menu principal, oprima 2.',
+    'Pour de l\'aide avec une nouvelle réservation, visitez notre site web ou parlez avec Coyi, notre assistant I.A. Pour laisser un message vocal, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
   ), lang)
 
   // No input → goodbye
@@ -442,9 +442,9 @@ export function generateInsuranceInfo(lang: Lang = 'en'): string {
   })
 
   say(gather, t(lang,
-    'ItWhip offers three tiers of insurance coverage: Basic at 40 percent, Standard at 75 percent, and Premium at 90 percent. For full details, visit itwhip.com slash insurance guide. To receive a text with this info, press 1. To return to the main menu, press 2.',
-    'ItWhip ofrece tres niveles de cobertura de seguro: Basico al 40 por ciento, Estandar al 75 por ciento y Premium al 90 por ciento. Para detalles completos, visita itwhip.com slash insurance guide. Para recibir un mensaje de texto con esta informacion, oprima 1. Para volver al menu principal, oprima 2.',
-    'ItWhip propose trois niveaux de couverture d\'assurance: Basique à 40 pour cent, Standard à 75 pour cent et Premium à 90 pour cent. Pour tous les détails, visitez itwhip.com slash insurance guide. Pour recevoir un SMS avec ces informations, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
+    'ItWhip offers three tiers of insurance coverage: Basic at 40 percent, Standard at 75 percent, and Premium at 90 percent. For full details, visit our insurance guide on the website. To receive a text with this info, press 1. To return to the main menu, press 2.',
+    'ItWhip ofrece tres niveles de cobertura de seguro: Basico al 40 por ciento, Estandar al 75 por ciento y Premium al 90 por ciento. Para detalles completos, visita nuestra guia de seguros en el sitio web. Para recibir un mensaje de texto con esta informacion, oprima 1. Para volver al menu principal, oprima 2.',
+    'ItWhip propose trois niveaux de couverture d\'assurance: Basique à 40 pour cent, Standard à 75 pour cent et Premium à 90 pour cent. Pour tous les détails, consultez notre guide d\'assurance sur le site web. Pour recevoir un SMS avec ces informations, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
   ), lang)
 
   // No input → goodbye
@@ -467,9 +467,9 @@ export function generateReportDamage(lang: Lang = 'en'): string {
   })
 
   say(gather, t(lang,
-    'To report vehicle damage, please use your ItWhip account online or chat with Choé at itwhip.com. This allows you to upload photos and documentation. To receive a text with the link, press 1. To leave a voicemail about damage, press 2. To return to the main menu, press 3.',
-    'Para reportar danos al vehiculo, por favor usa tu cuenta de ItWhip en linea o habla con Choé en itwhip.com. Esto te permite subir fotos y documentacion. Para recibir un mensaje de texto con el enlace, oprima 1. Para dejar un mensaje de voz sobre el dano, oprima 2. Para volver al menu principal, oprima 3.',
-    'Pour signaler des dommages au véhicule, veuillez utiliser votre compte ItWhip en ligne ou parler avec Choé sur itwhip.com. Cela vous permet de télécharger des photos et documents. Pour recevoir un SMS avec le lien, appuyez sur 1. Pour laisser un message vocal, appuyez sur 2. Pour revenir au menu principal, appuyez sur 3.'
+    'To report vehicle damage, please use your ItWhip account online or chat with Coyi on our website. This allows you to upload photos and documentation. To receive a text with the link, press 1. To leave a voicemail about damage, press 2. To return to the main menu, press 3.',
+    'Para reportar danos al vehiculo, por favor usa tu cuenta de ItWhip en linea o habla con Coyi en nuestro sitio web. Esto te permite subir fotos y documentacion. Para recibir un mensaje de texto con el enlace, oprima 1. Para dejar un mensaje de voz sobre el dano, oprima 2. Para volver al menu principal, oprima 3.',
+    'Pour signaler des dommages au véhicule, veuillez utiliser votre compte ItWhip en ligne ou parler avec Coyi sur notre site web. Cela vous permet de télécharger des photos et documents. Pour recevoir un SMS avec le lien, appuyez sur 1. Pour laisser un message vocal, appuyez sur 2. Pour revenir au menu principal, appuyez sur 3.'
   ), lang)
 
   // No input → goodbye
@@ -487,18 +487,18 @@ export function generateSpeakWithSomeone(roomName: string, lang: Lang = 'en'): s
   if (isBusinessHours()) {
     // Brief message before hold music starts
     say(twiml, t(lang,
-      'Connecting you to our team now. Just so you know, our A.I. assistant Choé can book everything for you in just a few chats at itwhip.com slash Choé. Please hold.',
-      'Conectandote con nuestro equipo. Solo para que sepas, nuestro asistente de inteligencia artificial Choé puede reservar todo por ti en solo unos chats en itwhip.com slash Choé. Por favor espera.',
-      'Nous vous connectons à notre équipe. Sachez que notre assistant I.A. Choé peut tout réserver pour vous en quelques messages sur itwhip.com slash Choé. Veuillez patienter.'
+      'Connecting you to our team now. Just so you know, our A.I. assistant Coyi can book everything for you in just a few chats on our website. Please hold.',
+      'Conectandote con nuestro equipo. Solo para que sepas, nuestro asistente de inteligencia artificial Coyi puede reservar todo por ti en solo unos chats en nuestro sitio web. Por favor espera.',
+      'Nous vous connectons à notre équipe. Sachez que notre assistant I.A. Coyi peut tout réserver pour vous en quelques messages sur notre site web. Veuillez patienter.'
     ), lang)
 
-    // Caller enters conference with hold music + promo messages
+    // Caller enters conference with hold music
     const dial = twiml.dial({
       action: menuUrl('voicemail-prompt', lang),
     })
     dial.conference({
-      waitUrl: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/wait-music?lang=${lang}&n=0`,
-      waitMethod: 'POST',
+      waitUrl: 'http://twimlets.com/holdmusic?Bucket=com.twilio.music.classical',
+      waitMethod: 'GET',
       startConferenceOnEnter: false,
       endConferenceOnExit: true,
       beep: 'false',
@@ -518,9 +518,9 @@ export function generateVoicemailPrompt(lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
 
   say(twiml, t(lang,
-    'Our office is currently closed. Our hours are Monday through Friday, 8 A.M. to 8 P.M. Arizona time. Please leave your name, phone number, and a brief message after the beep, and we\'ll return your call on the next business day. For instant help anytime, visit itwhip.com and chat with Choé.',
-    'Nuestra oficina esta cerrada. Nuestro horario es de lunes a viernes, de 8 de la manana a 8 de la noche, hora de Arizona. Por favor deja tu nombre, numero de telefono y un breve mensaje despues del tono, y te llamaremos el siguiente dia habil. Para ayuda instantanea, visita itwhip.com y habla con Choé.',
-    'Notre bureau est actuellement fermé. Nos heures sont du lundi au vendredi, de 8 heures à 20 heures, heure de l\'Arizona. Veuillez laisser votre nom, numéro de téléphone et un bref message après le bip, et nous vous rappellerons le prochain jour ouvrable. Pour de l\'aide instantanée, visitez itwhip.com et parlez avec Choé.'
+    'Our office is currently closed. Our hours are Monday through Friday, 8 A.M. to 8 P.M. Arizona time. Please leave your name, phone number, and a brief message after the beep, and we\'ll return your call on the next business day. For instant help anytime, visit our website and chat with Coyi.',
+    'Nuestra oficina esta cerrada. Nuestro horario es de lunes a viernes, de 8 de la manana a 8 de la noche, hora de Arizona. Por favor deja tu nombre, numero de telefono y un breve mensaje despues del tono, y te llamaremos el siguiente dia habil. Para ayuda instantanea, visita nuestro sitio web y habla con Coyi.',
+    'Notre bureau est actuellement fermé. Nos heures sont du lundi au vendredi, de 8 heures à 20 heures, heure de l\'Arizona. Veuillez laisser votre nom, numéro de téléphone et un bref message après le bip, et nous vous rappellerons le prochain jour ouvrable. Pour de l\'aide instantanée, visitez notre site web et parlez avec Coyi.'
   ), lang)
 
   twiml.record({

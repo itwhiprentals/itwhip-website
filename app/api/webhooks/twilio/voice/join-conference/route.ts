@@ -1,9 +1,14 @@
 // app/api/webhooks/twilio/voice/join-conference/route.ts
 // TwiML for the host/support when they answer the outbound call
 // Joins them into the same conference room as the waiting caller
+//
+// AMD (Answering Machine Detection): If Twilio detects voicemail,
+// we hang up and end the conference so the caller routes to IVR voicemail.
 
 import { NextRequest, NextResponse } from 'next/server'
 import twilio from 'twilio'
+import { parseTwilioBody } from '@/app/lib/twilio/verify-signature'
+import { endConference } from '@/app/lib/twilio/conference'
 
 const VoiceResponse = twilio.twiml.VoiceResponse
 
@@ -23,9 +28,22 @@ function xml(twiml: string): NextResponse {
 }
 
 export async function POST(request: NextRequest) {
+  const params = await parseTwilioBody(request)
   const url = new URL(request.url)
   const room = url.searchParams.get('room') || 'default'
   const lang = (url.searchParams.get('lang') || 'en') as Lang
+
+  // AMD check: if voicemail answered, don't join the conference
+  const answeredBy = params.AnsweredBy || ''
+  if (answeredBy.startsWith('machine')) {
+    console.log(`[Conference] AMD detected voicemail (${answeredBy}), ending conference ${room}`)
+    // End the conference so the caller routes to IVR voicemail
+    endConference(room).catch(e => console.error('[Conference] Failed to end:', e))
+    // Hang up the outbound call
+    const twiml = new VoiceResponse()
+    twiml.hangup()
+    return xml(twiml.toString())
+  }
 
   const twiml = new VoiceResponse()
 
