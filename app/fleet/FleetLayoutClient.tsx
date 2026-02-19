@@ -285,7 +285,7 @@ function InternalLayoutContent({
 
             {/* Mobile Navigation */}
             {mobileMenuOpen && (
-              <div className="md:hidden border-t border-gray-200 dark:border-gray-800 py-3">
+              <div className="md:hidden border-t border-gray-200 dark:border-gray-800 py-3 max-h-[70vh] overflow-y-auto">
                 <nav className="flex flex-col gap-2">
                   <Link
                     href="/fleet"

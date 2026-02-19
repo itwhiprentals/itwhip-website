@@ -4,11 +4,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 
-const FLEET_KEY = process.env.FLEET_API_KEY || 'phoenix-fleet-2847'
+const PHOENIX_KEY = 'phoenix-fleet-2847'
+const EXTERNAL_KEY = process.env.FLEET_API_KEY || ''
 
 function verifyFleetKey(request: NextRequest): boolean {
   const key = request.nextUrl.searchParams.get('key')
-  return key === FLEET_KEY
+  return key === PHOENIX_KEY || (!!EXTERNAL_KEY && key === EXTERNAL_KEY)
 }
 
 export async function GET(request: NextRequest) {

@@ -14,9 +14,9 @@ const VOICES: Record<string, { voice: string; language: string }> = {
 }
 
 const THANKS: Record<string, string> = {
-  en: 'Thank you. Your message has been recorded. For immediate help, visit itwhip.com and chat with coyee, our AI booking assistant. Goodbye.',
-  es: 'Gracias. Su mensaje ha sido grabado. Para ayuda inmediata, visite itwhip.com y hable con coyee, nuestra asistente de reservas. Adiós.',
-  fr: 'Merci. Votre message a été enregistré. Pour une aide immédiate, visitez itwhip.com et parlez avec coyee, notre assistant de réservation. Au revoir.',
+  en: 'Thank you. Your message has been recorded. For immediate help, visit itwhip.com and chat with Coyi, our AI booking assistant. Goodbye.',
+  es: 'Gracias. Su mensaje ha sido grabado. Para ayuda inmediata, visite itwhip.com y hable con Coyi, nuestra asistente de reservas. Adiós.',
+  fr: 'Merci. Votre message a été enregistré. Pour une aide immédiate, visitez itwhip.com et parlez avec Coyi, notre assistant de réservation. Au revoir.',
 }
 
 export async function POST(request: NextRequest) {
