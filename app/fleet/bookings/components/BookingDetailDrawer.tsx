@@ -14,7 +14,8 @@ import {
   IoWarningOutline,
   IoCheckmarkCircleOutline,
   IoTimeOutline,
-  IoOpenOutline
+  IoOpenOutline,
+  IoCallOutline
 } from 'react-icons/io5'
 import { FleetBooking, formatCurrency, formatDate, formatDateTime, getStatusColor, getVerificationColor, getTripStatusLabel, getReviewStatusColor, getReviewStatusLabel } from '../types'
 import { BookingQuickActions } from './BookingQuickActions'
@@ -157,9 +158,18 @@ export function BookingDetailDrawer({
                 <span className="text-sm font-medium text-gray-900 dark:text-white">{booking.guestEmail}</span>
               </div>
               {booking.guestPhone && (
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-500">Phone</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{booking.guestPhone}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">{booking.guestPhone}</span>
+                    <button
+                      onClick={() => window.dispatchEvent(new CustomEvent('phone-dial', { detail: { number: booking.guestPhone } }))}
+                      className="p-1 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
+                      title="Call guest"
+                    >
+                      <IoCallOutline className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               )}
               {booking.guestId && (
@@ -194,7 +204,18 @@ export function BookingDetailDrawer({
                 {booking.car.licensePlate && (
                   <p className="text-xs text-gray-500">{booking.car.licensePlate}</p>
                 )}
-                <p className="text-xs text-gray-500">Host: {booking.host.name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-gray-500">Host: {booking.host.name}</p>
+                  {booking.host.phone && (
+                    <button
+                      onClick={() => window.dispatchEvent(new CustomEvent('phone-dial', { detail: { number: booking.host.phone } }))}
+                      className="p-0.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
+                      title={`Call host: ${booking.host.phone}`}
+                    >
+                      <IoCallOutline className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
                 <Link
                   href={`/fleet/hosts/${booking.host.id}`}
                   className="text-xs text-purple-600 hover:underline"

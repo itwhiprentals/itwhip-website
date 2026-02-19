@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
   const url = new URL(request.url)
   const room = url.searchParams.get('room') || 'default'
   const lang = (url.searchParams.get('lang') || 'en') as Lang
+  const endOnExit = url.searchParams.get('endOnExit') !== 'false'
 
   // AMD check: if voicemail answered, don't join the conference
   const answeredBy = params.AnsweredBy || ''
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
   const dial = twiml.dial()
   dial.conference({
     startConferenceOnEnter: true,
-    endConferenceOnExit: true,
+    endConferenceOnExit: endOnExit,
     beep: 'false',
   }, room)
 
