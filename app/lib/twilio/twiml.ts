@@ -90,11 +90,11 @@ export function generateLanguageSelection(): string {
   })
 
   gather.say(VOICE.en, 'Thank you for calling ItWhip, Arizona\'s car rental marketplace. For faster help anytime, chat with Coyi, our A.I. assistant, on our website.')
-  gather.pause({ length: 0.5 })
+  gather.pause({ length: 1 })
   gather.say(VOICE.en, 'For English, press 1.')
-  gather.pause({ length: 0.3 })
+  gather.pause({ length: 1 })
   gather.say(VOICE.es, 'Para español, oprima el 2.')
-  gather.pause({ length: 0.3 })
+  gather.pause({ length: 1 })
   gather.say(VOICE.fr, 'Pour le français, appuyez sur le 3.')
 
   // No input → goodbye
@@ -273,7 +273,7 @@ export function generateBookingFound(booking: {
     `Encontre tu reserva. Tienes un ${booking.carName} reservado para ${booking.dates} con ${booking.hostName}.`,
     `J'ai trouvé votre réservation. Vous avez un ${booking.carName} réservé pour ${booking.dates} avec ${booking.hostName}.`
   ), lang)
-  gather.pause({ length: 0.3 })
+  gather.pause({ length: 1 })
   say(gather, t(lang,
     'To connect with your host, press 1. To hear pickup details, press 2. To return to the main menu, press 3.',
     'Para conectar con tu anfitrion, oprima 1. Para escuchar detalles de recogida, oprima 2. Para volver al menu principal, oprima 3.',
