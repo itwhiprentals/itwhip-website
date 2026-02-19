@@ -179,9 +179,9 @@ export function generateAboutItWhip(lang: Lang = 'en'): string {
   })
 
   say(gather, t(lang,
-    'ItWhip connects you with local car owners in Phoenix for affordable, flexible rentals. Browse cars, compare prices, and book instantly on our website. Or chat with Coyi, our A.I. assistant, anytime for help finding the perfect car. To receive a text with links, press 1. To speak with someone, press 2. To hear this again, press 3.',
-    'ItWhip te conecta con dueños de autos locales en Phoenix para rentas accesibles y flexibles. Busca autos, compara precios y reserva al instante en nuestro sitio web. O habla con Coyi, nuestro asistente de inteligencia artificial, para ayuda encontrando el auto perfecto. Para recibir un mensaje de texto con los enlaces, oprima 1. Para hablar con alguien, oprima 2. Para escuchar esto de nuevo, oprima 3.',
-    'ItWhip vous connecte avec des propriétaires de voitures locaux à Phoenix pour des locations abordables et flexibles. Parcourez les voitures, comparez les prix et réservez instantanément sur notre site web. Ou parlez avec Coyi, notre assistant I.A., pour trouver la voiture parfaite. Pour recevoir un SMS avec les liens, appuyez sur 1. Pour parler à quelqu\'un, appuyez sur 2. Pour réécouter, appuyez sur 3.'
+    'ItWhip connects you with local car owners across Arizona for affordable, flexible rentals. Browse cars, compare prices, and book instantly on our website. Or chat with Coyi, our A.I. assistant, anytime for help finding the perfect car. To receive a text with links, press 1. To speak with someone, press 2. To hear this again, press 3.',
+    'ItWhip te conecta con dueños de autos locales en todo Arizona para rentas accesibles y flexibles. Busca autos, compara precios y reserva al instante en nuestro sitio web. O habla con Coyi, nuestro asistente de inteligencia artificial, para ayuda encontrando el auto perfecto. Para recibir un mensaje de texto con los enlaces, oprima 1. Para hablar con alguien, oprima 2. Para escuchar esto de nuevo, oprima 3.',
+    'ItWhip vous connecte avec des propriétaires de voitures locaux à travers l\'Arizona pour des locations abordables et flexibles. Parcourez les voitures, comparez les prix et réservez instantanément sur notre site web. Ou parlez avec Coyi, notre assistant I.A., pour trouver la voiture parfaite. Pour recevoir un SMS avec les liens, appuyez sur 1. Pour parler à quelqu\'un, appuyez sur 2. Pour réécouter, appuyez sur 3.'
   ), lang)
 
   // No input → goodbye
@@ -478,6 +478,81 @@ export function generateReportDamage(lang: Lang = 'en'): string {
 }
 
 // ════════════════════════════════════════════════════════════════════
+// 5.3: CLAIM STATUS — BOOKING CODE ENTRY
+// ════════════════════════════════════════════════════════════════════
+
+export function generateClaimStatusEntry(lang: Lang = 'en'): string {
+  const twiml = new VoiceResponse()
+
+  const gather = twiml.gather({
+    finishOnKey: '#',
+    action: menuUrl('claim-code', lang),
+    method: 'POST',
+    timeout: 10,
+  })
+
+  say(gather, t(lang,
+    'Please enter your 6-digit booking code followed by the pound sign. Or press star to go back.',
+    'Por favor ingresa tu codigo de reserva de 6 digitos seguido de la tecla de gato. O presiona asterisco para regresar.',
+    'Veuillez entrer votre code de réservation à 6 chiffres suivi du signe dièse. Ou appuyez sur étoile pour revenir.'
+  ), lang)
+
+  // No input → goodbye
+  goodbye(twiml, lang)
+  return twiml.toString()
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 5.3a: CLAIM FOUND
+// ════════════════════════════════════════════════════════════════════
+
+export function generateClaimFound(bookingCode: string, claimStatus: string, lang: Lang = 'en'): string {
+  const twiml = new VoiceResponse()
+
+  const gather = twiml.gather({
+    numDigits: 1,
+    action: menuUrl('claim-found', lang, `&code=${bookingCode}`),
+    method: 'POST',
+    timeout: GATHER_TIMEOUT,
+  })
+
+  say(gather, t(lang,
+    `Your claim for booking ${bookingCode} is currently ${claimStatus}. To speak with someone about this claim, press 1. To return to the main menu, press 2.`,
+    `Tu reclamo para la reserva ${bookingCode} esta actualmente ${claimStatus}. Para hablar con alguien sobre este reclamo, oprima 1. Para volver al menu principal, oprima 2.`,
+    `Votre réclamation pour la réservation ${bookingCode} est actuellement ${claimStatus}. Pour parler à quelqu'un à ce sujet, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.`
+  ), lang)
+
+  // No input → goodbye
+  goodbye(twiml, lang)
+  return twiml.toString()
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 5.3b: CLAIM NOT FOUND
+// ════════════════════════════════════════════════════════════════════
+
+export function generateClaimNotFound(lang: Lang = 'en'): string {
+  const twiml = new VoiceResponse()
+
+  const gather = twiml.gather({
+    numDigits: 1,
+    action: menuUrl('claim-not-found', lang),
+    method: 'POST',
+    timeout: GATHER_TIMEOUT,
+  })
+
+  say(gather, t(lang,
+    'I couldn\'t find a claim for that booking code. To try again, press 1. To return to the main menu, press 2.',
+    'No encontre un reclamo para ese codigo de reserva. Para intentar de nuevo, oprima 1. Para volver al menu principal, oprima 2.',
+    'Je n\'ai pas trouvé de réclamation pour ce code de réservation. Pour réessayer, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
+  ), lang)
+
+  // No input → goodbye
+  goodbye(twiml, lang)
+  return twiml.toString()
+}
+
+// ════════════════════════════════════════════════════════════════════
 // 6.0: SPEAK WITH SOMEONE / VOICEMAIL
 // ════════════════════════════════════════════════════════════════════
 
@@ -534,9 +609,9 @@ export function generateVoicemailPrompt(lang: Lang = 'en'): string {
   })
 
   say(twiml, t(lang,
-    'Thank you. Your message has been received. Goodbye.',
-    'Gracias. Tu mensaje fue recibido. Hasta luego.',
-    'Merci. Votre message a été reçu. Au revoir.'
+    'Thank you. Your message has been received. Remember, Coyi is available 24 7 on our website. Goodbye.',
+    'Gracias. Tu mensaje fue recibido. Recuerda, Coyi esta disponible las 24 horas en nuestro sitio web. Hasta luego.',
+    'Merci. Votre message a été reçu. N\'oubliez pas, Coyi est disponible 24 heures sur 24 sur notre site web. Au revoir.'
   ), lang)
 
   twiml.hangup()

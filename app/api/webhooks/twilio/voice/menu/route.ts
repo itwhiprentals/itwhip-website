@@ -26,11 +26,67 @@ import {
   generateInvalidInput,
   generateSmsSent,
   generateGoodbye,
+  generateClaimStatusEntry,
+  generateClaimFound,
+  generateClaimNotFound,
 } from '@/app/lib/twilio/twiml'
 
 type Lang = 'en' | 'es' | 'fr'
 
 const SUPPORT_PHONE = process.env.SUPPORT_PHONE_NUMBER || '+16026092577'
+
+// Human-readable claim status for IVR
+const CLAIM_STATUS_LABELS: Record<Lang, Record<string, string>> = {
+  en: {
+    PENDING: 'pending review',
+    UNDER_REVIEW: 'under review',
+    APPROVED: 'approved',
+    DENIED: 'denied',
+    PAID: 'paid',
+    DISPUTED: 'disputed',
+    RESOLVED: 'resolved',
+    GUEST_RESPONSE_PENDING: 'waiting for guest response',
+    GUEST_NO_RESPONSE: 'awaiting guest response',
+    VEHICLE_REPAIR_PENDING: 'pending vehicle repair',
+    INSURANCE_PROCESSING: 'being processed by insurance',
+    CLOSED: 'closed',
+    GUEST_RESPONDED: 'guest has responded',
+  },
+  es: {
+    PENDING: 'pendiente de revision',
+    UNDER_REVIEW: 'en revision',
+    APPROVED: 'aprobado',
+    DENIED: 'denegado',
+    PAID: 'pagado',
+    DISPUTED: 'en disputa',
+    RESOLVED: 'resuelto',
+    GUEST_RESPONSE_PENDING: 'esperando respuesta del huesped',
+    GUEST_NO_RESPONSE: 'esperando respuesta del huesped',
+    VEHICLE_REPAIR_PENDING: 'pendiente de reparacion del vehiculo',
+    INSURANCE_PROCESSING: 'en proceso por el seguro',
+    CLOSED: 'cerrado',
+    GUEST_RESPONDED: 'el huesped ha respondido',
+  },
+  fr: {
+    PENDING: 'en attente d\'examen',
+    UNDER_REVIEW: 'en cours d\'examen',
+    APPROVED: 'approuvée',
+    DENIED: 'refusée',
+    PAID: 'payée',
+    DISPUTED: 'contestée',
+    RESOLVED: 'résolue',
+    GUEST_RESPONSE_PENDING: 'en attente de réponse du locataire',
+    GUEST_NO_RESPONSE: 'en attente de réponse du locataire',
+    VEHICLE_REPAIR_PENDING: 'en attente de réparation du véhicule',
+    INSURANCE_PROCESSING: 'en cours de traitement par l\'assurance',
+    CLOSED: 'clôturée',
+    GUEST_RESPONDED: 'le locataire a répondu',
+  },
+}
+
+function claimStatusLabel(status: string, lang: Lang): string {
+  return CLAIM_STATUS_LABELS[lang]?.[status] || CLAIM_STATUS_LABELS.en[status] || status.toLowerCase().replace(/_/g, ' ')
+}
 
 function xml(twiml: string): NextResponse {
   return new NextResponse(twiml, {
@@ -264,7 +320,7 @@ export async function POST(request: NextRequest) {
             twiml = generateReportDamage(lang)
             break
           case '3': // Check claim status
-            twiml = generateReportDamage(lang)
+            twiml = generateClaimStatusEntry(lang)
             break
           case '4': // Back to main
             twiml = generateCustomerMenu(lang)
@@ -354,6 +410,58 @@ export async function POST(request: NextRequest) {
         }
         break
       }
+
+      // ─── Claim Status — Code Entry ────────────────────────
+      case 'claim-code': {
+        if (digits === '*') {
+          twiml = generateInsuranceMenu(lang)
+          break
+        }
+
+        if (digits && digits.length >= 4) {
+          const booking = await lookupBookingByCode(digits)
+          if (booking && booking.claims && booking.claims.length > 0) {
+            // Use the most recent claim
+            const claim = booking.claims[0]
+            const statusLabel = claimStatusLabel(claim.status, lang)
+            twiml = generateClaimFound(booking.bookingCode, statusLabel, lang)
+          } else if (booking) {
+            // Booking exists but no claims
+            twiml = generateClaimNotFound(lang)
+          } else {
+            twiml = generateClaimNotFound(lang)
+          }
+        } else {
+          twiml = generateClaimNotFound(lang)
+        }
+        break
+      }
+
+      // ─── Claim Found Actions ──────────────────────────────
+      case 'claim-found': {
+        switch (digits) {
+          case '1': { // Speak with someone about the claim
+            const room = makeRoom()
+            connectViaConference(SUPPORT_PHONE, room, callSid, lang)
+            twiml = generateSpeakWithSomeone(room, lang)
+            break
+          }
+          default:
+            twiml = generateCustomerMenu(lang)
+        }
+        break
+      }
+
+      // ─── Claim Not Found Actions ──────────────────────────
+      case 'claim-not-found':
+        switch (digits) {
+          case '1': // Try again
+            twiml = generateClaimStatusEntry(lang)
+            break
+          default:
+            twiml = generateCustomerMenu(lang)
+        }
+        break
 
       // ─── Booking Not Found Actions ──────────────────────
       case 'booking-not-found':
