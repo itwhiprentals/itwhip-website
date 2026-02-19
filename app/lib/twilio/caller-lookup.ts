@@ -81,7 +81,10 @@ async function findActiveBookingForHost(hostId: string): Promise<ActiveBooking |
     where: {
       hostId,
       status: { in: ['CONFIRMED', 'ACTIVE'] },
-      tripStatus: { in: ['ACTIVE', 'NOT_STARTED', null] },
+      OR: [
+        { tripStatus: { in: ['ACTIVE', 'NOT_STARTED'] } },
+        { tripStatus: null },
+      ],
     },
     orderBy: { startDate: 'asc' },
     select: {
@@ -115,7 +118,10 @@ async function findActiveBookingForGuest(guestId: string): Promise<ActiveBooking
     where: {
       reviewerProfileId: guestId,
       status: { in: ['CONFIRMED', 'ACTIVE'] },
-      tripStatus: { in: ['ACTIVE', 'NOT_STARTED', null] },
+      OR: [
+        { tripStatus: { in: ['ACTIVE', 'NOT_STARTED'] } },
+        { tripStatus: null },
+      ],
     },
     orderBy: { startDate: 'asc' },
     select: {
@@ -150,7 +156,10 @@ async function findActiveBookingByGuestPhone(digits: string): Promise<(ActiveBoo
     where: {
       guestPhone: { contains: digits },
       status: { in: ['CONFIRMED', 'ACTIVE'] },
-      tripStatus: { in: ['ACTIVE', 'NOT_STARTED', null] },
+      OR: [
+        { tripStatus: { in: ['ACTIVE', 'NOT_STARTED'] } },
+        { tripStatus: null },
+      ],
     },
     orderBy: { startDate: 'asc' },
     select: {
