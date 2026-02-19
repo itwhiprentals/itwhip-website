@@ -22,7 +22,8 @@ import {
   IoHeadsetOutline,
   IoFlashOutline,
   IoGlobeOutline,
-  IoShieldCheckmarkOutline
+  IoShieldCheckmarkOutline,
+  IoCallOutline
 } from 'react-icons/io5'
 
 export default function ContactContent() {
@@ -236,19 +237,26 @@ export default function ContactContent() {
                 {t('heroSubheading')}
               </p>
 
-              {/* Why Digital Support */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 max-w-2xl mx-auto">
-                <div className="flex items-start space-x-3">
-                  <IoGlobeOutline className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div className="text-left">
-                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-                      {t('whyDigitalSupportTitle')}
-                    </p>
-                    <p className="text-xs text-blue-800 dark:text-blue-200">
-                      {t('whyDigitalSupportText')}
-                    </p>
-                  </div>
-                </div>
+              {/* Contact Options */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl mx-auto">
+                <a href="tel:+18557030806" className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 hover:bg-green-100 dark:hover:bg-green-900/40 transition text-center">
+                  <IoCallOutline className="w-6 h-6 text-green-600 mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-green-900 dark:text-green-100">{t('callUsLabel')}</p>
+                  <p className="text-base font-bold text-green-700 dark:text-green-300">{t('callUsPhone')}</p>
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">{t('callUsHours')}</p>
+                </a>
+                <a href="mailto:info@itwhip.com" className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition text-center">
+                  <IoMailOutline className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">{t('emailUsLabel')}</p>
+                  <p className="text-base font-bold text-blue-700 dark:text-blue-300">{t('emailUsAddress')}</p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">{t('emailUsResponse')}</p>
+                </a>
+                <a href="tel:+16026092577" className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 hover:bg-red-100 dark:hover:bg-red-900/40 transition text-center">
+                  <IoFlashOutline className="w-6 h-6 text-red-600 mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-red-900 dark:text-red-100">{t('emergencyLine')}</p>
+                  <p className="text-base font-bold text-red-700 dark:text-red-300">{t('emergencyLinePhone')}</p>
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">{t('emergencyLineNote')}</p>
+                </a>
               </div>
             </div>
           </div>

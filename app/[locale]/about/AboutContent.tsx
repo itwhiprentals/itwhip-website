@@ -240,6 +240,7 @@ export default function AboutContent() {
                 {t('contactHeading')}
               </h3>
               <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                <p className="font-medium text-gray-900 dark:text-white">{t('contactPhoneSupport')}</p>
                 <p>{t('contactGeneralInquiries')}</p>
                 <p>{t('contactHostSupport')}</p>
                 <p>{t('contactPartnerInquiries')}</p>
