@@ -195,7 +195,7 @@ export default function PartnerHero({
                   alt={companyName}
                   fill
                   className="object-contain"
-                  style={{ transform: 'scale(1.15) translateY(1.5px)', transformOrigin: 'center center' }}
+                  style={{ transform: 'scale(1.05) translateY(1.5px)', transformOrigin: 'center center' }}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">

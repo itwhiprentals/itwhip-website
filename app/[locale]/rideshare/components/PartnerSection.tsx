@@ -155,15 +155,15 @@ export default function PartnerSection({ partner }: PartnerSectionProps) {
 
               {/* Name + Badge + Rating */}
               <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <h2 className="text-base font-bold text-gray-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors truncate">
                     {partner.companyName}
                   </h2>
                   {partner.isStripeVerified && (
-                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-[10px] font-medium flex-shrink-0">
-                      <IoCheckmarkCircle className="w-3 h-3" />
-                      {t('partnerVerified')}
-                    </span>
+                    <IoCheckmarkCircle className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" title={t('partnerVerified')} />
+                  )}
+                  {partner.hasActiveDiscount && (
+                    <DiscountBanner discounts={partner.discounts} variant="inline" />
                   )}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -172,9 +172,6 @@ export default function PartnerSection({ partner }: PartnerSectionProps) {
                       <IoStar className="w-3 h-3 text-amber-400 fill-current" />
                       {partner.avgRating.toFixed(1)}
                     </span>
-                  )}
-                  {partner.hasActiveDiscount && (
-                    <DiscountBanner discounts={partner.discounts} variant="inline" />
                   )}
                 </div>
               </div>

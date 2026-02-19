@@ -23,6 +23,10 @@ function pickNamespaces(messages: typeof enMessages) {
     Footer: m.Footer,
     Common: m.Common,
     Auth: m.Auth,
+    // Partner auth pages
+    PartnerLogin: m.PartnerLogin,
+    PartnerForgotPassword: m.PartnerForgotPassword,
+    PartnerResetPassword: m.PartnerResetPassword,
     // Partner portal namespaces
     PartnerNav: m.PartnerNav,
     PartnerDashboard: m.PartnerDashboard,

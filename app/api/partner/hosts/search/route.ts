@@ -7,7 +7,7 @@ import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
 
 // ItWhip platform partner email - only this partner can search hosts
-const ITWHIP_PLATFORM_EMAIL = process.env.ITWHIP_PLATFORM_EMAIL || 'jordan@smartcardemo.com'
+const ITWHIP_PLATFORM_EMAIL = process.env.ITWHIP_PLATFORM_EMAIL || 'Alex@driveitpro.com'
 
 export async function GET(request: NextRequest) {
   try {

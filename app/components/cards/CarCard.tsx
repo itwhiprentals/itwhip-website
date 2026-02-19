@@ -150,7 +150,7 @@ export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
 
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-3">
-              {isNewListing(tripCount) ? (
+              {tripCount === 0 ? (
                 <span className="text-green-600 dark:text-green-400 font-medium">{t('newListing')}</span>
               ) : car.rating && (Number(car.rating.average || car.rating) > 0) ? (
                 <>
