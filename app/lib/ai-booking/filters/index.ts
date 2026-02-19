@@ -54,12 +54,14 @@ export {
  * Applies all filters in sequence
  */
 export function buildWhereClause(query: SearchQuery): Prisma.RentalCarWhereInput {
-  // Start with base conditions (active cars from approved hosts)
+  // Start with base conditions (active cars from approved hosts with complete listings)
   let where: Prisma.RentalCarWhereInput = {
     isActive: true,
     host: {
       approvalStatus: 'APPROVED',
     },
+    dailyRate: { gt: 0 },
+    photos: { some: {} },
   };
 
   // Apply filters in order
@@ -126,12 +128,14 @@ export interface SearchRouteFilters {
  * Handles delivery as string array (multiple options)
  */
 export function buildSearchWhereClause(filters: SearchRouteFilters): Prisma.RentalCarWhereInput {
-  // Start with base conditions
+  // Start with base conditions (active cars from approved hosts with complete listings)
   let where: Prisma.RentalCarWhereInput = {
     isActive: true,
     host: {
       approvalStatus: 'APPROVED',
     },
+    dailyRate: { gt: 0 },
+    photos: { some: {} },
   };
 
   // Apply filters in order

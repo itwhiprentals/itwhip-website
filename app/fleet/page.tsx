@@ -65,7 +65,7 @@ export default function FleetDashboard() {
 
   const fetchCars = async () => {
     try {
-      const response = await fetch(`/fleet/api/cars?key=${apiKey}`)
+      const response = await fetch(`/fleet/api/cars?key=${apiKey}&limit=500`)
       const data = await response.json()
       if (data.success) {
         setCars(data.data || [])
@@ -208,6 +208,15 @@ export default function FleetDashboard() {
           >
             <IoPersonOutline className="text-2xl group-hover:scale-110 transition-transform" />
             <span className="text-xs font-medium text-center leading-tight">Hosts</span>
+          </Link>
+
+          {/* Vehicles */}
+          <Link
+            href={`/fleet/vehicles?key=${apiKey}`}
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-slate-600 to-gray-700 text-white rounded-lg hover:from-slate-700 hover:to-gray-800 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
+          >
+            <IoCarSportOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-xs font-medium text-center leading-tight">Vehicles</span>
           </Link>
 
           {/* Guests */}

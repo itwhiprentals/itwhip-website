@@ -30,11 +30,26 @@ export async function GET(
         host: {
           select: {
             id: true,
+            name: true,
             partnerCompanyName: true,
             partnerSlug: true,
             currentCommissionRate: true,
             active: true,
-            email: true
+            email: true,
+            phone: true,
+            approvalStatus: true,
+            documentsVerified: true,
+            isVerified: true,
+            hostType: true,
+            stripeConnectAccountId: true,
+            stripeAccountStatus: true,
+            stripePayoutsEnabled: true,
+            stripeChargesEnabled: true,
+            bankVerified: true,
+            photoIdVerified: true,
+            rating: true,
+            totalTrips: true,
+            profilePhoto: true,
           }
         },
         photos: {
@@ -113,6 +128,28 @@ export async function GET(
       _count: true
     })
 
+    // Build listing blockers
+    const blockers: { key: string; label: string; severity: 'error' | 'warning' }[] = []
+    if (!vehicle.isActive) blockers.push({ key: 'inactive', label: 'Car is deactivated', severity: 'error' })
+    if (!vehicle.host) blockers.push({ key: 'no_host', label: 'No host assigned', severity: 'error' })
+    if (vehicle.host?.approvalStatus !== 'APPROVED') blockers.push({ key: 'host_not_approved', label: `Host status: ${vehicle.host?.approvalStatus || 'N/A'}`, severity: 'error' })
+    if (vehicle.dailyRate <= 0) blockers.push({ key: 'no_rate', label: 'Daily rate is $0', severity: 'error' })
+    if (vehicle.photos.length === 0) blockers.push({ key: 'no_photos', label: 'No photos uploaded', severity: 'error' })
+    if (vehicle.hasActiveClaim) blockers.push({ key: 'active_claim', label: 'Active claim on vehicle', severity: 'error' })
+    if (vehicle.safetyHold) blockers.push({ key: 'safety_hold', label: `Safety hold: ${vehicle.safetyHoldReason || 'No reason'}`, severity: 'error' })
+    if (vehicle.requiresInspection) blockers.push({ key: 'inspection', label: 'Requires inspection', severity: 'warning' })
+    if (!vehicle.host?.stripePayoutsEnabled) blockers.push({ key: 'stripe_payouts', label: 'Host Stripe payouts not enabled', severity: 'warning' })
+    if (!vehicle.host?.documentsVerified) blockers.push({ key: 'docs_not_verified', label: 'Host documents not verified', severity: 'warning' })
+    if (vehicle.year < 2015 && vehicle.vehicleType === 'RENTAL') blockers.push({ key: 'old_vehicle', label: `${vehicle.year} vehicle — consider changing to Rideshare`, severity: 'warning' })
+    if (!vehicle.address || !vehicle.city) blockers.push({ key: 'no_location', label: 'Missing pickup location', severity: 'warning' })
+    if (!vehicle.transmission) blockers.push({ key: 'no_transmission', label: 'Transmission not set', severity: 'warning' })
+
+    // Determine if car would appear in search
+    const isSearchable = vehicle.isActive &&
+      vehicle.host?.approvalStatus === 'APPROVED' &&
+      vehicle.dailyRate > 0 &&
+      vehicle.photos.length > 0
+
     return NextResponse.json({
       success: true,
       vehicle: {
@@ -125,10 +162,22 @@ export async function GET(
         licensePlate: vehicle.licensePlate,
         isActive: vehicle.isActive,
         vehicleType: vehicle.vehicleType || 'RENTAL',
+        carType: vehicle.carType,
+        // Claim fields
+        hasActiveClaim: vehicle.hasActiveClaim,
+        activeClaimId: vehicle.activeClaimId,
+        claimDeactivatedAt: vehicle.claimDeactivatedAt?.toISOString() || null,
+        safetyHold: vehicle.safetyHold,
+        safetyHoldReason: vehicle.safetyHoldReason,
+        requiresInspection: vehicle.requiresInspection,
         // Pricing
         dailyRate: vehicle.dailyRate,
         weeklyRate: vehicle.weeklyRate,
         monthlyRate: vehicle.monthlyRate,
+        deliveryFee: vehicle.deliveryFee,
+        insuranceDaily: vehicle.insuranceDaily,
+        insuranceIncluded: vehicle.insuranceIncluded,
+        noDeposit: vehicle.noDeposit,
         // Details
         color: vehicle.color,
         seats: vehicle.seats,
@@ -136,27 +185,51 @@ export async function GET(
         transmission: vehicle.transmission,
         fuelType: vehicle.fuelType,
         currentMileage: vehicle.currentMileage,
+        instantBook: vehicle.instantBook,
         // Photos
         primaryPhoto: vehicle.photos.find((p: any) => p.isHero)?.url || vehicle.photos[0]?.url || null,
         photos: vehicle.photos.map((p: any) => p.url),
+        photoCount: vehicle.photos.length,
         // Features
         features: vehicle.features || '',
         description: vehicle.description,
         // Location
+        address: vehicle.address,
         city: vehicle.city,
         state: vehicle.state,
         zipCode: vehicle.zipCode,
+        airportPickup: vehicle.airportPickup,
+        hotelDelivery: vehicle.hotelDelivery,
+        homeDelivery: vehicle.homeDelivery,
+        // Trip settings
+        minTripDuration: vehicle.minTripDuration,
+        maxTripDuration: vehicle.maxTripDuration,
         // Timestamps
         createdAt: vehicle.createdAt.toISOString(),
         updatedAt: vehicle.updatedAt.toISOString(),
-        // Partner
-        partner: vehicle.host ? {
+        // Listing readiness
+        isSearchable,
+        blockers,
+        // Host (full detail for summary page)
+        host: vehicle.host ? {
           id: vehicle.host.id,
-          name: vehicle.host.partnerCompanyName,
-          slug: vehicle.host.partnerSlug,
+          name: vehicle.host.partnerCompanyName || vehicle.host.name,
           email: vehicle.host.email,
+          phone: vehicle.host.phone,
+          hostType: vehicle.host.hostType,
+          approvalStatus: vehicle.host.approvalStatus,
+          active: vehicle.host.active,
+          documentsVerified: vehicle.host.documentsVerified,
+          isVerified: vehicle.host.isVerified,
+          photoIdVerified: vehicle.host.photoIdVerified,
+          stripeConnected: !!vehicle.host.stripeConnectAccountId,
+          stripePayoutsEnabled: vehicle.host.stripePayoutsEnabled,
+          stripeChargesEnabled: vehicle.host.stripeChargesEnabled,
+          bankVerified: vehicle.host.bankVerified,
           commissionRate: vehicle.host.currentCommissionRate,
-          active: vehicle.host.active
+          rating: vehicle.host.rating,
+          totalTrips: vehicle.host.totalTrips,
+          profilePhoto: vehicle.host.profilePhoto,
         } : null,
         // Recent activity
         recentBookings: vehicle.bookings.map((b: any) => ({

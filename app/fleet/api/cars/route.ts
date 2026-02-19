@@ -1,78 +1,227 @@
-// app/sys-2847/fleet/api/cars/route.ts
+// app/fleet/api/cars/route.ts
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { Prisma } from '@prisma/client'
 
-// GET - Fetch all cars
+const FLEET_KEY = 'phoenix-fleet-2847'
+
+function validateFleetKey(request: NextRequest): boolean {
+  const key = request.headers.get('x-fleet-key') ||
+              request.nextUrl.searchParams.get('key')
+  return key === FLEET_KEY
+}
+
+// GET - Fetch cars with filters, pagination, and stats
 export async function GET(request: NextRequest) {
+  if (!validateFleetKey(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
+    const { searchParams } = request.nextUrl
+    const tab = searchParams.get('tab') || 'all'
+    const search = searchParams.get('search') || ''
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
+    const limit = Math.min(500, Math.max(1, parseInt(searchParams.get('limit') || '20')))
+    const sort = searchParams.get('sort') || 'newest'
+
+    // Build where clause based on tab
+    let where: Prisma.RentalCarWhereInput = {}
+
+    switch (tab) {
+      case 'active':
+        where.isActive = true
+        break
+      case 'unlisted':
+        where.isActive = false
+        break
+      case 'claimed':
+        where.hasActiveClaim = true
+        break
+      case 'issues':
+        where.OR = [
+          { dailyRate: { lte: 0 } },
+          { photos: { none: {} } },
+          { safetyHold: true },
+          { requiresInspection: true },
+        ]
+        break
+      // 'all' — no filter
+    }
+
+    // Apply search filter
+    if (search) {
+      const searchFilter: Prisma.RentalCarWhereInput = {
+        OR: [
+          { make: { contains: search, mode: 'insensitive' } },
+          { model: { contains: search, mode: 'insensitive' } },
+          { vin: { contains: search, mode: 'insensitive' } },
+          { licensePlate: { contains: search, mode: 'insensitive' } },
+          { city: { contains: search, mode: 'insensitive' } },
+          { host: { name: { contains: search, mode: 'insensitive' } } },
+          { host: { email: { contains: search, mode: 'insensitive' } } },
+        ],
+      }
+
+      // Merge search with tab filter
+      if (where.OR) {
+        where = { AND: [{ OR: where.OR }, searchFilter] }
+      } else {
+        where = { ...where, ...searchFilter }
+      }
+    }
+
+    // Build orderBy
+    let orderBy: Prisma.RentalCarOrderByWithRelationInput = { createdAt: 'desc' }
+    switch (sort) {
+      case 'oldest':
+        orderBy = { createdAt: 'asc' }
+        break
+      case 'price_high':
+        orderBy = { dailyRate: 'desc' }
+        break
+      case 'price_low':
+        orderBy = { dailyRate: 'asc' }
+        break
+      case 'rating':
+        orderBy = { rating: 'desc' }
+        break
+    }
+
+    // Run data query + stats in parallel
+    const [cars, total, statsResult] = await Promise.all([
+      // Main data query
+      prisma.rentalCar.findMany({
+        where,
+        include: {
+          host: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              approvalStatus: true,
+              partnerCompanyName: true,
+            },
+          },
+          photos: {
+            orderBy: { order: 'asc' },
+            take: 1,
+            select: { url: true, isHero: true },
+          },
+          _count: {
+            select: {
+              bookings: true,
+              reviews: true,
+              photos: true,
+            },
+          },
+        },
+        orderBy,
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+
+      // Total count for pagination
+      prisma.rentalCar.count({ where }),
+
+      // Stats counts (all in parallel)
+      Promise.all([
+        prisma.rentalCar.count(),
+        prisma.rentalCar.count({ where: { isActive: true } }),
+        prisma.rentalCar.count({ where: { isActive: false } }),
+        prisma.rentalCar.count({ where: { hasActiveClaim: true } }),
+        prisma.rentalCar.count({
+          where: {
+            OR: [
+              { dailyRate: { lte: 0 } },
+              { photos: { none: {} } },
+              { safetyHold: true },
+              { requiresInspection: true },
+            ],
+          },
+        }),
+      ]),
+    ])
+
+    const [totalAll, totalActive, totalUnlisted, totalClaimed, totalIssues] = statsResult
+
+    // Transform cars
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    
-    const cars = await prisma.rentalCar.findMany({
-      include: {
-        host: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            responseTime: true,
-            responseRate: true
-          }
-        },
-        photos: {
-          orderBy: { order: 'asc' }
-        },
-        bookings: {
-          where: {
-            status: {
-              in: ['PENDING', 'CONFIRMED', 'ACTIVE']
-            },
-            startDate: {
-              lte: today
-            },
-            endDate: {
-              gte: today
-            }
-          },
-          select: {
-            id: true,
-            startDate: true,
-            endDate: true,
-            status: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    })
 
-    // Transform data to match our types with computed status
-    const transformedCars = cars.map(car => {
-      // Check if car has active booking today
-      const hasActiveBookingToday = car.bookings && car.bookings.length > 0
-      
-      // Determine status based on bookings and active state
-      let status = 'AVAILABLE'
-      if (!car.isActive) {
+    const transformedCars = cars.map((car) => {
+      // Determine issues
+      const issues: string[] = []
+      if (car._count.photos === 0) issues.push('No Photos')
+      if (car.dailyRate <= 0) issues.push('$0 Rate')
+      if (car.safetyHold) issues.push('Safety Hold')
+      if (car.requiresInspection) issues.push('Needs Inspection')
+
+      // Determine display status
+      let status = 'ACTIVE'
+      if (!car.isActive && car.hasActiveClaim) {
+        status = 'CLAIMED'
+      } else if (!car.isActive) {
         status = 'UNLISTED'
-      } else if (hasActiveBookingToday) {
-        status = 'BOOKED'
+      } else if (car.safetyHold) {
+        status = 'SAFETY_HOLD'
       }
-      // You could add MAINTENANCE status based on a maintenance field or blocked dates
-      
+
       return {
-        ...car,
+        id: car.id,
+        year: car.year,
+        make: car.make,
+        model: car.model,
+        color: car.color,
+        carType: car.carType,
+        vin: car.vin,
+        licensePlate: car.licensePlate,
+        dailyRate: car.dailyRate,
+        city: car.city,
+        state: car.state,
+        isActive: car.isActive,
+        hasActiveClaim: car.hasActiveClaim,
+        safetyHold: car.safetyHold,
+        requiresInspection: car.requiresInspection,
+        rating: car.rating,
+        totalTrips: car.totalTrips,
+        createdAt: car.createdAt,
+        heroPhoto: car.photos[0]?.url || null,
+        photoCount: car._count.photos,
+        bookingCount: car._count.bookings,
+        reviewCount: car._count.reviews,
+        host: car.host
+          ? {
+              id: car.host.id,
+              name: car.host.partnerCompanyName || car.host.name,
+              email: car.host.email,
+              phone: car.host.phone,
+              approvalStatus: car.host.approvalStatus,
+            }
+          : null,
         status,
-        category: car.carType || 'LUXURY',
-        badges: [],
-        hasActiveBookingToday,
-        activeBookingsCount: car.bookings?.length || 0
+        issues,
       }
     })
 
     return NextResponse.json({
       success: true,
-      data: transformedCars
+      data: transformedCars,
+      stats: {
+        total: totalAll,
+        active: totalActive,
+        unlisted: totalUnlisted,
+        claimed: totalClaimed,
+        issues: totalIssues,
+      },
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
     })
   } catch (error) {
     console.error('Error fetching cars:', error)
@@ -85,9 +234,13 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new car
 export async function POST(request: NextRequest) {
+  if (!validateFleetKey(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
-    
+
     // Create the car
     const car = await prisma.rentalCar.create({
       data: {

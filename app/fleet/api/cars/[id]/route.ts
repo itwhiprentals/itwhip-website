@@ -199,6 +199,12 @@ export async function PUT(
         ...(body.airportPickup !== undefined && { airportPickup: body.airportPickup }),
         ...(body.hotelDelivery !== undefined && { hotelDelivery: body.hotelDelivery }),
         ...(body.homeDelivery !== undefined && { homeDelivery: body.homeDelivery }),
+        ...(body.vehicleType !== undefined && { vehicleType: body.vehicleType }),
+        ...(body.licensePlate !== undefined && { licensePlate: body.licensePlate }),
+        ...(body.vin !== undefined && { vin: body.vin }),
+        ...(body.description !== undefined && { description: body.description }),
+        ...(body.noDeposit !== undefined && { noDeposit: body.noDeposit }),
+        ...(body.insuranceIncluded !== undefined && { insuranceIncluded: body.insuranceIncluded }),
       }
     })
 

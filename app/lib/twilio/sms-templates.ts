@@ -237,6 +237,17 @@ export function ivrPickupDetails(data: {
   return templates[locale]
 }
 
+// ─── Vehicle Listing Issues (host) ────────────────────────────────
+
+export function vehicleIssuesHost(data: {
+  carName: string
+  issueCount: number
+  vehicleId: string
+}): string {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://itwhip.com'
+  return `ItWhip: Your ${data.carName} has ${data.issueCount} listing issue${data.issueCount !== 1 ? 's' : ''} preventing it from being listed. Check your email for details and fix them here: ${baseUrl}/partner/fleet/${data.vehicleId}`
+}
+
 // ─── IVR: Roadside Assistance (no booking code) ────────────────
 
 export function ivrRoadsideGeneral(locale: Locale = 'en'): string {

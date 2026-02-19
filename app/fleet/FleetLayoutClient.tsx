@@ -150,6 +150,12 @@ function InternalLayoutContent({
                     Add Car
                   </Link>
                   <Link
+                    href="/fleet/vehicles"
+                    className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                  >
+                    Vehicles
+                  </Link>
+                  <Link
                     href="/fleet/bulk"
                     className="px-2.5 py-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
                   >
@@ -301,6 +307,13 @@ function InternalLayoutContent({
                     className="px-3 py-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     Add Car
+                  </Link>
+                  <Link
+                    href="/fleet/vehicles"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    Vehicles
                   </Link>
                   <Link
                     href="/fleet/bulk"

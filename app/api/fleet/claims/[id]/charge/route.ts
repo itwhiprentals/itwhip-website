@@ -280,6 +280,32 @@ export async function POST(
       })
     }
 
+    // If fully recovered, auto-reactivate the car if this claim deactivated it
+    if (recoveryStatus === 'FULL' && claim.booking?.carId) {
+      try {
+        const car = await prisma.rentalCar.findUnique({
+          where: { id: claim.booking.carId },
+          select: { activeClaimId: true, hasActiveClaim: true, isActive: true, safetyHold: true }
+        })
+        // Only reactivate if THIS claim deactivated the car and no safety hold
+        if (car && car.activeClaimId === claim.id && !car.safetyHold) {
+          await prisma.rentalCar.update({
+            where: { id: claim.booking.carId },
+            data: {
+              isActive: true,
+              hasActiveClaim: false,
+              activeClaimId: null,
+              claimDeactivatedAt: null
+            }
+          })
+          console.log(`✅ Car ${claim.booking.carId} auto-reactivated after full claim recovery`)
+        }
+      } catch (carError) {
+        console.error('Failed to auto-reactivate car:', carError)
+        // Non-blocking — charge succeeded, car reactivation failure is not critical
+      }
+    }
+
     // ==========================================================================
     // STEP 4: Create audit log
     // ==========================================================================
