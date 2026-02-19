@@ -75,9 +75,10 @@ export default function PhoneWidget() {
   const [isMuted, setIsMuted] = useState(false)
   const [isMonitoring, setIsMonitoring] = useState(false)
 
+  const [isHolding, setIsHolding] = useState(false)
+
   // Conference state
   const [conference, setConference] = useState<ConferenceInfo | null>(null)
-  const [showConf, setShowConf] = useState(false)
   const [showAddPanel, setShowAddPanel] = useState(false)
   const [addNumber, setAddNumber] = useState('')
   const [addingParticipant, setAddingParticipant] = useState(false)
@@ -187,9 +188,9 @@ export default function PhoneWidget() {
     setCallerInfo('')
     setCallDuration(0)
     setIsMuted(false)
+    setIsHolding(false)
     setIsMonitoring(false)
     setConference(null)
-    setShowConf(false)
     setShowAddPanel(false)
     setShowKeypad(false)
     stopTimer()
@@ -251,6 +252,24 @@ export default function PhoneWidget() {
     callRef.current.mute(m)
     setIsMuted(m)
   }, [isMuted])
+
+  // Top-level hold: holds all non-fleet participants in the conference
+  // (defined as a ref-stable function since refreshParticipants is defined later)
+  const toggleHold = useCallback(async () => {
+    if (!conference) return
+    const others = conference.participants.filter(p => !p.isClient)
+    if (others.length === 0) return
+    const newHold = !isHolding
+    setIsHolding(newHold)
+    try {
+      await Promise.all(others.map(p =>
+        confAction({ action: 'hold', conferenceSid: conference.sid, participantSid: p.callSid, hold: newHold })
+      ))
+    } catch {
+      setError('Hold failed')
+      setIsHolding(!newHold)
+    }
+  }, [conference, isHolding])
 
   const sendDigit = useCallback((digit: string) => {
     if (callRef.current && state === 'active') {
@@ -435,49 +454,110 @@ export default function PhoneWidget() {
       {/* ACTIVE / DIALING */}
       {(state === 'active' || state === 'dialing') && (
         <div className="flex flex-col overflow-hidden">
-          <div className="p-4 text-center space-y-2 flex-shrink-0">
+          {/* Call info */}
+          <div className="px-4 pt-4 pb-2 text-center flex-shrink-0">
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {state === 'dialing' ? 'Dialing...' : isMonitoring ? 'Monitoring (Silent)' : 'On Call'}
+              {state === 'dialing' ? 'Dialing...' : isMonitoring ? 'Monitoring (Silent)' : isHolding ? 'On Hold' : 'On Call'}
             </p>
             <p className="text-base font-mono text-gray-700 dark:text-gray-300">{formatPhone(callerInfo)}</p>
             {state === 'active' && (
               <p className="text-sm font-mono text-gray-500 dark:text-gray-400">{formatDuration(callDuration)}</p>
             )}
+          </div>
 
-            {/* Control buttons */}
-            <div className="flex justify-center gap-2 pt-1">
-              <CtrlBtn
-                onClick={toggleMute}
-                active={isMuted}
-                title={isMuted ? 'Unmute' : 'Mute'}
-                icon={isMuted ? <MutedIcon /> : <MicIcon />}
-              />
-              {conference && !isMonitoring && (
-                <CtrlBtn
-                  onClick={() => setShowConf(!showConf)}
-                  active={showConf}
-                  title="Conference"
-                  icon={<UsersIcon />}
-                  badge={conference.participants.length}
+          {/* Main control grid — always visible */}
+          {state === 'active' && !isMonitoring && (
+            <div className="px-4 pb-3 flex-shrink-0">
+              <div className="grid grid-cols-3 gap-2">
+                <CtrlBtnLabeled
+                  onClick={toggleMute}
+                  active={isMuted}
+                  label={isMuted ? 'Unmute' : 'Mute'}
+                  icon={isMuted ? <MutedIcon /> : <MicIcon />}
                 />
-              )}
-              {!isMonitoring && (
-                <CtrlBtn
+                <CtrlBtnLabeled
+                  onClick={toggleHold}
+                  active={isHolding}
+                  label={isHolding ? 'Resume' : 'Hold'}
+                  icon={<PauseIcon />}
+                  disabled={!conference}
+                />
+                <CtrlBtnLabeled
+                  onClick={() => setShowAddPanel(!showAddPanel)}
+                  active={showAddPanel}
+                  label="Add Call"
+                  icon={<AddCallIcon />}
+                  disabled={!conference}
+                />
+                <CtrlBtnLabeled
                   onClick={() => setShowKeypad(!showKeypad)}
                   active={showKeypad}
-                  title="Keypad"
+                  label="Keypad"
                   icon={<GridIcon />}
                 />
-              )}
-              <button
-                onClick={hangUp}
-                className="w-10 h-10 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-colors"
-                title="Hang Up"
-              >
+                <CtrlBtnLabeled
+                  onClick={() => {
+                    // Transfer = add new party then leave
+                    if (!conference) return
+                    setShowAddPanel(true)
+                  }}
+                  label="Transfer"
+                  icon={<TransferIcon />}
+                  disabled={!conference}
+                />
+                <button
+                  onClick={hangUp}
+                  className="flex flex-col items-center gap-1 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors"
+                >
+                  <PhoneOffIcon />
+                  <span className="text-[10px] font-medium">End</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Monitoring — minimal controls */}
+          {state === 'active' && isMonitoring && (
+            <div className="px-4 pb-3 flex-shrink-0 flex justify-center gap-3">
+              <CtrlBtnLabeled onClick={toggleMute} active={isMuted} label={isMuted ? 'Unmute' : 'Mute'} icon={isMuted ? <MutedIcon /> : <MicIcon />} />
+              <button onClick={hangUp} className="flex flex-col items-center gap-1 py-2 px-4 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors">
+                <PhoneOffIcon /><span className="text-[10px] font-medium">Leave</span>
+              </button>
+            </div>
+          )}
+
+          {/* Dialing — just hang up */}
+          {state === 'dialing' && (
+            <div className="px-4 pb-3 flex-shrink-0 flex justify-center">
+              <button onClick={hangUp} className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-colors">
                 <PhoneOffIcon />
               </button>
             </div>
-          </div>
+          )}
+
+          {/* Add participant panel */}
+          {showAddPanel && conference && (
+            <div className="px-4 pb-3 flex-shrink-0">
+              <div className="flex gap-1.5">
+                <input
+                  type="tel"
+                  value={addNumber}
+                  onChange={e => setAddNumber(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') addParticipantToConf() }}
+                  placeholder="Phone number to add..."
+                  className="flex-1 px-2.5 py-2 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg font-mono"
+                  autoFocus
+                />
+                <button
+                  onClick={addParticipantToConf}
+                  disabled={addingParticipant || !addNumber.trim()}
+                  className="px-3 py-2 text-sm bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg font-medium"
+                >
+                  {addingParticipant ? '...' : 'Dial'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Keypad (expandable) */}
           {showKeypad && state === 'active' && (
@@ -486,76 +566,45 @@ export default function PhoneWidget() {
             </div>
           )}
 
-          {/* Conference Panel (expandable, scrollable) */}
-          {showConf && conference && (
+          {/* Conference participants — always visible when discovered */}
+          {conference && conference.participants.length > 0 && (
             <div className="border-t border-gray-200 dark:border-gray-700 overflow-y-auto flex-1 min-h-0">
-              <div className="px-4 py-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                    Participants ({conference.participants.length})
-                  </span>
-                  {!isMonitoring && (
-                    <button
-                      onClick={() => setShowAddPanel(!showAddPanel)}
-                      className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                    >
-                      + Add
-                    </button>
-                  )}
-                </div>
-
-                {/* Add participant panel */}
-                {showAddPanel && (
-                  <div className="flex gap-1.5">
-                    <input
-                      type="tel"
-                      value={addNumber}
-                      onChange={e => setAddNumber(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') addParticipantToConf() }}
-                      placeholder="Phone number..."
-                      className="flex-1 px-2 py-1.5 text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded font-mono"
-                    />
-                    <button
-                      onClick={addParticipantToConf}
-                      disabled={addingParticipant || !addNumber.trim()}
-                      className="px-2.5 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded font-medium"
-                    >
-                      {addingParticipant ? '...' : 'Dial'}
-                    </button>
-                  </div>
-                )}
-
-                {/* Participant list */}
+              <div className="px-4 py-2 space-y-1">
+                <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                  In Call ({conference.participants.length})
+                </span>
                 {conference.participants.map(p => (
                   <div key={p.callSid} className="flex items-center justify-between py-1.5 border-b border-gray-100 dark:border-gray-800 last:border-0">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${p.hold ? 'bg-yellow-400' : p.muted ? 'bg-red-400' : 'bg-green-400'}`} />
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${p.hold ? 'bg-yellow-400' : p.muted ? 'bg-red-400' : 'bg-green-400'}`} />
                       <span className="text-xs text-gray-700 dark:text-gray-300 truncate">
                         {p.isClient ? 'You (Fleet)' : formatPhone(p.label || p.callSid)}
                       </span>
+                      {p.hold && <span className="text-[9px] text-yellow-600 dark:text-yellow-400 font-medium">HOLD</span>}
+                      {p.muted && !p.hold && <span className="text-[9px] text-red-500 font-medium">MUTED</span>}
                     </div>
                     {!p.isClient && !isMonitoring && (
                       <div className="flex gap-1 flex-shrink-0">
-                        <MiniBtn
-                          onClick={() => muteParticipant(p.callSid, !p.muted)}
-                          title={p.muted ? 'Unmute' : 'Mute'}
-                          active={p.muted}
-                        >
-                          {p.muted ? 'M' : 'm'}
-                        </MiniBtn>
                         <MiniBtn
                           onClick={() => holdParticipant(p.callSid, !p.hold)}
                           title={p.hold ? 'Unhold' : 'Hold'}
                           active={p.hold}
                         >
-                          H
+                          {p.hold ? '▶' : '⏸'}
+                        </MiniBtn>
+                        <MiniBtn
+                          onClick={() => muteParticipant(p.callSid, !p.muted)}
+                          title={p.muted ? 'Unmute' : 'Mute'}
+                          active={p.muted}
+                        >
+                          {p.muted ? '🔇' : '🔊'}
                         </MiniBtn>
                         <MiniBtn
                           onClick={() => kickParticipant(p.callSid)}
-                          title="Remove"
+                          title="Remove from call"
                           danger
                         >
-                          x
+                          ✕
                         </MiniBtn>
                       </div>
                     )}
@@ -566,9 +615,9 @@ export default function PhoneWidget() {
                 {!isMonitoring && conference.participants.length > 1 && (
                   <button
                     onClick={endAllConference}
-                    className="w-full py-1.5 text-xs text-red-600 hover:text-red-700 font-medium border border-red-200 dark:border-red-800 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
+                    className="w-full py-1.5 mt-1 text-xs text-red-600 hover:text-red-700 font-medium border border-red-200 dark:border-red-800 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
-                    End All Conference
+                    End All
                   </button>
                 )}
               </div>
@@ -640,25 +689,21 @@ export default function PhoneWidget() {
 
 // ─── Sub-components ────────────────────────────────────────────
 
-function CtrlBtn({ onClick, active, title, icon, badge }: {
-  onClick: () => void; active?: boolean; title: string; icon: React.ReactNode; badge?: number
+function CtrlBtnLabeled({ onClick, active, label, icon, disabled }: {
+  onClick: () => void; active?: boolean; label: string; icon: React.ReactNode; disabled?: boolean
 }) {
   return (
     <button
       onClick={onClick}
-      className={`relative w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+      disabled={disabled}
+      className={`flex flex-col items-center gap-1 py-2 rounded-lg transition-colors disabled:opacity-30 ${
         active
-          ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-600 dark:text-yellow-400'
+          ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400'
           : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
       }`}
-      title={title}
     >
       {icon}
-      {badge !== undefined && badge > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-blue-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-          {badge}
-        </span>
-      )}
+      <span className="text-[10px] font-medium">{label}</span>
     </button>
   )
 }
@@ -670,7 +715,7 @@ function MiniBtn({ onClick, title, active, danger, children }: {
     <button
       onClick={onClick}
       title={title}
-      className={`w-5 h-5 rounded text-[9px] font-bold flex items-center justify-center transition-colors ${
+      className={`w-6 h-6 rounded text-xs flex items-center justify-center transition-colors ${
         danger
           ? 'text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30'
           : active
@@ -735,18 +780,34 @@ function MutedIcon() {
   )
 }
 
-function UsersIcon() {
-  return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-    </svg>
-  )
-}
-
 function GridIcon() {
   return (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+    </svg>
+  )
+}
+
+function PauseIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  )
+}
+
+function AddCallIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+    </svg>
+  )
+}
+
+function TransferIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
     </svg>
   )
 }
