@@ -559,28 +559,25 @@ export function generateClaimNotFound(lang: Lang = 'en'): string {
 export function generateSpeakWithSomeone(roomName: string, lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
 
-  if (isBusinessHours()) {
-    // Brief message before hold music starts
-    say(twiml, t(lang,
-      'Connecting you to our team now. Just so you know, our A.I. assistant Coyi can book everything for you in just a few chats on our website. Please hold.',
-      'Conectandote con nuestro equipo. Solo para que sepas, nuestro asistente de inteligencia artificial Coyi puede reservar todo por ti en solo unos chats en nuestro sitio web. Por favor espera.',
-      'Nous vous connectons à notre équipe. Sachez que notre assistant I.A. Coyi peut tout réserver pour vous en quelques messages sur notre site web. Veuillez patienter.'
-    ), lang)
+  // Always attempt to connect — 24/7 availability
+  // If no answer, conference ends → action URL → voicemail
+  say(twiml, t(lang,
+    'Connecting you to our team now. Just so you know, our A.I. assistant Coyi can book everything for you in just a few chats on our website. Please hold.',
+    'Conectandote con nuestro equipo. Solo para que sepas, nuestro asistente de inteligencia artificial Coyi puede reservar todo por ti en solo unos chats en nuestro sitio web. Por favor espera.',
+    'Nous vous connectons à notre équipe. Sachez que notre assistant I.A. Coyi peut tout réserver pour vous en quelques messages sur notre site web. Veuillez patienter.'
+  ), lang)
 
-    // Caller enters conference with hold music + promo messages
-    const dial = twiml.dial({
-      action: menuUrl('voicemail-prompt', lang),
-    })
-    dial.conference({
-      waitUrl: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/wait-music?lang=${lang}&n=0`,
-      waitMethod: 'POST',
-      startConferenceOnEnter: false,
-      endConferenceOnExit: true,
-      beep: 'false',
-    }, roomName)
-  } else {
-    twiml.redirect(menuUrl('voicemail-prompt', lang))
-  }
+  // Caller enters conference with hold music + promo messages
+  const dial = twiml.dial({
+    action: menuUrl('voicemail-prompt', lang),
+  })
+  dial.conference({
+    waitUrl: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/wait-music?lang=${lang}&n=0`,
+    waitMethod: 'POST',
+    startConferenceOnEnter: false,
+    endConferenceOnExit: true,
+    beep: 'false',
+  }, roomName)
 
   return twiml.toString()
 }
@@ -593,9 +590,9 @@ export function generateVoicemailPrompt(lang: Lang = 'en'): string {
   const twiml = new VoiceResponse()
 
   say(twiml, t(lang,
-    'Our office is currently closed. Our hours are Monday through Friday, 8 A.M. to 8 P.M. Arizona time. Please leave your name, phone number, and a brief message after the beep, and we\'ll return your call on the next business day. For instant help anytime, visit our website and chat with Coyi.',
-    'Nuestra oficina esta cerrada. Nuestro horario es de lunes a viernes, de 8 de la manana a 8 de la noche, hora de Arizona. Por favor deja tu nombre, numero de telefono y un breve mensaje despues del tono, y te llamaremos el siguiente dia habil. Para ayuda instantanea, visita nuestro sitio web y habla con Coyi.',
-    'Notre bureau est actuellement fermé. Nos heures sont du lundi au vendredi, de 8 heures à 20 heures, heure de l\'Arizona. Veuillez laisser votre nom, numéro de téléphone et un bref message après le bip, et nous vous rappellerons le prochain jour ouvrable. Pour de l\'aide instantanée, visitez notre site web et parlez avec Coyi.'
+    'Sorry we missed your call. Please leave your name, phone number, and a brief message after the beep, and we\'ll get back to you as soon as possible. For instant help anytime, visit our website and chat with Coyi.',
+    'Disculpa que no pudimos contestar. Por favor deja tu nombre, numero de telefono y un breve mensaje despues del tono, y te contactaremos lo antes posible. Para ayuda instantanea, visita nuestro sitio web y habla con Coyi.',
+    'Désolé de vous avoir manqué. Veuillez laisser votre nom, numéro de téléphone et un bref message après le bip, et nous vous recontacterons dès que possible. Pour de l\'aide instantanée, visitez notre site web et parlez avec Coyi.'
   ), lang)
 
   twiml.record({
