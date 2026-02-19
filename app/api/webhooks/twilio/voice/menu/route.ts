@@ -33,8 +33,6 @@ import {
 
 type Lang = 'en' | 'es' | 'fr'
 
-const SUPPORT_PHONE = process.env.SUPPORT_PHONE_NUMBER || '+16026092577'
-
 // Human-readable claim status for IVR
 const CLAIM_STATUS_LABELS: Record<Lang, Record<string, string>> = {
   en: {
@@ -152,12 +150,9 @@ export async function POST(request: NextRequest) {
           case '2': // I have a booking code
             twiml = generateBookingCodeEntry(lang)
             break
-          case '3': { // Speak with someone
-            const room = makeRoom()
-            connectViaConference(SUPPORT_PHONE, room, callSid, lang)
-            twiml = generateSpeakWithSomeone(room, lang)
+          case '3': // Speak with someone → Flex
+            twiml = generateSpeakWithSomeone(lang)
             break
-          }
           default:
             twiml = generateVisitorMenu(lang, tries)
         }
@@ -174,12 +169,9 @@ export async function POST(request: NextRequest) {
             }
             twiml = generateSmsSent(lang, 'visitor')
             break
-          case '2': { // Speak with someone
-            const room = makeRoom()
-            connectViaConference(SUPPORT_PHONE, room, callSid, lang)
-            twiml = generateSpeakWithSomeone(room, lang)
+          case '2': // Speak with someone → Flex
+            twiml = generateSpeakWithSomeone(lang)
             break
-          }
           case '3': // Hear again
             twiml = generateAboutItWhip(lang)
             break
@@ -197,12 +189,9 @@ export async function POST(request: NextRequest) {
           case '2': // Insurance & claims
             twiml = generateInsuranceMenu(lang)
             break
-          case '3': { // Speak with someone
-            const room = makeRoom()
-            connectViaConference(SUPPORT_PHONE, room, callSid, lang)
-            twiml = generateSpeakWithSomeone(room, lang)
+          case '3': // Speak with someone → Flex
+            twiml = generateSpeakWithSomeone(lang)
             break
-          }
           default:
             twiml = generateCustomerMenu(lang, tries)
         }
@@ -228,12 +217,9 @@ export async function POST(request: NextRequest) {
           case '1': // Roadside assistance
             twiml = generateRoadsideInfo(lang)
             break
-          case '2': { // Speak with someone immediately
-            const room = makeRoom()
-            connectViaConference(SUPPORT_PHONE, room, callSid, lang)
-            twiml = generateSpeakWithSomeone(room, lang)
+          case '2': // Speak with someone immediately → Flex
+            twiml = generateSpeakWithSomeone(lang)
             break
-          }
           default:
             twiml = generateEmergencyMenu(lang, tries)
         }
@@ -279,10 +265,8 @@ export async function POST(request: NextRequest) {
               connectViaConference(bk.host.phone, room, callSid, lang)
               twiml = generateConnectToHost(room, lang)
             } else {
-              // No host phone — connect to support instead
-              const room = makeRoom()
-              connectViaConference(SUPPORT_PHONE, room, callSid, lang)
-              twiml = generateSpeakWithSomeone(room, lang)
+              // No host phone — connect to support via Flex
+              twiml = generateSpeakWithSomeone(lang)
             }
             break
           }
@@ -440,12 +424,9 @@ export async function POST(request: NextRequest) {
       // ─── Claim Found Actions ──────────────────────────────
       case 'claim-found': {
         switch (digits) {
-          case '1': { // Speak with someone about the claim
-            const room = makeRoom()
-            connectViaConference(SUPPORT_PHONE, room, callSid, lang)
-            twiml = generateSpeakWithSomeone(room, lang)
+          case '1': // Speak with someone about the claim → Flex
+            twiml = generateSpeakWithSomeone(lang)
             break
-          }
           default:
             twiml = generateCustomerMenu(lang)
         }
@@ -477,15 +458,16 @@ export async function POST(request: NextRequest) {
         }
         break
 
-      // ─── Voicemail Prompt / Conference Callback ──────────
+      // ─── Voicemail Prompt / Queue+Conference Callback ────
       case 'voicemail-prompt': {
-        // Conference/Dial callback — check if the call was actually answered
+        // Called from Enqueue action (Flex) or Conference/Dial action (host calls)
         const dialStatus = params.DialCallStatus
-        if (dialStatus === 'completed') {
+        const queueResult = params.QueueResult
+        if (dialStatus === 'completed' || queueResult === 'bridged') {
           // Call connected and ended normally → goodbye
           twiml = generateGoodbye(lang)
         } else {
-          // No answer, busy, failed, or direct navigation → voicemail
+          // No answer, busy, failed, queue timeout → voicemail
           twiml = generateVoicemailPrompt(lang)
         }
         break
