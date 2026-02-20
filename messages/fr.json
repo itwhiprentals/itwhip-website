@@ -15862,7 +15862,10 @@
     "confirmWithdraw": "Êtes-vous sûr de vouloir retirer votre réclamation ?",
     "failedToWithdraw": "Échec du retrait de la réclamation",
     "carAssignedAlert": "Véhicule attribué avec succès ! La réservation sera finalisée sous peu.",
-    "failedToAssignCar": "Échec de l'attribution du véhicule"
+    "failedToAssignCar": "Échec de l'attribution du véhicule",
+    "clearAll": "Tout Effacer",
+    "confirmClearAll": "Êtes-vous sûr de vouloir retirer toutes vos réclamations actives ? Cette action est irréversible.",
+    "failedToClear": "Échec de la suppression des réclamations"
   },
   "PartnerVehicleDetail": {
     "standard": "Standard",

@@ -246,7 +246,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET - Check Connect account status
+// GET - Check Connect account status (or create login link)
 export async function GET(request: NextRequest) {
   try {
     const partner = await getPartnerFromToken(request)
@@ -256,6 +256,31 @@ export async function GET(request: NextRequest) {
         { error: 'Unauthorized' },
         { status: 401 }
       )
+    }
+
+    // Handle login-link action: create Stripe Express Dashboard login link
+    const { searchParams } = new URL(request.url)
+    if (searchParams.get('action') === 'login-link') {
+      if (!partner.stripeConnectAccountId) {
+        return NextResponse.json(
+          { success: false, error: 'No Stripe account connected' },
+          { status: 400 }
+        )
+      }
+
+      try {
+        const loginLink = await stripe.accounts.createLoginLink(partner.stripeConnectAccountId)
+        return NextResponse.json({
+          success: true,
+          url: loginLink.url
+        })
+      } catch (stripeError: any) {
+        console.error('[Partner Banking] Error creating login link:', stripeError)
+        return NextResponse.json(
+          { success: false, error: 'Failed to create Stripe dashboard login link' },
+          { status: 500 }
+        )
+      }
     }
 
     if (!partner.stripeConnectAccountId) {

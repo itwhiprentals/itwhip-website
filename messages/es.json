@@ -15862,7 +15862,10 @@
     "confirmWithdraw": "¿Estás seguro de que quieres retirar tu reclamo?",
     "failedToWithdraw": "Error al retirar el reclamo",
     "carAssignedAlert": "¡Auto asignado exitosamente! La reserva se finalizará en breve.",
-    "failedToAssignCar": "Error al asignar el auto"
+    "failedToAssignCar": "Error al asignar el auto",
+    "clearAll": "Borrar Todo",
+    "confirmClearAll": "¿Estás seguro de que quieres retirar todos tus reclamos activos? Esta acción no se puede deshacer.",
+    "failedToClear": "Error al borrar los reclamos"
   },
   "PartnerVehicleDetail": {
     "standard": "Estándar",

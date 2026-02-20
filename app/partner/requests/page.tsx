@@ -24,7 +24,8 @@ import {
   IoWarningOutline,
   IoCloseCircleOutline,
   IoFlashOutline,
-  IoArrowBackOutline
+  IoArrowBackOutline,
+  IoTrashOutline
 } from 'react-icons/io5'
 
 interface MyClaim {
@@ -90,6 +91,7 @@ export default function PartnerRequestsPage() {
   const [claimingRequest, setClaimingRequest] = useState<string | null>(null)
   const [assigningCar, setAssigningCar] = useState<{ requestId: string; claimId: string } | null>(null)
   const [selectedCarId, setSelectedCarId] = useState<string>('')
+  const [clearing, setClearing] = useState(false)
   const [stats, setStats] = useState({
     openCount: 0,
     myClaimsCount: 0,
@@ -132,6 +134,29 @@ export default function PartnerRequestsPage() {
       }
     } catch (error) {
       console.error('Failed to fetch cars:', error)
+    }
+  }
+
+  const clearAllClaims = async () => {
+    if (!window.confirm(t('confirmClearAll'))) return
+
+    setClearing(true)
+    try {
+      const response = await fetch('/api/partner/requests/clear', {
+        method: 'DELETE'
+      })
+      const data = await response.json()
+
+      if (data.success) {
+        fetchRequests()
+      } else {
+        alert(data.error || t('failedToClear'))
+      }
+    } catch (error) {
+      console.error('Failed to clear claims:', error)
+      alert(t('failedToClear'))
+    } finally {
+      setClearing(false)
     }
   }
 
@@ -308,6 +333,21 @@ export default function PartnerRequestsPage() {
                 {t('subtitle')}
               </p>
             </div>
+            {stats.myActiveClaimCount > 0 && (
+              <button
+                onClick={clearAllClaims}
+                disabled={clearing}
+                className="flex items-center gap-1 px-3 py-2 text-sm text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors disabled:opacity-50"
+                title={t('clearAll')}
+              >
+                {clearing ? (
+                  <IoRefreshOutline className="w-4 h-4 animate-spin" />
+                ) : (
+                  <IoTrashOutline className="w-4 h-4" />
+                )}
+                <span className="hidden sm:inline">{t('clearAll')}</span>
+              </button>
+            )}
             <button
               onClick={fetchRequests}
               className="p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"

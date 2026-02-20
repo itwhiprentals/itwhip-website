@@ -15862,7 +15862,10 @@
     "confirmWithdraw": "Are you sure you want to withdraw your claim?",
     "failedToWithdraw": "Failed to withdraw claim",
     "carAssignedAlert": "Car assigned successfully! The booking will be finalized shortly.",
-    "failedToAssignCar": "Failed to assign car"
+    "failedToAssignCar": "Failed to assign car",
+    "clearAll": "Clear All",
+    "confirmClearAll": "Are you sure you want to withdraw all your active claims? This cannot be undone.",
+    "failedToClear": "Failed to clear claims"
   },
   "PartnerVehicleDetail": {
     "standard": "Standard",

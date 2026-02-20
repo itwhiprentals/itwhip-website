@@ -142,14 +142,6 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
-    } else {
-      // Manager inviting owner
-      if (!senderHost.isHostManager && !senderHost.managesOthersCars) {
-        return NextResponse.json(
-          { error: 'You must be registered as a fleet manager to invite vehicle owners' },
-          { status: 400 }
-        )
-      }
     }
 
     // Check for existing pending invitation to same recipient

@@ -1,5 +1,5 @@
 // app/partner/dashboard/components/InvitationsStatsCard.tsx
-// Displays invitation statistics for Fleet Managers
+// Displays invitation statistics — muted colors
 
 'use client'
 
@@ -93,7 +93,7 @@ export default function InvitationsStatsCard({ onViewInvitations }: InvitationsS
           <p className="text-gray-500 dark:text-gray-400 mb-2">{error}</p>
           <button
             onClick={fetchStats}
-            className="text-purple-600 hover:text-purple-700 text-sm flex items-center gap-1 mx-auto"
+            className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 text-sm flex items-center gap-1 mx-auto"
           >
             <IoRefreshOutline className="w-4 h-4" />
             {t('isRetry')}
@@ -108,9 +108,9 @@ export default function InvitationsStatsCard({ onViewInvitations }: InvitationsS
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-          <IoMailOutline className="w-5 h-5 text-purple-600" />
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <IoMailOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
           {t('isInvitations')}
         </h2>
         <button
@@ -118,37 +118,37 @@ export default function InvitationsStatsCard({ onViewInvitations }: InvitationsS
           className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           title={t('isRefresh')}
         >
-          <IoRefreshOutline className="w-5 h-5" />
+          <IoRefreshOutline className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Sent Invitations */}
         <div
-          className="p-4 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-lg border border-purple-200 dark:border-purple-800 cursor-pointer hover:shadow-md transition-all"
+          className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
           onClick={() => onViewInvitations?.('sent')}
         >
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <IoSendOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-              <span className="font-medium text-purple-900 dark:text-purple-100">{t('isSent')}</span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
+              <IoSendOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('isSent')}</span>
             </div>
-            <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">{sentStats.total}</span>
+            <span className="text-lg font-bold text-gray-900 dark:text-white">{sentStats.total}</span>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
+          <div className="grid grid-cols-2 gap-1.5 text-xs">
+            <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
               <IoTimeOutline className="w-3 h-3" />
               <span>{t('isPending', { count: sentStats.pending })}</span>
             </div>
-            <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+            <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
               <IoCheckmarkCircleOutline className="w-3 h-3" />
               <span>{t('isAccepted', { count: sentStats.accepted })}</span>
             </div>
-            <div className="flex items-center gap-1 text-red-600 dark:text-red-400">
+            <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
               <IoCloseCircleOutline className="w-3 h-3" />
               <span>{t('isDeclined', { count: sentStats.declined })}</span>
             </div>
-            <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+            <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
               <IoSwapHorizontalOutline className="w-3 h-3" />
               <span>{t('isNegotiating', { count: sentStats.counterOffered })}</span>
             </div>
@@ -157,30 +157,30 @@ export default function InvitationsStatsCard({ onViewInvitations }: InvitationsS
 
         {/* Received Invitations */}
         <div
-          className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg border border-blue-200 dark:border-blue-800 cursor-pointer hover:shadow-md transition-all"
+          className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
           onClick={() => onViewInvitations?.('received')}
         >
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <IoMailOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <span className="font-medium text-blue-900 dark:text-blue-100">{t('isReceived')}</span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
+              <IoMailOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('isReceived')}</span>
             </div>
-            <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{receivedStats.total}</span>
+            <span className="text-lg font-bold text-gray-900 dark:text-white">{receivedStats.total}</span>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
+          <div className="grid grid-cols-2 gap-1.5 text-xs">
+            <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
               <IoTimeOutline className="w-3 h-3" />
               <span>{t('isPending', { count: receivedStats.pending })}</span>
             </div>
-            <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+            <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
               <IoCheckmarkCircleOutline className="w-3 h-3" />
               <span>{t('isAccepted', { count: receivedStats.accepted })}</span>
             </div>
-            <div className="flex items-center gap-1 text-red-600 dark:text-red-400">
+            <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
               <IoCloseCircleOutline className="w-3 h-3" />
               <span>{t('isDeclined', { count: receivedStats.declined })}</span>
             </div>
-            <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+            <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
               <IoSwapHorizontalOutline className="w-3 h-3" />
               <span>{t('isNegotiating', { count: receivedStats.counterOffered })}</span>
             </div>
@@ -188,16 +188,16 @@ export default function InvitationsStatsCard({ onViewInvitations }: InvitationsS
         </div>
       </div>
 
-      {/* Quick Action Buttons */}
-      {sentStats.pending > 0 || receivedStats.pending > 0 ? (
-        <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-          <p className="text-sm text-yellow-800 dark:text-yellow-200">
+      {/* Pending notice */}
+      {(sentStats.pending > 0 || receivedStats.pending > 0) && (
+        <div className="mt-3 p-2 bg-gray-50 dark:bg-gray-700/30 border border-gray-100 dark:border-gray-700 rounded-lg">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             {receivedStats.pending > 0 && (
               <span className="font-medium">
                 {t('isAwaitingResponse', { count: receivedStats.pending })}
               </span>
             )}
-            {receivedStats.pending > 0 && sentStats.pending > 0 && ' • '}
+            {receivedStats.pending > 0 && sentStats.pending > 0 && ' \u2022 '}
             {sentStats.pending > 0 && (
               <span>
                 {t('isSentPending', { count: sentStats.pending })}
@@ -205,7 +205,7 @@ export default function InvitationsStatsCard({ onViewInvitations }: InvitationsS
             )}
           </p>
         </div>
-      ) : null}
+      )}
     </div>
   )
 }

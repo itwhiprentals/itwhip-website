@@ -148,7 +148,7 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
             disabled={!onPhotoChange}
           >
             {user.profilePhoto ? (
-              <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-white">
+              <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-white border-2 border-gray-200 dark:border-gray-600">
                 <Image
                   src={user.profilePhoto}
                   alt={displayName}
@@ -158,7 +158,7 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
                 />
               </div>
             ) : (
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center border-2 border-gray-200 dark:border-gray-600">
                 <IoPersonOutline className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
               </div>
             )}

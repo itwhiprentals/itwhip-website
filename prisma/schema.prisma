@@ -2199,6 +2199,8 @@ model RentalHost {
   canViewBookings               Boolean                @default(false)
   canWithdrawFunds              Boolean                @default(false)
   commissionRate                Float                  @default(0.25)
+  revenuePath                   String?
+  revenueTier                   String?
   dashboardAccess               Boolean                @default(false)
   depositAmount                 Float                  @default(500)
   depositMode                   String                 @default("global")

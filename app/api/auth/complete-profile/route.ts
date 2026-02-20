@@ -432,6 +432,30 @@ export async function POST(request: NextRequest) {
           } else if (isManageOnly) {
             console.log(`[Complete Profile] Skipping RentalCar creation for manage-only fleet manager`)
           }
+
+          // Auto-create ReviewerProfile so hosts also have guest access
+          const existingGuestProfile = await tx.reviewerProfile.findFirst({
+            where: { OR: [{ userId: user.id }, { email: pendingOAuth.email }] }
+          })
+          if (!existingGuestProfile) {
+            await tx.reviewerProfile.create({
+              data: {
+                id: crypto.randomUUID(),
+                userId: user.id,
+                email: pendingOAuth.email,
+                name: pendingOAuth.name || '',
+                phoneNumber: digitsOnly || null,
+                profilePhotoUrl: pendingOAuth.image,
+                memberSince: new Date(),
+                city: isManageOnly ? '' : (carData?.city || ''),
+                state: isManageOnly ? 'AZ' : (carData?.state || 'AZ'),
+                zipCode: isManageOnly ? '' : (carData?.zipCode || ''),
+                emailVerified: true,
+                updatedAt: new Date()
+              } as any
+            })
+            console.log(`[Complete Profile] Auto-created ReviewerProfile for new host (dual-role)`)
+          }
         } else if (roleHint === 'guest') {
           // SECURITY: Block guest profile creation for existing HOST users
           const existingHost = await tx.rentalHost.findFirst({
@@ -639,6 +663,32 @@ export async function POST(request: NextRequest) {
         }
       })
       console.log(`[Complete Profile] Created RentalHost for guest upgrade: ${host.id} - isManageOnly: ${isManageOnly}`)
+
+      // Auto-create ReviewerProfile if missing so hosts also have guest access
+      const existingGuestProfile = await prisma.reviewerProfile.findFirst({
+        where: { OR: [{ userId: userId }, { email: email }] }
+      })
+      if (!existingGuestProfile) {
+        await prisma.reviewerProfile.create({
+          data: {
+            id: crypto.randomUUID(),
+            userId: userId,
+            email: email || '',
+            name: updatedUser.name || '',
+            phoneNumber: digitsOnly || null,
+            profilePhotoUrl: updatedUser.image,
+            memberSince: new Date(),
+            city: isManageOnly ? '' : (carData?.city || ''),
+            state: isManageOnly ? 'AZ' : (carData?.state || 'AZ'),
+            zipCode: isManageOnly ? '' : (carData?.zipCode || ''),
+            emailVerified: true,
+            updatedAt: new Date()
+          } as any
+        })
+        console.log(`[Complete Profile] Auto-created ReviewerProfile for host upgrade (dual-role)`)
+      } else {
+        console.log(`[Complete Profile] ReviewerProfile already exists for host upgrade user`)
+      }
 
       // Create RentalCar - ONLY for hosts who own cars (not manage-only fleet managers)
       if (!isManageOnly && carData) {
@@ -866,17 +916,10 @@ export async function POST(request: NextRequest) {
       })
 
       if (existingHost) {
-        console.log(`[Complete Profile] ⚠️ BLOCKED: Existing HOST tried to create guest profile - must use Account Linking`)
-        return NextResponse.json({
-          success: false,
-          error: 'You already have a Host account. Please use Account Linking to add guest capabilities, or go to your Host Dashboard.',
-          requiresAccountLinking: true,
-          isHost: true,
-          hostDashboardUrl: '/host/dashboard'
-        }, { status: 409 })
+        console.log(`[Complete Profile] Existing HOST adding guest profile (dual-role)`)
       }
 
-      // CREATE ReviewerProfile for existing user who wants guest access (non-hosts only)
+      // CREATE ReviewerProfile for existing user who wants guest access
       console.log(`[Complete Profile] Creating ReviewerProfile for existing user with roleHint=guest`)
 
       const newProfile = await prisma.reviewerProfile.create({

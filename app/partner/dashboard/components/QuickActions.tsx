@@ -35,14 +35,14 @@ const actions = [
   {
     nameKey: 'qaIdVerification',
     descKey: 'qaIdVerificationDesc',
-    href: '/partner/verifications',
+    href: '/partner/settings',
     icon: IoIdCardOutline,
     color: 'bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400'
   },
   {
     nameKey: 'qaCreateDiscount',
     descKey: 'qaCreateDiscountDesc',
-    href: '/partner/discounts/new',
+    href: '/partner/discounts',
     icon: IoPricetagOutline,
     color: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400'
   },
