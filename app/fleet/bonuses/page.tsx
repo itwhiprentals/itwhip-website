@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import PromoCodesTab from './components/PromoCodesTab'
 
 interface Guest {
   id: string
@@ -55,6 +56,7 @@ type BonusType = 'deposit' | 'credit' | 'bonus'
 type TargetType = 'specific' | 'all' | 'verified' | 'top_rated'
 
 export default function FleetBonusesPage() {
+  const [activeTab, setActiveTab] = useState<'bonuses' | 'promos'>('bonuses')
   const [analytics, setAnalytics] = useState<Analytics | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [guests, setGuests] = useState<Guest[]>([])
@@ -213,6 +215,35 @@ export default function FleetBonusesPage() {
         </Link>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
+        <nav className="flex space-x-4">
+          <button
+            onClick={() => setActiveTab('bonuses')}
+            className={`px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap transition-colors ${
+              activeTab === 'bonuses'
+                ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-b-2 border-blue-600'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            Bonuses
+          </button>
+          <button
+            onClick={() => setActiveTab('promos')}
+            className={`px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap transition-colors ${
+              activeTab === 'promos'
+                ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-b-2 border-blue-600'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            Promo Codes
+          </button>
+        </nav>
+      </div>
+
+      {activeTab === 'promos' && <PromoCodesTab />}
+
+      {activeTab === 'bonuses' && (<>
       {/* Analytics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg p-4 text-white shadow-lg">
@@ -592,6 +623,7 @@ export default function FleetBonusesPage() {
           </div>
         </div>
       </div>
+      </>)}
     </div>
   )
 }

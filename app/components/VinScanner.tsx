@@ -39,7 +39,11 @@ export default function VinScanner({ onScan, onClose }: VinScannerProps) {
         scannerRef.current = scanner
 
         await scanner.start(
-          { facingMode: 'environment' },
+          {
+            facingMode: 'environment',
+            // Higher resolution for better barcode decode (aligned with DL verification camera)
+            advanced: [{ width: { min: 640, ideal: 1280 } }, { height: { min: 480, ideal: 720 } }]
+          } as any,
           {
             fps: 15,
             qrbox: { width: 300, height: 180 },
@@ -51,7 +55,10 @@ export default function VinScanner({ onScan, onClose }: VinScannerProps) {
             // 6=DATA_MATRIX (GM newer models - 2D)
             // 11=PDF_417 (state registration documents)
             // 4=CODE_93 (some automotive applications)
-            formatsToSupport: [0, 3, 4, 5, 6, 11]
+            formatsToSupport: [0, 3, 4, 5, 6, 11],
+            // Use native BarcodeDetector API if available (faster, more reliable)
+            // Aligned with server-side barcode-validator tryHarder/tryRotate settings
+            experimentalFeatures: { useBarCodeDetectorIfSupported: true }
           } as any,
           (decodedText) => {
             // Validate VIN format (17 alphanumeric, no I, O, Q)

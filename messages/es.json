@@ -3115,7 +3115,11 @@
     "bookingFailed": "La reserva falló",
     "failedToSubmitBooking": "Error al enviar la reserva. Por favor intente de nuevo o contacte soporte.",
     "insuranceRequired": "El seguro es obligatorio para todas las reservas. Por favor regrese y seleccione una opción de seguro.",
-    "andSeparator": " y "
+    "andSeparator": " y ",
+    "havePromoCode": "\u00bfTienes un c\u00f3digo promocional?",
+    "enterPromoCode": "Ingresa el c\u00f3digo",
+    "apply": "Aplicar",
+    "promoDiscount": "Descuento promocional"
   },
   "Coverage": {
     "pageTitle": "Áreas de Servicio",
@@ -16122,6 +16126,7 @@
     "tab_photos": "Fotos",
     "tab_pricing": "Precios",
     "tab_features": "Características",
+    "tab_guidelines": "Reglas",
     "tab_insurance": "Seguro",
     "tab_availability": "Disponibilidad",
     "standard": "Estándar",

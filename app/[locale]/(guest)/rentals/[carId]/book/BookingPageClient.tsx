@@ -35,6 +35,7 @@ import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatter
 
 // Import Phase 14 booking UI components
 import { VisitorIdentityVerify, GuestIdentityVerify, InsurancePill, BookingSuccessModal, HeaderBar, CarInfoCard, BookingModals, AlertBanners, HostGuardModal, BookingDetailsCards, SecondDriverForm, PrimaryDriverForm, PriceSummary, PricingFooter, IdentityVerificationSection } from './components'
+import type { AppliedPromo } from './components/PromoCodeInput'
 
 // Stripe Payment Element for Apple Pay, Google Pay, and Card payments
 import { loadStripe } from '@stripe/stripe-js'
@@ -409,6 +410,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   const [cardCVC, setCardCVC] = useState('')
   const [cardZip, setCardZip] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+  const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null)
 
   // Stripe Payment Element states (for Apple Pay, Google Pay, Card)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
@@ -1183,9 +1185,19 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       deposit = deposit * 0.5
     }
 
+    // Apply promo discount to pricing total
+    const promoAmount = appliedPromo
+      ? appliedPromo.discountType === 'percentage'
+        ? Math.round(savedBookingDetails.pricing.dailyRate * savedBookingDetails.pricing.days * appliedPromo.discountValue / 100 * 100) / 100
+        : appliedPromo.discountValue
+      : 0
+    const pricingForBalances = promoAmount > 0
+      ? { ...pricing, total: Math.round((pricing.total - promoAmount) * 100) / 100 }
+      : pricing
+
     // Apply credits and bonus
     const appliedBalances = calculateAppliedBalances(
-      pricing,
+      pricingForBalances,
       deposit,
       guestBalances,
       0.25
@@ -1196,7 +1208,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
 
     // If grand total is < $0.50, it's a $0 booking
     return grandTotal >= 0 && grandTotal < 0.50
-  }, [savedBookingDetails, balancesLoaded, car, guestBalances, userProfile?.insuranceVerified])
+  }, [savedBookingDetails, balancesLoaded, car, guestBalances, userProfile?.insuranceVerified, appliedPromo])
 
   // Check if payment form is complete
   // Use Payment Element status OR saved payment method selection
@@ -1319,7 +1331,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         return
       }
 
-      // Calculate the ACTUAL amount to charge (after credits/bonus + deposit)
+      // Calculate the ACTUAL amount to charge (after credits/bonus + deposit + promo)
       const carCity = (car as any)?.city || getCityFromAddress(car?.address || 'Phoenix, AZ')
       const pricing = calculateBookingPricing({
         dailyRate: savedBookingDetails.pricing.dailyRate,
@@ -1335,6 +1347,16 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         city: carCity
       })
 
+      // Apply promo discount to pricing total (service fee stays on original amount)
+      const promoAmount = appliedPromo
+        ? appliedPromo.discountType === 'percentage'
+          ? Math.round(savedBookingDetails.pricing.dailyRate * savedBookingDetails.pricing.days * appliedPromo.discountValue / 100 * 100) / 100
+          : appliedPromo.discountValue
+        : 0
+      const pricingForBalances = promoAmount > 0
+        ? { ...pricing, total: Math.round((pricing.total - promoAmount) * 100) / 100 }
+        : pricing
+
       // Calculate adjusted deposit (50% off if insurance verified)
       let deposit = savedBookingDetails.pricing.deposit || 0
       if (userProfile?.insuranceVerified) {
@@ -1343,7 +1365,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
 
       // Apply credits and bonus to get actual amount to pay
       const appliedBalances = calculateAppliedBalances(
-        pricing,
+        pricingForBalances,
         deposit,
         guestBalances,
         0.25 // 25% max bonus
@@ -1405,7 +1427,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     }
 
     createPaymentIntent()
-  }, [savedBookingDetails, carId, clientSecret, driverEmail, guestEmail, userProfile, balancesLoaded, guestBalances, car, isIdentityVerified])
+  }, [savedBookingDetails, carId, clientSecret, driverEmail, guestEmail, userProfile, balancesLoaded, guestBalances, car, isIdentityVerified, appliedPromo])
 
   // ============================================
   // FILE UPLOAD HANDLER
@@ -2000,6 +2022,13 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         // Insurance
         insurance: mapInsuranceType(savedBookingDetails?.insuranceType || 'basic'),
 
+        // Promo code (if applied)
+        ...(appliedPromo && {
+          promoCode: appliedPromo.code,
+          promoDiscountAmount: promoDiscountAmount,
+          promoSource: appliedPromo.source
+        }),
+
         // Driver info
         driverInfo: {
           licenseNumber: driverLicense || '',
@@ -2127,6 +2156,13 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   const eligibility = moderationStatus
     ? checkBookingEligibility()
     : { allowed: true }
+
+  // Calculate promo discount dollar amount
+  const promoDiscountAmount = appliedPromo
+    ? appliedPromo.discountType === 'percentage'
+      ? Math.round(savedBookingDetails.pricing.dailyRate * numberOfDays * appliedPromo.discountValue / 100 * 100) / 100
+      : appliedPromo.discountValue
+    : 0
 
   // ============================================
   // SWITCH TO GUEST ACCOUNT HANDLER
@@ -2480,6 +2516,19 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             guestBalances={guestBalances}
             userProfile={userProfile}
             numberOfDays={numberOfDays}
+            promoDiscount={promoDiscountAmount}
+            carId={carId}
+            appliedPromo={appliedPromo}
+            onPromoApplied={(promo) => {
+              setAppliedPromo(promo)
+              setClientSecret(null)
+              setPaymentIntentId(null)
+            }}
+            onPromoRemoved={() => {
+              setAppliedPromo(null)
+              setClientSecret(null)
+              setPaymentIntentId(null)
+            }}
             agreedToTerms={agreedToTerms}
             onAgreedToTermsChange={setAgreedToTerms}
             showDepositTooltip={showDepositTooltip}
@@ -2520,6 +2569,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         eligibility={eligibility}
         isIdentityVerified={isIdentityVerified}
         onCheckout={handleCheckoutClick}
+        promoDiscount={promoDiscountAmount}
       />
       
       <BookingModals

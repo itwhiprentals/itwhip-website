@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl'
 import { IoHelpCircleOutline, IoRibbonOutline } from 'react-icons/io5'
+import PromoCodeInput, { type AppliedPromo } from './PromoCodeInput'
 import {
   calculateBookingPricing,
   formatPrice,
@@ -31,6 +32,11 @@ interface PriceSummaryProps {
   guestBalances: GuestBalances
   userProfile: { insuranceVerified?: boolean } | null
   numberOfDays: number
+  promoDiscount?: number
+  carId: string
+  appliedPromo: AppliedPromo | null
+  onPromoApplied: (promo: AppliedPromo) => void
+  onPromoRemoved: () => void
   agreedToTerms: boolean
   onAgreedToTermsChange: (checked: boolean) => void
   showDepositTooltip: boolean
@@ -48,6 +54,11 @@ export function PriceSummary({
   guestBalances,
   userProfile,
   numberOfDays,
+  promoDiscount = 0,
+  carId,
+  appliedPromo,
+  onPromoApplied,
+  onPromoRemoved,
   agreedToTerms,
   onAgreedToTermsChange,
   showDepositTooltip,
@@ -73,8 +84,13 @@ export function PriceSummary({
     city: carCity
   })
 
+  // Apply promo discount to total before calculating credits/bonus
+  const pricingForBalances = promoDiscount > 0
+    ? { ...pricing, total: Math.round((pricing.total - promoDiscount) * 100) / 100 }
+    : pricing
+
   const appliedBalances = calculateAppliedBalances(
-    pricing,
+    pricingForBalances,
     adjustedDeposit,
     guestBalances,
     0.25
@@ -110,6 +126,14 @@ export function PriceSummary({
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">{t('enhancements')}</span>
               <span className="font-medium text-gray-900 dark:text-white">${formatPrice(pricing.enhancementsTotal)}</span>
+            </div>
+          )}
+
+          {/* Promo Discount (if any) */}
+          {promoDiscount > 0 && (
+            <div className="flex justify-between text-green-600 dark:text-green-400">
+              <span className="font-medium">{t('promoDiscount')}</span>
+              <span className="font-medium">-${formatPrice(promoDiscount)}</span>
             </div>
           )}
 
@@ -251,6 +275,16 @@ export function PriceSummary({
                   ${formatPrice(appliedBalances.amountToPay + appliedBalances.depositFromCard)}
                 </span>
               </div>
+            </div>
+
+            {/* Promo Code Input - underneath total */}
+            <div className="mt-3">
+              <PromoCodeInput
+                carId={carId}
+                onPromoApplied={onPromoApplied}
+                onPromoRemoved={onPromoRemoved}
+                appliedPromo={appliedPromo}
+              />
             </div>
           </div>
         </div>

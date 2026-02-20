@@ -1748,6 +1748,10 @@ model RentalBooking {
   bonusApplied               Float                 @default(0)
   depositFromWallet          Float                 @default(0)
   depositFromCard            Float                 @default(0)
+  // ===== PROMO CODE =====
+  promoCode                  String?
+  promoDiscountAmount        Float?                @default(0)
+  promoSource                String?               // "platform" or "host"
   chargeAmount               Float?
   agreementExpiresAt         DateTime?
   agreementSentAt            DateTime?
@@ -3515,6 +3519,26 @@ model partner_discounts {
 
   @@index([code])
   @@index([hostId])
+  @@index([isActive])
+}
+
+model platform_promo_codes {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  title         String
+  description   String?
+  discountType  String    @default("percentage") // "percentage" or "fixed"
+  discountValue Float                             // percentage (0-100) or fixed dollar amount
+  maxUses       Int?
+  usedCount     Int       @default(0)
+  minBookingAmount Float? @default(0)
+  startsAt      DateTime?
+  expiresAt     DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([code])
   @@index([isActive])
 }
 

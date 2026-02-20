@@ -33,7 +33,8 @@ import {
   IoCloseOutline,
   IoRemoveCircleOutline,
   IoArrowBackOutline,
-  IoSwapHorizontalOutline
+  IoSwapHorizontalOutline,
+  IoInformationCircleOutline
 } from 'react-icons/io5'
 import { useTranslations } from 'next-intl'
 
@@ -1114,6 +1115,18 @@ export default function PartnerDiscountsPage() {
               <h3 className="font-semibold text-gray-900 dark:text-white">{t('promoCodes')}</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                 {t('promoCodesDescription')}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Promo code payout info banner */}
+        <div className="px-5 pt-4">
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <IoInformationCircleOutline className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-amber-800 dark:text-amber-300">
+                When you offer promo codes, the platform service fee is still calculated on the full booking amount. The discount is covered by your payout. If your payout balance doesn&apos;t cover it, the difference will be charged to your card on file.
               </p>
             </div>
           </div>

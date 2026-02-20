@@ -35,6 +35,9 @@ import {
 // Import components
 import HostAssignmentSection from './components/HostAssignmentSection'
 import InviteHostModal from './components/InviteHostModal'
+import PricingSection from './components/PricingSection'
+import RentalGuidelinesCard from './components/RentalGuidelinesCard'
+import PickupLocationCard from './components/PickupLocationCard'
 
 interface VehicleData {
   id: string
@@ -66,6 +69,13 @@ interface VehicleData {
   homeDelivery: boolean
   isActive: boolean
   instantBook: boolean
+  advanceNotice: number | null
+  minTripDuration: number | null
+  maxTripDuration: number | null
+  vehicleType: string | null
+  rules: string | null
+  includedMilesPerDay: number | null
+  overageMileRate: number | null
   features: string[]
   photos: { id: string; url: string; isHero: boolean; order: number }[]
   totalTrips: number
@@ -203,9 +213,9 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
               </Link>
               <div className="min-w-0">
                 <h1 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
-                  {vehicle.year} {formatVehicleName(vehicle.make)} {formatVehicleName(vehicle.model)}
+                  {vehicle.year} {formatVehicleName(vehicle.make)}
                 </h1>
-                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">{vehicle.trim || t('standard')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 font-normal truncate">{formatVehicleName(vehicle.model)}</p>
               </div>
             </div>
 
@@ -224,7 +234,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                 className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 text-sm"
               >
                 <IoCreateOutline className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="hidden sm:inline">{t('edit')}</span>
+                <span className="hidden sm:inline">Full Edit</span>
               </Link>
             </div>
           </div>
@@ -398,7 +408,6 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                   {t('edit')}
                 </Link>
               </div>
-
               {/* Non-editable Info (VIN verified) */}
               <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
                 <p className="text-[10px] sm:text-xs text-gray-500 mb-1.5 flex items-center gap-1">
@@ -442,17 +451,9 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                   </div>
                 )}
               </div>
-            </div>
 
-            {/* Location */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-2 mb-2 sm:mb-4">
-                <IoLocationOutline className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
-                <h2 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white">{t('location')}</h2>
-              </div>
-              <p className="text-xs sm:text-base text-gray-900 dark:text-white">
-                {vehicle.address && `${vehicle.address}, `}
-                {vehicle.city}, {vehicle.state} {vehicle.zipCode}
+              <p className="mt-3 sm:mt-4 text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">
+                Vehicle specs verified via VIN decode. Editable fields can be updated in Full Edit.
               </p>
             </div>
 
@@ -500,7 +501,8 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
             {vehicle.features && vehicle.features.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <h2 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-4">{t('features')}</h2>
-                <div className="flex flex-wrap gap-1 sm:gap-2">
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">These features are displayed on your public listing page.</p>
+                <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
                   {vehicle.features.map((feature, index) => (
                     <span
                       key={index}
@@ -520,6 +522,36 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                 <p className="text-xs sm:text-base text-gray-700 dark:text-gray-300">{vehicle.description}</p>
               </div>
             )}
+
+            {/* Pricing Section */}
+            <PricingSection
+              vehicleId={vehicle.id}
+              vehicleType={vehicle.vehicleType || 'RENTAL'}
+              dailyRate={vehicle.dailyRate || 0}
+              weeklyRate={vehicle.weeklyRate || null}
+              monthlyRate={vehicle.monthlyRate || null}
+              includedMilesPerDay={vehicle.includedMilesPerDay || null}
+              overageMileRate={vehicle.overageMileRate || null}
+            />
+
+            {/* Rental Guidelines */}
+            <RentalGuidelinesCard
+              vehicleId={vehicle.id}
+              rules={vehicle.rules || null}
+            />
+
+            {/* Pickup Location */}
+            <PickupLocationCard
+              vehicleId={vehicle.id}
+              city={vehicle.city || ''}
+              state={vehicle.state || 'AZ'}
+              zipCode={vehicle.zipCode || ''}
+              address={vehicle.address || ''}
+              advanceNotice={vehicle.advanceNotice || 24}
+              minTripDuration={vehicle.minTripDuration || 1}
+              maxTripDuration={vehicle.maxTripDuration || 30}
+              instantBook={vehicle.instantBook || false}
+            />
 
             {/* Host Assignment Section */}
             <HostAssignmentSection

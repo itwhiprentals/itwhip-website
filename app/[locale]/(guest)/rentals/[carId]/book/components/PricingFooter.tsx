@@ -34,6 +34,7 @@ interface PricingFooterProps {
   eligibility: { allowed: boolean }
   isIdentityVerified: boolean
   onCheckout: () => void
+  promoDiscount?: number
 }
 
 export function PricingFooter({
@@ -47,7 +48,8 @@ export function PricingFooter({
   isUploading,
   eligibility,
   isIdentityVerified,
-  onCheckout
+  onCheckout,
+  promoDiscount = 0
 }: PricingFooterProps) {
   const t = useTranslations('BookingPage')
 
@@ -66,8 +68,13 @@ export function PricingFooter({
     city: carCity
   })
 
+  // Apply promo discount to total before calculating credits/bonus
+  const pricingForBalances = promoDiscount > 0
+    ? { ...pricing, total: Math.round((pricing.total - promoDiscount) * 100) / 100 }
+    : pricing
+
   const stickyAppliedBalances = calculateAppliedBalances(
-    pricing,
+    pricingForBalances,
     adjustedDeposit,
     guestBalances,
     0.25

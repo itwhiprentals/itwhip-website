@@ -3097,7 +3097,11 @@
     "bookingFailed": "Booking failed",
     "failedToSubmitBooking": "Failed to submit booking. Please try again or contact support.",
     "insuranceRequired": "Insurance is required for all bookings. Please go back and select an insurance option.",
-    "andSeparator": ", and "
+    "andSeparator": ", and ",
+    "havePromoCode": "Have a promo code?",
+    "enterPromoCode": "Enter promo code",
+    "apply": "Apply",
+    "promoDiscount": "Promo discount"
   },
   "Coverage": {
     "pageTitle": "Service Areas",
@@ -16122,6 +16126,7 @@
     "tab_photos": "Photos",
     "tab_pricing": "Pricing",
     "tab_features": "Features",
+    "tab_guidelines": "Guidelines",
     "tab_insurance": "Insurance",
     "tab_availability": "Availability",
     "standard": "Standard",

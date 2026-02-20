@@ -105,6 +105,11 @@ const bookingSchema = z.object({
   paymentIntentId: z.string().optional(),
   paymentMethodId: z.string().optional(), // For saving card
   notes: z.string().optional(),
+
+  // Promo code (optional)
+  promoCode: z.string().optional(),
+  promoDiscountAmount: z.number().optional(),
+  promoSource: z.enum(['platform', 'host']).optional(),
   
   // Fraud detection data from client
   fraudData: z.object({
@@ -757,6 +762,35 @@ export async function POST(request: NextRequest) {
     }
     // ========== END STRIPE SETUP ==========
 
+    // ========== SERVER-SIDE PROMO CODE VALIDATION ==========
+    if (bookingData.promoCode) {
+      if (bookingData.promoSource === 'platform') {
+        const promoRecord = await prisma.platform_promo_codes.findFirst({
+          where: { code: { equals: bookingData.promoCode, mode: 'insensitive' } }
+        })
+        if (!promoRecord || !promoRecord.isActive) {
+          return NextResponse.json({ error: 'Promo code is no longer valid' }, { status: 400 })
+        }
+        if (promoRecord.expiresAt && new Date() > promoRecord.expiresAt) {
+          return NextResponse.json({ error: 'Promo code has expired' }, { status: 400 })
+        }
+        if (promoRecord.maxUses && promoRecord.usedCount >= promoRecord.maxUses) {
+          return NextResponse.json({ error: 'Promo code usage limit reached' }, { status: 400 })
+        }
+      } else if (bookingData.promoSource === 'host') {
+        const hostPromo = await prisma.partner_discounts.findFirst({
+          where: { code: { equals: bookingData.promoCode, mode: 'insensitive' } }
+        })
+        if (!hostPromo || !hostPromo.isActive) {
+          return NextResponse.json({ error: 'Promo code is no longer valid' }, { status: 400 })
+        }
+        if (hostPromo.expiresAt && new Date() > hostPromo.expiresAt) {
+          return NextResponse.json({ error: 'Promo code has expired' }, { status: 400 })
+        }
+      }
+    }
+    // ========== END PROMO CODE VALIDATION ==========
+
     // Generate booking code
     const bookingCode = generateBookingCode()
 
@@ -818,6 +852,11 @@ export async function POST(request: NextRequest) {
           depositAmount: depositAmount,
           securityDeposit: depositAmount || 0,
           depositHeld: 0,
+
+          // Promo code (if applied)
+          promoCode: bookingData.promoCode || null,
+          promoDiscountAmount: bookingData.promoDiscountAmount || 0,
+          promoSource: bookingData.promoSource || null,
 
           // ALL bookings start PENDING — three-tier approval: fleet → host → confirmed
           status: RentalBookingStatus.PENDING as any,
@@ -1265,6 +1304,19 @@ export async function POST(request: NextRequest) {
           expiresAt: addHours(new Date(), 72) // 3 days to access booking
         }
       })
+
+      // Increment promo code usage count
+      if (bookingData.promoCode && bookingData.promoSource === 'platform') {
+        await tx.platform_promo_codes.updateMany({
+          where: { code: { equals: bookingData.promoCode, mode: 'insensitive' } },
+          data: { usedCount: { increment: 1 } }
+        })
+      } else if (bookingData.promoCode && bookingData.promoSource === 'host') {
+        await tx.partner_discounts.updateMany({
+          where: { code: { equals: bookingData.promoCode, mode: 'insensitive' } },
+          data: { usedCount: { increment: 1 } }
+        })
+      }
 
       // For confirmed bookings (no verification needed and not flagged), update statistics and block availability
       if (!needsVerification && !requiresManualReview) {

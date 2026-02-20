@@ -174,13 +174,13 @@ export default function DriverRequirementsPage() {
     },
     {
       icon: IoBusinessOutline,
-      title: t('trustFeatureHotelPartnerNetworkTitle'),
-      description: t('trustFeatureHotelPartnerNetworkDescription')
+      title: t('trustFeatureHotelPartnerTitle'),
+      description: t('trustFeatureHotelPartnerDescription')
     },
     {
       icon: IoServerOutline,
-      title: t('trustFeatureGDSIntegrationTitle'),
-      description: t('trustFeatureGDSIntegrationDescription')
+      title: t('trustFeatureGDSTitle'),
+      description: t('trustFeatureGDSDescription')
     },
     {
       icon: IoStarOutline,
@@ -189,13 +189,13 @@ export default function DriverRequirementsPage() {
     },
     {
       icon: IoLockClosedOutline,
-      title: t('trustFeatureSecurePlatformTitle'),
-      description: t('trustFeatureSecurePlatformDescription')
+      title: t('trustFeatureSecureTitle'),
+      description: t('trustFeatureSecureDescription')
     },
     {
       icon: IoWalletOutline,
-      title: t('trustFeatureGuaranteedPaymentsTitle'),
-      description: t('trustFeatureGuaranteedPaymentsDescription')
+      title: t('trustFeaturePaymentsTitle'),
+      description: t('trustFeaturePaymentsDescription')
     }
   ]
 

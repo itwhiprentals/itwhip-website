@@ -124,11 +124,16 @@ export default function DriverLicenseScanner({ onScan, onClose }: DriverLicenseS
         scannerRef.current = scanner
 
         await scanner.start(
-          { facingMode: 'environment' },
+          {
+            facingMode: 'environment',
+            advanced: [{ width: { min: 640, ideal: 1280 } }, { height: { min: 480, ideal: 720 } }]
+          } as any,
           {
             fps: 10,
             qrbox: { width: 280, height: 160 },
             aspectRatio: 1.75,
+            formatsToSupport: [11], // 11=PDF_417 (standard for US driver's licenses)
+            experimentalFeatures: { useBarCodeDetectorIfSupported: true }
           } as any,
           (decodedText: string) => {
             console.log('[DL Scanner] Raw scan:', decodedText.substring(0, 100) + '...')
@@ -183,11 +188,16 @@ export default function DriverLicenseScanner({ onScan, onClose }: DriverLicenseS
         const scanner = new Html5Qrcode('dl-scanner-container')
         scannerRef.current = scanner
         await scanner.start(
-          { facingMode: 'environment' },
+          {
+            facingMode: 'environment',
+            advanced: [{ width: { min: 640, ideal: 1280 } }, { height: { min: 480, ideal: 720 } }]
+          } as any,
           {
             fps: 10,
             qrbox: { width: 280, height: 160 },
             aspectRatio: 1.75,
+            formatsToSupport: [11],
+            experimentalFeatures: { useBarCodeDetectorIfSupported: true }
           } as any,
           (decodedText: string) => {
             const parsedData = parseAAMVABarcode(decodedText)

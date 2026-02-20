@@ -3,7 +3,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, use } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -25,7 +25,8 @@ import {
   IoToggle,
   IoToggleOutline,
   IoShieldCheckmark,
-  IoShieldOutline
+  IoShieldOutline,
+  IoDocumentTextOutline
 } from 'react-icons/io5'
 import { useTranslations } from 'next-intl'
 import { AddressAutocomplete, AddressResult } from '@/app/components/shared/AddressAutocomplete'
@@ -83,6 +84,7 @@ interface VehicleData {
   vinVerificationMethod: string | null
   hasActiveBooking: boolean
   vehicleType: 'RENTAL' | 'RIDESHARE'
+  rules: string | null
   // Insurance fields
   insuranceEligible: boolean
   insuranceExpiryDate: string | null
@@ -99,6 +101,7 @@ const TABS = [
   { id: 'photos', label: 'Photos', icon: IoImageOutline },
   { id: 'pricing', label: 'Pricing', icon: IoPricetagOutline },
   { id: 'features', label: 'Features', icon: IoSparklesOutline },
+  { id: 'guidelines', label: 'Guidelines', icon: IoDocumentTextOutline },
   { id: 'insurance', label: 'Insurance', icon: IoShieldOutline },
   { id: 'availability', label: 'Availability', icon: IoCalendarOutline }
 ]
@@ -106,9 +109,12 @@ const TABS = [
 export default function PartnerFleetEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const t = useTranslations('PartnerVehicleEdit')
 
-  const [activeTab, setActiveTab] = useState('details')
+  const tabFromUrl = searchParams.get('tab')
+  const validTabs = TABS.map(t => t.id)
+  const [activeTab, setActiveTab] = useState(tabFromUrl && validTabs.includes(tabFromUrl) ? tabFromUrl : 'details')
   const [vehicle, setVehicle] = useState<VehicleData | null>(null)
   const [formData, setFormData] = useState<Partial<VehicleData>>({})
   const [photos, setPhotos] = useState<PhotoItem[]>([])
@@ -366,9 +372,9 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
               </Link>
               <div>
                 <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  {vehicle.year} {vehicle.make} {vehicle.model}
+                  {vehicle.year} {vehicle.make}
                 </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{vehicle.trim || t('standard')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{vehicle.model}</p>
               </div>
             </div>
 
@@ -401,7 +407,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
               <button
                 onClick={handleSave}
                 disabled={!hasChanges || isSaving}
-                className="flex items-center gap-2 px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-6 py-2 bg-black text-white rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? (
                   <>
@@ -411,7 +417,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                 ) : (
                   <>
                     <IoSaveOutline className="w-5 h-5" />
-                    {t('saveChanges')}
+                    Save
                   </>
                 )}
               </button>
@@ -956,61 +962,101 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                 </div>
               </div>
 
-              {/* Mileage Policy - Only for Rentals */}
-              {formData.vehicleType === 'RENTAL' && (
-                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">{t('mileagePolicy')}</h4>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        {t('includedMilesPerDay')}
-                      </label>
-                      <input
-                        type="number"
-                        value={(formData as any).includedMilesPerDay || 200}
-                        onChange={(e) => handleChange('includedMilesPerDay' as any, parseInt(e.target.value) || 200)}
-                        min="50"
-                        max="500"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">{t('standardMilesPerDay')}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        {t('overageRate')}
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-gray-500">$</span>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={(formData as any).mileageOverageRate || 0.45}
-                          onChange={(e) => handleChange('mileageOverageRate' as any, parseFloat(e.target.value) || 0.45)}
-                          min="0.25"
-                          max="1.00"
-                          className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white"
-                        />
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">{t('standardOverageRate')}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Mileage Policy */}
+              {(() => {
+                // Check if "Unlimited mileage" is in the rules
+                let currentRules: string[] = []
+                try {
+                  const parsed = JSON.parse(formData.rules || '[]')
+                  if (Array.isArray(parsed)) currentRules = parsed
+                } catch {}
+                const isUnlimited = formData.vehicleType === 'RIDESHARE' || currentRules.includes('Unlimited mileage')
 
-              {/* Unlimited Mileage Badge - For Rideshare */}
-              {formData.vehicleType === 'RIDESHARE' && (
-                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    <IoCheckmarkCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
-                    <div>
-                      <p className="font-medium text-green-700 dark:text-green-300">{t('unlimitedMileageIncluded')}</p>
-                      <p className="text-sm text-green-600 dark:text-green-400">
-                        {t('unlimitedMileageDescription')}
-                      </p>
-                    </div>
+                const toggleUnlimited = (checked: boolean) => {
+                  const updated = currentRules.filter(r => r !== 'Unlimited mileage')
+                  if (checked) {
+                    updated.push('Unlimited mileage')
+                    // Clear mileage fields when unlimited
+                    handleChange('includedMilesPerDay' as any, null)
+                    handleChange('mileageOverageRate' as any, null)
+                  }
+                  handleChange('rules', updated.length > 0 ? JSON.stringify(updated) : null)
+                }
+
+                return (
+                  <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-3">{t('mileagePolicy')}</h4>
+
+                    {/* Unlimited Mileage Toggle */}
+                    <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors mb-4">
+                      <input
+                        type="checkbox"
+                        checked={isUnlimited}
+                        onChange={(e) => toggleUnlimited(e.target.checked)}
+                        disabled={formData.vehicleType === 'RIDESHARE'}
+                        className="w-4 h-4 text-black rounded border-gray-300 focus:ring-black dark:focus:ring-white"
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">Unlimited mileage</span>
+                        {formData.vehicleType === 'RIDESHARE' && (
+                          <p className="text-xs text-green-600 dark:text-green-400">Always enabled for rideshare vehicles</p>
+                        )}
+                      </div>
+                    </label>
+
+                    {/* Miles/Day + Overage - only when NOT unlimited */}
+                    {!isUnlimited && (
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            {t('includedMilesPerDay')}
+                          </label>
+                          <input
+                            type="number"
+                            value={(formData as any).includedMilesPerDay || 200}
+                            onChange={(e) => handleChange('includedMilesPerDay' as any, parseInt(e.target.value) || 200)}
+                            min="50"
+                            max="500"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-black dark:focus:ring-white dark:bg-gray-700 dark:text-white"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">{t('standardMilesPerDay')}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            {t('overageRate')}
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={(formData as any).mileageOverageRate || 0.45}
+                              onChange={(e) => handleChange('mileageOverageRate' as any, parseFloat(e.target.value) || 0.45)}
+                              min="0.25"
+                              max="1.00"
+                              className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-black dark:focus:ring-white dark:bg-gray-700 dark:text-white"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">{t('standardOverageRate')}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Unlimited badge when checked */}
+                    {isUnlimited && (
+                      <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <IoCheckmarkCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+                        <div>
+                          <p className="font-medium text-green-700 dark:text-green-300">{t('unlimitedMileageIncluded')}</p>
+                          <p className="text-sm text-green-600 dark:text-green-400">
+                            {t('unlimitedMileageDescription')}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                )
+              })()}
             </div>
 
             {/* Delivery Options */}
@@ -1115,6 +1161,179 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
             </div>
           </div>
         )}
+
+        {/* Guidelines Tab */}
+        {activeTab === 'guidelines' && (() => {
+          // Parse existing rules into a set for checkbox state
+          let existingRules: string[] = []
+          try {
+            const parsed = JSON.parse(formData.rules || '[]')
+            if (Array.isArray(parsed)) existingRules = parsed
+          } catch {}
+
+          const PRESET_RULES = [
+            'No smoking',
+            'No pets allowed',
+            'No off-road driving',
+            'No racing or track use',
+            'No towing or hauling',
+            'No modifications or alterations',
+            'No international travel',
+            'No subleasing or lending to others',
+            'Valid driver\'s license and insurance required',
+            'Vehicle must be returned clean',
+            'Report any damage immediately',
+            'Fuel must be returned at same level'
+          ]
+
+          const AGE_OPTIONS = [
+            { value: 0, label: 'No age requirement' },
+            { value: 21, label: 'Must be 21+ to book' },
+            { value: 25, label: 'Must be 25+ to book' },
+            { value: 30, label: 'Must be 30+ to book' }
+          ]
+
+          // Extract current age rule
+          const currentAgeRule = existingRules.find(r => /^Must be \d+\+ to book$/.test(r))
+          const currentAge = currentAgeRule ? parseInt(currentAgeRule.match(/\d+/)?.[0] || '0') : 0
+
+          // Extract cleaning fee
+          const cleaningFeeRule = existingRules.find(r => /cleaning fee/i.test(r))
+          const cleaningFee = cleaningFeeRule ? parseInt(cleaningFeeRule.match(/\$(\d+)/)?.[1] || '0') : 0
+
+          // Extract late return fee
+          const lateFeeRule = existingRules.find(r => /late return fee/i.test(r))
+          const lateFee = lateFeeRule ? parseInt(lateFeeRule.match(/\$(\d+)/)?.[1] || '0') : 0
+
+          // Rebuild rules array from current selections
+          const rebuildRules = (updates: {
+            presets?: Record<string, boolean>
+            age?: number
+            cleaning?: number
+            lateReturn?: number
+          }) => {
+            const rules: string[] = []
+
+            // Preset checkboxes
+            for (const rule of PRESET_RULES) {
+              const isChecked = updates.presets !== undefined
+                ? updates.presets[rule] ?? existingRules.includes(rule)
+                : existingRules.includes(rule)
+              if (isChecked) rules.push(rule)
+            }
+
+            // Preserve "Unlimited mileage" if it exists (managed from Pricing tab)
+            if (existingRules.includes('Unlimited mileage')) {
+              rules.push('Unlimited mileage')
+            }
+
+            // Age rule
+            const ageVal = updates.age !== undefined ? updates.age : currentAge
+            if (ageVal > 0) rules.push(`Must be ${ageVal}+ to book`)
+
+            // Cleaning fee
+            const cleanVal = updates.cleaning !== undefined ? updates.cleaning : cleaningFee
+            if (cleanVal > 0) rules.push(`$${cleanVal} cleaning fee for excessive mess`)
+
+            // Late return fee
+            const lateVal = updates.lateReturn !== undefined ? updates.lateReturn : lateFee
+            if (lateVal > 0) rules.push(`$${lateVal}/hour late return fee`)
+
+            handleChange('rules', rules.length > 0 ? JSON.stringify(rules) : null)
+          }
+
+          return (
+          <div className="space-y-6">
+            {/* Preset Rules */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Rental Rules</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                Select the rules that apply to your vehicle.
+              </p>
+
+              <div className="space-y-3">
+                {PRESET_RULES.map(rule => (
+                  <label key={rule} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={existingRules.includes(rule)}
+                      onChange={(e) => rebuildRules({ presets: { [rule]: e.target.checked } })}
+                      className="w-4 h-4 text-black rounded border-gray-300 focus:ring-black dark:focus:ring-white"
+                    />
+                    <span className="text-sm text-gray-900 dark:text-white">{rule}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Age & Fees */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Age & Fees</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                Set minimum age and fee policies.
+              </p>
+
+              <div className="space-y-4">
+                {/* Minimum Age Dropdown */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Minimum Driver Age
+                  </label>
+                  <select
+                    value={currentAge}
+                    onChange={(e) => rebuildRules({ age: parseInt(e.target.value) })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-black dark:focus:ring-white dark:bg-gray-700 dark:text-white text-sm"
+                  >
+                    {AGE_OPTIONS.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Cleaning Fee */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Cleaning Fee ($)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="25"
+                      value={cleaningFee || ''}
+                      onChange={(e) => rebuildRules({ cleaning: parseInt(e.target.value) || 0 })}
+                      placeholder="0"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-black dark:focus:ring-white dark:bg-gray-700 dark:text-white text-sm"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">For excessive mess</p>
+                  </div>
+
+                  {/* Late Return Fee */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Late Return Fee ($/hr)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="10"
+                      value={lateFee || ''}
+                      onChange={(e) => rebuildRules({ lateReturn: parseInt(e.target.value) || 0 })}
+                      placeholder="0"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-black dark:focus:ring-white dark:bg-gray-700 dark:text-white text-sm"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Per hour late</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              These rules are shown to guests before booking as a checklist on your listing.
+            </p>
+          </div>
+          )
+        })()}
 
         {/* Insurance Tab */}
         {activeTab === 'insurance' && (

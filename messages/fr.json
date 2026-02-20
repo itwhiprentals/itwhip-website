@@ -3115,7 +3115,11 @@
     "bookingFailed": "La réservation a échoué",
     "failedToSubmitBooking": "Échec de l'envoi de la réservation. Veuillez réessayer ou contacter le support.",
     "insuranceRequired": "L'assurance est obligatoire pour toutes les réservations. Veuillez revenir en arrière et sélectionner une option d'assurance.",
-    "andSeparator": " et "
+    "andSeparator": " et ",
+    "havePromoCode": "Vous avez un code promo ?",
+    "enterPromoCode": "Entrez le code promo",
+    "apply": "Appliquer",
+    "promoDiscount": "R\u00e9duction promotionnelle"
   },
   "Coverage": {
     "pageTitle": "Zones de service",
@@ -16122,6 +16126,7 @@
     "tab_photos": "Photos",
     "tab_pricing": "Tarification",
     "tab_features": "Équipements",
+    "tab_guidelines": "Règles",
     "tab_insurance": "Assurance",
     "tab_availability": "Disponibilité",
     "standard": "Standard",

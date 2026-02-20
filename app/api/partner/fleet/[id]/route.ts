@@ -174,6 +174,11 @@ export async function GET(
       // Vehicle Type (Rental vs Rideshare)
       vehicleType: vehicle.vehicleType || 'RENTAL',
 
+      // Rules & mileage
+      rules: vehicle.rules || null,
+      includedMilesPerDay: vehicle.includedMilesPerDay || null,
+      overageMileRate: vehicle.overageMileRate || null,
+
       // Stats
       totalTrips: vehicle.totalTrips,
       rating: vehicle.rating,
@@ -281,6 +286,9 @@ export async function PUT(
       // Vehicle Type (Rental vs Rideshare)
       vehicleType,
 
+      // Rules / Guidelines
+      rules,
+
       // Insurance fields
       hasOwnInsurance,
       insuranceProvider,
@@ -350,6 +358,9 @@ export async function PUT(
     if (vehicleType !== undefined && (vehicleType === 'RENTAL' || vehicleType === 'RIDESHARE')) {
       updateData.vehicleType = vehicleType
     }
+
+    // Rules / Guidelines
+    if (rules !== undefined) updateData.rules = rules
 
     // Insurance updates
     if (hasOwnInsurance !== undefined) {
