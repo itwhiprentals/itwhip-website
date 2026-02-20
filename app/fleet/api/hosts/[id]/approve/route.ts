@@ -113,6 +113,7 @@ export async function POST(
     // Create audit log for approval
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         category: 'HOST_MANAGEMENT',
         eventType: 'host_approved',
         severity: 'INFO',
@@ -258,6 +259,7 @@ export async function DELETE(
     // Create audit log for rejection
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         category: 'HOST_MANAGEMENT',
         eventType: 'host_rejected',
         severity: 'INFO',
