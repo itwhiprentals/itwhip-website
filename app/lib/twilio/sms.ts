@@ -104,13 +104,12 @@ export async function sendSms(
   try {
     // Use Messaging Service when available (handles 10DLC compliance)
     // Falls back to sending from phone number directly
+    // NOTE: Temporarily bypassing Messaging Service due to invalid SID - use phone number directly
     const message = await twilioClient.messages.create({
       body,
       to: normalizedTo,
+      from: TWILIO_TOLLFREE_NUMBER,
       statusCallback: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/sms-status`,
-      ...(TWILIO_MESSAGING_SERVICE_SID
-        ? { messagingServiceSid: TWILIO_MESSAGING_SERVICE_SID }
-        : { from: TWILIO_TOLLFREE_NUMBER }),
     })
 
     // Update log with Twilio SID and status
