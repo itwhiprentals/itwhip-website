@@ -1042,33 +1042,35 @@ export default function PartnerRevenuePage() {
         const carsNeeded = nextTier ? nextTier.minCars - fleetSize : 0
 
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center gap-2 mb-1">
-              <IoShieldCheckmarkOutline className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Choose Your Revenue Path</h2>
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <IoShieldCheckmarkOutline className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Choose Your Revenue Path</h2>
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Select how you want to earn. Your choice determines your payout rate across all bookings.
+              </p>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
-              Select how you want to earn. Your choice determines your payout rate across all bookings.
-            </p>
 
             {/* Two selectable path cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Insurance Path Card */}
               <button
                 type="button"
                 onClick={() => { setRevenuePath('insurance'); if (!revenueTier) setRevenueTier('p2p') }}
-                className={`text-left p-4 rounded-lg border-2 transition-colors ${
+                className={`text-left p-4 rounded-lg border-2 transition-all ${
                   revenuePath === 'insurance'
-                    ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-700'
-                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 ring-2 ring-orange-500/20'
+                    : 'border-gray-200 dark:border-gray-600 hover:border-orange-300 dark:hover:border-orange-500/50'
                 }`}
               >
                 <div className="flex items-center gap-3 mb-2">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    revenuePath === 'insurance' ? 'bg-gray-900 dark:bg-white' : 'bg-gray-100 dark:bg-gray-700'
+                    revenuePath === 'insurance' ? 'bg-orange-500' : 'bg-orange-100 dark:bg-orange-900/30'
                   }`}>
                     <IoShieldCheckmarkOutline className={`w-5 h-5 ${
-                      revenuePath === 'insurance' ? 'text-white dark:text-gray-900' : 'text-gray-600 dark:text-gray-400'
+                      revenuePath === 'insurance' ? 'text-white' : 'text-orange-600 dark:text-orange-400'
                     }`} />
                   </div>
                   <div>
@@ -1078,11 +1080,11 @@ export default function PartnerRevenuePage() {
                 </div>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Select your insurance type to determine payout rate. Platform coverage (40%) or bring your own (up to 90%).</p>
                 <div className="flex items-center justify-between mt-3">
-                  <span className="text-sm font-bold text-gray-900 dark:text-white">40% – 90% payout</span>
+                  <span className="text-sm font-bold text-orange-600 dark:text-orange-400">40% – 90% payout</span>
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                    revenuePath === 'insurance' ? 'border-gray-900 dark:border-white' : 'border-gray-300 dark:border-gray-500'
+                    revenuePath === 'insurance' ? 'border-orange-500' : 'border-gray-300 dark:border-gray-500'
                   }`}>
-                    {revenuePath === 'insurance' && <div className="w-2.5 h-2.5 rounded-full bg-gray-900 dark:bg-white" />}
+                    {revenuePath === 'insurance' && <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />}
                   </div>
                 </div>
               </button>
@@ -1091,18 +1093,18 @@ export default function PartnerRevenuePage() {
               <button
                 type="button"
                 onClick={() => { setRevenuePath('tiers'); setRevenueTier(null) }}
-                className={`text-left p-4 rounded-lg border-2 transition-colors ${
+                className={`text-left p-4 rounded-lg border-2 transition-all ${
                   revenuePath === 'tiers'
-                    ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-700'
-                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/20'
+                    : 'border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500/50'
                 }`}
               >
                 <div className="flex items-center gap-3 mb-2">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    revenuePath === 'tiers' ? 'bg-gray-900 dark:bg-white' : 'bg-gray-100 dark:bg-gray-700'
+                    revenuePath === 'tiers' ? 'bg-blue-500' : 'bg-blue-100 dark:bg-blue-900/30'
                   }`}>
                     <IoLayersOutline className={`w-5 h-5 ${
-                      revenuePath === 'tiers' ? 'text-white dark:text-gray-900' : 'text-gray-600 dark:text-gray-400'
+                      revenuePath === 'tiers' ? 'text-white' : 'text-blue-600 dark:text-blue-400'
                     }`} />
                   </div>
                   <div>
@@ -1112,11 +1114,11 @@ export default function PartnerRevenuePage() {
                 </div>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Your commission is automatically set by your fleet size. More cars = lower commission.</p>
                 <div className="flex items-center justify-between mt-3">
-                  <span className="text-sm font-bold text-gray-900 dark:text-white">Currently {currentTier.name} ({100 - currentTier.commission}%)</span>
+                  <span className="text-sm font-bold text-blue-600 dark:text-blue-400">Currently {currentTier.name} ({100 - currentTier.commission}%)</span>
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                    revenuePath === 'tiers' ? 'border-gray-900 dark:border-white' : 'border-gray-300 dark:border-gray-500'
+                    revenuePath === 'tiers' ? 'border-blue-500' : 'border-gray-300 dark:border-gray-500'
                   }`}>
-                    {revenuePath === 'tiers' && <div className="w-2.5 h-2.5 rounded-full bg-gray-900 dark:bg-white" />}
+                    {revenuePath === 'tiers' && <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />}
                   </div>
                 </div>
               </button>
@@ -1124,38 +1126,44 @@ export default function PartnerRevenuePage() {
 
             {/* Insurance sub-options (shown when Insurance is selected) */}
             {revenuePath === 'insurance' && (
-              <div className="space-y-2 mb-4 pl-1">
+              <div className="space-y-2 bg-white dark:bg-gray-800 rounded-lg border border-orange-200 dark:border-orange-800/40 p-4">
                 {[
-                  { value: null, label: 'Platform Insurance', payout: '40% payout', desc: 'We handle claims and coverage' },
-                  { value: 'p2p' as const, label: 'P2P Insurance', payout: '75% payout', desc: 'Upload your P2P insurance proof' },
-                  { value: 'commercial' as const, label: 'Commercial Insurance', payout: '90% payout', desc: 'Upload your commercial insurance proof' },
+                  { value: null, label: 'Platform Insurance', payout: '40% payout', desc: 'We handle claims and coverage', color: 'amber' },
+                  { value: 'p2p' as const, label: 'P2P Insurance', payout: '75% payout', desc: 'Upload your P2P insurance proof', color: 'green' },
+                  { value: 'commercial' as const, label: 'Commercial Insurance', payout: '90% payout', desc: 'Upload your commercial insurance proof', color: 'purple' },
                 ].map((option) => {
                   const isSelected = option.value === null
                     ? revenueTier === null || revenueTier === undefined
                     : revenueTier === option.value
+                  const colorMap: Record<string, { border: string; bg: string; radio: string; dot: string; payout: string }> = {
+                    amber: { border: 'border-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20', radio: 'border-amber-500', dot: 'bg-amber-500', payout: 'text-amber-600 dark:text-amber-400' },
+                    green: { border: 'border-green-500', bg: 'bg-green-50 dark:bg-green-900/20', radio: 'border-green-500', dot: 'bg-green-500', payout: 'text-green-600 dark:text-green-400' },
+                    purple: { border: 'border-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20', radio: 'border-purple-500', dot: 'bg-purple-500', payout: 'text-purple-600 dark:text-purple-400' },
+                  }
+                  const c = colorMap[option.color]
                   return (
                     <button
                       key={option.value ?? 'platform'}
                       type="button"
                       onClick={() => setRevenueTier(option.value as any)}
-                      className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors text-left ${
+                      className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all text-left ${
                         isSelected
-                          ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-700'
+                          ? `${c.border} ${c.bg}`
                           : 'border-gray-200 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                          isSelected ? 'border-gray-900 dark:border-white' : 'border-gray-300 dark:border-gray-500'
+                          isSelected ? c.radio : 'border-gray-300 dark:border-gray-500'
                         }`}>
-                          {isSelected && <div className="w-2 h-2 rounded-full bg-gray-900 dark:bg-white" />}
+                          {isSelected && <div className={`w-2 h-2 rounded-full ${c.dot}`} />}
                         </div>
                         <div>
                           <span className="text-sm font-medium text-gray-900 dark:text-white">{option.label}</span>
                           <p className="text-xs text-gray-400 dark:text-gray-500">{option.desc}</p>
                         </div>
                       </div>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">{option.payout}</span>
+                      <span className={`text-sm font-medium ${isSelected ? c.payout : 'text-gray-500 dark:text-gray-400'}`}>{option.payout}</span>
                     </button>
                   )
                 })}
@@ -1164,36 +1172,35 @@ export default function PartnerRevenuePage() {
 
             {/* Commission Tier details (shown when Tiers is selected) */}
             {revenuePath === 'tiers' && (
-              <div className="mb-4">
+              <div className="space-y-5">
                 {/* Current Tier Display */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-5 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <div className="text-center sm:text-left">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{currentTier.name} Partner</p>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold text-gray-900 dark:text-white">{currentTier.commission}%</span>
-                      <span className="text-sm text-gray-400 dark:text-gray-500">commission</span>
-                    </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">You keep {100 - currentTier.commission}%</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 text-center border border-blue-100 dark:border-blue-800/30">
+                    <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1 uppercase tracking-wide">Your Tier</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">{currentTier.name}</p>
                   </div>
-                  <div className="sm:border-l sm:border-gray-200 dark:sm:border-gray-700 sm:pl-6">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Fleet Size</p>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-bold text-gray-900 dark:text-white">{fleetSize}</span>
-                      <span className="text-sm text-gray-400 dark:text-gray-500">vehicles</span>
-                    </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center border border-gray-100 dark:border-gray-700">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1 uppercase tracking-wide">Commission</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">{currentTier.commission}%</p>
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">Keep {100 - currentTier.commission}%</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center border border-gray-100 dark:border-gray-700">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1 uppercase tracking-wide">Fleet</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">{fleetSize}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">vehicles</p>
                   </div>
                 </div>
 
                 {/* Progress to Next Tier */}
                 {nextTier && (
-                  <div className="mb-5">
+                  <div>
                     <div className="flex items-center justify-between text-sm mb-2">
                       <span className="text-gray-500 dark:text-gray-400">Progress to {nextTier.name}</span>
                       <span className="text-gray-500 dark:text-gray-400">{carsNeeded} more vehicles needed</span>
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                       <div
-                        className="bg-gray-900 dark:bg-white h-2.5 rounded-full transition-all duration-500"
+                        className="bg-blue-500 h-2.5 rounded-full transition-all duration-500"
                         style={{ width: `${progressToNext}%` }}
                       />
                     </div>
@@ -1211,12 +1218,12 @@ export default function PartnerRevenuePage() {
                       key={tier.name}
                       className={`p-3 rounded-lg border text-center ${
                         i === currentTierIdx
-                          ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-700'
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                           : 'border-gray-200 dark:border-gray-600'
                       }`}
                     >
                       <p className={`text-xs font-medium mb-1 ${
-                        i === currentTierIdx ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'
+                        i === currentTierIdx ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'
                       }`}>
                         {i === currentTierIdx ? 'Current' : i === currentTierIdx + 1 ? 'Next' : ''}
                       </p>
@@ -1224,7 +1231,7 @@ export default function PartnerRevenuePage() {
                         i === currentTierIdx ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'
                       }`}>{tier.name}</p>
                       <p className={`text-lg font-bold ${
-                        i === currentTierIdx ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'
+                        i === currentTierIdx ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'
                       }`}>{tier.commission}%</p>
                       <p className="text-xs text-gray-400 dark:text-gray-500">{tier.minCars}+ cars</p>
                     </div>
@@ -1233,9 +1240,9 @@ export default function PartnerRevenuePage() {
 
                 {/* Diamond unlock message */}
                 {currentTierIdx < TIERS.length - 1 && (
-                  <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-800/30">
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      <span className="font-medium text-gray-700 dark:text-gray-300">Unlock Diamond Benefits</span>{' '}
+                      <span className="font-medium text-blue-700 dark:text-blue-300">Unlock Diamond Benefits</span>{' '}
                       &mdash; Reach 100+ vehicles to unlock the lowest commission rate (10%) and priority support.
                     </p>
                   </div>
@@ -1244,7 +1251,7 @@ export default function PartnerRevenuePage() {
             )}
 
             {/* Save + Current Status */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
               <div>
                 {savedRevenuePath ? (
                   <p className="text-sm text-gray-500 dark:text-gray-400">

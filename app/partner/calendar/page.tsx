@@ -208,12 +208,12 @@ export default function PartnerCalendarPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6 overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <IoCalendarOutline className="w-7 h-7" />
+            <IoCalendarOutline className="w-7 h-7 flex-shrink-0" />
             {t('title')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
@@ -221,12 +221,12 @@ export default function PartnerCalendarPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
           {/* Vehicle Filter */}
           <select
             value={selectedVehicle || ''}
             onChange={(e) => setSelectedVehicle(e.target.value || null)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+            className="w-full sm:w-auto px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
           >
             <option value="">{t('allVehicles')}</option>
             {vehicles.map(v => (
@@ -237,20 +237,20 @@ export default function PartnerCalendarPage() {
           {/* Block Dates Button */}
           <button
             onClick={() => setShowBlockModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors whitespace-nowrap"
           >
-            <IoLockClosedOutline className="w-5 h-5" />
+            <IoLockClosedOutline className="w-5 h-5 flex-shrink-0" />
             {t('blockDates')}
           </button>
         </div>
       </div>
 
       {/* Availability Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="flex gap-4 overflow-x-auto pb-2 sm:pb-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-x-visible">
         {availability.slice(0, 4).map(a => (
           <div
             key={a.vehicleId}
-            className={`bg-white dark:bg-gray-800 rounded-lg border p-4 cursor-pointer transition-all ${
+            className={`bg-white dark:bg-gray-800 rounded-lg border p-4 cursor-pointer transition-all min-w-[200px] sm:min-w-0 flex-shrink-0 sm:flex-shrink ${
               selectedVehicle === a.vehicleId
                 ? 'border-orange-500 ring-2 ring-orange-500/20'
                 : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
@@ -303,29 +303,29 @@ export default function PartnerCalendarPage() {
       </div>
 
       {/* Calendar */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Calendar Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2 sm:gap-4">
             <button
               onClick={() => navigateMonth('prev')}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
               <IoChevronBackOutline className="w-5 h-5" />
             </button>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white min-w-[180px] text-center">
+            <h2 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white min-w-[120px] sm:min-w-[180px] text-center">
               {currentDate.toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
             </h2>
             <button
               onClick={() => navigateMonth('next')}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
               <IoChevronForwardOutline className="w-5 h-5" />
             </button>
           </div>
           <button
             onClick={goToToday}
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
             {t('today')}
           </button>
@@ -334,7 +334,7 @@ export default function PartnerCalendarPage() {
         {/* Week Days Header */}
         <div className="grid grid-cols-7 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
           {weekDays.map(day => (
-            <div key={day} className="py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
+            <div key={day} className="py-2 sm:py-3 text-center text-[10px] sm:text-sm font-medium text-gray-500 dark:text-gray-400">
               {day}
             </div>
           ))}
@@ -347,7 +347,7 @@ export default function PartnerCalendarPage() {
               return (
                 <div
                   key={`empty-${index}`}
-                  className="min-h-[100px] border-b border-r border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30"
+                  className="min-h-[60px] sm:min-h-[100px] border-b border-r border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30"
                 />
               )
             }
@@ -358,13 +358,13 @@ export default function PartnerCalendarPage() {
             return (
               <div
                 key={date.toISOString()}
-                className={`min-h-[100px] border-b border-r border-gray-100 dark:border-gray-700 p-1 ${
+                className={`min-h-[60px] sm:min-h-[100px] border-b border-r border-gray-100 dark:border-gray-700 p-0.5 sm:p-1 overflow-hidden ${
                   isPast ? 'bg-gray-50 dark:bg-gray-900/30' : ''
                 }`}
               >
-                <div className={`text-sm font-medium mb-1 px-1 ${
+                <div className={`text-[10px] sm:text-sm font-medium mb-0.5 sm:mb-1 px-0.5 sm:px-1 ${
                   isToday(date)
-                    ? 'bg-orange-500 text-white w-7 h-7 rounded-full flex items-center justify-center'
+                    ? 'bg-orange-500 text-white w-5 h-5 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[10px] sm:text-sm'
                     : isPast
                     ? 'text-gray-400 dark:text-gray-500'
                     : 'text-gray-900 dark:text-white'
@@ -374,20 +374,32 @@ export default function PartnerCalendarPage() {
 
                 {/* Events */}
                 <div className="space-y-0.5">
-                  {dayEvents.slice(0, 3).map(event => (
+                  {dayEvents.slice(0, 3).map((event, i) => (
                     <button
                       key={event.id}
                       onClick={() => setSelectedEvent(event)}
-                      className="w-full text-left px-1.5 py-0.5 text-xs rounded truncate transition-opacity hover:opacity-80"
+                      className={`w-full text-left px-0.5 sm:px-1.5 py-0.5 text-[8px] sm:text-xs rounded truncate block transition-opacity hover:opacity-80 overflow-hidden ${
+                        i > 0 ? 'hidden sm:block' : ''
+                      }`}
                       style={{ backgroundColor: event.color, color: 'white' }}
                     >
-                      {event.type === 'blocked' && <IoLockClosedOutline className="w-3 h-3 inline mr-0.5" />}
-                      {event.title}
+                      <span className="hidden sm:inline">
+                        {event.type === 'blocked' && <IoLockClosedOutline className="w-3 h-3 inline mr-0.5" />}
+                        {event.title}
+                      </span>
+                      <span className="sm:hidden">
+                        <IoEllipseSharp className="w-1.5 h-1.5 inline" />
+                      </span>
                     </button>
                   ))}
                   {dayEvents.length > 3 && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 px-1">
+                    <p className="text-[8px] sm:text-xs text-gray-500 dark:text-gray-400 px-0.5 sm:px-1 hidden sm:block">
                       {t('moreEvents', { count: dayEvents.length - 3 })}
+                    </p>
+                  )}
+                  {dayEvents.length > 1 && (
+                    <p className="text-[8px] text-gray-500 dark:text-gray-400 px-0.5 sm:hidden">
+                      +{dayEvents.length - 1}
                     </p>
                   )}
                 </div>
