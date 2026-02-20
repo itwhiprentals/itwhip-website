@@ -18,6 +18,9 @@ interface Booking {
   id: string
   guestName: string
   vehicleName: string
+  vehicleYear?: number
+  vehicleMake?: string
+  vehicleModel?: string
   startDate: string
   endDate: string
   status: 'confirmed' | 'pending' | 'active' | 'completed' | 'cancelled'
@@ -113,8 +116,15 @@ export default function RecentBookings({ bookings }: RecentBookingsProps) {
                 </span>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                {booking.vehicleName}
+                {booking.vehicleYear && booking.vehicleMake
+                  ? `${booking.vehicleYear} ${booking.vehicleMake}`
+                  : booking.vehicleName}
               </p>
+              {booking.vehicleModel && (
+                <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
+                  {booking.vehicleModel}
+                </p>
+              )}
               <p className="text-xs text-gray-400 dark:text-gray-500">
                 {formatDate(booking.startDate)} - {formatDate(booking.endDate)}
               </p>

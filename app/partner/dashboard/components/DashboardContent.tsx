@@ -321,6 +321,9 @@ export default function DashboardContent({
       vehicleName: b.vehicle
         ? `${b.vehicle.year} ${b.vehicle.make} ${b.vehicle.model}`
         : 'Unknown Vehicle',
+      vehicleYear: b.vehicle?.year,
+      vehicleMake: b.vehicle?.make,
+      vehicleModel: b.vehicle?.model,
       startDate: b.startDate,
       endDate: b.endDate,
       status: (b.status?.toLowerCase() || 'pending') as 'confirmed' | 'pending' | 'active' | 'completed' | 'cancelled',

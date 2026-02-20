@@ -237,10 +237,19 @@ export default function InvitationsList({
               </div>
             ) : (
               <div className="space-y-2">
+                {activeTab === 'sent' && (
+                  <Link
+                    href="/partner/fleet/invite-owner"
+                    className="flex items-center justify-center gap-2 p-2.5 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+                  >
+                    <IoAddCircleOutline className="w-4 h-4" />
+                    {t('ilInviteCarOwner')}
+                  </Link>
+                )}
                 {invitations.map((invitation) => (
                   <Link
                     key={invitation.id}
-                    href={`/partner/fleet/invitations/${invitation.id}`}
+                    href={`/partner/fleet/invitations/${invitation.token}`}
                     className="block p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
                   >
                     <div className="flex items-start gap-3">

@@ -141,6 +141,9 @@ export async function GET(request: NextRequest) {
       vehicleName: booking.car
         ? `${booking.car.year} ${booking.car.make} ${booking.car.model}`
         : 'Unknown Vehicle',
+      vehicle: booking.car
+        ? { year: booking.car.year, make: booking.car.make, model: booking.car.model }
+        : undefined,
       startDate: booking.startDate.toISOString(),
       endDate: booking.endDate.toISOString(),
       status: mapBookingStatus(booking.status),

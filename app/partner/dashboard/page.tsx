@@ -506,7 +506,20 @@ export default function PartnerDashboardPage() {
                 <IoArrowForwardOutline className="w-4 h-4" />
               </Link>
             </div>
-            <RecentBookings bookings={recentBookings.slice(0, 5) as any} />
+            <RecentBookings bookings={recentBookings.slice(0, 5).map(b => ({
+              id: b.id,
+              guestName: b.guestName || 'Unknown Guest',
+              vehicleName: b.vehicle
+                ? `${b.vehicle.year} ${b.vehicle.make} ${b.vehicle.model}`
+                : 'Unknown Vehicle',
+              vehicleYear: b.vehicle?.year,
+              vehicleMake: b.vehicle?.make,
+              vehicleModel: b.vehicle?.model,
+              startDate: b.startDate,
+              endDate: b.endDate,
+              status: (b.status?.toLowerCase() || 'pending') as 'confirmed' | 'pending' | 'active' | 'completed' | 'cancelled',
+              totalAmount: b.totalAmount || 0
+            }))} />
           </div>
         )}
       </div>
@@ -1066,7 +1079,20 @@ export default function PartnerDashboardPage() {
             <IoArrowForwardOutline className="w-4 h-4" />
           </Link>
         </div>
-        <RecentBookings bookings={recentBookings as any} />
+        <RecentBookings bookings={recentBookings.map(b => ({
+          id: b.id,
+          guestName: b.guestName || 'Unknown Guest',
+          vehicleName: b.vehicle
+            ? `${b.vehicle.year} ${b.vehicle.make} ${b.vehicle.model}`
+            : 'Unknown Vehicle',
+          vehicleYear: b.vehicle?.year,
+          vehicleMake: b.vehicle?.make,
+          vehicleModel: b.vehicle?.model,
+          startDate: b.startDate,
+          endDate: b.endDate,
+          status: (b.status?.toLowerCase() || 'pending') as 'confirmed' | 'pending' | 'active' | 'completed' | 'cancelled',
+          totalAmount: b.totalAmount || 0
+        }))} />
       </div>
 
       {/* Revenue Path Card — shows Insurance or Tier card based on selection */}

@@ -122,8 +122,11 @@ export default function FleetOverview({ vehicles }: FleetOverviewProps) {
                   )}
                 </div>
                 <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {vehicle.year} {vehicle.make}
+                  </p>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {vehicle.year} {vehicle.make} {vehicle.model}
+                    {vehicle.model}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {t('foPerDayTrips', { rate: vehicle.dailyRate, trips: vehicle.totalTrips })}
