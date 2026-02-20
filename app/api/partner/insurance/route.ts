@@ -104,7 +104,9 @@ export async function GET(request: NextRequest) {
         totalVehicles,
         vehiclesWithInsurance,
         vehiclesWithoutInsurance: totalVehicles - vehiclesWithInsurance
-      }
+      },
+      revenuePath: partner.revenuePath || null,
+      revenueTier: partner.revenueTier || null,
     })
 
   } catch (error) {

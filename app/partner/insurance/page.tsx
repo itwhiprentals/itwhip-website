@@ -71,6 +71,8 @@ export default function InsurancePage() {
   const [saving, setSaving] = useState(false)
   const [savingVehicle, setSavingVehicle] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [revenuePath, setRevenuePath] = useState<string | null>(null)
+  const [revenueTier, setRevenueTier] = useState<string | null>(null)
 
   // Vehicle expansion state
   const [expandedVehicleId, setExpandedVehicleId] = useState<string | null>(null)
@@ -122,6 +124,10 @@ export default function InsurancePage() {
         // Load covered vehicle IDs
         setCoveredVehicleIds(ins.coveredVehicleIds || [])
         setRentalCoveredVehicleIds(ins.rentalCoveredVehicleIds || [])
+
+        // Load revenue path from API response
+        setRevenuePath(data.revenuePath || null)
+        setRevenueTier(data.revenueTier || null)
       }
     } catch (error) {
       console.error('Failed to fetch insurance:', error)
@@ -315,6 +321,83 @@ export default function InsurancePage() {
         </div>
       )}
 
+      {/* Revenue Path Context Banner */}
+      {revenuePath === 'insurance' && !revenueTier && (
+        <div className="mb-6 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+          <div className="flex items-start gap-3">
+            <IoInformationCircleOutline className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                {t('platformInsuranceBanner')}
+              </p>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                {t('platformInsuranceBannerDesc')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      {revenuePath === 'insurance' && revenueTier === 'p2p' && (
+        <div className="mb-6 p-4 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+          <div className="flex items-start gap-3">
+            <IoAlertCircleOutline className="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-orange-800 dark:text-orange-300">
+                {t('p2pInsuranceBanner')}
+              </p>
+              <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                {t('p2pInsuranceBannerDesc')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      {revenuePath === 'insurance' && revenueTier === 'commercial' && (
+        <div className="mb-6 p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+          <div className="flex items-start gap-3">
+            <IoAlertCircleOutline className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-purple-800 dark:text-purple-300">
+                {t('commercialInsuranceBanner')}
+              </p>
+              <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                {t('commercialInsuranceBannerDesc')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      {revenuePath === 'tiers' && (
+        <div className="mb-6 p-4 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600">
+          <div className="flex items-start gap-3">
+            <IoInformationCircleOutline className="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {t('tiersPathBanner')}
+              </p>
+              <Link href="/partner/revenue" className="text-xs text-orange-600 dark:text-orange-400 hover:underline mt-1 inline-block">
+                {t('setRevenuePathLink')}
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+      {!revenuePath && (
+        <div className="mb-6 p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-start gap-3">
+            <IoInformationCircleOutline className="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {t('noRevenuePathBanner')}
+              </p>
+              <Link href="/partner/revenue" className="text-xs text-orange-600 dark:text-orange-400 hover:underline mt-1 inline-block">
+                {t('setRevenuePathLink')}
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
@@ -368,7 +451,7 @@ export default function InsurancePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className={`grid grid-cols-1 lg:grid-cols-3 gap-6 ${revenuePath === 'tiers' ? 'opacity-50 pointer-events-none' : ''}`}>
         {/* Left Column - Main Settings */}
         <div className="lg:col-span-2 space-y-6">
           {/* Partner Insurance Toggle */}

@@ -34,6 +34,7 @@ import Image from 'next/image'
 
 // Import dashboard components
 import TierProgressCard from './components/TierProgressCard'
+import InsurancePathCard from './components/InsurancePathCard'
 import RevenueChart from './components/RevenueChart'
 import RecentBookings from './components/RecentBookings'
 import FleetOverview from './components/FleetOverview'
@@ -1068,13 +1069,20 @@ export default function PartnerDashboardPage() {
         <RecentBookings bookings={recentBookings as any} />
       </div>
 
-      {/* Commission Tier Progress - B2B Feature */}
+      {/* Revenue Path Card — shows Insurance or Tier card based on selection */}
       {stats && (
-        <TierProgressCard
-          currentRate={stats.currentCommissionRate}
-          fleetSize={stats.fleetSize}
-          tier={stats.tier}
-        />
+        stats.revenuePath === 'insurance' ? (
+          <InsurancePathCard
+            revenueTier={stats.revenueTier}
+            commissionRate={stats.currentCommissionRate}
+          />
+        ) : (
+          <TierProgressCard
+            currentRate={stats.currentCommissionRate}
+            fleetSize={stats.fleetSize}
+            tier={stats.tier}
+          />
+        )
       )}
     </div>
   )

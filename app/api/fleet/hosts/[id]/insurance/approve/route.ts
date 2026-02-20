@@ -65,6 +65,8 @@ export async function POST(
         name: true,
         earningsTier: true,
         commissionRate: true,
+        revenuePath: true,
+        revenueTier: true,
         usingLegacyInsurance: true,
         // P2P fields
         p2pInsuranceProvider: true,
@@ -158,6 +160,10 @@ export async function POST(
           newTier = 'PREMIUM'
           newCommissionRate = 0.10
           updateData.commercialInsuranceStatus = 'ACTIVE'
+          // Sync revenue path fields
+          updateData.revenuePath = 'tiers'
+          updateData.revenueTier = 'commercial'
+          updateData.currentCommissionRate = newCommissionRate
           
           // 🔄 AUTO-DEACTIVATE P2P if it's ACTIVE
           if (host.p2pInsuranceStatus === 'ACTIVE' || (host.usingLegacyInsurance && host.hostInsuranceStatus === 'ACTIVE')) {
@@ -175,7 +181,7 @@ export async function POST(
           if (host.usingLegacyInsurance) {
             updateData.hostInsuranceStatus = 'ACTIVE'
           }
-          
+
           // Check if Commercial is ACTIVE
           if (host.commercialInsuranceStatus === 'ACTIVE') {
             // 🔄 AUTO-DEACTIVATE Commercial, P2P takes over
@@ -189,6 +195,10 @@ export async function POST(
             newTier = 'STANDARD'
             newCommissionRate = 0.25
           }
+          // Sync revenue path fields
+          updateData.revenuePath = 'tiers'
+          updateData.revenueTier = 'p2p'
+          updateData.currentCommissionRate = newCommissionRate
         }
         
         // Set tier
@@ -280,10 +290,16 @@ export async function POST(
           }
         }
         
+        // Sync revenue path: if falling back to BASIC (no insurance), clear revenue path
+        const revenuePathUpdate = newTier === 'BASIC'
+          ? { revenuePath: null, revenueTier: null, currentCommissionRate: newCommissionRate }
+          : { revenueTier: newTier === 'PREMIUM' ? 'commercial' : 'p2p', currentCommissionRate: newCommissionRate }
+
         // Build update data
         const updateData: any = {
           earningsTier: newTier,
           commissionRate: newCommissionRate,
+          ...revenuePathUpdate,
           lastTierChange: new Date(),
           tierChangeReason: `${insuranceType} insurance rejected - ${reason}`,
           tierChangeBy: admin.email,
@@ -453,6 +469,8 @@ export async function DELETE(
         name: true,
         earningsTier: true,
         commissionRate: true,
+        revenuePath: true,
+        revenueTier: true,
         usingLegacyInsurance: true,
         p2pInsuranceStatus: true,
         commercialInsuranceStatus: true,
@@ -495,10 +513,16 @@ export async function DELETE(
         }
       }
       
+      // Sync revenue path based on remaining insurance
+      const revenuePathSync = newTier === 'BASIC'
+        ? { revenuePath: null, revenueTier: null, currentCommissionRate: newCommissionRate }
+        : { revenuePath: 'tiers', revenueTier: newTier === 'PREMIUM' ? 'commercial' : 'p2p', currentCommissionRate: newCommissionRate }
+
       // Build update data
       const updateData: any = {
         earningsTier: newTier,
         commissionRate: newCommissionRate,
+        ...revenuePathSync,
         lastTierChange: new Date(),
         tierChangeReason: `${insuranceType} insurance deleted by admin`,
         tierChangeBy: admin.email,

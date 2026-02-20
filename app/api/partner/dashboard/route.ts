@@ -231,6 +231,8 @@ export async function GET(request: NextRequest) {
         companyName: partner.partnerCompanyName || (partner as any).displayName,
         email: partner.email,
         commissionRate: partner.currentCommissionRate || 0.25,
+        revenuePath: partner.revenuePath || null,
+        revenueTier: partner.revenueTier || null,
         tier: {
           current: tierInfo.currentTier,
           vehiclesNeeded: tierInfo.vehiclesToNextTier,
@@ -248,6 +250,8 @@ export async function GET(request: NextRequest) {
         utilization,
         avgRating,
         currentCommissionRate: partner.currentCommissionRate || 0.25,
+        revenuePath: partner.revenuePath || null,
+        revenueTier: partner.revenueTier || null,
         grossRevenue: totalRevenue,
         netRevenue: totalRevenue * (1 - (partner.currentCommissionRate || 0.25)),
         thisMonthRevenue: monthlyRevenueTotal,

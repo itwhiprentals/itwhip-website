@@ -239,7 +239,6 @@ export default function PartnerRevenuePage() {
 
   const handleSaveTier = async () => {
     if (!revenuePath) return
-    if (revenuePath === 'tiers' && !revenueTier) return
 
     setIsSavingTier(true)
     try {
@@ -248,7 +247,7 @@ export default function PartnerRevenuePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           revenuePath,
-          revenueTier: revenuePath === 'insurance' ? null : revenueTier,
+          revenueTier: revenuePath === 'tiers' ? null : (revenueTier || null),
         }),
       })
       const result = await res.json()
@@ -271,28 +270,26 @@ export default function PartnerRevenuePage() {
   const tierHasChanges = revenuePath !== savedRevenuePath || revenueTier !== savedRevenueTier
 
   const getPayoutLabel = (path: 'insurance' | 'tiers' | null, tier: 'p2p' | 'commercial' | 'self_manage' | null): string => {
-    if (path === 'insurance') return '40%'
-    if (path === 'tiers') {
+    if (path === 'insurance') {
       switch (tier) {
         case 'p2p': return '75%'
         case 'commercial': return '90%'
-        case 'self_manage': return '75%'
-        default: return '--'
+        default: return '40%'
       }
     }
+    if (path === 'tiers') return `${100 - ((() => { const T = [{m:0,c:25},{m:10,c:20},{m:50,c:15},{m:100,c:10}]; return T.reduce((r,t) => fleetSize >= t.m ? t.c : r, 25) })())}%`
     return '--'
   }
 
   const getTierDisplayName = (path: 'insurance' | 'tiers' | null, tier: 'p2p' | 'commercial' | 'self_manage' | null): string => {
-    if (path === 'insurance') return 'Insurance Path'
-    if (path === 'tiers') {
+    if (path === 'insurance') {
       switch (tier) {
-        case 'p2p': return 'Tiers / P2P Insurance'
-        case 'commercial': return 'Tiers / Commercial Insurance'
-        case 'self_manage': return 'Tiers / Self-Manage'
-        default: return 'Tiers'
+        case 'p2p': return 'Insurance / P2P'
+        case 'commercial': return 'Insurance / Commercial'
+        default: return 'Insurance / Platform'
       }
     }
+    if (path === 'tiers') return 'Commission Tiers'
     return 'Not selected'
   }
 
@@ -1028,144 +1025,7 @@ export default function PartnerRevenuePage() {
         </div>
       )}
 
-      {/* ====== BOTTOM SECTION: Revenue Path + Commission Tier ====== */}
-
-      {/* Your Revenue Path */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center gap-2 mb-1">
-          <IoShieldCheckmarkOutline className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Your Revenue Path</h2>
-        </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          As a mobility company we offer two revenue paths. Select your insurance coverage to determine your payout rate.
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          {/* Insurance Path Card */}
-          <button
-            type="button"
-            onClick={() => { setRevenuePath('insurance'); setRevenueTier(null) }}
-            className={`text-left p-4 rounded-lg border-2 transition-colors ${
-              revenuePath === 'insurance'
-                ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-700'
-                : 'border-gray-200 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-            }`}
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                revenuePath === 'insurance' ? 'bg-gray-900 dark:bg-white' : 'bg-gray-100 dark:bg-gray-700'
-              }`}>
-                <IoShieldCheckmarkOutline className={`w-5 h-5 ${
-                  revenuePath === 'insurance' ? 'text-white dark:text-gray-900' : 'text-gray-600 dark:text-gray-400'
-                }`} />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">Insurance Path</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Use our coverage</p>
-              </div>
-            </div>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">We handle claims and coverage. You earn 40% of each booking.</p>
-            <div className="flex items-center justify-between mt-3">
-              <span className="text-sm font-bold text-gray-900 dark:text-white">You earn 40%</span>
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                revenuePath === 'insurance' ? 'border-gray-900 dark:border-white' : 'border-gray-300 dark:border-gray-500'
-              }`}>
-                {revenuePath === 'insurance' && <div className="w-2.5 h-2.5 rounded-full bg-gray-900 dark:bg-white" />}
-              </div>
-            </div>
-          </button>
-
-          {/* Tiers Path Card */}
-          <button
-            type="button"
-            onClick={() => { setRevenuePath('tiers'); if (!revenueTier) setRevenueTier('p2p') }}
-            className={`text-left p-4 rounded-lg border-2 transition-colors ${
-              revenuePath === 'tiers'
-                ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-700'
-                : 'border-gray-200 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-            }`}
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                revenuePath === 'tiers' ? 'bg-gray-900 dark:bg-white' : 'bg-gray-100 dark:bg-gray-700'
-              }`}>
-                <IoLayersOutline className={`w-5 h-5 ${
-                  revenuePath === 'tiers' ? 'text-white dark:text-gray-900' : 'text-gray-600 dark:text-gray-400'
-                }`} />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">Bring Your Insurance</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Higher payouts</p>
-              </div>
-            </div>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Bring your own coverage for higher payout rates based on insurance type.</p>
-            <div className="flex items-center justify-between mt-3">
-              <span className="text-sm font-bold text-gray-900 dark:text-white">Up to 90%</span>
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                revenuePath === 'tiers' ? 'border-gray-900 dark:border-white' : 'border-gray-300 dark:border-gray-500'
-              }`}>
-                {revenuePath === 'tiers' && <div className="w-2.5 h-2.5 rounded-full bg-gray-900 dark:bg-white" />}
-              </div>
-            </div>
-          </button>
-        </div>
-
-        {/* Insurance type dropdown (shown when Bring Your Insurance is selected) */}
-        {revenuePath === 'tiers' && (
-          <div className="space-y-2 mb-4 pl-1">
-            {[
-              { value: 'p2p' as const, label: 'P2P Insurance', payout: '75% payout' },
-              { value: 'commercial' as const, label: 'Commercial Insurance', payout: '90% payout' },
-              { value: 'self_manage' as const, label: 'Self-Manage', payout: '75% payout' },
-            ].map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setRevenueTier(option.value)}
-                className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors text-left ${
-                  revenueTier === option.value
-                    ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-700'
-                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                    revenueTier === option.value ? 'border-gray-900 dark:border-white' : 'border-gray-300 dark:border-gray-500'
-                  }`}>
-                    {revenueTier === option.value && <div className="w-2 h-2 rounded-full bg-gray-900 dark:bg-white" />}
-                  </div>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{option.label}</span>
-                </div>
-                <span className="text-sm text-gray-500 dark:text-gray-400">{option.payout}</span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Save + Current Status */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-          <div>
-            {savedRevenuePath ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Current: <span className="font-medium text-gray-900 dark:text-white">{getTierDisplayName(savedRevenuePath, savedRevenueTier)}</span>
-                {' '}&mdash;{' '}
-                <span className="font-medium text-gray-900 dark:text-white">{getPayoutLabel(savedRevenuePath, savedRevenueTier)} payout</span>
-              </p>
-            ) : (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No revenue path selected yet</p>
-            )}
-          </div>
-          <button
-            onClick={handleSaveTier}
-            disabled={isSavingTier || !revenuePath || !tierHasChanges || (revenuePath === 'tiers' && !revenueTier)}
-            className="px-5 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg font-medium text-sm hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSavingTier ? 'Saving...' : 'Save Selection'}
-          </button>
-        </div>
-      </div>
-
-      {/* Commission Tier */}
+      {/* ====== BOTTOM SECTION: Choose Your Revenue Path ====== */}
       {(() => {
         const TIERS = [
           { name: 'Standard', minCars: 0, commission: 25 },
@@ -1184,88 +1044,226 @@ export default function PartnerRevenuePage() {
         return (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center gap-2 mb-1">
-              <IoLayersOutline className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Commission Tier</h2>
+              <IoShieldCheckmarkOutline className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Choose Your Revenue Path</h2>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
-              Grow your fleet to unlock higher earnings
+              Select how you want to earn. Your choice determines your payout rate across all bookings.
             </p>
 
-            {/* Current Tier Display */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-6">
-              <div className="text-center sm:text-left">
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{currentTier.name} Partner</p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-gray-900 dark:text-white">{currentTier.commission}%</span>
-                  <span className="text-sm text-gray-400 dark:text-gray-500">commission</span>
-                </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">You keep {100 - currentTier.commission}%</p>
-              </div>
-              <div className="sm:border-l sm:border-gray-200 dark:sm:border-gray-700 sm:pl-6">
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Fleet Size</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">{fleetSize}</span>
-                  <span className="text-sm text-gray-400 dark:text-gray-500">vehicles</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Progress to Next Tier */}
-            {nextTier && (
-              <div className="mb-6">
-                <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-gray-500 dark:text-gray-400">Progress to {nextTier.name}</span>
-                  <span className="text-gray-500 dark:text-gray-400">{carsNeeded} more vehicles needed</span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                  <div
-                    className="bg-gray-900 dark:bg-white h-2.5 rounded-full transition-all duration-500"
-                    style={{ width: `${progressToNext}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500 mt-1">
-                  <span>{currentTier.minCars} vehicles</span>
-                  <span>{nextTier.minCars} vehicles</span>
-                </div>
-              </div>
-            )}
-
-            {/* All Tiers */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {TIERS.map((tier, i) => (
-                <div
-                  key={tier.name}
-                  className={`p-3 rounded-lg border text-center ${
-                    i === currentTierIdx
-                      ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-700'
-                      : 'border-gray-200 dark:border-gray-600'
-                  }`}
-                >
-                  <p className={`text-xs font-medium mb-1 ${
-                    i === currentTierIdx ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'
+            {/* Two selectable path cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              {/* Insurance Path Card */}
+              <button
+                type="button"
+                onClick={() => { setRevenuePath('insurance'); if (!revenueTier) setRevenueTier('p2p') }}
+                className={`text-left p-4 rounded-lg border-2 transition-colors ${
+                  revenuePath === 'insurance'
+                    ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-700'
+                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                }`}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    revenuePath === 'insurance' ? 'bg-gray-900 dark:bg-white' : 'bg-gray-100 dark:bg-gray-700'
                   }`}>
-                    {i === currentTierIdx ? 'Current' : i === currentTierIdx + 1 ? 'Next' : ''}
-                  </p>
-                  <p className={`font-semibold text-sm ${
-                    i === currentTierIdx ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'
-                  }`}>{tier.name}</p>
-                  <p className={`text-lg font-bold ${
-                    i === currentTierIdx ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'
-                  }`}>{tier.commission}%</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">{tier.minCars}+ cars</p>
+                    <IoShieldCheckmarkOutline className={`w-5 h-5 ${
+                      revenuePath === 'insurance' ? 'text-white dark:text-gray-900' : 'text-gray-600 dark:text-gray-400'
+                    }`} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Insurance</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Choose your coverage</p>
+                  </div>
                 </div>
-              ))}
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Select your insurance type to determine payout rate. Platform coverage (40%) or bring your own (up to 90%).</p>
+                <div className="flex items-center justify-between mt-3">
+                  <span className="text-sm font-bold text-gray-900 dark:text-white">40% – 90% payout</span>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    revenuePath === 'insurance' ? 'border-gray-900 dark:border-white' : 'border-gray-300 dark:border-gray-500'
+                  }`}>
+                    {revenuePath === 'insurance' && <div className="w-2.5 h-2.5 rounded-full bg-gray-900 dark:bg-white" />}
+                  </div>
+                </div>
+              </button>
+
+              {/* Commission Tiers Card */}
+              <button
+                type="button"
+                onClick={() => { setRevenuePath('tiers'); setRevenueTier(null) }}
+                className={`text-left p-4 rounded-lg border-2 transition-colors ${
+                  revenuePath === 'tiers'
+                    ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-700'
+                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                }`}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    revenuePath === 'tiers' ? 'bg-gray-900 dark:bg-white' : 'bg-gray-100 dark:bg-gray-700'
+                  }`}>
+                    <IoLayersOutline className={`w-5 h-5 ${
+                      revenuePath === 'tiers' ? 'text-white dark:text-gray-900' : 'text-gray-600 dark:text-gray-400'
+                    }`} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Commission Tiers</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Fleet-size based</p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Your commission is automatically set by your fleet size. More cars = lower commission.</p>
+                <div className="flex items-center justify-between mt-3">
+                  <span className="text-sm font-bold text-gray-900 dark:text-white">Currently {currentTier.name} ({100 - currentTier.commission}%)</span>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    revenuePath === 'tiers' ? 'border-gray-900 dark:border-white' : 'border-gray-300 dark:border-gray-500'
+                  }`}>
+                    {revenuePath === 'tiers' && <div className="w-2.5 h-2.5 rounded-full bg-gray-900 dark:bg-white" />}
+                  </div>
+                </div>
+              </button>
             </div>
 
-            {/* Diamond unlock message */}
-            {currentTierIdx < TIERS.length - 1 && (
-              <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700">
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Unlock Diamond Benefits</span>{' '}
-                  &mdash; Reach 100+ vehicles to unlock the lowest commission rate (10%) and priority support.
-                </p>
+            {/* Insurance sub-options (shown when Insurance is selected) */}
+            {revenuePath === 'insurance' && (
+              <div className="space-y-2 mb-4 pl-1">
+                {[
+                  { value: null, label: 'Platform Insurance', payout: '40% payout', desc: 'We handle claims and coverage' },
+                  { value: 'p2p' as const, label: 'P2P Insurance', payout: '75% payout', desc: 'Upload your P2P insurance proof' },
+                  { value: 'commercial' as const, label: 'Commercial Insurance', payout: '90% payout', desc: 'Upload your commercial insurance proof' },
+                ].map((option) => {
+                  const isSelected = option.value === null
+                    ? revenueTier === null || revenueTier === undefined
+                    : revenueTier === option.value
+                  return (
+                    <button
+                      key={option.value ?? 'platform'}
+                      type="button"
+                      onClick={() => setRevenueTier(option.value as any)}
+                      className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors text-left ${
+                        isSelected
+                          ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-700'
+                          : 'border-gray-200 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                          isSelected ? 'border-gray-900 dark:border-white' : 'border-gray-300 dark:border-gray-500'
+                        }`}>
+                          {isSelected && <div className="w-2 h-2 rounded-full bg-gray-900 dark:bg-white" />}
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">{option.label}</span>
+                          <p className="text-xs text-gray-400 dark:text-gray-500">{option.desc}</p>
+                        </div>
+                      </div>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">{option.payout}</span>
+                    </button>
+                  )
+                })}
               </div>
             )}
+
+            {/* Commission Tier details (shown when Tiers is selected) */}
+            {revenuePath === 'tiers' && (
+              <div className="mb-4">
+                {/* Current Tier Display */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-5 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="text-center sm:text-left">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{currentTier.name} Partner</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-bold text-gray-900 dark:text-white">{currentTier.commission}%</span>
+                      <span className="text-sm text-gray-400 dark:text-gray-500">commission</span>
+                    </div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">You keep {100 - currentTier.commission}%</p>
+                  </div>
+                  <div className="sm:border-l sm:border-gray-200 dark:sm:border-gray-700 sm:pl-6">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Fleet Size</p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold text-gray-900 dark:text-white">{fleetSize}</span>
+                      <span className="text-sm text-gray-400 dark:text-gray-500">vehicles</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress to Next Tier */}
+                {nextTier && (
+                  <div className="mb-5">
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span className="text-gray-500 dark:text-gray-400">Progress to {nextTier.name}</span>
+                      <span className="text-gray-500 dark:text-gray-400">{carsNeeded} more vehicles needed</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                      <div
+                        className="bg-gray-900 dark:bg-white h-2.5 rounded-full transition-all duration-500"
+                        style={{ width: `${progressToNext}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      <span>{currentTier.minCars} vehicles</span>
+                      <span>{nextTier.minCars} vehicles</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* All Tiers */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {TIERS.map((tier, i) => (
+                    <div
+                      key={tier.name}
+                      className={`p-3 rounded-lg border text-center ${
+                        i === currentTierIdx
+                          ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-700'
+                          : 'border-gray-200 dark:border-gray-600'
+                      }`}
+                    >
+                      <p className={`text-xs font-medium mb-1 ${
+                        i === currentTierIdx ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'
+                      }`}>
+                        {i === currentTierIdx ? 'Current' : i === currentTierIdx + 1 ? 'Next' : ''}
+                      </p>
+                      <p className={`font-semibold text-sm ${
+                        i === currentTierIdx ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'
+                      }`}>{tier.name}</p>
+                      <p className={`text-lg font-bold ${
+                        i === currentTierIdx ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'
+                      }`}>{tier.commission}%</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">{tier.minCars}+ cars</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Diamond unlock message */}
+                {currentTierIdx < TIERS.length - 1 && (
+                  <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Unlock Diamond Benefits</span>{' '}
+                      &mdash; Reach 100+ vehicles to unlock the lowest commission rate (10%) and priority support.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Save + Current Status */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+              <div>
+                {savedRevenuePath ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Current: <span className="font-medium text-gray-900 dark:text-white">{getTierDisplayName(savedRevenuePath, savedRevenueTier)}</span>
+                    {' '}&mdash;{' '}
+                    <span className="font-medium text-gray-900 dark:text-white">{getPayoutLabel(savedRevenuePath, savedRevenueTier)} payout</span>
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No revenue path selected yet</p>
+                )}
+              </div>
+              <button
+                onClick={handleSaveTier}
+                disabled={isSavingTier || !revenuePath || !tierHasChanges}
+                className="px-5 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg font-medium text-sm hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSavingTier ? 'Saving...' : 'Save Selection'}
+              </button>
+            </div>
           </div>
         )
       })()}

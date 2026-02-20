@@ -13,23 +13,27 @@ type RevenueTier = typeof VALID_REVENUE_TIERS[number]
 
 /**
  * Calculate commission rate based on revenue path and tier selection
+ *
+ * Insurance path: Platform (60%), P2P (25%), Commercial (10%)
+ * Tiers path: auto-calculated by fleet size (handled separately)
  */
-function getCommissionRate(revenuePath: RevenuePath, revenueTier: RevenueTier | null): number {
+function getCommissionRate(revenuePath: RevenuePath, revenueTier: RevenueTier | null, fleetSize: number): number {
   if (revenuePath === 'insurance') {
-    return 0.60 // Platform keeps 60%, host gets 40%
+    switch (revenueTier) {
+      case 'p2p':
+        return 0.25 // Host gets 75%
+      case 'commercial':
+        return 0.10 // Host gets 90%
+      default:
+        return 0.60 // Platform insurance, host gets 40%
+    }
   }
 
-  // Tiers path
-  switch (revenueTier) {
-    case 'p2p':
-      return 0.25 // Host gets 75%
-    case 'commercial':
-      return 0.10 // Host gets 90%
-    case 'self_manage':
-      return 0.25 // Host gets 75%
-    default:
-      return 0.25
-  }
+  // Tiers path: commission based on fleet size
+  if (fleetSize >= 100) return 0.10 // Diamond
+  if (fleetSize >= 50) return 0.15  // Platinum
+  if (fleetSize >= 10) return 0.20  // Gold
+  return 0.25                        // Standard
 }
 
 /**
@@ -108,21 +112,16 @@ export async function PUT(request: NextRequest) {
 
     // Validate tier based on path
     if (revenuePath === 'insurance') {
-      // Insurance path: revenueTier should be null
-      if (revenueTier) {
+      // Insurance path: revenueTier can be null (platform), 'p2p', or 'commercial'
+      if (revenueTier && !['p2p', 'commercial'].includes(revenueTier)) {
         return NextResponse.json(
-          { error: 'revenueTier must be null when revenuePath is "insurance".' },
+          { error: 'revenueTier must be null, "p2p", or "commercial" when revenuePath is "insurance".' },
           { status: 400 }
         )
       }
     } else if (revenuePath === 'tiers') {
-      // Tiers path: revenueTier must be one of p2p/commercial/self_manage
-      if (!revenueTier || !VALID_REVENUE_TIERS.includes(revenueTier as RevenueTier)) {
-        return NextResponse.json(
-          { error: 'revenueTier must be "p2p", "commercial", or "self_manage" when revenuePath is "tiers".' },
-          { status: 400 }
-        )
-      }
+      // Tiers path: revenueTier should be null (auto-calculated by fleet size)
+      // Accept but ignore any tier value — fleet size determines the rate
     }
 
     // Fetch current partner data
@@ -140,9 +139,14 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 })
     }
 
+    // Count fleet size for tier calculation
+    const fleetSize = await prisma.rentalCar.count({
+      where: { hostId }
+    })
+
     const oldRate = partner.currentCommissionRate ?? partner.commissionRate ?? 0.25
-    const effectiveTier = revenuePath === 'insurance' ? null : (revenueTier as RevenueTier)
-    const newRate = getCommissionRate(revenuePath as RevenuePath, effectiveTier)
+    const effectiveTier = revenuePath === 'insurance' ? (revenueTier as RevenueTier || null) : null
+    const newRate = getCommissionRate(revenuePath as RevenuePath, effectiveTier, fleetSize)
 
     // Update RentalHost with new revenue path, tier, and commission rate
     await prisma.rentalHost.update({

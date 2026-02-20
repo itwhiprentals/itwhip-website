@@ -312,7 +312,17 @@ export default function HostDetailPage({ params }: { params: Promise<{ id: strin
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3 md:p-4">
             <div className="text-xl md:text-2xl font-bold">{(host.commissionRate * 100).toFixed(0)}%</div>
-            <div className="text-xs md:text-sm text-gray-600">Commission</div>
+            <div className="text-xs md:text-sm text-gray-600">
+              Commission
+              {host.revenuePath && (
+                <span className="block text-xs text-gray-400">
+                  {host.revenuePath === 'insurance' ? 'Platform Ins.'
+                    : host.revenueTier === 'commercial' ? 'Commercial'
+                    : host.revenueTier === 'p2p' ? 'P2P'
+                    : 'Self-Manage'}
+                </span>
+              )}
+            </div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3 md:p-4">
             <div className="text-xl md:text-2xl font-bold">{host.dashboardAccess ? 'Yes' : 'No'}</div>
@@ -421,7 +431,16 @@ export default function HostDetailPage({ params }: { params: Promise<{ id: strin
               <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded">
                 <h4 className="font-semibold mb-2">Commission & Banking</h4>
                 <div className="text-sm space-y-1">
-                  <div>Commission Rate: {(host.commissionRate * 100).toFixed(0)}%</div>
+                  <div>Commission Rate: {(host.commissionRate * 100).toFixed(0)}%
+                    {host.revenuePath && (
+                      <span className="ml-2 text-xs text-gray-500">
+                        ({host.revenuePath === 'insurance' ? 'Platform Insurance'
+                          : host.revenueTier === 'commercial' ? 'Commercial'
+                          : host.revenueTier === 'p2p' ? 'P2P'
+                          : 'Self-Manage'})
+                      </span>
+                    )}
+                  </div>
                   <div>Bank Verified: {host.bankVerified ? 'Yes' : 'No'}</div>
                 </div>
               </div>
@@ -724,6 +743,27 @@ export default function HostDetailPage({ params }: { params: Promise<{ id: strin
 
           {activeTab === 'insurance' && (
             <div className="space-y-6">
+              {/* Revenue Path Banner */}
+              {host.revenuePath && (
+                <div className={`p-3 rounded-lg border text-sm ${
+                  host.revenuePath === 'insurance'
+                    ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300'
+                    : host.revenueTier === 'commercial'
+                    ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 text-purple-800 dark:text-purple-300'
+                    : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
+                }`}>
+                  <strong>Revenue Path:</strong>{' '}
+                  {host.revenuePath === 'insurance'
+                    ? `Platform Insurance — ${(host.commissionRate * 100).toFixed(0)}% commission, ${((1 - host.commissionRate) * 100).toFixed(0)}% payout`
+                    : host.revenueTier === 'commercial'
+                    ? `Commercial Insurance — ${(host.commissionRate * 100).toFixed(0)}% commission, ${((1 - host.commissionRate) * 100).toFixed(0)}% payout`
+                    : host.revenueTier === 'p2p'
+                    ? `P2P Insurance — ${(host.commissionRate * 100).toFixed(0)}% commission, ${((1 - host.commissionRate) * 100).toFixed(0)}% payout`
+                    : `Self-Manage — ${(host.commissionRate * 100).toFixed(0)}% commission, ${((1 - host.commissionRate) * 100).toFixed(0)}% payout`
+                  }
+                </div>
+              )}
+
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold">Insurance Coverage</h3>
                 <button
