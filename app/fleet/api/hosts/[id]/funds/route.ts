@@ -274,6 +274,7 @@ export async function POST(
     // Create audit log
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         category: 'FINANCIAL',
         eventType: `host_funds_${action}`,
         severity: action === 'suspend_payouts' ? 'WARNING' : 'INFO',

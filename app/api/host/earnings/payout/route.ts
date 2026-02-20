@@ -7,6 +7,7 @@ import { sendPayoutConfirmationEmail } from '@/app/lib/email/payout-confirmation
 import {
   PAYOUT_CONFIG,
   calculateHostEarnings,
+  determineHostTier,
   PLATFORM_COMMISSION,
   HOST_PROTECTION_PLANS
 } from '@/app/fleet/financial-constants'
@@ -60,9 +61,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get host's protection plan commission rate
-    const protectionPlan = (host as any).protectionPlan || 'BASIC'
-    const planConfig = (HOST_PROTECTION_PLANS as any)[protectionPlan]
+    // Get host's actual commission rate from insurance tier
+    const hostTier = determineHostTier({
+      earningsTier: (host as any).earningsTier,
+      p2pInsuranceStatus: (host as any).p2pInsuranceStatus,
+      commercialInsuranceStatus: (host as any).commercialInsuranceStatus,
+      hostInsuranceStatus: (host as any).hostInsuranceStatus,
+    })
+    const planConfig = (HOST_PROTECTION_PLANS as any)[hostTier]
     const commissionRate = planConfig?.platformFee || PLATFORM_COMMISSION.BASIC
 
     // Calculate available balance (completed trips older than 3 days)

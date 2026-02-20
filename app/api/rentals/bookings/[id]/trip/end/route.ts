@@ -6,7 +6,7 @@ import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { validateOdometer, validateFuelLevel, validateInspectionPhotos } from '@/app/lib/trip/validation'
 import { calculateTripCharges } from '@/app/lib/trip/calculations'
 import { PaymentProcessor } from '@/app/lib/stripe/payment-processor'
-import { calculateHostEarnings } from '@/app/fleet/financial-constants'
+import { calculateHostEarnings, determineHostTier } from '@/app/fleet/financial-constants'
 import { 
   RentalBookingStatus, 
   VerificationStatus, 
@@ -492,10 +492,16 @@ export async function POST(
         })
         const isNewHost = completedTripsCount < 3
         
-        // Calculate host earnings
+        // Calculate host earnings using actual insurance tier
+        const hostTier = determineHostTier({
+          earningsTier: booking.host.earningsTier,
+          p2pInsuranceStatus: booking.host.p2pInsuranceStatus,
+          commercialInsuranceStatus: booking.host.commercialInsuranceStatus,
+          hostInsuranceStatus: booking.host.hostInsuranceStatus,
+        })
         const hostEarnings = calculateHostEarnings(
           booking.totalAmount,
-          booking.host.protectionPlan || 'BASIC',
+          hostTier,
           isNewHost
         )
         
