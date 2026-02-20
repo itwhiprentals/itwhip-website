@@ -122,6 +122,7 @@ export async function POST(
     // Create VERIFIED history entry
     await prisma.insuranceHistory.create({
       data: {
+        id: crypto.randomUUID(),
         reviewerProfile: {
           connect: { id: guestId }
         },
@@ -395,6 +396,7 @@ export async function DELETE(
     // Create history entry for rejection
     await prisma.insuranceHistory.create({
       data: {
+        id: crypto.randomUUID(),
         reviewerProfile: {
           connect: { id: guestId }
         },
