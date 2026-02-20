@@ -25,19 +25,30 @@ export function generateCarSlug(car: {
    */
   export function extractCarId(slug: string): string {
     // Check if it's already just an ID (old format)
-    // Prisma cuid format starts with 'c' followed by lowercase letters and numbers
+    // Prisma CUID format starts with 'c' followed by lowercase letters and numbers
     if (slug.match(/^c[a-z0-9]{20,30}$/)) {
       return slug
     }
-    
-    // Extract ID from end of SEO URL (after last hyphen)
-    // Look for pattern: -c[alphanumeric]{20+} at the end
-    const matches = slug.match(/-(c[a-z0-9]{20,30})$/)
-    
-    if (matches && matches[1]) {
-      return matches[1]
+
+    // Check if it's a bare UUID (e.g. "89fd408e-87e6-4ec9-b379-2142fca6cca7")
+    if (slug.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)) {
+      return slug
     }
-    
+
+    // Extract CUID from end of SEO URL (after last hyphen)
+    // Look for pattern: -c[alphanumeric]{20+} at the end
+    const cuidMatch = slug.match(/-(c[a-z0-9]{20,30})$/)
+    if (cuidMatch && cuidMatch[1]) {
+      return cuidMatch[1]
+    }
+
+    // Extract UUID from end of SEO URL
+    // Look for pattern: -[8hex]-[4hex]-[4hex]-[4hex]-[12hex] at the end
+    const uuidMatch = slug.match(/-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/)
+    if (uuidMatch && uuidMatch[1]) {
+      return uuidMatch[1]
+    }
+
     // Fallback: return the original slug if no ID pattern found
     // This prevents crashes but might cause 404s - better than breaking
     console.warn(`Could not extract car ID from slug: ${slug}`)
@@ -77,7 +88,8 @@ export function generateCarSlug(car: {
    * Check if a URL is using the old format
    */
   export function isOldUrlFormat(slug: string): boolean {
-    return /^c[a-z0-9]{20,30}$/.test(slug)
+    return /^c[a-z0-9]{20,30}$/.test(slug) ||
+           /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(slug)
   }
   
   /**

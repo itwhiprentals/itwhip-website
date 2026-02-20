@@ -94,27 +94,91 @@ export async function GET(request: NextRequest) {
       }
     }) : []
 
-    // Get comprehensive audit log for all activities
-    const auditLog = hostId ? await prisma.activityLog.findMany({
-      where: {
-        OR: [
-          { entityId: hostId },
-          { adminId: hostId }
-        ]
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 20,
-      select: {
-        id: true,
-        action: true,
-        entityType: true,
-        category: true,
-        createdAt: true,
-        ipAddress: true,
-        oldValue: true,
-        newValue: true
-      }
-    }) : []
+    // Get comprehensive audit log from BOTH tables
+    // ActivityLog: login events, simple actions
+    // AuditLog: detailed compliance events (car edits, charges, host management)
+
+    // First get the host's car IDs so we can find car-related audit events
+    const hostCarIds = hostId ? (await prisma.rentalCar.findMany({
+      where: { hostId },
+      select: { id: true }
+    })).map(c => c.id) : []
+
+    const [activityLogs, detailedAuditLogs] = hostId ? await Promise.all([
+      prisma.activityLog.findMany({
+        where: {
+          OR: [
+            { entityId: hostId },
+            { adminId: hostId }
+          ]
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: {
+          id: true,
+          action: true,
+          entityType: true,
+          category: true,
+          createdAt: true,
+          ipAddress: true,
+          oldValue: true,
+          newValue: true
+        }
+      }),
+      prisma.auditLog.findMany({
+        where: {
+          OR: [
+            { userId: hostId },
+            { adminId: hostId },
+            { resourceId: hostId },
+            // Match audit events for this host's cars
+            ...(hostCarIds.length > 0 ? [{ resourceId: { in: hostCarIds } }] : [])
+          ]
+        },
+        orderBy: { timestamp: 'desc' },
+        take: 20,
+        select: {
+          id: true,
+          action: true,
+          resource: true,
+          category: true,
+          timestamp: true,
+          ipAddress: true,
+          details: true,
+          resourceId: true
+        }
+      })
+    ]) : [[], []]
+
+    // Merge and sort both audit sources by timestamp, take latest 20
+    const auditLog = [
+      ...activityLogs.map(log => ({
+        id: log.id,
+        action: log.action,
+        entityType: log.entityType,
+        category: log.category,
+        createdAt: log.createdAt,
+        ipAddress: log.ipAddress,
+        oldValue: log.oldValue,
+        newValue: log.newValue
+      })),
+      ...detailedAuditLogs.map(log => {
+        const details = log.details as any
+        const changes = details?.changes ? Object.entries(details.changes).map(([k, v]) => `${k}: ${v}`).join(', ') : null
+        return {
+          id: log.id,
+          action: log.action,
+          entityType: log.resource,
+          category: log.category,
+          createdAt: log.timestamp,
+          ipAddress: log.ipAddress,
+          oldValue: null,
+          newValue: changes
+        }
+      })
+    ]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 20)
 
     // Get active sessions count - count from Session model or default to 1 (current session)
     // Note: Session model uses userId which may be different from hostId

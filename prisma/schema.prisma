@@ -4493,6 +4493,7 @@ enum AuditCategory {
   FINANCIAL
   CHARGE_MANAGEMENT
   HOST_MANAGEMENT
+  CAR_MANAGEMENT
 }
 
 enum AuditSeverity {

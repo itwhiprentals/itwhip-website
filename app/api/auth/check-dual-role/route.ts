@@ -22,13 +22,7 @@ export async function GET(request: NextRequest) {
     // Set by switch-role API when user explicitly switches between host and guest modes
     const currentModeCookie = getCurrentModeFromCookie(request)
 
-    // Debug log
-    console.log('[Dual-Role Check] Cookie debug:', {
-      hostAccessToken: cookies.hostAccessToken ? `${cookies.hostAccessToken.substring(0, 30)}... (${cookies.hostAccessToken.length} chars)` : 'EMPTY',
-      partnerToken: cookies.partnerToken ? `${cookies.partnerToken.substring(0, 30)}... (${cookies.partnerToken.length} chars)` : 'EMPTY',
-      accessToken: cookies.accessToken ? `${cookies.accessToken.substring(0, 30)}... (${cookies.accessToken.length} chars)` : 'EMPTY',
-      currentMode: currentModeCookie || 'NOT_SET'
-    })
+    // Only log when tokens are present (skip noisy unauthenticated requests)
 
     // MILITARY GRADE: Decode ALL tokens and track their userIds using centralized service
     const hostToken = decodeToken(cookies.hostAccessToken, 'hostAccessToken')
@@ -53,15 +47,12 @@ export async function GET(request: NextRequest) {
     // Clear any expired tokens immediately
     if (hostToken.expired) {
       cookiesToClear.push(COOKIE_NAMES.HOST_ACCESS_TOKEN, COOKIE_NAMES.HOST_REFRESH_TOKEN)
-      console.log('[Dual-Role Check] 🧹 Clearing expired hostAccessToken')
     }
     if (partnerTok.expired) {
       cookiesToClear.push(COOKIE_NAMES.PARTNER_TOKEN)
-      console.log('[Dual-Role Check] 🧹 Clearing expired partner_token')
     }
     if (guestToken.expired) {
       cookiesToClear.push(COOKIE_NAMES.ACCESS_TOKEN, COOKIE_NAMES.REFRESH_TOKEN)
-      console.log('[Dual-Role Check] 🧹 Clearing expired accessToken')
     }
 
     // If no valid tokens, return unauthorized
@@ -95,18 +86,15 @@ export async function GET(request: NextRequest) {
         // Clear non-guest tokens that don't match
         if (hostToken.userId && hostToken.userId !== guestUserId) {
           cookiesToClear.push(COOKIE_NAMES.HOST_ACCESS_TOKEN, COOKIE_NAMES.HOST_REFRESH_TOKEN)
-          console.log('[Dual-Role Check] 🧹 Clearing mismatched hostAccessToken (different user)')
         }
         if (partnerTok.userId && partnerTok.userId !== guestUserId) {
           cookiesToClear.push(COOKIE_NAMES.PARTNER_TOKEN)
-          console.log('[Dual-Role Check] 🧹 Clearing mismatched partner_token (different user)')
         }
       } else {
         // No guest token, keep host/partner
         const hostUserId = hostToken.userId || partnerTok.userId
         if (guestToken.valid && guestToken.userId && guestToken.userId !== hostUserId) {
           cookiesToClear.push(COOKIE_NAMES.ACCESS_TOKEN, COOKIE_NAMES.REFRESH_TOKEN)
-          console.log('[Dual-Role Check] 🧹 Clearing mismatched accessToken (different user)')
         }
       }
     }
@@ -123,28 +111,23 @@ export async function GET(request: NextRequest) {
     // Priority 1: Use current_mode cookie if set (explicit user choice from role switcher)
     if (currentModeCookie === 'host' || currentModeCookie === 'guest') {
       currentRole = currentModeCookie
-      console.log(`[Dual-Role Check] Using current_mode cookie: ${currentRole}`)
     }
     // Priority 2 (fallback for initial login): Check token content
     // If hostAccessToken is valid, user is in host mode
     else if (hostToken.valid && hostToken.userId === primaryUserId) {
       currentRole = 'host'
-      console.log('[Dual-Role Check] Fallback: hostAccessToken valid, setting currentRole=host')
     }
     // Priority 3: If partner_token is valid, user is in host mode
     else if (partnerTok.valid && partnerTok.userId === primaryUserId) {
       currentRole = 'host'
-      console.log('[Dual-Role Check] Fallback: partner_token valid, setting currentRole=host')
     }
     // Priority 4: If accessToken is valid AND is a host token (isRentalHost), user is in host mode
     else if (guestToken.valid && guestToken.userId === primaryUserId && guestToken.isRentalHost) {
       currentRole = 'host'
-      console.log('[Dual-Role Check] Fallback: accessToken contains host token (isRentalHost=true)')
     }
     // Priority 5: If accessToken is valid and is NOT a host token, user is in guest mode
     else if (guestToken.valid && guestToken.userId === primaryUserId && !guestToken.isRentalHost) {
       currentRole = 'guest'
-      console.log('[Dual-Role Check] Fallback: accessToken is guest token, setting currentRole=guest')
     }
 
     // Get user data including legacyDualId
@@ -173,7 +156,6 @@ export async function GET(request: NextRequest) {
         // If still no user, this is a recruited host without a User record
         // That's OK - they can still use the partner dashboard
         if (!user) {
-          console.log('[Dual-Role Check] Recruited host without User record, allowing access')
           return NextResponse.json({
             hasBothRoles: false,
             hasHostProfile: true,
@@ -246,7 +228,6 @@ export async function GET(request: NextRequest) {
 
       if (linkedUser) {
         linkedUserId = linkedUser.id
-        console.log(`[Dual-Role Check] Found linked user: ${linkedUser.email}`)
 
         const [linkedHost, linkedGuest] = await Promise.all([
           prisma.rentalHost.findFirst({
@@ -274,14 +255,12 @@ export async function GET(request: NextRequest) {
 
     // ADDITIONAL CHECK: If tokens claim a role the user doesn't have, clear them
     if (currentRole === 'host' && !hasHostProfile) {
-      console.log('[Dual-Role Check] 🧹 User claims host role but NO host profile - clearing host cookies')
       cookiesToClear.push(COOKIE_NAMES.HOST_ACCESS_TOKEN, COOKIE_NAMES.HOST_REFRESH_TOKEN, COOKIE_NAMES.PARTNER_TOKEN)
       currentRole = hasGuestProfile ? 'guest' : null
       // Also clear the current_mode cookie since it's invalid
       cookiesToClear.push(COOKIE_NAMES.CURRENT_MODE)
     }
     if (currentRole === 'guest' && !hasGuestProfile) {
-      console.log('[Dual-Role Check] 🧹 User claims guest role but NO guest profile - clearing guest cookies')
       cookiesToClear.push(COOKIE_NAMES.ACCESS_TOKEN, COOKIE_NAMES.REFRESH_TOKEN)
       currentRole = hasHostProfile ? 'host' : null
       // Also clear the current_mode cookie since it's invalid
@@ -312,8 +291,9 @@ export async function GET(request: NextRequest) {
       clearCookie(response, cookieName)
     }
 
+    // Only log security-relevant cookie clearing events
     if (uniqueCookiesToClear.length > 0) {
-      console.log('[Dual-Role Check] ✅ Cleared stale cookies:', uniqueCookiesToClear)
+      console.warn('[Dual-Role] Cleared stale cookies:', uniqueCookiesToClear)
     }
 
     return response
