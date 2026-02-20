@@ -265,7 +265,7 @@ export async function POST(
           <a href="https://itwhip.com/terms" style="color: #4b5563;">Terms</a> | <a href="https://itwhip.com/privacy" style="color: #4b5563;">Privacy</a>
         </p>
         <p style="color: #374151; font-size: 11px; margin-top: 16px; text-align: center;">
-          <a href="${baseUrl}/verify-email?ref=${emailReferenceId}" style="color: #374151; text-decoration: none;">Verify: <strong style="color: #ea580c;">${emailReferenceId}</strong></a>
+          <a href="${baseUrl}/verify-email?ref=${emailReferenceId}" style="color: #374151; text-decoration: none;">Ref: <strong style="color: #ea580c;">${emailReferenceId}</strong></a>
         </p>
         <img src="${baseUrl}/api/tracking/pixel/${id}" width="1" height="1" style="display:none;" alt="" />
       </body>
@@ -294,7 +294,7 @@ View Your Dashboard: ${inviteLink}
 Best regards,
 The ItWhip Team
 
-Verify: ${baseUrl}/verify-email?ref=${emailReferenceId}
+Ref: ${emailReferenceId} - ${baseUrl}/verify-email?ref=${emailReferenceId}
     `
 
     let emailSent = false

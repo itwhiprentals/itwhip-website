@@ -66,7 +66,7 @@ function VerifyEmailContent() {
           <Link href="/" className="inline-block">
             <h1 className="text-2xl font-bold text-orange-600">ItWhip</h1>
           </Link>
-          <p className="text-gray-500 text-sm mt-1">Email Verification</p>
+          <p className="text-gray-500 text-sm mt-1">Email Authenticity Check</p>
         </div>
 
         {/* Card */}
@@ -79,9 +79,9 @@ function VerifyEmailContent() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">Enter Reference ID</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">Check Email Authenticity</h2>
               <p className="text-gray-500 text-sm mb-4">
-                Enter the reference ID from the email you want to verify.
+                Enter the reference ID from the email to confirm it was sent by ItWhip.
               </p>
               <form
                 onSubmit={(e) => {
@@ -103,7 +103,7 @@ function VerifyEmailContent() {
                   type="submit"
                   className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition font-medium"
                 >
-                  Verify Email
+                  Check Reference
                 </button>
               </form>
             </div>

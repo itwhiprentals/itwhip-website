@@ -219,7 +219,7 @@ export async function GET(request: NextRequest) {
         <!-- Reference ID for verification -->
         <p style="color: #374151; font-size: 11px; margin-top: 16px; text-align: center;">
           <a href="${baseUrl}/verify-email?ref=${emailReferenceId}" style="color: #374151; text-decoration: none;">
-            Verify this email: <strong style="color: #ea580c;">${emailReferenceId}</strong>
+            Ref: <strong style="color: #ea580c;">${emailReferenceId}</strong>
           </a>
         </p>
 
@@ -270,7 +270,7 @@ Questions? Reply to this email or visit itwhip.com/help
 
 ItWhip Rentals | Phoenix, AZ | itwhip.com
 
-Verify this email: ${baseUrl}/verify-email?ref=${emailReferenceId}
+Ref: ${emailReferenceId} - ${baseUrl}/verify-email?ref=${emailReferenceId}
     `
 
     // Send the test email

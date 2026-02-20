@@ -153,7 +153,7 @@ export function getGuestWelcomeTemplate(data: GuestWelcomeData): EmailTemplate {
       <!-- Reference ID for verification -->
       <p style="color: #374151; font-size: 11px; margin-top: 16px; text-align: center;">
         <a href="${baseUrl}/verify-email?ref=${data.referenceId}" style="color: #374151; text-decoration: none;">
-          Verify this email: <strong style="color: #ea580c;">${data.referenceId}</strong>
+          Ref: <strong style="color: #ea580c;">${data.referenceId}</strong>
         </a>
       </p>
       ` : ''}
@@ -197,7 +197,7 @@ About: ${emailConfig.aboutUrl} | Terms: ${emailConfig.termsUrl} | Privacy: ${ema
 
 Follow us: Instagram @itwhipofficial | Facebook | X @itwhipofficial | LinkedIn
 ${data.referenceId ? `
-Verify this email: ${baseUrl}/verify-email?ref=${data.referenceId}` : ''}
+Ref: ${data.referenceId} - ${baseUrl}/verify-email?ref=${data.referenceId}` : ''}
   `
 
   return { subject, html, text }

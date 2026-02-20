@@ -323,7 +323,7 @@ export async function POST(
         <!-- Reference ID for verification -->
         <p style="color: #374151; font-size: 11px; margin-top: 16px; text-align: center;">
           <a href="${baseUrl}/verify-email?ref=${emailReferenceId}" style="color: #374151; text-decoration: none;">
-            Verify this email: <strong style="color: #ea580c;">${emailReferenceId}</strong>
+            Ref: <strong style="color: #ea580c;">${emailReferenceId}</strong>
           </a>
         </p>
 
@@ -387,7 +387,7 @@ Follow us: Instagram @itwhipofficial | Facebook | X @itwhipofficial | LinkedIn
 ItWhip Rentals | Phoenix, AZ | itwhip.com
 About: https://itwhip.com/about | Terms: https://itwhip.com/terms | Privacy: https://itwhip.com/privacy
 
-Verify this email: ${baseUrl}/verify-email?ref=${emailReferenceId}
+Ref: ${emailReferenceId} - ${baseUrl}/verify-email?ref=${emailReferenceId}
     `
 
     // Send the email

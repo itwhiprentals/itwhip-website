@@ -90,14 +90,14 @@ function verificationBlockHtml(emailReferenceId: string): string {
     <!-- Reference ID for verification -->
     <p style="color: #374151; font-size: 11px; margin-top: 16px; text-align: center;">
       <a href="${baseUrl}/verify-email?ref=${emailReferenceId}" style="color: #374151; text-decoration: none;">
-        Verify this email: <strong style="color: #ea580c;">${emailReferenceId}</strong>
+        Ref: <strong style="color: #ea580c;">${emailReferenceId}</strong>
       </a>
     </p>
   `
 }
 
 function verificationBlockText(emailReferenceId: string): string {
-  return `Verify this email: ${emailReferenceId}\n${baseUrl}/verify-email?ref=${emailReferenceId}`
+  return `Ref: ${emailReferenceId}\n${baseUrl}/verify-email?ref=${emailReferenceId}`
 }
 
 function socialIconsHtml(): string {
