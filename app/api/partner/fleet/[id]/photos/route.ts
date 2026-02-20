@@ -27,9 +27,7 @@ async function getPartnerFromToken() {
       where: { id: hostId }
     })
 
-    if (!partner || (partner.hostType !== 'FLEET_PARTNER' && partner.hostType !== 'PARTNER')) {
-      return null
-    }
+    if (!partner) return null
 
     return partner
   } catch {
@@ -210,11 +208,26 @@ export async function PUT(
       data: { isHero: false }
     })
 
-    // Set new hero
+    // Set new hero and move to order 0
     await prisma.rentalCarPhoto.update({
       where: { id: photoId },
-      data: { isHero: true }
+      data: { isHero: true, order: -1 }
     })
+
+    // Re-number all non-hero photos sequentially
+    const allPhotos = await prisma.rentalCarPhoto.findMany({
+      where: { carId: id },
+      orderBy: [{ isHero: 'desc' }, { order: 'asc' }]
+    })
+
+    for (let i = 0; i < allPhotos.length; i++) {
+      if (allPhotos[i].order !== i) {
+        await prisma.rentalCarPhoto.update({
+          where: { id: allPhotos[i].id },
+          data: { order: i }
+        })
+      }
+    }
 
     console.log(`[Partner Fleet] Hero photo set:`, {
       partnerId: partner.id,
@@ -222,15 +235,141 @@ export async function PUT(
       photoId
     })
 
+    // Return updated photos
+    const updatedPhotos = await prisma.rentalCarPhoto.findMany({
+      where: { carId: id },
+      orderBy: { order: 'asc' }
+    })
+
     return NextResponse.json({
       success: true,
-      message: 'Hero photo updated'
+      message: 'Hero photo updated',
+      photos: updatedPhotos.map(p => ({
+        id: p.id,
+        url: p.url,
+        isHero: p.isHero,
+        order: p.order
+      }))
     })
 
   } catch (error: any) {
     console.error('[Partner Fleet] Error setting hero photo:', error)
     return NextResponse.json(
       { error: 'Failed to set hero photo' },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH - Reorder photos (swap two photos)
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const partner = await getPartnerFromToken()
+
+    if (!partner) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const { id } = await params
+
+    const vehicle = await prisma.rentalCar.findFirst({
+      where: { id, hostId: partner.id }
+    })
+
+    if (!vehicle) {
+      return NextResponse.json(
+        { error: 'Vehicle not found' },
+        { status: 404 }
+      )
+    }
+
+    const body = await request.json()
+    const { photoId, direction } = body // direction: 'left' or 'right'
+
+    if (!photoId || !direction) {
+      return NextResponse.json(
+        { error: 'photoId and direction are required' },
+        { status: 400 }
+      )
+    }
+
+    // Get all photos ordered
+    const photos = await prisma.rentalCarPhoto.findMany({
+      where: { carId: id },
+      orderBy: { order: 'asc' }
+    })
+
+    const currentIndex = photos.findIndex(p => p.id === photoId)
+    if (currentIndex === -1) {
+      return NextResponse.json({ error: 'Photo not found' }, { status: 404 })
+    }
+
+    const targetIndex = direction === 'left' ? currentIndex - 1 : currentIndex + 1
+    if (targetIndex < 0 || targetIndex >= photos.length) {
+      return NextResponse.json({ error: 'Cannot move further' }, { status: 400 })
+    }
+
+    // Swap orders
+    const currentPhoto = photos[currentIndex]
+    const targetPhoto = photos[targetIndex]
+
+    await prisma.rentalCarPhoto.update({
+      where: { id: currentPhoto.id },
+      data: { order: targetPhoto.order }
+    })
+    await prisma.rentalCarPhoto.update({
+      where: { id: targetPhoto.id },
+      data: { order: currentPhoto.order }
+    })
+
+    // If swapping into position 0, update hero status
+    if (targetIndex === 0) {
+      await prisma.rentalCarPhoto.updateMany({
+        where: { carId: id },
+        data: { isHero: false }
+      })
+      await prisma.rentalCarPhoto.update({
+        where: { id: currentPhoto.id },
+        data: { isHero: true }
+      })
+    } else if (currentIndex === 0) {
+      // Moving hero away from first position — new first becomes hero
+      await prisma.rentalCarPhoto.updateMany({
+        where: { carId: id },
+        data: { isHero: false }
+      })
+      await prisma.rentalCarPhoto.update({
+        where: { id: targetPhoto.id },
+        data: { isHero: true }
+      })
+    }
+
+    // Return updated photos
+    const updatedPhotos = await prisma.rentalCarPhoto.findMany({
+      where: { carId: id },
+      orderBy: { order: 'asc' }
+    })
+
+    return NextResponse.json({
+      success: true,
+      photos: updatedPhotos.map(p => ({
+        id: p.id,
+        url: p.url,
+        isHero: p.isHero,
+        order: p.order
+      }))
+    })
+
+  } catch (error: any) {
+    console.error('[Partner Fleet] Error reordering photos:', error)
+    return NextResponse.json(
+      { error: 'Failed to reorder photos' },
       { status: 500 }
     )
   }

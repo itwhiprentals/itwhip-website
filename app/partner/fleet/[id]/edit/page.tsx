@@ -26,7 +26,9 @@ import {
   IoToggleOutline,
   IoShieldCheckmark,
   IoShieldOutline,
-  IoDocumentTextOutline
+  IoDocumentTextOutline,
+  IoChevronBackOutline,
+  IoChevronForwardOutline
 } from 'react-icons/io5'
 import { useTranslations } from 'next-intl'
 import { AddressAutocomplete, AddressResult } from '@/app/components/shared/AddressAutocomplete'
@@ -135,7 +137,17 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
         if (data.success) {
           setVehicle(data.vehicle)
           setFormData(data.vehicle)
-          setPhotos(data.vehicle.photos || [])
+          // Ensure only one hero photo (fix any DB inconsistency)
+          const rawPhotos: PhotoItem[] = data.vehicle.photos || []
+          let foundHero = false
+          const cleanedPhotos = rawPhotos.map(p => {
+            if (p.isHero && !foundHero) {
+              foundHero = true
+              return p
+            }
+            return { ...p, isHero: false }
+          })
+          setPhotos(cleanedPhotos)
         } else {
           setError(data.error || t('failedToLoadVehicle'))
         }
@@ -283,7 +295,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
     }
   }
 
-  // Set hero photo
+  // Set hero photo (also moves it to first position)
   const handleSetHero = async (photoId: string) => {
     try {
       const res = await fetch(`/api/partner/fleet/${id}/photos`, {
@@ -292,14 +304,30 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
         body: JSON.stringify({ photoId })
       })
 
-      if (res.ok) {
-        setPhotos(prev => prev.map(p => ({
-          ...p,
-          isHero: p.id === photoId
-        })))
+      const data = await res.json()
+      if (data.success && data.photos) {
+        setPhotos(data.photos)
       }
     } catch (err) {
       console.error('Set hero error:', err)
+    }
+  }
+
+  // Move photo left or right
+  const handleMovePhoto = async (photoId: string, direction: 'left' | 'right') => {
+    try {
+      const res = await fetch(`/api/partner/fleet/${id}/photos`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoId, direction })
+      })
+
+      const data = await res.json()
+      if (data.success && data.photos) {
+        setPhotos(data.photos)
+      }
+    } catch (err) {
+      console.error('Move photo error:', err)
     }
   }
 
@@ -823,39 +851,65 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {photos.map(photo => (
-                  <div key={photo.id} className="relative group aspect-[4/3]">
+                {photos.map((photo, index) => (
+                  <div key={photo.id} className={`relative group aspect-[4/3] ${photo.isHero ? 'ring-2 ring-yellow-400 rounded-lg' : ''}`}>
                     <Image
                       src={photo.url}
                       alt={t('vehiclePhotoAlt')}
                       fill
                       className="object-cover rounded-lg"
                     />
-                    <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => handleSetHero(photo.id)}
-                        className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-lg"
-                        title={t('setAsMainPhoto')}
-                      >
-                        {photo.isHero ? (
-                          <IoStar className="w-5 h-5 text-yellow-500" />
-                        ) : (
-                          <IoStarOutline className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-                        )}
-                      </button>
+                    {/* Top controls — star + delete */}
+                    <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {!photo.isHero && (
+                        <button
+                          onClick={() => handleSetHero(photo.id)}
+                          className="p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm"
+                          title={t('setAsMainPhoto')}
+                        >
+                          <IoStarOutline className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDeletePhoto(photo.id)}
-                        className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-lg"
+                        className="p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm"
                         title={t('deletePhoto')}
                       >
-                        <IoTrashOutline className="w-5 h-5 text-red-500" />
+                        <IoTrashOutline className="w-4 h-4 text-red-500" />
                       </button>
                     </div>
+                    {/* Move arrows */}
+                    <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {index > 0 && (
+                        <button
+                          onClick={() => handleMovePhoto(photo.id, 'left')}
+                          className="p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm"
+                          title="Move left"
+                        >
+                          <IoChevronBackOutline className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                        </button>
+                      )}
+                      {index < photos.length - 1 && (
+                        <button
+                          onClick={() => handleMovePhoto(photo.id, 'right')}
+                          className="p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm"
+                          title="Move right"
+                        >
+                          <IoChevronForwardOutline className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                        </button>
+                      )}
+                    </div>
+                    {/* Main photo badge */}
                     {photo.isHero && (
-                      <div className="absolute bottom-2 left-2 px-2 py-1 bg-purple-600 text-white text-xs rounded">
-                        {t('mainPhoto')}
+                      <div className="absolute bottom-2 left-2 px-2 py-1 bg-yellow-400 text-yellow-900 text-xs font-semibold rounded flex items-center gap-1">
+                        <IoStar className="w-3 h-3" />
+                        Main
                       </div>
                     )}
+                    {/* Position number */}
+                    <div className="absolute top-2 left-2 w-6 h-6 bg-black/50 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                      {index + 1}
+                    </div>
                   </div>
                 ))}
               </div>

@@ -134,7 +134,7 @@ export default function PartnerAnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="p-3 sm:p-4">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
@@ -146,7 +146,7 @@ export default function PartnerAnalyticsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 sm:p-4 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

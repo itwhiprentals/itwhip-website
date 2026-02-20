@@ -376,7 +376,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Reset in-progress flag in case previous check stalled
       refreshInProgressRef.current = false
       console.log('[AuthContext] Window focused, re-checking auth')
-      refreshAuth()
+      refreshAuth().catch(() => { /* network error on focus — ignore */ })
     }
 
     window.addEventListener('focus', handleFocus)
@@ -399,7 +399,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Reset in-progress flag to allow this refresh
         refreshInProgressRef.current = false
         console.log('[AuthContext] Navigated to protected path, refreshing auth:', pathname)
-        refreshAuth()
+        refreshAuth().catch(() => { /* network error during navigation — ignore */ })
       }
     }
 

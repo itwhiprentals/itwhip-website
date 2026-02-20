@@ -169,14 +169,14 @@ export default function PartnerBookingsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-[400px]">
+      <div className="p-3 sm:p-4 flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 sm:p-4 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -356,9 +356,20 @@ export default function PartnerBookingsPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Link
                           href={`/partner/fleet/${booking.vehicleId}`}
-                          className="text-sm font-medium text-gray-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-400"
+                          className="hover:text-orange-600 dark:hover:text-orange-400"
                         >
-                          {booking.vehicleName}
+                          {(() => {
+                            const parts = booking.vehicleName.split(' ')
+                            const year = parts[0]
+                            const make = parts[1] || ''
+                            const model = parts.slice(2).join(' ') || ''
+                            return (
+                              <>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{year} {make}</p>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">{model}</p>
+                              </>
+                            )
+                          })()}
                         </Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -402,13 +413,13 @@ export default function PartnerBookingsPage() {
 
       {/* Summary */}
       {filteredBookings.length > 0 && (
-        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-          <p>
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {t('showingOf', { filtered: filteredBookings.length, total: bookings.length })}
           </p>
-          <p>
+          <Link href="/partner/revenue" className="text-sm text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
             {t('totalRevenue')} <span className="font-semibold text-gray-900 dark:text-white">${totalRevenue.toLocaleString()}</span>
-          </p>
+          </Link>
         </div>
       )}
     </div>

@@ -333,6 +333,9 @@ export default function InsurancePage() {
               <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
                 {t('platformInsuranceBannerDesc')}
               </p>
+              <Link href="/partner/revenue" className="text-xs text-orange-600 dark:text-orange-400 hover:underline mt-2 inline-block">
+                {t('setRevenuePathLink')}
+              </Link>
             </div>
           </div>
         </div>
@@ -368,16 +371,13 @@ export default function InsurancePage() {
         </div>
       )}
       {revenuePath === 'tiers' && (
-        <div className="mb-6 p-4 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600">
+        <div className="mb-6 p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
           <div className="flex items-start gap-3">
-            <IoInformationCircleOutline className="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0 mt-0.5" />
+            <IoShieldCheckmarkOutline className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <p className="text-sm font-medium text-green-800 dark:text-green-300">
                 {t('tiersPathBanner')}
               </p>
-              <Link href="/partner/revenue" className="text-xs text-orange-600 dark:text-orange-400 hover:underline mt-1 inline-block">
-                {t('setRevenuePathLink')}
-              </Link>
             </div>
           </div>
         </div>
@@ -418,40 +418,63 @@ export default function InsurancePage() {
               <IoShieldCheckmarkOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.vehiclesWithInsurance || 0}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{t('withVehicleInsurance')}</p>
+              {revenuePath === 'insurance' && !revenueTier ? (
+                <>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats?.totalVehicles || 0}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('platformCovered')}</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.vehiclesWithInsurance || 0}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('withVehicleInsurance')}</p>
+                </>
+              )}
             </div>
           </div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-              hasInsurance && coversDuringRentals
-                ? 'bg-green-100 dark:bg-green-900/30'
-                : 'bg-amber-100 dark:bg-amber-900/30'
-            }`}>
-              {hasInsurance && coversDuringRentals ? (
-                <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
-              ) : (
-                <IoWarningOutline className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-              )}
-            </div>
-            <div>
-              <p className={`text-lg font-bold ${
-                hasInsurance && coversDuringRentals
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-amber-600 dark:text-amber-400'
-              }`}>
-                {hasInsurance && coversDuringRentals ? t('covered') : t('notCovered')}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{t('rentalCoverage')}</p>
-            </div>
+            {revenuePath === 'insurance' && !revenueTier ? (
+              <>
+                <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                  <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-green-600 dark:text-green-400">{t('covered')}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('rentalCoverage')}</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                  hasInsurance && coversDuringRentals
+                    ? 'bg-green-100 dark:bg-green-900/30'
+                    : 'bg-amber-100 dark:bg-amber-900/30'
+                }`}>
+                  {hasInsurance && coversDuringRentals ? (
+                    <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  ) : (
+                    <IoWarningOutline className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  )}
+                </div>
+                <div>
+                  <p className={`text-lg font-bold ${
+                    hasInsurance && coversDuringRentals
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-amber-600 dark:text-amber-400'
+                  }`}>
+                    {hasInsurance && coversDuringRentals ? t('covered') : t('notCovered')}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('rentalCoverage')}</p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      <div className={`grid grid-cols-1 lg:grid-cols-3 gap-6 ${revenuePath === 'tiers' ? 'opacity-50 pointer-events-none' : ''}`}>
+      <div className={`grid grid-cols-1 lg:grid-cols-3 gap-6 ${revenuePath === 'insurance' && !revenueTier ? 'opacity-50 pointer-events-none' : ''}`}>
         {/* Left Column - Main Settings */}
         <div className="lg:col-span-2 space-y-6">
           {/* Partner Insurance Toggle */}
@@ -898,8 +921,9 @@ export default function InsurancePage() {
                             )}
                           </div>
                           <div className="text-left">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{vehicle.year} {vehicle.make}</p>
                             <p className="font-medium text-gray-900 dark:text-white text-sm">
-                              {vehicle.year} {vehicle.make} {vehicle.model}
+                              {vehicle.model}
                             </p>
                             <p className={`text-xs ${
                               hasVehicleInsurance

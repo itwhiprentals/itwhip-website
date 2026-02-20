@@ -29,7 +29,8 @@ import {
   IoOpenOutline,
   IoSettingsOutline,
   IoBusinessOutline,
-  IoInformationCircleOutline
+  IoInformationCircleOutline,
+  IoStarOutline
 } from 'react-icons/io5'
 
 // Import components
@@ -106,6 +107,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [refreshManagement, setRefreshManagement] = useState(0)
   const [activeTab, setActiveTab] = useState<'info' | 'share' | 'actions'>('info')
+  const [settingHero, setSettingHero] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchVehicle = async () => {
@@ -174,6 +176,28 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
     }
   }
 
+  const handleSetHero = async (photoId: string) => {
+    setSettingHero(photoId)
+    try {
+      const res = await fetch(`/api/partner/fleet/${id}/photos`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoId })
+      })
+      const data = await res.json()
+      if (data.success && vehicle) {
+        setVehicle({
+          ...vehicle,
+          photos: vehicle.photos.map(p => ({ ...p, isHero: p.id === photoId }))
+        })
+      }
+    } catch (err) {
+      console.error('Failed to set hero photo:', err)
+    } finally {
+      setSettingHero(null)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -221,7 +245,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
 
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               {/* Status Badge */}
-              <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
+              <span className={`px-3 py-2 rounded-lg text-sm font-medium ${
                 vehicle.isActive
                   ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                   : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
@@ -231,10 +255,10 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
 
               <Link
                 href={`/partner/fleet/${id}/edit`}
-                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 text-sm"
+                className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 text-sm"
               >
-                <IoCreateOutline className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="hidden sm:inline">Full Edit</span>
+                <IoCreateOutline className="w-4 h-4" />
+                Edit
               </Link>
             </div>
           </div>
@@ -312,23 +336,43 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
 
               {/* Photo Thumbnails */}
               {vehicle.photos.length > 1 && (
-                <div className="p-2 sm:p-4 flex gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide">
-                  {vehicle.photos.map((photo, index) => (
-                    <button
-                      key={photo.id}
-                      onClick={() => setSelectedPhoto(index)}
-                      className={`relative w-14 h-10 sm:w-20 sm:h-16 rounded sm:rounded-lg overflow-hidden flex-shrink-0 ${
-                        selectedPhoto === index ? 'ring-2 ring-purple-600' : 'ring-1 ring-gray-200 dark:ring-gray-600'
-                      }`}
-                    >
-                      <Image
-                        src={photo.url}
-                        alt={t('photoNumber', { number: index + 1 })}
-                        fill
-                        className="object-cover"
-                      />
-                    </button>
-                  ))}
+                <div className="p-2 sm:p-4">
+                  <div className="flex gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide">
+                    {vehicle.photos.map((photo, index) => (
+                      <div key={photo.id} className="relative flex-shrink-0">
+                        <button
+                          onClick={() => setSelectedPhoto(index)}
+                          className={`relative w-14 h-10 sm:w-20 sm:h-16 rounded sm:rounded-lg overflow-hidden ${
+                            selectedPhoto === index ? 'ring-2 ring-purple-600' : 'ring-1 ring-gray-200 dark:ring-gray-600'
+                          }`}
+                        >
+                          <Image
+                            src={photo.url}
+                            alt={t('photoNumber', { number: index + 1 })}
+                            fill
+                            className="object-cover"
+                          />
+                        </button>
+                        {/* Hero star badge */}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleSetHero(photo.id) }}
+                          disabled={settingHero === photo.id}
+                          className={`absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center shadow-sm ${
+                            photo.isHero
+                              ? 'bg-yellow-400 text-white'
+                              : 'bg-white dark:bg-gray-700 text-gray-400 hover:text-yellow-500 border border-gray-200 dark:border-gray-600'
+                          }`}
+                          title={photo.isHero ? 'Main photo' : 'Set as main photo'}
+                        >
+                          {photo.isHero
+                            ? <IoStar className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                            : <IoStarOutline className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                          }
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-gray-400 mt-1.5">Tap the star to set as main photo</p>
                 </div>
               )}
             </div>

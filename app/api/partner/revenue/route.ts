@@ -202,6 +202,9 @@ export async function GET(request: NextRequest) {
         return {
           id: v.carId,
           name: car ? `${car.year} ${car.make} ${car.model}` : 'Unknown Vehicle',
+          year: car?.year || null,
+          make: car?.make || null,
+          model: car?.model || null,
           revenue: v._sum.totalAmount || 0,
           bookings: v._count
         }

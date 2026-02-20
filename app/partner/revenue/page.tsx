@@ -203,7 +203,7 @@ export default function PartnerRevenuePage() {
 
   const handleViewAllPayouts = async () => {
     if (!bankingStatus || bankingStatus.stripeConnectStatus === 'not_connected' || !bankingStatus.stripeAccountId) {
-      alert('Connect your bank account first')
+      alert(t('connectBankFirst'))
       return
     }
     try {
@@ -212,11 +212,11 @@ export default function PartnerRevenuePage() {
       if (result.success && result.url) {
         window.open(result.url, '_blank')
       } else {
-        alert(result.error || 'Failed to open Stripe dashboard')
+        alert(result.error || t('failedOpenStripeDashboard'))
       }
     } catch (error) {
       console.error('Failed to open Stripe dashboard:', error)
-      alert('Failed to open Stripe dashboard')
+      alert(t('failedOpenStripeDashboard'))
     }
   }
 
@@ -284,13 +284,13 @@ export default function PartnerRevenuePage() {
   const getTierDisplayName = (path: 'insurance' | 'tiers' | null, tier: 'p2p' | 'commercial' | 'self_manage' | null): string => {
     if (path === 'insurance') {
       switch (tier) {
-        case 'p2p': return 'Insurance / P2P'
-        case 'commercial': return 'Insurance / Commercial'
-        default: return 'Insurance / Platform'
+        case 'p2p': return t('insuranceP2pDisplay')
+        case 'commercial': return t('insuranceCommercialDisplay')
+        default: return t('insurancePlatformDisplay')
       }
     }
-    if (path === 'tiers') return 'Commission Tiers'
-    return 'Not selected'
+    if (path === 'tiers') return t('commissionTiersDisplay')
+    return t('notSelected')
   }
 
   const formatCurrency = (amount: number) => {
@@ -319,7 +319,7 @@ export default function PartnerRevenuePage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-[400px]">
+      <div className="p-3 sm:p-4 flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
       </div>
     )
@@ -351,7 +351,7 @@ export default function PartnerRevenuePage() {
   const hasRevenue = revenueData.totalBookings > 0
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 sm:p-4 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -555,11 +555,11 @@ export default function PartnerRevenuePage() {
       {/* Instant Payout Button (placeholder) */}
       <div className="flex justify-end">
         <button
-          onClick={() => alert('Complete more rides to unlock instant payouts')}
+          onClick={() => alert(t('instantPayoutLocked'))}
           className="inline-flex items-center gap-2 opacity-50 cursor-not-allowed bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-4 py-2 rounded-lg text-sm font-medium"
         >
           <IoFlashOutline className="w-4 h-4" />
-          Instant Payout
+          {t('instantPayout')}
         </button>
       </div>
 
@@ -754,9 +754,16 @@ export default function PartnerRevenuePage() {
                     #{index + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                      {vehicle.name}
-                    </p>
+                    {vehicle.year && vehicle.make ? (
+                      <>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{vehicle.year} {vehicle.make}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{vehicle.model || vehicle.name}</p>
+                      </>
+                    ) : (
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        {vehicle.name}
+                      </p>
+                    )}
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       {t('vehicleBookings', { count: vehicle.bookings })}
                     </p>
@@ -1046,10 +1053,10 @@ export default function PartnerRevenuePage() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <IoShieldCheckmarkOutline className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Choose Your Revenue Path</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('chooseRevenuePath')}</h2>
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Select how you want to earn. Your choice determines your payout rate across all bookings.
+                {t('chooseRevenuePathDesc')}
               </p>
             </div>
 
@@ -1074,13 +1081,13 @@ export default function PartnerRevenuePage() {
                     }`} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Insurance</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Choose your coverage</p>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{t('insurancePathTitle')}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('insurancePathSubtitle')}</p>
                   </div>
                 </div>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Select your insurance type to determine payout rate. Platform coverage (40%) or bring your own (up to 90%).</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{t('insurancePathDesc')}</p>
                 <div className="flex items-center justify-between mt-3">
-                  <span className="text-sm font-bold text-orange-600 dark:text-orange-400">40% – 90% payout</span>
+                  <span className="text-sm font-bold text-orange-600 dark:text-orange-400">{t('insurancePayoutRange')}</span>
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                     revenuePath === 'insurance' ? 'border-orange-500' : 'border-gray-300 dark:border-gray-500'
                   }`}>
@@ -1108,13 +1115,13 @@ export default function PartnerRevenuePage() {
                     }`} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Commission Tiers</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Fleet-size based</p>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{t('commissionTiersTitle')}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('commissionTiersSubtitle')}</p>
                   </div>
                 </div>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Your commission is automatically set by your fleet size. More cars = lower commission.</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{t('commissionTiersDesc')}</p>
                 <div className="flex items-center justify-between mt-3">
-                  <span className="text-sm font-bold text-blue-600 dark:text-blue-400">Currently {currentTier.name} ({100 - currentTier.commission}%)</span>
+                  <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{t('currentlyTierPayout', { tierName: currentTier.name, pct: 100 - currentTier.commission })}</span>
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                     revenuePath === 'tiers' ? 'border-blue-500' : 'border-gray-300 dark:border-gray-500'
                   }`}>
@@ -1128,9 +1135,9 @@ export default function PartnerRevenuePage() {
             {revenuePath === 'insurance' && (
               <div className="space-y-2 bg-white dark:bg-gray-800 rounded-lg border border-orange-200 dark:border-orange-800/40 p-4">
                 {[
-                  { value: null, label: 'Platform Insurance', payout: '40% payout', desc: 'We handle claims and coverage', color: 'amber' },
-                  { value: 'p2p' as const, label: 'P2P Insurance', payout: '75% payout', desc: 'Upload your P2P insurance proof', color: 'green' },
-                  { value: 'commercial' as const, label: 'Commercial Insurance', payout: '90% payout', desc: 'Upload your commercial insurance proof', color: 'purple' },
+                  { value: null, label: t('platformInsurance'), payout: t('payoutPercent', { pct: 40 }), desc: t('platformInsuranceDesc'), color: 'amber' },
+                  { value: 'p2p' as const, label: t('p2pInsurance'), payout: t('payoutPercent', { pct: 75 }), desc: t('p2pInsuranceDesc'), color: 'green' },
+                  { value: 'commercial' as const, label: t('commercialInsurance'), payout: t('payoutPercent', { pct: 90 }), desc: t('commercialInsuranceDesc'), color: 'purple' },
                 ].map((option) => {
                   const isSelected = option.value === null
                     ? revenueTier === null || revenueTier === undefined
@@ -1176,18 +1183,18 @@ export default function PartnerRevenuePage() {
                 {/* Current Tier Display */}
                 <div className="grid grid-cols-3 gap-3">
                   <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 text-center border border-blue-100 dark:border-blue-800/30">
-                    <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1 uppercase tracking-wide">Your Tier</p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1 uppercase tracking-wide">{t('yourTier')}</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">{currentTier.name}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center border border-gray-100 dark:border-gray-700">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1 uppercase tracking-wide">Commission</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1 uppercase tracking-wide">{t('commissionLabel2')}</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">{currentTier.commission}%</p>
-                    <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">Keep {100 - currentTier.commission}%</p>
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">{t('keepPercent', { pct: 100 - currentTier.commission })}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center border border-gray-100 dark:border-gray-700">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1 uppercase tracking-wide">Fleet</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1 uppercase tracking-wide">{t('fleetLabel')}</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">{fleetSize}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">vehicles</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('vehiclesUnit')}</p>
                   </div>
                 </div>
 
@@ -1195,8 +1202,8 @@ export default function PartnerRevenuePage() {
                 {nextTier && (
                   <div>
                     <div className="flex items-center justify-between text-sm mb-2">
-                      <span className="text-gray-500 dark:text-gray-400">Progress to {nextTier.name}</span>
-                      <span className="text-gray-500 dark:text-gray-400">{carsNeeded} more vehicles needed</span>
+                      <span className="text-gray-500 dark:text-gray-400">{t('progressToTier', { tierName: nextTier.name })}</span>
+                      <span className="text-gray-500 dark:text-gray-400">{t('moreVehiclesNeeded', { count: carsNeeded })}</span>
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                       <div
@@ -1205,8 +1212,8 @@ export default function PartnerRevenuePage() {
                       />
                     </div>
                     <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      <span>{currentTier.minCars} vehicles</span>
-                      <span>{nextTier.minCars} vehicles</span>
+                      <span>{t('vehiclesCount', { count: fleetSize })}</span>
+                      <span>{t('vehiclesCount', { count: nextTier.minCars })}</span>
                     </div>
                   </div>
                 )}
@@ -1225,7 +1232,7 @@ export default function PartnerRevenuePage() {
                       <p className={`text-xs font-medium mb-1 ${
                         i === currentTierIdx ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'
                       }`}>
-                        {i === currentTierIdx ? 'Current' : i === currentTierIdx + 1 ? 'Next' : ''}
+                        {i === currentTierIdx ? t('currentLabel') : i === currentTierIdx + 1 ? t('nextLabel') : ''}
                       </p>
                       <p className={`font-semibold text-sm ${
                         i === currentTierIdx ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'
@@ -1233,7 +1240,7 @@ export default function PartnerRevenuePage() {
                       <p className={`text-lg font-bold ${
                         i === currentTierIdx ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'
                       }`}>{tier.commission}%</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">{tier.minCars}+ cars</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">{t('minCarsLabel', { count: tier.minCars || 1 })}</p>
                     </div>
                   ))}
                 </div>
@@ -1242,8 +1249,8 @@ export default function PartnerRevenuePage() {
                 {currentTierIdx < TIERS.length - 1 && (
                   <div className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-800/30">
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      <span className="font-medium text-blue-700 dark:text-blue-300">Unlock Diamond Benefits</span>{' '}
-                      &mdash; Reach 100+ vehicles to unlock the lowest commission rate (10%) and priority support.
+                      <span className="font-medium text-blue-700 dark:text-blue-300">{t('unlockDiamondBenefits')}</span>{' '}
+                      &mdash; {t('unlockDiamondDesc')}
                     </p>
                   </div>
                 )}
@@ -1255,12 +1262,10 @@ export default function PartnerRevenuePage() {
               <div>
                 {savedRevenuePath ? (
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Current: <span className="font-medium text-gray-900 dark:text-white">{getTierDisplayName(savedRevenuePath, savedRevenueTier)}</span>
-                    {' '}&mdash;{' '}
-                    <span className="font-medium text-gray-900 dark:text-white">{getPayoutLabel(savedRevenuePath, savedRevenueTier)} payout</span>
+                    {t('currentPathLabel', { pathName: getTierDisplayName(savedRevenuePath, savedRevenueTier), payout: getPayoutLabel(savedRevenuePath, savedRevenueTier) })}
                   </p>
                 ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No revenue path selected yet</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('noRevenuePathSelected')}</p>
                 )}
               </div>
               <button
@@ -1268,7 +1273,7 @@ export default function PartnerRevenuePage() {
                 disabled={isSavingTier || !revenuePath || !tierHasChanges}
                 className="px-5 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg font-medium text-sm hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSavingTier ? 'Saving...' : 'Save Selection'}
+                {isSavingTier ? t('saving') : t('saveSelection')}
               </button>
             </div>
           </div>
