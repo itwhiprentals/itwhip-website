@@ -245,7 +245,7 @@ export default function CarInformationForm({
           year: result.year || '',
           trim: normalizedTrim,
           fuelType: result.fuelType || '',       // electric, gas, hybrid, diesel
-          doors: result.doors || '',              // number of doors
+          doors: result.doors ? String(parseInt(result.doors) === 5 ? 4 : parseInt(result.doors) === 3 ? 2 : parseInt(result.doors) || 4) : '',
           bodyClass: result.bodyClass || '',      // Sedan, SUV, Pickup (maps to carType)
           transmission: result.transmission || '', // automatic, manual, CVT
           driveType: result.driveType || ''       // AWD, FWD, RWD, 4WD

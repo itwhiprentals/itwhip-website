@@ -423,8 +423,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const url = typeof args[0] === 'string' ? args[0] : args[0] instanceof Request ? args[0].url : ''
         // Skip auth-checking endpoints (401 is expected/normal for these)
         const isAuthEndpoint = url.includes('/api/auth/') || url.includes('/api/partner/session')
-        if (url.includes('/api/') && !isAuthEndpoint) {
-          const path = window.location.pathname
+        // Skip partner API calls on partner pages — partner layout handles its own auth
+        const isPartnerApi = url.includes('/api/partner/')
+        const path = window.location.pathname
+        const isPartnerPage = path.startsWith('/partner/') || path.startsWith('/host/')
+        if (isPartnerApi && isPartnerPage) {
+          // Don't intercept — PartnerLayoutClient manages partner auth separately
+        } else if (url.includes('/api/') && !isAuthEndpoint) {
           const isAuthPage = path.includes('/auth/') || path.includes('/partner/login')
           if (!isAuthPage) {
             redirecting = true
@@ -499,6 +504,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         path.startsWith('/admin/')
 
       if (isProtectedPage) {
+        // Partner/host pages have their own auth — don't redirect to guest login
+        if (path.startsWith('/partner/') || path.startsWith('/host/')) {
+          // PartnerLayoutClient handles redirect to /partner/login
+          return
+        }
         const reason = wasLoggedInRef.current ? 'session expired' : 'not authenticated'
         console.log(`[AuthContext] ${reason} on protected page "${path}" — redirecting to login`)
         wasLoggedInRef.current = false

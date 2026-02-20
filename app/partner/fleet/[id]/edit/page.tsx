@@ -244,6 +244,9 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
         const formData = new FormData()
         formData.append('file', file)
         formData.append('type', 'vehicle-photo')
+        if (vehicle) {
+          formData.append('vehicleName', `${vehicle.year} ${vehicle.make} ${vehicle.model}`)
+        }
 
         const uploadRes = await fetch('/api/partner/upload', {
           method: 'POST',

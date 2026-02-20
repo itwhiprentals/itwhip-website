@@ -21,7 +21,7 @@ const JWT_SECRET = new TextEncoder().encode(
 
 async function getPartnerFromToken() {
   const cookieStore = await cookies()
-  const token = cookieStore.get('partner_token')?.value
+  const token = cookieStore.get('partner_token')?.value || cookieStore.get('hostAccessToken')?.value
 
   if (!token) return null
 
@@ -39,9 +39,7 @@ async function getPartnerFromToken() {
       }
     })
 
-    if (!partner || (partner.hostType !== 'FLEET_PARTNER' && partner.hostType !== 'PARTNER')) {
-      return null
-    }
+    if (!partner) return null
 
     return partner
   } catch {
@@ -54,16 +52,20 @@ async function uploadToCloudinary(
   file: File,
   folder: string,
   partnerId: string,
-  index?: number
+  index?: number,
+  vehicleName?: string
 ): Promise<any> {
   const bytes = await file.arrayBuffer()
   const buffer = Buffer.from(bytes)
   const base64 = buffer.toString('base64')
   const dataUri = `data:${file.type};base64,${base64}`
 
-  const publicId = index !== undefined
-    ? `${partnerId}-vehicle-${Date.now()}-${index}`
-    : `${partnerId}-vehicle-${Date.now()}`
+  // Build a descriptive public_id from vehicle name if available
+  const slug = vehicleName
+    ? vehicleName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 80)
+    : 'vehicle'
+  const suffix = index !== undefined ? `-${index + 1}` : ''
+  const publicId = `${slug}-${partnerId.slice(-6)}-${Date.now()}${suffix}`
 
   const uploadResult = await cloudinary.uploader.upload(dataUri, {
     folder: folder,
@@ -104,6 +106,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const type = formData.get('type') as string
     const carId = formData.get('carId') as string | null
+    const vehicleName = formData.get('vehicleName') as string | null
 
     // Get all files from formData
     const files: File[] = []
@@ -177,8 +180,9 @@ export async function POST(request: NextRequest) {
       })
 
       // Upload all files in parallel
+      const carName = vehicleName || `${car.year || ''} ${car.make || ''} ${car.model || ''}`.trim() || null
       const uploadPromises = files.map((file, index) =>
-        uploadToCloudinary(file, folder, partner.id, index)
+        uploadToCloudinary(file, folder, partner.id, index, carName || undefined)
       )
 
       const uploadResults = await Promise.all(uploadPromises)
@@ -220,7 +224,7 @@ export async function POST(request: NextRequest) {
 
     // Upload without saving to database (for wizard flow before vehicle is created)
     const uploadPromises = files.map((file, index) =>
-      uploadToCloudinary(file, folder, partner.id, index)
+      uploadToCloudinary(file, folder, partner.id, index, vehicleName || undefined)
     )
 
     const uploadResults = await Promise.all(uploadPromises)

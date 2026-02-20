@@ -391,7 +391,7 @@ export async function POST(request: NextRequest) {
               return {
                 carType: mapBodyClassToCarType(vehicleBodyClass) || specs?.carType || 'midsize',
                 seats: specs?.seats || 5,
-                doors: vehicleDoors ? parseInt(vehicleDoors) : (specs?.doors || 4),
+                doors: (() => { const d = vehicleDoors ? parseInt(vehicleDoors) : (specs?.doors || 4); return d === 5 ? 4 : d === 3 ? 2 : d })(),
                 transmission: normalizeTransmission(vehicleTransmission) || 'automatic',
                 fuelType: vehicleFuelType || specs?.fuelType || 'gas',
               }
