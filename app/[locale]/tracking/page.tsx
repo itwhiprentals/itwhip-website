@@ -6,7 +6,6 @@ import { Link } from '@/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
 import {
   IoLocationOutline,
-  IoCarSportOutline,
   IoCheckmarkCircleOutline,
   IoChevronForwardOutline,
   IoLinkOutline,
@@ -204,17 +203,6 @@ export default async function TrackingPage() {
                   {t(benefitKey)}
                 </span>
               ))}
-            </div>
-          </div>
-
-          {/* Fleet Status Placeholder */}
-          <div className="flex items-center justify-center">
-            <div className="inline-flex items-center gap-3 px-5 py-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-              <IoCarSportOutline className="w-5 h-5 text-gray-400" />
-              <span className="text-gray-600 dark:text-gray-300">
-                <span className="font-semibold text-gray-900 dark:text-white">0</span> {t('of')}{' '}
-                <span className="font-semibold text-gray-900 dark:text-white">3</span> {t('vehiclesTracked')}
-              </span>
             </div>
           </div>
 
