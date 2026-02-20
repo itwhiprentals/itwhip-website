@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       partner: {
-        businessAddress: (partner as any).address || '',
+        businessAddress: `${partner.city || ''}, ${partner.state || ''} ${partner.zipCode || ''}`.trim(),
         businessCity: partner.city || '',
         businessState: partner.state || '',
         businessZipCode: partner.zipCode || ''
@@ -73,7 +73,6 @@ export async function GET(request: NextRequest) {
         companyName: partner.partnerCompanyName || '',
         businessType: partner.businessType || '',
         taxId: partner.taxId || '',
-        address: (partner as any).address || '',
         city: partner.city || '',
         state: partner.state || '',
         zipCode: partner.zipCode || '',
@@ -121,7 +120,6 @@ export async function PUT(request: NextRequest) {
     // Profile settings
     if (body.companyName !== undefined) updateData.partnerCompanyName = body.companyName
     if (body.phone !== undefined) updateData.phone = body.phone
-    if (body.address !== undefined) updateData.address = body.address
     if (body.city !== undefined) updateData.city = body.city
     if (body.state !== undefined) updateData.state = body.state
     if (body.zipCode !== undefined) updateData.zipCode = body.zipCode

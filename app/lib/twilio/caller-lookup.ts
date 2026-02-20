@@ -83,7 +83,7 @@ async function findActiveBookingForHost(hostId: string): Promise<ActiveBooking |
       status: { in: ['CONFIRMED', 'ACTIVE'] },
       OR: [
         { tripStatus: { in: ['ACTIVE', 'NOT_STARTED'] } },
-        { tripStatus: null },
+        { tripStatus: { equals: null } },
       ],
     },
     orderBy: { startDate: 'asc' },
@@ -120,7 +120,7 @@ async function findActiveBookingForGuest(guestId: string): Promise<ActiveBooking
       status: { in: ['CONFIRMED', 'ACTIVE'] },
       OR: [
         { tripStatus: { in: ['ACTIVE', 'NOT_STARTED'] } },
-        { tripStatus: null },
+        { tripStatus: { equals: null } },
       ],
     },
     orderBy: { startDate: 'asc' },
@@ -158,7 +158,7 @@ async function findActiveBookingByGuestPhone(digits: string): Promise<(ActiveBoo
       status: { in: ['CONFIRMED', 'ACTIVE'] },
       OR: [
         { tripStatus: { in: ['ACTIVE', 'NOT_STARTED'] } },
-        { tripStatus: null },
+        { tripStatus: { equals: null } },
       ],
     },
     orderBy: { startDate: 'asc' },
