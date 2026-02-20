@@ -3545,6 +3545,8 @@
   "PartnerProfile": {
     "partnerInfoNotAvailable": "Informations sur le partenaire non disponibles",
     "verifiedPartner": "Partenaire vérifié",
+    "verifiedPartnerTooltip": "Entreprise vérifiée : identité, assurance et flotte confirmées",
+    "fleetPartner": "Partenaire de Flotte",
     "established": "Depuis {year}",
     "rating": "note",
     "vehicles": "véhicules",

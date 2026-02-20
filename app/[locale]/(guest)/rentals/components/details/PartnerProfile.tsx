@@ -12,7 +12,6 @@ import {
   IoMailOutline,
   IoCallOutline,
   IoArrowForwardOutline,
-  IoShieldCheckmarkOutline,
   IoCheckmarkCircleOutline,
   IoBusinessOutline,
   IoPeopleOutline,
@@ -126,11 +125,9 @@ export default function PartnerProfile({ partner }: PartnerProfileProps) {
                 {companyName}
               </h3>
             )}
-            {/* Partner badge */}
-            <div className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-orange-100 to-orange-50 dark:from-orange-900/30 dark:to-orange-800/20 text-orange-700 dark:text-orange-400 rounded-full text-xs font-semibold">
-              <IoShieldCheckmarkOutline className="w-3.5 h-3.5" />
-              <span>{t('verifiedPartner')}</span>
-            </div>
+            <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 text-xs font-medium rounded">
+              {t('fleetPartner')}
+            </span>
           </div>
 
           <div className="flex flex-col gap-2 text-sm text-gray-600 dark:text-gray-400">

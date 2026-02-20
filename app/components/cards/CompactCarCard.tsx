@@ -7,6 +7,7 @@ import { Link } from '@/i18n/navigation'
 import { generateCarUrl } from '@/app/lib/utils/urls'
 import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 import { formatRating } from '@/app/lib/utils/formatCarSpecs'
+import { isCompanyName } from '@/app/lib/utils/namePrivacy'
 import {
   IoLocationOutline,
   IoFlashOutline,
@@ -34,6 +35,9 @@ export interface CompactCarCardProps {
       name?: string | null
       profilePhoto?: string | null
       rating?: number | null  // Host/company rating
+      isBusinessHost?: boolean
+      partnerCompanyName?: string | null
+      hostType?: string | null
     } | null
   }
   /** Accent color for price. Defaults to 'amber' */
@@ -79,10 +83,18 @@ const parseRating = (rating: any): number | null => {
   return parsed
 }
 
-// Get host display name (first name only)
-const getHostDisplayName = (name: string | null | undefined): string | null => {
-  if (!name) return null
-  return name.trim().split(' ')[0]
+// Get host display name — company/business hosts show full name, personal hosts show first name only
+const getHostDisplayName = (host: { name?: string | null; isBusinessHost?: boolean; partnerCompanyName?: string | null; hostType?: string | null } | null | undefined): string | null => {
+  if (!host) return null
+  // If partnerCompanyName is set, always use it
+  if (host.partnerCompanyName) return host.partnerCompanyName.trim()
+  if (!host.name) return null
+  const name = host.name.trim()
+  // Business hosts: show full name (detected via flags OR name pattern like "The Rental Agency")
+  const isBusiness = host.isBusinessHost || host.hostType === 'FLEET_PARTNER' || host.hostType === 'BUSINESS'
+  if (isBusiness || isCompanyName(name)) return name
+  // Personal hosts: first name only for privacy
+  return name.split(' ')[0]
 }
 
 export default function CompactCarCard({ car, accentColor = 'amber', className = '' }: CompactCarCardProps) {
@@ -112,7 +124,7 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
   const colors = accentColors[accentColor]
 
   // Host info
-  const hostDisplayName = getHostDisplayName(car.host?.name)
+  const hostDisplayName = getHostDisplayName(car.host)
   const hostInitial = hostDisplayName ? hostDisplayName.charAt(0).toUpperCase() : null
   const hostPhotoUrl = car.host?.profilePhoto
   const hasValidHostPhoto = isValidHostPhoto(hostPhotoUrl) && !hostAvatarError

@@ -711,7 +711,10 @@ export default function SearchResultsClient({
                             photos: car.photos,
                             host: car.host ? {
                               name: car.host.name,
-                              profilePhoto: car.host.avatar || car.host.profilePhoto
+                              profilePhoto: car.host.avatar || car.host.profilePhoto,
+                              isBusinessHost: car.host.isBusinessHost,
+                              partnerCompanyName: car.host.partnerCompanyName,
+                              hostType: car.host.hostType
                             } : null
                           }}
                         />
@@ -762,7 +765,10 @@ export default function SearchResultsClient({
                             photos: car.photos,
                             host: car.host ? {
                               name: car.host.name,
-                              profilePhoto: car.host.avatar || car.host.profilePhoto
+                              profilePhoto: car.host.avatar || car.host.profilePhoto,
+                              isBusinessHost: car.host.isBusinessHost,
+                              partnerCompanyName: car.host.partnerCompanyName,
+                              hostType: car.host.hostType
                             } : null
                           }}
                         />

@@ -4,6 +4,7 @@ import { Metadata } from 'next'
 import { Link } from '@/i18n/navigation'
 import Script from 'next/script'
 import prisma from '@/app/lib/database/prisma'
+import { HOST_CARD_SELECT } from '@/app/lib/database/host-select'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
@@ -310,9 +311,7 @@ export default async function CarModelPage({ params }: PageProps) {
         orderBy: { order: 'asc' },
         take: 1
       },
-      host: {
-        select: { name: true, profilePhoto: true }
-      }
+      host: { select: HOST_CARD_SELECT }
     },
     orderBy: [
       { instantBook: 'desc' },
@@ -358,9 +357,7 @@ export default async function CarModelPage({ params }: PageProps) {
         orderBy: { order: 'asc' },
         take: 1
       },
-      host: {
-        select: { name: true, profilePhoto: true }
-      }
+      host: { select: HOST_CARD_SELECT }
     },
     orderBy: [
       { instantBook: 'desc' },

@@ -1,6 +1,7 @@
 // app/api/rentals/search/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/app/lib/database/prisma'
+import { HOST_SEARCH_SELECT } from '@/app/lib/database/host-select'
 import { calculateDistance, getBoundingBox } from '@/lib/utils/distance'
 import { checkAvailability } from '@/lib/utils/availability'
 import { getLocationByName, ALL_ARIZONA_LOCATIONS } from '@/lib/data/arizona-locations'
@@ -176,15 +177,7 @@ export async function GET(request: NextRequest) {
         // Host - LIMITED PUBLIC FIELDS + DEPOSIT SETTINGS
         host: {
           select: {
-            name: true,
-            profilePhoto: true,
-            responseRate: true,
-            responseTime: true,
-            isVerified: true,
-            // Deposit settings for hybrid system
-            requireDeposit: true,
-            depositAmount: true,
-            makeDeposits: true
+            ...HOST_SEARCH_SELECT,
           }
         },
         
@@ -481,7 +474,10 @@ export async function GET(request: NextRequest) {
           verified: car.host.isVerified,
           responseRate: car.host.responseRate || 95,
           responseTime: car.host.responseTime || 60,
-          totalTrips: actualTripCount
+          totalTrips: actualTripCount,
+          isBusinessHost: car.host.isBusinessHost || false,
+          partnerCompanyName: car.host.partnerCompanyName || null,
+          hostType: car.host.hostType || null
         },
         photos: car.photos.map((photo: any) => ({
           url: photo.url,

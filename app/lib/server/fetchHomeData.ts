@@ -2,6 +2,7 @@
 // Server-side data fetching for homepage with random rotation on each request
 
 import { prisma } from '@/app/lib/database/prisma'
+import { HOST_CARD_SELECT } from '@/app/lib/database/host-select'
 
 // Type for transformed car data matching client component expectations
 export interface HomePageCar {
@@ -25,6 +26,9 @@ export interface HomePageCar {
   host: {
     name: string
     profilePhoto: string | null
+    isBusinessHost?: boolean
+    partnerCompanyName?: string | null
+    hostType?: string | null
   } | null
 }
 
@@ -98,9 +102,8 @@ export async function getESGCars(limit = 10, excludeIds: string[] = []): Promise
     include: {
       host: {
         select: {
+          ...HOST_CARD_SELECT,
           id: true,
-          name: true,
-          profilePhoto: true
         }
       },
       photos: {
@@ -165,9 +168,8 @@ export async function getP2PCars(city?: string, limit = 10, excludeIds: string[]
     include: {
       host: {
         select: {
+          ...HOST_CARD_SELECT,
           id: true,
-          name: true,
-          profilePhoto: true
         }
       },
       photos: {
@@ -264,7 +266,10 @@ function transformCar(car: any): HomePageCar {
     host: car.host
       ? {
           name: car.host.name,
-          profilePhoto: car.host.profilePhoto || null
+          profilePhoto: car.host.profilePhoto || null,
+          isBusinessHost: car.host.isBusinessHost,
+          partnerCompanyName: car.host.partnerCompanyName,
+          hostType: car.host.hostType,
         }
       : null
   }

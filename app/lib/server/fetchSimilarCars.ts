@@ -2,6 +2,7 @@
 // Server-side data fetching for SimilarCars component SSR
 
 import { prisma } from '@/app/lib/database/prisma'
+import { HOST_CARD_SELECT } from '@/app/lib/database/host-select'
 
 // Type matching SimilarCars component expectations
 export interface SimilarCarData {
@@ -29,6 +30,9 @@ export interface SimilarCarData {
     name?: string
     profilePhoto?: string
     isVerified?: boolean
+    isBusinessHost?: boolean
+    partnerCompanyName?: string | null
+    hostType?: string | null
   }
 }
 
@@ -63,9 +67,8 @@ export async function getSimilarCars(
       include: {
         host: {
           select: {
-            name: true,
-            profilePhoto: true,
-            isVerified: true
+            ...HOST_CARD_SELECT,
+            isVerified: true,
           }
         },
         photos: {
@@ -114,9 +117,8 @@ export async function getHostCars(
       include: {
         host: {
           select: {
-            name: true,
-            profilePhoto: true,
-            isVerified: true
+            ...HOST_CARD_SELECT,
+            isVerified: true,
           }
         },
         photos: {
@@ -186,7 +188,10 @@ function transformCar(car: any): SimilarCarData {
     host: car.host ? {
       name: car.host.name,
       profilePhoto: car.host.profilePhoto,
-      isVerified: car.host.isVerified
+      isVerified: car.host.isVerified,
+      isBusinessHost: car.host.isBusinessHost,
+      partnerCompanyName: car.host.partnerCompanyName,
+      hostType: car.host.hostType,
     } : undefined
   }
 }

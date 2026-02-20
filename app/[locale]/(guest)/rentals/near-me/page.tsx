@@ -7,6 +7,7 @@ import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import prisma from '@/app/lib/database/prisma'
+import { HOST_CARD_SELECT } from '@/app/lib/database/host-select'
 import { CITY_SEO_DATA } from '@/app/lib/data/city-seo-data'
 import { AIRPORT_DATA } from '@/app/lib/data/airports'
 import { LocationAwareTitle, DynamicPageTitle } from '@/app/components/LocationAwareContent'
@@ -97,7 +98,10 @@ function transformCarForCompactCard(car: any) {
     photos: car.photos || [],
     host: car.host ? {
       name: car.host.name,
-      profilePhoto: car.host.profilePhoto
+      profilePhoto: car.host.profilePhoto,
+      isBusinessHost: car.host.isBusinessHost,
+      partnerCompanyName: car.host.partnerCompanyName,
+      hostType: car.host.hostType
     } : null
   }
 }
@@ -129,9 +133,7 @@ export default async function NearMePage() {
         orderBy: { order: 'asc' },
         take: 1
       },
-      host: {
-        select: { name: true, profilePhoto: true }
-      }
+      host: { select: HOST_CARD_SELECT }
     },
     orderBy: [
       { instantBook: 'desc' },

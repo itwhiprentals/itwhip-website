@@ -8,6 +8,7 @@ import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import prisma from '@/app/lib/database/prisma'
+import { HOST_CARD_SELECT } from '@/app/lib/database/host-select'
 import { generateCarUrl } from '@/app/lib/utils/urls'
 import {
   IoCarOutline,
@@ -455,14 +456,7 @@ export default async function CarMakePage({
         orderBy: { order: 'asc' },
         take: 1
       },
-      host: {
-        select: {
-          id: true,
-          name: true,
-          profilePhoto: true,
-          rating: true
-        }
-      }
+      host: { select: HOST_CARD_SELECT }
     },
     orderBy: [
       { instantBook: 'desc' },
@@ -488,7 +482,10 @@ export default async function CarMakePage({
     photos: car.photos || [],
     host: car.host ? {
       name: car.host.name,
-      profilePhoto: car.host.profilePhoto
+      profilePhoto: car.host.profilePhoto,
+      isBusinessHost: car.host.isBusinessHost,
+      partnerCompanyName: car.host.partnerCompanyName,
+      hostType: car.host.hostType
     } : null
   }))
 

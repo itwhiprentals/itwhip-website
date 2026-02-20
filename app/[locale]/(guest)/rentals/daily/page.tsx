@@ -2,6 +2,7 @@
 import { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import prisma from '@/app/lib/database/prisma'
+import { HOST_CARD_SELECT } from '@/app/lib/database/host-select'
 import UseCasePage from '@/app/[locale]/(guest)/rentals/components/UseCasePage'
 import { getUseCaseBySlug } from '@/app/lib/data/use-cases'
 
@@ -56,7 +57,7 @@ export default async function DailyPage() {
         take: 1
       },
       host: {
-        select: { name: true, profilePhoto: true }
+        select: HOST_CARD_SELECT
       }
     },
     orderBy: [

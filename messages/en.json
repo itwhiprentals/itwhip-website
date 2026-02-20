@@ -3527,6 +3527,8 @@
   "PartnerProfile": {
     "partnerInfoNotAvailable": "Partner information not available",
     "verifiedPartner": "Verified Partner",
+    "verifiedPartnerTooltip": "Verified business with identity, insurance & fleet confirmed",
+    "fleetPartner": "Fleet Partner",
     "established": "Est. {year}",
     "rating": "rating",
     "vehicles": "vehicles",

@@ -5,6 +5,7 @@ import { Metadata } from 'next'
 import Image from 'next/image'
 import { IoCarOutline, IoLocationOutline, IoStarOutline, IoChevronForwardOutline } from 'react-icons/io5'
 import prisma from '@/app/lib/database/prisma'
+import { HOST_CARD_SELECT } from '@/app/lib/database/host-select'
 import { calculateDistance, getBoundingBox } from '@/lib/utils/distance'
 import { getLocationByName, ALL_ARIZONA_LOCATIONS } from '@/lib/data/arizona-locations'
 import { format, addDays } from 'date-fns'
@@ -144,15 +145,7 @@ async function getInitialCars(location: string, pickupDate: string, returnDate: 
       homeDelivery: true,
       rating: true,
       totalTrips: true,
-      host: {
-        select: {
-          name: true,
-          profilePhoto: true,
-          isVerified: true,
-          responseRate: true,
-          responseTime: true
-        }
-      },
+      host: { select: { ...HOST_CARD_SELECT, isVerified: true, responseRate: true, responseTime: true } },
       photos: {
         select: {
           url: true,
@@ -235,7 +228,10 @@ async function getInitialCars(location: string, pickupDate: string, returnDate: 
           verified: car.host.isVerified,
           responseRate: car.host.responseRate || 95,
           responseTime: car.host.responseTime || 60,
-          totalTrips: actualTripCount
+          totalTrips: actualTripCount,
+          isBusinessHost: car.host.isBusinessHost || false,
+          partnerCompanyName: car.host.partnerCompanyName || null,
+          hostType: car.host.hostType || null
         },
         photos: car.photos.map((photo: any) => ({
           url: photo.url,

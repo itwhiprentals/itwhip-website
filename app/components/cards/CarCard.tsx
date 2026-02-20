@@ -7,6 +7,7 @@ import { Link } from '@/i18n/navigation'
 import { generateCarUrl } from '@/app/lib/utils/urls'
 import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
 import { formatRating, isNewListing } from '@/app/lib/utils/formatCarSpecs'
+import { isCompanyName } from '@/app/lib/utils/namePrivacy'
 import CarImage from './CarImage'
 import {
   IoFlashOutline,
@@ -92,7 +93,10 @@ export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
 
           {/* Host avatar and name - bottom-left */}
           {showHostAvatar && car.host && (() => {
-            const hostFirstName = (car.host.name || 'Host').split(' ')[0]
+            // Business/company hosts: show full name; Personal hosts: first name only
+            const name = (car.host.partnerCompanyName || car.host.name || 'Host').trim()
+            const isBusiness = car.host.isBusinessHost || car.host.hostType === 'FLEET_PARTNER' || car.host.hostType === 'BUSINESS' || isCompanyName(name)
+            const hostFirstName = isBusiness ? name : name.split(' ')[0]
             const hostInitial = hostFirstName.charAt(0).toUpperCase()
             const hostPhotoUrl = car.host.profilePhoto || car.host.avatar
             const hasValidPhoto = isValidHostPhoto(hostPhotoUrl) && !hostAvatarError

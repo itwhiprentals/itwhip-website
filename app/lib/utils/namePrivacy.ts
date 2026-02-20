@@ -31,7 +31,7 @@ const COMPANY_KEYWORDS = [
   // Business descriptors
   'Group', 'Services', 'Service', 'Enterprise', 'Enterprises', 'Company',
   'Transportation', 'Transport', 'Leasing', 'Lease', 'Holdings', 'Holding',
-  'International', 'Global', 'National', 'Partners', 'Partnership', 'Associates',
+  'International', 'Global', 'National', 'Partners', 'Partnership', 'Associates', 'Agency',
   // Common fleet/rental business terms
   'Mobility', 'Drive', 'Rides', 'Wheels', 'Speed', 'Performance'
 ]

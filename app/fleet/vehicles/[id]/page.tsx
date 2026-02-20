@@ -181,6 +181,17 @@ function InlineEdit({
 
 // ─── Notify Host Bottom Sheet ─────────────────────────────────────────────────
 
+const COMMON_ISSUES = [
+  { key: 'no_plate', label: 'License plate missing' },
+  { key: 'adjust_price', label: 'Daily rate needs adjustment' },
+  { key: 'update_photos', label: 'Photos need updating' },
+  { key: 'insurance_docs', label: 'Insurance documents needed' },
+  { key: 'stripe_setup', label: 'Stripe payouts not set up' },
+  { key: 'no_description', label: 'Vehicle description missing' },
+  { key: 'incomplete_location', label: 'Pickup location incomplete' },
+  { key: 'missing_vin', label: 'VIN number missing' },
+] as const
+
 function NotifyHostSheet({
   vehicle,
   host,
@@ -198,12 +209,30 @@ function NotifyHostSheet({
   const [phone, setPhone] = useState(host.phone || '')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [messageType, setMessageType] = useState<'issues' | 'custom'>(blockers.length > 0 ? 'issues' : 'custom')
+  const [customMessage, setCustomMessage] = useState('')
+  const [selectedIssues, setSelectedIssues] = useState<string[]>([])
+  const [includeListingLink, setIncludeListingLink] = useState(true)
+
   const errors = blockers.filter(b => b.severity === 'error')
   const warnings = blockers.filter(b => b.severity === 'warning')
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  const carName = `${vehicle.year} ${vehicle.make} ${vehicle.model}`
+
+  const canSend = isValidEmail && !sending && (
+    messageType === 'issues'
+      ? blockers.length > 0
+      : (customMessage.trim().length > 0 || selectedIssues.length > 0)
+  )
+
+  const toggleIssue = (key: string) => {
+    setSelectedIssues(prev =>
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    )
+  }
 
   const handleSend = async () => {
-    if (!isValidEmail || sending) return
+    if (!canSend) return
     setSending(true)
     setError(null)
     try {
@@ -213,6 +242,10 @@ function NotifyHostSheet({
         body: JSON.stringify({
           overrideEmail: email !== host.email ? email : undefined,
           overridePhone: phone !== (host.phone || '') ? phone : undefined,
+          messageType,
+          customMessage: messageType === 'custom' ? customMessage.trim() : undefined,
+          selectedIssues: messageType === 'custom' && selectedIssues.length > 0 ? selectedIssues : undefined,
+          includeListingLink: messageType === 'custom' ? includeListingLink : undefined,
         }),
       })
       const data = await res.json()
@@ -229,66 +262,153 @@ function NotifyHostSheet({
     }
   }
 
-  const carName = `${vehicle.year} ${vehicle.make} ${vehicle.model}`
-  const totalCount = blockers.length
-
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 z-40"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
 
-      {/* Sheet — slides up on mobile, centered on desktop */}
+      {/* Sheet */}
       <div className="fixed bottom-0 left-0 right-0 sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:max-w-lg sm:w-full z-50 bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
           <div>
             <h2 className="text-base font-semibold text-gray-900 dark:text-white">Notify Host</h2>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{carName}</p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-          >
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
             <IoCloseOutline className="text-xl text-gray-500" />
           </button>
         </div>
 
         <div className="px-5 py-4 space-y-4">
 
-          {/* What this email contains */}
-          <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-              This email will list <strong className="text-gray-900 dark:text-white">{totalCount} issue{totalCount !== 1 ? 's' : ''}</strong> and ask {host.name.split(' ')[0]} to fix them before the car can be listed.
-            </p>
-
-            {/* Issue preview */}
-            <div className="space-y-1.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
-              {errors.map(b => (
-                <div key={b.key} className="flex items-start gap-2">
-                  <IoCloseCircleOutline className="text-red-500 flex-shrink-0 mt-0.5 text-sm" />
-                  <span className="text-xs text-red-700 dark:text-red-400">{b.label}</span>
-                </div>
-              ))}
-              {warnings.map(b => (
-                <div key={b.key} className="flex items-start gap-2">
-                  <IoWarningOutline className="text-yellow-500 flex-shrink-0 mt-0.5 text-sm" />
-                  <span className="text-xs text-yellow-700 dark:text-yellow-400">{b.label}</span>
-                </div>
-              ))}
-            </div>
+          {/* Mode toggle */}
+          <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <button
+              onClick={() => setMessageType('issues')}
+              className={`flex-1 py-2 text-xs font-medium rounded-md transition-colors ${
+                messageType === 'issues'
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
+              }`}
+            >
+              Report Issues {blockers.length > 0 && `(${blockers.length})`}
+            </button>
+            <button
+              onClick={() => setMessageType('custom')}
+              className={`flex-1 py-2 text-xs font-medium rounded-md transition-colors ${
+                messageType === 'custom'
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
+              }`}
+            >
+              Custom Message
+            </button>
           </div>
 
-          {/* Subject preview */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Email subject</label>
-            <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 font-mono text-xs">
-              Action needed: {carName} — {totalCount} listing issue{totalCount !== 1 ? 's' : ''}
-            </p>
-          </div>
+          {/* === Issues Mode === */}
+          {messageType === 'issues' && (
+            <>
+              {blockers.length > 0 ? (
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    This email will list <strong className="text-gray-900 dark:text-white">{blockers.length} issue{blockers.length !== 1 ? 's' : ''}</strong> and ask {host.name.split(' ')[0]} to fix them.
+                  </p>
+                  <div className="space-y-1.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
+                    {errors.map(b => (
+                      <div key={b.key} className="flex items-start gap-2">
+                        <IoCloseCircleOutline className="text-red-500 flex-shrink-0 mt-0.5 text-sm" />
+                        <span className="text-xs text-red-700 dark:text-red-400">{b.label}</span>
+                      </div>
+                    ))}
+                    {warnings.map(b => (
+                      <div key={b.key} className="flex items-start gap-2">
+                        <IoWarningOutline className="text-yellow-500 flex-shrink-0 mt-0.5 text-sm" />
+                        <span className="text-xs text-yellow-700 dark:text-yellow-400">{b.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <IoCheckmarkCircleOutline className="text-3xl text-green-500 mx-auto mb-2" />
+                  <p className="text-sm text-gray-600 dark:text-gray-400">No issues detected. Switch to Custom Message to send a note.</p>
+                </div>
+              )}
+
+              {/* Subject preview */}
+              {blockers.length > 0 && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Email subject</label>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 font-mono text-xs">
+                    Action needed: {carName} — {blockers.length} listing issue{blockers.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* === Custom Message Mode === */}
+          {messageType === 'custom' && (
+            <>
+              {/* Common issues checkboxes */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Flag issues (optional)</label>
+                <div className="grid grid-cols-1 gap-1.5">
+                  {COMMON_ISSUES.map(issue => (
+                    <label
+                      key={issue.key}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors text-xs ${
+                        selectedIssues.includes(issue.key)
+                          ? 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-400'
+                          : 'bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedIssues.includes(issue.key)}
+                        onChange={() => toggleIssue(issue.key)}
+                        className="rounded text-orange-600 focus:ring-orange-500 w-3.5 h-3.5"
+                      />
+                      {issue.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom message */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Your message</label>
+                <textarea
+                  value={customMessage}
+                  onChange={e => setCustomMessage(e.target.value)}
+                  placeholder={`Hi ${host.name.split(' ')[0]}, your car is now active on ItWhip! Please update your license plate and adjust the daily rate...`}
+                  rows={4}
+                  className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400"
+                />
+              </div>
+
+              {/* Include listing link */}
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={includeListingLink}
+                  onChange={e => setIncludeListingLink(e.target.checked)}
+                  className="rounded text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-xs text-gray-600 dark:text-gray-400">Include link to live listing</span>
+              </label>
+
+              {/* Subject preview */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Email subject</label>
+                <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 font-mono text-xs">
+                  Update on your {carName} listing
+                </p>
+              </div>
+            </>
+          )}
 
           {/* Editable email */}
           <div>
@@ -304,7 +424,6 @@ function NotifyHostSheet({
               onChange={e => setEmail(e.target.value)}
               className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Change this if the email on file is incorrect</p>
           </div>
 
           {/* Editable phone */}
@@ -323,9 +442,6 @@ function NotifyHostSheet({
               placeholder="No phone on file"
               className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400"
             />
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              {phone ? 'A text message will also be sent to this number' : 'Add a number to also send a text message'}
-            </p>
           </div>
 
           {/* Error */}
@@ -345,7 +461,7 @@ function NotifyHostSheet({
             </button>
             <button
               onClick={handleSend}
-              disabled={!isValidEmail || sending}
+              disabled={!canSend}
               className="flex-2 flex-grow-[2] px-4 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {sending ? (
@@ -519,12 +635,12 @@ function BlockersList({
           {emailSent ? (
             <>
               <IoCheckmarkCircleOutline className="text-lg" />
-              Email Opened
+              Email Sent
             </>
           ) : (
             <>
               <IoSendOutline />
-              Email Host About All Issues
+              Notify Host
             </>
           )}
         </button>
@@ -912,11 +1028,52 @@ function RecentBookings({ bookings }: { bookings: Booking[] }) {
 // ─── Actions Panel ────────────────────────────────────────────────────────────
 
 function ActionsPanel({ vehicle }: { vehicle: VehicleDetail }) {
+  const [copied, setCopied] = useState(false)
+  const makeSlug = vehicle.make.toLowerCase().replace(/\s+/g, '-')
+  const modelSlug = vehicle.model.toLowerCase().replace(/\s+/g, '-')
+  const citySlug = (vehicle.city || 'phoenix').toLowerCase().replace(/\s+/g, '-')
+  const listingPath = `/rentals/${vehicle.year}-${makeSlug}-${modelSlug}-${citySlug}-${vehicle.id}`
+  const listingUrl = `https://itwhip.com${listingPath}`
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(listingUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4">
       <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Actions</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <ActionLink href={`/fleet/edit/${vehicle.id}`} icon={IoSettingsOutline} label="Full Edit Page" color="blue" />
+        <div className="flex gap-1">
+          <a
+            href={listingPath}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 flex items-center justify-between px-4 py-3 border rounded-lg transition-colors bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30"
+          >
+            <div className="flex items-center gap-2">
+              <IoEyeOutline className="text-green-600 dark:text-green-400" />
+              <span className="text-sm font-medium text-green-700 dark:text-green-300">View Live Listing</span>
+            </div>
+            <IoChevronForwardOutline className="text-green-600 dark:text-green-400" />
+          </a>
+          <button
+            onClick={copyLink}
+            className="flex items-center justify-center w-10 border rounded-lg transition-colors bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30"
+            title="Copy listing URL"
+          >
+            {copied ? (
+              <IoCheckmarkOutline className="text-green-600 dark:text-green-400" />
+            ) : (
+              <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+              </svg>
+            )}
+          </button>
+        </div>
         {vehicle.host && (
           <ActionLink href={`/fleet/hosts/${vehicle.host.id}`} icon={IoPersonOutline} label="View Host Profile" color="purple" />
         )}
@@ -1194,6 +1351,28 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
           onOpenSheet={() => setShowNotifySheet(true)}
           emailSent={emailSent}
         />
+
+        {/* Show "Message Host" button even when there are no blockers */}
+        {vehicle.blockers.length === 0 && vehicle.host && (
+          <div className="mb-4">
+            <button
+              onClick={() => setShowNotifySheet(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+            >
+              {emailSent ? (
+                <>
+                  <IoCheckmarkCircleOutline className="text-lg" />
+                  Email Sent
+                </>
+              ) : (
+                <>
+                  <IoSendOutline />
+                  Message Host
+                </>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Photo + Vehicle Info */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">

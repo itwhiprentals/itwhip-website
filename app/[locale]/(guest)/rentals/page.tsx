@@ -5,6 +5,7 @@ import { Metadata } from 'next'
 import { Suspense } from 'react'
 import { getTranslations } from 'next-intl/server'
 import prisma from '@/app/lib/database/prisma'
+import { HOST_CARD_SELECT } from '@/app/lib/database/host-select'
 import CarFilters from './components/CarFilters'
 import CarGrid from './components/CarGrid'
 import Breadcrumbs from './components/Breadcrumbs'
@@ -168,13 +169,7 @@ export default async function RentalsPage({
           orderBy: { order: 'asc' },
           take: 1
         },
-        host: {
-          select: {
-            name: true,
-            isVerified: true,
-            profilePhoto: true
-          }
-        }
+        host: { select: { ...HOST_CARD_SELECT, isVerified: true } }
       },
       orderBy: [
         { rating: 'desc' },

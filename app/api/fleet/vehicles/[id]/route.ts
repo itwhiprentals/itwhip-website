@@ -143,6 +143,7 @@ export async function GET(
     if (vehicle.year < 2015 && vehicle.vehicleType === 'RENTAL') blockers.push({ key: 'old_vehicle', label: `${vehicle.year} vehicle — consider changing to Rideshare`, severity: 'warning' })
     if (!vehicle.address || !vehicle.city) blockers.push({ key: 'no_location', label: 'Missing pickup location', severity: 'warning' })
     if (!vehicle.transmission) blockers.push({ key: 'no_transmission', label: 'Transmission not set', severity: 'warning' })
+    if (!vehicle.licensePlate) blockers.push({ key: 'no_plate', label: 'License plate not entered', severity: 'warning' })
 
     // Determine if car would appear in search
     const isSearchable = vehicle.isActive &&

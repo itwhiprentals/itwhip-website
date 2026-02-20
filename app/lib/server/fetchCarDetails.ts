@@ -3,6 +3,7 @@
 // to avoid self-fetching (localhost → localhost deadlock in dev)
 
 import prisma from '@/app/lib/database/prisma'
+import { HOST_CARD_SELECT } from '@/app/lib/database/host-select'
 
 /**
  * Fetch car details directly from the database for SSR use.
@@ -63,9 +64,8 @@ export async function getCarForSSR(carId: string) {
       hostId: true,
       host: {
         select: {
+          ...HOST_CARD_SELECT,
           id: true,
-          name: true,
-          profilePhoto: true,
           approvalStatus: true,
           active: true,
         }
@@ -122,7 +122,14 @@ export async function getCarForSSR(carId: string) {
     totalTrips: car.totalTrips || 0,
     instantBook: car.instantBook,
     photos: car.photos,
-    host: car.host ? { id: car.host.id, name: car.host.name, profilePhoto: car.host.profilePhoto } : null,
+    host: car.host ? {
+      id: car.host.id,
+      name: car.host.name,
+      profilePhoto: car.host.profilePhoto,
+      isBusinessHost: car.host.isBusinessHost,
+      partnerCompanyName: car.host.partnerCompanyName,
+      hostType: car.host.hostType,
+    } : null,
     hostId: car.hostId,
     reviews: car.reviews,
     location: car.latitude && car.longitude ? { lat: car.latitude, lng: car.longitude } : null,

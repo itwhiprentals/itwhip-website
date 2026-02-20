@@ -8,6 +8,7 @@ import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
 import prisma from '@/app/lib/database/prisma'
+import { HOST_CARD_SELECT } from '@/app/lib/database/host-select'
 import { CITY_SEO_DATA } from '@/app/lib/data/city-seo-data'
 import {
   IoChevronForwardOutline,
@@ -251,9 +252,7 @@ export default async function BudgetRentalsPage() {
         orderBy: { order: 'asc' },
         take: 1
       },
-      host: {
-        select: { name: true, profilePhoto: true }
-      }
+      host: { select: HOST_CARD_SELECT }
     }
   })
 

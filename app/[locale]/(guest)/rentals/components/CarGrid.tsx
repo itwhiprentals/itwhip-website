@@ -57,7 +57,10 @@ export default function CarGrid({
     photos: Array.isArray(car.photos) ? car.photos : [],
     host: car.host ? {
       name: car.host.name,
-      profilePhoto: car.host.profilePhoto || car.host.avatar  // Handle both field names
+      profilePhoto: car.host.profilePhoto || car.host.avatar,  // Handle both field names
+      isBusinessHost: car.host.isBusinessHost,
+      partnerCompanyName: car.host.partnerCompanyName,
+      hostType: car.host.hostType
     } : null
   })
 

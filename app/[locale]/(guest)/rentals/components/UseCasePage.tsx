@@ -51,7 +51,10 @@ function transformCarForCompactCard(car: any) {
     photos: car.photos || [],
     host: car.host ? {
       name: car.host.name,
-      profilePhoto: car.host.profilePhoto
+      profilePhoto: car.host.profilePhoto,
+      isBusinessHost: car.host.isBusinessHost,
+      partnerCompanyName: car.host.partnerCompanyName,
+      hostType: car.host.hostType
     } : null
   }
 }
