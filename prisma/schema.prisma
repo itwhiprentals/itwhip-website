@@ -1829,6 +1829,15 @@ model RentalBooking {
   autoLoginExpiresAt         DateTime?
   verificationSource         String?               // BOOKING_FLOW, ONBOARDING, STRIPE
 
+  // ===== VERIFICATION HOLD =====
+  holdReason                 String?               // e.g. "stripe_identity_required"
+  heldAt                     DateTime?
+  heldBy                     String?               // "fleet-admin"
+  holdDocumentTypes          String[]              @default([])
+  holdDeadline               DateTime?
+  holdMessage                String?
+  previousStatus             String?               // status before hold (to restore)
+
   BookingSession             BookingSession?
   ChargeAdjustment           ChargeAdjustment[]
   Claim                      Claim[]
@@ -4901,6 +4910,7 @@ enum RefundRequestStatus {
 enum RentalBookingStatus {
   PENDING
   CONFIRMED
+  ON_HOLD
   ACTIVE
   COMPLETED
   CANCELLED

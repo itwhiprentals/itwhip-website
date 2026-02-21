@@ -12,7 +12,7 @@ import { MessagesPanel } from './components/MessagesPanel'
 import { PolicyFooter, CancellationDialog } from './components/BookingModals'
 import CancellationPolicyModal from '@/app/[locale]/(guest)/rentals/components/modals/CancellationPolicyModal'
 import TrustSafetyModal from '@/app/[locale]/(guest)/rentals/components/modals/TrustSafetyModal'
-import { ChevronLeft, XCircle, CheckCircle, Copy, Clock, MessageSquare, Calendar, User } from './components/Icons'
+import { ChevronLeft, XCircle, CheckCircle, Copy, Clock, MessageSquare, Calendar, User, MapPin, Car } from './components/Icons'
 import StatusProgression from '../../../components/StatusProgression'
 // Import Trip Cards
 import { TripStartCard } from './components/trip/TripStartCard'
@@ -469,8 +469,8 @@ export default function BookingDetailsPage() {
             <h1 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100">{t('bookingStatus')}</h1>
           </div>
           
-          {/* Car info header — hidden during inspection phase, active trip & completed trip */}
-          {!isPreTripReady && !isTripActive && !isCompletedTrip && (
+          {/* Car info header — hidden during inspection phase, active trip, completed trip & ON_HOLD (shown in card photo) */}
+          {!isPreTripReady && !isTripActive && !isCompletedTrip && booking.status !== 'ON_HOLD' && (
             <div className="space-y-3 pl-6">
               <div>
                 <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -541,9 +541,9 @@ export default function BookingDetailsPage() {
           documentsSubmittedAt={typeof booking.documentsSubmittedAt === 'string' ? booking.documentsSubmittedAt : undefined}
           reviewedAt={typeof booking.reviewedAt === 'string' ? booking.reviewedAt : undefined}
           handoffStatus={booking.handoffStatus}
-          onCancel={!isPreTripReady && !isTripActive && (booking.status === 'PENDING' || booking.status === 'CONFIRMED') ? () => setShowCancelDialog(true) : undefined}
-          onModify={!isPreTripReady && !isTripActive && ['PENDING', 'CONFIRMED'].includes(booking.status) ? () => setShowModifyModal(true) : undefined}
-          onViewAgreement={!isPreTripReady && !isTripActive && !isCompletedTrip ? () => setShowAgreement(true) : undefined}
+          onCancel={!isPreTripReady && !isTripActive && booking.status !== 'ON_HOLD' && (booking.status === 'PENDING' || booking.status === 'CONFIRMED') ? () => setShowCancelDialog(true) : undefined}
+          onModify={!isPreTripReady && !isTripActive && booking.status !== 'ON_HOLD' && ['PENDING', 'CONFIRMED'].includes(booking.status) ? () => setShowModifyModal(true) : undefined}
+          onViewAgreement={!isPreTripReady && !isTripActive && booking.status !== 'ON_HOLD' && !isCompletedTrip ? () => setShowAgreement(true) : undefined}
           hideStatusMessage={isPreTripReady || isTripActive || isCompletedTrip}
           hideTitle={isPreTripReady || isTripActive}
         />
@@ -563,6 +563,135 @@ export default function BookingDetailsPage() {
                   <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                     {t('paymentOnHoldDesc')}
                   </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ON_HOLD card — car photo with info overlay + verify button, matching CONFIRMED layout */}
+        {booking.status === 'ON_HOLD' && (
+          <div className="mt-3">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+              {/* Car photo with info overlay */}
+              {booking.car.photos && booking.car.photos.length > 0 && (
+                <div className="relative">
+                  <img
+                    src={booking.car.photos[0].url}
+                    alt={`${booking.car.make} ${booking.car.model}`}
+                    className="w-full h-52 sm:h-60 object-cover object-[center_35%]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                  {/* Car info overlay — bottom left */}
+                  <div className="absolute bottom-3 left-3 right-3">
+                    <h3 className="text-white text-lg font-bold drop-shadow-lg">
+                      {booking.car.year} {booking.car.make}
+                    </h3>
+                    <p className="text-white/90 text-sm font-medium drop-shadow-lg">
+                      {booking.car.model}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                      {(() => {
+                        const vc = getVehicleClass(booking.car.make, booking.car.model, (booking.car.type || null) as any)
+                        return vc ? <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white/20 text-white backdrop-blur-sm">{vc}</span> : null
+                      })()}
+                      {(() => {
+                        const ft = formatFuelTypeBadge((booking.car as any).fuelType || null)
+                        return ft ? <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white/20 text-white backdrop-blur-sm">{ft}</span> : null
+                      })()}
+                      {booking.car.transmission && (
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white/20 text-white backdrop-blur-sm capitalize">
+                          {booking.car.transmission.toLowerCase()}
+                        </span>
+                      )}
+                      {booking.car.seats && (
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white/20 text-white backdrop-blur-sm">
+                          {t('seats', { count: booking.car.seats })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* Verify identity content */}
+              <div className="p-4">
+                <p className="text-sm text-gray-700 dark:text-gray-300 text-center">
+                  {t('verificationHoldDesc')}
+                </p>
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/identity/verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                          returnUrl: `${window.location.origin}/rentals/dashboard/bookings/${booking.id}?verified=true`
+                        })
+                      })
+                      const data = await response.json()
+                      if (!response.ok) throw new Error(data.error || 'Failed to start verification')
+                      if (data.url) window.location.href = data.url
+                    } catch (err) {
+                      console.error('Stripe Identity error:', err)
+                    }
+                  }}
+                  className="mt-3 w-full px-6 py-3 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  {t('verifyIdentity')}
+                </button>
+              </div>
+              {/* Trip Details — pickup/dropoff layout matching TripStartCard */}
+              <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('confirmationNumber')}</p>
+                    <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{booking.bookingCode}</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-3">{t('pickup')}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(booking.startDate)} at {booking.startTime}</p>
+                    <p className="text-xs text-gray-500 italic mt-3">{t('completeVerificationForLocation')}</p>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0 pl-4">
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('statusLabel')}</p>
+                    <p className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase">{t('onHoldBadge')}</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-3">{t('dropoff')}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(booking.endDate)} at {booking.endTime}</p>
+                    <p className="text-xs text-gray-500 italic mt-3">{t('completeVerificationForLocation')}</p>
+                  </div>
+                </div>
+              </div>
+              {/* Cancel / Modify / Agreement buttons */}
+              <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3">
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    onClick={() => setShowCancelDialog(true)}
+                    className="flex items-center justify-center gap-1.5 px-2 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    {t('cancel')}
+                  </button>
+                  <button
+                    onClick={() => setShowModifyModal(true)}
+                    className="flex items-center justify-center gap-1.5 px-2 py-2 border border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs font-medium"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                    {t('modify')}
+                  </button>
+                  <button
+                    onClick={() => setShowAgreement(true)}
+                    className="flex items-center justify-center gap-1.5 px-2 py-2 border border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs font-medium"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    {t('agreement')}
+                  </button>
                 </div>
               </div>
             </div>
@@ -945,7 +1074,7 @@ export default function BookingDetailsPage() {
             </p>
           </>
         ) : (
-          <div className={`grid gap-6 mt-6 ${isPreTripReady ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
+          <div className={`grid gap-6 ${booking.status === 'ON_HOLD' ? 'mt-3' : 'mt-6'} ${isPreTripReady ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
             {/* Left Column - Details */}
             <div className={isPreTripReady ? '' : 'lg:col-span-2 space-y-6'}>
               <BookingDetails
@@ -956,8 +1085,8 @@ export default function BookingDetailsPage() {
                 isPreTripReady={isPreTripReady}
               />
 
-              {/* Messages Panel - hidden during inspection phase */}
-              {!isPreTripReady && booking.status !== 'PENDING' && booking.status !== 'CANCELLED' && (
+              {/* Messages Panel - hidden during inspection phase and ON_HOLD */}
+              {!isPreTripReady && booking.status !== 'PENDING' && booking.status !== 'CANCELLED' && booking.status !== 'ON_HOLD' && (
                 <MessagesPanel
                   bookingId={bookingId}
                   messages={messages}
@@ -1016,8 +1145,20 @@ export default function BookingDetailsPage() {
           }}
         />
 
-        {/* Policy Footer — hidden during inspection phase & active trip */}
-        {!isPreTripReady && !isTripActive && <PolicyFooter booking={booking} />}
+        {/* Policy Footer — hidden during inspection phase, active trip & ON_HOLD */}
+        {!isPreTripReady && !isTripActive && booking.status !== 'ON_HOLD' && <PolicyFooter booking={booking} />}
+
+        {/* Minimal legal footer for ON_HOLD */}
+        {booking.status === 'ON_HOLD' && (
+          <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4 text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-400 max-w-3xl mx-auto mb-2">
+              {t('footerLegal')}
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              {t('copyright')}
+            </p>
+          </div>
+        )}
 
         {/* Cancellation Policy & Trust Safety Modals (for inspection phase) */}
         <CancellationPolicyModal

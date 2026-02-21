@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { sendPendingReviewEmail, sendHostReviewEmail } from '@/app/lib/email/booking-emails'
+import { sendEmail } from '@/app/lib/email/sender'
 
 export async function GET(request: NextRequest) {
   try {
@@ -46,11 +47,14 @@ export async function GET(request: NextRequest) {
       where.status = { in: ['PENDING', 'CONFIRMED'] }
     } else if (tab === 'active') {
       where.status = 'ACTIVE'
+    } else if (tab === 'on_hold') {
+      where.status = 'ON_HOLD'
     } else if (tab === 'needs_attention') {
       where.OR = [
         { flaggedForReview: true },
         { verificationStatus: 'PENDING', verificationDeadline: { lte: new Date() } },
         { status: 'DISPUTE_REVIEW' },
+        { status: 'ON_HOLD' },
         { riskScore: { gte: 60 } },
         { hostFinalReviewStatus: 'CLAIM_FILED' }
       ]
@@ -162,11 +166,11 @@ export async function GET(request: NextRequest) {
       bookingCode: booking.bookingCode,
 
       // Guest info
-      guestId: booking.renterId || booking.reviewerProfile?.id,
+      guestId: booking.reviewerProfile?.id || booking.renterId,
       guestName: booking.guestName || booking.reviewerProfile?.name || 'Guest',
       guestEmail: booking.guestEmail || booking.reviewerProfile?.email || '',
       guestPhone: booking.guestPhone || booking.reviewerProfile?.phoneNumber || '',
-      guestStripeVerified: booking.reviewerProfile?.stripeIdentityStatus === 'verified' || booking.reviewerProfile?.documentsVerified === true,
+      guestStripeVerified: booking.reviewerProfile?.stripeIdentityStatus === 'verified',
 
       // Car info
       car: {
@@ -240,6 +244,14 @@ export async function GET(request: NextRequest) {
       reviewedBy: booking.reviewedBy,
       reviewedAt: booking.reviewedAt,
 
+      // Hold
+      holdReason: booking.holdReason,
+      heldAt: booking.heldAt,
+      heldBy: booking.heldBy,
+      holdDeadline: booking.holdDeadline,
+      holdMessage: booking.holdMessage,
+      previousStatus: booking.previousStatus,
+
       // Cancellation
       cancellationReason: booking.cancellationReason,
       cancelledBy: booking.cancelledBy,
@@ -269,7 +281,7 @@ export async function GET(request: NextRequest) {
     }))
 
     // Get stats for dashboard
-    const [pendingVerification, activeBookings, needsAttention, todayBookings, pendingReview, pendingHostReview] = await Promise.all([
+    const [pendingVerification, activeBookings, needsAttention, todayBookings, pendingReview, pendingHostReview, onHoldBookings] = await Promise.all([
       prisma.rentalBooking.count({
         where: { verificationStatus: 'PENDING', status: { in: ['PENDING', 'CONFIRMED'] } }
       }),
@@ -300,6 +312,10 @@ export async function GET(request: NextRequest) {
       // Pending Host Final Review (completed trips awaiting host deposit review)
       prisma.rentalBooking.count({
         where: { hostFinalReviewStatus: 'PENDING_REVIEW', status: 'COMPLETED' }
+      }),
+      // On Hold bookings
+      prisma.rentalBooking.count({
+        where: { status: 'ON_HOLD' }
       })
     ])
 
@@ -320,7 +336,8 @@ export async function GET(request: NextRequest) {
         todayBookings,
         totalBookings: totalCount,
         pendingReview,
-        pendingHostReview
+        pendingHostReview,
+        onHoldBookings
       }
     })
 
@@ -452,6 +469,120 @@ export async function PATCH(request: NextRequest) {
           }
         }
         break
+
+      case 'request_documents': {
+        const { documentTypes, deadline, message, placeOnHold } = body
+        if (!documentTypes || !Array.isArray(documentTypes) || documentTypes.length === 0) {
+          return NextResponse.json({ error: 'documentTypes must be a non-empty array' }, { status: 400 })
+        }
+
+        const holdBooking = await prisma.rentalBooking.findUnique({
+          where: { id: bookingId },
+          select: {
+            id: true, bookingCode: true, status: true,
+            guestEmail: true, guestName: true,
+            car: { select: { make: true, model: true, year: true } }
+          }
+        })
+        if (!holdBooking) {
+          return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+        }
+
+        if (placeOnHold && holdBooking.status === 'CONFIRMED') {
+          updateData.previousStatus = holdBooking.status
+          updateData.status = 'ON_HOLD'
+        }
+
+        updateData.holdReason = 'stripe_identity_required'
+        updateData.heldAt = new Date()
+        updateData.heldBy = 'fleet-admin'
+        updateData.holdDocumentTypes = documentTypes
+        updateData.holdDeadline = deadline ? new Date(deadline) : null
+        updateData.holdMessage = message || null
+        updateData.verificationStatus = 'PENDING'
+
+        // Send verification request email to guest
+        const bookingCode = holdBooking.bookingCode
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://itwhip.com'
+        const verifyUrl = `${baseUrl}/rentals/dashboard/bookings/${holdBooking.id}`
+        const guestName = holdBooking.guestName || 'Guest'
+        const carInfo = `${holdBooking.car.year} ${holdBooking.car.make} ${holdBooking.car.model}`
+
+        const emailSubject = `Action Required: Complete Identity Verification - ${bookingCode}`
+        const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background-color:#f4f4f4;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;">
+    <tr>
+      <td style="background:linear-gradient(135deg,#16a34a,#15803d);padding:32px 24px;text-align:center;">
+        <h1 style="color:#ffffff;margin:0;font-size:24px;">ItWhip</h1>
+        <p style="color:#dcfce7;margin:8px 0 0;font-size:14px;">Identity Verification Required</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:32px 24px;">
+        <p style="font-size:16px;color:#1f2937;margin:0 0 16px;">Hi ${guestName},</p>
+        <p style="font-size:14px;color:#4b5563;line-height:1.6;margin:0 0 16px;">
+          Your booking <strong>${bookingCode}</strong> for the <strong>${carInfo}</strong> has been placed on hold pending identity verification.
+        </p>
+        <p style="font-size:14px;color:#4b5563;line-height:1.6;margin:0 0 16px;">
+          To proceed with your reservation, we need you to complete identity verification. This helps us ensure the safety and security of all our guests and hosts.
+        </p>
+        ${message ? `<div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:12px 16px;margin:0 0 16px;border-radius:0 4px 4px 0;"><p style="font-size:13px;color:#92400e;margin:0;"><strong>Note from our team:</strong> ${message}</p></div>` : ''}
+        ${deadline ? `<p style="font-size:13px;color:#dc2626;margin:0 0 16px;"><strong>Deadline:</strong> Please complete verification by ${new Date(deadline).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.</p>` : ''}
+        <div style="text-align:center;margin:24px 0;">
+          <a href="${verifyUrl}" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
+            Verify My Identity
+          </a>
+        </div>
+        <p style="font-size:13px;color:#6b7280;line-height:1.5;margin:16px 0 0;">
+          If you have questions, please don't hesitate to contact our support team.
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td style="background:#f9fafb;padding:16px 24px;text-align:center;border-top:1px solid #e5e7eb;">
+        <p style="font-size:12px;color:#9ca3af;margin:0;">&copy; ${new Date().getFullYear()} ItWhip. All rights reserved.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+        const emailText = `Hi ${guestName},\n\nYour booking ${bookingCode} for the ${carInfo} has been placed on hold pending identity verification.\n\nTo proceed with your reservation, please complete identity verification at: ${verifyUrl}\n\n${message ? `Note from our team: ${message}\n\n` : ''}${deadline ? `Deadline: ${new Date(deadline).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n\n` : ''}If you have questions, please contact our support team.\n\n- ItWhip Team`
+
+        if (holdBooking.guestEmail) {
+          sendEmail(holdBooking.guestEmail, emailSubject, emailHtml, emailText)
+            .catch(err => console.error('[Fleet] Verification request email error:', err))
+        }
+        break
+      }
+
+      case 'release_hold': {
+        const heldBooking = await prisma.rentalBooking.findUnique({
+          where: { id: bookingId },
+          select: { id: true, status: true, previousStatus: true }
+        })
+        if (!heldBooking) {
+          return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+        }
+        if (heldBooking.status !== 'ON_HOLD') {
+          return NextResponse.json({ error: 'Booking is not on hold' }, { status: 400 })
+        }
+
+        updateData.status = heldBooking.previousStatus || 'CONFIRMED'
+        updateData.holdReason = null
+        updateData.heldAt = null
+        updateData.heldBy = null
+        updateData.holdDeadline = null
+        updateData.holdMessage = null
+        updateData.previousStatus = null
+        updateData.verificationStatus = 'APPROVED'
+        updateData.reviewedBy = 'fleet-admin'
+        updateData.reviewedAt = new Date()
+        break
+      }
 
       case 'resend_email': {
         // Resend the appropriate email based on booking state

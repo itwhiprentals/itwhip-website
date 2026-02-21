@@ -52,7 +52,7 @@ export async function POST(
       }
     })
 
-    const wasStripeVerified = guestProfile?.stripeIdentityStatus === 'verified' || guestProfile?.documentsVerified === true
+    const wasStripeVerified = guestProfile?.stripeIdentityStatus === 'verified'
 
     if (wasStripeVerified) {
       // Path A: Already Stripe-verified → check Claude AI DL verification pass or manual review

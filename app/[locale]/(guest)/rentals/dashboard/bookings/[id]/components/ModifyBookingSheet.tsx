@@ -72,10 +72,8 @@ const INSURANCE_TIERS = ['MINIMUM', 'BASIC', 'PREMIUM', 'LUXURY'] as const
 
 // Values must match DB pickupType: 'host' | 'delivery' | 'airport' | 'hotel'
 const DELIVERY_OPTIONS = [
-  { value: 'host', label: 'Pickup', icon: IoCarSportOutline, fee: 0, desc: 'Meet at host location' },
-  { value: 'delivery', label: 'Delivery', icon: IoSparklesOutline, fee: 35, desc: 'Delivered to your location' },
+  { value: 'host', label: 'Pickup', icon: IoCarSportOutline, fee: 0, desc: 'Meet host at location' },
   { value: 'airport', label: 'Airport', icon: IoAirplaneOutline, fee: 50, desc: 'PHX Sky Harbor' },
-  { value: 'hotel', label: 'Hotel', icon: IoHomeOutline, fee: 35, desc: 'Your accommodation' },
 ] as const
 
 /**
@@ -387,7 +385,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
         <div className="flex gap-2">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+            className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
           >
             {t('keepCurrent')}
           </button>
@@ -406,12 +404,12 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
             SECTION 1: DATES
             ================================================================ */}
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">{t('rentalDates')}</h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('rentalDates')}</h3>
 
           {/* Current dates */}
-          <div className="p-3 bg-gray-50 rounded-lg mb-3 text-center">
-            <p className="text-xs font-medium text-gray-500 mb-0.5">{t('current')}</p>
-            <p className="text-sm text-gray-900">
+          <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg mb-3 text-center">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">{t('current')}</p>
+            <p className="text-sm text-gray-900 dark:text-gray-100">
               {new Date(booking.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               {' → '}
               {new Date(booking.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -438,7 +436,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
                   }}
                   minDate={today}
                   dateFormat="MMM d, yyyy"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             )}
@@ -454,7 +452,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
                   : (newStartDate ? new Date(newStartDate.getTime() + 86400000) : today)
                 }
                 dateFormat="MMM d, yyyy"
-                className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${extendOnly ? 'text-center' : ''}`}
+                className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${extendOnly ? 'text-center' : ''}`}
               />
             </div>
           </div>
@@ -477,7 +475,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
             SECTION 2: INSURANCE TIER (hidden in extend-only mode)
             ================================================================ */}
         {!extendOnly && <div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">{t('insuranceProtection')}</h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('insuranceProtection')}</h3>
 
           {loadingQuotes ? (
             <div className="p-3 bg-gray-50 rounded-lg text-center">
@@ -498,8 +496,8 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
                     onClick={() => setInsuranceTier(tier)}
                     className={`w-full text-left p-2.5 rounded-lg border transition-all ${
                       isSelected
-                        ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
-                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 ring-1 ring-blue-500'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -510,7 +508,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
                           {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
                         </div>
                         <div>
-                          <span className="text-xs font-medium text-gray-900">{tier}</span>
+                          <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{tier}</span>
                           {isCurrent && (
                             <span className="ml-1.5 px-1.5 py-0.5 text-[9px] font-medium bg-gray-200 text-gray-600 rounded">
                               {t('current')}
@@ -550,7 +548,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
             SECTION 3: DELIVERY (hidden in extend-only mode)
             ================================================================ */}
         {!extendOnly && <div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">{t('deliveryMethod')}</h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('deliveryMethod')}</h3>
 
           <div className="grid grid-cols-2 gap-1.5">
             {DELIVERY_OPTIONS.map((option) => {
@@ -564,13 +562,13 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
                   onClick={() => setDeliveryType(option.value)}
                   className={`text-left p-2.5 rounded-lg border transition-all ${
                     isSelected
-                      ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 ring-1 ring-blue-500'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <Icon className={`w-4 h-4 ${isSelected ? 'text-blue-600' : 'text-gray-400'}`} />
-                    <span className="text-xs font-medium text-gray-900">{option.label}</span>
+                    <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{option.label}</span>
                     {isCurrent && (
                       <span className="px-1 py-0.5 text-[8px] font-medium bg-gray-200 text-gray-600 rounded">
                         {t('current')}
@@ -598,7 +596,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
                 value={deliveryAddress}
                 onChange={(e) => setDeliveryAddress(e.target.value)}
                 placeholder={deliveryType === 'hotel' ? 'e.g. Hyatt Regency Phoenix' : 'Enter delivery address'}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           )}
@@ -608,7 +606,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
             SECTION 4: ENHANCEMENTS / ADD-ONS (hidden in extend-only mode)
             ================================================================ */}
         {!extendOnly && <div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">{t('enhancements')}</h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('enhancements')}</h3>
 
           <div className="space-y-1.5">
             {(Object.entries(ADDON_PRICES) as [keyof typeof ADDON_PRICES, typeof ADDON_PRICES[keyof typeof ADDON_PRICES]][]).map(([key, config]) => {
@@ -627,8 +625,8 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
                   onClick={() => setAddOns(prev => ({ ...prev, [key]: !prev[key as keyof AddOnsState] }))}
                   className={`w-full text-left p-2.5 rounded-lg border transition-all ${
                     isChecked
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -639,7 +637,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
                     </div>
                     <Icon className={`w-4 h-4 flex-shrink-0 ${isChecked ? 'text-blue-600' : 'text-gray-400'}`} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-900">{config.label}</p>
+                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{config.label}</p>
                       <p className="text-[10px] text-gray-500">{config.desc}</p>
                     </div>
                     <span className="text-xs font-medium text-gray-700 flex-shrink-0">
@@ -657,9 +655,9 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
             ================================================================ */}
         {newPricing && (
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-2">{t('priceSummary')}</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('priceSummary')}</h3>
 
-            <div className="p-3 bg-gray-50 rounded-lg space-y-1.5 text-xs">
+            <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-1.5 text-xs">
               <div className="flex justify-between">
                 <span className="text-gray-600">{days} day{days !== 1 ? 's' : ''} × ${formatPrice(booking.dailyRate)}/day</span>
                 <span>${formatPrice(newPricing.basePrice)}</span>
@@ -689,7 +687,7 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
                 <span>${formatPrice(newPricing.taxes)}</span>
               </div>
 
-              <div className="flex justify-between pt-1.5 border-t border-gray-200 font-medium text-gray-900">
+              <div className="flex justify-between pt-1.5 border-t border-gray-200 dark:border-gray-700 font-medium text-gray-900 dark:text-gray-100">
                 <span>{t('newTotal')}</span>
                 <span>${formatPrice(newPricing.total)}</span>
               </div>

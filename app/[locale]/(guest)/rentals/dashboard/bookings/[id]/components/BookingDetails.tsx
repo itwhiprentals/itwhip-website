@@ -333,9 +333,9 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
         </>
       )}
 
-      {/* Car Photos — hidden during inspection phase (shown on main page instead) */}
-      {!isPreTripReady && booking.car.photos && booking.car.photos.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      {/* Car Photos — hidden during inspection phase and ON_HOLD (shown on main page instead) */}
+      {!isPreTripReady && booking.status !== 'ON_HOLD' && booking.car.photos && booking.car.photos.length > 0 && (
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm overflow-hidden">
           <img
             src={booking.car.photos[0].url}
             alt={`${booking.car.make} ${booking.car.model}`}
@@ -344,16 +344,16 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
         </div>
       )}
 
-      {/* Trip Details Card - hidden during inspection phase (info already in TripStartCard) */}
-      {!isPreTripReady && (
-      <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4">
-        <h2 className="text-sm font-semibold text-gray-900 mb-3">{t('tripDetails')}</h2>
+      {/* Trip Details Card - hidden during inspection phase (info already in TripStartCard) and ON_HOLD (attached to car card on main page) */}
+      {!isPreTripReady && booking.status !== 'ON_HOLD' && (
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm p-3 sm:p-4">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">{t('tripDetails')}</h2>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="flex items-start space-x-2">
             <Calendar className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-xs font-medium text-gray-700">{t('dates')}</p>
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('dates')}</p>
               <p className="text-xs text-gray-600">
                 {formatDate(booking.startDate)}
               </p>
@@ -366,19 +366,21 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
           <div className="flex items-start space-x-2">
             <Clock className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-xs font-medium text-gray-700">{t('time')}</p>
-              <p className="text-xs text-gray-600">{t('pickupTime', { time: booking.startTime })}</p>
-              <p className="text-xs text-gray-600">{t('returnTime', { time: booking.endTime })}</p>
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('time')}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">{t('pickupTime', { time: booking.startTime })}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">{t('returnTime', { time: booking.endTime })}</p>
             </div>
           </div>
 
           <div className="flex items-start space-x-2">
             <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-xs font-medium text-gray-700">{t('location')}</p>
-              {booking.onboardingCompletedAt ? (
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('location')}</p>
+              {booking.status === 'ON_HOLD' ? (
+                <p className="text-xs text-gray-500 italic">{t('completeVerificationForLocation')}</p>
+              ) : booking.onboardingCompletedAt ? (
                 <>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     {hoursUntilPickup <= TIME_THRESHOLDS.SHOW_FULL_DETAILS_HOURS
                       ? (booking.exactAddress || booking.pickupLocation || 'Phoenix, AZ')
                       : (booking.pickupLocation || 'Phoenix, AZ')}
@@ -396,8 +398,8 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
           <div className="flex items-start space-x-2">
             <Car className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-xs font-medium text-gray-700">{t('vehicle')}</p>
-              <p className="text-xs text-gray-600">{booking.car.type || 'CONVERTIBLE'}</p>
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('vehicle')}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">{booking.car.type || 'CONVERTIBLE'}</p>
               <p className="text-xs text-gray-600">
                 {booking.car.transmission || 'AUTOMATIC'} • {t('seats', { count: booking.car.seats || 2 })}
               </p>

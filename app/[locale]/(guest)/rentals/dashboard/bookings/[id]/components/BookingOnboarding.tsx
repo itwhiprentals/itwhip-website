@@ -30,7 +30,8 @@ export function BookingOnboarding({ booking, onDocumentUploaded }: BookingOnboar
   const [error, setError] = useState<string | null>(null)
   const [verificationDone, setVerificationDone] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)
-  const [showContent, setShowContent] = useState(false)
+  const isOnHold = booking.status === 'ON_HOLD'
+  const [showContent, setShowContent] = useState(isOnHold)
 
   const isPending = booking.status === 'PENDING'
   const onboardingDone = !!booking.onboardingCompletedAt

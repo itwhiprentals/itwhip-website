@@ -65,6 +65,7 @@ export default function StatusProgression({
   const isActive = status === 'ACTIVE' || tripStatus === 'ACTIVE' || !!tripStartedAt
   const isCompleted = status === 'COMPLETED' || tripStatus === 'COMPLETED' || !!tripEndedAt
   const isHandoffDone = handoffStatus === 'HANDOFF_COMPLETE' || handoffStatus === 'BYPASSED'
+  const isOnHold = status === 'ON_HOLD'
   
   // Check for special states - FIXED case sensitivity
   const isCancelled = status === 'CANCELLED'
@@ -82,21 +83,22 @@ export default function StatusProgression({
       description: documentsSubmittedAt ? t('docsSubmitted') : t('awaitingDocs')
     },
     {
-      name: t('stepVerified'),
-      complete: isVerified,
-      active: isVerified && !wasConfirmed && !paymentFailed && !isCancelled && !hasPendingCharges,
-      description: isVerified ? t('documentsApproved') : t('underReview'),
+      name: isOnHold ? t('stepStripe') : t('stepVerified'),
+      complete: isVerified && !isOnHold,
+      active: isOnHold || (isVerified && !wasConfirmed && !paymentFailed && !isCancelled && !hasPendingCharges),
+      description: isOnHold ? t('verificationRequired') : isVerified ? t('documentsApproved') : t('underReview'),
       error: paymentFailed
     },
     {
-      name: hasPendingCharges ? t('stepCharges') : t('stepConfirmed'),
-      complete: isConfirmed && !hasPendingCharges,
-      active: hasPendingCharges || (isConfirmed && !isActive),
-      description: hasPendingCharges ? t('processingFinalCharges') :
+      name: isOnHold ? t('stepOnHold') : hasPendingCharges ? t('stepCharges') : t('stepConfirmed'),
+      complete: isConfirmed && !hasPendingCharges && !isOnHold,
+      active: false,
+      description: isOnHold ? t('awaitingDocs') :
+                   hasPendingCharges ? t('processingFinalCharges') :
                    (isConfirmed && isHandoffDone) ? t('handoffComplete') :
                    isConfirmed ? t('paymentSuccessful') :
                    paymentFailed ? t('paymentFailed') : t('processingPayment'),
-      error: paymentFailed
+      error: isOnHold || paymentFailed
     },
     {
       name: t('stepActive'),
@@ -130,7 +132,11 @@ export default function StatusProgression({
   return (
     <div className={`bg-white dark:bg-gray-900 rounded-lg shadow ${hideTitle ? 'p-4' : 'p-6'}`}>
       <div className={`flex items-center justify-between ${hideTitle ? 'mb-1' : 'mb-6'}`}>
-        {!hideTitle && <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('bookingStatus')}</h2>}
+        {!hideTitle && (
+          <h2 className={`text-lg font-semibold ${isOnHold ? 'text-red-600 dark:text-red-400 w-full text-center' : 'text-gray-900 dark:text-gray-100'}`}>
+            {isOnHold ? t('onHoldTitle') : t('bookingStatus')}
+          </h2>
+        )}
         {paymentFailed && !hasPendingCharges && (
           <span className="flex items-center text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 px-3 py-1 rounded-full">
             <IoAlertCircle className="w-4 h-4 mr-1" />
@@ -154,7 +160,8 @@ export default function StatusProgression({
             className="h-full bg-gradient-to-r from-green-400 via-green-500 to-emerald-500 rounded-full relative shadow-[0_1px_3px_rgba(34,197,94,0.4)]"
             initial={{ width: '0%' }}
             animate={{
-              width: isCompleted ? '100%' :
+              width: isOnHold ? '35%' :
+                     isCompleted ? '100%' :
                      isActive ? '85%' :
                      (isConfirmed && isHandoffDone) ? '73%' :
                      isConfirmed ? '60%' :
@@ -167,7 +174,7 @@ export default function StatusProgression({
               <div className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-white/25 to-transparent animate-shimmer" />
             </div>
             {/* Arrow at the leading edge */}
-            {!isCompleted && (isVerified || isConfirmed || isActive) && (
+            {!isCompleted && (isVerified || isConfirmed || isActive || isOnHold) && (
               <div className="absolute -right-1.5 top-1/2 -translate-y-1/2">
                 <motion.div
                   animate={{ x: [0, 3, 0] }}
@@ -235,7 +242,7 @@ export default function StatusProgression({
       </div>
       
       {/* Status Messages - FIXED with mutually exclusive conditions */}
-      {!hideStatusMessage && (<div className="mt-6 pt-6 border-t dark:border-gray-800 space-y-4">
+      {!hideStatusMessage && !isOnHold && (<div className="mt-6 pt-6 border-t dark:border-gray-800 space-y-4">
         {(() => {
           // Priority order for status messages
           if (hasPendingCharges) {
@@ -247,6 +254,22 @@ export default function StatusProgression({
                     <p className="text-sm font-medium text-amber-900 dark:text-amber-200">{t('processingFinalChargesTitle')}</p>
                     <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
                       {t('processingFinalChargesDesc')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
+          if (isOnHold) {
+            return (
+              <div className="bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <div className="flex items-start">
+                  <IoAlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mr-2 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-red-900 dark:text-red-200">{t('onHoldTitle')}</p>
+                    <p className="text-xs text-red-700 dark:text-red-400 mt-1">
+                      {t('onHoldDesc')}
                     </p>
                   </div>
                 </div>
@@ -339,7 +362,7 @@ export default function StatusProgression({
             {onModify && (
               <button
                 onClick={onModify}
-                className="flex items-center justify-center gap-1.5 px-2 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-xs font-medium"
+                className="flex items-center justify-center gap-1.5 px-2 py-2 border border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs font-medium"
               >
                 <IoCreateOutline className="w-3.5 h-3.5" />
                 <span>{t('modify')}</span>
@@ -348,7 +371,7 @@ export default function StatusProgression({
             {onViewAgreement && (
               <button
                 onClick={onViewAgreement}
-                className="flex items-center justify-center gap-1.5 px-2 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-xs font-medium"
+                className="flex items-center justify-center gap-1.5 px-2 py-2 border border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs font-medium"
               >
                 <IoDocumentTextOutline className="w-3.5 h-3.5" />
                 <span>{t('agreement')}</span>

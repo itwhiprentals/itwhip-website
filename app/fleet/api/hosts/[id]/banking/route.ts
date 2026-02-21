@@ -253,8 +253,17 @@ export async function GET(
             balance: (customer as any).balance
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching Stripe Customer:', error)
+        // Auto-clear invalid Stripe customer ID (deleted or never existed)
+        if (error?.code === 'resource_missing') {
+          console.log(`[banking] Clearing invalid stripeCustomerId ${host.stripeCustomerId} for host ${id}`)
+          await prisma.rentalHost.update({
+            where: { id },
+            data: { stripeCustomerId: null }
+          })
+          host.stripeCustomerId = null
+        }
       }
     }
 

@@ -28,6 +28,7 @@ export function BookingQuickActions({ booking, onAction, loading }: BookingQuick
   const isActive = booking.status === 'ACTIVE'
   const isCancelled = booking.status === 'CANCELLED'
   const isCompleted = booking.status === 'COMPLETED'
+  const isOnHold = booking.status === 'ON_HOLD'
 
   // Show "Connect Guest & Host" for confirmed/active bookings with both phones
   const canBridge = (booking.status === 'CONFIRMED' || booking.status === 'ACTIVE') &&
@@ -104,6 +105,18 @@ export function BookingQuickActions({ booking, onAction, loading }: BookingQuick
             </button>
           )}
         </div>
+      )}
+
+      {/* Release Hold */}
+      {isOnHold && (
+        <button
+          onClick={() => onAction('release_hold')}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 min-h-[44px]"
+        >
+          <IoCheckmarkCircleOutline className="w-5 h-5" />
+          Release Hold
+        </button>
       )}
 
       {/* Standard Actions */}

@@ -122,6 +122,28 @@ export function BookingDetailDrawer({
           </div>
         )}
 
+        {/* Hold Alert */}
+        {booking.status === 'ON_HOLD' && (
+          <div className="px-4 py-3 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800">
+            <div className="flex items-center gap-2">
+              <IoWarningOutline className="w-5 h-5 text-red-600" />
+              <span className="text-sm font-medium text-red-700 dark:text-red-300">
+                On Hold — {booking.holdReason === 'stripe_identity_required' ? 'Stripe Identity Required' : booking.holdReason || 'Verification Required'}
+              </span>
+            </div>
+            {booking.holdDeadline && (
+              <p className="text-xs text-red-600 dark:text-red-400 mt-1 ml-7">
+                Deadline: {formatDate(booking.holdDeadline)}
+              </p>
+            )}
+            {booking.holdMessage && (
+              <p className="text-xs text-red-600 dark:text-red-400 mt-1 ml-7">
+                Message: {booking.holdMessage}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Quick Actions */}

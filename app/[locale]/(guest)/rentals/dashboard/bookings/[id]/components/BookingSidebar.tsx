@@ -87,10 +87,10 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
         {(booking.paymentStatus === 'paid' || booking.paymentStatus === 'PAID' || booking.paymentStatus === 'captured' || booking.paymentStatus === 'CAPTURED') && (
           <div className="mb-4 p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg">
             <div className="flex items-start">
-              <CheckCircle className="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
+              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mr-2 flex-shrink-0 mt-0.5" />
               <div className="text-xs sm:text-sm text-green-800 dark:text-green-200">
                 <p className="font-medium mb-1">{t('paymentConfirmed')}</p>
-                <p className="text-xs">
+                <p className="text-xs text-green-700 dark:text-green-300">
                   {t('paymentConfirmedDesc', { amount: formatCurrency(booking.totalAmount), email: booking.guestEmail || '' })}
                 </p>
               </div>

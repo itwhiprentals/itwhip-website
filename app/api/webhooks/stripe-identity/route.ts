@@ -252,6 +252,65 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
 
   console.log(`[Stripe Identity] Profile ${profileId} verified successfully`)
 
+  // Auto-release ON_HOLD bookings for this guest
+  try {
+    const profileForBookings = await prisma.reviewerProfile.findUnique({
+      where: { id: profileId },
+      select: { email: true }
+    })
+
+    if (profileForBookings?.email) {
+      const heldBookings = await prisma.rentalBooking.findMany({
+        where: {
+          guestEmail: profileForBookings.email.toLowerCase(),
+          status: 'ON_HOLD',
+          holdReason: 'stripe_identity_required',
+        },
+        select: {
+          id: true, bookingCode: true, previousStatus: true,
+          guestEmail: true, guestName: true, hostId: true,
+          car: { select: { make: true, model: true, year: true } }
+        }
+      })
+
+      for (const held of heldBookings) {
+        await prisma.rentalBooking.update({
+          where: { id: held.id },
+          data: {
+            status: (held.previousStatus as any) || 'CONFIRMED',
+            holdReason: null,
+            verificationStatus: 'APPROVED',
+            reviewedBy: 'stripe-identity',
+            reviewedAt: new Date(),
+            onboardingCompletedAt: new Date(),
+          }
+        })
+        console.log(`[Stripe Identity] Auto-released booking ${held.bookingCode} from ON_HOLD → ${held.previousStatus || 'CONFIRMED'}`)
+
+        // Send fleet notification
+        try {
+          await prisma.hostNotification.create({
+            data: {
+              id: crypto.randomUUID(),
+              hostId: held.hostId,
+              type: 'VERIFICATION_COMPLETE',
+              category: 'BOOKING',
+              subject: `Guest verified - ${held.bookingCode} released from hold`,
+              message: `${held.guestName || 'Guest'} has completed Stripe Identity verification for ${held.car.year} ${held.car.make} ${held.car.model}. Booking ${held.bookingCode} has been automatically released from hold.`,
+              priority: 'high',
+              actionUrl: `/partner/bookings/${held.id}`,
+              updatedAt: new Date()
+            }
+          })
+        } catch (notifErr) {
+          console.error('[Stripe Identity] Fleet notification error:', notifErr)
+        }
+      }
+    }
+  } catch (releaseErr) {
+    console.error('[Stripe Identity] Auto-release ON_HOLD error:', releaseErr)
+  }
+
   // Check if guest has active payment method and grant signup bonus
   await grantSignupBonusIfEligible(updatedProfile, session.id)
 }

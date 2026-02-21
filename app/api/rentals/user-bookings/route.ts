@@ -322,7 +322,7 @@ export async function GET(request: NextRequest) {
         insurancePhotoUrl: booking.insurancePhotoUrl,
         selfiePhotoUrl: booking.selfiePhotoUrl,
         onboardingCompletedAt: booking.onboardingCompletedAt,
-        guestStripeVerified: booking.guestProfile?.stripeIdentityStatus === 'verified' || booking.guestProfile?.documentsVerified === true,
+        guestStripeVerified: booking.guestProfile?.stripeIdentityStatus === 'verified',
         guestInsuranceOnFile: booking.guestProfile?.insuranceVerified === true,
         car: {
           id: booking.car.id,

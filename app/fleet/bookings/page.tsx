@@ -153,6 +153,9 @@ export default function FleetBookingsPage() {
       case 'resend_email':
         handleResendEmail(booking.id)
         break
+      case 'release_hold':
+        handleReleaseHold(booking.id)
+        break
     }
   }
 
@@ -180,6 +183,26 @@ export default function FleetBookingsPage() {
     } catch (err) {
       console.error('Resend email error:', err)
       alert('Failed to resend email')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  // Release hold handler
+  const handleReleaseHold = async (bookingId: string) => {
+    if (!confirm('Release this booking from hold? It will return to its previous status.')) return
+    setActionLoading(true)
+    try {
+      const res = await fetch('/fleet/api/bookings?key=phoenix-fleet-2847', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId, action: 'release_hold' })
+      })
+      if (!res.ok) throw new Error('Failed to release hold')
+      loadBookingsRef.current?.()
+    } catch (err) {
+      console.error('Release hold error:', err)
+      alert('Failed to release hold')
     } finally {
       setActionLoading(false)
     }
@@ -289,10 +312,18 @@ export default function FleetBookingsPage() {
   const handleRequestDocuments = async (bookingId: string, data: any) => {
     setActionLoading(true)
     try {
-      // This would call a document request API
-      console.log('Request documents:', bookingId, data)
-      // For now, just close the modal
+      const res = await fetch('/fleet/api/bookings?key=phoenix-fleet-2847', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId,
+          action: 'request_documents',
+          ...data
+        })
+      })
+      if (!res.ok) throw new Error('Failed to request documents')
       setShowRequestDocsModal(false)
+      loadBookingsRef.current?.()
     } catch (err) {
       console.error('Error:', err)
     } finally {

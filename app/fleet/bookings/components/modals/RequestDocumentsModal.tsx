@@ -14,7 +14,7 @@ interface RequestDocumentsModalProps {
   isOpen: boolean
   onClose: () => void
   booking: FleetBooking | null
-  onSubmit: (bookingId: string, data: { documentTypes: string[]; deadline: string; message: string }) => Promise<void>
+  onSubmit: (bookingId: string, data: { documentTypes: string[]; deadline: string; message: string; placeOnHold: boolean }) => Promise<void>
   loading: boolean
 }
 
@@ -62,9 +62,15 @@ export function RequestDocumentsModal({
   loading
 }: RequestDocumentsModalProps) {
   const [selectedDocs, setSelectedDocs] = useState<string[]>([])
-  const [deadline, setDeadline] = useState('')
+  const getDefaultDeadline = () => {
+    const date = new Date()
+    date.setDate(date.getDate() + 2)
+    return date.toISOString().split('T')[0]
+  }
+  const [deadline, setDeadline] = useState(getDefaultDeadline())
   const [messageTemplate, setMessageTemplate] = useState('incomplete')
   const [customMessage, setCustomMessage] = useState('')
+  const [placeOnHold, setPlaceOnHold] = useState(true)
 
   if (!isOpen || !booking) return null
 
@@ -86,20 +92,14 @@ export function RequestDocumentsModal({
     await onSubmit(booking.id, {
       documentTypes: selectedDocs,
       deadline,
-      message: getMessage()
+      message: getMessage(),
+      placeOnHold
     })
     setSelectedDocs([])
     setDeadline('')
     setMessageTemplate('incomplete')
     setCustomMessage('')
     onClose()
-  }
-
-  // Get default deadline (48 hours from now)
-  const getDefaultDeadline = () => {
-    const date = new Date()
-    date.setDate(date.getDate() + 2)
-    return date.toISOString().split('T')[0]
   }
 
   return (
@@ -233,9 +233,25 @@ export function RequestDocumentsModal({
             />
           </div>
 
+          {/* Place on Hold Option */}
+          <label className="flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800">
+            <input
+              type="checkbox"
+              checked={placeOnHold}
+              onChange={(e) => setPlaceOnHold(e.target.checked)}
+              className="mt-0.5 w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+            />
+            <div>
+              <p className="text-sm font-medium text-red-900 dark:text-red-200">Place reservation on hold</p>
+              <p className="text-xs text-red-700 dark:text-red-400">Booking status will change to On Hold until verification is complete</p>
+            </div>
+          </label>
+
           <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              The guest will receive an email notification with the document request. Their booking will remain on hold until documents are submitted.
+              {placeOnHold
+                ? 'The guest will receive an email notification with the document request. Their booking will be placed on hold until documents are submitted.'
+                : 'The guest will receive an email notification with the document request.'}
             </p>
           </div>
         </div>

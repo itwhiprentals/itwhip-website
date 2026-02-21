@@ -55,7 +55,7 @@ export const CancellationDialog: React.FC<CancellationDialogProps> = ({
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+            className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
           >
             {t('keepBooking')}
           </button>
@@ -78,17 +78,17 @@ export const CancellationDialog: React.FC<CancellationDialogProps> = ({
           </p>
         </div>
       ) : (
-        <div className="mb-3 p-2.5 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
-          <span className="text-green-600 text-sm mt-0.5">&#10003;</span>
-          <p className="text-xs font-medium text-green-800">
+        <div className="mb-3 p-2.5 bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-lg flex items-start gap-2">
+          <span className="text-green-600 dark:text-green-400 text-sm mt-0.5">&#10003;</span>
+          <p className="text-xs font-medium text-green-800 dark:text-green-200">
             {t('freeCancellationBadge')}
           </p>
         </div>
       )}
 
       {/* What You Paid */}
-      <div className="mb-3 p-3 bg-gray-50 rounded-lg">
-        <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">{t('whatYouPaid')}</p>
+      <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-2">{t('whatYouPaid')}</p>
         <div className="space-y-1.5 text-xs">
           <div className="flex justify-between">
             <span className="text-gray-600">
@@ -97,72 +97,72 @@ export const CancellationDialog: React.FC<CancellationDialogProps> = ({
                 rate: formatCurrency(booking.dailyRate)
               })}
             </span>
-            <span className="text-gray-900">{formatCurrency(booking.subtotal || (booking.dailyRate * (booking.numberOfDays || 1)))}</span>
+            <span className="text-gray-900 dark:text-gray-100">{formatCurrency(booking.subtotal || (booking.dailyRate * (booking.numberOfDays || 1)))}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">{t('serviceFeeLine')} <span className="text-gray-400 text-[10px]">({t('nonRefundable')})</span></span>
-            <span className="text-gray-900">{formatCurrency(booking.serviceFee)}</span>
+            <span className="text-gray-600 dark:text-gray-400">{t('serviceFeeLine')} <span className="text-gray-400 text-[10px]">({t('nonRefundable')})</span></span>
+            <span className="text-gray-900 dark:text-gray-100">{formatCurrency(booking.serviceFee)}</span>
           </div>
           {booking.insuranceFee > 0 && (
             <div className="flex justify-between">
-              <span className="text-gray-600">{t('insuranceLine', { tier: booking.insuranceType || 'Basic' })} <span className="text-gray-400 text-[10px]">({t('nonRefundable')})</span></span>
-              <span className="text-gray-900">{formatCurrency(booking.insuranceFee)}</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('insuranceLine', { tier: booking.insuranceType || 'Basic' })} <span className="text-gray-400 text-[10px]">({t('nonRefundable')})</span></span>
+              <span className="text-gray-900 dark:text-gray-100">{formatCurrency(booking.insuranceFee)}</span>
             </div>
           )}
           {booking.deliveryFee > 0 && (
             <div className="flex justify-between">
-              <span className="text-gray-600">{t('deliveryFeeLine')} <span className="text-gray-400 text-[10px]">({t('nonRefundable')})</span></span>
-              <span className="text-gray-900">{formatCurrency(booking.deliveryFee)}</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('deliveryFeeLine')} <span className="text-gray-400 text-[10px]">({t('nonRefundable')})</span></span>
+              <span className="text-gray-900 dark:text-gray-100">{formatCurrency(booking.deliveryFee)}</span>
             </div>
           )}
           <div className="flex justify-between">
-            <span className="text-gray-600">{t('taxesLine')}</span>
-            <span className="text-gray-900">{formatCurrency(booking.taxes)}</span>
+            <span className="text-gray-600 dark:text-gray-400">{t('taxesLine')}</span>
+            <span className="text-gray-900 dark:text-gray-100">{formatCurrency(booking.taxes)}</span>
           </div>
-          <div className="border-t border-gray-200 pt-1.5 mt-1.5">
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-1.5 mt-1.5">
             <div className="flex justify-between font-semibold">
-              <span className="text-gray-900">{t('tripTotalLine')}</span>
-              <span className="text-gray-900">{formatCurrency(booking.totalAmount)}</span>
+              <span className="text-gray-900 dark:text-gray-100">{t('tripTotalLine')}</span>
+              <span className="text-gray-900 dark:text-gray-100">{formatCurrency(booking.totalAmount)}</span>
             </div>
           </div>
           {hasCreditsOrBonus && (
             <>
               {(booking.creditsApplied || 0) > 0 && (
-                <div className="flex justify-between text-gray-600">
+                <div className="flex justify-between text-gray-600 dark:text-gray-400">
                   <span>{t('creditsAppliedLine')}</span>
                   <span className="font-semibold">(-{formatCurrency(booking.creditsApplied!)})</span>
                 </div>
               )}
               {(booking.bonusApplied || 0) > 0 && (
-                <div className="flex justify-between text-gray-600">
+                <div className="flex justify-between text-gray-600 dark:text-gray-400">
                   <span>{t('bonusAppliedLine')}</span>
                   <span className="font-semibold">(-{formatCurrency(booking.bonusApplied!)})</span>
                 </div>
               )}
               <div className="flex justify-between font-medium">
-                <span className="text-gray-700">{t('youPaidWithCard')}</span>
-                <span className="text-gray-900">{formatCurrency(booking.chargeAmount || booking.totalAmount)}</span>
+                <span className="text-gray-700 dark:text-gray-300">{t('youPaidWithCard')}</span>
+                <span className="text-gray-900 dark:text-gray-100">{formatCurrency(booking.chargeAmount || booking.totalAmount)}</span>
               </div>
             </>
           )}
           {hasCardDeposit && hasWalletDeposit ? (
             <>
-              <div className="flex justify-between text-gray-500">
+              <div className="flex justify-between text-gray-500 dark:text-gray-400">
                 <span>{t('depositFromCardLine')}</span>
                 <span>{formatCurrency(booking.depositFromCard!)}</span>
               </div>
-              <div className="flex justify-between text-gray-500">
+              <div className="flex justify-between text-gray-500 dark:text-gray-400">
                 <span>{t('depositFromWalletLine')}</span>
                 <span>{formatCurrency(booking.depositFromWallet!)}</span>
               </div>
             </>
           ) : hasWalletDeposit ? (
-            <div className="flex justify-between text-gray-500">
+            <div className="flex justify-between text-gray-500 dark:text-gray-400">
               <span>{t('depositFromWalletLine')}</span>
               <span>{formatCurrency(booking.depositFromWallet!)}</span>
             </div>
           ) : (
-            <div className="flex justify-between text-gray-500">
+            <div className="flex justify-between text-gray-500 dark:text-gray-400">
               <span>{t('securityDepositHeld')}</span>
               <span>{formatCurrency(booking.depositAmount)}</span>
             </div>
@@ -171,22 +171,22 @@ export const CancellationDialog: React.FC<CancellationDialogProps> = ({
       </div>
 
       {/* Refund Breakdown */}
-      <div className="mb-3 p-3 bg-white border border-gray-200 rounded-lg">
-        <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">{t('refundBreakdown')}</p>
+      <div className="mb-3 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-2">{t('refundBreakdown')}</p>
         <div className="space-y-1.5 text-xs">
 
           {/* ── Not refunded ── */}
           <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{t('notRefundedSection')}</p>
           {refundInfo.nonRefundableFees > 0 && (
             <div className="flex justify-between">
-              <span className="text-gray-600">{t('nonRefundableFeesTotal')}</span>
-              <span className="text-gray-900">{formatCurrency(refundInfo.nonRefundableFees)}</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('nonRefundableFeesTotal')}</span>
+              <span className="text-gray-900 dark:text-gray-100">{formatCurrency(refundInfo.nonRefundableFees)}</span>
             </div>
           )}
           {booking.taxes > 0 && (
             <div className="flex justify-between">
-              <span className="text-gray-600">{t('taxesLine')}</span>
-              <span className="text-gray-900">{formatCurrency(booking.taxes)}</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('taxesLine')}</span>
+              <span className="text-gray-900 dark:text-gray-100">{formatCurrency(booking.taxes)}</span>
             </div>
           )}
           {hasPenalty && (
@@ -197,7 +197,7 @@ export const CancellationDialog: React.FC<CancellationDialogProps> = ({
           )}
 
           {/* Separator */}
-          <div className="border-t border-gray-100 my-1"></div>
+          <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
 
           {/* ── Your refund ── */}
           <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{t('yourRefundSection')}</p>
@@ -205,20 +205,20 @@ export const CancellationDialog: React.FC<CancellationDialogProps> = ({
             <>
               {refundInfo.creditsRestored > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-gray-700">{t('creditsRestoredLine')}</span>
-                  <span className="font-semibold text-gray-900">{formatCurrency(refundInfo.creditsRestored)}</span>
+                  <span className="text-gray-700 dark:text-gray-300">{t('creditsRestoredLine')}</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(refundInfo.creditsRestored)}</span>
                 </div>
               )}
               {refundInfo.bonusRestored > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-gray-700">{t('bonusRestoredLine')}</span>
-                  <span className="font-semibold text-gray-900">{formatCurrency(refundInfo.bonusRestored)}</span>
+                  <span className="text-gray-700 dark:text-gray-300">{t('bonusRestoredLine')}</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(refundInfo.bonusRestored)}</span>
                 </div>
               )}
               {refundInfo.depositFromWallet > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-gray-700">{t('depositWalletRestored')}</span>
-                  <span className="font-semibold text-gray-900">{formatCurrency(refundInfo.depositFromWallet)}</span>
+                  <span className="text-gray-700 dark:text-gray-300">{t('depositWalletRestored')}</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(refundInfo.depositFromWallet)}</span>
                 </div>
               )}
               {refundInfo.totalCardRefund > 0 && (
@@ -226,7 +226,7 @@ export const CancellationDialog: React.FC<CancellationDialogProps> = ({
                   <span className="text-gray-700">
                     {cardLabel ? t('refundToCardLabel', { card: cardLabel }) : t('cardRefundLine')}
                   </span>
-                  <span className="font-semibold text-gray-900">{formatCurrency(refundInfo.totalCardRefund)}</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(refundInfo.totalCardRefund)}</span>
                 </div>
               )}
             </>
@@ -236,22 +236,22 @@ export const CancellationDialog: React.FC<CancellationDialogProps> = ({
                 <span className="text-gray-700">
                   {cardLabel ? t('refundToCardLabel', { card: cardLabel }) : t('tripRefundLine')}
                 </span>
-                <span className="font-semibold text-gray-900">{formatCurrency(refundInfo.refundAmount)}</span>
+                <span className="font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(refundInfo.refundAmount)}</span>
               </div>
               {booking.depositAmount > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-gray-700">{t('depositReleased')}</span>
-                  <span className="font-semibold text-gray-900">{formatCurrency(booking.depositAmount)}</span>
+                  <span className="text-gray-700 dark:text-gray-300">{t('depositReleased')}</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(booking.depositAmount)}</span>
                 </div>
               )}
             </>
           )}
 
           {/* Total back to you */}
-          <div className="border-t border-gray-200 pt-1.5 mt-1.5">
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-1.5 mt-1.5">
             <div className="flex justify-between font-semibold">
-              <span className="text-gray-900">{t('totalBackToYou')}</span>
-              <span className="text-gray-900">{formatCurrency(totalBack)}</span>
+              <span className="text-gray-900 dark:text-gray-100">{t('totalBackToYou')}</span>
+              <span className="text-gray-900 dark:text-gray-100">{formatCurrency(totalBack)}</span>
             </div>
           </div>
         </div>
@@ -259,13 +259,13 @@ export const CancellationDialog: React.FC<CancellationDialogProps> = ({
 
       {/* Reason dropdown */}
       <div className="mb-3">
-        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
           {t('reasonRequired')} <span className="text-red-500">*</span>
         </label>
         <select
           value={cancellationReason}
           onChange={(e) => setCancellationReason(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-red-500"
         >
           <option value="">{t('selectReason')}</option>
           <option value="plans_changed">{t('reasonPlansChanged')}</option>
