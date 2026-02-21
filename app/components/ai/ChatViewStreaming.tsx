@@ -196,6 +196,8 @@ export default function ChatViewStreaming({
     }
   }, [session?.messages.length, vehicles, effectiveSummary, currentText, checkout.state.step])
 
+  const isInCheckout = checkout.state.step !== CheckoutStep.IDLE && checkout.state.step !== CheckoutStep.CANCELLED && checkout.state.step !== CheckoutStep.FAILED
+
   // Detect checkout cancellation keywords
   const isCancelIntent = useCallback((msg: string) => {
     return /\b(cancel|start over|nevermind|never mind|go back to search|stop checkout|quit checkout|abort)\b/i.test(msg)
@@ -382,7 +384,6 @@ export default function ChatViewStreaming({
 
   const messages = session?.messages || []
   const hasMessages = messages.length > 0
-  const isInCheckout = checkout.state.step !== CheckoutStep.IDLE && checkout.state.step !== CheckoutStep.CANCELLED && checkout.state.step !== CheckoutStep.FAILED
 
   const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 }
 
