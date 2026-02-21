@@ -90,6 +90,7 @@ export async function POST(req: NextRequest) {
       data: {
         resetToken: hashedToken,
         resetTokenExpiry: expiresAt,
+        resetTokenUsed: false,
         lastPasswordReset: null,
         updatedAt: new Date()
       }
