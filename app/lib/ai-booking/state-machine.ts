@@ -46,7 +46,15 @@ export function createInitialSession(): BookingSession {
     messages: [],
     maxTotalBudget: null,
     rentalDays: null,
+    verifiedEmail: null,
+    verifiedAt: null,
   };
+}
+
+/** Check if the session has a valid (non-expired) email verification — 30-minute window */
+export function isSessionVerified(session: BookingSession): boolean {
+  if (!session.verifiedEmail || !session.verifiedAt) return false;
+  return (Date.now() - session.verifiedAt) < 30 * 60 * 1000;
 }
 
 // =============================================================================

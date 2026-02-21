@@ -5184,6 +5184,10 @@ model ChoeAIConversation {
   authPromptedAt  DateTime?
   convertedAt     DateTime?
 
+  // Email Verification (Choé OTP)
+  verifiedEmail   String?
+  verifiedAt      DateTime?
+
   // Booking Attribution
   bookingId       String?
   bookingValue    Decimal?  @db.Decimal(10, 2)
@@ -5201,6 +5205,21 @@ model ChoeAIConversation {
   @@index([outcome, startedAt])
   @@index([sessionId])
   @@map("choe_ai_conversations")
+}
+
+model ChoeAIOtpVerification {
+  id         String    @id @default(cuid())
+  sessionId  String
+  email      String
+  code       String
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  @@index([sessionId])
+  @@index([email, expiresAt])
+  @@map("choe_ai_otp_verifications")
 }
 
 model ChoeAIMessage {

@@ -37,6 +37,46 @@ import {
   supportsExtendedThinking,
   enhancePromptForThinking,
 } from '@/app/lib/ai-booking/extended-thinking'
+import { isSessionVerified } from '@/app/lib/ai-booking/state-machine'
+
+// =============================================================================
+// BOOKING LOOKUP (for verified users asking about their bookings)
+// =============================================================================
+
+async function fetchBookingContextByEmail(email: string): Promise<string> {
+  try {
+    const bookings = await prisma.rentalBooking.findMany({
+      where: { guestEmail: email, status: { not: 'CANCELLED' } },
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        bookingCode: true,
+        status: true,
+        startDate: true,
+        endDate: true,
+        startTime: true,
+        endTime: true,
+        car: { select: { make: true, model: true, year: true } },
+      },
+    })
+
+    if (bookings.length === 0) {
+      return 'BOOKING LOOKUP: No active bookings found for this email.'
+    }
+
+    const lines = bookings.map((b) => {
+      const car = b.car ? `${b.car.year} ${b.car.make} ${b.car.model}` : 'N/A'
+      const start = b.startDate ? new Date(b.startDate).toLocaleDateString() : '?'
+      const end = b.endDate ? new Date(b.endDate).toLocaleDateString() : '?'
+      return `  - ${b.bookingCode}: ${car} | ${start} – ${end} | Status: ${b.status}`
+    })
+
+    return `BOOKING LOOKUP (verified email: ${email}):\n${lines.join('\n')}\nPresent this data naturally. Include booking codes and statuses.`
+  } catch (error) {
+    console.error('[ai-booking-stream] Booking lookup failed:', error)
+    return 'BOOKING LOOKUP: Unable to retrieve bookings at this time.'
+  }
+}
 
 // =============================================================================
 // MULTI-TURN CACHING HELPER
@@ -456,17 +496,27 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       }
     }
 
-    // Add user message
-    session = addMessage(session, 'user', body.message)
+    // Handle [VERIFIED:email] prefix — client sends this after OTP verification
+    let userMessage = body.message
+    let bookingContext = ''
+    const verifiedMatch = body.message.match(/^\[VERIFIED:([^\]]+)\]\s*(.*)$/)
+    if (verifiedMatch) {
+      const verifiedEmail = verifiedMatch[1]
+      userMessage = verifiedMatch[2] || body.message
+      bookingContext = await fetchBookingContextByEmail(verifiedEmail)
+    }
+
+    // Add clean user message (without [VERIFIED:] prefix)
+    session = addMessage(session, 'user', userMessage)
     await sse.sendEvent('session', { session })
 
     // Persist user message to DB
     if (conversationId) {
-      await saveMessage(conversationId, 'user', body.message)
+      await saveMessage(conversationId, 'user', userMessage)
     }
 
     // Check query complexity for extended thinking
-    const complexity = detectComplexQuery(body.message)
+    const complexity = detectComplexQuery(userMessage)
     const modelSupportsThinking = supportsExtendedThinking(modelConfig.modelId)
     const thinkingConfig = getExtendedThinkingConfig(complexity.score, modelSupportsThinking)
 
@@ -479,15 +529,23 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       })
     }
 
+    // Determine verification status from session
+    const isVerified = isSessionVerified(session)
+
     // Build system prompt (enhanced for complex queries)
     const locale = body.locale || 'en'
     let systemPrompt = buildSystemPrompt({
       session,
       isLoggedIn: !!body.userId,
-      isVerified: false,
+      isVerified,
       vehicles: body.previousVehicles || undefined,
       locale,
     })
+
+    // Inject booking context if user is verified and asking about bookings
+    if (bookingContext) {
+      systemPrompt += `\n\n${bookingContext}`
+    }
 
     // Enhance prompt for extended thinking
     if (thinkingConfig.enabled) {
@@ -706,7 +764,7 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
           systemPrompt = buildSystemPrompt({
             session: updatedSession,
             isLoggedIn: !!body.userId,
-            isVerified: false,
+            isVerified,
             vehicles: filteredVehicles,
             locale,
           })
@@ -796,7 +854,7 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
           session,
           vehicle: summary.vehicle,
           userId: body.userId,
-          isVerified: false,
+          isVerified,
           numberOfDays: summary.numberOfDays,
           totalAmount: summary.estimatedTotal,
         })

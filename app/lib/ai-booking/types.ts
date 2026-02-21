@@ -38,6 +38,11 @@ export interface BookingSession {
   maxTotalBudget?: number | null;
   /** Number of rental days (for total cost calculation) */
   rentalDays?: number | null;
+
+  /** Verified email from OTP flow (null if not yet verified) */
+  verifiedEmail: string | null;
+  /** Timestamp (ms) when email was verified — expires after 30 min */
+  verifiedAt: number | null;
 }
 
 export interface ChatMessage {
@@ -76,7 +81,8 @@ export type BookingAction =
   | 'NEEDS_LOGIN'
   | 'NEEDS_VERIFICATION'
   | 'HIGH_RISK_REVIEW'
-  | 'START_OVER';
+  | 'START_OVER'
+  | 'NEEDS_EMAIL_OTP';
 
 // =============================================================================
 // VEHICLE (simplified for AI chat display)

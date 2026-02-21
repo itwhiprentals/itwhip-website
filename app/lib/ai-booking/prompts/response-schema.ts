@@ -23,7 +23,7 @@ FIELD RULES:
 - reply: 2-3 sentences, ends with question or action prompt
 - nextState: The state AFTER processing this message
 - extractedData: Only include fields you actually extracted. Omit fields with no new data.
-- action: null for normal flow, or one of: "HANDOFF_TO_PAYMENT", "NEEDS_LOGIN", "NEEDS_VERIFICATION", "HIGH_RISK_REVIEW", "START_OVER"
+- action: null for normal flow, or one of: "HANDOFF_TO_PAYMENT", "NEEDS_LOGIN", "NEEDS_VERIFICATION", "HIGH_RISK_REVIEW", "START_OVER", "NEEDS_EMAIL_OTP"
 - searchQuery: Include ONLY when searching for cars (location + dates available)
 
 CRITICAL FILTER RULES (read carefully):

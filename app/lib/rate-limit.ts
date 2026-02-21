@@ -81,6 +81,22 @@ export const verifyLinkOtpRateLimit = new Ratelimit({
   prefix: 'ratelimit:verify-link-otp',
 })
 
+// ✅ CHOÉ OTP SEND RATE LIMIT: 3 sends per 15 minutes per IP/email
+export const choeOtpSendRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(3, '15 m'),
+  analytics: true,
+  prefix: 'ratelimit:choe-otp-send',
+})
+
+// ✅ CHOÉ OTP VERIFY RATE LIMIT: 10 attempts per 15 minutes per IP
+export const choeOtpVerifyRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(10, '15 m'),
+  analytics: true,
+  prefix: 'ratelimit:choe-otp-verify',
+})
+
 // Helper function to get client IP
 export function getClientIp(request: Request): string {
   // Check common headers for real IP (when behind proxy/CDN)

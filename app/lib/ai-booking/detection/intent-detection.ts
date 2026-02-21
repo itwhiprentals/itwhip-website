@@ -154,6 +154,33 @@ export function hasFilters(query: SearchQuery | null): boolean {
   );
 }
 
+// =============================================================================
+// IDENTITY / BOOKING STATUS INTENTS
+// =============================================================================
+
+/**
+ * Detect if user wants to check their booking status
+ */
+export function wantsBookingStatus(message: string): boolean {
+  return /\b(status|my booking|my reservation|track my|where.?s my|check my booking|booking number|reservation number|is my booking confirmed|my trip|my rental)\b/i.test(message)
+}
+
+/**
+ * Detect if user wants sensitive account info
+ */
+export function wantsSensitiveInfo(message: string): boolean {
+  return /\b(my profile|my account|my email|my phone|my history|my past rentals|my bookings|my balance|my credits|my trips)\b/i.test(message)
+}
+
+/**
+ * Composite: check if message requires identity verification
+ */
+export function requiresIdentityVerification(message: string): { isBookingStatus: boolean; isSensitive: boolean; requiresVerification: boolean } {
+  const isBookingStatus = wantsBookingStatus(message)
+  const isSensitive = wantsSensitiveInfo(message)
+  return { isBookingStatus, isSensitive, requiresVerification: isBookingStatus || isSensitive }
+}
+
 /**
  * Get a human-readable summary of detected intents
  * Useful for debugging and logging

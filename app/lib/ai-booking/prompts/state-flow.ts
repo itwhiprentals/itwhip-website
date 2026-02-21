@@ -26,7 +26,7 @@ ${saved.length > 0 ? saved.map((s) => `  - ${s}`).join('\n') : '  (none yet)'}`;
  * Build user context string showing login/verification status
  */
 export function buildUserContext(isLoggedIn: boolean, isVerified: boolean): string {
-  return `USER STATUS: logged_in=${isLoggedIn}, verified=${isVerified}`;
+  return `USER STATUS: logged_in=${isLoggedIn}, email_verified=${isVerified}${isVerified ? ' (can access booking data and proceed to checkout)' : ' (needs email OTP verification for booking status and checkout)'}`;
 }
 
 /**

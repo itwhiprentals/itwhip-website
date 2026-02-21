@@ -14,11 +14,15 @@ import AddOnsCard from './AddOnsCard'
 import GrandTotalCard from './GrandTotalCard'
 import PaymentCard from './PaymentCard'
 import ConfirmationCard from './ConfirmationCard'
+import VerificationCard from './VerificationCard'
 import { IoSunnyOutline, IoMoonOutline } from 'react-icons/io5'
 import { useLocale, useTranslations } from 'next-intl'
 import { useStreamingChat } from '@/app/hooks/useStreamingChat'
 import { useCheckout } from '@/app/hooks/useCheckout'
+import { useVerification } from '@/app/hooks/useVerification'
 import { useAuthOptional } from '@/app/contexts/AuthContext'
+import { isSessionVerified } from '@/app/lib/ai-booking/state-machine'
+import { requiresIdentityVerification } from '@/app/lib/ai-booking/detection/intent-detection'
 import type {
   BookingSession,
   VehicleSummary,
@@ -63,6 +67,10 @@ export default function ChatViewStreaming({
 
   // Checkout pipeline (deterministic — independent from AI conversation)
   const checkout = useCheckout()
+
+  // OTP verification (for checkout gate + booking status)
+  const verification = useVerification(persistedSession?.sessionId ?? '')
+  const pendingMessageRef = useRef<string | null>(null)
 
   // Use streaming hook
   const {
@@ -201,6 +209,20 @@ export default function ChatViewStreaming({
       // Still send the message to Claude so it can respond naturally
     }
 
+    // Intercept messages that require identity verification
+    const identityCheck = requiresIdentityVerification(message)
+    if (identityCheck.requiresVerification && session && !isSessionVerified(session)) {
+      pendingMessageRef.current = message
+      const purpose = identityCheck.isBookingStatus ? 'BOOKING_STATUS' : 'SENSITIVE_INFO'
+      verification.show(auth?.user?.email ?? null, purpose)
+      return
+    }
+
+    // If session is verified and we have a pending message, prefix with verified email
+    const messageToSend = verification.verifiedEmail
+      ? `[VERIFIED:${verification.verifiedEmail}] ${message}`
+      : message
+
     // Optimistically add user message to session so it appears immediately
     const updatedSession: BookingSession = persistedSession
       ? {
@@ -219,18 +241,20 @@ export default function ChatViewStreaming({
           endTime: null,
           vehicleType: null,
           vehicleId: null,
+          verifiedEmail: null,
+          verifiedAt: null,
         }
 
     setPersistedSession(updatedSession)
 
     sendMessage({
-      message,
+      message: messageToSend,
       session: persistedSession, // Send original session to backend
       previousVehicles: persistedVehicles,
       userId: auth?.user?.id ?? null,
       locale,
     })
-  }, [sendMessage, persistedSession, persistedVehicles, auth?.user?.id, locale])
+  }, [sendMessage, persistedSession, persistedVehicles, auth?.user?.id, locale, isInCheckout, isCancelIntent, checkout, session, verification, auth?.user?.email])
 
   // Reset handler
   const handleReset = useCallback(() => {
@@ -238,9 +262,11 @@ export default function ChatViewStreaming({
     setPersistedSession(null)
     setPersistedVehicles(null)
     checkout.resetCheckout()
+    verification.reset()
+    pendingMessageRef.current = null
     localStorage.removeItem('itwhip-ai-session-id')
     localStorage.removeItem('itwhip-ai-vehicles')
-  }, [resetStream, checkout])
+  }, [resetStream, checkout, verification])
 
   // Vehicle select handler - include vehicleId for reliable extraction
   const handleVehicleSelect = useCallback((vehicle: VehicleSummary) => {
@@ -250,11 +276,15 @@ export default function ChatViewStreaming({
   }, [handleSendMessage])
 
   // Action handlers — "Confirm & Book" now starts the in-chat checkout pipeline
+  // Gate on email verification first
   const handleConfirm = useCallback(() => {
-    if (effectiveSummary) {
-      checkout.initCheckout(effectiveSummary)
+    if (!effectiveSummary) return
+    if (session && !isSessionVerified(session)) {
+      verification.show(auth?.user?.email ?? null, 'CHECKOUT')
+      return
     }
-  }, [effectiveSummary, checkout])
+    checkout.initCheckout(effectiveSummary)
+  }, [effectiveSummary, checkout, session, verification, auth?.user?.email])
 
   const handleChangeVehicle = useCallback(() => {
     handleSendMessage('Show me other cars')
@@ -297,14 +327,58 @@ export default function ChatViewStreaming({
     setIsExploring(false)
   }, [effectiveSummary, session, checkout])
 
+  // OTP verification callbacks
+  const handleVerifyCode = useCallback(async (code: string) => {
+    const verifiedEmail = await verification.verifyCode(code)
+    if (verifiedEmail && session) {
+      // Update session with verified status
+      const updatedSession = {
+        ...session,
+        verifiedEmail,
+        verifiedAt: Date.now(),
+      }
+      setPersistedSession(updatedSession)
+
+      // If checkout was pending, start it
+      if (verification.purpose === 'CHECKOUT' && effectiveSummary) {
+        setTimeout(() => {
+          checkout.initCheckout(effectiveSummary)
+          verification.hide()
+        }, 1500) // Show success flash briefly
+      }
+
+      // If there was a pending message (booking status / sensitive info), replay it
+      if (pendingMessageRef.current) {
+        const msg = pendingMessageRef.current
+        pendingMessageRef.current = null
+        setTimeout(() => {
+          verification.hide()
+          sendMessage({
+            message: `[VERIFIED:${verifiedEmail}] ${msg}`,
+            session: updatedSession,
+            previousVehicles: persistedVehicles,
+            userId: auth?.user?.id ?? null,
+            locale,
+          })
+        }, 1500)
+      }
+    }
+  }, [verification, session, effectiveSummary, checkout, sendMessage, persistedVehicles, auth?.user?.id, locale])
+
   const handleAction = useCallback(() => {
     if (action === 'NEEDS_LOGIN' && onNavigateToLogin) {
       onNavigateToLogin()
     } else if (action === 'HANDOFF_TO_PAYMENT' && effectiveSummary) {
-      // Start in-chat checkout instead of navigating away
+      // Gate on verification before starting checkout
+      if (session && !isSessionVerified(session)) {
+        verification.show(auth?.user?.email ?? null, 'CHECKOUT')
+        return
+      }
       checkout.initCheckout(effectiveSummary)
+    } else if (action === 'NEEDS_EMAIL_OTP') {
+      verification.show(auth?.user?.email ?? null, 'CHECKOUT')
     }
-  }, [action, effectiveSummary, onNavigateToLogin, checkout])
+  }, [action, effectiveSummary, onNavigateToLogin, checkout, session, verification, auth?.user?.email])
 
   const messages = session?.messages || []
   const hasMessages = messages.length > 0
@@ -430,6 +504,33 @@ export default function ChatViewStreaming({
                 summary={effectiveSummary}
                 onConfirm={handleConfirm}
                 onChangeVehicle={handleChangeVehicle}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Verification card — inline OTP flow */}
+        <AnimatePresence>
+          {verification.isVisible && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={springTransition}
+            >
+              <VerificationCard
+                email={verification.email}
+                maskedEmail={verification.maskedEmail}
+                otpSent={verification.otpSent}
+                expiresAt={verification.expiresAt}
+                purpose={verification.purpose}
+                onSendOtp={verification.sendOtp}
+                onVerifyCode={handleVerifyCode}
+                onResend={verification.resend}
+                isLoading={verification.isLoading}
+                error={verification.error}
+                attemptsRemaining={verification.attemptsRemaining}
+                verified={verification.verified}
               />
             </motion.div>
           )}
@@ -771,6 +872,7 @@ function ActionPrompt({
     NEEDS_VERIFICATION: { labelKey: 'verifyLabel', descKey: 'verifyDescription' },
     HIGH_RISK_REVIEW: { labelKey: 'uploadDocsLabel', descKey: 'uploadDocsDescription' },
     HANDOFF_TO_PAYMENT: { labelKey: 'paymentLabel', descKey: 'paymentDescription' },
+    NEEDS_EMAIL_OTP: { labelKey: 'verifyLabel', descKey: 'verifyDescription' },
   }
 
   const c = config[action]
