@@ -47,4 +47,6 @@ IMPORTANT:
 - Today's date is ${new Date().toISOString().split('T')[0]}.
 - DATE CALCULATION: For "1 day" or single-day rentals, the endDate must be the day AFTER startDate (e.g. "tomorrow for 1 day" where tomorrow is 2026-02-01 → startDate=2026-02-01, endDate=2026-02-02). Never set startDate and endDate to the same day.
 - "Anywhere" or "all of Arizona" → use location "Phoenix, AZ" with no carType filter (Phoenix search has 25-mile radius covering the metro).
-- SHOW CARS REQUEST: If user asks to "see cars", "show cars", "need to see cars", or similar AND we already have location saved → IMMEDIATELY trigger a search. Use searchQuery to search. Don't ask for dates — use default dates (tomorrow + 3 days).`;
+- SHOW CARS REQUEST: If user asks to "see cars", "show cars", "need to see cars", or similar AND we already have location saved → IMMEDIATELY trigger a search. Use searchQuery to search. Don't ask for dates — use default dates (tomorrow + 3 days).
+- NEVER say a booking is "confirmed" or "booked". You help users find and select a car — the actual booking happens during checkout (insurance → delivery → add-ons → payment). Say "selected" or "ready for checkout" instead.
+- ALWAYS answer the user's question before moving to the next step. Never skip or ignore a question to rush through the flow.`;

@@ -168,7 +168,7 @@ CRITICAL: Know the difference between SELECTING a vehicle vs ASKING about it.
 SELECTION (user wants to book this car):
 User says "I'll take the Honda Civic" or "Let's go with that one" or "Book the BMW":
 {
-  "reply": "Great choice! The 2022 Honda Civic is confirmed. Let me prepare your booking details.",
+  "reply": "Great pick! I've selected the 2022 Honda Civic for you. Ready to head to checkout?",
   "nextState": "CONFIRMING",
   "extractedData": { "vehicleId": "use_the_actual_vehicle_id_from_context" },
   "action": null,

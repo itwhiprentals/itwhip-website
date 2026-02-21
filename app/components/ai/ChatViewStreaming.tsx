@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import MessageBubble from './MessageBubble'
@@ -18,6 +18,7 @@ import { IoSunnyOutline, IoMoonOutline } from 'react-icons/io5'
 import { useLocale, useTranslations } from 'next-intl'
 import { useStreamingChat } from '@/app/hooks/useStreamingChat'
 import { useCheckout } from '@/app/hooks/useCheckout'
+import { useAuthOptional } from '@/app/contexts/AuthContext'
 import type {
   BookingSession,
   VehicleSummary,
@@ -53,6 +54,7 @@ export default function ChatViewStreaming({
 }: ChatViewStreamingProps) {
   const locale = useLocale()
   const t = useTranslations('ChoeAI')
+  const auth = useAuthOptional()
   const [persistedSession, setPersistedSession] = useState<BookingSession | null>(null)
   const [persistedVehicles, setPersistedVehicles] = useState<VehicleSummary[] | null>(null)
   const [isLoadingSession, setIsLoadingSession] = useState(true)
@@ -90,6 +92,46 @@ export default function ChatViewStreaming({
   // Use stream state or persisted state
   const session = streamSession || persistedSession
   const vehicles = streamVehicles || persistedVehicles
+
+  // Fallback: rebuild summary client-side if server didn't return one
+  // (happens after page reload, checkout failure, or re-selection)
+  const effectiveSummary = useMemo<BookingSummaryType | null>(() => {
+    if (summary) return summary
+    if (
+      session?.state === BookingState.CONFIRMING &&
+      session.vehicleId &&
+      session.startDate &&
+      session.endDate &&
+      vehicles
+    ) {
+      const selected = vehicles.find((v) => v.id === session.vehicleId)
+      if (selected) {
+        const numberOfDays = Math.max(1, Math.ceil(
+          (new Date(session.endDate).getTime() - new Date(session.startDate).getTime()) / (1000 * 60 * 60 * 24)
+        ))
+        const subtotal = selected.dailyRate * numberOfDays
+        const serviceFee = Math.round(subtotal * 0.15 * 100) / 100
+        const taxable = subtotal + serviceFee
+        const estimatedTax = Math.round(taxable * 0.084 * 100) / 100
+        return {
+          vehicle: selected,
+          location: session.location || 'Phoenix',
+          startDate: session.startDate,
+          endDate: session.endDate,
+          startTime: session.startTime || '10:00',
+          endTime: session.endTime || '10:00',
+          numberOfDays,
+          dailyRate: selected.dailyRate,
+          subtotal,
+          serviceFee,
+          estimatedTax,
+          estimatedTotal: Math.round((taxable + estimatedTax) * 100) / 100,
+          depositAmount: selected.depositAmount,
+        }
+      }
+    }
+    return null
+  }, [summary, session, vehicles])
 
   // Load conversation from database on mount (using sessionId from localStorage)
   useEffect(() => {
@@ -143,7 +185,7 @@ export default function ChatViewStreaming({
       }
       hasInteracted.current = true
     }
-  }, [session?.messages.length, vehicles, summary, currentText, checkout.state.step])
+  }, [session?.messages.length, vehicles, effectiveSummary, currentText, checkout.state.step])
 
   // Detect checkout cancellation keywords
   const isCancelIntent = useCallback((msg: string) => {
@@ -184,9 +226,10 @@ export default function ChatViewStreaming({
       message,
       session: persistedSession, // Send original session to backend
       previousVehicles: persistedVehicles,
+      userId: auth?.user?.id ?? null,
       locale,
     })
-  }, [sendMessage, persistedSession, persistedVehicles, locale])
+  }, [sendMessage, persistedSession, persistedVehicles, auth?.user?.id, locale])
 
   // Reset handler
   const handleReset = useCallback(() => {
@@ -207,10 +250,10 @@ export default function ChatViewStreaming({
 
   // Action handlers — "Confirm & Book" now starts the in-chat checkout pipeline
   const handleConfirm = useCallback(() => {
-    if (summary) {
-      checkout.initCheckout(summary)
+    if (effectiveSummary) {
+      checkout.initCheckout(effectiveSummary)
     }
-  }, [summary, checkout])
+  }, [effectiveSummary, checkout])
 
   const handleChangeVehicle = useCallback(() => {
     handleSendMessage('Show me other cars')
@@ -219,15 +262,15 @@ export default function ChatViewStreaming({
   const handleAction = useCallback(() => {
     if (action === 'NEEDS_LOGIN' && onNavigateToLogin) {
       onNavigateToLogin()
-    } else if (action === 'HANDOFF_TO_PAYMENT' && summary) {
+    } else if (action === 'HANDOFF_TO_PAYMENT' && effectiveSummary) {
       // Start in-chat checkout instead of navigating away
-      checkout.initCheckout(summary)
+      checkout.initCheckout(effectiveSummary)
     }
-  }, [action, summary, onNavigateToLogin, checkout])
+  }, [action, effectiveSummary, onNavigateToLogin, checkout])
 
   const messages = session?.messages || []
   const hasMessages = messages.length > 0
-  const isInCheckout = checkout.state.step !== CheckoutStep.IDLE && checkout.state.step !== CheckoutStep.CANCELLED
+  const isInCheckout = checkout.state.step !== CheckoutStep.IDLE && checkout.state.step !== CheckoutStep.CANCELLED && checkout.state.step !== CheckoutStep.FAILED
 
   const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 }
 
@@ -328,14 +371,14 @@ export default function ChatViewStreaming({
 
         {/* Booking summary — hide once checkout starts */}
         <AnimatePresence>
-          {summary && session?.state === BookingState.CONFIRMING && !isInCheckout && (
+          {effectiveSummary && session?.state === BookingState.CONFIRMING && !isInCheckout && (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={springTransition}
             >
               <BookingSummary
-                summary={summary}
+                summary={effectiveSummary}
                 onConfirm={handleConfirm}
                 onChangeVehicle={handleChangeVehicle}
               />

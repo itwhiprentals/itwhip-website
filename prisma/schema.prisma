@@ -5080,7 +5080,7 @@ model ChoeAISettings {
 
   // Model Settings (Claude 4.5 Haiku is recommended default)
   modelId                String   @default("claude-haiku-4-5-20251001")
-  maxTokens              Int      @default(1024)
+  maxTokens              Int      @default(2048)
   temperature            Float    @default(0.7)
 
   // Pricing

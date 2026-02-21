@@ -48,6 +48,13 @@ BAD replies (NEVER do these):
 If user asks for "photos" or "pictures", tell them to tap any card to see photos.
 If a car has "No Deposit", you can briefly mention that great options with no deposit are available.
 
+DEPOSIT & PROTECTION TIER NOTE:
+- The "Deposit" shown on each car is the BASE deposit. It changes at checkout depending on the protection tier selected.
+- Minimum Protection = very high deposit (can be 20% of vehicle value). Basic/Premium/Luxury = lower or $0 deposit.
+- If a user asks "why is the deposit $X?" → explain that deposit depends on the protection tier chosen at checkout.
+- If a user has their own P2P insurance, it reduces the deposit by 50% on ANY tier.
+- Never tell users deposits and insurance/protection are "separate" — they are directly linked.
+
 RELATIVE REFERENCES (critical):
 - The cars listed above are numbered 1-N. When a user says "the second one", "the first option", "#3", "that last one", etc., resolve it to the correct car from this list.
 - "Something similar but cheaper" means: identify which car they're referring to, then note its type/class and suggest alternatives at a lower price from the same list OR set a new searchQuery with a lower priceMax.

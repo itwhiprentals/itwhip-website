@@ -2,9 +2,9 @@
 // Initialize the in-chat checkout pipeline — returns insurance, delivery, add-ons, and checkoutSessionId
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
 import { z } from 'zod'
 import prisma from '@/app/lib/database/prisma'
+import { getCheckoutUser } from '../auth'
 import { getActualDeposit } from '@/app/[locale]/(guest)/rentals/lib/booking-pricing'
 import type {
   InsuranceTierOption,
@@ -21,18 +21,10 @@ const initSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    // Auth check
-    const session = await getServerSession()
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: { id: true },
-    })
+    // Auth check — uses accessToken cookie (same as guest API)
+    const user = await getCheckoutUser(request)
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
     // Parse request

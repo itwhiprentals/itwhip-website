@@ -233,6 +233,8 @@ export function useCheckout() {
           return { ...prev, step: CheckoutStep.ADDONS }
         case CheckoutStep.PAYMENT:
           return { ...prev, step: CheckoutStep.REVIEW }
+        case CheckoutStep.FAILED:
+          return { ...initialState }
         default:
           return prev
       }
