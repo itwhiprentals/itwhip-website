@@ -186,15 +186,34 @@ export async function POST(request: NextRequest) {
     // Grand total (rental charges + tax — deposit is a separate hold)
     const rentalTotal = Math.round((taxableAmount + tax) * 100) / 100
 
-    // Convert to cents for Stripe
-    const rentalCents = Math.round(rentalTotal * 100)
-    const depositCents = Math.round(deposit * 100)
-    const totalChargeCents = rentalCents + depositCents
+    // =========================================================================
+    // APPLY CREDITS, BONUSES, DEPOSIT WALLET
+    // =========================================================================
+    const appliedCredits = pending.appliedCredits || 0
+    const appliedBonus = pending.appliedBonus || 0
+    const appliedDepositWallet = pending.appliedDepositWallet || 0
+    const promoDiscount = pending.promoDiscount || 0
+
+    // Credits + bonus + promo reduce rental charges
+    const rentalDiscount = Math.min(appliedCredits + appliedBonus + promoDiscount, rentalTotal)
+    const adjustedRentalTotal = Math.round((rentalTotal - rentalDiscount) * 100) / 100
+
+    // Deposit wallet reduces deposit
+    const adjustedDeposit = Math.round(Math.max(deposit - appliedDepositWallet, 0) * 100) / 100
+
+    // Convert to cents for Stripe — enforce $1.00 minimum (Stripe rejects $0 charges)
+    const rentalCents = Math.round(adjustedRentalTotal * 100)
+    const depositCents = Math.round(adjustedDeposit * 100)
+    const totalChargeCents = Math.max(rentalCents + depositCents, 100)
 
     // Platform fee: 15% of rental amount (before tax)
     const platformFeeCents = Math.round(basePrice * 0.15 * 100)
 
-    console.log(`[checkout/payment-intent] ${numberOfDays} days × $${car.dailyRate}/day = $${rentalTotal} rental + $${deposit} deposit = $${(totalChargeCents / 100).toFixed(2)} total`)
+    console.log(`[checkout/payment-intent] ${numberOfDays} days × $${car.dailyRate}/day = $${rentalTotal} rental + $${deposit} deposit`)
+    if (rentalDiscount > 0 || appliedDepositWallet > 0) {
+      console.log(`[checkout/payment-intent] Applied: credits=$${appliedCredits} bonus=$${appliedBonus} promo=$${promoDiscount} depositWallet=$${appliedDepositWallet}`)
+    }
+    console.log(`[checkout/payment-intent] Charging: $${(totalChargeCents / 100).toFixed(2)} (after discounts)`)
 
     // =========================================================================
     // STRIPE PAYMENT INTENT
@@ -215,12 +234,18 @@ export async function POST(request: NextRequest) {
         numberOfDays: numberOfDays.toString(),
         dailyRate: car.dailyRate.toString(),
         rentalTotal: rentalTotal.toString(),
+        rentalTotalBeforeDiscounts: rentalTotal.toString(),
         depositAmount: deposit.toString(),
         insurance: pending.selectedInsurance || 'none',
         delivery: pending.selectedDelivery || 'pickup',
         addOns: selectedAddOns.join(','),
         startDate: pending.startDate.toISOString().split('T')[0],
         endDate: pending.endDate.toISOString().split('T')[0],
+        appliedCredits: appliedCredits.toString(),
+        appliedBonus: appliedBonus.toString(),
+        appliedDepositWallet: appliedDepositWallet.toString(),
+        promoCode: pending.promoCode || '',
+        promoDiscount: promoDiscount.toString(),
       },
       description: `Car rental: ${car.year} ${car.make} ${car.model} (via Choé)`,
       statement_descriptor: 'ITWHIP RENTAL',
@@ -230,10 +255,14 @@ export async function POST(request: NextRequest) {
       receipt_email: user.email!,
     })
 
-    // Extend TTL for payment phase (30 minutes)
+    // Save PI ID and extend TTL for payment phase (30 minutes)
     await prisma.pendingCheckout.update({
       where: { checkoutSessionId: parsed.data.checkoutSessionId },
-      data: { expiresAt: new Date(Date.now() + 30 * 60 * 1000) },
+      data: {
+        paymentIntentId: paymentIntent.id,
+        checkoutStep: 'PAYMENT',
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      },
     })
 
     return NextResponse.json({
@@ -256,6 +285,14 @@ export async function POST(request: NextRequest) {
         rentalTotal,
         deposit,
         grandTotal: Math.round((rentalTotal + deposit) * 100) / 100,
+        // Credit/bonus/promo discounts applied
+        appliedCredits,
+        appliedBonus,
+        appliedDepositWallet,
+        promoDiscount,
+        adjustedRentalTotal,
+        adjustedDeposit,
+        chargedTotal: Math.round((adjustedRentalTotal + adjustedDeposit) * 100) / 100,
       },
     })
   } catch (error) {

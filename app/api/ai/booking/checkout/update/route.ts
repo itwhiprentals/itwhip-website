@@ -11,6 +11,13 @@ const updateSchema = z.object({
   selectedInsurance: z.enum(['MINIMUM', 'BASIC', 'PREMIUM', 'LUXURY']).optional(),
   selectedDelivery: z.enum(['pickup', 'airport', 'hotel', 'home']).optional(),
   selectedAddOns: z.array(z.enum(['refuelService', 'additionalDriver', 'extraMiles', 'vipConcierge'])).optional(),
+  checkoutStep: z.enum(['INSURANCE', 'DELIVERY', 'ADDONS', 'REVIEW', 'PAYMENT']).optional(),
+  appliedCredits: z.number().min(0).optional(),
+  appliedBonus: z.number().min(0).optional(),
+  appliedDepositWallet: z.number().min(0).optional(),
+  promoCode: z.string().optional(),
+  promoDiscount: z.number().min(0).optional(),
+  selectedPaymentMethod: z.string().optional(),
 })
 
 export async function PATCH(request: NextRequest) {
@@ -31,7 +38,11 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    const { checkoutSessionId, selectedInsurance, selectedDelivery, selectedAddOns } = parsed.data
+    const {
+      checkoutSessionId, selectedInsurance, selectedDelivery, selectedAddOns,
+      checkoutStep, appliedCredits, appliedBonus, appliedDepositWallet,
+      promoCode, promoDiscount, selectedPaymentMethod,
+    } = parsed.data
 
     // Fetch pending checkout and verify ownership
     const pending = await prisma.pendingCheckout.findUnique({
@@ -64,6 +75,13 @@ export async function PATCH(request: NextRequest) {
     if (selectedInsurance !== undefined) updateData.selectedInsurance = selectedInsurance
     if (selectedDelivery !== undefined) updateData.selectedDelivery = selectedDelivery
     if (selectedAddOns !== undefined) updateData.selectedAddOns = selectedAddOns
+    if (checkoutStep !== undefined) updateData.checkoutStep = checkoutStep
+    if (appliedCredits !== undefined) updateData.appliedCredits = appliedCredits
+    if (appliedBonus !== undefined) updateData.appliedBonus = appliedBonus
+    if (appliedDepositWallet !== undefined) updateData.appliedDepositWallet = appliedDepositWallet
+    if (promoCode !== undefined) updateData.promoCode = promoCode
+    if (promoDiscount !== undefined) updateData.promoDiscount = promoDiscount
+    if (selectedPaymentMethod !== undefined) updateData.selectedPaymentMethod = selectedPaymentMethod
 
     // Extend TTL on each update (15 more minutes)
     updateData.expiresAt = new Date(Date.now() + 15 * 60 * 1000)
@@ -73,7 +91,19 @@ export async function PATCH(request: NextRequest) {
       data: updateData,
     })
 
-    return NextResponse.json({ success: true })
+    // Price change detection — compare stored rate vs live rate
+    let priceChanged: { oldRate: number; newRate: number } | null = null
+    if (pending.dailyRateAtCheckout !== null) {
+      const car = await prisma.rentalCar.findUnique({
+        where: { id: pending.vehicleId },
+        select: { dailyRate: true },
+      })
+      if (car && car.dailyRate !== pending.dailyRateAtCheckout) {
+        priceChanged = { oldRate: pending.dailyRateAtCheckout, newRate: car.dailyRate }
+      }
+    }
+
+    return NextResponse.json({ success: true, priceChanged })
   } catch (error) {
     console.error('[checkout/update] Error:', error)
     return NextResponse.json({ error: 'Failed to update checkout' }, { status: 500 })

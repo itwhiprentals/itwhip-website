@@ -776,10 +776,10 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       await saveMessage(conversationId, 'assistant', parsed.reply, totalTokensUsed, undefined, toolsUsedNames, vehiclesReturnedCount)
     }
 
-    // Build booking summary if confirming
+    // Build booking summary if confirming or ready for payment
     const pricingConfig = await getPricingConfig()
     let summary: BookingSummary | null = null
-    if (session.state === BookingState.CONFIRMING && session.vehicleId && vehicles) {
+    if ((session.state === BookingState.CONFIRMING || session.state === BookingState.READY_FOR_PAYMENT) && session.vehicleId && vehicles) {
       const selectedVehicle = vehicles.find((v) => v.id === session.vehicleId)
       if (selectedVehicle && session.startDate && session.endDate) {
         summary = buildBookingSummary(session, selectedVehicle, pricingConfig)
@@ -788,7 +788,7 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
 
     // Risk assessment - use parsed.action or compute from risk assessment
     let action: string | null = parsed.action
-    if (!action && session.state === BookingState.CONFIRMING && summary && featureFlags.riskAssessmentEnabled) {
+    if (!action && (session.state === BookingState.CONFIRMING || session.state === BookingState.READY_FOR_PAYMENT) && summary && featureFlags.riskAssessmentEnabled) {
       if (!body.userId) {
         action = 'NEEDS_LOGIN'
       } else {

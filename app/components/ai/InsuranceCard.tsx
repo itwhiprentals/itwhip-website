@@ -9,6 +9,7 @@ interface InsuranceCardProps {
   onSelect: (tier: 'MINIMUM' | 'BASIC' | 'PREMIUM' | 'LUXURY') => void
   onBack?: () => void
   compact?: boolean
+  onExplore?: () => void
 }
 
 const TIER_META: Record<string, { label: string; color: string; description: string }> = {
@@ -18,7 +19,7 @@ const TIER_META: Record<string, { label: string; color: string; description: str
   LUXURY: { label: 'Luxury', color: 'text-amber-600', description: 'Full protection' },
 }
 
-export default function InsuranceCard({ options, selected, onSelect, onBack, compact }: InsuranceCardProps) {
+export default function InsuranceCard({ options, selected, onSelect, onBack, compact, onExplore }: InsuranceCardProps) {
   if (compact && selected) {
     const opt = options.find((o) => o.tier === selected)
     return (
@@ -115,6 +116,17 @@ export default function InsuranceCard({ options, selected, onSelect, onBack, com
           )
         })}
       </div>
+
+      {onExplore && !compact && (
+        <div className="px-3 pb-2">
+          <button
+            onClick={onExplore}
+            className="text-[10px] text-gray-400 hover:text-primary transition-colors"
+          >
+            Want to explore other cars?
+          </button>
+        </div>
+      )}
     </div>
   )
 }

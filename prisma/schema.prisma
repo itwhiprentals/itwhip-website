@@ -5362,6 +5362,22 @@ model PendingCheckout {
   selectedDelivery    String?  // pickup | airport | hotel | home
   selectedAddOns      Json?    // string[] of add-on IDs
 
+  // Checkout state persistence (survives page reload)
+  checkoutStep        String?  // INSURANCE | DELIVERY | ADDONS | REVIEW | PAYMENT
+  insuranceOptions    Json?    // Cached insurance tier options from init
+  deliveryOptions     Json?    // Cached delivery options from init
+  addOnOptions        Json?    // Cached add-on options from init
+  paymentIntentId     String?  // Stripe PaymentIntent ID (to retrieve clientSecret)
+  dailyRateAtCheckout Float?   // Snapshot of daily rate at init (for price change detection)
+
+  // Credits, bonuses, deposit wallet, promo
+  appliedCredits        Float?   @default(0)
+  appliedBonus          Float?   @default(0)
+  appliedDepositWallet  Float?   @default(0)
+  promoCode             String?
+  promoDiscount         Float?   @default(0)
+  selectedPaymentMethod String?  // Stripe PaymentMethod ID if using saved card
+
   // Lifecycle
   status              String   @default("active") // active | completed | expired | cancelled
   expiresAt           DateTime // 15-minute TTL

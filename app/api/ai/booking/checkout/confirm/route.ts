@@ -29,10 +29,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    // Look up guest's ReviewerProfile for linking
+    // Look up guest's ReviewerProfile for linking + balances
     const reviewerProfile = await prisma.reviewerProfile.findUnique({
       where: { email: user.email! },
-      select: { id: true },
+      select: { id: true, creditBalance: true, bonusBalance: true, depositWalletBalance: true },
     })
 
     // Parse request
@@ -206,6 +206,31 @@ export async function POST(request: NextRequest) {
         where: { checkoutSessionId },
         data: { status: 'completed' },
       })
+
+      // Deduct applied credits, bonus, and deposit wallet from ReviewerProfile
+      const appliedCredits = pending.appliedCredits || 0
+      const appliedBonus = pending.appliedBonus || 0
+      const appliedDepositWallet = pending.appliedDepositWallet || 0
+
+      if (reviewerProfile?.id && (appliedCredits > 0 || appliedBonus > 0 || appliedDepositWallet > 0)) {
+        const balanceUpdates: any = {}
+        if (appliedCredits > 0) {
+          balanceUpdates.creditBalance = { decrement: appliedCredits }
+        }
+        if (appliedBonus > 0) {
+          balanceUpdates.bonusBalance = { decrement: appliedBonus }
+        }
+        if (appliedDepositWallet > 0) {
+          balanceUpdates.depositWalletBalance = { decrement: appliedDepositWallet }
+        }
+
+        await tx.reviewerProfile.update({
+          where: { id: reviewerProfile.id },
+          data: balanceUpdates,
+        })
+
+        console.log(`[checkout/confirm] Deducted balances for ${bookingCode}: credits=$${appliedCredits} bonus=$${appliedBonus} depositWallet=$${appliedDepositWallet}`)
+      }
 
       return newBooking
     }, { isolationLevel: 'Serializable' })

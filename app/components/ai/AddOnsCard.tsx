@@ -10,9 +10,10 @@ interface AddOnsCardProps {
   onContinue: () => void
   onBack?: () => void
   compact?: boolean
+  onExplore?: () => void
 }
 
-export default function AddOnsCard({ addOns, numberOfDays, onToggle, onContinue, onBack, compact }: AddOnsCardProps) {
+export default function AddOnsCard({ addOns, numberOfDays, onToggle, onContinue, onBack, compact, onExplore }: AddOnsCardProps) {
   const selectedAddOns = addOns.filter((a) => a.selected)
 
   if (compact && selectedAddOns.length >= 0) {
@@ -96,6 +97,17 @@ export default function AddOnsCard({ addOns, numberOfDays, onToggle, onContinue,
           Continue to Review
         </button>
       </div>
+
+      {onExplore && !compact && (
+        <div className="px-3 pb-2">
+          <button
+            onClick={onExplore}
+            className="text-[10px] text-gray-400 hover:text-primary transition-colors"
+          >
+            Want to explore other cars?
+          </button>
+        </div>
+      )}
     </div>
   )
 }

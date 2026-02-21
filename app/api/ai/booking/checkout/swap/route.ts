@@ -1,5 +1,5 @@
-// app/api/ai/booking/checkout/init/route.ts
-// Initialize the in-chat checkout pipeline — returns insurance, delivery, add-ons, and checkoutSessionId
+// app/api/ai/booking/checkout/swap/route.ts
+// Swap to a different vehicle mid-checkout without losing the session
 
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
@@ -10,18 +10,15 @@ import { getActualDeposit } from '@/app/[locale]/(guest)/rentals/lib/booking-pri
 import type {
   InsuranceTierOption,
   DeliveryOption,
-  AddOnOption,
 } from '@/app/lib/ai-booking/types'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil',
 })
 
-const initSchema = z.object({
+const swapSchema = z.object({
+  checkoutSessionId: z.string().min(1),
   vehicleId: z.string().min(1),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  numberOfDays: z.number().int().positive(),
 })
 
 export async function POST(request: NextRequest) {
@@ -32,20 +29,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    // Fetch guest balances
-    const reviewerProfile = await prisma.reviewerProfile.findUnique({
-      where: { email: user.email },
-      select: { creditBalance: true, bonusBalance: true, depositWalletBalance: true, stripeCustomerId: true },
-    })
-
-    const platformSettings = await prisma.platformSettings.findUnique({
-      where: { id: 'global' },
-      select: { maxBonusPercentage: true },
-    })
-
     // Parse request
     const body = await request.json()
-    const parsed = initSchema.safeParse(body)
+    const parsed = swapSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'Invalid request', details: parsed.error.flatten() },
@@ -53,16 +39,38 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { vehicleId, startDate, endDate, numberOfDays } = parsed.data
+    const { checkoutSessionId, vehicleId } = parsed.data
 
-    // Validate dates
-    const start = new Date(startDate)
-    const end = new Date(endDate)
-    if (end <= start) {
-      return NextResponse.json({ error: 'End date must be after start date' }, { status: 400 })
+    // =========================================================================
+    // VALIDATE SESSION
+    // =========================================================================
+    const pending = await prisma.pendingCheckout.findUnique({
+      where: { checkoutSessionId },
+    })
+
+    if (!pending) {
+      return NextResponse.json({ error: 'Checkout session not found' }, { status: 404 })
     }
 
-    // Fetch vehicle with host data for deposit calculation
+    if (pending.userId !== user.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
+
+    if (pending.status !== 'active') {
+      return NextResponse.json({ error: 'Checkout session is no longer active' }, { status: 410 })
+    }
+
+    if (pending.expiresAt < new Date()) {
+      await prisma.pendingCheckout.update({
+        where: { checkoutSessionId },
+        data: { status: 'expired' },
+      })
+      return NextResponse.json({ error: 'Checkout session expired. Please restart checkout.' }, { status: 410 })
+    }
+
+    // =========================================================================
+    // FETCH NEW VEHICLE
+    // =========================================================================
     const car = await prisma.rentalCar.findUnique({
       where: { id: vehicleId },
       select: {
@@ -100,17 +108,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Vehicle not available' }, { status: 404 })
     }
 
-    // Generate checkoutSessionId
-    const checkoutSessionId = crypto.randomUUID()
+    // =========================================================================
+    // REBUILD INSURANCE OPTIONS
+    // =========================================================================
+    const startDate = new Date(pending.startDate)
+    const endDate = new Date(pending.endDate)
+    const numberOfDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
 
-    // =========================================================================
-    // INSURANCE OPTIONS
-    // =========================================================================
     const vehicleValue = car.estimatedValue ? Number(car.estimatedValue) : 30000
     const insuranceOptions = await buildInsuranceOptions(vehicleValue, numberOfDays)
 
     // =========================================================================
-    // DELIVERY OPTIONS
+    // REBUILD DELIVERY OPTIONS
     // =========================================================================
     const deliveryOptions: DeliveryOption[] = [
       { type: 'pickup', label: 'Host Pickup', fee: 0, available: true },
@@ -120,106 +129,76 @@ export async function POST(request: NextRequest) {
     ]
 
     // =========================================================================
-    // ADD-ON OPTIONS
-    // =========================================================================
-    const addOns: AddOnOption[] = [
-      {
-        id: 'refuelService',
-        label: 'Refuel Service',
-        description: 'Return the car at any fuel level — we handle refueling',
-        price: 75,
-        perDay: false,
-        selected: false,
-      },
-      {
-        id: 'additionalDriver',
-        label: 'Additional Driver',
-        description: 'Add a second authorized driver to your rental',
-        price: 50,
-        perDay: true,
-        selected: false,
-      },
-      {
-        id: 'extraMiles',
-        label: 'Extra Miles (+500 mi)',
-        description: 'Add 500 extra miles to your rental allowance',
-        price: 295,
-        perDay: false,
-        selected: false,
-      },
-      {
-        id: 'vipConcierge',
-        label: 'VIP Concierge',
-        description: 'Priority support, premium pickup, and personalized service',
-        price: 150,
-        perDay: true,
-        selected: false,
-      },
-    ]
-
-    // =========================================================================
-    // DEPOSIT
+    // RECALCULATE DEPOSIT
     // =========================================================================
     const deposit = getActualDeposit(car)
 
     // =========================================================================
-    // DATE SOFT-LOCK (15-minute TTL)
+    // PRESERVE COMPATIBLE SELECTIONS
     // =========================================================================
-    await prisma.pendingCheckout.create({
-      data: {
-        checkoutSessionId,
-        vehicleId,
-        startDate: start,
-        endDate: end,
-        userId: user.id,
-        status: 'active',
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
-        checkoutStep: 'INSURANCE',
-        insuranceOptions: insuranceOptions as any,
-        deliveryOptions: deliveryOptions as any,
-        addOnOptions: addOns as any,
-        dailyRateAtCheckout: car.dailyRate,
-      },
-    })
 
-    console.log(`[checkout/init] Session ${checkoutSessionId} created for vehicle ${vehicleId} by user ${user.id}`)
+    // Insurance: keep tier if it still exists (all 4 tiers are always present)
+    const selectedInsurance = pending.selectedInsurance ?? null
 
-    // Fetch saved cards from Stripe
-    let savedCards: Array<{ id: string; brand: string; last4: string; expMonth: number; expYear: number }> = []
-    if (reviewerProfile?.stripeCustomerId) {
-      try {
-        const methods = await stripe.paymentMethods.list({
-          customer: reviewerProfile.stripeCustomerId,
-          type: 'card',
-        })
-        savedCards = methods.data.map(pm => ({
-          id: pm.id,
-          brand: pm.card?.brand ?? 'unknown',
-          last4: pm.card?.last4 ?? '****',
-          expMonth: pm.card?.exp_month ?? 0,
-          expYear: pm.card?.exp_year ?? 0,
-        }))
-      } catch { /* non-fatal */ }
+    // Delivery: keep if still available on new car, else reset to null
+    let selectedDelivery = pending.selectedDelivery ?? null
+    if (selectedDelivery) {
+      const matchingOption = deliveryOptions.find(
+        (opt) => opt.type === selectedDelivery && opt.available,
+      )
+      if (!matchingOption) {
+        selectedDelivery = null
+      }
     }
 
+    // Add-ons: keep as-is (they're vehicle-agnostic)
+    // No changes needed — selectedAddOns remain on the PendingCheckout record
+
+    // =========================================================================
+    // CANCEL EXISTING PAYMENT INTENT (amounts changed)
+    // =========================================================================
+    if (pending.paymentIntentId) {
+      try {
+        await stripe.paymentIntents.cancel(pending.paymentIntentId)
+        console.log(`[checkout/swap] Cancelled PaymentIntent ${pending.paymentIntentId}`)
+      } catch (err) {
+        // Non-fatal — PI may already be cancelled or in a terminal state
+        console.warn(`[checkout/swap] Failed to cancel PaymentIntent ${pending.paymentIntentId}:`, err)
+      }
+    }
+
+    // =========================================================================
+    // UPDATE PENDING CHECKOUT
+    // =========================================================================
+    await prisma.pendingCheckout.update({
+      where: { checkoutSessionId },
+      data: {
+        vehicleId,
+        insuranceOptions: insuranceOptions as any,
+        deliveryOptions: deliveryOptions as any,
+        dailyRateAtCheckout: car.dailyRate,
+        selectedInsurance: selectedInsurance,
+        selectedDelivery: selectedDelivery,
+        checkoutStep: 'INSURANCE',
+        paymentIntentId: null,
+        // Extend TTL on swap (15 more minutes)
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+      },
+    })
+
+    console.log(`[checkout/swap] Session ${checkoutSessionId} swapped from vehicle ${pending.vehicleId} to ${vehicleId} by user ${user.id}`)
+
     return NextResponse.json({
-      checkoutSessionId,
       insuranceOptions,
       deliveryOptions,
-      addOns,
       deposit,
+      selectedInsurance,
+      selectedDelivery,
       vehicleCity: car.city || 'Phoenix',
-      guestBalances: {
-        credits: reviewerProfile?.creditBalance ?? 0,
-        bonus: reviewerProfile?.bonusBalance ?? 0,
-        depositWallet: reviewerProfile?.depositWalletBalance ?? 0,
-        maxBonusPercent: platformSettings?.maxBonusPercentage ?? 0.25,
-      },
-      savedCards,
     })
   } catch (error) {
-    console.error('[checkout/init] Error:', error)
-    return NextResponse.json({ error: 'Failed to initialize checkout' }, { status: 500 })
+    console.error('[checkout/swap] Error:', error)
+    return NextResponse.json({ error: 'Failed to swap vehicle' }, { status: 500 })
   }
 }
 

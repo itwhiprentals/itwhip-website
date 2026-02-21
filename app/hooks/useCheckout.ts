@@ -2,16 +2,15 @@
 // Manages the in-chat checkout pipeline state and API calls.
 // Completely independent from the AI conversation (SSE) — uses direct REST calls.
 
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import type {
   BookingSummary,
   CheckoutState,
   GrandTotal,
   AddOnItem,
   BookingConfirmation,
-  InsuranceTierOption,
-  DeliveryOption,
-  AddOnOption,
+  GuestBalances,
+  SavedCard,
 } from '@/app/lib/ai-booking/types'
 import { CheckoutStep } from '@/app/lib/ai-booking/types'
 import { getTaxRate } from '@/app/[locale]/(guest)/rentals/lib/arizona-taxes'
@@ -34,6 +33,15 @@ const initialState: CheckoutState = {
   paymentIntentId: null,
   bookingConfirmation: null,
   error: null,
+  guestBalances: null,
+  savedCards: [],
+  appliedCredits: 0,
+  appliedBonus: 0,
+  appliedDepositWallet: 0,
+  promoCode: null,
+  promoDiscount: 0,
+  selectedPaymentMethod: null,
+  priceChanged: null,
 }
 
 // SessionStorage key for 3DS redirect persistence
@@ -50,24 +58,145 @@ export function useCheckout() {
   const [state, setState] = useState<CheckoutState>(initialState)
   const [isLoading, setIsLoading] = useState(false)
   const [initTimestamp, setInitTimestamp] = useState<number | null>(null)
+  const [isRehydrating, setIsRehydrating] = useState(false)
+  const hasRehydrated = useRef(false)
 
   // ---------------------------------------------------------------------------
-  // 3DS PERSISTENCE: Rehydrate on mount
+  // AUTO-REHYDRATE: Restore checkout from server on mount
   // ---------------------------------------------------------------------------
   useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem(STORAGE_KEY)
-      if (saved) {
+    if (hasRehydrated.current) return
+    hasRehydrated.current = true
+
+    async function rehydrate() {
+      try {
+        const saved = sessionStorage.getItem(STORAGE_KEY)
+        if (!saved) return
+
         const { checkoutSessionId, step } = JSON.parse(saved)
-        if (checkoutSessionId && step && step !== CheckoutStep.IDLE) {
-          // Re-fetch state from server would go here in a full implementation.
-          // For now, we persist enough to resume after 3DS redirect.
-          console.log(`[useCheckout] Found persisted session: ${checkoutSessionId} at step ${step}`)
+        if (!checkoutSessionId || !step || step === CheckoutStep.IDLE) return
+
+        console.log(`[useCheckout] Rehydrating session: ${checkoutSessionId} at step ${step}`)
+        setIsRehydrating(true)
+
+        const res = await fetch(`/api/ai/booking/checkout/resume?checkoutSessionId=${checkoutSessionId}`)
+        if (!res.ok) {
+          console.warn('[useCheckout] Resume failed, clearing session')
+          sessionStorage.removeItem(STORAGE_KEY)
+          return
         }
+
+        const data = await res.json()
+
+        // Map server checkoutStep string to CheckoutStep enum
+        const stepMap: Record<string, CheckoutStep> = {
+          INSURANCE: CheckoutStep.INSURANCE,
+          DELIVERY: CheckoutStep.DELIVERY,
+          ADDONS: CheckoutStep.ADDONS,
+          REVIEW: CheckoutStep.REVIEW,
+          PAYMENT: CheckoutStep.PAYMENT,
+        }
+        const resumedStep = stepMap[data.checkoutStep] || CheckoutStep.INSURANCE
+
+        // Rebuild the summary from vehicle data
+        const vehicle = data.vehicle
+        if (!vehicle) {
+          console.warn('[useCheckout] No vehicle in resume data')
+          sessionStorage.removeItem(STORAGE_KEY)
+          return
+        }
+
+        const startDate = new Date(data.startDate || data.vehicle?.startDate)
+        const endDate = new Date(data.endDate || data.vehicle?.endDate)
+
+        // Build a minimal BookingSummary for the UI
+        const numberOfDays = Math.max(1, Math.ceil(
+          (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+        ))
+        const dailyRate = vehicle.dailyRate
+        const subtotal = dailyRate * numberOfDays
+        const serviceFee = Math.round(subtotal * 0.15 * 100) / 100
+        const taxable = subtotal + serviceFee
+        const estimatedTax = Math.round(taxable * 0.084 * 100) / 100
+
+        const resumedSummary: BookingSummary = {
+          vehicle: {
+            id: vehicle.id,
+            make: vehicle.make,
+            model: vehicle.model,
+            year: vehicle.year,
+            dailyRate: vehicle.dailyRate,
+            photo: vehicle.photo || null,
+            photos: [],
+            rating: null,
+            reviewCount: 0,
+            trips: 0,
+            distance: null,
+            location: vehicle.city || 'Phoenix',
+            instantBook: false,
+            vehicleType: null,
+            seats: null,
+            transmission: null,
+            depositAmount: data.deposit || vehicle.depositAmount || 0,
+            insuranceBasicDaily: null,
+          },
+          location: vehicle.city || 'Phoenix',
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0],
+          startTime: '10:00',
+          endTime: '10:00',
+          numberOfDays,
+          dailyRate,
+          subtotal,
+          serviceFee,
+          estimatedTax,
+          estimatedTotal: Math.round((taxable + estimatedTax) * 100) / 100,
+          depositAmount: data.deposit || vehicle.depositAmount || 0,
+        }
+
+        // Restore add-on selected states
+        const selectedAddOnIds = data.selectedAddOns || []
+        const addOns = (data.addOns || []).map((a: any) => ({
+          ...a,
+          selected: selectedAddOnIds.includes(a.id),
+        }))
+
+        setState({
+          step: resumedStep,
+          checkoutSessionId: data.checkoutSessionId,
+          vehicleId: vehicle.id,
+          summary: resumedSummary,
+          insuranceOptions: data.insuranceOptions || [],
+          selectedInsurance: data.selectedInsurance || null,
+          deliveryOptions: data.deliveryOptions || [],
+          selectedDelivery: data.selectedDelivery || null,
+          addOns,
+          clientSecret: data.clientSecret || null,
+          paymentIntentId: data.paymentIntentId || null,
+          bookingConfirmation: null,
+          error: null,
+          guestBalances: data.guestBalances || null,
+          savedCards: data.savedCards || [],
+          appliedCredits: data.appliedCredits || 0,
+          appliedBonus: data.appliedBonus || 0,
+          appliedDepositWallet: data.appliedDepositWallet || 0,
+          promoCode: data.promoCode || null,
+          promoDiscount: data.promoDiscount || 0,
+          selectedPaymentMethod: null,
+          priceChanged: data.priceChanged || null,
+        })
+
+        setInitTimestamp(Date.now())
+        console.log(`[useCheckout] Rehydrated to step ${resumedStep}`)
+      } catch (err) {
+        console.warn('[useCheckout] Rehydration failed:', err)
+        sessionStorage.removeItem(STORAGE_KEY)
+      } finally {
+        setIsRehydrating(false)
       }
-    } catch {
-      // Ignore sessionStorage errors (SSR, privacy mode)
     }
+
+    rehydrate()
   }, [])
 
   // Persist to sessionStorage on state changes
@@ -141,6 +270,8 @@ export function useCheckout() {
         insuranceOptions: data.insuranceOptions,
         deliveryOptions: data.deliveryOptions,
         addOns: data.addOns,
+        guestBalances: data.guestBalances || null,
+        savedCards: data.savedCards || [],
       }))
     } catch (error: any) {
       setState((prev) => ({
@@ -164,9 +295,8 @@ export function useCheckout() {
         step: CheckoutStep.DELIVERY,
       }))
 
-      // Persist to server
       if (state.checkoutSessionId) {
-        await updateServerSession({ selectedInsurance: tier })
+        await updateServerSession({ selectedInsurance: tier, checkoutStep: 'DELIVERY' })
       }
     },
     [state.checkoutSessionId],
@@ -184,7 +314,7 @@ export function useCheckout() {
       }))
 
       if (state.checkoutSessionId) {
-        await updateServerSession({ selectedDelivery: type })
+        await updateServerSession({ selectedDelivery: type, checkoutStep: 'ADDONS' })
       }
     },
     [state.checkoutSessionId],
@@ -202,12 +332,10 @@ export function useCheckout() {
         return { ...prev, addOns: updated }
       })
 
-      // Persist selected add-ons to server
       if (state.checkoutSessionId) {
         const currentSelected = state.addOns
           .filter((a) => (a.id === id ? !a.selected : a.selected))
           .map((a) => a.id)
-        // If toggling on, add it; if toggling off, the filter handles it
         const isCurrentlySelected = state.addOns.find((a) => a.id === id)?.selected
         const newSelected = isCurrentlySelected
           ? currentSelected.filter((x) => x !== id)
@@ -246,7 +374,101 @@ export function useCheckout() {
   // ---------------------------------------------------------------------------
   const proceedToReview = useCallback(() => {
     setState((prev) => ({ ...prev, step: CheckoutStep.REVIEW }))
-  }, [])
+    if (state.checkoutSessionId) {
+      updateServerSession({ checkoutStep: 'REVIEW' })
+    }
+  }, [state.checkoutSessionId])
+
+  // ---------------------------------------------------------------------------
+  // ACTION: Apply credits
+  // ---------------------------------------------------------------------------
+  const applyCredits = useCallback(
+    async (amount: number) => {
+      const capped = Math.min(amount, state.guestBalances?.credits || 0)
+      setState((prev) => ({ ...prev, appliedCredits: capped }))
+      if (state.checkoutSessionId) {
+        await updateServerSession({ appliedCredits: capped })
+      }
+    },
+    [state.checkoutSessionId, state.guestBalances],
+  )
+
+  // ---------------------------------------------------------------------------
+  // ACTION: Apply bonus
+  // ---------------------------------------------------------------------------
+  const applyBonus = useCallback(
+    async (amount: number) => {
+      const maxPercent = state.guestBalances?.maxBonusPercent || 0.25
+      const gt = computeGrandTotal(state)
+      const maxAllowed = gt ? Math.round(gt.subtotalBeforeDiscounts * maxPercent * 100) / 100 : 0
+      const capped = Math.min(amount, state.guestBalances?.bonus || 0, maxAllowed)
+      setState((prev) => ({ ...prev, appliedBonus: capped }))
+      if (state.checkoutSessionId) {
+        await updateServerSession({ appliedBonus: capped })
+      }
+    },
+    [state.checkoutSessionId, state.guestBalances, state],
+  )
+
+  // ---------------------------------------------------------------------------
+  // ACTION: Apply deposit wallet
+  // ---------------------------------------------------------------------------
+  const applyDepositWallet = useCallback(
+    async (amount: number) => {
+      const capped = Math.min(amount, state.guestBalances?.depositWallet || 0)
+      setState((prev) => ({ ...prev, appliedDepositWallet: capped }))
+      if (state.checkoutSessionId) {
+        await updateServerSession({ appliedDepositWallet: capped })
+      }
+    },
+    [state.checkoutSessionId, state.guestBalances],
+  )
+
+  // ---------------------------------------------------------------------------
+  // ACTION: Apply promo code
+  // ---------------------------------------------------------------------------
+  const applyPromo = useCallback(
+    async (code: string) => {
+      if (!state.checkoutSessionId) return
+
+      try {
+        const res = await fetch('/api/promo/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, checkoutSessionId: state.checkoutSessionId }),
+        })
+
+        if (!res.ok) {
+          const err = await res.json()
+          throw new Error(err.error || 'Invalid promo code')
+        }
+
+        const data = await res.json()
+        setState((prev) => ({
+          ...prev,
+          promoCode: code,
+          promoDiscount: data.discount || 0,
+        }))
+        await updateServerSession({ promoCode: code, promoDiscount: data.discount || 0 })
+      } catch (error: any) {
+        setState((prev) => ({ ...prev, error: error.message }))
+      }
+    },
+    [state.checkoutSessionId],
+  )
+
+  // ---------------------------------------------------------------------------
+  // ACTION: Select saved payment method
+  // ---------------------------------------------------------------------------
+  const selectPaymentMethod = useCallback(
+    (pmId: string | null) => {
+      setState((prev) => ({ ...prev, selectedPaymentMethod: pmId }))
+      if (state.checkoutSessionId && pmId) {
+        updateServerSession({ selectedPaymentMethod: pmId })
+      }
+    },
+    [state.checkoutSessionId],
+  )
 
   // ---------------------------------------------------------------------------
   // ACTION: Proceed to payment (creates PaymentIntent)
@@ -254,7 +476,6 @@ export function useCheckout() {
   const proceedToPayment = useCallback(async () => {
     if (!state.checkoutSessionId) return
 
-    // Check if the 15-minute hold has expired
     if (isSessionExpired()) {
       setState((prev) => ({
         ...prev,
@@ -330,7 +551,6 @@ export function useCheckout() {
           bookingConfirmation: confirmation,
         }))
 
-        // Clear sessionStorage
         try {
           sessionStorage.removeItem(STORAGE_KEY)
         } catch {
@@ -350,20 +570,65 @@ export function useCheckout() {
   )
 
   // ---------------------------------------------------------------------------
+  // ACTION: Swap vehicle mid-checkout
+  // ---------------------------------------------------------------------------
+  const swapVehicle = useCallback(
+    async (newSummary: BookingSummary) => {
+      if (!state.checkoutSessionId) return
+
+      setIsLoading(true)
+      try {
+        const res = await fetch('/api/ai/booking/checkout/swap', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            checkoutSessionId: state.checkoutSessionId,
+            vehicleId: newSummary.vehicle.id,
+          }),
+        })
+
+        if (!res.ok) {
+          const err = await res.json()
+          throw new Error(err.error || 'Failed to swap vehicle')
+        }
+
+        const data = await res.json()
+
+        setState((prev) => ({
+          ...prev,
+          vehicleId: newSummary.vehicle.id,
+          summary: newSummary,
+          insuranceOptions: data.insuranceOptions,
+          deliveryOptions: data.deliveryOptions,
+          selectedInsurance: data.selectedInsurance || null,
+          selectedDelivery: data.selectedDelivery || null,
+          clientSecret: null,
+          paymentIntentId: null,
+          step: CheckoutStep.INSURANCE,
+          error: null,
+        }))
+      } catch (error: any) {
+        setState((prev) => ({
+          ...prev,
+          error: error.message || 'Failed to swap vehicle',
+        }))
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [state.checkoutSessionId],
+  )
+
+  // ---------------------------------------------------------------------------
   // ACTION: Cancel checkout
   // ---------------------------------------------------------------------------
   const cancelCheckout = useCallback(async () => {
     if (state.checkoutSessionId) {
-      // Release soft-lock on server
       try {
         await fetch('/api/ai/booking/checkout/update', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            checkoutSessionId: state.checkoutSessionId,
-            // The update endpoint will extend TTL, but we want to mark as cancelled.
-            // We'll handle cancellation via a separate status update below.
-          }),
+          body: JSON.stringify({ checkoutSessionId: state.checkoutSessionId }),
         })
       } catch {
         // Non-critical
@@ -400,9 +665,16 @@ export function useCheckout() {
     selectedInsurance?: string
     selectedDelivery?: string
     selectedAddOns?: string[]
+    checkoutStep?: string
+    appliedCredits?: number
+    appliedBonus?: number
+    appliedDepositWallet?: number
+    promoCode?: string
+    promoDiscount?: number
+    selectedPaymentMethod?: string
   }) {
     try {
-      await fetch('/api/ai/booking/checkout/update', {
+      const res = await fetch('/api/ai/booking/checkout/update', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -410,6 +682,13 @@ export function useCheckout() {
           ...data,
         }),
       })
+      if (res.ok) {
+        const result = await res.json()
+        // Handle price change detection from update response
+        if (result.priceChanged) {
+          setState((prev) => ({ ...prev, priceChanged: result.priceChanged }))
+        }
+      }
     } catch (error) {
       console.error('[useCheckout] Failed to update server session:', error)
     }
@@ -418,6 +697,7 @@ export function useCheckout() {
   return {
     state,
     isLoading,
+    isRehydrating,
     grandTotal,
     initCheckout,
     selectInsurance,
@@ -429,6 +709,12 @@ export function useCheckout() {
     confirmBooking,
     cancelCheckout,
     resetCheckout,
+    applyCredits,
+    applyBonus,
+    applyDepositWallet,
+    applyPromo,
+    selectPaymentMethod,
+    swapVehicle,
   }
 }
 
@@ -489,8 +775,17 @@ function computeGrandTotal(state: CheckoutState): GrandTotal | null {
     }
   }
 
-  // Total = rental charges + tax + deposit
-  const total = Math.round((taxableAmount + tax + deposit) * 100) / 100
+  // Subtotal before discounts
+  const subtotalBeforeDiscounts = Math.round((taxableAmount + tax + deposit) * 100) / 100
+
+  // Applied discounts
+  const { appliedCredits, appliedBonus, promoDiscount, appliedDepositWallet } = state
+  const rentalDiscount = Math.min(appliedCredits + appliedBonus + promoDiscount, taxableAmount + tax)
+  const depositDiscount = Math.min(appliedDepositWallet, deposit)
+  const totalDiscount = Math.round((rentalDiscount + depositDiscount) * 100) / 100
+
+  // Total after discounts — enforce $1.00 minimum (Stripe rejects $0 charges)
+  const total = Math.max(Math.round((subtotalBeforeDiscounts - totalDiscount) * 100) / 100, 1.00)
 
   return {
     rental,
@@ -502,6 +797,12 @@ function computeGrandTotal(state: CheckoutState): GrandTotal | null {
     tax,
     taxRate: taxRateDisplay,
     deposit,
+    appliedCredits,
+    appliedBonus,
+    promoDiscount,
+    appliedDepositWallet,
+    totalDiscount,
+    subtotalBeforeDiscounts,
     total,
   }
 }

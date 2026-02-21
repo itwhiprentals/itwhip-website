@@ -58,6 +58,7 @@ export default function ChatViewStreaming({
   const [persistedSession, setPersistedSession] = useState<BookingSession | null>(null)
   const [persistedVehicles, setPersistedVehicles] = useState<VehicleSummary[] | null>(null)
   const [isLoadingSession, setIsLoadingSession] = useState(true)
+  const [isExploring, setIsExploring] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Checkout pipeline (deterministic — independent from AI conversation)
@@ -98,7 +99,7 @@ export default function ChatViewStreaming({
   const effectiveSummary = useMemo<BookingSummaryType | null>(() => {
     if (summary) return summary
     if (
-      session?.state === BookingState.CONFIRMING &&
+      (session?.state === BookingState.CONFIRMING || session?.state === BookingState.READY_FOR_PAYMENT) &&
       session.vehicleId &&
       session.startDate &&
       session.endDate &&
@@ -259,6 +260,43 @@ export default function ChatViewStreaming({
     handleSendMessage('Show me other cars')
   }, [handleSendMessage])
 
+  const handleExplore = useCallback(() => {
+    setIsExploring(true)
+  }, [])
+
+  const handleReturnToCheckout = useCallback(() => {
+    setIsExploring(false)
+  }, [])
+
+  const handleSwapVehicle = useCallback((vehicle: VehicleSummary) => {
+    if (!effectiveSummary || !session?.startDate || !session?.endDate) return
+    // Build a new summary for the swapped vehicle
+    const numberOfDays = Math.max(1, Math.ceil(
+      (new Date(session.endDate).getTime() - new Date(session.startDate).getTime()) / (1000 * 60 * 60 * 24)
+    ))
+    const subtotal = vehicle.dailyRate * numberOfDays
+    const serviceFee = Math.round(subtotal * 0.15 * 100) / 100
+    const taxable = subtotal + serviceFee
+    const estimatedTax = Math.round(taxable * 0.084 * 100) / 100
+    const newSummary: BookingSummaryType = {
+      vehicle,
+      location: session.location || 'Phoenix',
+      startDate: session.startDate,
+      endDate: session.endDate,
+      startTime: session.startTime || '10:00',
+      endTime: session.endTime || '10:00',
+      numberOfDays,
+      dailyRate: vehicle.dailyRate,
+      subtotal,
+      serviceFee,
+      estimatedTax,
+      estimatedTotal: Math.round((taxable + estimatedTax) * 100) / 100,
+      depositAmount: vehicle.depositAmount,
+    }
+    checkout.swapVehicle(newSummary)
+    setIsExploring(false)
+  }, [effectiveSummary, session, checkout])
+
   const handleAction = useCallback(() => {
     if (action === 'NEEDS_LOGIN' && onNavigateToLogin) {
       onNavigateToLogin()
@@ -353,15 +391,26 @@ export default function ChatViewStreaming({
 
         {/* Vehicle cards - persist for scroll-back (hide during CONFIRMING/checkout) */}
         <AnimatePresence>
-          {vehicles && vehicles.length > 0 && session?.state !== BookingState.CONFIRMING && !isInCheckout && (
+          {vehicles && vehicles.length > 0 && ((!isInCheckout && session?.state !== BookingState.CONFIRMING && session?.state !== BookingState.READY_FOR_PAYMENT) || isExploring) && (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={springTransition}
             >
+              {isExploring && isInCheckout && (
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-2 flex items-center justify-between mb-2">
+                  <span className="text-xs text-gray-600 dark:text-gray-300">You have an active checkout</span>
+                  <button
+                    onClick={handleReturnToCheckout}
+                    className="text-xs text-primary font-semibold hover:text-primary/80"
+                  >
+                    Return to checkout
+                  </button>
+                </div>
+              )}
               <VehicleResults
                 vehicles={vehicles}
-                onSelect={handleVehicleSelect}
+                onSelect={isExploring ? handleSwapVehicle : handleVehicleSelect}
                 startDate={session?.startDate}
                 endDate={session?.endDate}
               />
@@ -371,7 +420,7 @@ export default function ChatViewStreaming({
 
         {/* Booking summary — hide once checkout starts */}
         <AnimatePresence>
-          {effectiveSummary && session?.state === BookingState.CONFIRMING && !isInCheckout && (
+          {effectiveSummary && (session?.state === BookingState.CONFIRMING || session?.state === BookingState.READY_FOR_PAYMENT) && !isInCheckout && (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -390,7 +439,7 @@ export default function ChatViewStreaming({
         {/* CHECKOUT PIPELINE CARDS (deterministic, no AI)                 */}
         {/* ============================================================= */}
         <AnimatePresence mode="wait">
-          {isInCheckout && (
+          {isInCheckout && !isExploring && (
             <motion.div
               key={checkout.state.step}
               initial={{ opacity: 0, y: 16 }}
@@ -399,6 +448,15 @@ export default function ChatViewStreaming({
               transition={springTransition}
               className="space-y-2"
             >
+              {/* Price change warning */}
+              {checkout.state.priceChanged && (
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2">
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    Price updated: was ${checkout.state.priceChanged.oldRate}/day, now ${checkout.state.priceChanged.newRate}/day
+                  </p>
+                </div>
+              )}
+
               {/* Compact summaries of completed steps */}
               {checkout.state.step !== CheckoutStep.INSURANCE &&
                 checkout.state.step !== CheckoutStep.CONFIRMED &&
@@ -443,6 +501,7 @@ export default function ChatViewStreaming({
                   options={checkout.state.insuranceOptions}
                   selected={checkout.state.selectedInsurance}
                   onSelect={checkout.selectInsurance}
+                  onExplore={handleExplore}
                 />
               )}
 
@@ -451,6 +510,7 @@ export default function ChatViewStreaming({
                   options={checkout.state.deliveryOptions}
                   selected={checkout.state.selectedDelivery}
                   onSelect={checkout.selectDelivery}
+                  onExplore={handleExplore}
                 />
               )}
 
@@ -460,6 +520,7 @@ export default function ChatViewStreaming({
                   numberOfDays={checkout.state.summary?.numberOfDays || 1}
                   onToggle={checkout.toggleAddOn}
                   onContinue={checkout.proceedToReview}
+                  onExplore={handleExplore}
                 />
               )}
 
@@ -471,6 +532,21 @@ export default function ChatViewStreaming({
                   onPay={checkout.proceedToPayment}
                   onBack={checkout.goBack}
                   isLoading={checkout.isLoading}
+                  onExplore={handleExplore}
+                  guestBalances={checkout.state.guestBalances}
+                  appliedCredits={checkout.state.appliedCredits}
+                  appliedBonus={checkout.state.appliedBonus}
+                  appliedDepositWallet={checkout.state.appliedDepositWallet}
+                  onApplyCredits={checkout.applyCredits}
+                  onApplyBonus={checkout.applyBonus}
+                  onApplyDepositWallet={checkout.applyDepositWallet}
+                  promoCode={checkout.state.promoCode}
+                  promoDiscount={checkout.state.promoDiscount}
+                  onApplyPromo={checkout.applyPromo}
+                  savedCards={checkout.state.savedCards}
+                  selectedPaymentMethod={checkout.state.selectedPaymentMethod}
+                  onSelectPaymentMethod={checkout.selectPaymentMethod}
+                  priceChanged={checkout.state.priceChanged}
                 />
               )}
 

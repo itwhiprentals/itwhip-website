@@ -9,6 +9,7 @@ interface DeliveryCardProps {
   onSelect: (type: 'pickup' | 'airport' | 'hotel' | 'home') => void
   onBack?: () => void
   compact?: boolean
+  onExplore?: () => void
 }
 
 const DELIVERY_ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -18,7 +19,7 @@ const DELIVERY_ICONS: Record<string, React.ComponentType<{ size?: number; classN
   home: IoHome,
 }
 
-export default function DeliveryCard({ options, selected, onSelect, onBack, compact }: DeliveryCardProps) {
+export default function DeliveryCard({ options, selected, onSelect, onBack, compact, onExplore }: DeliveryCardProps) {
   const availableOptions = options.filter((o) => o.available)
 
   if (compact && selected) {
@@ -88,6 +89,17 @@ export default function DeliveryCard({ options, selected, onSelect, onBack, comp
           )
         })}
       </div>
+
+      {onExplore && !compact && (
+        <div className="px-3 pb-2">
+          <button
+            onClick={onExplore}
+            className="text-[10px] text-gray-400 hover:text-primary transition-colors"
+          >
+            Want to explore other cars?
+          </button>
+        </div>
+      )}
     </div>
   )
 }

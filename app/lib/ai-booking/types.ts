@@ -235,6 +235,23 @@ export interface AddOnItem {
   amount: number;
 }
 
+/** Guest balance information */
+export interface GuestBalances {
+  credits: number;
+  bonus: number;
+  depositWallet: number;
+  maxBonusPercent: number;
+}
+
+/** Saved payment card from Stripe */
+export interface SavedCard {
+  id: string;
+  brand: string;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+}
+
 /**
  * Full checkout state managed by useCheckout hook.
  * NOTE: grandTotal is NOT stored here — it's computed via computeGrandTotal() in the hook.
@@ -256,6 +273,24 @@ export interface CheckoutState {
   paymentIntentId: string | null;
   bookingConfirmation: BookingConfirmation | null;
   error: string | null;
+  /** Guest credit/bonus/deposit wallet balances */
+  guestBalances: GuestBalances | null;
+  /** Saved payment cards from Stripe */
+  savedCards: SavedCard[];
+  /** Applied credits (reduces rental total) */
+  appliedCredits: number;
+  /** Applied bonus (reduces rental total, capped at maxBonusPercent) */
+  appliedBonus: number;
+  /** Applied deposit wallet (reduces deposit) */
+  appliedDepositWallet: number;
+  /** Active promo code */
+  promoCode: string | null;
+  /** Promo discount amount */
+  promoDiscount: number;
+  /** Selected saved payment method ID */
+  selectedPaymentMethod: string | null;
+  /** Price changed since checkout init */
+  priceChanged: { oldRate: number; newRate: number } | null;
 }
 
 /** Display-only grand total computed from current CheckoutState */
@@ -269,6 +304,14 @@ export interface GrandTotal {
   tax: number;
   taxRate: string;
   deposit: number;
+  /** Discounts from credits, bonus, promo */
+  appliedCredits: number;
+  appliedBonus: number;
+  promoDiscount: number;
+  appliedDepositWallet: number;
+  totalDiscount: number;
+  /** Total before discounts */
+  subtotalBeforeDiscounts: number;
   total: number;
 }
 
