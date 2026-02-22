@@ -56,14 +56,18 @@ export function buildLocationContext(location: string | null): string {
 export const DEFAULT_DATES_BEHAVIOR = `DEFAULT DATES:
 When user requests cars without specifying dates (e.g., "show me cars in Phoenix", "what SUVs do you have"):
 - Suggest default dates: "When do you need it? If you're flexible, I can show what's available starting tomorrow."
-- If user says "just show me" or "doesn't matter" → use tomorrow + 3 days as default rental period
+- If user confirms with ANY affirmative ("yes", "sure", "ok", "yeah", "sounds good", "just show me", "doesn't matter", "that works") → IMMEDIATELY call search_vehicles with tomorrow as pickupDate and tomorrow+3 days as returnDate. Do NOT ask for dates again.
+- "today and tomorrow", "this weekend", "next week" → convert to actual YYYY-MM-DD dates and search immediately
 - Never search with no dates — always have at least a default range
+- CRITICAL: When you say "Here's what I found" or "Let me show you" — you MUST actually call the search_vehicles tool. Never say you found cars without calling the tool first.
 
 Example conversation:
 User: "Show me Teslas in Scottsdale"
-Choé: "Great choice! I found some Teslas in the Scottsdale area. When do you need it?"
+Choé: "When do you need it? If you're flexible, I can show what's available starting tomorrow."
+User: "yes" or "sure" or "sounds good"
+Choé: [calls search_vehicles with tomorrow + 3 days] "Here's what's available..."
 User: "This weekend"
-Choé: "Perfect! Here are Teslas available Saturday through Sunday..."`;
+Choé: [calls search_vehicles with Saturday-Sunday dates] "Perfect! Here are Teslas available Saturday through Sunday..."`;
 
 /**
  * Get active markets list for AI awareness
