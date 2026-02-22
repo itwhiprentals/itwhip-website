@@ -45,6 +45,7 @@ import { isSessionVerified } from '@/app/lib/ai-booking/state-machine'
 
 async function fetchBookingContextByEmail(email: string): Promise<string> {
   try {
+    // Fetch bookings with verification details
     const bookings = await prisma.rentalBooking.findMany({
       where: { guestEmail: email, status: { not: 'CANCELLED' } },
       take: 5,
@@ -52,11 +53,24 @@ async function fetchBookingContextByEmail(email: string): Promise<string> {
       select: {
         bookingCode: true,
         status: true,
+        verificationStatus: true,
+        tripStatus: true,
         startDate: true,
         endDate: true,
         startTime: true,
         endTime: true,
-        car: { select: { make: true, model: true, year: true } },
+        handoffStatus: true,
+        car: { select: { make: true, model: true, year: true, instantBook: true } },
+      },
+    })
+
+    // Fetch guest's Stripe identity verification status
+    const guestProfile = await prisma.reviewerProfile.findFirst({
+      where: { email },
+      select: {
+        stripeIdentityStatus: true,
+        stripeIdentityVerifiedAt: true,
+        documentsVerified: true,
       },
     })
 
@@ -68,10 +82,37 @@ async function fetchBookingContextByEmail(email: string): Promise<string> {
       const car = b.car ? `${b.car.year} ${b.car.make} ${b.car.model}` : 'N/A'
       const start = b.startDate ? new Date(b.startDate).toLocaleDateString() : '?'
       const end = b.endDate ? new Date(b.endDate).toLocaleDateString() : '?'
-      return `  - ${b.bookingCode}: ${car} | ${start} – ${end} | Status: ${b.status}`
+      const isInstantBook = b.car?.instantBook ?? false
+      const parts = [
+        `${b.bookingCode}: ${car}`,
+        `${start} – ${end}`,
+        `Booking Status: ${b.status}`,
+        `Verification: ${b.verificationStatus}`,
+      ]
+      if (b.tripStatus) parts.push(`Trip: ${b.tripStatus}`)
+      if (b.handoffStatus) parts.push(`Handoff: ${b.handoffStatus}`)
+      if (isInstantBook) parts.push('(Instant Book)')
+      return `  - ${parts.join(' | ')}`
     })
 
-    return `BOOKING LOOKUP (verified email: ${email}):\n${lines.join('\n')}\nPresent this data naturally. Include booking codes and statuses.`
+    // Add Stripe identity context
+    let identityContext = ''
+    if (guestProfile) {
+      const status = guestProfile.stripeIdentityStatus || 'not_started'
+      identityContext = `\nSTRIPE IDENTITY VERIFICATION: ${status}`
+      if (status === 'verified') {
+        identityContext += ' (passed)'
+      } else if (status === 'requires_input') {
+        identityContext += ' (incomplete — guest needs to redo identity check)'
+      } else if (status === 'processing') {
+        identityContext += ' (submitted, still processing — usually takes 1-2 minutes)'
+      } else if (status === 'not_started') {
+        identityContext += ' (not yet started — guest needs to complete identity verification)'
+      }
+      identityContext += `\nDocuments verified: ${guestProfile.documentsVerified ? 'yes' : 'no'}`
+    }
+
+    return `BOOKING LOOKUP (verified email: ${email}):\n${lines.join('\n')}${identityContext}\nUse the ACTIVE BOOKING SUPPORT rules to handle questions about these bookings.`
   } catch (error) {
     console.error('[ai-booking-stream] Booking lookup failed:', error)
     return 'BOOKING LOOKUP: Unable to retrieve bookings at this time.'

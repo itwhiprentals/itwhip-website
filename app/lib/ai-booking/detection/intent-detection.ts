@@ -162,7 +162,7 @@ export function hasFilters(query: SearchQuery | null): boolean {
  * Detect if user wants to check their booking status
  */
 export function wantsBookingStatus(message: string): boolean {
-  return /\b(status|my booking|my reservation|track my|where.?s my|check my booking|booking number|reservation number|is my booking confirmed|my trip|my rental)\b/i.test(message)
+  return /\b(status|my booking|my reservation|track my|where.?s my|check my booking|booking number|reservation number|is my booking confirmed|my trip|my rental|not yet ready|status is stuck|waiting for confirmation|instant book.*(nothing|no response|no update|still|waiting)|where.?s my car|nobody.*(follow|respond|reply|answer)|booking.*(delayed|taking|long|stuck|pending)|still (pending|waiting|no response))\b/i.test(message)
 }
 
 /**
