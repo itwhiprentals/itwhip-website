@@ -225,10 +225,10 @@ export const BOOKING_TOOLS: Anthropic.Tool[] = [
 
 Common calculations:
 1. BUDGET → DAILY RATE: "$350 for 4 days" → calculate("350 / 4") = $87.50/day → use as priceMax
-2. TOTAL CHECKOUT (with deposit): (rate × days × 1.234) + deposit
-   - Honda $29 × 3 days + $0 deposit = calculate("29 * 3 * 1.234 + 0") = $107.36
-   - BMW $79 × 3 days + $500 deposit = calculate("79 * 3 * 1.234 + 500") = $792.46
-3. BUDGET CHECK: Does car fit budget? calculate("(rate * days * 1.234) + deposit") ≤ budget?
+2. TOTAL CHECKOUT (with deposit): (rate × days × 1.2466) + deposit
+   - Honda $29 × 3 days + $0 deposit = calculate("29 * 3 * 1.2466 + 0") = $108.45
+   - BMW $79 × 3 days + $500 deposit = calculate("79 * 3 * 1.2466 + 500") = $795.44
+3. BUDGET CHECK: Does car fit budget? calculate("(rate * days * 1.2466) + deposit") ≤ budget?
 
 CRITICAL: Always include depositAmount in total calculations! Check the car's deposit in AVAILABLE CARS list.`,
     input_schema: {
@@ -236,7 +236,7 @@ CRITICAL: Always include depositAmount in total calculations! Check the car's de
       properties: {
         expression: {
           type: 'string',
-          description: 'The mathematical expression to evaluate (e.g., "350 / 4" for budget per day, "29 * 7 * 1.234" for total cost with fees)',
+          description: 'The mathematical expression to evaluate (e.g., "350 / 4" for budget per day, "29 * 7 * 1.2466" for total cost with fees)',
         },
         purpose: {
           type: 'string',
