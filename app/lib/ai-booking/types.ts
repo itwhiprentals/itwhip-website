@@ -74,6 +74,8 @@ export interface AIBookingResponse {
   summary: BookingSummary | null;
   action: BookingAction | null;
   suggestions: string[] | null;
+  cards: CardType[] | null;
+  bookings: BookingData[] | null;
 }
 
 export type BookingAction =
@@ -83,6 +85,29 @@ export type BookingAction =
   | 'HIGH_RISK_REVIEW'
   | 'START_OVER'
   | 'NEEDS_EMAIL_OTP';
+
+/** Card types that Claude can request to display */
+export type CardType = 'BOOKING_STATUS' | 'POLICY';
+
+/** Structured booking data for BookingStatusCard rendering */
+export interface BookingData {
+  bookingCode: string;
+  status: string;
+  verificationStatus: string;
+  tripStatus: string | null;
+  startDate: string;
+  endDate: string;
+  startTime: string | null;
+  endTime: string | null;
+  handoffStatus: string | null;
+  dailyRate: number | null;
+  numberOfDays: number | null;
+  totalAmount: number | null;
+  depositAmount: number | null;
+  holdReason: string | null;
+  car: { make: string; model: string; year: number; instantBook: boolean } | null;
+  stripeIdentityStatus: string | null;
+}
 
 // =============================================================================
 // VEHICLE (simplified for AI chat display)
@@ -155,6 +180,7 @@ export interface ClaudeBookingOutput {
   }>;
   action: BookingAction | null;
   searchQuery: SearchQuery | null;
+  cards: CardType[] | null;
 }
 
 export interface SearchQuery {

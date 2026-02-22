@@ -10,6 +10,8 @@ import {
   AIBookingRequest,
   VehicleSummary,
   BookingSummary,
+  BookingData,
+  CardType,
 } from '@/app/lib/ai-booking/types'
 import {
   createInitialSession,
@@ -43,7 +45,13 @@ import { isSessionVerified } from '@/app/lib/ai-booking/state-machine'
 // BOOKING LOOKUP (for verified users asking about their bookings)
 // =============================================================================
 
-async function fetchBookingContextByEmail(email: string): Promise<string> {
+interface BookingLookupResult {
+  contextString: string;
+  bookings: BookingData[];
+  stripeIdentityStatus: string | null;
+}
+
+async function fetchBookingContextByEmail(email: string): Promise<BookingLookupResult> {
   try {
     // Fetch bookings with verification details
     const bookings = await prisma.rentalBooking.findMany({
@@ -79,10 +87,37 @@ async function fetchBookingContextByEmail(email: string): Promise<string> {
       },
     })
 
+    const identityStatus = (guestProfile?.stripeIdentityStatus as string) || null
+
     if (bookings.length === 0) {
-      return 'BOOKING LOOKUP: No active bookings found for this email.'
+      return {
+        contextString: 'BOOKING LOOKUP: No active bookings found for this email.',
+        bookings: [],
+        stripeIdentityStatus: identityStatus,
+      }
     }
 
+    // Build structured booking data for client-side cards
+    const structuredBookings: BookingData[] = bookings.map((b) => ({
+      bookingCode: b.bookingCode,
+      status: b.status,
+      verificationStatus: b.verificationStatus,
+      tripStatus: b.tripStatus,
+      startDate: b.startDate ? new Date(b.startDate).toISOString() : '',
+      endDate: b.endDate ? new Date(b.endDate).toISOString() : '',
+      startTime: b.startTime,
+      endTime: b.endTime,
+      handoffStatus: b.handoffStatus,
+      dailyRate: b.dailyRate ? Number(b.dailyRate) : null,
+      numberOfDays: b.numberOfDays,
+      totalAmount: b.totalAmount ? Number(b.totalAmount) : null,
+      depositAmount: b.depositAmount !== undefined ? Number(b.depositAmount) : null,
+      holdReason: b.holdReason,
+      car: b.car ? { make: b.car.make, model: b.car.model, year: b.car.year, instantBook: b.car.instantBook } : null,
+      stripeIdentityStatus: identityStatus,
+    }))
+
+    // Build context string for Claude's prompt (unchanged format)
     const lines = bookings.map((b) => {
       const car = b.car ? `${b.car.year} ${b.car.make} ${b.car.model}` : 'N/A'
       const start = b.startDate ? new Date(b.startDate).toLocaleDateString() : '?'
@@ -122,10 +157,18 @@ async function fetchBookingContextByEmail(email: string): Promise<string> {
       identityContext += `\nDocuments verified: ${guestProfile.documentsVerified ? 'yes' : 'no'}`
     }
 
-    return `BOOKING LOOKUP (verified email: ${email}):\n${lines.join('\n')}${identityContext}\nUse the ACTIVE BOOKING SUPPORT rules to handle questions about these bookings.`
+    return {
+      contextString: `BOOKING LOOKUP (verified email: ${email}):\n${lines.join('\n')}${identityContext}\nUse the ACTIVE BOOKING SUPPORT rules to handle questions about these bookings.`,
+      bookings: structuredBookings,
+      stripeIdentityStatus: identityStatus,
+    }
   } catch (error) {
     console.error('[ai-booking-stream] Booking lookup failed:', error)
-    return 'BOOKING LOOKUP: Unable to retrieve bookings at this time.'
+    return {
+      contextString: 'BOOKING LOOKUP: Unable to retrieve bookings at this time.',
+      bookings: [],
+      stripeIdentityStatus: null,
+    }
   }
 }
 
@@ -550,6 +593,7 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     // Handle [VERIFIED:email] prefix — client sends this after OTP verification
     let userMessage = body.message
     let bookingContext = ''
+    let bookingLookup: BookingLookupResult | null = null
     let isAutoLookup = false
     const verifiedMatch = body.message.match(/^\[VERIFIED:([^\]]+)\]\s*(.*)$/)
     if (verifiedMatch) {
@@ -563,13 +607,14 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       }
 
       userMessage = remainder || 'Please look up my bookings and help me.'
-      bookingContext = await fetchBookingContextByEmail(verifiedEmail)
+      bookingLookup = await fetchBookingContextByEmail(verifiedEmail)
+      bookingContext = bookingLookup.contextString
 
       if (isAutoLookup) {
         // Auto-lookup: don't add a visible user message — just inject context for Claude
         // Use a system-level instruction as the user message so Claude knows what to do
         userMessage = 'Email verification complete. Look up my bookings and tell me what you see.'
-        bookingContext = `IMPORTANT: The user just completed email OTP verification. Their booking data is below. Help them directly — do NOT ask to verify again or return NEEDS_EMAIL_OTP.\n\n${bookingContext}`
+        bookingContext = `IMPORTANT: The user just completed email OTP verification. Their booking data is below. Help them directly — do NOT ask to verify again or return NEEDS_EMAIL_OTP.\nYou MUST respond in JSON format with cards: ["BOOKING_STATUS"]. Keep your reply to a brief summary — the BookingStatusCard displays all booking details.\n\n${bookingContext}`
         console.log(`[ai-booking-stream] Auto-lookup after verification: ${verifiedEmail}`)
       }
     }
@@ -968,6 +1013,15 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       await updateConversationStats(conversationId, session, totalTokensUsed, cost)
     }
 
+    // Determine cards — use Claude's response, but auto-inject BOOKING_STATUS
+    // when we have booking data (Claude sometimes returns plain text instead of JSON)
+    let finalCards = parsed.cards ?? null
+    if (bookingLookup?.bookings && bookingLookup.bookings.length > 0) {
+      if (!finalCards || !finalCards.includes('BOOKING_STATUS')) {
+        finalCards = finalCards ? [...finalCards, 'BOOKING_STATUS'] : ['BOOKING_STATUS']
+      }
+    }
+
     // Send final response
     await sse.sendEvent('done', {
       session,
@@ -976,6 +1030,8 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       action,
       suggestions: getSuggestions(session.state, locale),
       tokensUsed: totalTokensUsed,
+      cards: finalCards,
+      bookings: bookingLookup?.bookings ?? null,
     })
 
   } catch (error) {

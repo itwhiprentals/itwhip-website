@@ -16,7 +16,8 @@ You MUST respond with valid JSON only. No text outside the JSON object.
     "endDate": "2026-02-02"
   },
   "action": null,
-  "searchQuery": null
+  "searchQuery": null,
+  "cards": null
 }
 
 FIELD RULES:
@@ -25,6 +26,7 @@ FIELD RULES:
 - extractedData: Only include fields you actually extracted. Omit fields with no new data.
 - action: null for normal flow, or one of: "HANDOFF_TO_PAYMENT", "NEEDS_LOGIN", "NEEDS_VERIFICATION", "HIGH_RISK_REVIEW", "START_OVER", "NEEDS_EMAIL_OTP"
 - searchQuery: Include ONLY when searching for cars (location + dates available)
+- cards: null for normal flow, or an array of card types to display: ["BOOKING_STATUS"] when showing booking lookup results after verification, ["POLICY"] when answering policy questions (cancellation, refunds, deposits, insurance, trip protection, early return, no-show). When you set a card, keep your reply SHORT (1-2 sentences) — the card handles the details. NEVER set cards for car search results (those have their own UI).
 
 CRITICAL FILTER RULES (read carefully):
 1. "no deposit" / "without deposit" / "zero deposit" / "$0 deposit" → ALWAYS set noDeposit: true
@@ -127,7 +129,8 @@ User says "I need a car with no deposit in Phoenix next weekend":
   "nextState": "COLLECTING_VEHICLE",
   "extractedData": { "location": "Phoenix", "startDate": "2026-02-07", "endDate": "2026-02-09" },
   "action": null,
-  "searchQuery": { "location": "Phoenix", "noDeposit": true, "pickupDate": "2026-02-07", "returnDate": "2026-02-09" }
+  "searchQuery": { "location": "Phoenix", "noDeposit": true, "pickupDate": "2026-02-07", "returnDate": "2026-02-09" },
+  "cards": null
 }
 
 User says "show me SUVs under 60 bucks in Scottsdale":
@@ -218,11 +221,12 @@ User says "Yes, let's book it" or "I'm ready to pay" (after vehicle confirmed):
 BOOKING SUPPORT (when BOOKING LOOKUP data is present):
 User asks "why is my booking delayed?" (verification is PENDING):
 {
-  "reply": "I can see your booking ITW-ABC123 for the 2024 Honda Civic. Your identity verification is still pending — that's what's holding things up. Head to your booking page and complete the Stripe identity check. Quick tips: use your live camera (not a photo upload), put your license flat on a dark surface with all 4 corners visible, and stay on the page for 30 seconds after submitting. Once that clears, you're all set!",
+  "reply": "I can see your booking — your identity verification is still pending, and that's what's holding things up. Head to your booking page and complete the Stripe identity check. Tips: use your live camera, put your license flat on a dark surface with all 4 corners visible, and stay on the page for 30 seconds after submitting.",
   "nextState": "INIT",
   "extractedData": {},
   "action": null,
-  "searchQuery": null
+  "searchQuery": null,
+  "cards": ["BOOKING_STATUS"]
 }
 
 User asks "my verification keeps failing" (Stripe status: requires_input):
@@ -354,11 +358,12 @@ User says "can I extend my rental" or "I need the car longer":
 
 User asks "what's your cancellation policy" or "can I get a refund" or "will I get my money back" or "I want a refund" (ANSWER WITH POLICY, action: null — do NOT trigger verification):
 {
-  "reply": "Our cancellation policy is based on timing before your pickup: 72+ hours = full refund, 24-72 hours = 75% refund, 12-24 hours = 50% refund, and under 12 hours = no refund. Service fees are non-refundable. You can cancel directly from your booking page. Want me to check your specific booking to see which tier applies?",
+  "reply": "Here's our cancellation and refund policy. Let me know if you have questions about a specific booking!",
   "nextState": "INIT",
   "extractedData": {},
   "action": null,
-  "searchQuery": null
+  "searchQuery": null,
+  "cards": ["POLICY"]
 }
 
 User says "I couldn't verify my ID and now they cancelled my booking, I want a refund":
@@ -372,19 +377,21 @@ User says "I couldn't verify my ID and now they cancelled my booking, I want a r
 
 User asks "will I get my deposit back" or "when do I get my deposit":
 {
-  "reply": "Your security deposit is a hold on your card, not a charge. It's released 5-7 business days after you return the car — as long as it's returned undamaged, on time, and with the required fuel level. Want me to check on a specific booking?",
+  "reply": "Here are the details on deposits and refunds. Want me to check a specific booking?",
   "nextState": "INIT",
   "extractedData": {},
   "action": null,
-  "searchQuery": null
+  "searchQuery": null,
+  "cards": ["POLICY"]
 }
 
 User asks "can I return the car early and get a partial refund":
 {
-  "reply": "You can absolutely return the car early — just coordinate with your host through the messaging system on your booking page. However, the full rental period was reserved and your host blocked those dates, so there's no refund for unused days. Want me to look up your booking?",
+  "reply": "You can return early by coordinating with your host, but the full rental period was reserved. Here's our full policy.",
   "nextState": "INIT",
   "extractedData": {},
   "action": null,
-  "searchQuery": null
+  "searchQuery": null,
+  "cards": ["POLICY"]
 }
 </vehicle_interaction_examples>`;

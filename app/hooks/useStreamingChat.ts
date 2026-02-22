@@ -7,6 +7,8 @@ import type {
   VehicleSummary,
   BookingSummary,
   BookingAction,
+  CardType,
+  BookingData,
 } from '@/app/lib/ai-booking/types'
 
 // =============================================================================
@@ -25,6 +27,8 @@ interface StreamingState {
   error: string | null
   isRateLimited: boolean
   toolsInUse: Array<{ name: string; input: unknown }>
+  cards: CardType[] | null
+  bookings: BookingData[] | null
 }
 
 interface StreamingOptions {
@@ -42,6 +46,8 @@ interface StreamingResponse {
   action: BookingAction | null
   suggestions: string[]
   tokensUsed: number
+  cards: CardType[] | null
+  bookings: BookingData[] | null
 }
 
 interface SendMessageParams {
@@ -70,6 +76,8 @@ export function useStreamingChat(options: StreamingOptions = {}) {
     error: null,
     isRateLimited: false,
     toolsInUse: [],
+    cards: null,
+    bookings: null,
   })
 
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -228,6 +236,8 @@ export function useStreamingChat(options: StreamingOptions = {}) {
               action: response.action as BookingAction | null,
               suggestions: response.suggestions || [],
               toolsInUse: [],
+              cards: response.cards ?? null,
+              bookings: response.bookings ?? null,
             }))
             options.onComplete?.(response)
             break
@@ -296,6 +306,8 @@ export function useStreamingChat(options: StreamingOptions = {}) {
       error: null,
       isRateLimited: false,
       toolsInUse: [],
+      cards: null,
+      bookings: null,
     })
   }, [cancel])
 

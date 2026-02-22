@@ -15,6 +15,8 @@ import GrandTotalCard from './GrandTotalCard'
 import PaymentCard from './PaymentCard'
 import ConfirmationCard from './ConfirmationCard'
 import VerificationCard from './VerificationCard'
+import PolicyCard from './PolicyCard'
+import BookingStatusCard from './BookingStatusCard'
 import { IoSunnyOutline, IoMoonOutline } from 'react-icons/io5'
 import { useLocale, useTranslations } from 'next-intl'
 import { useStreamingChat } from '@/app/hooks/useStreamingChat'
@@ -28,6 +30,8 @@ import type {
   VehicleSummary,
   BookingSummary as BookingSummaryType,
   BookingAction,
+  CardType,
+  BookingData,
 } from '@/app/lib/ai-booking/types'
 import { BookingState, CheckoutStep } from '@/app/lib/ai-booking/types'
 
@@ -61,6 +65,8 @@ export default function ChatViewStreaming({
   const auth = useAuthOptional()
   const [persistedSession, setPersistedSession] = useState<BookingSession | null>(null)
   const [persistedVehicles, setPersistedVehicles] = useState<VehicleSummary[] | null>(null)
+  const [persistedCards, setPersistedCards] = useState<CardType[] | null>(null)
+  const [persistedBookings, setPersistedBookings] = useState<BookingData[] | null>(null)
   const [isLoadingSession, setIsLoadingSession] = useState(true)
   const [isExploring, setIsExploring] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -88,6 +94,8 @@ export default function ChatViewStreaming({
     error,
     isRateLimited,
     toolsInUse,
+    cards: streamCards,
+    bookings: streamBookings,
     sendMessage,
     reset: resetStream,
     clearAction,
@@ -103,6 +111,15 @@ export default function ChatViewStreaming({
           verification.hide()
         }
       }
+      // Persist cards and bookings for scroll-back
+      if (response.cards) {
+        setPersistedCards(response.cards)
+      } else {
+        setPersistedCards(null)
+      }
+      if (response.bookings) {
+        setPersistedBookings(response.bookings)
+      }
       // Auto-show verification card when API returns NEEDS_EMAIL_OTP
       // Skip if user already dismissed the card this session
       if (response.action === 'NEEDS_EMAIL_OTP' && !dismissedVerificationRef.current) {
@@ -114,6 +131,8 @@ export default function ChatViewStreaming({
   // Use stream state or persisted state
   const session = streamSession || persistedSession
   const vehicles = streamVehicles || persistedVehicles
+  const activeCards = streamCards ?? persistedCards
+  const activeBookings = streamBookings ?? persistedBookings
 
   // Fallback: rebuild summary client-side if server didn't return one
   // (happens after page reload, checkout failure, or re-selection)
@@ -277,6 +296,8 @@ export default function ChatViewStreaming({
     resetStream()
     setPersistedSession(null)
     setPersistedVehicles(null)
+    setPersistedCards(null)
+    setPersistedBookings(null)
     checkout.resetCheckout()
     verification.reset()
     pendingMessageRef.current = null
@@ -551,6 +572,34 @@ export default function ChatViewStreaming({
                 onConfirm={handleConfirm}
                 onChangeVehicle={handleChangeVehicle}
               />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Policy card */}
+        <AnimatePresence>
+          {activeCards?.includes('POLICY') && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={springTransition}
+            >
+              <PolicyCard onDismiss={() => setPersistedCards(null)} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Booking status card */}
+        <AnimatePresence>
+          {activeCards?.includes('BOOKING_STATUS') && activeBookings && activeBookings.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={springTransition}
+            >
+              <BookingStatusCard bookings={activeBookings} onDismiss={() => setPersistedCards(null)} />
             </motion.div>
           )}
         </AnimatePresence>

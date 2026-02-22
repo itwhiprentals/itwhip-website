@@ -2,7 +2,7 @@
 // Parses and validates Claude's structured JSON output
 // SDK-extractable — no framework-specific imports
 
-import { BookingState, ClaudeBookingOutput } from './types';
+import { BookingState, ClaudeBookingOutput, CardType } from './types';
 
 // =============================================================================
 // PARSE CLAUDE RESPONSE
@@ -89,7 +89,10 @@ function validateAndNormalize(parsed: Record<string, unknown>): ClaudeBookingOut
   // Validate searchQuery
   const searchQuery = normalizeSearchQuery(parsed.searchQuery);
 
-  return { reply, nextState, extractedData, action, searchQuery };
+  // Validate cards
+  const cards = normalizeCards(parsed.cards);
+
+  return { reply, nextState, extractedData, action, searchQuery, cards };
 }
 
 function isValidState(state: unknown): boolean {
@@ -161,6 +164,18 @@ function normalizeSearchQuery(
   return Object.keys(result).length > 0 ? (result as ClaudeBookingOutput['searchQuery']) : null;
 }
 
+function normalizeCards(raw: unknown): CardType[] | null {
+  if (!Array.isArray(raw)) return null;
+  const valid: CardType[] = [];
+  const validTypes: string[] = ['BOOKING_STATUS', 'POLICY'];
+  for (const item of raw) {
+    if (typeof item === 'string' && validTypes.includes(item)) {
+      valid.push(item as CardType);
+    }
+  }
+  return valid.length > 0 ? valid : null;
+}
+
 // =============================================================================
 // FALLBACK
 // =============================================================================
@@ -186,6 +201,7 @@ function createFallbackResponse(raw: string): ClaudeBookingOutput {
     extractedData: {},
     action: null,
     searchQuery: null,
+    cards: null,
   };
 }
 
