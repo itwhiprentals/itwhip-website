@@ -211,21 +211,8 @@ export default function ChatViewStreaming({
       // Still send the message to Claude so it can respond naturally
     }
 
-    // Intercept messages that require identity verification
-    const identityCheck = requiresIdentityVerification(message)
-    if (identityCheck.requiresVerification && session && !isSessionVerified(session)) {
-      pendingMessageRef.current = message
-      const purpose = identityCheck.isBookingStatus ? 'BOOKING_STATUS' : 'SENSITIVE_INFO'
-      verification.show(auth?.user?.email ?? null, purpose)
-      return
-    }
-
-    // If session is verified and we have a pending message, prefix with verified email
-    const messageToSend = verification.verifiedEmail
-      ? `[VERIFIED:${verification.verifiedEmail}] ${message}`
-      : message
-
     // Optimistically add user message to session so it appears immediately
+    // (must happen BEFORE verification intercept so the question is always visible)
     const updatedSession: BookingSession = persistedSession
       ? {
           ...persistedSession,
@@ -248,6 +235,20 @@ export default function ChatViewStreaming({
         }
 
     setPersistedSession(updatedSession)
+
+    // Intercept messages that require identity verification
+    const identityCheck = requiresIdentityVerification(message)
+    if (identityCheck.requiresVerification && session && !isSessionVerified(session)) {
+      pendingMessageRef.current = message
+      const purpose = identityCheck.isBookingStatus ? 'BOOKING_STATUS' : 'SENSITIVE_INFO'
+      verification.show(auth?.user?.email ?? null, purpose)
+      return
+    }
+
+    // If session is verified and we have a pending message, prefix with verified email
+    const messageToSend = verification.verifiedEmail
+      ? `[VERIFIED:${verification.verifiedEmail}] ${message}`
+      : message
 
     sendMessage({
       message: messageToSend,

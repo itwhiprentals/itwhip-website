@@ -20,7 +20,7 @@ You MUST respond with valid JSON only. No text outside the JSON object.
 }
 
 FIELD RULES:
-- reply: 2-3 sentences, ends with question or action prompt
+- reply: concise for search (2-3 sentences), as long as needed for support/troubleshooting. Always finish sentences completely — never cut off mid-thought.
 - nextState: The state AFTER processing this message
 - extractedData: Only include fields you actually extracted. Omit fields with no new data.
 - action: null for normal flow, or one of: "HANDOFF_TO_PAYMENT", "NEEDS_LOGIN", "NEEDS_VERIFICATION", "HIGH_RISK_REVIEW", "START_OVER", "NEEDS_EMAIL_OTP"
