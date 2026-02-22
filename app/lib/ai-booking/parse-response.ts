@@ -191,7 +191,7 @@ function createFallbackResponse(raw: string): ClaudeBookingOutput {
     } else {
       // Use raw text but strip any JSON-like content
       const cleaned = raw.trim().replace(/^\{[\s\S]*\}$/, '').trim();
-      reply = cleaned.length > 0 ? cleaned.slice(0, 500) : reply;
+      reply = cleaned.length > 0 ? cleaned.slice(0, 3000) : reply;
     }
   }
 

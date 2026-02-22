@@ -99,6 +99,7 @@ export default function ChatViewStreaming({
     sendMessage,
     reset: resetStream,
     clearAction,
+    clearCards,
   } = useStreamingChat({
     onComplete: (response) => {
       setPersistedSession(response.session)
@@ -585,7 +586,7 @@ export default function ChatViewStreaming({
               exit={{ opacity: 0, y: -8 }}
               transition={springTransition}
             >
-              <PolicyCard onDismiss={() => setPersistedCards(null)} />
+              <PolicyCard onDismiss={() => { clearCards(); setPersistedCards(null) }} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -599,7 +600,7 @@ export default function ChatViewStreaming({
               exit={{ opacity: 0, y: -8 }}
               transition={springTransition}
             >
-              <BookingStatusCard bookings={activeBookings} onDismiss={() => setPersistedCards(null)} />
+              <BookingStatusCard bookings={activeBookings} onDismiss={() => { clearCards(); setPersistedCards(null); setPersistedBookings(null) }} />
             </motion.div>
           )}
         </AnimatePresence>

@@ -316,12 +316,18 @@ export function useStreamingChat(options: StreamingOptions = {}) {
     setState(prev => ({ ...prev, action: null }))
   }, [])
 
+  // Clear cards + bookings (e.g. when user dismisses a card)
+  const clearCards = useCallback(() => {
+    setState(prev => ({ ...prev, cards: null, bookings: null }))
+  }, [])
+
   return {
     ...state,
     sendMessage,
     cancel,
     reset,
     clearAction,
+    clearCards,
   }
 }
 
