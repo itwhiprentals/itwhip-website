@@ -60,6 +60,11 @@ async function fetchBookingContextByEmail(email: string): Promise<string> {
         startTime: true,
         endTime: true,
         handoffStatus: true,
+        dailyRate: true,
+        numberOfDays: true,
+        totalAmount: true,
+        depositAmount: true,
+        holdReason: true,
         car: { select: { make: true, model: true, year: true, instantBook: true } },
       },
     })
@@ -92,6 +97,11 @@ async function fetchBookingContextByEmail(email: string): Promise<string> {
       if (b.tripStatus) parts.push(`Trip: ${b.tripStatus}`)
       if (b.handoffStatus) parts.push(`Handoff: ${b.handoffStatus}`)
       if (isInstantBook) parts.push('(Instant Book)')
+      if (b.holdReason) parts.push(`Hold Reason: ${b.holdReason}`)
+      if (b.dailyRate) parts.push(`Daily Rate: $${b.dailyRate}`)
+      if (b.numberOfDays) parts.push(`Days: ${b.numberOfDays}`)
+      if (b.totalAmount) parts.push(`Total: $${b.totalAmount}`)
+      if (b.depositAmount !== undefined) parts.push(`Deposit: $${b.depositAmount}`)
       return `  - ${parts.join(' | ')}`
     })
 
