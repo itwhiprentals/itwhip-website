@@ -191,6 +191,8 @@ interface RawCarResult {
   // Trips count
   trips?: number;
   totalTrips?: number;
+  // Host info
+  host?: { name?: string };
 }
 
 /**
@@ -277,6 +279,9 @@ function normalizeCarResult(car: RawCarResult): VehicleSummary {
   // Trips count from search API
   const trips = car.trips || car.totalTrips || 0;
 
+  // Host first name only (privacy)
+  const hostFirstName = car.host?.name?.split(' ')[0] || null;
+
   return {
     id: car.id,
     make: car.make,
@@ -296,5 +301,6 @@ function normalizeCarResult(car: RawCarResult): VehicleSummary {
     transmission: car.transmission || null,
     depositAmount,
     insuranceBasicDaily: null, // Populated by stream route with real InsuranceProvider data
+    hostFirstName,
   };
 }

@@ -371,6 +371,7 @@ export async function executeTools(
                   location: v.location,
                   vehicleType: v.vehicleType,
                   instantBook: v.instantBook,
+                  hostFirstName: v.hostFirstName,
                 })),
               })
             : JSON.stringify({ found: 0, message: 'No vehicles available in Phoenix metro area for these dates.' }),

@@ -139,6 +139,7 @@ export function useCheckout() {
             transmission: null,
             depositAmount: data.deposit || vehicle.depositAmount || 0,
             insuranceBasicDaily: null,
+            hostFirstName: null,
           },
           location: vehicle.city || 'Phoenix',
           startDate: startDate.toISOString().split('T')[0],

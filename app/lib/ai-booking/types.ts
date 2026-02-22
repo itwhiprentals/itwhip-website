@@ -112,6 +112,8 @@ export interface VehicleSummary {
   depositAmount: number;
   /** Real daily insurance rate for Basic tier (from InsuranceProvider pricing rules) */
   insuranceBasicDaily: number | null;
+  /** Host's first name for display */
+  hostFirstName: string | null;
 }
 
 // =============================================================================

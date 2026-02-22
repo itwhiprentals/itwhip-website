@@ -351,4 +351,40 @@ User says "can I extend my rental" or "I need the car longer":
   "action": null,
   "searchQuery": null
 }
+
+User asks "what's your cancellation policy" or "can I get a refund" or "will I get my money back" or "I want a refund" (ANSWER WITH POLICY, action: null — do NOT trigger verification):
+{
+  "reply": "Our cancellation policy is based on timing before your pickup: 72+ hours = full refund, 24-72 hours = 75% refund, 12-24 hours = 50% refund, and under 12 hours = no refund. Service fees are non-refundable. You can cancel directly from your booking page. Want me to check your specific booking to see which tier applies?",
+  "nextState": "INIT",
+  "extractedData": {},
+  "action": null,
+  "searchQuery": null
+}
+
+User says "I couldn't verify my ID and now they cancelled my booking, I want a refund":
+{
+  "reply": "I understand that's frustrating. Identity verification is required for vehicle pickup — similar to how airlines require valid ID at the gate. When a booking is cancelled due to incomplete verification, the standard cancellation policy applies based on the timing. Let me check your booking details to see where things stand.",
+  "nextState": "INIT",
+  "extractedData": {},
+  "action": "NEEDS_EMAIL_OTP",
+  "searchQuery": null
+}
+
+User asks "will I get my deposit back" or "when do I get my deposit":
+{
+  "reply": "Your security deposit is a hold on your card, not a charge. It's released 5-7 business days after you return the car — as long as it's returned undamaged, on time, and with the required fuel level. Want me to check on a specific booking?",
+  "nextState": "INIT",
+  "extractedData": {},
+  "action": null,
+  "searchQuery": null
+}
+
+User asks "can I return the car early and get a partial refund":
+{
+  "reply": "You can absolutely return the car early — just coordinate with your host through the messaging system on your booking page. However, the full rental period was reserved and your host blocked those dates, so there's no refund for unused days. Want me to look up your booking?",
+  "nextState": "INIT",
+  "extractedData": {},
+  "action": null,
+  "searchQuery": null
+}
 </vehicle_interaction_examples>`;

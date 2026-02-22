@@ -299,11 +299,17 @@ export function useStreamingChat(options: StreamingOptions = {}) {
     })
   }, [cancel])
 
+  // Clear the action field (e.g. when user dismisses the verification card)
+  const clearAction = useCallback(() => {
+    setState(prev => ({ ...prev, action: null }))
+  }, [])
+
   return {
     ...state,
     sendMessage,
     cancel,
     reset,
+    clearAction,
   }
 }
 

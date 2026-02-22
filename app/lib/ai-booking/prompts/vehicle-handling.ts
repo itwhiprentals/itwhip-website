@@ -21,6 +21,7 @@ export function buildVehicleContext(vehicles: VehicleSummary[]): string {
         (v.depositAmount === 0 ? ' (No Deposit!)' : ' (refundable)') +
         (v.instantBook ? ' · Instant Book' : '') +
         (v.vehicleType === 'RIDESHARE' ? ' · Rideshare' : '') +
+        (v.hostFirstName ? ` · Hosted by ${v.hostFirstName}` : '') +
         ` [ID: ${v.id}]`
     )
     .join('\n');

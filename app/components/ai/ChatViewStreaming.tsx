@@ -22,7 +22,7 @@ import { useCheckout } from '@/app/hooks/useCheckout'
 import { useVerification } from '@/app/hooks/useVerification'
 import { useAuthOptional } from '@/app/contexts/AuthContext'
 import { isSessionVerified } from '@/app/lib/ai-booking/state-machine'
-import { requiresIdentityVerification } from '@/app/lib/ai-booking/detection/intent-detection'
+// Client-side intercept removed — Claude handles NEEDS_EMAIL_OTP via API
 import type {
   BookingSession,
   VehicleSummary,
@@ -71,6 +71,9 @@ export default function ChatViewStreaming({
   // OTP verification (for checkout gate + booking status)
   const verification = useVerification(persistedSession?.sessionId ?? '')
   const pendingMessageRef = useRef<string | null>(null)
+  // Persistent dismiss flag — once user clicks X on verification card, don't re-show
+  // until they explicitly reset the conversation or click a "Verify" action button.
+  const dismissedVerificationRef = useRef(false)
 
   // Use streaming hook
   const {
@@ -87,6 +90,7 @@ export default function ChatViewStreaming({
     toolsInUse,
     sendMessage,
     reset: resetStream,
+    clearAction,
   } = useStreamingChat({
     onComplete: (response) => {
       setPersistedSession(response.session)
@@ -100,8 +104,8 @@ export default function ChatViewStreaming({
         }
       }
       // Auto-show verification card when API returns NEEDS_EMAIL_OTP
-      // verification.show is a stable useCallback — safe from stale closure
-      if (response.action === 'NEEDS_EMAIL_OTP') {
+      // Skip if user already dismissed the card this session
+      if (response.action === 'NEEDS_EMAIL_OTP' && !dismissedVerificationRef.current) {
         verification.show(auth?.user?.email ?? null, 'BOOKING_STATUS')
       }
     },
@@ -214,6 +218,11 @@ export default function ChatViewStreaming({
 
   // Send message handler - optimistically add user message immediately
   const handleSendMessage = useCallback((message: string) => {
+    // Reset dismiss flag on new message — user's fresh input deserves a fresh response.
+    // This prevents the card from looping within a single response cycle (clearAction handles that),
+    // but allows it to re-appear if Claude legitimately returns NEEDS_EMAIL_OTP for the new message.
+    dismissedVerificationRef.current = false
+
     // If user wants to cancel during checkout, cancel the pipeline
     if (isInCheckout && isCancelIntent(message)) {
       checkout.cancelCheckout()
@@ -245,14 +254,9 @@ export default function ChatViewStreaming({
 
     setPersistedSession(updatedSession)
 
-    // Intercept messages that require identity verification
-    const identityCheck = requiresIdentityVerification(message)
-    if (identityCheck.requiresVerification && session && !isSessionVerified(session)) {
-      pendingMessageRef.current = message
-      const purpose = identityCheck.isBookingStatus ? 'BOOKING_STATUS' : 'SENSITIVE_INFO'
-      verification.show(auth?.user?.email ?? null, purpose)
-      return
-    }
+    // NOTE: Client-side verification intercept removed — Claude handles NEEDS_EMAIL_OTP
+    // via the API. This ensures messages are always sent, always visible, and avoids
+    // false positives on policy/FAQ questions like "cancellation policy".
 
     // If session is verified and we have a pending message, prefix with verified email
     const messageToSend = verification.verifiedEmail
@@ -276,6 +280,7 @@ export default function ChatViewStreaming({
     checkout.resetCheckout()
     verification.reset()
     pendingMessageRef.current = null
+    dismissedVerificationRef.current = false
     localStorage.removeItem('itwhip-ai-session-id')
     localStorage.removeItem('itwhip-ai-vehicles')
   }, [resetStream, checkout, verification])
@@ -403,17 +408,22 @@ export default function ChatViewStreaming({
       }
       checkout.initCheckout(effectiveSummary)
     } else if (action === 'NEEDS_EMAIL_OTP') {
+      // User explicitly clicked Verify — override dismiss flag
+      dismissedVerificationRef.current = false
       verification.show(auth?.user?.email ?? null, 'BOOKING_STATUS')
     }
   }, [action, effectiveSummary, onNavigateToLogin, checkout, session, verification, auth?.user?.email])
 
-  // Backup: auto-show verification card via useEffect (in case onComplete closure is stale)
+  // Backup: auto-show verification card when action TRANSITIONS to NEEDS_EMAIL_OTP
+  // Uses a ref to track previous action — prevents re-triggering on isVisible changes (dismiss loop)
+  const prevActionRef = useRef<string | null>(null)
   useEffect(() => {
-    if (action === 'NEEDS_EMAIL_OTP' && !verification.isVisible) {
-      console.log('[ChatView] useEffect auto-trigger: action=NEEDS_EMAIL_OTP, showing verification card')
+    if (action === 'NEEDS_EMAIL_OTP' && prevActionRef.current !== 'NEEDS_EMAIL_OTP' && !dismissedVerificationRef.current) {
+      console.log('[ChatView] useEffect auto-trigger: action transitioned to NEEDS_EMAIL_OTP')
       verification.show(auth?.user?.email ?? null, 'BOOKING_STATUS')
     }
-  }, [action, verification.isVisible, verification.show, auth?.user?.email])
+    prevActionRef.current = action
+  }, [action, verification.show, auth?.user?.email])
 
   // Filter out auto-lookup system messages (post-verification triggers that shouldn't show as bubbles)
   const AUTO_LOOKUP_MSG = 'Email verification complete. Look up my bookings and tell me what you see.'
@@ -567,7 +577,7 @@ export default function ChatViewStreaming({
                 error={verification.error}
                 attemptsRemaining={verification.attemptsRemaining}
                 verified={verification.verified}
-                onDismiss={verification.hide}
+                onDismiss={() => { verification.hide(); clearAction(); dismissedVerificationRef.current = true; }}
               />
             </motion.div>
           )}
