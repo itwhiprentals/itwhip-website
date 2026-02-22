@@ -550,16 +550,36 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     // Handle [VERIFIED:email] prefix — client sends this after OTP verification
     let userMessage = body.message
     let bookingContext = ''
+    let isAutoLookup = false
     const verifiedMatch = body.message.match(/^\[VERIFIED:([^\]]+)\]\s*(.*)$/)
     if (verifiedMatch) {
       const verifiedEmail = verifiedMatch[1]
-      userMessage = verifiedMatch[2] || body.message
+      let remainder = verifiedMatch[2] || ''
+
+      // Check for [AUTO_LOOKUP] flag — silent post-verification trigger
+      if (remainder.startsWith('[AUTO_LOOKUP]')) {
+        isAutoLookup = true
+        remainder = remainder.replace('[AUTO_LOOKUP]', '').trim()
+      }
+
+      userMessage = remainder || 'Please look up my bookings and help me.'
       bookingContext = await fetchBookingContextByEmail(verifiedEmail)
+
+      if (isAutoLookup) {
+        // Auto-lookup: don't add a visible user message — just inject context for Claude
+        // Use a system-level instruction as the user message so Claude knows what to do
+        userMessage = 'Email verification complete. Look up my bookings and tell me what you see.'
+        bookingContext = `IMPORTANT: The user just completed email OTP verification. Their booking data is below. Help them directly — do NOT ask to verify again or return NEEDS_EMAIL_OTP.\n\n${bookingContext}`
+        console.log(`[ai-booking-stream] Auto-lookup after verification: ${verifiedEmail}`)
+      }
     }
 
-    // Add clean user message (without [VERIFIED:] prefix)
+    // Add user message to session — for auto-lookup, this is a hidden system instruction
     session = addMessage(session, 'user', userMessage)
-    await sse.sendEvent('session', { session })
+    // For auto-lookup, don't broadcast the session update (no visible user bubble)
+    if (!isAutoLookup) {
+      await sse.sendEvent('session', { session })
+    }
 
     // Persist user message to DB
     if (conversationId) {
@@ -922,6 +942,7 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
 
     // Risk assessment - use parsed.action or compute from risk assessment
     let action: string | null = parsed.action
+    if (action) console.log(`[ai-booking-stream] Action from Claude: ${action}`)
     if (!action && (session.state === BookingState.CONFIRMING || session.state === BookingState.READY_FOR_PAYMENT) && summary && featureFlags.riskAssessmentEnabled) {
       if (!body.userId) {
         action = 'NEEDS_LOGIN'

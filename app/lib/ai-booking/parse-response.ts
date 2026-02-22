@@ -98,7 +98,7 @@ function isValidState(state: unknown): boolean {
 
 function isValidAction(action: unknown): boolean {
   if (action === null || action === undefined || action === 'NONE') return true;
-  const validActions = ['HANDOFF_TO_PAYMENT', 'NEEDS_LOGIN', 'NEEDS_VERIFICATION', 'HIGH_RISK_REVIEW', 'START_OVER'];
+  const validActions = ['HANDOFF_TO_PAYMENT', 'NEEDS_LOGIN', 'NEEDS_VERIFICATION', 'HIGH_RISK_REVIEW', 'START_OVER', 'NEEDS_EMAIL_OTP'];
   return typeof action === 'string' && validActions.includes(action);
 }
 

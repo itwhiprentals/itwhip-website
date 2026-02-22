@@ -99,6 +99,11 @@ export default function ChatViewStreaming({
           verification.hide()
         }
       }
+      // Auto-show verification card when API returns NEEDS_EMAIL_OTP
+      // verification.show is a stable useCallback — safe from stale closure
+      if (response.action === 'NEEDS_EMAIL_OTP') {
+        verification.show(auth?.user?.email ?? null, 'BOOKING_STATUS')
+      }
     },
   })
 
@@ -198,7 +203,7 @@ export default function ChatViewStreaming({
       }
       hasInteracted.current = true
     }
-  }, [session?.messages.length, vehicles, effectiveSummary, currentText, checkout.state.step])
+  }, [session?.messages.length, vehicles, effectiveSummary, currentText, checkout.state.step, verification.isVisible])
 
   const isInCheckout = checkout.state.step !== CheckoutStep.IDLE && checkout.state.step !== CheckoutStep.CANCELLED && checkout.state.step !== CheckoutStep.FAILED
 
@@ -368,6 +373,21 @@ export default function ChatViewStreaming({
             locale,
           })
         }, 1500)
+      } else if (verification.purpose === 'BOOKING_STATUS' || verification.purpose === 'SENSITIVE_INFO') {
+        // No pending message — verification was triggered by API (NEEDS_EMAIL_OTP), not client-side intercept.
+        // Send a silent auto-lookup trigger. The [AUTO_LOOKUP] flag tells the server to:
+        // 1. NOT add a visible user message (avoids duplicate bubble)
+        // 2. Fetch booking data and tell Claude verification is complete
+        setTimeout(() => {
+          verification.hide()
+          sendMessage({
+            message: `[VERIFIED:${verifiedEmail}] [AUTO_LOOKUP]`,
+            session: updatedSession,
+            previousVehicles: persistedVehicles,
+            userId: auth?.user?.id ?? null,
+            locale,
+          })
+        }, 1500)
       }
     }
   }, [verification, session, effectiveSummary, checkout, sendMessage, persistedVehicles, auth?.user?.id, locale])
@@ -387,7 +407,17 @@ export default function ChatViewStreaming({
     }
   }, [action, effectiveSummary, onNavigateToLogin, checkout, session, verification, auth?.user?.email])
 
-  const messages = session?.messages || []
+  // Backup: auto-show verification card via useEffect (in case onComplete closure is stale)
+  useEffect(() => {
+    if (action === 'NEEDS_EMAIL_OTP' && !verification.isVisible) {
+      console.log('[ChatView] useEffect auto-trigger: action=NEEDS_EMAIL_OTP, showing verification card')
+      verification.show(auth?.user?.email ?? null, 'BOOKING_STATUS')
+    }
+  }, [action, verification.isVisible, verification.show, auth?.user?.email])
+
+  // Filter out auto-lookup system messages (post-verification triggers that shouldn't show as bubbles)
+  const AUTO_LOOKUP_MSG = 'Email verification complete. Look up my bookings and tell me what you see.'
+  const messages = (session?.messages || []).filter(m => m.content !== AUTO_LOOKUP_MSG)
   const hasMessages = messages.length > 0
 
   const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 }
@@ -704,7 +734,7 @@ export default function ChatViewStreaming({
 
         {/* Action buttons — hide during checkout */}
         <AnimatePresence>
-          {action && !isInCheckout && (
+          {action && !isInCheckout && action !== 'NEEDS_EMAIL_OTP' && (
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -763,7 +793,7 @@ export default function ChatViewStreaming({
           onSend={handleSendMessage}
           onReset={handleReset}
           suggestions={suggestions}
-          disabled={isStreaming}
+          disabled={isStreaming || (verification.isVisible && !verification.verified)}
           hasMessages={hasMessages}
         />
       </div>

@@ -90,12 +90,13 @@ export function useStreamingChat(options: StreamingOptions = {}) {
     const abortController = new AbortController()
     abortControllerRef.current = abortController
 
-    // Reset state
+    // Reset state — clear previous action to prevent stale triggers
     setState(prev => ({
       ...prev,
       isStreaming: true,
       isThinking: false,
       currentText: '',
+      action: null,
       error: null,
       isRateLimited: false,
       toolsInUse: [],
