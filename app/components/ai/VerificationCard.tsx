@@ -7,6 +7,7 @@ import {
   IoMail,
   IoReload,
   IoSync,
+  IoClose,
 } from 'react-icons/io5'
 
 // ---------------------------------------------------------------------------
@@ -26,6 +27,7 @@ interface VerificationCardProps {
   error: string | null
   attemptsRemaining: number | null
   verified: boolean               // true = success flash
+  onDismiss?: () => void          // close/X button handler
 }
 
 // ---------------------------------------------------------------------------
@@ -78,6 +80,7 @@ export default function VerificationCard({
   error,
   attemptsRemaining,
   verified,
+  onDismiss,
 }: VerificationCardProps) {
   // -- Local state -----------------------------------------------------------
   const [emailInput, setEmailInput] = useState(email ?? '')
@@ -199,9 +202,18 @@ export default function VerificationCard({
       {/* -- Header --------------------------------------------------------- */}
       <div className="flex items-center gap-2 p-3 border-b border-gray-100 dark:border-gray-700">
         <IoShieldCheckmark size={16} className="text-purple-600" />
-        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+        <h4 className="text-sm font-semibold text-gray-900 dark:text-white flex-1">
           {PURPOSE_TITLES[purpose]}
         </h4>
+        {onDismiss && (
+          <button
+            onClick={onDismiss}
+            className="p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            aria-label="Dismiss"
+          >
+            <IoClose size={16} />
+          </button>
+        )}
       </div>
 
       <div className="p-4">

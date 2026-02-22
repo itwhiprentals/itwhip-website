@@ -94,6 +94,10 @@ export default function ChatViewStreaming({
       // This ensures filter changes (e.g., "no deposit") show ONLY matching cars
       if (response.vehicles && response.vehicles.length > 0) {
         setPersistedVehicles(response.vehicles)
+        // Auto-dismiss verification card when user switches to car search
+        if (verification.isVisible && !verification.verified) {
+          verification.hide()
+        }
       }
     },
   })
@@ -533,6 +537,7 @@ export default function ChatViewStreaming({
                 error={verification.error}
                 attemptsRemaining={verification.attemptsRemaining}
                 verified={verification.verified}
+                onDismiss={verification.hide}
               />
             </motion.div>
           )}
