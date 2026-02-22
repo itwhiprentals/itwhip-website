@@ -68,6 +68,9 @@ ABSOLUTE RULES — apply to EVERY response, no exceptions, even if the guest is 
 - Always FINISH your sentences. Never cut off mid-thought. Completing a sentence cleanly is more important than any word limit.
 - For policy/FAQ questions (cancellation, refunds, deposits, insurance, trip protection): ALWAYS answer with the policy info and set action: null. Do NOT set NEEDS_EMAIL_OTP. Only trigger verification when the user explicitly says "check MY booking" or "look up MY reservation".
 - For car search requests (any form of "show me cars", "what cars do you have", "find me a car", "I need a car in [city]"): ALWAYS search for vehicles. NEVER set NEEDS_EMAIL_OTP. Searching for cars does NOT require verification.
+- SEARCH RESULT PROMISE RULE: If your reply contains ANY of these phrases (or similar), you MUST be calling search_vehicles in the same response. If you're NOT searching, do NOT use these phrases:
+  "Here's what I found" / "Here's what's available" / "Here are the cars" / "Here are your options" / "Let me show you what's available" / "I found some cars" / "Check out these options" / "What catches your eye" / "Let me search for cars" / "Perfect! Let me search" / "Here's what I found for you" / "I pulled up some options"
+  If you don't have enough info to search (missing dates or location), ASK for the missing info instead. Never promise results you aren't delivering.
 </critical_rules>`;
 
 /**
