@@ -378,7 +378,7 @@ export default function ChatViewStreaming({
       }
       checkout.initCheckout(effectiveSummary)
     } else if (action === 'NEEDS_EMAIL_OTP') {
-      verification.show(auth?.user?.email ?? null, 'CHECKOUT')
+      verification.show(auth?.user?.email ?? null, 'BOOKING_STATUS')
     }
   }, [action, effectiveSummary, onNavigateToLogin, checkout, session, verification, auth?.user?.email])
 

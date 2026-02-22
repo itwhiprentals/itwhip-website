@@ -8,6 +8,7 @@
 // Re-export everything from the modular prompts
 export {
   buildSystemPrompt,
+  buildStaticInstructions,
   IDENTITY,
   buildStateContext,
   buildUserContext,
@@ -16,7 +17,9 @@ export {
   buildWeatherContext,
   PERSONALITY_RULES,
   OFF_TOPIC_RULES,
-  ALLOWED_QUESTIONS,
+  FAQ_CONTENT,
+  BOOKING_SUPPORT_RULES,
+  GUARDRAILS,
   RESPONSE_FORMAT,
   SEARCH_QUERY_EXAMPLES,
   EXAMPLE_CONVERSATIONS,

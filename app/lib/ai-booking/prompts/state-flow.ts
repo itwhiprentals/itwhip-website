@@ -25,8 +25,9 @@ ${saved.length > 0 ? saved.map((s) => `  - ${s}`).join('\n') : '  (none yet)'}`;
 /**
  * Build user context string showing login/verification status
  */
-export function buildUserContext(isLoggedIn: boolean, isVerified: boolean): string {
-  return `USER STATUS: logged_in=${isLoggedIn}, email_verified=${isVerified}${isVerified ? ' (can access booking data and proceed to checkout)' : ' (needs email OTP verification for booking status and checkout)'}`;
+export function buildUserContext(isLoggedIn: boolean, isVerified: boolean, userEmail?: string | null): string {
+  const emailPart = userEmail ? `, account_email=${userEmail}` : '';
+  return `USER STATUS: logged_in=${isLoggedIn}${emailPart}, email_verified=${isVerified}${isVerified ? ' (can access booking data and proceed to checkout)' : ' (needs email OTP verification for booking status and checkout)'}`;
 }
 
 /**

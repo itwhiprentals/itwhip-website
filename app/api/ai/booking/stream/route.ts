@@ -16,7 +16,7 @@ import {
   addMessage,
   calculateDays,
 } from '@/app/lib/ai-booking/state-machine'
-import { buildSystemPrompt } from '@/app/lib/ai-booking/system-prompt'
+import { buildSystemPrompt, buildStaticInstructions } from '@/app/lib/ai-booking/system-prompt'
 import { parseClaudeResponse } from '@/app/lib/ai-booking/parse-response'
 import { assessBookingRisk } from '@/app/lib/ai-booking/risk-bridge'
 import { checkAISecurity } from '@/app/lib/ai-booking/security'
@@ -573,12 +573,23 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     // Determine verification status from session
     const isVerified = isSessionVerified(session)
 
+    // Look up logged-in user's email for prompt context
+    let userEmail: string | null = null
+    if (body.userId) {
+      const profile = await prisma.reviewerProfile.findUnique({
+        where: { id: body.userId },
+        select: { email: true },
+      })
+      userEmail = profile?.email ?? null
+    }
+
     // Build system prompt (enhanced for complex queries)
     const locale = body.locale || 'en'
     let systemPrompt = buildSystemPrompt({
       session,
       isLoggedIn: !!body.userId,
       isVerified,
+      userEmail,
       vehicles: body.previousVehicles || undefined,
       locale,
     })
@@ -593,15 +604,28 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       systemPrompt = enhancePromptForThinking(systemPrompt)
     }
 
+    // Build static instructions for first user turn (never changes — well-cached)
+    const staticInstructions = buildStaticInstructions()
+
+    // Prepend instruction turn before conversation messages
+    // Per Anthropic's guide: bulk content in first user turn, identity-only system prompt
+    const instructionMessages: Anthropic.MessageParam[] = [
+      { role: 'user' as const, content: [{ type: 'text' as const, text: staticInstructions, cache_control: { type: 'ephemeral' as const } }] },
+      { role: 'assistant' as const, content: 'Understood' },
+    ]
+
     // Build messages for Claude with multi-turn caching
     // Add cache_control to second-to-last user message for conversation prefix caching
     // This saves ~90% on tokens for repeated conversation context
-    let claudeMessages: Anthropic.MessageParam[] = addCacheControlToMessages(
-      session.messages.map((m) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-      }))
-    )
+    let claudeMessages: Anthropic.MessageParam[] = [
+      ...instructionMessages,
+      ...addCacheControlToMessages(
+        session.messages.map((m) => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+        }))
+      ),
+    ]
 
     const client = getClient()
     let vehicles: VehicleSummary[] | null = body.previousVehicles || null
@@ -806,6 +830,7 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
             session: updatedSession,
             isLoggedIn: !!body.userId,
             isVerified,
+            userEmail,
             vehicles: filteredVehicles,
             locale,
           })
