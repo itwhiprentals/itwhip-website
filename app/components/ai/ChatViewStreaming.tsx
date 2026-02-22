@@ -80,6 +80,8 @@ export default function ChatViewStreaming({
   // Persistent dismiss flag — once user clicks X on verification card, don't re-show
   // until they explicitly reset the conversation or click a "Verify" action button.
   const dismissedVerificationRef = useRef(false)
+  // Persistent dismiss flag for cards — prevents re-show after user clicks X
+  const dismissedCardsRef = useRef<Set<string>>(new Set())
 
   // Use streaming hook
   const {
@@ -112,9 +114,10 @@ export default function ChatViewStreaming({
           verification.hide()
         }
       }
-      // Persist cards and bookings for scroll-back
+      // Persist cards and bookings for scroll-back (skip dismissed cards)
       if (response.cards) {
-        setPersistedCards(response.cards)
+        const filtered = response.cards.filter((c: CardType) => !dismissedCardsRef.current.has(c))
+        setPersistedCards(filtered.length > 0 ? filtered : null)
       } else {
         setPersistedCards(null)
       }
@@ -132,7 +135,9 @@ export default function ChatViewStreaming({
   // Use stream state or persisted state
   const session = streamSession || persistedSession
   const vehicles = streamVehicles || persistedVehicles
-  const activeCards = streamCards ?? persistedCards
+  // Filter out dismissed cards from both stream and persisted
+  const rawCards = streamCards ?? persistedCards
+  const activeCards = rawCards?.filter((c: CardType) => !dismissedCardsRef.current.has(c)) ?? null
   const activeBookings = streamBookings ?? persistedBookings
 
   // Fallback: rebuild summary client-side if server didn't return one
@@ -303,6 +308,7 @@ export default function ChatViewStreaming({
     verification.reset()
     pendingMessageRef.current = null
     dismissedVerificationRef.current = false
+    dismissedCardsRef.current.clear()
     localStorage.removeItem('itwhip-ai-session-id')
     localStorage.removeItem('itwhip-ai-vehicles')
   }, [resetStream, checkout, verification])
@@ -586,7 +592,7 @@ export default function ChatViewStreaming({
               exit={{ opacity: 0, y: -8 }}
               transition={springTransition}
             >
-              <PolicyCard onDismiss={() => { clearCards(); setPersistedCards(null) }} />
+              <PolicyCard onDismiss={() => { dismissedCardsRef.current.add('POLICY'); clearCards(); setPersistedCards(null) }} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -600,7 +606,7 @@ export default function ChatViewStreaming({
               exit={{ opacity: 0, y: -8 }}
               transition={springTransition}
             >
-              <BookingStatusCard bookings={activeBookings} onDismiss={() => { clearCards(); setPersistedCards(null); setPersistedBookings(null) }} />
+              <BookingStatusCard bookings={activeBookings} onDismiss={() => { dismissedCardsRef.current.add('BOOKING_STATUS'); clearCards(); setPersistedCards(null); setPersistedBookings(null) }} />
             </motion.div>
           )}
         </AnimatePresence>

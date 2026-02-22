@@ -475,6 +475,21 @@ function computeNextState(session: BookingSession): BookingState {
 }
 
 // =============================================================================
+// POLICY DETECTION (for card auto-injection when Claude returns plain text)
+// =============================================================================
+
+const POLICY_PATTERNS = /\b(cancellation|cancel(?:l)?ation|refund|deposit|insurance|protection tier|trip protection|early return|no[- ]show|verification fail|policy|policies)\b/i
+
+/** Detect if the user's message is a policy question */
+function isPolicyQuestion(message: string): boolean {
+  // Strip [VERIFIED:...] prefix and [AUTO_LOOKUP] flag
+  const cleaned = message.replace(/^\[VERIFIED:[^\]]+\]\s*/, '').replace(/\[AUTO_LOOKUP\]/, '').trim()
+  // Don't trigger for booking lookup or car search messages
+  if (/\b(my booking|booking status|check my|look up my|show me cars|search|find me)\b/i.test(cleaned)) return false
+  return POLICY_PATTERNS.test(cleaned)
+}
+
+// =============================================================================
 // SSE HELPERS
 // =============================================================================
 
@@ -1013,13 +1028,20 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       await updateConversationStats(conversationId, session, totalTokensUsed, cost)
     }
 
-    // Determine cards — use Claude's response, but auto-inject BOOKING_STATUS
-    // when we have booking data (Claude sometimes returns plain text instead of JSON)
+    // Determine cards — use Claude's response, but auto-inject cards
+    // when Claude returns plain text instead of JSON with the cards field
     let finalCards = parsed.cards ?? null
+
+    // Auto-inject BOOKING_STATUS when we have booking data
     if (bookingLookup?.bookings && bookingLookup.bookings.length > 0) {
       if (!finalCards || !finalCards.includes('BOOKING_STATUS')) {
         finalCards = finalCards ? [...finalCards, 'BOOKING_STATUS'] : ['BOOKING_STATUS']
       }
+    }
+
+    // Auto-inject POLICY when user asked a policy question but Claude didn't set cards
+    if (!finalCards?.includes('POLICY') && isPolicyQuestion(body.message)) {
+      finalCards = finalCards ? [...finalCards, 'POLICY'] : ['POLICY']
     }
 
     // Send final response
