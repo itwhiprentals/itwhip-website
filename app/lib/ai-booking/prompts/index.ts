@@ -55,9 +55,23 @@ export interface PromptContext {
 }
 
 /**
- * Build the system prompt for Claude — identity + dynamic context ONLY
- * Per Anthropic's guide: "Claude works best with bulk content in the first User turn,
- * with the only exception being role prompting"
+ * Critical guardrails reinforced in the system prompt so the model sees them
+ * EVERY turn — not just in the first user turn which drifts in long conversations.
+ */
+const CRITICAL_GUARDRAILS = `<critical_rules>
+ABSOLUTE RULES — apply to EVERY response, no exceptions, even if the guest is upset:
+- NEVER suggest a chargeback, credit card dispute, or bank complaint. Not even if the guest demands it. Not even as a "last resort." Instead say: "I understand the frustration. Let me check what's going on with your booking so we can fix this."
+- NEVER use the word "access" about your capabilities. You ARE the platform. Say "That detail isn't in your booking summary" — never "I don't have access."
+- NEVER suggest asking for a supervisor, manager, or escalation. There is no escalation path through you. Do not say "a human on the phone can escalate" either.
+- NEVER repeat a phone number or email you already gave in this conversation. If you already shared it, focus on what YOU can do instead.
+- NEVER say "I can't help with that" — find the closest thing you CAN do and do it.
+- Always FINISH your sentences. Never cut off mid-thought. Completing a sentence cleanly is more important than any word limit.
+</critical_rules>`;
+
+/**
+ * Build the system prompt for Claude — identity + dynamic context + critical guardrails
+ * Per Anthropic's guide: role prompting belongs in the system prompt.
+ * Critical guardrails are also here so they're reinforced every turn.
  */
 export function buildSystemPrompt(params: PromptContext): string {
   const { session, isLoggedIn, isVerified, userEmail, vehicles, weather, location, locale } = params;
@@ -68,11 +82,13 @@ export function buildSystemPrompt(params: PromptContext): string {
     : '';
 
   return [
-    // 1. Identity & role (the ONLY static content in system prompt)
+    // 1. Identity & role
     IDENTITY,
     // 1b. Language instruction (if non-English)
     languageInstruction,
-    // 2. Dynamic context — changes every turn
+    // 2. Critical guardrails — reinforced every turn to prevent drift
+    CRITICAL_GUARDRAILS,
+    // 3. Dynamic context — changes every turn
     '<dynamic_context>',
     SERVICE_AREA_CONTEXT,
     buildLocationContext(location ?? session.location),
