@@ -33,7 +33,17 @@ import type {
   CardType,
   BookingData,
 } from '@/app/lib/ai-booking/types'
-import { BookingState, CheckoutStep } from '@/app/lib/ai-booking/types'
+import { BookingState, CheckoutStep, ConversationMode } from '@/app/lib/ai-booking/types'
+
+// =============================================================================
+// COOKIE HELPERS
+// =============================================================================
+
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
+  return match ? match[2] : null
+}
 
 // =============================================================================
 // TYPES
@@ -98,6 +108,7 @@ export default function ChatViewStreaming({
     toolsInUse,
     cards: streamCards,
     bookings: streamBookings,
+    mode: streamMode,
     sendMessage,
     reset: resetStream,
     clearAction,
@@ -114,10 +125,13 @@ export default function ChatViewStreaming({
           verification.hide()
         }
       }
-      // Persist cards and bookings for scroll-back (skip dismissed cards)
+      // Persist cards and bookings for scroll-back
+      // If server sent cards back, un-dismiss them (user may have asked to re-show)
       if (response.cards) {
-        const filtered = response.cards.filter((c: CardType) => !dismissedCardsRef.current.has(c))
-        setPersistedCards(filtered.length > 0 ? filtered : null)
+        for (const card of response.cards) {
+          dismissedCardsRef.current.delete(card)
+        }
+        setPersistedCards(response.cards)
       } else {
         setPersistedCards(null)
       }
@@ -194,7 +208,20 @@ export default function ChatViewStreaming({
         if (response.ok) {
           const data = await response.json()
           if (data.success && data.data) {
-            setPersistedSession(data.data.session)
+            const loadedSession = data.data.session
+            // Restore verification from cookies if session doesn't have it (cross-session persistence)
+            if (loadedSession && !loadedSession.verifiedEmail) {
+              const emailCookie = getCookie('choe_verified_email')
+              const atCookie = getCookie('choe_verified_at')
+              if (emailCookie && atCookie) {
+                const verifiedAt = parseInt(atCookie)
+                if (Date.now() - verifiedAt < 7 * 60 * 60 * 1000) {
+                  loadedSession.verifiedEmail = decodeURIComponent(emailCookie)
+                  loadedSession.verifiedAt = verifiedAt
+                }
+              }
+            }
+            setPersistedSession(loadedSession)
             // Vehicles aren't persisted in DB yet, load from localStorage as fallback
             const savedVehicles = localStorage.getItem('itwhip-ai-vehicles')
             if (savedVehicles) setPersistedVehicles(JSON.parse(savedVehicles))
@@ -275,6 +302,7 @@ export default function ChatViewStreaming({
           vehicleId: null,
           verifiedEmail: null,
           verifiedAt: null,
+          mode: ConversationMode.GENERAL,
         }
 
     setPersistedSession(updatedSession)
@@ -283,9 +311,19 @@ export default function ChatViewStreaming({
     // via the API. This ensures messages are always sent, always visible, and avoids
     // false positives on policy/FAQ questions like "cancellation policy".
 
-    // If session is verified and we have a pending message, prefix with verified email
-    const messageToSend = verification.verifiedEmail
-      ? `[VERIFIED:${verification.verifiedEmail}] ${message}`
+    // If session is verified (via React state, session, or cookie), prefix with verified email
+    const effectiveVerifiedEmail = verification.verifiedEmail
+      || updatedSession.verifiedEmail
+      || (() => {
+        const emailCookie = getCookie('choe_verified_email')
+        const atCookie = getCookie('choe_verified_at')
+        if (emailCookie && atCookie && (Date.now() - parseInt(atCookie)) < 7 * 60 * 60 * 1000) {
+          return decodeURIComponent(emailCookie)
+        }
+        return null
+      })()
+    const messageToSend = effectiveVerifiedEmail
+      ? `[VERIFIED:${effectiveVerifiedEmail}] ${message}`
       : message
 
     sendMessage({
@@ -377,12 +415,17 @@ export default function ChatViewStreaming({
     const verifiedEmail = await verification.verifyCode(code)
     if (verifiedEmail && session) {
       // Update session with verified status
+      const verifiedAt = Date.now()
       const updatedSession = {
         ...session,
         verifiedEmail,
-        verifiedAt: Date.now(),
+        verifiedAt,
       }
       setPersistedSession(updatedSession)
+
+      // Persist verification in cookies (7-hour window, survives page reloads and new sessions)
+      document.cookie = `choe_verified_email=${encodeURIComponent(verifiedEmail)};max-age=${7 * 60 * 60};path=/;SameSite=Strict`
+      document.cookie = `choe_verified_at=${verifiedAt};max-age=${7 * 60 * 60};path=/;SameSite=Strict`
 
       // If checkout was pending, start it
       if (verification.purpose === 'CHECKOUT' && effectiveSummary) {
@@ -431,8 +474,21 @@ export default function ChatViewStreaming({
     } else if (action === 'HANDOFF_TO_PAYMENT' && effectiveSummary) {
       // Gate on verification before starting checkout
       if (session && !isSessionVerified(session)) {
-        verification.show(auth?.user?.email ?? null, 'CHECKOUT')
-        return
+        // Check cookie fallback before showing OTP
+        const emailCookie = getCookie('choe_verified_email')
+        const atCookie = getCookie('choe_verified_at')
+        if (emailCookie && atCookie && (Date.now() - parseInt(atCookie)) < 7 * 60 * 60 * 1000) {
+          // Restore verification from cookie and proceed
+          const restoredSession = {
+            ...session,
+            verifiedEmail: decodeURIComponent(emailCookie),
+            verifiedAt: parseInt(atCookie),
+          }
+          setPersistedSession(restoredSession)
+        } else {
+          verification.show(auth?.user?.email ?? null, 'CHECKOUT')
+          return
+        }
       }
       checkout.initCheckout(effectiveSummary)
     } else if (action === 'NEEDS_EMAIL_OTP') {
@@ -861,6 +917,8 @@ export default function ChatViewStreaming({
           suggestions={suggestions}
           disabled={isStreaming || (verification.isVisible && !verification.verified)}
           hasMessages={hasMessages}
+          mode={streamMode ?? 'GENERAL'}
+          isDetectingMode={isStreaming}
         />
       </div>
     </motion.div>

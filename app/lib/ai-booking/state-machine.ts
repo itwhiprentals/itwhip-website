@@ -7,6 +7,7 @@ import {
   BookingSession,
   ChatMessage,
   ClaudeBookingOutput,
+  ConversationMode,
 } from './types';
 
 // Import date validators from dedicated module (avoid duplication)
@@ -48,13 +49,14 @@ export function createInitialSession(): BookingSession {
     rentalDays: null,
     verifiedEmail: null,
     verifiedAt: null,
+    mode: ConversationMode.GENERAL,
   };
 }
 
-/** Check if the session has a valid (non-expired) email verification — 30-minute window */
+/** Check if the session has a valid (non-expired) email verification — 7-hour window */
 export function isSessionVerified(session: BookingSession): boolean {
   if (!session.verifiedEmail || !session.verifiedAt) return false;
-  return (Date.now() - session.verifiedAt) < 30 * 60 * 1000;
+  return (Date.now() - session.verifiedAt) < 7 * 60 * 60 * 1000;
 }
 
 // =============================================================================
@@ -204,4 +206,27 @@ export function wantsDefaultDates(message: string): boolean {
     /\bwhen.?ever\b/i,
   ];
   return patterns.some(p => p.test(message));
+}
+
+// =============================================================================
+// MODE DETECTION
+// =============================================================================
+
+/** Detect conversation mode from user message and session context */
+export function detectMode(message: string, session: BookingSession): ConversationMode {
+  // Strip verification prefix for clean matching
+  const cleaned = message.replace(/^\[VERIFIED:[^\]]+\]\s*/, '').replace(/\[AUTO_LOOKUP\]/, '').trim();
+
+  // Personal: verified + account-related query
+  if (session.verifiedEmail && /\b(my booking|my reservation|my trip|my rental|my account|verification status|check my|look up my)\b/i.test(cleaned)) {
+    return ConversationMode.PERSONAL;
+  }
+
+  // Booking: location/date/car intent
+  if (/\b(car|vehicle|rent|book|reserve|phoenix|tucson|scottsdale|tempe|mesa|chandler|gilbert|glendale|peoria|surprise|goodyear|avondale|tomorrow|next week|this weekend|\d{1,2}\/\d{1,2}|show me|find me|search|looking for)\b/i.test(cleaned)) {
+    return ConversationMode.BOOKING;
+  }
+
+  // General: everything else (policy, FAQ, greetings, off-topic)
+  return ConversationMode.GENERAL;
 }

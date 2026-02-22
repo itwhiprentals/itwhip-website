@@ -5,6 +5,7 @@
 //   - First user turn: all static instructions wrapped in XML tags
 
 import type { BookingSession, VehicleSummary, WeatherContext } from '../types';
+import { ConversationMode } from '../types';
 
 import { IDENTITY } from './identity';
 import { buildStateContext, buildUserContext, BOOKING_SEQUENCE } from './state-flow';
@@ -73,6 +74,19 @@ ABSOLUTE RULES — apply to EVERY response, no exceptions, even if the guest is 
   If you don't have enough info to search (missing dates or location), ASK for the missing info instead. Never promise results you aren't delivering.
 </critical_rules>`;
 
+/** Build mode context for the system prompt */
+function buildModeContext(mode: ConversationMode): string {
+  switch (mode) {
+    case ConversationMode.BOOKING:
+      return `<mode>BOOKING MODE — The guest is looking to rent a car. Focus on the booking flow: location → dates → vehicle → confirm. Stay on track. Don't digress into policy unless asked. Set mode: "BOOKING" in your response.</mode>`;
+    case ConversationMode.PERSONAL:
+      return `<mode>PERSONAL MODE — The guest is verified and asking about their account or existing bookings. Help with their bookings, verification status, account questions. Don't push new bookings unless they ask. Set mode: "PERSONAL" in your response.</mode>`;
+    case ConversationMode.GENERAL:
+    default:
+      return `<mode>GENERAL MODE — The guest is asking general questions (policy, FAQ, greetings, what you can do). Answer helpfully, show PolicyCard when relevant. Don't push the booking flow unless they express intent to rent. Set mode: "GENERAL" in your response.</mode>`;
+  }
+}
+
 /**
  * Build the system prompt for Claude — identity + dynamic context + critical guardrails
  * Per Anthropic's guide: role prompting belongs in the system prompt.
@@ -93,7 +107,9 @@ export function buildSystemPrompt(params: PromptContext): string {
     languageInstruction,
     // 2. Critical guardrails — reinforced every turn to prevent drift
     CRITICAL_GUARDRAILS,
-    // 3. Dynamic context — changes every turn
+    // 3. Conversation mode — guides behavior focus
+    buildModeContext(session.mode),
+    // 4. Dynamic context — changes every turn
     '<dynamic_context>',
     SERVICE_AREA_CONTEXT,
     buildLocationContext(location ?? session.location),

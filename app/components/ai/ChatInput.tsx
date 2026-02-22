@@ -12,6 +12,8 @@ interface ChatInputProps {
   suggestions: string[]
   disabled: boolean
   hasMessages: boolean
+  mode?: 'GENERAL' | 'BOOKING' | 'PERSONAL'
+  isDetectingMode?: boolean
 }
 
 export default function ChatInput({
@@ -20,6 +22,8 @@ export default function ChatInput({
   suggestions,
   disabled,
   hasMessages,
+  mode,
+  isDetectingMode,
 }: ChatInputProps) {
   const [value, setValue] = useState('')
   const [placeholderIndex, setPlaceholderIndex] = useState(0)
@@ -142,6 +146,19 @@ export default function ChatInput({
             <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
             {t('platform')}
           </span>
+          {mode && (
+            <>
+              <span className="text-[9px] text-gray-300/40 dark:text-gray-600/40">|</span>
+              <span className="flex items-center gap-1 text-[9px] text-gray-400/70 dark:text-gray-500/60">
+                <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${
+                  isDetectingMode
+                    ? 'bg-yellow-400 animate-pulse'
+                    : 'bg-green-400'
+                }`} />
+                {isDetectingMode ? t('detectingMode') : t(`mode${mode.charAt(0) + mode.slice(1).toLowerCase()}`)}
+              </span>
+            </>
+          )}
         </div>
       </div>
 

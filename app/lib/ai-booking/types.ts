@@ -3,6 +3,16 @@
 // SDK-extractable — no framework-specific imports
 
 // =============================================================================
+// CONVERSATION MODES
+// =============================================================================
+
+export enum ConversationMode {
+  GENERAL = 'GENERAL',
+  BOOKING = 'BOOKING',
+  PERSONAL = 'PERSONAL',
+}
+
+// =============================================================================
 // BOOKING STATES
 // =============================================================================
 
@@ -41,8 +51,11 @@ export interface BookingSession {
 
   /** Verified email from OTP flow (null if not yet verified) */
   verifiedEmail: string | null;
-  /** Timestamp (ms) when email was verified — expires after 30 min */
+  /** Timestamp (ms) when email was verified — expires after 7 hours */
   verifiedAt: number | null;
+
+  /** Current conversation mode */
+  mode: ConversationMode;
 }
 
 export interface ChatMessage {
@@ -181,6 +194,7 @@ export interface ClaudeBookingOutput {
   action: BookingAction | null;
   searchQuery: SearchQuery | null;
   cards: CardType[] | null;
+  mode: ConversationMode | null;
 }
 
 export interface SearchQuery {

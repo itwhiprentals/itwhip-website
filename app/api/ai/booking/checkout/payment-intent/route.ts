@@ -218,7 +218,23 @@ export async function POST(request: NextRequest) {
     // =========================================================================
     // STRIPE PAYMENT INTENT
     // =========================================================================
-    const stripeCustomerId = await getOrCreateStripeCustomer(user)
+
+    // Resolve the correct Stripe customer BEFORE creating the PI.
+    // If a saved card is selected, use that card's customer so confirm() works.
+    let stripeCustomerId = await getOrCreateStripeCustomer(user)
+
+    if (pending.selectedPaymentMethod) {
+      try {
+        const pm = await stripe.paymentMethods.retrieve(pending.selectedPaymentMethod)
+        const pmCustomer = pm.customer as string | null
+        if (pmCustomer && pmCustomer !== stripeCustomerId) {
+          console.log(`[checkout/payment-intent] Using saved card's customer ${pmCustomer} instead of ${stripeCustomerId}`)
+          stripeCustomerId = pmCustomer
+        }
+      } catch (pmError) {
+        console.warn('[checkout/payment-intent] Could not retrieve saved payment method, using default customer:', pmError)
+      }
+    }
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalChargeCents,
@@ -265,6 +281,48 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // =========================================================================
+    // SAVED CARD: Confirm server-side (skip PaymentElement UI)
+    // =========================================================================
+    if (pending.selectedPaymentMethod) {
+      console.log(`[checkout/payment-intent] Confirming with saved card: ${pending.selectedPaymentMethod}`)
+
+      try {
+        const confirmedPI = await stripe.paymentIntents.confirm(paymentIntent.id, {
+          payment_method: pending.selectedPaymentMethod,
+          return_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://itwhip.com'}/choe`,
+        })
+
+        if (confirmedPI.status === 'requires_capture') {
+          // Authorized with saved card — client skips PaymentCard entirely
+          console.log(`[checkout/payment-intent] Saved card authorized: ${confirmedPI.id}`)
+          return NextResponse.json({
+            confirmed: true,
+            paymentIntentId: confirmedPI.id,
+          })
+        }
+
+        if (confirmedPI.status === 'requires_action') {
+          // 3DS required — client needs to handle the challenge
+          console.log(`[checkout/payment-intent] 3DS required for saved card: ${confirmedPI.id}`)
+          return NextResponse.json({
+            requiresAction: true,
+            clientSecret: confirmedPI.client_secret,
+            paymentIntentId: confirmedPI.id,
+          })
+        }
+
+        // Unexpected status — fall through to normal card entry
+        console.warn(`[checkout/payment-intent] Unexpected PI status after confirm: ${confirmedPI.status}`)
+      } catch (confirmError) {
+        // Saved card confirmation failed (expired, declined, etc.) — fall through to new card entry
+        console.warn(`[checkout/payment-intent] Saved card confirmation failed, falling back to new card:`, confirmError)
+      }
+    }
+
+    // =========================================================================
+    // NEW CARD: Return clientSecret for PaymentElement
+    // =========================================================================
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,

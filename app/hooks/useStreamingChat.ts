@@ -9,6 +9,7 @@ import type {
   BookingAction,
   CardType,
   BookingData,
+  ConversationMode,
 } from '@/app/lib/ai-booking/types'
 
 // =============================================================================
@@ -29,6 +30,7 @@ interface StreamingState {
   toolsInUse: Array<{ name: string; input: unknown }>
   cards: CardType[] | null
   bookings: BookingData[] | null
+  mode: ConversationMode | null
 }
 
 interface StreamingOptions {
@@ -48,6 +50,7 @@ interface StreamingResponse {
   tokensUsed: number
   cards: CardType[] | null
   bookings: BookingData[] | null
+  mode: ConversationMode | null
 }
 
 interface SendMessageParams {
@@ -78,6 +81,7 @@ export function useStreamingChat(options: StreamingOptions = {}) {
     toolsInUse: [],
     cards: null,
     bookings: null,
+    mode: null,
   })
 
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -238,6 +242,7 @@ export function useStreamingChat(options: StreamingOptions = {}) {
               toolsInUse: [],
               cards: response.cards ?? null,
               bookings: response.bookings ?? null,
+              mode: response.mode ?? prev.mode,
             }))
             options.onComplete?.(response)
             break
@@ -308,6 +313,7 @@ export function useStreamingChat(options: StreamingOptions = {}) {
       toolsInUse: [],
       cards: null,
       bookings: null,
+      mode: null,
     })
   }, [cancel])
 

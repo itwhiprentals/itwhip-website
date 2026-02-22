@@ -17,7 +17,8 @@ You MUST respond with valid JSON only. No text outside the JSON object.
   },
   "action": null,
   "searchQuery": null,
-  "cards": null
+  "cards": null,
+  "mode": "GENERAL"
 }
 
 FIELD RULES:
@@ -27,6 +28,7 @@ FIELD RULES:
 - action: null for normal flow, or one of: "HANDOFF_TO_PAYMENT", "NEEDS_LOGIN", "NEEDS_VERIFICATION", "HIGH_RISK_REVIEW", "START_OVER", "NEEDS_EMAIL_OTP"
 - searchQuery: Include ONLY when searching for cars (location + dates available)
 - cards: null for normal flow, or an array of card types to display: ["BOOKING_STATUS"] when showing booking lookup results after verification, ["POLICY"] when answering policy questions (cancellation, refunds, deposits, insurance, trip protection, early return, no-show). When you set a card, keep your reply SHORT (1-2 sentences) — the card handles the details. NEVER set cards for car search results (those have their own UI).
+- mode: The conversation mode — "GENERAL" for FAQ/policy/greetings, "BOOKING" for car search/rental flow, "PERSONAL" for verified account/booking support. Match to what the user is doing.
 
 CRITICAL FILTER RULES (read carefully):
 1. "no deposit" / "without deposit" / "zero deposit" / "$0 deposit" → ALWAYS set noDeposit: true

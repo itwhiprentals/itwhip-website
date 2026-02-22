@@ -8,6 +8,7 @@ import {
   BookingSession,
   BookingState,
   VehicleSummary,
+  ConversationMode,
 } from './types';
 import { createInitialSession } from './state-machine';
 
@@ -85,6 +86,9 @@ export async function loadConversation(
       endTime: conversation.endTime ?? null,
       vehicleId: conversation.vehicleId ?? null,
       vehicleType: conversation.vehicleType ?? null,
+      verifiedEmail: conversation.verifiedEmail ?? null,
+      verifiedAt: conversation.verifiedAt ? conversation.verifiedAt.getTime() : null,
+      mode: ConversationMode.GENERAL,
     };
 
     // Parse last assistant message for vehicles (if any were shown)

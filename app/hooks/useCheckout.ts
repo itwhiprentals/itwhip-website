@@ -3,6 +3,7 @@
 // Completely independent from the AI conversation (SSE) — uses direct REST calls.
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
+import { loadStripe } from '@stripe/stripe-js'
 import type {
   BookingSummary,
   CheckoutState,
@@ -487,7 +488,7 @@ export function useCheckout() {
     }
 
     setIsLoading(true)
-    setState((prev) => ({ ...prev, step: CheckoutStep.PAYMENT, error: null }))
+    setState((prev) => ({ ...prev, error: null }))
 
     try {
       const res = await fetch('/api/ai/booking/checkout/payment-intent', {
@@ -503,8 +504,98 @@ export function useCheckout() {
 
       const data = await res.json()
 
+      // -----------------------------------------------------------------
+      // SAVED CARD: Payment already authorized server-side
+      // -----------------------------------------------------------------
+      if (data.confirmed) {
+        console.log('[useCheckout] Saved card authorized — confirming booking')
+        setState((prev) => ({
+          ...prev,
+          step: CheckoutStep.PROCESSING,
+          paymentIntentId: data.paymentIntentId,
+        }))
+
+        // Confirm booking directly (same as confirmBooking callback)
+        const confirmRes = await fetch('/api/ai/booking/checkout/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            checkoutSessionId: state.checkoutSessionId,
+            paymentIntentId: data.paymentIntentId,
+          }),
+        })
+
+        if (!confirmRes.ok) {
+          const err = await confirmRes.json()
+          throw new Error(err.error || 'Failed to confirm booking')
+        }
+
+        const confirmation = await confirmRes.json()
+        setState((prev) => ({
+          ...prev,
+          step: CheckoutStep.CONFIRMED,
+          bookingConfirmation: confirmation,
+        }))
+        try { sessionStorage.removeItem(STORAGE_KEY) } catch { /* ignore */ }
+        return
+      }
+
+      // -----------------------------------------------------------------
+      // SAVED CARD + 3DS: Client must handle authentication challenge
+      // -----------------------------------------------------------------
+      if (data.requiresAction) {
+        console.log('[useCheckout] 3DS required for saved card — launching challenge')
+        setState((prev) => ({ ...prev, step: CheckoutStep.PROCESSING }))
+
+        const stripeInstance = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+        if (!stripeInstance) throw new Error('Failed to load Stripe')
+
+        const { error: actionError, paymentIntent } = await stripeInstance.handleNextAction({
+          clientSecret: data.clientSecret,
+        })
+
+        if (actionError) {
+          throw new Error(actionError.message || 'Card verification failed. Please try again.')
+        }
+
+        if (paymentIntent?.status === 'requires_capture') {
+          // 3DS passed — confirm booking
+          console.log('[useCheckout] 3DS passed — confirming booking')
+          const confirmRes = await fetch('/api/ai/booking/checkout/confirm', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              checkoutSessionId: state.checkoutSessionId,
+              paymentIntentId: paymentIntent.id,
+            }),
+          })
+
+          if (!confirmRes.ok) {
+            const err = await confirmRes.json()
+            throw new Error(err.error || 'Failed to confirm booking')
+          }
+
+          const confirmation = await confirmRes.json()
+          setState((prev) => ({
+            ...prev,
+            step: CheckoutStep.CONFIRMED,
+            bookingConfirmation: confirmation,
+            paymentIntentId: paymentIntent.id,
+          }))
+          try { sessionStorage.removeItem(STORAGE_KEY) } catch { /* ignore */ }
+          return
+        }
+
+        // Unexpected status after 3DS
+        throw new Error('Card verification incomplete. Please try a different card.')
+      }
+
+      // -----------------------------------------------------------------
+      // NEW CARD: Show PaymentElement UI
+      // -----------------------------------------------------------------
       setState((prev) => ({
         ...prev,
+        step: CheckoutStep.PAYMENT,
         clientSecret: data.clientSecret,
         paymentIntentId: data.paymentIntentId,
       }))

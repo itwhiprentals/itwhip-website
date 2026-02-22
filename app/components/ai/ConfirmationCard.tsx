@@ -1,15 +1,15 @@
 'use client'
 
 import { IoCheckmarkCircle, IoCarSport, IoCalendar, IoCard } from 'react-icons/io5'
+import { Link } from '@/i18n/navigation'
 import type { BookingConfirmation } from '@/app/lib/ai-booking/types'
 
 interface ConfirmationCardProps {
   confirmation: BookingConfirmation
-  onViewBooking?: () => void
   onNewSearch?: () => void
 }
 
-export default function ConfirmationCard({ confirmation, onViewBooking, onNewSearch }: ConfirmationCardProps) {
+export default function ConfirmationCard({ confirmation, onNewSearch }: ConfirmationCardProps) {
   return (
     <div className="bg-white dark:bg-gray-800 border border-green-200 dark:border-green-800 rounded-lg overflow-hidden">
       {/* Success header */}
@@ -66,22 +66,18 @@ export default function ConfirmationCard({ confirmation, onViewBooking, onNewSea
 
       {/* Actions */}
       <div className="p-3 border-t border-gray-100 dark:border-gray-700 flex gap-2">
-        {onViewBooking && (
-          <button
-            onClick={onViewBooking}
-            className="flex-1 py-2 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            View Booking
-          </button>
-        )}
-        {onNewSearch && (
-          <button
-            onClick={onNewSearch}
-            className="flex-1 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-          >
-            New Search
-          </button>
-        )}
+        <Link
+          href={`/rentals/dashboard/bookings/${confirmation.bookingId}`}
+          className="flex-1 py-2 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary/90 transition-colors text-center"
+        >
+          View My Booking
+        </Link>
+        <Link
+          href="/dashboard"
+          className="flex-1 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-center"
+        >
+          Go to Dashboard
+        </Link>
       </div>
     </div>
   )

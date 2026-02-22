@@ -55,9 +55,9 @@ export async function POST(request: NextRequest) {
 
     const { vehicleId, startDate, endDate, numberOfDays } = parsed.data
 
-    // Validate dates
-    const start = new Date(startDate)
-    const end = new Date(endDate)
+    // Validate dates — use noon UTC to prevent timezone shift (UTC midnight = previous day in MST)
+    const start = new Date(startDate + 'T12:00:00Z')
+    const end = new Date(endDate + 'T12:00:00Z')
     if (end <= start) {
       return NextResponse.json({ error: 'End date must be after start date' }, { status: 400 })
     }

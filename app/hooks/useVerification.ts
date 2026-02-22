@@ -79,6 +79,11 @@ export function useVerification(sessionId: string) {
   // ---------------------------------------------------------------------------
   const reset = useCallback(() => {
     setState(initialState)
+    // Clear verification cookies
+    if (typeof document !== 'undefined') {
+      document.cookie = 'choe_verified_email=;max-age=0;path=/'
+      document.cookie = 'choe_verified_at=;max-age=0;path=/'
+    }
   }, [])
 
   // ---------------------------------------------------------------------------

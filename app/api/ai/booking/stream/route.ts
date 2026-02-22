@@ -39,7 +39,8 @@ import {
   supportsExtendedThinking,
   enhancePromptForThinking,
 } from '@/app/lib/ai-booking/extended-thinking'
-import { isSessionVerified } from '@/app/lib/ai-booking/state-machine'
+import { isSessionVerified, detectMode } from '@/app/lib/ai-booking/state-machine'
+import { ConversationMode } from '@/app/lib/ai-booking/types'
 
 // =============================================================================
 // BOOKING LOOKUP (for verified users asking about their bookings)
@@ -261,6 +262,8 @@ async function upsertConversation(
           vehicleType: session.vehicleType,
           lastActivityAt: new Date(),
           messageCount: actualMessageCount,
+          ...(session.verifiedEmail && { verifiedEmail: session.verifiedEmail }),
+          ...(session.verifiedAt && { verifiedAt: new Date(session.verifiedAt) }),
         }
       })
       return existing.id
@@ -489,6 +492,14 @@ function isPolicyQuestion(message: string): boolean {
   return POLICY_PATTERNS.test(cleaned)
 }
 
+const REDISPLAY_PATTERNS = /\b(don'?t see|didn'?t see|not showing|where.?s the|pull.* back|show.* again|can'?t see|no card|missing|not there|where is it|bring.* back)\b/i
+
+/** Detect if the user is asking to re-display a card they dismissed */
+function isCardRedisplayRequest(message: string): boolean {
+  const cleaned = message.replace(/^\[VERIFIED:[^\]]+\]\s*/, '').replace(/\[AUTO_LOOKUP\]/, '').trim()
+  return REDISPLAY_PATTERNS.test(cleaned)
+}
+
 // =============================================================================
 // SSE HELPERS
 // =============================================================================
@@ -584,8 +595,9 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       return
     }
 
-    // Initialize session
+    // Initialize session (ensure mode defaults for sessions from older clients)
     let session: BookingSession = body.session || createInitialSession()
+    if (!session.mode) session.mode = ConversationMode.GENERAL
 
     // Create/update conversation in DB
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
@@ -672,6 +684,10 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       })
       userEmail = profile?.email ?? null
     }
+
+    // Detect conversation mode from user message
+    const detectedMode = detectMode(userMessage, session)
+    session.mode = detectedMode
 
     // Build system prompt (enhanced for complex queries)
     const locale = body.locale || 'en'
@@ -981,6 +997,11 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     // Update session state - use parsed.nextState or compute from session
     session.state = parsed.nextState || computeNextState(session)
 
+    // Apply Claude's mode suggestion if valid (overrides detection)
+    if (parsed.mode && Object.values(ConversationMode).includes(parsed.mode)) {
+      session.mode = parsed.mode
+    }
+
     // Add only the reply text to session (not raw JSON)
     session = addMessage(session, 'assistant', parsed.reply)
 
@@ -1044,6 +1065,23 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       finalCards = finalCards ? [...finalCards, 'POLICY'] : ['POLICY']
     }
 
+    // Re-display cards when user says "I don't see it" / "pull it back up"
+    if (isCardRedisplayRequest(body.message)) {
+      if (bookingLookup?.bookings && bookingLookup.bookings.length > 0) {
+        if (!finalCards?.includes('BOOKING_STATUS')) {
+          finalCards = finalCards ? [...finalCards, 'BOOKING_STATUS'] : ['BOOKING_STATUS']
+        }
+      }
+      // Re-show POLICY if the recent conversation had policy content
+      if (isPolicyQuestion(body.message) || session.messages.some(m =>
+        m.role === 'assistant' && (m.content.includes('cancellation') || m.content.includes('refund') || m.content.includes('policy'))
+      )) {
+        if (!finalCards?.includes('POLICY')) {
+          finalCards = finalCards ? [...finalCards, 'POLICY'] : ['POLICY']
+        }
+      }
+    }
+
     // Send final response
     await sse.sendEvent('done', {
       session,
@@ -1054,6 +1092,7 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       tokensUsed: totalTokensUsed,
       cards: finalCards,
       bookings: bookingLookup?.bookings ?? null,
+      mode: session.mode,
     })
 
   } catch (error) {

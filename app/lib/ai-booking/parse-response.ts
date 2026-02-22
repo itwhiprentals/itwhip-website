@@ -2,7 +2,7 @@
 // Parses and validates Claude's structured JSON output
 // SDK-extractable — no framework-specific imports
 
-import { BookingState, ClaudeBookingOutput, CardType } from './types';
+import { BookingState, ClaudeBookingOutput, CardType, ConversationMode } from './types';
 
 // =============================================================================
 // PARSE CLAUDE RESPONSE
@@ -92,7 +92,10 @@ function validateAndNormalize(parsed: Record<string, unknown>): ClaudeBookingOut
   // Validate cards
   const cards = normalizeCards(parsed.cards);
 
-  return { reply, nextState, extractedData, action, searchQuery, cards };
+  // Validate mode
+  const mode = isValidMode(parsed.mode) ? (parsed.mode as ConversationMode) : null;
+
+  return { reply, nextState, extractedData, action, searchQuery, cards, mode };
 }
 
 function isValidState(state: unknown): boolean {
@@ -103,6 +106,10 @@ function isValidAction(action: unknown): boolean {
   if (action === null || action === undefined || action === 'NONE') return true;
   const validActions = ['HANDOFF_TO_PAYMENT', 'NEEDS_LOGIN', 'NEEDS_VERIFICATION', 'HIGH_RISK_REVIEW', 'START_OVER', 'NEEDS_EMAIL_OTP'];
   return typeof action === 'string' && validActions.includes(action);
+}
+
+function isValidMode(mode: unknown): boolean {
+  return typeof mode === 'string' && Object.values(ConversationMode).includes(mode as ConversationMode);
 }
 
 function normalizeExtractedData(
@@ -202,6 +209,7 @@ function createFallbackResponse(raw: string): ClaudeBookingOutput {
     action: null,
     searchQuery: null,
     cards: null,
+    mode: null,
   };
 }
 
