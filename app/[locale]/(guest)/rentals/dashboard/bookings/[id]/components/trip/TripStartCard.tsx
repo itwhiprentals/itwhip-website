@@ -237,6 +237,17 @@ export function TripStartCard({
               {remainingTripTime && (
                 <p className="text-xs font-semibold text-red-600 dark:text-red-400 mt-1">{t('tripDuration', { time: remainingTripTime })}</p>
               )}
+              <button
+                onClick={handleStartInspection}
+                disabled={isStarting}
+                className="w-full mt-3 px-6 py-3 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {isStarting ? t('starting') : t('startTrip')}
+              </button>
             </div>
           )}
 
@@ -244,6 +255,17 @@ export function TripStartCard({
             <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
               <p className="text-xs font-medium text-red-900 dark:text-red-200">{t('lateStart')}</p>
               <p className="text-xs text-red-700 dark:text-red-300 mt-0.5">{t('lateDesc')}</p>
+              <button
+                onClick={handleStartInspection}
+                disabled={isStarting}
+                className="w-full mt-3 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {isStarting ? t('starting') : t('startTrip')}
+              </button>
             </div>
           )}
 
