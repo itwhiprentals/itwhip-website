@@ -22,6 +22,7 @@ import { ModifyBookingSheet } from './components/ModifyBookingSheet'
 import { SecureAccountBanner } from './components/SecureAccountBanner'
 import RentalAgreementModal from '../../../components/modals/RentalAgreementModal'
 import { BookedCard, VerifiedCard, IssuesCard, OnHoldCard, ConfirmedCard, CompletedCard } from './components/cards'
+import { MinimalLegalFooter } from './components/cards/SharedCardSections'
 import { getVehicleClass, formatFuelTypeBadge } from '@/app/lib/utils/vehicleClassification'
 import {
   getTimeUntilPickup, validateFileUpload
@@ -551,8 +552,8 @@ export default function BookingDetailsPage() {
           documentsSubmittedAt={typeof booking.documentsSubmittedAt === 'string' ? booking.documentsSubmittedAt : undefined}
           reviewedAt={typeof booking.reviewedAt === 'string' ? booking.reviewedAt : undefined}
           handoffStatus={booking.handoffStatus}
-          hideStatusMessage={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED'}
-          hideTitle={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED'}
+          hideStatusMessage={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ON_HOLD'}
+          hideTitle={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ON_HOLD'}
         />
 
         {/* Booking Onboarding - show for PENDING (grayed out) and CONFIRMED (active) */}
@@ -596,6 +597,13 @@ export default function BookingDetailsPage() {
         {booking.status === 'ON_HOLD' && (
           <OnHoldCard
             booking={booking}
+            messages={messages}
+            messagesLoading={messagesLoading}
+            messageSending={messageSending}
+            messageError={messageError}
+            messageUploading={messageUploading}
+            onSendMessage={sendMessage}
+            onFileUpload={handleMessageFileUpload}
             onCancel={() => setShowCancelDialog(true)}
             onModify={() => setShowModifyModal(true)}
             onAgreement={() => setShowAgreement(true)}
@@ -775,8 +783,8 @@ export default function BookingDetailsPage() {
               </div>
             )}
 
-            {/* Right Column - Sidebar (skip for PENDING/CONFIRMED — already rendered below cards) */}
-            {booking.status !== 'PENDING' && booking.status !== 'CONFIRMED' && (
+            {/* Right Column - Sidebar (skip for PENDING/CONFIRMED/ON_HOLD — rendered in card components) */}
+            {booking.status !== 'PENDING' && booking.status !== 'CONFIRMED' && booking.status !== 'ON_HOLD' && (
               <BookingSidebar
                 booking={booking}
                 onCancelClick={() => setShowCancelDialog(true)}
@@ -827,14 +835,7 @@ export default function BookingDetailsPage() {
 
         {/* Minimal legal footer for ON_HOLD */}
         {booking.status === 'ON_HOLD' && (
-          <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400 max-w-3xl mx-auto mb-2">
-              {t('footerLegal')}
-            </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500">
-              {t('copyright')}
-            </p>
-          </div>
+          <MinimalLegalFooter />
         )}
 
         {/* Cancellation Policy & Trust Safety Modals (for inspection phase) */}
