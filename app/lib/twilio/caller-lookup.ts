@@ -218,7 +218,7 @@ export async function lookupBookingByPhone(phone: string) {
       deliveryAddress: true,
       car: { select: { year: true, make: true, model: true, address: true, city: true } },
       host: { select: { name: true, phone: true } },
-      claims: { select: { id: true, status: true, type: true, estimatedCost: true }, take: 5 },
+      Claim: { select: { id: true, status: true, type: true, estimatedCost: true }, take: 5 },
     },
   })
 }
@@ -244,7 +244,7 @@ export async function lookupBookingByCode(code: string) {
       deliveryAddress: true,
       car: { select: { year: true, make: true, model: true, address: true, city: true } },
       host: { select: { name: true, phone: true } },
-      claims: { select: { id: true, status: true, type: true, estimatedCost: true }, take: 5 },
+      Claim: { select: { id: true, status: true, type: true, estimatedCost: true }, take: 5 },
     },
   })
 }
