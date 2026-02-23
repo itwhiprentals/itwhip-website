@@ -4532,7 +4532,9 @@
     "remainingHours": "{hours}h remaining",
     "lateStartDaysHours": "Late start - {days}d {hours}h remaining",
     "lateStartHours": "Late start - {hours}h remaining",
-    "lateStartMinutes": "Late start - {minutes}m remaining"
+    "lateStartMinutes": "Late start - {minutes}m remaining",
+    "startTrip": "Start Trip",
+    "starting": "Starting..."
   },
   "TripActiveCard": {
     "overdue": "Overdue",

@@ -4550,7 +4550,9 @@
     "remainingHours": "{hours}h restantes",
     "lateStartDaysHours": "Inicio tardío - {days}d {hours}h restantes",
     "lateStartHours": "Inicio tardío - {hours}h restantes",
-    "lateStartMinutes": "Inicio tardío - {minutes}m restantes"
+    "lateStartMinutes": "Inicio tardío - {minutes}m restantes",
+    "startTrip": "Iniciar viaje",
+    "starting": "Iniciando..."
   },
   "TripActiveCard": {
     "overdue": "Vencido",

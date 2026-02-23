@@ -3,7 +3,7 @@
 import { TRIP_CONSTANTS, HANDOFF_STATUS } from './constants'
 
 // TESTING MODE - Set to true to bypass all date/time validations
-export const TESTING_MODE = true
+export const TESTING_MODE = false
 
 export interface ValidationResult {
   valid: boolean
