@@ -556,8 +556,8 @@ export default function BookingDetailsPage() {
           hideTitle={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ON_HOLD'}
         />
 
-        {/* Booking Onboarding - show for PENDING (grayed out) and CONFIRMED (active) */}
-        {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && !booking.onboardingCompletedAt && (
+        {/* Booking Onboarding - show for PENDING (grayed out) and CONFIRMED (active) — excluded for verified-pending (rendered inside VerifiedCard) */}
+        {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && !isVerifiedPending && !booking.onboardingCompletedAt && (
           <div className="mt-3">
             <BookingOnboarding booking={booking} onDocumentUploaded={loadBooking} />
           </div>
@@ -577,6 +577,14 @@ export default function BookingDetailsPage() {
         {isVerifiedPending && !hasIssues && (
           <VerifiedCard
             booking={booking}
+            messages={messages}
+            messagesLoading={messagesLoading}
+            messageSending={messageSending}
+            messageError={messageError}
+            messageUploading={messageUploading}
+            onSendMessage={sendMessage}
+            onFileUpload={handleMessageFileUpload}
+            onDocumentUploaded={loadBooking}
             onCancel={() => setShowCancelDialog(true)}
             onModify={() => setShowModifyModal(true)}
             onAgreement={() => setShowAgreement(true)}
@@ -610,8 +618,8 @@ export default function BookingDetailsPage() {
           />
         )}
 
-        {/* Sidebar for PENDING — rendered directly below card, not in grid */}
-        {booking.status === 'PENDING' && (
+        {/* Sidebar for PENDING — rendered directly below card, not in grid (excluded for verified-pending — inside VerifiedCard) */}
+        {booking.status === 'PENDING' && !isVerifiedPending && (
           <div className="mt-3">
             <BookingSidebar
               booking={booking}

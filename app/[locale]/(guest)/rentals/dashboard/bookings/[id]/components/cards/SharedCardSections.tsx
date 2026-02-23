@@ -20,6 +20,7 @@ interface HostMessagesCardProps {
   onSendMessage: (text: string) => void
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void
   readOnly?: boolean
+  readOnlyLabel?: string
 }
 
 export const HostMessagesCard: React.FC<HostMessagesCardProps> = ({
@@ -32,6 +33,7 @@ export const HostMessagesCard: React.FC<HostMessagesCardProps> = ({
   onSendMessage,
   onFileUpload,
   readOnly = false,
+  readOnlyLabel,
 }) => {
   const t = useTranslations('BookingDetail')
 
@@ -73,7 +75,7 @@ export const HostMessagesCard: React.FC<HostMessagesCardProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('messages')}</span>
             {readOnly && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">{t('messagesLocked')}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">{readOnlyLabel || t('messagesLocked')}</span>
             )}
           </div>
           <svg className="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
