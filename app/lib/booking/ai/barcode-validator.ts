@@ -219,8 +219,16 @@ function findWasmFile(): string {
   const candidates = [
     join(process.cwd(), 'node_modules/zxing-wasm/dist/reader/zxing_reader.wasm'),
     join(process.cwd(), '.next/server/node_modules/zxing-wasm/dist/reader/zxing_reader.wasm'),
-    join(dirname(require.resolve('zxing-wasm/reader')), 'zxing_reader.wasm'),
   ]
+  // require.resolve can return a numeric module ID in bundled environments (Vercel webpack)
+  // instead of a file path — guard against that
+  try {
+    const resolved = require.resolve('zxing-wasm/reader')
+    if (typeof resolved === 'string') {
+      candidates.push(join(dirname(resolved), 'zxing_reader.wasm'))
+    }
+  } catch {}
+
   for (const p of candidates) {
     if (existsSync(p)) {
       console.log(`[barcode-validator] Found WASM at: ${p}`)

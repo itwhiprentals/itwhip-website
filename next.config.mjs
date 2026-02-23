@@ -10,7 +10,7 @@ const nextConfig = {
   allowedDevOrigins: ['10.165.1.231'],
 
   // Exclude geoip-lite from webpack bundling (use native Node.js require)
-  serverExternalPackages: ['geoip-lite'],
+  serverExternalPackages: ['geoip-lite', 'zxing-wasm'],
 
   // Ensure WASM binaries are included in Vercel serverless function bundles
   outputFileTracingIncludes: {
