@@ -35,6 +35,7 @@ export default function TripStartPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentStep, setCurrentStep] = useState(0)
+  const [handoffSkipped, setHandoffSkipped] = useState(false)
 
   const [tripData, setTripData] = useState<TripStartData>({
     photos: {},
@@ -73,7 +74,14 @@ export default function TripStartPage() {
           }
           
           setBooking(booking)
-          
+
+          // If handoff already complete, skip to Photos (step 1)
+          if (booking.handoffStatus === 'HANDOFF_COMPLETE' || booking.handoffStatus === 'BYPASSED') {
+            setCurrentStep(1)
+            setHandoffSkipped(true)
+            setTripData(prev => ({ ...prev, location: { lat: 0, lng: 0 } }))
+          }
+
           // Location will be verified by the LocationVerify component via GPS
         } else {
           setError('Booking not found')
@@ -172,7 +180,8 @@ export default function TripStartPage() {
   }
 
   const handleBack = () => {
-    if (currentStep > 0) {
+    const minStep = handoffSkipped ? 1 : 0
+    if (currentStep > minStep) {
       setCurrentStep(currentStep - 1)
       setError(null)
     }
@@ -291,11 +300,11 @@ export default function TripStartPage() {
         {/* Navigation Buttons */}
         <div className="flex justify-between">
           <button
-            onClick={currentStep === 0 ? () => router.back() : handleBack}
+            onClick={currentStep <= (handoffSkipped ? 1 : 0) ? () => router.back() : handleBack}
             disabled={submitting}
             className="px-6 py-2 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
           >
-            {currentStep === 0 ? 'Cancel' : 'Back'}
+            Back
           </button>
 
           <button
