@@ -556,8 +556,8 @@ export default function BookingDetailsPage() {
           hideTitle={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ON_HOLD'}
         />
 
-        {/* Booking Onboarding - show for PENDING (grayed out) and CONFIRMED (active) — excluded for verified-pending (rendered inside VerifiedCard) */}
-        {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && !isVerifiedPending && !booking.onboardingCompletedAt && (
+        {/* Booking Onboarding - show for PENDING (grayed out) — excluded for verified-pending and CONFIRMED (rendered inside their cards) */}
+        {booking.status === 'PENDING' && !isVerifiedPending && !booking.onboardingCompletedAt && (
           <div className="mt-3">
             <BookingOnboarding booking={booking} onDocumentUploaded={loadBooking} />
           </div>
@@ -635,79 +635,37 @@ export default function BookingDetailsPage() {
 
         {/* CONFIRMED card — pre-trip (onboarding complete or not, trip not started) */}
         {booking.status === 'CONFIRMED' && !booking.tripStartedAt && (
-          <>
-            {isPreTripReady ? (
-              <div className="mt-3">
-                <TripStartCard
-                  booking={booking}
-                  onTripStarted={loadBooking}
-                  onCancel={() => setShowCancelDialog(true)}
-                  onModify={() => setShowModifyModal(true)}
-                  onViewAgreement={() => setShowAgreement(true)}
-                />
-              </div>
-            ) : (
-              <ConfirmedCard
-                booking={booking}
-                onCancel={() => setShowCancelDialog(true)}
-                onModify={() => setShowModifyModal(true)}
-                onAgreement={() => setShowAgreement(true)}
-              />
-            )}
-            {/* Sidebar for CONFIRMED — rendered directly below card, not in grid */}
-            <div className="mt-3">
-              <BookingSidebar
-                booking={booking}
-                onCancelClick={() => setShowCancelDialog(true)}
-                onUploadClick={() => fileInputRef.current?.click()}
-                onAddToCalendar={addToGoogleCalendar}
-                uploadingFile={uploadingFile}
-              />
-            </div>
-            {/* Host + Messages combined card for CONFIRMED */}
-            <div className="mt-3 bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-              {/* Host section */}
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                    {booking.host.profilePhoto ? (
-                      <img src={booking.host.profilePhoto} alt={booking.host.name} className="w-10 h-10 rounded-full object-cover" />
-                    ) : (
-                      <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{booking.host.name}</p>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-yellow-500 text-xs">★</span>
-                      <span className="text-xs text-gray-600 dark:text-gray-400">{booking.host.rating.toFixed(1)}</span>
-                      <span className="text-gray-300 dark:text-gray-600 text-xs">•</span>
-                      <span className="text-xs text-gray-600 dark:text-gray-400">~{booking.host.responseTime}min</span>
-                    </div>
-                  </div>
-                  <a
-                    href="/messages"
-                    className="flex-shrink-0 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors inline-flex items-center gap-1.5"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                    {t('messageHost')}
-                  </a>
-                </div>
-              </div>
-              {/* Messages section */}
-              <MessagesPanel
-                bookingId={bookingId}
-                messages={messages}
-                loading={messagesLoading}
-                sending={messageSending}
-                error={messageError}
-                onSendMessage={sendMessage}
-                onFileUpload={handleMessageFileUpload}
-                uploadingFile={messageUploading}
-                noWrapper
-              />
-            </div>
-          </>
+          isPreTripReady ? (
+            <TripStartCard
+              booking={booking}
+              messages={messages}
+              messagesLoading={messagesLoading}
+              messageSending={messageSending}
+              messageError={messageError}
+              messageUploading={messageUploading}
+              onSendMessage={sendMessage}
+              onFileUpload={handleMessageFileUpload}
+              onTripStarted={loadBooking}
+              onCancel={() => setShowCancelDialog(true)}
+              onModify={() => setShowModifyModal(true)}
+              onViewAgreement={() => setShowAgreement(true)}
+            />
+          ) : (
+            <ConfirmedCard
+              booking={booking}
+              messages={messages}
+              messagesLoading={messagesLoading}
+              messageSending={messageSending}
+              messageError={messageError}
+              messageUploading={messageUploading}
+              onSendMessage={sendMessage}
+              onFileUpload={handleMessageFileUpload}
+              onDocumentUploaded={loadBooking}
+              onCancel={() => setShowCancelDialog(true)}
+              onModify={() => setShowModifyModal(true)}
+              onAgreement={() => setShowAgreement(true)}
+            />
+          )
         )}
 
         {booking.tripStartedAt && !booking.tripEndedAt && (
