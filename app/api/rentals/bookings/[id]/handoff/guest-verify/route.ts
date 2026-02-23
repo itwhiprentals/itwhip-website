@@ -209,44 +209,51 @@ export async function POST(
       }
     })
 
-    // Create arrival notification message
-    const arrivalMessage = typeof message === 'string' && message.trim()
-      ? message.trim()
-      : "I've arrived at the vehicle"
-
-    await prisma.rentalMessage.create({
-      data: {
-        id: crypto.randomUUID(),
-        updatedAt: new Date(),
-        bookingId,
-        senderId: user.id || bookingId,
-        senderType: 'guest',
-        senderName: booking.guestName || 'Guest',
-        senderEmail: booking.guestEmail || undefined,
-        message: arrivalMessage,
-        category: 'arrival_notification',
-      }
+    // Create arrival notification message (idempotent — skip if already sent)
+    const existingArrival = await prisma.rentalMessage.findFirst({
+      where: { bookingId, category: 'arrival_notification' },
+      select: { id: true },
     })
 
-    // Email host about guest arrival
-    const hostEmail = booking.car.host?.email
-    if (hostEmail) {
-      const carLabel = `${booking.car.year || ''} ${booking.car.make || ''} ${booking.car.model || ''}`.trim()
-      const distanceLabel = distanceMeters < 1000
-        ? `${distanceMeters}m`
-        : `${(distanceMeters / 1609.34).toFixed(1)} mi`
+    if (!existingArrival) {
+      const arrivalMessage = typeof message === 'string' && message.trim()
+        ? message.trim()
+        : "I've arrived at the vehicle"
 
-      await sendEmail({
-        to: hostEmail,
-        subject: `Guest arrived — ${booking.bookingCode || bookingId}`,
-        html: `
-          <p><strong>${booking.guestName || 'Your guest'}</strong> has arrived near the <strong>${carLabel}</strong> (${distanceLabel} away).</p>
-          ${arrivalMessage !== "I've arrived at the vehicle" ? `<blockquote style="border-left: 3px solid #22c55e; padding-left: 10px; margin: 10px 0; color: #374151;">${arrivalMessage}</blockquote>` : ''}
-          ${arrivalSummary ? `<p style="color: #6b7280; font-size: 14px;">${arrivalSummary}</p>` : ''}
-          <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/partner/bookings/${bookingId}" style="color: #22c55e;">View booking &amp; confirm handoff</a></p>
-        `,
-        text: `${booking.guestName || 'Your guest'} has arrived near the ${carLabel} (${distanceLabel} away). ${arrivalMessage}`,
-      }).catch(err => console.error('[Handoff] Host email failed:', err))
+      await prisma.rentalMessage.create({
+        data: {
+          id: crypto.randomUUID(),
+          updatedAt: new Date(),
+          bookingId,
+          senderId: user.id || bookingId,
+          senderType: 'guest',
+          senderName: booking.guestName || 'Guest',
+          senderEmail: booking.guestEmail || undefined,
+          message: arrivalMessage,
+          category: 'arrival_notification',
+        }
+      })
+
+      // Email host about guest arrival
+      const hostEmail = booking.car.host?.email
+      if (hostEmail) {
+        const carLabel = `${booking.car.year || ''} ${booking.car.make || ''} ${booking.car.model || ''}`.trim()
+        const distanceLabel = distanceMeters < 1000
+          ? `${distanceMeters}m`
+          : `${(distanceMeters / 1609.34).toFixed(1)} mi`
+
+        await sendEmail({
+          to: hostEmail,
+          subject: `Guest arrived — ${booking.bookingCode || bookingId}`,
+          html: `
+            <p><strong>${booking.guestName || 'Your guest'}</strong> has arrived near the <strong>${carLabel}</strong> (${distanceLabel} away).</p>
+            ${arrivalMessage !== "I've arrived at the vehicle" ? `<blockquote style="border-left: 3px solid #22c55e; padding-left: 10px; margin: 10px 0; color: #374151;">${arrivalMessage}</blockquote>` : ''}
+            ${arrivalSummary ? `<p style="color: #6b7280; font-size: 14px;">${arrivalSummary}</p>` : ''}
+            <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/partner/bookings/${bookingId}" style="color: #22c55e;">View booking &amp; confirm handoff</a></p>
+          `,
+          text: `${booking.guestName || 'Your guest'} has arrived near the ${carLabel} (${distanceLabel} away). ${arrivalMessage}`,
+        }).catch(err => console.error('[Handoff] Host email failed:', err))
+      }
     }
 
     return NextResponse.json({

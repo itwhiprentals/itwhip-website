@@ -118,37 +118,44 @@ export async function POST(
       data: updateData,
     })
 
-    // Create a message for guest with key instructions
+    // Create a message for guest with key instructions (idempotent — skip if already sent)
     if (effectiveKeyInstructions) {
-      await prisma.rentalMessage.create({
-        data: {
-          id: crypto.randomUUID(),
-          updatedAt: new Date(),
-          bookingId,
-          senderId: partner.id,
-          senderType: 'host',
-          senderName: partner.businessName || partner.name || 'Host',
-          message: effectiveKeyInstructions,
-          category: 'key_instructions',
-        }
+      const existingKeyMsg = await prisma.rentalMessage.findFirst({
+        where: { bookingId, category: 'key_instructions' },
+        select: { id: true },
       })
 
-      // Email guest with key instructions
-      if (booking.guestEmail) {
-        const carLabel = `${booking.car.year || ''} ${booking.car.make || ''} ${booking.car.model || ''}`.trim()
-        await sendEmail({
-          to: booking.guestEmail,
-          subject: `Key instructions — ${booking.bookingCode || bookingId}`,
-          html: `
-            <p>Your host has confirmed the handoff for the <strong>${carLabel}</strong>.</p>
-            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 12px 0;">
-              <p style="margin: 0 0 4px; font-weight: 600; color: #166534;">Key Instructions</p>
-              <p style="margin: 0; color: #374151;">${effectiveKeyInstructions}</p>
-            </div>
-            <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/rentals/trip/start/${bookingId}" style="color: #22c55e;">Continue to vehicle inspection</a></p>
-          `,
-          text: `Key instructions for ${carLabel}: ${effectiveKeyInstructions}`,
-        }).catch(err => console.error('[Handoff] Guest key email failed:', err))
+      if (!existingKeyMsg) {
+        await prisma.rentalMessage.create({
+          data: {
+            id: crypto.randomUUID(),
+            updatedAt: new Date(),
+            bookingId,
+            senderId: partner.id,
+            senderType: 'host',
+            senderName: partner.businessName || partner.name || 'Host',
+            message: effectiveKeyInstructions,
+            category: 'key_instructions',
+          }
+        })
+
+        // Email guest with key instructions
+        if (booking.guestEmail) {
+          const carLabel = `${booking.car.year || ''} ${booking.car.make || ''} ${booking.car.model || ''}`.trim()
+          await sendEmail({
+            to: booking.guestEmail,
+            subject: `Key instructions — ${booking.bookingCode || bookingId}`,
+            html: `
+              <p>Your host has confirmed the handoff for the <strong>${carLabel}</strong>.</p>
+              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 12px 0;">
+                <p style="margin: 0 0 4px; font-weight: 600; color: #166534;">Key Instructions</p>
+                <p style="margin: 0; color: #374151;">${effectiveKeyInstructions}</p>
+              </div>
+              <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/rentals/trip/start/${bookingId}" style="color: #22c55e;">Continue to vehicle inspection</a></p>
+            `,
+            text: `Key instructions for ${carLabel}: ${effectiveKeyInstructions}`,
+          }).catch(err => console.error('[Handoff] Guest key email failed:', err))
+        }
       }
     }
 

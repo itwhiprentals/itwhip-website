@@ -192,9 +192,9 @@ export function emergencyRoadsideInfo(data: {
 
 export function ivrAboutItWhip(locale: Locale = 'en'): string {
   const templates: Record<Locale, string> = {
-    en: `Welcome to ItWhip! Phoenix's car rental marketplace.\n\nRent a car: itwhip.com/rentals/search\nList your car: itwhip.com/partner\nChat with Choe (AI): itwhip.com/choe`,
-    es: `Bienvenido a ItWhip! El mercado de renta de autos de Phoenix.\n\nRenta un auto: itwhip.com/es/rentals/search\nPublica tu auto: itwhip.com/partner\nChatea con Choe (IA): itwhip.com/es/choe`,
-    fr: `Bienvenue sur ItWhip! Le marche de location de voitures de Phoenix.\n\nLouez une voiture: itwhip.com/fr/rentals/search\nInscrivez votre voiture: itwhip.com/partner\nParlez avec Choe (IA): itwhip.com/fr/choe`,
+    en: `Welcome to ItWhip! Phoenix's car rental marketplace.\n\nRent a car: itwhip.com/rentals/search\nList your car: itwhip.com/get-started/business\nChat with Choe (AI): itwhip.com/choe`,
+    es: `Bienvenido a ItWhip! El mercado de renta de autos de Phoenix.\n\nRenta un auto: itwhip.com/es/rentals/search\nPublica tu auto: itwhip.com/get-started/business\nChatea con Choe (IA): itwhip.com/es/choe`,
+    fr: `Bienvenue sur ItWhip! Le marche de location de voitures de Phoenix.\n\nLouez une voiture: itwhip.com/fr/rentals/search\nInscrivez votre voiture: itwhip.com/get-started/business\nParlez avec Choe (IA): itwhip.com/fr/choe`,
   }
   return templates[locale]
 }

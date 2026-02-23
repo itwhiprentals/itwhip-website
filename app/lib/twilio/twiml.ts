@@ -152,9 +152,9 @@ export function generateVisitorMenu(lang: Lang = 'en', tries: number = 0): strin
   })
 
   say(gather, t(lang,
-    'To learn more about renting or listing cars on the platform, press 1. If you have a booking code, press 2. To speak with someone, press 3.',
-    'Para saber mas sobre rentar o publicar autos en la plataforma, oprima 1. Si tienes un codigo de reserva, oprima 2. Para hablar con alguien, oprima 3.',
-    'Pour en savoir plus sur la location ou l\'inscription de voitures sur la plateforme, appuyez sur 1. Si vous avez un code de réservation, appuyez sur 2. Pour parler à quelqu\'un, appuyez sur 3.'
+    'To learn more about renting or listing cars on the platform, press 1. To look up your booking, press 2. To speak with someone, press 3.',
+    'Para saber mas sobre rentar o publicar autos en la plataforma, oprima 1. Para buscar tu reserva, oprima 2. Para hablar con alguien, oprima 3.',
+    'Pour en savoir plus sur la location ou l\'inscription de voitures sur la plateforme, appuyez sur 1. Pour rechercher votre réservation, appuyez sur 2. Pour parler à quelqu\'un, appuyez sur 3.'
   ), lang)
 
   // No input → repeat with tries+1
@@ -240,6 +240,107 @@ export function generateBookingCodeEntry(lang: Lang = 'en'): string {
     'Please enter your 6-digit booking code followed by the pound sign. Or press star to skip.',
     'Por favor ingresa tu codigo de reserva de 6 digitos seguido de la tecla de gato. O presiona asterisco para saltar.',
     'Veuillez entrer votre code de réservation à 6 chiffres suivi du signe dièse. Ou appuyez sur étoile pour passer.'
+  ), lang)
+
+  // No input → goodbye
+  goodbye(twiml, lang)
+  return twiml.toString()
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 4.0a: PHONE NUMBER ENTRY (alternative to booking code)
+// ════════════════════════════════════════════════════════════════════
+// "Enter the 10-digit phone number you used when booking, followed by pound. Or press star for booking code."
+
+export function generatePhoneNumberEntry(lang: Lang = 'en'): string {
+  const twiml = new VoiceResponse()
+
+  const gather = twiml.gather({
+    finishOnKey: '#',
+    action: menuUrl('phone-lookup', lang),
+    method: 'POST',
+    timeout: 12,
+  })
+
+  say(gather, t(lang,
+    'Please enter the 10-digit phone number you used when booking, followed by the pound sign. Or press star to enter a booking code instead.',
+    'Por favor ingresa el numero de telefono de 10 digitos que usaste al reservar, seguido de la tecla de gato. O presiona asterisco para ingresar un codigo de reserva.',
+    'Veuillez entrer le numéro de téléphone à 10 chiffres utilisé lors de la réservation, suivi du signe dièse. Ou appuyez sur étoile pour entrer un code de réservation.'
+  ), lang)
+
+  // No input → goodbye
+  goodbye(twiml, lang)
+  return twiml.toString()
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 4.0b: EMAIL CODE SENT (verification code emailed to guest)
+// ════════════════════════════════════════════════════════════════════
+
+export function generateEmailCodeSent(maskedEmail: string, pin: string, bookingCode: string, lang: Lang = 'en'): string {
+  const twiml = new VoiceResponse()
+
+  const gather = twiml.gather({
+    finishOnKey: '#',
+    action: menuUrl('verify-email-code', lang, `&pin=${pin}&code=${bookingCode}`),
+    method: 'POST',
+    timeout: 30,
+  })
+
+  say(gather, t(lang,
+    `We found a booking for that number. We've sent a 4-digit code to your email at ${maskedEmail}. Please enter the code followed by the pound sign.`,
+    `Encontramos una reserva para ese numero. Enviamos un codigo de 4 digitos a tu correo ${maskedEmail}. Por favor ingresa el codigo seguido de la tecla de gato.`,
+    `Nous avons trouvé une réservation pour ce numéro. Nous avons envoyé un code à 4 chiffres à votre courriel ${maskedEmail}. Veuillez entrer le code suivi du signe dièse.`
+  ), lang)
+
+  // No input → goodbye
+  goodbye(twiml, lang)
+  return twiml.toString()
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 4.0c: PHONE NOT FOUND
+// ════════════════════════════════════════════════════════════════════
+
+export function generatePhoneNotFound(lang: Lang = 'en'): string {
+  const twiml = new VoiceResponse()
+
+  const gather = twiml.gather({
+    numDigits: 1,
+    action: menuUrl('phone-not-found', lang),
+    method: 'POST',
+    timeout: GATHER_TIMEOUT,
+  })
+
+  say(gather, t(lang,
+    'I couldn\'t find a booking for that phone number. To try again, press 1. To enter a booking code instead, press 2. To return to the main menu, press 3.',
+    'No encontre una reserva para ese numero. Para intentar de nuevo, oprima 1. Para ingresar un codigo de reserva, oprima 2. Para volver al menu principal, oprima 3.',
+    'Je n\'ai pas trouvé de réservation pour ce numéro. Pour réessayer, appuyez sur 1. Pour entrer un code de réservation, appuyez sur 2. Pour revenir au menu principal, appuyez sur 3.'
+  ), lang)
+
+  // No input → goodbye
+  goodbye(twiml, lang)
+  return twiml.toString()
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 4.0d: CODE INCORRECT
+// ════════════════════════════════════════════════════════════════════
+
+export function generateCodeIncorrect(lang: Lang = 'en'): string {
+  const twiml = new VoiceResponse()
+
+  const gather = twiml.gather({
+    numDigits: 1,
+    action: menuUrl('code-incorrect', lang),
+    method: 'POST',
+    timeout: GATHER_TIMEOUT,
+  })
+
+  say(gather, t(lang,
+    'That code is incorrect. To try again, press 1. To return to the main menu, press 2.',
+    'Ese codigo es incorrecto. Para intentar de nuevo, oprima 1. Para volver al menu principal, oprima 2.',
+    'Ce code est incorrect. Pour réessayer, appuyez sur 1. Pour revenir au menu principal, appuyez sur 2.'
   ), lang)
 
   // No input → goodbye

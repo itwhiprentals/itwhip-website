@@ -190,6 +190,39 @@ async function findActiveBookingByGuestPhone(digits: string): Promise<(ActiveBoo
   }
 }
 
+// ─── Booking Lookup by Phone ──────────────────────────────────────
+
+export async function lookupBookingByPhone(phone: string) {
+  const digits = normalizeForLookup(phone)
+  if (!digits || digits.length < 10) return null
+
+  return prisma.rentalBooking.findFirst({
+    where: {
+      guestPhone: { contains: digits },
+      status: { in: ['CONFIRMED', 'ACTIVE', 'COMPLETED'] },
+    },
+    orderBy: { startDate: 'desc' },
+    select: {
+      id: true,
+      bookingCode: true,
+      status: true,
+      tripStatus: true,
+      startDate: true,
+      endDate: true,
+      startTime: true,
+      endTime: true,
+      guestPhone: true,
+      guestName: true,
+      guestEmail: true,
+      pickupLocation: true,
+      deliveryAddress: true,
+      car: { select: { year: true, make: true, model: true, address: true, city: true } },
+      host: { select: { name: true, phone: true } },
+      claims: { select: { id: true, status: true, type: true, estimatedCost: true }, take: 5 },
+    },
+  })
+}
+
 // ─── Booking Lookup by Code ────────────────────────────────────────
 
 export async function lookupBookingByCode(code: string) {

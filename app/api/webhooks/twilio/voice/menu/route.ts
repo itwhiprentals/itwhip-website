@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyTwilioWebhook, parseTwilioBody } from '@/app/lib/twilio/verify-signature'
-import { lookupBookingByCode } from '@/app/lib/twilio/caller-lookup'
+import { lookupBookingByCode, lookupBookingByPhone } from '@/app/lib/twilio/caller-lookup'
 import {
   generateVisitorMenu,
   generateAboutItWhip,
@@ -29,6 +29,10 @@ import {
   generateClaimStatusEntry,
   generateClaimFound,
   generateClaimNotFound,
+  generatePhoneNumberEntry,
+  generateEmailCodeSent,
+  generatePhoneNotFound,
+  generateCodeIncorrect,
 } from '@/app/lib/twilio/twiml'
 
 type Lang = 'en' | 'es' | 'fr'
@@ -119,6 +123,23 @@ function connectAgentToConference(roomName: string, callerCallSid: string, lang:
   }).catch(() => {})
 }
 
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@')
+  if (!local || !domain) return '***'
+  if (local.length <= 2) return `${local[0]}***@${domain}`
+  return `${local[0]}${local[1]}***@${domain}`
+}
+
+async function sendVerificationCode(email: string, pin: string) {
+  const { sendEmail } = await import('@/app/lib/email/send-email')
+  await sendEmail({
+    to: email,
+    subject: `Your ItWhip verification code: ${pin}`,
+    html: `<p>Your verification code is: <strong style="font-size: 24px; letter-spacing: 4px;">${pin}</strong></p><p>Enter this code on the phone to access your booking details.</p><p style="color: #6b7280;">This code expires when your call ends.</p>`,
+    text: `Your ItWhip verification code is: ${pin}. Enter this code on the phone to access your booking details.`,
+  })
+}
+
 export async function POST(request: NextRequest) {
   try {
     const params = await parseTwilioBody(request)
@@ -161,8 +182,8 @@ export async function POST(request: NextRequest) {
           case '1': // Learn about ItWhip
             twiml = generateAboutItWhip(lang)
             break
-          case '2': // I have a booking code
-            twiml = generateBookingCodeEntry(lang)
+          case '2': // Look up your booking (phone number entry)
+            twiml = generatePhoneNumberEntry(lang)
             break
           case '3': { // Speak with someone
             const room = makeRoom()
@@ -203,8 +224,8 @@ export async function POST(request: NextRequest) {
       // ─── Customer Main Menu ─────────────────────────────
       case 'customer':
         switch (digits) {
-          case '1': // Booking support
-            twiml = generateBookingCodeEntry(lang)
+          case '1': // Booking support (phone number entry)
+            twiml = generatePhoneNumberEntry(lang)
             break
           case '2': // Insurance & claims
             twiml = generateInsuranceMenu(lang)
@@ -483,6 +504,81 @@ export async function POST(request: NextRequest) {
             break
           case '2': // Main menu
             twiml = generateVisitorMenu(lang)
+            break
+          default:
+            twiml = generateVisitorMenu(lang)
+        }
+        break
+
+      // ─── Phone Number Lookup (with email verification) ────
+      case 'phone-lookup': {
+        if (digits === '*') {
+          twiml = generateBookingCodeEntry(lang)
+          break
+        }
+        if (digits && digits.length >= 10) {
+          const booking = await lookupBookingByPhone(digits)
+          if (booking && booking.guestEmail) {
+            const pin = String(Math.floor(1000 + Math.random() * 9000))
+            const masked = maskEmail(booking.guestEmail)
+            sendVerificationCode(booking.guestEmail, pin).catch(e =>
+              console.error('[IVR] Email code send failed:', e)
+            )
+            twiml = generateEmailCodeSent(masked, pin, booking.bookingCode, lang)
+          } else {
+            twiml = generatePhoneNotFound(lang)
+          }
+        } else {
+          twiml = generatePhoneNotFound(lang)
+        }
+        break
+      }
+
+      // ─── Verify Email Code ────────────────────────────────
+      case 'verify-email-code': {
+        const expectedPin = url.searchParams.get('pin') || ''
+        const bookingCode = url.searchParams.get('code') || ''
+        if (digits === expectedPin && bookingCode) {
+          const booking = await lookupBookingByCode(bookingCode)
+          if (booking) {
+            const carName = `${booking.car.year || ''} ${booking.car.make || ''} ${booking.car.model || ''}`.trim()
+            const fmt = (d: Date) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            const dates = `${fmt(booking.startDate)}-${fmt(booking.endDate)}`
+
+            twiml = generateBookingFound({
+              bookingCode: booking.bookingCode,
+              carName,
+              dates,
+              hostName: booking.host?.name || 'your host',
+            }, lang)
+          } else {
+            twiml = generateBookingNotFound(lang)
+          }
+        } else {
+          twiml = generateCodeIncorrect(lang)
+        }
+        break
+      }
+
+      // ─── Phone Not Found Actions ──────────────────────────
+      case 'phone-not-found':
+        switch (digits) {
+          case '1': // Try again
+            twiml = generatePhoneNumberEntry(lang)
+            break
+          case '2': // Enter booking code instead
+            twiml = generateBookingCodeEntry(lang)
+            break
+          default:
+            twiml = generateVisitorMenu(lang)
+        }
+        break
+
+      // ─── Code Incorrect Actions ───────────────────────────
+      case 'code-incorrect':
+        switch (digits) {
+          case '1': // Try again (re-enter phone number)
+            twiml = generatePhoneNumberEntry(lang)
             break
           default:
             twiml = generateVisitorMenu(lang)
