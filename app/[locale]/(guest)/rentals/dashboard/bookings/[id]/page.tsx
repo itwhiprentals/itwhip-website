@@ -21,7 +21,7 @@ import { BookingOnboarding } from './components/BookingOnboarding'
 import { ModifyBookingSheet } from './components/ModifyBookingSheet'
 import { SecureAccountBanner } from './components/SecureAccountBanner'
 import RentalAgreementModal from '../../../components/modals/RentalAgreementModal'
-import { BookedCard, VerifiedCard, IssuesCard, OnHoldCard, ConfirmedCard, CompletedCard } from './components/cards'
+import { BookedCard, VerifiedCard, IssuesCard, OnHoldCard, ConfirmedCard, CompletedCard, CancelledCard } from './components/cards'
 import { MinimalLegalFooter } from './components/cards/SharedCardSections'
 import { getVehicleClass, formatFuelTypeBadge } from '@/app/lib/utils/vehicleClassification'
 import {
@@ -385,7 +385,7 @@ export default function BookingDetailsPage() {
 
   // Load and poll messages only when booking is confirmed (not PENDING/CANCELLED)
   useEffect(() => {
-    if (!booking || booking.status === 'PENDING' || booking.status === 'CANCELLED') return
+    if (!booking || booking.status === 'PENDING') return
 
     loadMessages()
     const messageInterval = setInterval(() => {
@@ -481,7 +481,7 @@ export default function BookingDetailsPage() {
           </div>
           
           {/* Car info header — hidden for all card-based states (shown in CarPhotoOverlay) */}
-          {!isTripActive && !isCompletedTrip && booking.status !== 'ON_HOLD' && booking.status !== 'PENDING' && booking.status !== 'CONFIRMED' && !hasIssues && (
+          {!isTripActive && !isCompletedTrip && booking.status !== 'ON_HOLD' && booking.status !== 'PENDING' && booking.status !== 'CONFIRMED' && booking.status !== 'CANCELLED' && !hasIssues && (
             <div className="space-y-3 pl-6">
               <div>
                 <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -552,7 +552,7 @@ export default function BookingDetailsPage() {
           documentsSubmittedAt={typeof booking.documentsSubmittedAt === 'string' ? booking.documentsSubmittedAt : undefined}
           reviewedAt={typeof booking.reviewedAt === 'string' ? booking.reviewedAt : undefined}
           handoffStatus={booking.handoffStatus}
-          hideStatusMessage={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ON_HOLD'}
+          hideStatusMessage={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ON_HOLD' || booking.status === 'CANCELLED'}
           hideTitle={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ON_HOLD'}
         />
 
@@ -618,6 +618,21 @@ export default function BookingDetailsPage() {
           />
         )}
 
+        {/* CANCELLED card */}
+        {booking.status === 'CANCELLED' && (
+          <CancelledCard
+            booking={booking}
+            messages={messages}
+            messagesLoading={messagesLoading}
+            messageSending={messageSending}
+            messageError={messageError}
+            messageUploading={messageUploading}
+            onSendMessage={sendMessage}
+            onFileUpload={handleFileUpload}
+            onViewAgreement={() => setShowAgreement(true)}
+          />
+        )}
+
         {/* Sidebar for PENDING — rendered directly below card, not in grid (excluded for verified-pending — inside VerifiedCard) */}
         {booking.status === 'PENDING' && !isVerifiedPending && (
           <div className="mt-3">
@@ -678,8 +693,8 @@ export default function BookingDetailsPage() {
           </div>
         )}
 
-        {/* Main Content */}
-        {isCompletedTrip ? (
+        {/* Main Content — skip for CANCELLED (CancelledCard handles everything) */}
+        {booking.status === 'CANCELLED' ? null : isCompletedTrip ? (
           <CompletedCard
             booking={booking}
             messages={messages}
@@ -796,7 +811,7 @@ export default function BookingDetailsPage() {
 
         {/* Policy Footer — hidden during inspection phase, active trip & ON_HOLD */}
         {!isPreTripReady && !isTripActive && booking.status !== 'ON_HOLD' && (
-          <PolicyFooter booking={booking} compact={booking.status === 'PENDING' || isCompletedTrip} />
+          <PolicyFooter booking={booking} compact={booking.status === 'PENDING' || isCompletedTrip || booking.status === 'CANCELLED'} />
         )}
 
         {/* Minimal legal footer for ON_HOLD */}
@@ -869,6 +884,7 @@ export default function BookingDetailsPage() {
           }}
           context="dashboard"
           isDraft={booking.status === 'PENDING'}
+          bookingStatus={booking.status}
         />
       </div>
     </div>

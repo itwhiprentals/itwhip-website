@@ -47,7 +47,7 @@ export const getTimeUntilPickup = (booking: Booking | null): string | null => {
   return 'Pickup today!'
 }
 
-export const calculateRefund = (booking: Booking): RefundCalculation => {
+export const calculateRefund = (booking: Booking, asOfDate?: Date): RefundCalculation => {
   const tripDays = booking.numberOfDays || calculateTripDays(booking.startDate, booking.endDate)
 
   // Only the base rental (subtotal) is refundable.
@@ -56,10 +56,12 @@ export const calculateRefund = (booking: Booking): RefundCalculation => {
 
   // Delegate to canonical cancellation policy (single source of truth)
   // Uses MST timezone (Arizona) for proper hours-until-pickup calculation
+  // For cancelled bookings, pass cancelledAt so tier matches the original cancellation time
   const result = calculateCancellationRefund(
     new Date(booking.startDate),
     subtotal,
-    tripDays
+    tripDays,
+    asOfDate
   )
 
   // Service fee is non-refundable

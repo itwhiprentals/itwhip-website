@@ -155,6 +155,9 @@ export async function GET(request: NextRequest) {
         b."handoffStatus",
         b."hostFinalReviewStatus",
         b."hostFinalReviewDeadline",
+        b."cancelledAt",
+        b."cancelledBy",
+        b."cancellationReason",
 
         (
           SELECT json_build_object(

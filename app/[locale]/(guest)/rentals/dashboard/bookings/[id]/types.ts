@@ -97,6 +97,9 @@ export interface Booking {
     handoffStatus?: string | null
     hostFinalReviewStatus?: string | null
     hostFinalReviewDeadline?: string | null
+    cancelledAt?: string | Date | null
+    cancelledBy?: string | null
+    cancellationReason?: string | null
   }
   
   export interface Message {

@@ -29,12 +29,13 @@ export interface CancellationResult {
 export function calculateCancellationRefund(
   startDate: Date,
   totalAmount: number,
-  _numberOfDays?: number // kept for backward compat — no longer used in calculation
+  _numberOfDays?: number, // kept for backward compat — no longer used in calculation
+  asOfDate?: Date // optional: calculate as-of this date (e.g. cancelledAt) instead of now
 ): CancellationResult {
   const MST_OFFSET_MS = 7 * 60 * 60 * 1000 // UTC-7
 
   // Convert both to MST epoch millis for comparison
-  const nowMST = Date.now() - MST_OFFSET_MS
+  const nowMST = (asOfDate ? new Date(asOfDate).getTime() : Date.now()) - MST_OFFSET_MS
   const startMST = new Date(startDate).getTime() - MST_OFFSET_MS
 
   const diffMs = startMST - nowMST

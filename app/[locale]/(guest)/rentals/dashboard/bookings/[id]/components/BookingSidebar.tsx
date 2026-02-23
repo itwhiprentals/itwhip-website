@@ -22,7 +22,7 @@ export const BookingSidebar: React.FC<BookingSidebarProps> = ({
   return (
     <div className="space-y-4 lg:space-y-6">
       <PaymentSummary booking={booking} />
-      {booking.status !== 'PENDING' && booking.status !== 'CONFIRMED' && <HostCard booking={booking} t={t} />}
+      {booking.status !== 'PENDING' && booking.status !== 'CONFIRMED' && booking.status !== 'CANCELLED' && <HostCard booking={booking} t={t} />}
     </div>
   )
 }

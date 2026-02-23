@@ -117,6 +117,7 @@ interface RentalAgreementModalProps {
   agreementTracking?: AgreementTracking
   onAgree?: (accepted: boolean) => void
   isDraft?: boolean // true = pre-booking preview (mask names), false = confirmed legal document (full names)
+  bookingStatus?: string
 }
 
 // Helper function to determine vehicle tier and coverage
@@ -176,7 +177,8 @@ export default function RentalAgreementModal({
   context = 'preview',
   agreementTracking,
   onAgree,
-  isDraft = true // Default to draft mode (pre-booking preview)
+  isDraft = true, // Default to draft mode (pre-booking preview)
+  bookingStatus,
 }: RentalAgreementModalProps) {
   const t = useTranslations('RentalAgreement')
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false)
@@ -519,12 +521,14 @@ export default function RentalAgreementModal({
       {/* Bottom Sheet on mobile, Modal on desktop */}
       <div className="fixed inset-x-0 bottom-0 md:inset-0 z-50 flex md:items-center md:justify-center pointer-events-none no-print">
         <div className="bg-white dark:bg-gray-800 w-full md:max-w-4xl md:mx-auto rounded-t-2xl md:rounded-lg border border-gray-200 dark:border-gray-700 shadow-2xl pointer-events-auto max-h-[90vh] md:max-h-[85vh] flex flex-col relative">
-          {/* Watermark for Pending/Preview */}
-          {(isPending || context === 'preview') && (
+          {/* Watermark for Pending/Preview/Cancelled */}
+          {(isPending || context === 'preview' || bookingStatus === 'CANCELLED') && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 opacity-10">
               <div className="transform -rotate-45">
-                <p className="text-4xl sm:text-6xl font-bold text-gray-900 dark:text-white">
-                  {context === 'preview' ? t('draftWatermark') : t('pendingWatermark')}
+                <p className={`text-4xl sm:text-6xl font-bold ${
+                  bookingStatus === 'CANCELLED' ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'
+                }`}>
+                  {bookingStatus === 'CANCELLED' ? t('cancelledWatermark') : context === 'preview' ? t('draftWatermark') : t('pendingWatermark')}
                 </p>
               </div>
             </div>
