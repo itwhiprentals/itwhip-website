@@ -222,12 +222,7 @@ export function canStartTrip(
     }
   }
   
-  if (currentTime > latestStart) {
-    return {
-      valid: false,
-      error: 'Trip window has expired. Please contact support.'
-    }
-  }
+  // No upper time limit — guest can start trip anytime after the early window opens
 
   return { valid: true }
 }
