@@ -24,7 +24,8 @@ export async function POST(
         renterId: true,
         guestEmail: true,
         status: true,
-        onboardingCompletedAt: true
+        onboardingCompletedAt: true,
+        verificationStatus: true,
       }
     })
 
@@ -52,7 +53,9 @@ export async function POST(
       }
     })
 
-    const wasStripeVerified = guestProfile?.stripeIdentityStatus === 'verified'
+    // Skip Stripe if guest already Stripe-verified OR admin approved verification
+    const adminApproved = booking.verificationStatus?.toUpperCase() === 'APPROVED'
+    const wasStripeVerified = guestProfile?.stripeIdentityStatus === 'verified' || adminApproved
 
     if (wasStripeVerified) {
       // Path A: Already Stripe-verified → check Claude AI DL verification pass or manual review

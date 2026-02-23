@@ -49,37 +49,36 @@ export default function CancellationPolicyModal({
   const t = useTranslations('CancellationPolicy')
   const [refundCalculator, setRefundCalculator] = useState({
     tripTotal: 500,
-    numberOfDays: 3,
     hoursBeforePickup: 48,
   })
 
   const calculateRefund = () => {
-    const { tripTotal, numberOfDays, hoursBeforePickup } = refundCalculator
-    const safeDays = Math.max(1, numberOfDays)
-    const avgDailyCost = tripTotal / safeDays
-    let penaltyAmount = 0
-    let penaltyDays = 0
-    let serviceFeeRefund = 0
+    const { tripTotal, hoursBeforePickup } = refundCalculator
+    let refundPercent = 0
+    let tierLabel = ''
 
-    if (hoursBeforePickup >= 24) {
-      penaltyAmount = 0
-      penaltyDays = 0
-      if (hoursBeforePickup >= 168) {
-        serviceFeeRefund = tripTotal * 0.10
-      }
+    if (hoursBeforePickup >= 72) {
+      refundPercent = 100
+      tierLabel = '72+ hours — 100% refund'
+    } else if (hoursBeforePickup >= 24) {
+      refundPercent = 75
+      tierLabel = '24–72 hours — 75% refund'
+    } else if (hoursBeforePickup >= 12) {
+      refundPercent = 50
+      tierLabel = '12–24 hours — 50% refund'
     } else {
-      penaltyDays = safeDays > 2 ? 1 : 0.5
-      penaltyAmount = Math.round(avgDailyCost * penaltyDays * 100) / 100
+      refundPercent = 0
+      tierLabel = '<12 hours — No refund'
     }
 
-    const refundAmount = Math.max(0, tripTotal - penaltyAmount)
+    const refundAmount = Math.round(tripTotal * (refundPercent / 100) * 100) / 100
+    const penaltyAmount = Math.round((tripTotal - refundAmount) * 100) / 100
     return {
       penaltyAmount,
-      penaltyDays,
+      refundPercent,
+      tierLabel,
       amount: refundAmount,
-      avgDailyCost: Math.round(avgDailyCost * 100) / 100,
-      serviceFee: serviceFeeRefund,
-      total: refundAmount + serviceFeeRefund,
+      total: refundAmount,
     }
   }
 
@@ -93,30 +92,32 @@ export default function CancellationPolicyModal({
       size="large"
     >
         {/* Deposit Always Released Notice */}
-        <div className="px-6 py-3 bg-green-50 dark:bg-green-900/20 border-b border-green-200 dark:border-green-800">
+        <div className="px-6 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center">
             <ShieldCheck className="w-5 h-5 text-green-600 dark:text-green-400 mr-2" />
-            <p className="text-xs text-green-800 dark:text-green-200">
+            <p className="text-xs text-gray-800 dark:text-gray-200">
               <strong>{t('depositAlwaysReleased')}:</strong> {t('depositAlwaysReleasedDesc')}
             </p>
           </div>
         </div>
 
-          <div className="prose prose-sm max-w-none">
-            {/* Quick Reference Timeline — 2 tiers */}
+          <div className="prose prose-sm max-w-none mt-4">
+            {/* Quick Reference Timeline — 4 tiers */}
             <section className="mb-6">
               <h3 className="text-base font-semibold mb-3 text-gray-900 dark:text-white">{t('cancellationTimeline')}</h3>
 
               {/* Mobile: vertical timeline */}
               <div className="sm:hidden space-y-0">
                 {[
-                  { time: '24+ hours before pickup', refund: 'Full refund', color: 'bg-green-500', textColor: 'text-green-700', subColor: 'text-green-600' },
-                  { time: 'Less than 24 hours', refund: '1-day penalty*', color: 'bg-amber-500', textColor: 'text-amber-700', subColor: 'text-amber-600' },
+                  { time: '72+ hours before pickup', refund: '100% refund', color: 'bg-green-500', textColor: 'text-gray-700 dark:text-gray-300', subColor: 'text-gray-600 dark:text-gray-400' },
+                  { time: '24–72 hours before pickup', refund: '75% refund', color: 'bg-blue-500', textColor: 'text-gray-700 dark:text-gray-300', subColor: 'text-gray-600 dark:text-gray-400' },
+                  { time: '12–24 hours before pickup', refund: '50% refund', color: 'bg-amber-500', textColor: 'text-gray-700 dark:text-gray-300', subColor: 'text-gray-600 dark:text-gray-400' },
+                  { time: 'Less than 12 hours', refund: 'No refund', color: 'bg-red-500', textColor: 'text-gray-700 dark:text-gray-300', subColor: 'text-gray-600 dark:text-gray-400' },
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <div className="flex flex-col items-center">
                       <div className={`w-3 h-3 ${item.color} rounded-full flex-shrink-0`} />
-                      {i < 1 && <div className="w-0.5 h-8 bg-gray-200" />}
+                      {i < 3 && <div className="w-0.5 h-8 bg-gray-200" />}
                     </div>
                     <div className="pb-3">
                       <p className={`text-xs font-semibold ${item.textColor}`}>{item.time}</p>
@@ -124,7 +125,7 @@ export default function CancellationPolicyModal({
                     </div>
                   </div>
                 ))}
-                <p className="text-[10px] text-gray-500 ml-6">*Trips 1-2 days: half-day penalty. Trips 3+ days: 1-day penalty.</p>
+                <p className="text-[10px] text-gray-500 ml-6">Service fees are non-refundable. No-shows forfeit entire payment.</p>
               </div>
 
               {/* Desktop: horizontal timeline */}
@@ -132,22 +133,32 @@ export default function CancellationPolicyModal({
                 <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                   <div className="relative">
                     <div className="absolute top-1.5 left-0 right-0 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full" />
-                    <div className="absolute top-1.5 left-0 w-1/2 h-1.5 bg-green-500 rounded-l-full" />
-                    <div className="absolute top-1.5 left-1/2 w-1/2 h-1.5 bg-amber-500 rounded-r-full" />
+                    <div className="absolute top-1.5 left-0 w-1/4 h-1.5 bg-green-500 rounded-l-full" />
+                    <div className="absolute top-1.5 left-[25%] w-1/4 h-1.5 bg-blue-500" />
+                    <div className="absolute top-1.5 left-[50%] w-1/4 h-1.5 bg-amber-500" />
+                    <div className="absolute top-1.5 left-[75%] w-1/4 h-1.5 bg-red-500 rounded-r-full" />
 
                     <div className="relative flex justify-between pt-5">
-                      <div className="text-center w-1/2">
-                        <p className="text-xs font-semibold text-green-700 dark:text-green-300">{t('twentyFourPlusHours')}</p>
-                        <p className="text-xs text-green-600 dark:text-green-400">{t('fullRefund')}</p>
+                      <div className="text-center w-1/4">
+                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">72+ hrs</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">100% refund</p>
                       </div>
-                      <div className="text-center w-1/2">
-                        <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">{t('lessThan24Hours')}</p>
-                        <p className="text-xs text-amber-600 dark:text-amber-400">{t('oneDayPenalty')}</p>
+                      <div className="text-center w-1/4">
+                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">24–72 hrs</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">75% refund</p>
+                      </div>
+                      <div className="text-center w-1/4">
+                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">12–24 hrs</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">50% refund</p>
+                      </div>
+                      <div className="text-center w-1/4">
+                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">&lt;12 hrs</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">No refund</p>
                       </div>
                     </div>
                   </div>
                   <p className="text-[10px] text-gray-500 mt-3 text-center">
-                    {t('penaltyDisclaimer')}
+                    Service fees are non-refundable. Taxes refunded per Arizona regulations. No-shows forfeit entire payment.
                   </p>
                 </div>
               </div>
@@ -160,8 +171,8 @@ export default function CancellationPolicyModal({
                 {t('refundCalculator')}
               </h3>
 
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 block">
                       {t('tripTotal')}
@@ -176,22 +187,6 @@ export default function CancellationPolicyModal({
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       min="0"
                       step="50"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 block">
-                      {t('numberOfDays')}
-                    </label>
-                    <input
-                      type="number"
-                      value={refundCalculator.numberOfDays}
-                      onChange={(e) => setRefundCalculator({
-                        ...refundCalculator,
-                        numberOfDays: parseInt(e.target.value) || 1
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                      min="1"
-                      step="1"
                     />
                   </div>
                   <div>
@@ -215,25 +210,23 @@ export default function CancellationPolicyModal({
                 <div className="bg-white dark:bg-gray-700 rounded-lg p-3">
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">{t('avgDailyCost')}:</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">${refund.avgDailyCost.toFixed(2)}</span>
+                      <span className="text-gray-600 dark:text-gray-400">Cancellation tier:</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{refund.tierLabel}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">{t('tripRefund')} ({refund.refundPercent}%):</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">${refund.amount.toFixed(2)}</span>
                     </div>
                     {refund.penaltyAmount > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">{t('penalty')} ({refund.penaltyDays === 1 ? t('oneDay') : t('halfDay')}):</span>
+                        <span className="text-gray-600 dark:text-gray-400">Forfeited:</span>
                         <span className="font-semibold text-red-600 dark:text-red-400">-${refund.penaltyAmount.toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">{t('tripRefund')}:</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">${refund.amount.toFixed(2)}</span>
+                      <span className="text-gray-600 dark:text-gray-400">Service fees:</span>
+                      <span className="text-xs text-red-600 dark:text-red-400">Non-refundable</span>
                     </div>
-                    {refund.serviceFee > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">{t('serviceFeeRefund')}:</span>
-                        <span className="font-semibold text-gray-900 dark:text-white">${refund.serviceFee.toFixed(2)}</span>
-                      </div>
-                    )}
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600 dark:text-gray-400">{t('securityDeposit')}:</span>
                       <span className="text-xs text-green-600 dark:text-green-400">{t('alwaysReleased')}</span>
@@ -245,8 +238,8 @@ export default function CancellationPolicyModal({
                   </div>
                 </div>
 
-                <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
-                  Note: Trip Protection is embedded in our service and remains active until pickup time, providing peace of mind even after cancellation.
+                <p className="text-xs text-gray-700 dark:text-gray-300 mt-2">
+                  Taxes refunded per Arizona regulations. Service fees are non-refundable.
                 </p>
               </div>
             </section>
@@ -256,35 +249,58 @@ export default function CancellationPolicyModal({
               <h3 className="text-base font-semibold mb-3 text-gray-900 dark:text-white">{t('guestCancellationPolicy')}</h3>
 
               <div className="space-y-3">
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                   <div className="flex items-start">
                     <Clock className="w-5 h-5 text-green-600 dark:text-green-400 mr-2 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-medium text-green-900 dark:text-green-100 mb-2">24+ Hours Before Pickup &mdash; Free Cancellation</h4>
-                      <ul className="text-xs text-green-800 dark:text-green-200 space-y-1">
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">72+ Hours Before Pickup &mdash; Full Refund</h4>
+                      <ul className="text-xs text-gray-800 dark:text-gray-200 space-y-1">
                         <li>&bull; 100% refund of rental cost</li>
-                        <li>&bull; Full service fee refund if 7+ days before</li>
                         <li>&bull; Security deposit released immediately</li>
                         <li>&bull; Credits and bonus balances fully restored</li>
-                        <li>&bull; Trip Protection coverage continues until pickup time</li>
                         <li>&bull; No impact on your rental history</li>
                       </ul>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-2 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">24–72 Hours Before Pickup &mdash; 75% Refund</h4>
+                      <ul className="text-xs text-gray-800 dark:text-gray-200 space-y-1">
+                        <li>&bull; 75% refund of rental cost</li>
+                        <li>&bull; Security deposit always released in full</li>
+                        <li>&bull; Credits and bonus restored proportionally</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                   <div className="flex items-start">
                     <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400 mr-2 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-medium text-amber-900 dark:text-amber-100 mb-2">{t('lateCancellationTitle')}</h4>
-                      <ul className="text-xs text-amber-800 dark:text-amber-200 space-y-1">
-                        <li>&bull; <strong>Trips 3+ days:</strong> Penalty = 1 day&apos;s average cost</li>
-                        <li>&bull; <strong>Trips 1-2 days:</strong> Penalty = 50% of 1 day&apos;s average cost</li>
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">12–24 Hours Before Pickup &mdash; 50% Refund</h4>
+                      <ul className="text-xs text-gray-800 dark:text-gray-200 space-y-1">
+                        <li>&bull; 50% refund of rental cost</li>
                         <li>&bull; Security deposit always released in full</li>
-                        <li>&bull; Penalty applied proportionally across payment sources</li>
-                        <li>&bull; Trip Protection remains active until pickup</li>
                         <li>&bull; Host may offer reschedule option</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <Clock className="w-5 h-5 text-red-600 dark:text-red-400 mr-2 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Less Than 12 Hours &mdash; No Refund</h4>
+                      <ul className="text-xs text-gray-800 dark:text-gray-200 space-y-1">
+                        <li>&bull; No refund of rental cost</li>
+                        <li>&bull; Security deposit still released in full</li>
+                        <li>&bull; Contact host to discuss rescheduling</li>
                       </ul>
                     </div>
                   </div>
@@ -295,8 +311,8 @@ export default function CancellationPolicyModal({
             {/* What's Always Refunded */}
             <section className="mb-6">
               <h3 className="text-base font-semibold mb-3 text-gray-900 dark:text-white">{t('alwaysRefunded')}</h3>
-              <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
-                <ul className="text-xs text-emerald-800 dark:text-emerald-200 space-y-2">
+              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <ul className="text-xs text-gray-800 dark:text-gray-200 space-y-2">
                   <li className="flex items-center">
                     <CheckCircle className="w-4 h-4 mr-2 text-emerald-600 flex-shrink-0" />
                     <span><strong>Security deposit</strong> &mdash; 100% released regardless of timing</span>
@@ -307,9 +323,14 @@ export default function CancellationPolicyModal({
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="w-4 h-4 mr-2 text-emerald-600 flex-shrink-0" />
-                    <span><strong>Service fee</strong> &mdash; if cancelled 7+ days before pickup</span>
+                    <span><strong>Taxes</strong> &mdash; refunded per Arizona regulations</span>
                   </li>
                 </ul>
+                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                  <p className="text-xs text-gray-800 dark:text-gray-200">
+                    <strong>Note:</strong> Service fees are non-refundable on all cancellations.
+                  </p>
+                </div>
               </div>
             </section>
 
@@ -317,12 +338,12 @@ export default function CancellationPolicyModal({
             <section className="mb-6">
               <h3 className="text-base font-semibold mb-3 text-gray-900 dark:text-white">{t('hostCancellationPolicy')}</h3>
 
-              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                 <div className="flex items-start">
                   <AlertCircle className="w-5 h-5 text-purple-600 dark:text-purple-400 mr-2 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="text-sm font-medium text-purple-900 dark:text-purple-100 mb-2">{t('whenHostCancels')}</h4>
-                    <ul className="text-xs text-purple-800 dark:text-purple-200 space-y-1">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">{t('whenHostCancels')}</h4>
+                    <ul className="text-xs text-gray-800 dark:text-gray-200 space-y-1">
                       <li>&bull; Guest receives 100% refund including all fees</li>
                       <li>&bull; Trip Protection fee fully refunded</li>
                       <li>&bull; ItWhip provides $50 travel credit for inconvenience</li>
@@ -337,28 +358,19 @@ export default function CancellationPolicyModal({
 
             {/* Trip Protection & Cancellation */}
             <section className="mb-6">
-              <h3 className="text-base font-semibold mb-3 text-gray-900 dark:text-white">{t('tripProtectionCancellations')}</h3>
+              <h3 className="text-xs font-semibold mb-2 text-gray-900 dark:text-white">{t('tripProtectionCancellations')}</h3>
 
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                <div className="flex items-start">
-                  <ShieldCheck className="w-5 h-5 text-green-600 dark:text-green-400 mr-2 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-sm font-medium text-green-900 dark:text-green-100 mb-2">{t('tripProtectionWithCancellations')}</h4>
-                    <div className="text-xs text-green-800 dark:text-green-200 space-y-2">
-                      <p>
-                        <strong>Coverage Continues:</strong> Even after you cancel, Trip Protection remains active until your
-                        original pickup time. This means if you change your mind or rebook, you&apos;re still covered.
-                      </p>
-                      <p>
-                        <strong>No Separate Charge:</strong> Trip Protection is included in every rental at no additional cost.
-                        It&apos;s part of our platform service, not a separate insurance product you need to cancel.
-                      </p>
-                      <p>
-                        <strong>Protection Benefits:</strong> If something happens to prevent your trip (covered emergency,
-                        natural disaster, etc.), Trip Protection may provide additional refund consideration beyond standard policy.
-                      </p>
-                    </div>
-                  </div>
+              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                <div className="text-[11px] leading-relaxed text-gray-600 dark:text-gray-400 space-y-1">
+                  <p>
+                    <strong className="text-gray-700 dark:text-gray-300">Coverage Continues:</strong> Trip Protection remains active until your original pickup time, even after cancellation.
+                  </p>
+                  <p>
+                    <strong className="text-gray-700 dark:text-gray-300">No Separate Charge:</strong> Included in every rental at no additional cost.
+                  </p>
+                  <p>
+                    <strong className="text-gray-700 dark:text-gray-300">Protection Benefits:</strong> Covered emergencies or natural disasters may provide additional refund consideration.
+                  </p>
                 </div>
               </div>
             </section>
@@ -386,11 +398,11 @@ export default function CancellationPolicyModal({
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                   <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">{t('notCoveredNoRefund')}</h4>
                   <p className="text-xs text-gray-600 dark:text-gray-300 mb-2">
-                    No refunds provided for:
+                    Entire payment forfeited (deposit still returned):
                   </p>
                   <ul className="text-xs text-gray-600 dark:text-gray-300 space-y-1">
-                    <li>&bull; No-show without cancellation</li>
-                    <li>&bull; Failed verification at pickup</li>
+                    <li>&bull; <strong>No-show</strong> &mdash; forfeit entire payment</li>
+                    <li>&bull; <strong>Failed verification</strong> &mdash; same as no-show rules</li>
                     <li>&bull; Invalid or suspended license</li>
                     <li>&bull; DUI/DWI discovered</li>
                     <li>&bull; False information provided</li>
@@ -399,8 +411,8 @@ export default function CancellationPolicyModal({
                 </div>
               </div>
 
-              <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                <p className="text-xs text-amber-800 dark:text-amber-200">
+              <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                <p className="text-xs text-gray-800 dark:text-gray-200">
                   <strong>Documentation Required:</strong> For special circumstance refunds, you must provide documentation
                   within 14 days of cancellation. Our Trip Protection team reviews each case individually.
                 </p>
@@ -411,8 +423,8 @@ export default function CancellationPolicyModal({
             <section className="mb-6">
               <h3 className="text-base font-semibold mb-3 text-gray-900 dark:text-white">{t('howToCancel')}</h3>
 
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                <ol className="text-xs text-blue-800 dark:text-blue-200 space-y-2">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <ol className="text-xs text-gray-800 dark:text-gray-200 space-y-2">
                   <li className="flex items-start">
                     <span className="font-bold mr-2">1.</span>
                     <span>Open the ItWhip app or website and log in</span>
@@ -485,12 +497,12 @@ export default function CancellationPolicyModal({
               <div className="space-y-3">
                 <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
                   <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    Q: How is the late cancellation penalty calculated?
+                    Q: How does the tiered refund work?
                   </h4>
                   <p className="text-xs text-gray-600 dark:text-gray-300">
-                    A: We calculate the average daily cost of your trip (total / number of days). For trips 3 or more days,
-                    the penalty is 1 day&apos;s average cost. For trips 1-2 days, it&apos;s half a day&apos;s average cost. This is fairer
-                    than a flat percentage &mdash; a 10-day trip only loses 1 day, not a huge chunk.
+                    A: Refunds are based on how far in advance you cancel: 72+ hours = 100%, 24–72 hours = 75%,
+                    12–24 hours = 50%, less than 12 hours = no refund. Service fees are non-refundable on all cancellations.
+                    Your security deposit is always returned regardless of when you cancel.
                   </p>
                 </div>
 
@@ -527,12 +539,12 @@ export default function CancellationPolicyModal({
 
                 <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
                   <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    Q: I used credits/bonus to pay. How does the penalty work?
+                    Q: I used credits/bonus to pay. How does the refund work?
                   </h4>
                   <p className="text-xs text-gray-600 dark:text-gray-300">
-                    A: The penalty is split proportionally across all payment sources. For example, if you paid 50% with
-                    credits and 50% with your card, the penalty is split 50/50 between credits and card. Your deposit
-                    wallet is always fully returned regardless.
+                    A: The refund percentage is applied proportionally across all payment sources. For example, if you
+                    cancel at 24–72 hours (75% refund) and paid 50% with credits and 50% with card, both sources get
+                    75% back. Your deposit wallet is always fully returned regardless.
                   </p>
                 </div>
               </div>
@@ -540,7 +552,7 @@ export default function CancellationPolicyModal({
 
             {/* Contact Support */}
             <section className="mb-6">
-              <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg p-4 text-center">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-center">
                 <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">{t('needHelp')}</h4>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mb-3">
                   Our support team is available 24/7 to assist with cancellations and special circumstances

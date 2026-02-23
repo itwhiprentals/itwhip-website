@@ -333,8 +333,8 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
         </>
       )}
 
-      {/* Car Photos — hidden during inspection phase and ON_HOLD (shown on main page instead) */}
-      {!isPreTripReady && booking.status !== 'ON_HOLD' && booking.car.photos && booking.car.photos.length > 0 && (
+      {/* Car Photos — hidden during inspection phase, ON_HOLD, and PENDING (shown in state card on main page instead) */}
+      {!isPreTripReady && booking.status !== 'ON_HOLD' && booking.status !== 'PENDING' && booking.car.photos && booking.car.photos.length > 0 && (
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm overflow-hidden">
           <img
             src={booking.car.photos[0].url}
@@ -344,8 +344,8 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
         </div>
       )}
 
-      {/* Trip Details Card - hidden during inspection phase (info already in TripStartCard) and ON_HOLD (attached to car card on main page) */}
-      {!isPreTripReady && booking.status !== 'ON_HOLD' && (
+      {/* Trip Details Card - hidden during inspection phase, ON_HOLD, and PENDING (info already in state card on main page) */}
+      {!isPreTripReady && booking.status !== 'ON_HOLD' && booking.status !== 'PENDING' && (
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm p-3 sm:p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">{t('tripDetails')}</h2>
 

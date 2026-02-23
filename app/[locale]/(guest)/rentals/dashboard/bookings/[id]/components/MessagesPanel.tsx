@@ -15,6 +15,8 @@ interface MessagesPanelProps {
   onSendMessage: (message: string) => Promise<void>
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>
   uploadingFile: boolean
+  noWrapper?: boolean
+  readOnly?: boolean
 }
 
 export const MessagesPanel: React.FC<MessagesPanelProps> = ({
@@ -25,7 +27,9 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
   error,
   onSendMessage,
   onFileUpload,
-  uploadingFile
+  uploadingFile,
+  noWrapper = false,
+  readOnly = false
 }) => {
   const t = useTranslations('BookingDetail')
   const locale = useLocale()
@@ -132,7 +136,7 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
   }
 
   return (
-    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700 p-4 sm:p-6">
+    <div className={noWrapper ? 'p-4' : 'bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700 p-4 sm:p-6'}>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('messages')}</h2>
         <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -156,7 +160,7 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
         )}
       </div>
 
-      {showQuickActions && messages.length === 0 && (
+      {!readOnly && showQuickActions && messages.length === 0 && (
         <div className="mt-2 px-1">
           <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-1.5 uppercase tracking-wider">{t('quickMessages')}</p>
           <div className="flex flex-wrap gap-1.5">
@@ -174,62 +178,66 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
         </div>
       )}
 
-      <div className="flex items-end gap-2 mt-3">
-        <div className="flex-1">
-          <input
-            id="message-input"
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                handleSendMessage()
-              }
-            }}
-            placeholder={t('typeMessage')}
-            className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-1 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
-            disabled={sending}
-          />
-        </div>
-        
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploadingFile}
-          className="p-2 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-          title={t('attachFile')}
-        >
-          <Paperclip className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-        </button>
-        
-        <button
-          onClick={handleSendMessage}
-          disabled={sending || !newMessage.trim()}
-          className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {sending ? (
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-          ) : (
-            <Send className="w-4 h-4" />
+      {!readOnly && (
+        <>
+          <div className="flex items-end gap-2 mt-3">
+            <div className="flex-1">
+              <input
+                id="message-input"
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleSendMessage()
+                  }
+                }}
+                placeholder={t('typeMessage')}
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-1 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
+                disabled={sending}
+              />
+            </div>
+
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingFile}
+              className="p-2 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+              title={t('attachFile')}
+            >
+              <Paperclip className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+            </button>
+
+            <button
+              onClick={handleSendMessage}
+              disabled={sending || !newMessage.trim()}
+              className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {sending ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+
+          {error && (
+            <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            </div>
           )}
-        </button>
-      </div>
 
-      {error && (
-        <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-        </div>
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            onChange={onFileUpload}
+            className="hidden"
+            accept="image/*,.pdf"
+            disabled={uploadingFile}
+          />
+        </>
       )}
-
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        onChange={onFileUpload}
-        className="hidden"
-        accept="image/*,.pdf"
-        disabled={uploadingFile}
-      />
     </div>
   )
 }

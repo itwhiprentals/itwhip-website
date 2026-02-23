@@ -244,10 +244,47 @@ export async function GET(request: NextRequest) {
 
     console.log(`Found ${bookingsRaw.length} bookings for authenticated user: ${userEmail}`)
 
-    // Fetch card brand + last4 from Stripe for single-booking detail view
+    const now = new Date()
+
+    // Auto-complete expired no-show bookings (CONFIRMED, past end date+time, no tripStartedAt)
+    const noShowIds: string[] = []
+    for (const booking of bookingsRaw) {
+      if (booking.status === 'CONFIRMED' && !booking.tripStartedAt) {
+        const endDate = new Date(booking.endDate)
+        const [endH, endM] = (booking.endTime || '10:00').split(':').map(Number)
+        endDate.setHours(endH || 10, endM || 0, 0, 0)
+        if (now.getTime() > endDate.getTime()) {
+          noShowIds.push(booking.id)
+          booking.status = 'COMPLETED'
+          booking.tripStatus = 'COMPLETED'
+          booking.tripEndedAt = now
+        }
+      }
+    }
+    if (noShowIds.length > 0) {
+      console.log(`[Auto-complete] Marking ${noShowIds.length} expired booking(s) as NO_SHOW:`, noShowIds)
+      try {
+        await prisma.rentalBooking.updateMany({
+          where: { id: { in: noShowIds } },
+          data: {
+            status: 'COMPLETED',
+            tripStatus: 'COMPLETED',
+            tripEndedAt: now,
+          }
+        })
+      } catch (err) {
+        console.error('[Auto-complete] No-show update error:', err)
+      }
+    }
+
+    // Fetch card brand + last4 + actual charge from Stripe for single-booking detail view
     const isSingleBooking = bookingId && bookingsRaw.length === 1
     let cardBrand: string | null = null
     let cardLast4: string | null = null
+    let stripeChargeAmount: number | null = null
+    let piMetaCredits = 0
+    let piMetaBonus = 0
+    let piMetaDepositWallet = 0
     if (isSingleBooking) {
       const b = bookingsRaw[0]
       try {
@@ -255,15 +292,31 @@ export async function GET(request: NextRequest) {
           const pm = await stripe.paymentMethods.retrieve(b.stripePaymentMethodId)
           cardBrand = (pm as any).card?.brand || null
           cardLast4 = (pm as any).card?.last4 || null
-        } else if (b.paymentIntentId) {
-          // Fallback: expand payment_method from the payment intent
+        }
+        if (b.paymentIntentId) {
           const pi = await stripe.paymentIntents.retrieve(b.paymentIntentId, {
             expand: ['payment_method']
           })
-          const pm = pi.payment_method as any
-          if (pm && typeof pm === 'object') {
-            cardBrand = pm.card?.brand || null
-            cardLast4 = pm.card?.last4 || null
+          // Get card info from PI if not already found
+          if (!cardBrand) {
+            const pm = pi.payment_method as any
+            if (pm && typeof pm === 'object') {
+              cardBrand = pm.card?.brand || null
+              cardLast4 = pm.card?.last4 || null
+            }
+          }
+          // Derive actual charge amount from Stripe (cents → dollars)
+          const piAmount = (pi as any).amount_received || (pi as any).amount
+          if (piAmount && piAmount > 0) {
+            stripeChargeAmount = piAmount / 100
+          }
+          // Read credit/bonus/deposit/promo from PI metadata (fallback for older bookings)
+          const meta = pi.metadata
+          if (meta) {
+            piMetaCredits = parseFloat(meta.appliedCredits || '0')
+            piMetaBonus = parseFloat(meta.appliedBonus || '0')
+            piMetaDepositWallet = parseFloat(meta.appliedDepositWallet || '0')
+            piMetaPromo = parseFloat(meta.promoDiscount || '0')
           }
         }
       } catch {
@@ -271,8 +324,50 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // For single booking with missing credits/bonus/deposit, look up actual transactions
+    let txCreditsUsed = 0
+    let txBonusUsed = 0
+    let txDepositFromWallet = 0
+    if (isSingleBooking) {
+      const b = bookingsRaw[0]
+      const dbCredits = parseFloat(b.creditsApplied || '0')
+      const dbBonus = parseFloat(b.bonusApplied || '0')
+      const dbDepositWallet = parseFloat(b.depositFromWallet || '0')
+      const total = parseFloat(b.totalAmount)
+
+      // Look up credit/bonus transactions if DB fields are empty
+      if (dbCredits === 0 && dbBonus === 0 && stripeChargeAmount !== null && stripeChargeAmount < total) {
+        try {
+          const txns = await prisma.creditBonusTransaction.findMany({
+            where: { bookingId: b.id, action: 'USE' },
+            select: { type: true, amount: true }
+          })
+          for (const tx of txns) {
+            if (tx.type === 'CREDIT') txCreditsUsed += Math.abs(tx.amount)
+            else if (tx.type === 'BONUS') txBonusUsed += Math.abs(tx.amount)
+          }
+        } catch {
+          // Non-blocking
+        }
+      }
+
+      // Look up deposit wallet transactions if DB field is empty
+      if (dbDepositWallet === 0 && parseFloat(b.depositAmount || '0') > 0) {
+        try {
+          const depTxns = await prisma.depositTransaction.findMany({
+            where: { bookingId: b.id, type: 'HOLD' },
+            select: { amount: true }
+          })
+          for (const tx of depTxns) {
+            txDepositFromWallet += Math.abs(tx.amount)
+          }
+        } catch {
+          // Non-blocking
+        }
+      }
+    }
+
     const transformedBookings = bookingsRaw.map(booking => {
-      const now = new Date()
       let bookingState: string
       
       if (booking.status === 'CANCELLED') {
@@ -363,10 +458,66 @@ export async function GET(request: NextRequest) {
         taxes: parseFloat(booking.taxes),
         totalAmount: parseFloat(booking.totalAmount),
         depositAmount: parseFloat(booking.depositAmount),
-        creditsApplied: parseFloat(booking.creditsApplied || '0'),
-        bonusApplied: parseFloat(booking.bonusApplied || '0'),
-        chargeAmount: booking.chargeAmount ? parseFloat(booking.chargeAmount) : null,
-        depositFromWallet: parseFloat(booking.depositFromWallet || '0'),
+        ...(() => {
+          const dbCredits = parseFloat(booking.creditsApplied || '0')
+          const dbBonus = parseFloat(booking.bonusApplied || '0')
+          const dbCharge = booking.chargeAmount ? parseFloat(booking.chargeAmount) : null
+          const total = parseFloat(booking.totalAmount)
+
+          // Card charge: DB → Stripe PI (source of truth)
+          const actualCharge = dbCharge ?? (isSingleBooking ? stripeChargeAmount : null)
+
+          // Resolve credits: DB → transaction records → PI metadata
+          const credits = dbCredits > 0 ? dbCredits
+            : txCreditsUsed > 0 ? txCreditsUsed
+            : (isSingleBooking ? piMetaCredits : 0)
+
+          // Resolve bonus: DB → transaction records → PI metadata
+          const bonus = dbBonus > 0 ? dbBonus
+            : txBonusUsed > 0 ? txBonusUsed
+            : (isSingleBooking ? piMetaBonus : 0)
+
+          // $1.00 Stripe minimum: when credits/bonus cover the full amount,
+          // Stripe still requires a $1 minimum charge. That $1 is NOT a real payment —
+          // credits covered the entire trip total.
+          const isMinimumHold = actualCharge !== null && actualCharge <= 1.0 && total > 1.0
+
+          if (isMinimumHold) {
+            // Credits/bonus covered the full total
+            if (credits + bonus >= total - 1) {
+              // Individual breakdown is reliable
+              return {
+                creditsApplied: credits,
+                bonusApplied: bonus,
+                chargeAmount: actualCharge,
+                walletApplied: 0,
+                isMinimumHold: true,
+              }
+            }
+            // No reliable individual breakdown — show combined
+            return {
+              creditsApplied: 0,
+              bonusApplied: 0,
+              chargeAmount: actualCharge,
+              walletApplied: total,
+              isMinimumHold: true,
+            }
+          }
+
+          return {
+            creditsApplied: credits,
+            bonusApplied: bonus,
+            chargeAmount: actualCharge,
+            walletApplied: 0,
+            isMinimumHold: false,
+          }
+        })(),
+        depositFromWallet: (() => {
+          const dbVal = parseFloat(booking.depositFromWallet || '0')
+          return dbVal > 0 ? dbVal
+            : txDepositFromWallet > 0 ? txDepositFromWallet
+            : (isSingleBooking ? piMetaDepositWallet : 0)
+        })(),
         depositFromCard: parseFloat(booking.depositFromCard || '0'),
         paymentStatus: booking.paymentStatus,
         paymentIntentId: booking.paymentIntentId,

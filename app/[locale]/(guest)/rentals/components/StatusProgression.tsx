@@ -60,16 +60,19 @@ export default function StatusProgression({
                            paymentStatus?.toLowerCase() === 'captured' ||
                            paymentStatus === 'PAID' ||
                            paymentStatus === 'CAPTURED'
+  const paymentAuthorized = paymentStatus?.toUpperCase() === 'AUTHORIZED'
   const isConfirmed = paymentSuccessful && (status === 'CONFIRMED' || status === 'ACTIVE' || status === 'COMPLETED')
   // Check trip status for Active state
   const isActive = status === 'ACTIVE' || tripStatus === 'ACTIVE' || !!tripStartedAt
   const isCompleted = status === 'COMPLETED' || tripStatus === 'COMPLETED' || !!tripEndedAt
+  const isNoShow = isCompleted && !tripStartedAt
   const isHandoffDone = handoffStatus === 'HANDOFF_COMPLETE' || handoffStatus === 'BYPASSED'
   const isOnHold = status === 'ON_HOLD'
   
   // Check for special states - FIXED case sensitivity
   const isCancelled = status === 'CANCELLED'
-  const paymentFailed = isVerified && (paymentStatus?.toLowerCase() === 'failed' || paymentStatus === 'FAILED')
+  const paymentFailed = paymentStatus?.toLowerCase() === 'failed' || paymentStatus === 'FAILED'
+  const hasIssues = paymentFailed || vsLower === 'rejected'
   
   // NEW: Check for post-trip pending charges
   const hasPendingCharges = isCompleted && status === 'PENDING'
@@ -79,15 +82,16 @@ export default function StatusProgression({
     {
       name: t('stepBooked'),
       complete: isBooked,
-      active: !isVerified && !isCancelled,
-      description: documentsSubmittedAt ? t('docsSubmitted') : t('awaitingDocs')
+      active: false,
+      description: hasIssues ? t('actionRequired') : isVerified ? t('docsSubmitted') : paymentAuthorized ? t('pendingVerification') : documentsSubmittedAt ? t('docsSubmitted') : t('awaitingDocs'),
+      error: hasIssues && !isVerified
     },
     {
-      name: isOnHold ? t('stepStripe') : t('stepVerified'),
-      complete: isVerified && !isOnHold,
-      active: isOnHold || (isVerified && !wasConfirmed && !paymentFailed && !isCancelled && !hasPendingCharges),
-      description: isOnHold ? t('verificationRequired') : isVerified ? t('documentsApproved') : t('underReview'),
-      error: paymentFailed
+      name: isOnHold ? t('stepStripe') : hasIssues ? t('stepIssues') : t('stepVerified'),
+      complete: isVerified && !isOnHold && !hasIssues,
+      active: false,
+      description: isOnHold ? t('verificationRequired') : hasIssues ? t('issuesDesc') : isVerified ? t('documentsApproved') : t('underReview'),
+      error: hasIssues || paymentFailed
     },
     {
       name: isOnHold ? t('stepOnHold') : hasPendingCharges ? t('stepCharges') : t('stepConfirmed'),
@@ -102,17 +106,24 @@ export default function StatusProgression({
     },
     {
       name: t('stepActive'),
-      complete: isActive,
-      active: isActive && !isCompleted,
-      description: isActive ? t('tripInProgress') : t('readyForPickup')
+      complete: isActive && !isNoShow,
+      active: false,
+      description: isNoShow ? t('noShow') : isActive ? t('tripInProgress') : t('readyForPickup'),
+      error: isNoShow
     },
     {
       name: t('stepCompleted'),
       complete: isCompleted,
       active: false,
-      description: isCompleted ? t('tripFinished') : t('notStarted')
+      description: isNoShow ? t('noShowCompleted') : isCompleted ? t('tripFinished') : t('notStarted')
     }
   ]
+
+  // Auto-mark the next incomplete step as active (yellow pulsing)
+  if (!isCancelled && !isCompleted) {
+    const nextIdx = steps.findIndex(s => !s.complete && !s.error)
+    if (nextIdx >= 0) steps[nextIdx].active = true
+  }
   
   // Handle cancelled state
   if (isCancelled) {
@@ -165,7 +176,8 @@ export default function StatusProgression({
                      isActive ? '85%' :
                      (isConfirmed && isHandoffDone) ? '73%' :
                      isConfirmed ? '60%' :
-                     isVerified ? '35%' : '0%'
+                     isVerified ? '35%' :
+                     paymentAuthorized ? '15%' : '0%'
             }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
           >
@@ -174,7 +186,7 @@ export default function StatusProgression({
               <div className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-white/25 to-transparent animate-shimmer" />
             </div>
             {/* Arrow at the leading edge */}
-            {!isCompleted && (isVerified || isConfirmed || isActive || isOnHold) && (
+            {!isCompleted && (isVerified || isConfirmed || isActive || isOnHold || paymentAuthorized) && (
               <div className="absolute -right-1.5 top-1/2 -translate-y-1/2">
                 <motion.div
                   animate={{ x: [0, 3, 0] }}
@@ -270,6 +282,22 @@ export default function StatusProgression({
                     <p className="text-sm font-medium text-red-900 dark:text-red-200">{t('onHoldTitle')}</p>
                     <p className="text-xs text-red-700 dark:text-red-400 mt-1">
                       {t('onHoldDesc')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
+          if (isCompleted && isNoShow) {
+            return (
+              <div className="bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <div className="flex items-start">
+                  <IoCloseCircle className="w-5 h-5 text-red-600 dark:text-red-400 mr-2 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-red-900 dark:text-red-200">{t('noShowTitle')}</p>
+                    <p className="text-xs text-red-700 dark:text-red-400 mt-1">
+                      {t('noShowDesc')}
                     </p>
                   </div>
                 </div>

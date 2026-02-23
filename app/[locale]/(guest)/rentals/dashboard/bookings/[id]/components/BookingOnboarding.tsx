@@ -12,9 +12,6 @@ import {
   IoShieldCheckmarkOutline,
   IoLockClosedOutline,
   IoCheckmarkCircle,
-  IoIdCardOutline,
-  IoCameraOutline,
-  IoFlashOutline,
   IoInformationCircleOutline,
 } from 'react-icons/io5'
 import { VisitorIdentityVerify } from '../../../../[carId]/book/components/VisitorIdentityVerify'
@@ -38,7 +35,8 @@ export function BookingOnboarding({ booking, onDocumentUploaded }: BookingOnboar
 
   if (booking.status === 'ACTIVE' || booking.status === 'COMPLETED' || onboardingDone) return null
 
-  const isStripeVerified = !!booking.guestStripeVerified
+  // Skip Stripe if guest already Stripe-verified OR admin approved verification
+  const isStripeVerified = !!booking.guestStripeVerified || booking.verificationStatus?.toUpperCase() === 'APPROVED'
 
   // Complete onboarding via API
   const completeOnboarding = async () => {
@@ -89,84 +87,78 @@ export function BookingOnboarding({ booking, onDocumentUploaded }: BookingOnboar
   }
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-all ${isPending ? 'opacity-60' : ''}`}>
+    <div className={`bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-all ${isPending ? 'opacity-60' : ''}`}>
       {/* Header */}
-      <div className="px-4 sm:px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <div className="flex items-start sm:items-center gap-3">
-          <div className="p-2 bg-gray-900 rounded-lg flex-shrink-0">
-            <IoShieldCheckmarkOutline className="w-5 h-5 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="font-semibold text-gray-900 text-sm sm:text-base">
-                {t('onboardTitle')}
-              </h3>
-              {isPending ? (
-                <div className="flex items-center gap-1.5 text-xs text-gray-400 flex-shrink-0">
-                  <IoLockClosedOutline className="w-4 h-4" />
-                  <span className="hidden sm:inline">{t('locked')}</span>
-                </div>
-              ) : !showContent && !verificationDone && (
+      <div className="px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+        <div className="text-center">
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
+            {t('onboardTitle')}
+          </h3>
+          <div className="flex items-center justify-center gap-1 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {isPending
+                ? t('onboardAvailableAfterApproval')
+                : t('hostWantsToSeeDL', { hostName: booking.host.name })}
+            </p>
+            {!isPending && (
+              <div className="relative">
                 <button
-                  onClick={() => setShowContent(true)}
-                  className="hidden sm:flex px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors items-center gap-2 flex-shrink-0"
+                  onClick={() => setShowTooltip(!showTooltip)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
-                  <IoShieldCheckmarkOutline className="w-4 h-4" />
-                  <span>{t('uploadNow')}</span>
+                  <IoInformationCircleOutline className="w-3.5 h-3.5" />
                 </button>
-              )}
-            </div>
-            <div className="flex items-center gap-1 mt-0.5">
-              <p className="text-xs text-gray-500">
-                {isPending
-                  ? t('onboardAvailableAfterApproval')
-                  : isStripeVerified
-                    ? t('hostWantsToSeeDL', { hostName: booking.host.name })
-                    : t('onboardCompleteStripe')}
-              </p>
-              {!isPending && isStripeVerified && (
-                <div className="relative">
-                  <button
-                    onClick={() => setShowTooltip(!showTooltip)}
-                    className="text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <IoInformationCircleOutline className="w-3.5 h-3.5" />
-                  </button>
-                  {showTooltip && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setShowTooltip(false)} />
-                      <div className="absolute right-0 top-full mt-1 z-50 w-72 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg leading-relaxed sm:left-0 sm:right-auto">
-                        {t('hostVerifyTooltip')}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-            {/* Mobile: full-width button below text */}
-            {!isPending && !showContent && !verificationDone && (
-              <button
-                onClick={() => setShowContent(true)}
-                className="sm:hidden mt-3 w-full px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
-              >
-                <IoShieldCheckmarkOutline className="w-4 h-4" />
-                <span>{t('uploadNow')}</span>
-              </button>
+                {showTooltip && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowTooltip(false)} />
+                    <div className="absolute right-0 top-full mt-1 z-50 w-72 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg leading-relaxed sm:left-0 sm:right-auto">
+                      {t('hostVerifyTooltip')}
+                    </div>
+                  </>
+                )}
+              </div>
             )}
           </div>
+          {isPending && (
+            <div className="flex items-center justify-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 mt-2">
+              <IoLockClosedOutline className="w-4 h-4" />
+              <span>{t('locked')}</span>
+            </div>
+          )}
+          {!isPending && !showContent && !verificationDone && (
+            <button
+              onClick={() => setShowContent(true)}
+              className="mt-3 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors inline-flex items-center gap-2"
+            >
+              <IoShieldCheckmarkOutline className="w-4 h-4" />
+              <span>{t('uploadNow')}</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Content — collapsed by default, expand on button click */}
       {!isPending && (showContent || verificationDone) && (
-        <div className="px-4 sm:px-6 py-4">
+        <div className="relative px-4 sm:px-6 py-4">
+          {/* X close button — collapse back to initial state */}
+          {!verificationDone && (
+            <button
+              onClick={() => setShowContent(false)}
+              className="absolute top-3 right-3 sm:right-5 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+
           {isStripeVerified ? (
             // ═══ Path A: Already Stripe-verified → Claude AI DL verification ═══
             verificationDone ? (
-              <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <IoCheckmarkCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
+              <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg">
+                <IoCheckmarkCircle className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-green-900">{t('identityVerified')}</p>
+                  <p className="text-sm font-medium text-green-900 dark:text-green-200">{t('identityVerified')}</p>
                 </div>
               </div>
             ) : (
@@ -181,53 +173,28 @@ export function BookingOnboarding({ booking, onDocumentUploaded }: BookingOnboar
               />
             )
           ) : (
-            // ═══ Path B: Not Stripe-verified → Stripe Identity ═══
-            <div className="space-y-4">
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="text-sm font-semibold text-blue-900 mb-1">
-                  {t('stripeIdentityRequired')}
-                </h4>
-                <p className="text-xs text-blue-700 mb-3">
-                  {t('stripeIdentityDesc')}
-                </p>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-xs text-blue-800">
-                    <IoIdCardOutline className="w-4 h-4 flex-shrink-0" />
-                    <span>{t('stripeStep1PhotoId')}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-blue-800">
-                    <IoCameraOutline className="w-4 h-4 flex-shrink-0" />
-                    <span>{t('stripeStep2Selfie')}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-blue-800">
-                    <IoFlashOutline className="w-4 h-4 flex-shrink-0" />
-                    <span>{t('stripeStep3Instant')}</span>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={handleStripeVerify}
-                disabled={isVerifying}
-                className="w-full px-4 py-3 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {isVerifying ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <IoShieldCheckmarkOutline className="w-4 h-4" />
-                    {t('verifyNow')}
-                  </>
-                )}
-              </button>
-            </div>
+            // ═══ Path B: Not Stripe-verified → Stripe Identity button directly ═══
+            <button
+              onClick={handleStripeVerify}
+              disabled={isVerifying}
+              className="w-full px-4 py-3 bg-gray-900 dark:bg-gray-100 hover:bg-gray-800 dark:hover:bg-gray-200 text-white dark:text-gray-900 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isVerifying ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <IoShieldCheckmarkOutline className="w-4 h-4" />
+                  {t('verifyNow')}
+                </>
+              )}
+            </button>
           )}
         </div>
       )}
 
       {error && (
         <div className="px-4 sm:px-6 pb-3">
-          <p className="text-xs text-red-600">{error}</p>
+          <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
         </div>
       )}
     </div>

@@ -145,6 +145,23 @@ export async function POST(request: NextRequest) {
       home: 'home',
     }
 
+    // Resolve applied credits/bonus/deposit — use PI metadata as fallback
+    // (PendingCheckout fields can be 0 due to race conditions or field nullability)
+    const piMeta = paymentIntent.metadata
+    const appliedCredits = (pending.appliedCredits || 0) > 0
+      ? pending.appliedCredits!
+      : parseFloat(piMeta.appliedCredits || '0')
+    const appliedBonus = (pending.appliedBonus || 0) > 0
+      ? pending.appliedBonus!
+      : parseFloat(piMeta.appliedBonus || '0')
+    const appliedDepositWallet = (pending.appliedDepositWallet || 0) > 0
+      ? pending.appliedDepositWallet!
+      : parseFloat(piMeta.appliedDepositWallet || '0')
+
+    // Derive actual card charge from Stripe PI (source of truth)
+    const stripeChargeCents = (paymentIntent as any).amount_received || (paymentIntent as any).amount || 0
+    const actualChargeAmount = stripeChargeCents > 0 ? stripeChargeCents / 100 : null
+
     // Create booking + mark checkout completed atomically (serializable to prevent double-booking)
     const booking = await prisma.$transaction(async (tx) => {
       // Verify availability INSIDE transaction to prevent race condition
@@ -160,6 +177,12 @@ export async function POST(request: NextRequest) {
       if (conflict) {
         throw new Error('AVAILABILITY_CONFLICT')
       }
+
+      const depositFromWallet = Math.min(appliedDepositWallet, deposit)
+      const depositFromCard = Math.max(0, deposit - depositFromWallet)
+      const chargeAmount = actualChargeAmount ?? (
+        (totalAmount + depositFromCard) - appliedCredits - appliedBonus
+      )
 
       const newBooking = await tx.rentalBooking.create({
         data: {
@@ -197,11 +220,11 @@ export async function POST(request: NextRequest) {
           stripeCustomerId: typeof paymentIntent.customer === 'string' ? paymentIntent.customer : undefined,
           sessionId: checkoutSessionId,
           insuranceTier: pending.selectedInsurance,
-          creditsApplied: pending.appliedCredits || 0,
-          bonusApplied: pending.appliedBonus || 0,
-          depositFromWallet: pending.appliedDepositWallet || 0,
-          depositFromCard: Math.max(0, deposit - (pending.appliedDepositWallet || 0)),
-          chargeAmount: (totalAmount + Math.max(0, deposit - (pending.appliedDepositWallet || 0))) - (pending.appliedCredits || 0) - (pending.appliedBonus || 0),
+          creditsApplied: appliedCredits,
+          bonusApplied: appliedBonus,
+          depositFromWallet,
+          depositFromCard,
+          chargeAmount,
           bookingIpAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || null,
           bookingUserAgent: request.headers.get('user-agent') || null,
         },
@@ -214,20 +237,64 @@ export async function POST(request: NextRequest) {
       })
 
       // Deduct applied credits, bonus, and deposit wallet from ReviewerProfile
-      const appliedCredits = pending.appliedCredits || 0
-      const appliedBonus = pending.appliedBonus || 0
-      const appliedDepositWallet = pending.appliedDepositWallet || 0
-
+      // + create audit trail (CreditBonusTransaction / DepositTransaction)
       if (reviewerProfile?.id && (appliedCredits > 0 || appliedBonus > 0 || appliedDepositWallet > 0)) {
+        // Fetch current balances for audit trail
+        const currentBalances = await tx.reviewerProfile.findUnique({
+          where: { id: reviewerProfile.id },
+          select: { creditBalance: true, bonusBalance: true, depositWalletBalance: true },
+        })
+
         const balanceUpdates: any = {}
+
         if (appliedCredits > 0) {
           balanceUpdates.creditBalance = { decrement: appliedCredits }
+
+          await tx.creditBonusTransaction.create({
+            data: {
+              id: crypto.randomUUID(),
+              guestId: reviewerProfile.id,
+              amount: appliedCredits,
+              type: 'CREDIT',
+              action: 'USE',
+              balanceAfter: (currentBalances?.creditBalance || 0) - appliedCredits,
+              reason: `Applied to booking ${bookingCode}`,
+              bookingId,
+            },
+          })
         }
+
         if (appliedBonus > 0) {
           balanceUpdates.bonusBalance = { decrement: appliedBonus }
+
+          await tx.creditBonusTransaction.create({
+            data: {
+              id: crypto.randomUUID(),
+              guestId: reviewerProfile.id,
+              amount: appliedBonus,
+              type: 'BONUS',
+              action: 'USE',
+              balanceAfter: (currentBalances?.bonusBalance || 0) - appliedBonus,
+              reason: `Applied to booking ${bookingCode} (25% max)`,
+              bookingId,
+            },
+          })
         }
+
         if (appliedDepositWallet > 0) {
           balanceUpdates.depositWalletBalance = { decrement: appliedDepositWallet }
+
+          await tx.depositTransaction.create({
+            data: {
+              id: crypto.randomUUID(),
+              guestId: reviewerProfile.id,
+              amount: appliedDepositWallet,
+              type: 'HOLD',
+              balanceAfter: (currentBalances?.depositWalletBalance || 0) - appliedDepositWallet,
+              bookingId,
+              description: `Security deposit hold for booking ${bookingCode}`,
+            },
+          })
         }
 
         await tx.reviewerProfile.update({

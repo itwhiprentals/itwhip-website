@@ -60,6 +60,8 @@ export interface Booking {
     creditsApplied?: number
     bonusApplied?: number
     chargeAmount?: number
+    walletApplied?: number
+    isMinimumHold?: boolean
     depositFromWallet?: number
     depositFromCard?: number
     cardBrand?: string | null

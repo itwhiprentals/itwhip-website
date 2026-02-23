@@ -25,14 +25,14 @@ interface SectionBoxProps {
 }
 
 const sectionColorMap: Record<string, string> = {
-  green: 'bg-green-50 border-green-200',
-  blue: 'bg-blue-50 border-blue-200',
-  red: 'bg-red-50 border-red-200',
-  amber: 'bg-amber-50 border-amber-200',
-  purple: 'bg-purple-50 border-purple-200',
-  orange: 'bg-orange-50 border-orange-200',
-  gray: 'bg-gray-50 border-gray-200',
-  white: 'bg-white border-gray-200',
+  green: 'bg-green-50 border-green-200 dark:bg-green-900/30 dark:border-green-800',
+  blue: 'bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800',
+  red: 'bg-red-50 border-red-200 dark:bg-red-900/30 dark:border-red-800',
+  amber: 'bg-amber-50 border-amber-200 dark:bg-amber-900/30 dark:border-amber-800',
+  purple: 'bg-purple-50 border-purple-200 dark:bg-purple-900/30 dark:border-purple-800',
+  orange: 'bg-orange-50 border-orange-200 dark:bg-orange-900/30 dark:border-orange-800',
+  gray: 'bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600',
+  white: 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700',
 }
 
 /** Colored rounded container for section content */
@@ -53,7 +53,7 @@ interface NumberedStepProps {
 export function NumberedStep({ step, children }: NumberedStepProps) {
   return (
     <li className="flex items-start">
-      <span className="bg-purple-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 flex-shrink-0 text-xs">
+      <span className="bg-gray-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 flex-shrink-0 text-xs">
         {step}
       </span>
       <div>{children}</div>

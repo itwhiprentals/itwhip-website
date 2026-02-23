@@ -288,9 +288,10 @@ export const CancellationDialog: React.FC<CancellationDialogProps> = ({
 
 interface PolicyFooterProps {
   booking: Booking
+  compact?: boolean
 }
 
-export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking }) => {
+export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking, compact }) => {
   const t = useTranslations('BookingDetail')
   const [showRentalAgreement, setShowRentalAgreement] = useState(false)
   const [showInsuranceModal, setShowInsuranceModal] = useState(false)
@@ -299,7 +300,7 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking }) => {
 
   return (
     <>
-      <div className="mt-12 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 border-t border-gray-200 dark:border-gray-700">
+      <div className={`${compact ? 'mt-3' : 'mt-12'} bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 border-t border-gray-200 dark:border-gray-700`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center space-x-2 mb-2">
@@ -353,11 +354,15 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking }) => {
                   <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1 mb-3">
                     <li className="flex items-start">
                       <span className="text-gray-400 dark:text-gray-500 mr-1">•</span>
-                      <span>{t('fullRefund24hrs')}</span>
+                      <span>{t('fullRefund72hrs')}</span>
                     </li>
                     <li className="flex items-start">
                       <span className="text-gray-400 dark:text-gray-500 mr-1">•</span>
                       <span>{t('depositAlwaysReleased')}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-gray-400 dark:text-gray-500 mr-1">•</span>
+                      <span>{t('noShowForfeits')}</span>
                     </li>
                   </ul>
                   <span className="text-xs font-medium text-gray-500 dark:text-gray-400 inline-flex items-center">
@@ -396,18 +401,6 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking }) => {
               </div>
             </button>
           </div>
-
-          {!booking.tripEndedAt && (
-            <div className="text-center mb-6">
-              <button
-                onClick={() => setShowRentalAgreement(true)}
-                className="inline-flex items-center px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors"
-              >
-                <DocumentText className="w-4 h-4 mr-2" />
-                {t('invoice')}
-              </button>
-            </div>
-          )}
 
           <div className="text-center pt-6 border-t border-gray-200 dark:border-gray-700">
             <p className="text-xs text-gray-500 dark:text-gray-400 max-w-3xl mx-auto mb-2">

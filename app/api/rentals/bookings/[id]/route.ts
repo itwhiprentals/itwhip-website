@@ -323,38 +323,74 @@ export async function GET(
       )
     }
 
-    // Fetch card brand + last4 from Stripe (safe to expose, like Turo/Airbnb)
+    // Fetch card brand + last4 from Stripe, and derive chargeAmount from PI if not stored
     let cardBrand: string | null = null
     let cardLast4: string | null = null
+    let derivedChargeAmount: number | null = null
+
+    // Step 1: Get card info from payment method
     try {
       if (booking.stripePaymentMethodId) {
         const pm = await stripe.paymentMethods.retrieve(booking.stripePaymentMethodId)
         cardBrand = (pm as any).card?.brand || null
         cardLast4 = (pm as any).card?.last4 || null
-      } else if (booking.paymentIntentId) {
-        // Fallback: expand payment_method from the payment intent
+      }
+    } catch (e) {
+      console.log(`[booking/${bookingId}] PM fetch failed:`, e)
+    }
+
+    // Step 2: If chargeAmount not stored, fetch PI to derive it
+    const dbChargeAmount = Number(booking.chargeAmount) || 0
+    if (!dbChargeAmount && booking.paymentIntentId) {
+      try {
         const pi = await stripe.paymentIntents.retrieve(booking.paymentIntentId, {
           expand: ['payment_method']
         })
-        const pm = pi.payment_method as any
-        if (pm && typeof pm === 'object') {
-          cardBrand = pm.card?.brand || null
-          cardLast4 = pm.card?.last4 || null
+        console.log(`[booking/${bookingId}] PI ${booking.paymentIntentId}: amount=${pi.amount} status=${pi.status}`)
+        // Card info fallback from PI
+        if (!cardBrand) {
+          const pm = pi.payment_method as any
+          if (pm && typeof pm === 'object') {
+            cardBrand = pm.card?.brand || null
+            cardLast4 = pm.card?.last4 || null
+          }
         }
+        // Derive chargeAmount: prefer amount_received (actual capture) over amount (auth hold)
+        const piAmount = (pi.amount_received && pi.amount_received > 0) ? pi.amount_received : pi.amount
+        if (piAmount && piAmount > 0) {
+          derivedChargeAmount = piAmount / 100
+          console.log(`[booking/${bookingId}] Derived chargeAmount=$${derivedChargeAmount} from PI (received=${pi.amount_received} amount=${pi.amount})`)
+        }
+      } catch (e) {
+        console.log(`[booking/${bookingId}] PI fetch failed:`, e)
       }
-    } catch {
-      // Non-blocking — card info is cosmetic
     }
 
-    // Format the response to ensure clean data
-    // Strip Stripe IDs from guest-facing responses (only admins/hosts need them)
+    // Compute wallet applied amount for display
+    const actualChargeAmount = dbChargeAmount || derivedChargeAmount || 0
+    const storedCredits = Number(booking.creditsApplied) || 0
+    const storedBonus = Number(booking.bonusApplied) || 0
+    const totalAmount = Number(booking.totalAmount) || 0
+    // If credits/bonus not stored but charge < total, the difference was wallet-applied
+    const walletApplied = (storedCredits === 0 && storedBonus === 0 && actualChargeAmount > 0 && actualChargeAmount < totalAmount)
+      ? Math.round((totalAmount - actualChargeAmount) * 100) / 100
+      : 0
+
+    if (walletApplied > 0 || derivedChargeAmount) {
+      console.log(`[booking/${bookingId}] Payment: total=$${totalAmount} charge=$${actualChargeAmount} wallet=$${walletApplied} credits=$${storedCredits} bonus=$${storedBonus}`)
+    }
+
+    // Format the response
     const response = {
       ...booking,
       messageCount: booking._count.messages,
       disputeCount: booking._count.disputes,
-      _count: undefined,  // Remove internal structure
+      _count: undefined,
       cardBrand,
       cardLast4,
+      // Override chargeAmount with derived value for older bookings
+      chargeAmount: derivedChargeAmount || dbChargeAmount || null,
+      walletApplied: walletApplied > 0 ? walletApplied : undefined,
       // Redact Stripe internals for guest users
       ...(!user.isAdmin && !user.isHost ? {
         paymentIntentId: undefined,
