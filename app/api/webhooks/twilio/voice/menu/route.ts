@@ -33,6 +33,7 @@ import {
   generateEmailCodeSent,
   generatePhoneNotFound,
   generateCodeIncorrect,
+  generateEmailFailed,
 } from '@/app/lib/twilio/twiml'
 
 type Lang = 'en' | 'es' | 'fr'
@@ -132,12 +133,15 @@ function maskEmail(email: string): string {
 
 async function sendVerificationCode(email: string, pin: string) {
   const { sendEmail } = await import('@/app/lib/email/send-email')
-  await sendEmail({
+  const result = await sendEmail({
     to: email,
     subject: `Your ItWhip verification code: ${pin}`,
     html: `<p>Your verification code is: <strong style="font-size: 24px; letter-spacing: 4px;">${pin}</strong></p><p>Enter this code on the phone to access your booking details.</p><p style="color: #6b7280;">This code expires when your call ends.</p>`,
     text: `Your ItWhip verification code is: ${pin}. Enter this code on the phone to access your booking details.`,
   })
+  if (!result.success) {
+    throw new Error(result.error || 'Email send failed')
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -453,9 +457,9 @@ export async function POST(request: NextRequest) {
 
         if (digits && digits.length >= 4) {
           const booking = await lookupBookingByCode(digits)
-          if (booking && booking.claims && booking.claims.length > 0) {
+          if (booking && booking.Claim && booking.Claim.length > 0) {
             // Use the most recent claim
-            const claim = booking.claims[0]
+            const claim = booking.Claim[0]
             const statusLabel = claimStatusLabel(claim.status, lang)
             twiml = generateClaimFound(booking.bookingCode, statusLabel, lang)
           } else if (booking) {
@@ -521,10 +525,13 @@ export async function POST(request: NextRequest) {
           if (booking && booking.guestEmail) {
             const pin = String(Math.floor(1000 + Math.random() * 9000))
             const masked = maskEmail(booking.guestEmail)
-            sendVerificationCode(booking.guestEmail, pin).catch(e =>
+            try {
+              await sendVerificationCode(booking.guestEmail, pin)
+              twiml = generateEmailCodeSent(masked, pin, booking.bookingCode, lang)
+            } catch (e) {
               console.error('[IVR] Email code send failed:', e)
-            )
-            twiml = generateEmailCodeSent(masked, pin, booking.bookingCode, lang)
+              twiml = generateEmailFailed(lang)
+            }
           } else {
             twiml = generatePhoneNotFound(lang)
           }
@@ -544,6 +551,24 @@ export async function POST(request: NextRequest) {
             const carName = `${booking.car.year || ''} ${booking.car.make || ''} ${booking.car.model || ''}`.trim()
             const fmt = (d: Date) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
             const dates = `${fmt(booking.startDate)}-${fmt(booking.endDate)}`
+
+            // Auto-send booking summary SMS to caller's phone
+            if (callerPhone) {
+              const address = booking.deliveryAddress || booking.pickupLocation
+                || (booking.car?.address ? `${booking.car.address}, ${booking.car.city || ''}`.trim() : '')
+                || 'See dashboard for details'
+              import('@/app/lib/twilio/sms-triggers').then(({ sendIvrBookingSummarySms }) => {
+                sendIvrBookingSummarySms(callerPhone, {
+                  bookingCode: booking.bookingCode,
+                  carName,
+                  dates,
+                  startTime: booking.startTime || '10:00 AM',
+                  address,
+                  hostName: booking.host?.name || 'Your host',
+                  hostPhone: booking.host?.phone || null,
+                }, lang).catch(e => console.error('[IVR] Booking summary SMS failed:', e))
+              })
+            }
 
             twiml = generateBookingFound({
               bookingCode: booking.bookingCode,
@@ -580,6 +605,23 @@ export async function POST(request: NextRequest) {
           case '1': // Try again (re-enter phone number)
             twiml = generatePhoneNumberEntry(lang)
             break
+          default:
+            twiml = generateVisitorMenu(lang)
+        }
+        break
+
+      // ─── Email Failed Actions ──────────────────────────────
+      case 'email-failed':
+        switch (digits) {
+          case '1': // Try again (re-enter phone number)
+            twiml = generatePhoneNumberEntry(lang)
+            break
+          case '2': { // Speak with someone
+            const room = makeRoom()
+            connectAgentToConference(room, callSid, lang)
+            twiml = generateSpeakWithSomeone(room, lang)
+            break
+          }
           default:
             twiml = generateVisitorMenu(lang)
         }

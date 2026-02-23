@@ -349,6 +349,31 @@ export function generateCodeIncorrect(lang: Lang = 'en'): string {
 }
 
 // ════════════════════════════════════════════════════════════════════
+// 4.0e: EMAIL FAILED
+// ════════════════════════════════════════════════════════════════════
+
+export function generateEmailFailed(lang: Lang = 'en'): string {
+  const twiml = new VoiceResponse()
+
+  const gather = twiml.gather({
+    numDigits: 1,
+    action: menuUrl('email-failed', lang),
+    method: 'POST',
+    timeout: GATHER_TIMEOUT,
+  })
+
+  say(gather, t(lang,
+    'We had trouble sending the verification code. To try again, press 1. To speak with someone, press 2. To return to the main menu, press 3.',
+    'Tuvimos un problema enviando el codigo de verificacion. Para intentar de nuevo, oprima 1. Para hablar con alguien, oprima 2. Para volver al menu principal, oprima 3.',
+    'Nous avons eu un problème pour envoyer le code de vérification. Pour réessayer, appuyez sur 1. Pour parler avec quelqu\'un, appuyez sur 2. Pour revenir au menu principal, appuyez sur 3.'
+  ), lang)
+
+  // No input → goodbye
+  goodbye(twiml, lang)
+  return twiml.toString()
+}
+
+// ════════════════════════════════════════════════════════════════════
 // 4.1: BOOKING FOUND
 // ════════════════════════════════════════════════════════════════════
 // "I found your booking. {car} reserved for {dates} with {host}."

@@ -354,3 +354,12 @@ export async function sendIvrRoadsideSms(phone: string, locale: Locale = 'en'): 
   const body = templates.ivrRoadsideGeneral(locale)
   await sendSms(phone, body, { type: 'IVR_SMS', locale })
 }
+
+export async function sendIvrBookingSummarySms(
+  phone: string,
+  data: Parameters<typeof templates.ivrBookingSummary>[0],
+  locale: Locale = 'en'
+): Promise<void> {
+  const body = templates.ivrBookingSummary(data, locale)
+  await sendSms(phone, body, { type: 'IVR_SMS', locale })
+}

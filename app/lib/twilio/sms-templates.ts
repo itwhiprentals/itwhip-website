@@ -237,6 +237,50 @@ export function ivrPickupDetails(data: {
   return templates[locale]
 }
 
+// ─── IVR: Booking Summary (after phone verification) ─────────────
+
+export function ivrBookingSummary(data: {
+  bookingCode: string
+  carName: string
+  dates: string
+  startTime: string
+  address: string
+  hostName: string
+  hostPhone: string | null
+}, locale: Locale = 'en'): string {
+  if (locale === 'es') {
+    return `ItWhip - Tu Reserva\n\n` +
+      `Codigo: ${data.bookingCode}\n` +
+      `Auto: ${data.carName}\n` +
+      `Fechas: ${data.dates}\n` +
+      `Hora: ${data.startTime}\n` +
+      `Recogida: ${data.address}\n` +
+      `Anfitrion: ${data.hostName}` +
+      (data.hostPhone ? `\nTel: ${data.hostPhone}` : '') +
+      `\n\nVer reserva: itwhip.com/dashboard`
+  }
+  if (locale === 'fr') {
+    return `ItWhip - Votre Reservation\n\n` +
+      `Code: ${data.bookingCode}\n` +
+      `Vehicule: ${data.carName}\n` +
+      `Dates: ${data.dates}\n` +
+      `Heure: ${data.startTime}\n` +
+      `Prise en charge: ${data.address}\n` +
+      `Hote: ${data.hostName}` +
+      (data.hostPhone ? `\nTel: ${data.hostPhone}` : '') +
+      `\n\nVoir reservation: itwhip.com/dashboard`
+  }
+  return `ItWhip - Your Booking\n\n` +
+    `Code: ${data.bookingCode}\n` +
+    `Car: ${data.carName}\n` +
+    `Dates: ${data.dates}\n` +
+    `Time: ${data.startTime}\n` +
+    `Pickup: ${data.address}\n` +
+    `Host: ${data.hostName}` +
+    (data.hostPhone ? `\nPhone: ${data.hostPhone}` : '') +
+    `\n\nView booking: itwhip.com/dashboard`
+}
+
 // ─── Vehicle Listing Issues (host) ────────────────────────────────
 
 export function vehicleIssuesHost(data: {
