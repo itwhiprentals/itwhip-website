@@ -125,7 +125,7 @@ export interface Booking {
     totalRefund: number
     refundPercentage: number
     penaltyAmount: number
-    penaltyDays: number
+    tier: 'free' | 'moderate' | 'late' | 'no_refund'
     depositRefunded: boolean
     label: string
     // Payment source breakdown (when credits/bonus were used)

@@ -1,37 +1,35 @@
 // app/lib/booking/cancellation-policy.ts
-// Turo-style day-based cancellation policy
-// Penalty = X days' average cost instead of percentage of total
+// 4-tier percentage-based cancellation policy
+// Matches CancellationPolicyModal, RentalAgreement, legal page, and Choe AI
 // All calculations use MST (UTC-7) since Arizona doesn't observe DST
 
-export type CancellationTier = 'free' | 'late_long' | 'late_short'
+export type CancellationTier = 'free' | 'moderate' | 'late' | 'no_refund'
 
 export interface CancellationResult {
   tier: CancellationTier
   penaltyAmount: number        // Dollar amount of penalty
-  penaltyDays: number          // How many days' cost charged (0, 0.5, or 1)
-  refundAmount: number         // Trip cost minus penalty
-  refundPercentage: number     // For backward compat: refund as % of trip cost
+  refundAmount: number         // Subtotal minus penalty
+  refundPercentage: number     // Refund as % of subtotal (100, 75, 50, or 0)
   depositRefunded: boolean     // Always true — deposit released on any cancellation
   label: string
   hoursUntilPickup: number
-  averageDailyCost: number
 }
 
 /**
- * Calculate cancellation penalty using day-based approach (Turo-style).
+ * Calculate cancellation penalty using 4-tier percentage-based policy.
  *
- * Policy:
- *   24+ hours before pickup  → Free cancellation (no penalty)
- *   <24 hours, trips > 2 days → Penalty = 1 day's average cost
- *   <24 hours, trips ≤ 2 days → Penalty = 50% of 1 day's average cost
+ * Policy (applied to subtotal only — service fee, insurance, delivery always non-refundable):
+ *   72+ hours before pickup  → Free cancellation (100% refund)
+ *   24–72 hours              → Moderate (75% refund, 25% penalty)
+ *   12–24 hours              → Late (50% refund, 50% penalty)
+ *   <12 hours                → No refund (0% refund, 100% penalty)
  *
  * Security deposit is ALWAYS released regardless of timing.
- * Average daily cost = totalAmount / numberOfDays
  */
 export function calculateCancellationRefund(
   startDate: Date,
   totalAmount: number,
-  numberOfDays: number
+  _numberOfDays?: number // kept for backward compat — no longer used in calculation
 ): CancellationResult {
   const MST_OFFSET_MS = 7 * 60 * 60 * 1000 // UTC-7
 
@@ -42,55 +40,58 @@ export function calculateCancellationRefund(
   const diffMs = startMST - nowMST
   const hoursUntilPickup = Math.max(0, diffMs / (1000 * 60 * 60))
 
-  const safeDays = Math.max(1, numberOfDays)
-  const averageDailyCost = totalAmount / safeDays
-
-  // 24+ hours: free cancellation
-  if (hoursUntilPickup >= 24) {
+  // 72+ hours: free cancellation (100% refund)
+  if (hoursUntilPickup >= 72) {
     return {
       tier: 'free',
       penaltyAmount: 0,
-      penaltyDays: 0,
       refundAmount: totalAmount,
       refundPercentage: 100,
       depositRefunded: true,
-      label: '24+ hours before pickup — full refund',
+      label: '72+ hours before pickup — full refund',
       hoursUntilPickup,
-      averageDailyCost,
     }
   }
 
-  // <24 hours: late cancellation
-  if (safeDays > 2) {
-    // Long trips (3+ days): penalty = 1 day's average cost
-    const penalty = Math.round(averageDailyCost * 100) / 100
+  // 24–72 hours: moderate (75% refund, 25% penalty)
+  if (hoursUntilPickup >= 24) {
+    const penalty = Math.round(totalAmount * 0.25 * 100) / 100
     const refund = Math.round((totalAmount - penalty) * 100) / 100
     return {
-      tier: 'late_long',
+      tier: 'moderate',
       penaltyAmount: penalty,
-      penaltyDays: 1,
       refundAmount: Math.max(0, refund),
-      refundPercentage: totalAmount > 0 ? Math.round((Math.max(0, refund) / totalAmount) * 100) : 0,
+      refundPercentage: 75,
       depositRefunded: true,
-      label: `Less than 24 hours before pickup — 1 day penalty ($${penalty.toFixed(2)})`,
+      label: `24–72 hours before pickup — 25% penalty ($${penalty.toFixed(2)})`,
       hoursUntilPickup,
-      averageDailyCost,
     }
   }
 
-  // Short trips (1-2 days): penalty = 50% of 1 day's average cost
-  const penalty = Math.round(averageDailyCost * 0.5 * 100) / 100
-  const refund = Math.round((totalAmount - penalty) * 100) / 100
+  // 12–24 hours: late (50% refund, 50% penalty)
+  if (hoursUntilPickup >= 12) {
+    const penalty = Math.round(totalAmount * 0.50 * 100) / 100
+    const refund = Math.round((totalAmount - penalty) * 100) / 100
+    return {
+      tier: 'late',
+      penaltyAmount: penalty,
+      refundAmount: Math.max(0, refund),
+      refundPercentage: 50,
+      depositRefunded: true,
+      label: `12–24 hours before pickup — 50% penalty ($${penalty.toFixed(2)})`,
+      hoursUntilPickup,
+    }
+  }
+
+  // <12 hours: no refund (100% penalty)
   return {
-    tier: 'late_short',
-    penaltyAmount: penalty,
-    penaltyDays: 0.5,
-    refundAmount: Math.max(0, refund),
-    refundPercentage: totalAmount > 0 ? Math.round((Math.max(0, refund) / totalAmount) * 100) : 0,
+    tier: 'no_refund',
+    penaltyAmount: totalAmount,
+    refundAmount: 0,
+    refundPercentage: 0,
     depositRefunded: true,
-    label: `Less than 24 hours before pickup — half-day penalty ($${penalty.toFixed(2)})`,
+    label: 'Less than 12 hours before pickup — no refund',
     hoursUntilPickup,
-    averageDailyCost,
   }
 }
 

@@ -98,11 +98,15 @@ export const calculateRefund = (booking: Booking): RefundCalculation => {
     totalRefund: result.refundAmount,
     refundPercentage: subtotal > 0 ? result.refundAmount / subtotal : 0,
     penaltyAmount: result.penaltyAmount,
-    penaltyDays: result.penaltyDays,
+    tier: result.tier,
     depositRefunded: result.depositRefunded,
     label: result.tier === 'free'
       ? 'Full refund'
-      : `${result.penaltyDays === 1 ? '1-day' : 'Half-day'} penalty ($${result.penaltyAmount.toFixed(2)})`,
+      : result.tier === 'moderate'
+      ? `25% penalty ($${result.penaltyAmount.toFixed(2)})`
+      : result.tier === 'late'
+      ? `50% penalty ($${result.penaltyAmount.toFixed(2)})`
+      : 'No refund',
     cardRefund: distribution.cardRefund + cardValidationRefund,
     creditsRestored: distribution.creditsRestored,
     bonusRestored: distribution.bonusRestored,

@@ -70,7 +70,21 @@ export const CancellationDialog: React.FC<CancellationDialogProps> = ({
       }
     >
       {/* Policy tier badge */}
-      {hasPenalty ? (
+      {refundInfo.tier === 'free' ? (
+        <div className="mb-3 p-2.5 bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-lg flex items-start gap-2">
+          <span className="text-green-600 dark:text-green-400 text-sm mt-0.5">&#10003;</span>
+          <p className="text-xs font-medium text-green-800 dark:text-green-200">
+            {t('freeCancellationBadge')}
+          </p>
+        </div>
+      ) : refundInfo.tier === 'moderate' ? (
+        <div className="mb-3 p-2.5 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-lg flex items-start gap-2">
+          <span className="text-amber-600 dark:text-amber-400 text-sm mt-0.5">&#9888;</span>
+          <p className="text-xs font-medium text-amber-800 dark:text-amber-200">
+            {t('moderateCancelBadge', { penalty: formatCurrency(refundInfo.penaltyAmount), percent: penaltyPercent })}
+          </p>
+        </div>
+      ) : refundInfo.tier === 'late' ? (
         <div className="mb-3 p-2.5 bg-red-600 rounded-lg flex items-start gap-2">
           <span className="text-white text-sm mt-0.5">&#9888;</span>
           <p className="text-xs font-medium text-white">
@@ -78,10 +92,10 @@ export const CancellationDialog: React.FC<CancellationDialogProps> = ({
           </p>
         </div>
       ) : (
-        <div className="mb-3 p-2.5 bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-lg flex items-start gap-2">
-          <span className="text-green-600 dark:text-green-400 text-sm mt-0.5">&#10003;</span>
-          <p className="text-xs font-medium text-green-800 dark:text-green-200">
-            {t('freeCancellationBadge')}
+        <div className="mb-3 p-2.5 bg-red-800 rounded-lg flex items-start gap-2">
+          <span className="text-white text-sm mt-0.5">&#10007;</span>
+          <p className="text-xs font-medium text-white">
+            {t('noRefundBadge')}
           </p>
         </div>
       )}
@@ -191,7 +205,7 @@ export const CancellationDialog: React.FC<CancellationDialogProps> = ({
           )}
           {hasPenalty && (
             <div className="flex justify-between">
-              <span className="font-semibold text-red-600">{t('latePenalty')}</span>
+              <span className="font-semibold text-red-600">{t('cancellationPenalty')}</span>
               <span className="font-semibold text-red-600">{formatCurrency(refundInfo.penaltyAmount)}</span>
             </div>
           )}

@@ -1,6 +1,6 @@
 // app/api/rentals/bookings/[id]/cancel/route.ts
 // Guest-facing cancellation endpoint
-// Uses Turo-style day-based penalties with proportional credit/bonus handling
+// 4-tier percentage-based cancellation policy with proportional credit/bonus handling
 
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
@@ -97,14 +97,11 @@ export async function POST(
       }
     })
 
-    // Calculate day-based penalty — only the base rental (subtotal) is refundable
+    // Calculate percentage-based penalty — only the base rental (subtotal) is refundable
     // Service fee, insurance, and delivery fee are always non-refundable
     const tripCost = Number(booking.totalAmount || 0)
     const subtotal = Number(booking.subtotal || tripCost)
-    const days = booking.numberOfDays || Math.max(1, Math.ceil(
-      ((booking.endDate?.getTime() || 0) - (booking.startDate?.getTime() || 0)) / (1000 * 60 * 60 * 24)
-    ))
-    const cancellation = calculateCancellationRefund(booking.startDate!, subtotal, days)
+    const cancellation = calculateCancellationRefund(booking.startDate!, subtotal)
 
     // Calculate proportional penalty distribution across payment sources
     const creditsApplied = Number(booking.creditsApplied || 0)
@@ -131,9 +128,9 @@ export async function POST(
     const isValidationOnly = chargeAmount <= 1 && (creditsApplied + bonusApplied) >= tripCost
     const cardValidationRefund = isValidationOnly ? chargeAmount : 0
 
-    console.log(`[Cancel Booking] Policy: ${cancellation.label} (${cancellation.hoursUntilPickup.toFixed(1)}h before pickup)`)
-    console.log(`[Cancel Booking] Trip total: $${tripCost}, refundable base (subtotal): $${subtotal} over ${days} days`)
-    console.log(`[Cancel Booking] Penalty: $${cancellation.penaltyAmount} (${cancellation.penaltyDays} days, avg daily: $${cancellation.averageDailyCost.toFixed(2)})`)
+    console.log(`[Cancel Booking] Policy: ${cancellation.tier} — ${cancellation.label} (${cancellation.hoursUntilPickup.toFixed(1)}h before pickup)`)
+    console.log(`[Cancel Booking] Trip total: $${tripCost}, refundable base (subtotal): $${subtotal}, refund: ${cancellation.refundPercentage}%`)
+    console.log(`[Cancel Booking] Penalty: $${cancellation.penaltyAmount} (${100 - cancellation.refundPercentage}% of subtotal)`)
     console.log(`[Cancel Booking] Penalty split → card: $${distribution.penaltyFromCard}, credits: $${distribution.penaltyFromCredits}, bonus: $${distribution.penaltyFromBonus}`)
     console.log(`[Cancel Booking] Restoring → credits: $${distribution.creditsRestored}, bonus: $${distribution.bonusRestored}, card refund: $${distribution.cardRefund}${cardValidationRefund > 0 ? ` + $${cardValidationRefund} validation` : ''}`)
     console.log(`[Cancel Booking] Deposit: $${securityDeposit} (wallet: $${depositFromWallet}, card: $${depositFromCard}) — ALWAYS released`)
@@ -154,8 +151,12 @@ export async function POST(
               cancellation_reason: 'requested_by_customer',
             })
             console.log('[Cancel Booking] Voided entire authorization hold (free cancellation)')
+          } else if (cancellation.tier === 'no_refund') {
+            // No refund — capture the full hold amount
+            await stripe.paymentIntents.capture(cancelledBooking.paymentIntentId)
+            console.log('[Cancel Booking] Captured full authorization (no refund — <12 hours before pickup)')
           } else {
-            // Late cancellation with penalty — capture only the penalty amount, release the rest
+            // Moderate or late cancellation with partial penalty — capture only the penalty amount
             const penaltyFromCardCents = Math.round(distribution.penaltyFromCard * 100)
             if (penaltyFromCardCents > 0 && penaltyFromCardCents < pi.amount) {
               // Capture just the penalty portion
@@ -390,8 +391,7 @@ export async function POST(
         tier: cancellation.tier,
         policy: cancellation.label,
         penaltyAmount: cancellation.penaltyAmount,
-        penaltyDays: cancellation.penaltyDays,
-        averageDailyCost: cancellation.averageDailyCost,
+        refundPercentage: cancellation.refundPercentage,
         tripRefund: cancellation.refundAmount,
         depositRefunded: true,
       },
