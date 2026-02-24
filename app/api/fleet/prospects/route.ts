@@ -261,7 +261,7 @@ export async function POST(request: NextRequest) {
 
     // Check if prospect with this email already exists
     const existingProspect = await prisma.hostProspect.findFirst({
-      where: { email: email.toLowerCase() }
+      where: { email: email.toLowerCase(), status: { not: 'ARCHIVED' } }
     })
 
     if (existingProspect) {

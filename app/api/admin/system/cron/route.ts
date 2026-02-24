@@ -193,7 +193,30 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // 7. Update system metrics
+    // 7. Expire ON_HOLD bookings past deadline (no-show)
+    try {
+      const expireResponse = await fetch(`${baseUrl}/api/cron/expire-holds`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${cronSecret}`
+        }
+      })
+      const expireResult = await expireResponse.json()
+      results.push({
+        task: 'expire-holds',
+        status: expireResult.success ? 'success' : 'failed',
+        processed: expireResult.processed || 0
+      })
+    } catch (error) {
+      results.push({
+        task: 'expire-holds',
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    }
+
+    // 8. Update system metrics
     try {
       const { prisma } = await import('@/app/lib/database/prisma')
       const now = new Date()
