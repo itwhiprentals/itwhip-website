@@ -7,11 +7,11 @@ import {
   IoDocumentTextOutline,
   IoShieldCheckmarkOutline,
   IoCardOutline,
-  IoLockClosedOutline
+  IoLockClosedOutline,
+  IoTimeOutline
 } from 'react-icons/io5'
 
-// New simplified 5-tab structure
-export type TabType = 'account' | 'documents' | 'insurance' | 'payment' | 'security'
+export type TabType = 'account' | 'documents' | 'insurance' | 'payment' | 'security' | 'status'
 
 interface TabNavigationProps {
   activeTab: TabType
@@ -23,7 +23,8 @@ const tabDefs: { value: TabType; labelKey: string; icon: React.ComponentType<{ c
   { value: 'documents', labelKey: 'documents', icon: IoDocumentTextOutline },
   { value: 'insurance', labelKey: 'insurance', icon: IoShieldCheckmarkOutline },
   { value: 'payment', labelKey: 'payment', icon: IoCardOutline },
-  { value: 'security', labelKey: 'security', icon: IoLockClosedOutline }
+  { value: 'security', labelKey: 'security', icon: IoLockClosedOutline },
+  { value: 'status', labelKey: 'status', icon: IoTimeOutline }
 ]
 
 export default function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {

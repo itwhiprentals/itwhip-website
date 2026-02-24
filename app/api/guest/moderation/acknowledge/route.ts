@@ -98,11 +98,15 @@ export async function POST(request: NextRequest) {
         data: { expiresAt: now }
       })
 
-      // Update profile counts
+      // Update profile counts and reset restrictions
       await tx.reviewerProfile.update({
         where: { id: guest.id },
         data: {
-          activeWarningCount: 0
+          activeWarningCount: 0,
+          canInstantBook: true,
+          canBookLuxury: true,
+          canBookPremium: true,
+          requiresManualApproval: false
         }
       })
 

@@ -321,6 +321,20 @@ export function vehicleIssuesHost(data: {
   return `ItWhip: Your ${data.carName} has ${data.issueCount} listing issue${data.issueCount !== 1 ? 's' : ''} preventing it from being listed. Check your email for details and fix them here: ${baseUrl}/partner/fleet/${data.vehicleId}`
 }
 
+// ─── Warning Issued (guest) ──────────────────────────────────────
+
+export function warningIssuedGuest(data: {
+  category: string
+}, locale: Locale = 'en'): string {
+  const cat = data.category || 'policy violation'
+  const templates: Record<Locale, string> = {
+    en: `ItWhip: Your account has received a warning for ${cat}. Review the details and our Community Guidelines in your account. itwhip.com/dashboard`,
+    es: `ItWhip: Tu cuenta recibio una advertencia por ${cat}. Revisa los detalles y nuestras Normas en tu cuenta. itwhip.com/dashboard`,
+    fr: `ItWhip: Votre compte a recu un avertissement pour ${cat}. Consultez les details et nos Regles dans votre compte. itwhip.com/dashboard`,
+  }
+  return templates[locale] + CHOE_FOOTER[locale]
+}
+
 // ─── IVR: Roadside Assistance (no booking code) ────────────────
 
 export function ivrRoadsideGeneral(locale: Locale = 'en'): string {

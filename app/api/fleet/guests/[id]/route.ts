@@ -649,6 +649,23 @@ export async function DELETE(
           timestamp: now.toISOString()
         })
 
+        // Send warning notification (email + SMS, non-blocking)
+        try {
+          const { sendWarningNotifications } = await import('@/app/lib/notifications/warning-notifications')
+          await sendWarningNotifications({
+            guestId: id,
+            guestName: guest.name || 'Guest',
+            guestEmail: guest.user?.email || guest.email || '',
+            guestPhone: guest.phoneNumber || null,
+            warningCategory: warningCategory || null,
+            reason,
+            warningCount: guest.warningCount + 1,
+            expiresAt: warningExpiresAt,
+          })
+        } catch (err) {
+          console.error('[Warning] Notification send failed:', err)
+        }
+
         return NextResponse.json({
           success: true,
           action: 'warned',

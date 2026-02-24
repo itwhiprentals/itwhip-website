@@ -3808,6 +3808,7 @@
     "insurance": "Seguro",
     "payment": "Pagos",
     "security": "Seguridad",
+    "status": "Estado",
     "profileSections": "Secciones del perfil"
   },
   "ProfileTab": {

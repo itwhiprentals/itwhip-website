@@ -3790,6 +3790,7 @@
     "insurance": "Insurance",
     "payment": "Payment",
     "security": "Security",
+    "status": "Status",
     "profileSections": "Profile sections"
   },
   "ProfileTab": {

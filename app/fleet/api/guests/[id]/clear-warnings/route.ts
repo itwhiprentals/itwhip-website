@@ -106,13 +106,17 @@ export async function POST(
         }
       })
 
-      // Update the warning count on ReviewerProfile to 0
+      // Update the warning count on ReviewerProfile to 0 and reset restrictions
       await tx.reviewerProfile.update({
         where: { id: profile.id },
         data: {
           warningCount: 0,
           activeWarningCount: 0,
-          lastWarningAt: null
+          lastWarningAt: null,
+          canInstantBook: true,
+          canBookLuxury: true,
+          canBookPremium: true,
+          requiresManualApproval: false
         }
       })
 

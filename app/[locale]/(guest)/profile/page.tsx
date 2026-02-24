@@ -13,6 +13,7 @@ import DocumentsTab from './components/tabs/DocumentsTab'
 import InsuranceTab from './components/tabs/InsuranceTab'
 import PaymentMethodsTab from './components/tabs/PaymentMethodsTab'
 import SecurityTab from './components/tabs/SecurityTab'
+import StatusTab from './components/tabs/StatusTab'
 
 interface GuestProfile {
   id: string
@@ -184,7 +185,7 @@ function GuestProfileContent() {
   // ✅ FIXED: Handle tab changes separately
   useEffect(() => {
     const tabParam = searchParams.get('tab')
-    if (tabParam && ['account', 'documents', 'insurance', 'payment', 'security'].includes(tabParam)) {
+    if (tabParam && ['account', 'documents', 'insurance', 'payment', 'security', 'status'].includes(tabParam)) {
       setActiveTab(tabParam as TabType)
     }
   }, [searchParams])
@@ -488,6 +489,10 @@ function GuestProfileContent() {
               onPasswordSet={fetchProfile}
               onRefresh={fetchProfile}
             />
+          )}
+
+          {activeTab === 'status' && (
+            <StatusTab guestId={profile.id} />
           )}
         </div>
       </div>

@@ -1,8 +1,7 @@
 // app/components/moderation/AppealBottomSheet.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
-import { CldUploadWidget } from 'next-cloudinary'
+import { useState, useEffect, useRef } from 'react'
 import CommunityGuidelinesSheet from './CommunityGuidelinesSheet'
 
 // SVG Icons
@@ -162,8 +161,10 @@ export default function AppealBottomSheet({
   const [evidence, setEvidence] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
   const [expandedWarnings, setExpandedWarnings] = useState<Set<string>>(new Set())
   const [showGuidelinesFromAppeal, setShowGuidelinesFromAppeal] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (isOpen) {
@@ -231,13 +232,37 @@ export default function AppealBottomSheet({
     setError(null)
   }
 
-  const handleUploadSuccess = (result: any) => {
-    if (result?.info?.secure_url) {
-      if (evidence.length < 5) {
-        setEvidence([...evidence, result.info.secure_url])
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (evidence.length >= 5) {
+      alert('Maximum 5 files allowed')
+      return
+    }
+
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'guest_appeals')
+      formData.append('folder', 'guest_appeals')
+
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        { method: 'POST', body: formData }
+      )
+      const data = await res.json()
+      if (data.secure_url) {
+        setEvidence(prev => [...prev, data.secure_url])
       } else {
-        alert('Maximum 5 files allowed')
+        throw new Error('Upload failed')
       }
+    } catch (err) {
+      console.error('Evidence upload failed:', err)
+      alert('Failed to upload image. Please try again.')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
@@ -749,62 +774,49 @@ export default function AppealBottomSheet({
 
                 {/* APPEAL FORM */}
                 {selectedModerationId && moderationInfo.accountStatus !== 'BANNED' && (
-                  <div className="bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/10 dark:to-blue-900/10 border border-green-400 md:border-2 dark:border-green-600 rounded-xl p-3 md:p-5 space-y-3 md:space-y-4 shadow-sm md:shadow-md">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-lg">
-                        <CheckCircle className="w-5 h-5 text-green-700 dark:text-green-400" />
-                      </div>
-                      <h3 className="font-bold text-green-900 dark:text-green-100 text-base">
-                        Submit Your Appeal
-                      </h3>
-                    </div>
+                  <div className="space-y-3 md:space-y-4">
+                    <h3 className="font-bold text-gray-900 dark:text-white text-sm">
+                      Submit Your Appeal
+                    </h3>
 
                     <div>
-                      <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                         Your Appeal *
                       </label>
                       <textarea
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white resize-none text-sm"
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white resize-none text-sm"
                         rows={4}
                         placeholder="Explain why you believe this action should be reconsidered. Be specific and provide details that support your case."
                         disabled={submitting}
                         maxLength={2000}
                       />
-                      <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mt-1.5 text-right">
-                        {reason.length} / 2,000 characters
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
+                        {reason.length} / 2,000
                       </p>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                         Supporting Evidence (Optional)
                       </label>
 
                       {evidence.length > 0 && (
-                        <div className="space-y-2 mb-3">
+                        <div className="flex flex-wrap gap-2 mb-3">
                           {evidence.map((url, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between bg-white dark:bg-gray-700 rounded-lg p-3 border-2 border-gray-200 dark:border-gray-600 shadow-sm"
-                            >
-                              <div className="flex items-center flex-1 min-w-0 gap-3">
-                                <img
-                                  src={url}
-                                  alt={`Evidence ${index + 1}`}
-                                  className="w-10 h-10 md:w-12 md:h-12 rounded-lg object-cover border border-gray-200 md:border-2 dark:border-gray-600 flex-shrink-0"
-                                />
-                                <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                  Evidence {index + 1}
-                                </span>
-                              </div>
+                            <div key={index} className="relative">
+                              <img
+                                src={url}
+                                alt={`Evidence ${index + 1}`}
+                                className="w-16 h-16 rounded-lg object-cover"
+                              />
                               <button
                                 onClick={() => removeEvidence(index)}
-                                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 ml-3 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                 disabled={submitting}
+                                className="absolute -top-1.5 -right-1.5 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 rounded-full w-5 h-5 flex items-center justify-center text-xs"
                               >
-                                <Trash className="w-5 h-5" />
+                                ×
                               </button>
                             </div>
                           ))}
@@ -812,37 +824,32 @@ export default function AppealBottomSheet({
                       )}
 
                       {evidence.length < 5 && (
-                        <CldUploadWidget
-                          uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'guest_appeals'}
-                          onSuccess={handleUploadSuccess}
-                          options={{
-                            maxFiles: 1,
-                            maxFileSize: 5000000,
-                            sources: ['local', 'camera'],
-                            resourceType: 'image'
-                          }}
-                        >
-                          {({ open }) => (
-                            <button
-                              onClick={() => open()}
-                              disabled={submitting}
-                              className="w-full px-4 py-3 border-2 border-dashed border-gray-400 dark:border-gray-500 rounded-lg hover:border-green-500 dark:hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900/10 transition-all text-sm font-medium"
-                            >
-                              <div className="flex items-center justify-center text-gray-700 dark:text-gray-300">
-                                <Upload className="w-5 h-5 mr-2" />
-                                <span>Upload Evidence ({evidence.length}/5)</span>
-                              </div>
-                            </button>
-                          )}
-                        </CldUploadWidget>
+                        <>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileUpload}
+                            disabled={submitting || uploading}
+                            className="hidden"
+                          />
+                          <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={submitting || uploading}
+                            className="w-full px-4 py-2.5 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-gray-400 dark:hover:border-gray-500 transition-colors text-sm"
+                          >
+                            <div className="flex items-center justify-center text-gray-500 dark:text-gray-400">
+                              <Upload className="w-4 h-4 mr-2" />
+                              <span>{uploading ? 'Uploading...' : `Upload Photo (${evidence.length}/5)`}</span>
+                            </div>
+                          </button>
+                        </>
                       )}
                     </div>
 
-                    <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded-lg p-3">
-                      <p className="text-xs font-medium text-blue-800 dark:text-blue-200">
-                        💡 <strong>Tip:</strong> Each action allows 2 appeal attempts. Appeals are typically reviewed within 24-48 hours.
-                      </p>
-                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Each action allows 2 appeal attempts. Appeals are typically reviewed within 24-48 hours.
+                    </p>
                   </div>
                 )}
               </>

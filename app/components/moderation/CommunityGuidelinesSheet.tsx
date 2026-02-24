@@ -27,12 +27,49 @@ const Spinner = ({ className = "w-4 h-4" }: { className?: string }) => (
   </svg>
 )
 
+const CarIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10m10 0H3m10 0h2m4 0a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0016.586 7H13" />
+  </svg>
+)
+
+const DocIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+  </svg>
+)
+
+const ChatIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+  </svg>
+)
+
+const ClockIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+)
+
+const ScaleIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+  </svg>
+)
+
+const CreditCardIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+  </svg>
+)
+
 // ---------- Static data ----------
 
-const guidelines = [
+const guidelines: { title: string; icon: React.FC<{ className?: string }>; items: string[] }[] = [
   {
     title: 'Vehicle Care & Respect',
-    icon: '🚗',
+    icon: CarIcon,
     items: [
       'Return vehicles in the same condition you received them',
       'Report any damage or issues immediately — honesty is always the best policy',
@@ -42,7 +79,7 @@ const guidelines = [
   },
   {
     title: 'Honest Documentation',
-    icon: '📄',
+    icon: DocIcon,
     items: [
       'Provide valid, unaltered government-issued ID and driver\'s license',
       'Keep your insurance information current and accurate',
@@ -52,7 +89,7 @@ const guidelines = [
   },
   {
     title: 'Timely Communication',
-    icon: '💬',
+    icon: ChatIcon,
     items: [
       'Respond to host messages promptly',
       'Notify the host if you\'re running late for pickup or return',
@@ -62,7 +99,7 @@ const guidelines = [
   },
   {
     title: 'Pickup & Return',
-    icon: '⏰',
+    icon: ClockIcon,
     items: [
       'Arrive on time for scheduled pickups',
       'Return vehicles by the agreed-upon time — late returns affect other guests',
@@ -72,7 +109,7 @@ const guidelines = [
   },
   {
     title: 'Safety & Legal',
-    icon: '⚖️',
+    icon: ScaleIcon,
     items: [
       'Only authorized drivers listed on the booking may operate the vehicle',
       'Follow all local traffic laws and regulations',
@@ -82,7 +119,7 @@ const guidelines = [
   },
   {
     title: 'Payment & Deposits',
-    icon: '💳',
+    icon: CreditCardIcon,
     items: [
       'Ensure your payment method is valid and has sufficient funds',
       'Security deposits are refunded after a successful trip inspection',
@@ -217,7 +254,7 @@ export default function CommunityGuidelinesSheet({
             {guidelines.map((section) => (
               <div key={section.title} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                  <span>{section.icon}</span>
+                  <section.icon className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
                   {section.title}
                 </h3>
                 <ul className="space-y-1.5">
