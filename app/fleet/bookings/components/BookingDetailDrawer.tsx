@@ -13,12 +13,12 @@ import {
   IoShieldCheckmarkOutline,
   IoWarningOutline,
   IoCheckmarkCircleOutline,
-  IoTimeOutline,
   IoOpenOutline,
   IoCallOutline
 } from 'react-icons/io5'
 import { FleetBooking, formatCurrency, formatDate, formatDateTime, getStatusColor, getStatusLabel, getVerificationColor, getVerificationLabel, getTripStatusLabel, getReviewStatusColor, getReviewStatusLabel } from '../types'
 import { BookingQuickActions } from './BookingQuickActions'
+import { BookingProgressBar } from './BookingProgressBar'
 
 interface BookingDetailDrawerProps {
   isOpen: boolean
@@ -146,6 +146,9 @@ export function BookingDetailDrawer({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Progress Bar — mirrors guest view */}
+          <BookingProgressBar booking={booking} />
+
           {/* Quick Actions */}
           <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Quick Actions</h3>

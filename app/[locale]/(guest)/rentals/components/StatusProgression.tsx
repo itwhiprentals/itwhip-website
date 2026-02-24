@@ -64,8 +64,8 @@ export default function StatusProgression({
   const isConfirmed = paymentSuccessful && (status === 'CONFIRMED' || status === 'ACTIVE' || status === 'COMPLETED')
   // Check trip status for Active state
   const isActive = status === 'ACTIVE' || tripStatus === 'ACTIVE' || !!tripStartedAt
-  const isCompleted = status === 'COMPLETED' || tripStatus === 'COMPLETED' || !!tripEndedAt
-  const isNoShow = isCompleted && !tripStartedAt
+  const isNoShow = status === 'NO_SHOW'
+  const isCompleted = status === 'COMPLETED' || isNoShow || tripStatus === 'COMPLETED' || !!tripEndedAt
   const isHandoffDone = handoffStatus === 'HANDOFF_COMPLETE' || handoffStatus === 'BYPASSED'
   const isOnHold = status === 'ON_HOLD'
   
