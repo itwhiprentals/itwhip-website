@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const isPreview = request.nextUrl.searchParams.get('preview') === 'true'
     const { prisma } = await import('@/app/lib/database/prisma')
     const now = new Date()
 
@@ -48,6 +49,27 @@ export async function POST(request: NextRequest) {
         },
       },
     })
+
+    // Preview mode — return what would be affected without taking action
+    if (isPreview) {
+      return NextResponse.json({
+        success: true,
+        preview: true,
+        found: expiredHolds.length,
+        items: expiredHolds.map(b => ({
+          bookingCode: b.bookingCode,
+          guestName: b.guestName || 'Unknown',
+          car: `${b.car?.year || ''} ${b.car?.make || ''} ${b.car?.model || ''}`.trim(),
+          holdReason: b.holdReason || 'identity verification',
+          holdDeadline: b.holdDeadline?.toISOString() || null,
+          startDate: b.startDate.toISOString(),
+          endDate: b.endDate.toISOString(),
+          totalAmount: b.totalAmount,
+          host: b.host?.name || 'Unknown',
+          action: 'Mark as NO_SHOW (no refund)',
+        })),
+      })
+    }
 
     if (expiredHolds.length === 0) {
       return NextResponse.json({

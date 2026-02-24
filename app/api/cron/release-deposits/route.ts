@@ -109,6 +109,33 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Deposit Release] Found ${eligibleBookings.length} bookings eligible for deposit release`)
 
+    // Preview mode — return what would be affected without taking action
+    const isPreview = request.nextUrl.searchParams.get('preview') === 'true'
+    if (isPreview) {
+      return NextResponse.json({
+        success: true,
+        preview: true,
+        found: eligibleBookings.length,
+        items: eligibleBookings.map(b => {
+          const claimDeduction = b.depositUsedForClaim || 0
+          const net = b.depositAmount - claimDeduction
+          return {
+            bookingCode: b.bookingCode,
+            guestName: b.guestName || 'Unknown',
+            car: `${b.car?.make || ''} ${b.car?.model || ''}`.trim(),
+            depositAmount: b.depositAmount,
+            depositFromCard: b.depositFromCard || 0,
+            depositFromWallet: b.depositFromWallet || 0,
+            claimDeduction,
+            netRelease: net > 0 ? net : 0,
+            tripEndedAt: b.tripEndedAt?.toISOString() || null,
+            reviewStatus: b.hostFinalReviewStatus || 'none',
+            action: net > 0 ? `Release $${net.toFixed(2)} deposit` : 'Deposit fully used for claims',
+          }
+        }),
+      })
+    }
+
     let released = 0
     let skipped = 0
     let failed = 0
