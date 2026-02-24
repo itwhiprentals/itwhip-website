@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
         await prisma.auditLog.create({
           data: {
             id: crypto.randomUUID(),
-            category: 'SYSTEM',
+            category: 'DATA_MODIFICATION',
             eventType: 'booking_auto_completed',
             severity: 'INFO',
             action: 'auto_complete_overdue',

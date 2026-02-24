@@ -17,7 +17,7 @@ import {
   IoOpenOutline,
   IoCallOutline
 } from 'react-icons/io5'
-import { FleetBooking, formatCurrency, formatDate, formatDateTime, getStatusColor, getVerificationColor, getTripStatusLabel, getReviewStatusColor, getReviewStatusLabel } from '../types'
+import { FleetBooking, formatCurrency, formatDate, formatDateTime, getStatusColor, getStatusLabel, getVerificationColor, getVerificationLabel, getTripStatusLabel, getReviewStatusColor, getReviewStatusLabel } from '../types'
 import { BookingQuickActions } from './BookingQuickActions'
 
 interface BookingDetailDrawerProps {
@@ -57,10 +57,10 @@ export function BookingDetailDrawer({
             </h2>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(booking.status)}`}>
-                {booking.status}
+                {getStatusLabel(booking.status)}
               </span>
               <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getVerificationColor(booking.verificationStatus)}`}>
-                {booking.verificationStatus}
+                {getVerificationLabel(booking.verificationStatus)}
               </span>
               {booking.fleetStatus && (
                 <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${

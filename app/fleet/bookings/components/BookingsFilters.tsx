@@ -34,10 +34,11 @@ export function BookingsFilters({ filters, onFilterChange }: BookingsFiltersProp
           <option value="all">All Status</option>
           <option value="PENDING">Pending</option>
           <option value="CONFIRMED">Confirmed</option>
+          <option value="ON_HOLD">On Hold</option>
           <option value="ACTIVE">Active</option>
           <option value="COMPLETED">Completed</option>
           <option value="CANCELLED">Cancelled</option>
-          <option value="NO_SHOW">No Show</option>
+          <option value="NO_SHOW">No-Show</option>
           <option value="DISPUTE_REVIEW">Dispute Review</option>
         </select>
 

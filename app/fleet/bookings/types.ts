@@ -265,6 +265,35 @@ export function getStatusColor(status: BookingStatus): string {
   }
 }
 
+export function getStatusLabel(status: BookingStatus): string {
+  switch (status) {
+    case 'PENDING': return 'Pending'
+    case 'CONFIRMED': return 'Confirmed'
+    case 'ON_HOLD': return 'On Hold'
+    case 'ACTIVE': return 'Active'
+    case 'COMPLETED': return 'Completed'
+    case 'CANCELLED': return 'Cancelled'
+    case 'NO_SHOW': return 'No-Show'
+    case 'DISPUTE_REVIEW': return 'Dispute Review'
+    default: return status
+  }
+}
+
+export function getVerificationLabel(status: VerificationStatus): string {
+  switch (status) {
+    case 'PENDING': return 'Pending'
+    case 'IN_REVIEW': return 'In Review'
+    case 'APPROVED': return 'Verified'
+    case 'REJECTED': return 'Rejected'
+    case 'EXPIRED': return 'Expired'
+    default: return status
+  }
+}
+
+export function isTerminalStatus(status: BookingStatus): boolean {
+  return status === 'CANCELLED' || status === 'COMPLETED' || status === 'NO_SHOW'
+}
+
 export function getVerificationColor(status: VerificationStatus): string {
   switch (status) {
     case 'PENDING': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'

@@ -1,7 +1,7 @@
 // app/fleet/bookings/components/BookingsTable.tsx
 'use client'
 
-import { FleetBooking, formatCurrency, formatDate, getStatusColor, getVerificationColor, getReviewStatusColor, getReviewStatusLabel } from '../types'
+import { FleetBooking, formatCurrency, formatDate, getStatusColor, getStatusLabel, getVerificationColor, getVerificationLabel, getReviewStatusColor, getReviewStatusLabel, isTerminalStatus } from '../types'
 import {
   IoAlertCircleOutline,
   IoChevronForwardOutline
@@ -114,10 +114,10 @@ export function BookingsTable({ bookings, onSelect, onAction }: BookingsTablePro
                   <td className="px-4 py-3">
                     <div className="flex flex-col gap-1">
                       <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(booking.status)}`}>
-                        {booking.status}
+                        {getStatusLabel(booking.status)}
                       </span>
                       <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${getVerificationColor(booking.verificationStatus)}`}>
-                        {booking.verificationStatus}
+                        {getVerificationLabel(booking.verificationStatus)}
                       </span>
                       {booking.hostFinalReviewStatus && (
                         <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${getReviewStatusColor(booking.hostFinalReviewStatus)}`}>
@@ -140,7 +140,7 @@ export function BookingsTable({ bookings, onSelect, onAction }: BookingsTablePro
                   {/* Actions */}
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      {needsVerification && booking.status !== 'CANCELLED' && (
+                      {needsVerification && !isTerminalStatus(booking.status) && (
                         <>
                           <button
                             onClick={() => onAction(booking, 'approve')}

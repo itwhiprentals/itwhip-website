@@ -12,7 +12,7 @@ import {
   IoTimeOutline,
   IoChevronForwardOutline
 } from 'react-icons/io5'
-import { FleetBooking, formatCurrency, formatDate, getStatusColor, getVerificationColor } from '../types'
+import { FleetBooking, formatCurrency, formatDate, getStatusColor, getStatusLabel, getVerificationColor, getVerificationLabel, isTerminalStatus } from '../types'
 
 interface BookingCardProps {
   booking: FleetBooking
@@ -80,7 +80,7 @@ export function BookingCard({ booking, onSelect, onAction }: BookingCardProps) {
                 {booking.bookingCode}
               </span>
               <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(booking.status)}`}>
-                {booking.status}
+                {getStatusLabel(booking.status)}
               </span>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -187,7 +187,7 @@ export function BookingCard({ booking, onSelect, onAction }: BookingCardProps) {
 
         {/* Quick Actions */}
         <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100 dark:border-gray-700">
-          {needsVerification && booking.status !== 'CANCELLED' && (
+          {needsVerification && !isTerminalStatus(booking.status) && (
             <>
               <button
                 onClick={() => onAction(booking, 'approve')}
@@ -210,7 +210,7 @@ export function BookingCard({ booking, onSelect, onAction }: BookingCardProps) {
             </>
           )}
 
-          {booking.status !== 'CANCELLED' && booking.status !== 'COMPLETED' && (
+          {!isTerminalStatus(booking.status) && (
             <>
               <button
                 onClick={() => onAction(booking, 'modify')}

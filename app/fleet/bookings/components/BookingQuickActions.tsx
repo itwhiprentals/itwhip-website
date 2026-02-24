@@ -28,6 +28,7 @@ export function BookingQuickActions({ booking, onAction, loading }: BookingQuick
   const isActive = booking.status === 'ACTIVE'
   const isCancelled = booking.status === 'CANCELLED'
   const isCompleted = booking.status === 'COMPLETED'
+  const isNoShow = booking.status === 'NO_SHOW'
   const isOnHold = booking.status === 'ON_HOLD'
 
   // Show "Connect Guest & Host" for confirmed/active bookings with both phones
@@ -63,10 +64,11 @@ export function BookingQuickActions({ booking, onAction, loading }: BookingQuick
     window.dispatchEvent(new CustomEvent('phone-dial', { detail: { number } }))
   }
 
-  if (isCancelled || isCompleted) {
+  if (isCancelled || isCompleted || isNoShow) {
+    const label = isNoShow ? 'no-show' : booking.status.toLowerCase()
     return (
       <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-        No actions available for {booking.status.toLowerCase()} bookings
+        No actions available for {label} bookings
       </div>
     )
   }
