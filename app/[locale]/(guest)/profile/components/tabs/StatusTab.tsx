@@ -25,6 +25,7 @@ import {
   IoHelpCircleOutline
 } from 'react-icons/io5'
 import AppealBottomSheet from '@/app/components/moderation/AppealBottomSheet'
+import CommunityGuidelinesSheet from '@/app/components/moderation/CommunityGuidelinesSheet'
 
 interface StatusTabProps {
   guestId: string
@@ -165,6 +166,7 @@ export default function StatusTab({ guestId }: StatusTabProps) {
   const [error, setError] = useState<string | null>(null)
   const [appealNotifications, setAppealNotifications] = useState<AppealNotification[]>([])
   const [isAppealModalOpen, setIsAppealModalOpen] = useState(false)
+  const [showGuidelines, setShowGuidelines] = useState(false)
 
   useEffect(() => {
     fetchAllData()
@@ -735,7 +737,7 @@ export default function StatusTab({ guestId }: StatusTabProps) {
           </button>
 
           <button
-            onClick={() => window.open('/community-guidelines', '_blank')}
+            onClick={() => setShowGuidelines(true)}
             className="flex items-center gap-2 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left"
           >
             <IoHelpCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -925,7 +927,7 @@ export default function StatusTab({ guestId }: StatusTabProps) {
       </div>
 
       {/* Appeal Bottom Sheet Modal */}
-      <AppealBottomSheet 
+      <AppealBottomSheet
         isOpen={isAppealModalOpen}
         onClose={() => setIsAppealModalOpen(false)}
         guestId={guestId}
@@ -933,6 +935,10 @@ export default function StatusTab({ guestId }: StatusTabProps) {
           setIsAppealModalOpen(false)
           fetchAllData() // Refresh the data after successful appeal
         }}
+      />
+      <CommunityGuidelinesSheet
+        isOpen={showGuidelines}
+        onClose={() => setShowGuidelines(false)}
       />
     </div>
   )

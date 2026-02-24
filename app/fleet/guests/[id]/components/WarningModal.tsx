@@ -98,7 +98,7 @@ export default function WarningModal({
   currentWarningCount,
   onSuccess
 }: WarningModalProps) {
-  const [category, setCategory] = useState('LATE_RETURNS')
+  const [category, setCategory] = useState('')
   const [duration, setDuration] = useState('1_MONTH')
   const [customDate, setCustomDate] = useState('')
   const [restrictions, setRestrictions] = useState<string[]>([])
@@ -134,6 +134,10 @@ export default function WarningModal({
 
   const handleSubmit = async () => {
     // Validation
+    if (!category) {
+      setError('Please select a warning category')
+      return
+    }
     if (!publicReason.trim()) {
       setError('Public reason is required')
       return
@@ -176,7 +180,7 @@ export default function WarningModal({
       onClose()
       
       // Reset form
-      setCategory('LATE_RETURNS')
+      setCategory('')
       setDuration('1_MONTH')
       setCustomDate('')
       setRestrictions([])
@@ -395,7 +399,7 @@ export default function WarningModal({
         <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
           <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Summary</h4>
           <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
-            <li>• Category: <span className="font-medium">{selectedCategory?.label}</span></li>
+            <li>• Category: <span className={`font-medium ${!selectedCategory ? 'text-red-500' : ''}`}>{selectedCategory?.label || 'Not selected'}</span></li>
             <li>• New Warning Count: <span className="font-medium">{newWarningCount}</span></li>
             <li>• Duration: <span className="font-medium">
               {duration === 'CUSTOM' ? (customDate ? new Date(customDate).toLocaleDateString() : 'Not set') : DURATIONS.find(d => d.value === duration)?.label}
@@ -417,7 +421,7 @@ export default function WarningModal({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={submitting || !publicReason.trim()}
+            disabled={submitting || !publicReason.trim() || !category}
             className="px-6 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? 'Issuing Warning...' : 'Issue Warning'}

@@ -2,7 +2,6 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Link } from '@/i18n/navigation'
 import {
   SuspensionInfo,
   WARNING_CATEGORY_CONFIG,
@@ -11,6 +10,7 @@ import {
   WarningCategory
 } from '../types'
 import AppealBottomSheet from '@/app/components/moderation/AppealBottomSheet'
+import CommunityGuidelinesSheet from '@/app/components/moderation/CommunityGuidelinesSheet'
 
 const AlertCircle = ({ className = "w-5 h-5" }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -37,13 +37,16 @@ interface WarningBannerProps {
   onAppealSuccess?: () => void
 }
 
-export default function WarningBanner({ 
-  suspensionInfo, 
+export default function WarningBanner({
+  suspensionInfo,
   moderationHistory,
   guestId,
-  onAppealSuccess 
+  onAppealSuccess
 }: WarningBannerProps) {
   const [showAppealSheet, setShowAppealSheet] = useState(false)
+  const [showGuidelines, setShowGuidelines] = useState(false)
+  const [appealSubmitted, setAppealSubmitted] = useState(false)
+  const [warningDismissed, setWarningDismissed] = useState(false)
 
   const { 
     suspensionLevel, 
@@ -107,6 +110,7 @@ export default function WarningBanner({
 
   const handleAppealSubmitSuccess = () => {
     setShowAppealSheet(false)
+    setAppealSubmitted(true)
     if (onAppealSuccess) {
       onAppealSuccess()
     }
@@ -116,31 +120,79 @@ export default function WarningBanner({
   // CRITICAL FIX: Only show warning banner if there are ACTIVE warnings
   // ========================================================================
   if (!suspensionLevel && activeWarningCount > 0) {
-    console.log('[WarningBanner] ✅ Showing warning banner - Active warnings:', activeWarningCount)
-    
     const warningCategory = latestWarning?.warningCategory as WarningCategory | undefined
     const categoryConfig = warningCategory ? WARNING_CATEGORY_CONFIG[warningCategory] : null
     const severityColor = activeWarningCount === 1 ? 'yellow' : activeWarningCount === 2 ? 'orange' : 'red'
 
+    // After guidelines acknowledgment — show compact "dismissed" banner
+    if (warningDismissed) {
+      return (
+        <div className="-mx-2 sm:mx-0 w-[calc(100%+1rem)] sm:w-full rounded-lg p-3 mt-3 mb-3 border bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-green-800 dark:text-green-200">
+                Warning Dismissed
+              </p>
+              <p className="text-xs text-green-700 dark:text-green-300">
+                Thank you for reviewing our Community Guidelines. Your account is back in good standing.
+              </p>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // After appeal submission — show compact "under review" banner
+    if (appealSubmitted) {
+      return (
+        <div className="-mx-2 sm:mx-0 w-[calc(100%+1rem)] sm:w-full rounded-lg p-3 mt-3 mb-3 border bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">
+                Appeal Under Review
+              </p>
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                We'll review your appeal within 24-48 hours and notify you of the outcome.
+              </p>
+            </div>
+            <button
+              onClick={handleAppealClick}
+              className="px-3 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 border border-blue-400 dark:border-blue-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 flex-shrink-0"
+            >
+              View Status
+            </button>
+          </div>
+          <AppealBottomSheet
+            isOpen={showAppealSheet}
+            onClose={handleAppealClose}
+            guestId={guestId}
+            onSuccess={handleAppealSubmitSuccess}
+          />
+        </div>
+      )
+    }
+
     return (
       <>
-        <div className={`rounded-lg p-4 mt-4 mb-4 border ${
-          severityColor === 'yellow' 
+        <div className={`-mx-2 sm:mx-0 w-[calc(100%+1rem)] sm:w-full rounded-lg p-3 md:p-4 mt-3 md:mt-4 mb-3 md:mb-4 border ${
+          severityColor === 'yellow'
             ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700'
             : severityColor === 'orange'
             ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-700'
             : 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700'
         }`}>
           <div className="flex items-start">
-            <AlertCircle className={`w-6 h-6 mt-0.5 mr-3 flex-shrink-0 ${
-              severityColor === 'yellow' 
+            <AlertCircle className={`w-5 h-5 md:w-6 md:h-6 mt-0.5 mr-2 md:mr-3 flex-shrink-0 ${
+              severityColor === 'yellow'
                 ? 'text-yellow-600 dark:text-yellow-400'
                 : severityColor === 'orange'
                 ? 'text-orange-600 dark:text-orange-400'
                 : 'text-red-600 dark:text-red-400'
             }`} />
-            <div className="flex-1">
-              <h3 className={`font-bold mb-2 ${
+            <div className="flex-1 min-w-0">
+              <h3 className={`text-sm md:text-base font-bold mb-1 md:mb-2 ${
                 severityColor === 'yellow'
                   ? 'text-yellow-800 dark:text-yellow-200'
                   : severityColor === 'orange'
@@ -148,22 +200,21 @@ export default function WarningBanner({
                   : 'text-red-800 dark:text-red-200'
               }`}>
                 {activeWarningCount} Active Account Warning{activeWarningCount > 1 ? 's' : ''}
-                {categoryConfig && ` - ${categoryConfig.label}`}
               </h3>
 
-              <p className={`text-sm mb-3 ${
+              <p className={`text-xs md:text-sm mb-2 md:mb-3 ${
                 severityColor === 'yellow'
                   ? 'text-yellow-700 dark:text-yellow-300'
                   : severityColor === 'orange'
                   ? 'text-orange-700 dark:text-orange-300'
                   : 'text-red-700 dark:text-red-300'
               }`}>
-                Your account has been flagged for review. Click "View Details & Appeal" to see the reason and submit an appeal if you believe this is a mistake.
+                Your account has been flagged for review. Click &quot;View Details &amp; Appeal&quot; to see the reason and submit an appeal if you believe this is a mistake.
               </p>
 
               {activeRestrictions.length > 0 && (
-                <div className="mb-3">
-                  <p className={`text-sm font-semibold mb-2 ${
+                <div className="mb-2 md:mb-3">
+                  <p className={`text-xs md:text-sm font-semibold mb-1 md:mb-2 ${
                     severityColor === 'yellow'
                       ? 'text-yellow-900 dark:text-yellow-100'
                       : severityColor === 'orange'
@@ -172,21 +223,21 @@ export default function WarningBanner({
                   }`}>
                     Restrictions Applied:
                   </p>
-                  <div className="space-y-1">
+                  <div className="space-y-0.5 md:space-y-1">
                     {activeRestrictions.map((restriction) => {
                       const config = RESTRICTION_CONFIG[restriction]
                       return (
-                        <p key={restriction} className={`text-sm flex items-center ${
+                        <p key={restriction} className={`text-xs md:text-sm flex items-center ${
                           severityColor === 'yellow'
                             ? 'text-yellow-700 dark:text-yellow-300'
                             : severityColor === 'orange'
                             ? 'text-orange-700 dark:text-orange-300'
                             : 'text-red-700 dark:text-red-300'
                         }`}>
-                          <XCircle className="w-4 h-4 mr-2 flex-shrink-0 text-red-600 dark:text-red-400" />
+                          <XCircle className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2 flex-shrink-0 text-red-600 dark:text-red-400" />
                           <span className="font-medium">{config.label}</span>
-                          <span className="mx-2">-</span>
-                          <span>{config.description}</span>
+                          <span className="mx-1 md:mx-2">-</span>
+                          <span className="truncate">{config.description}</span>
                         </p>
                       )
                     })}
@@ -194,23 +245,10 @@ export default function WarningBanner({
                 </div>
               )}
 
-              {suspensionExpiresAt && (
-                <p className={`text-sm mb-3 ${
-                  severityColor === 'yellow'
-                    ? 'text-yellow-700 dark:text-yellow-300'
-                    : severityColor === 'orange'
-                    ? 'text-orange-700 dark:text-orange-300'
-                    : 'text-red-700 dark:text-red-300'
-                }`}>
-                  <strong>Warning expires:</strong> {new Date(suspensionExpiresAt).toLocaleDateString()}
-                  {daysRemaining !== null && ` (${daysRemaining} day${daysRemaining !== 1 ? 's' : ''} remaining)`}
-                </p>
-              )}
-
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={handleAppealClick}
-                  className={`inline-block px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors ${
                     severityColor === 'yellow'
                       ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
                       : severityColor === 'orange'
@@ -220,10 +258,10 @@ export default function WarningBanner({
                 >
                   View Details & Appeal
                 </button>
-                
-                <Link
-                  href="/community-guidelines"
-                  className={`inline-block px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
+
+                <button
+                  onClick={() => setShowGuidelines(true)}
+                  className={`px-3 md:px-4 py-1.5 md:py-2 border rounded-lg text-xs md:text-sm font-medium transition-colors ${
                     severityColor === 'yellow'
                       ? 'border-yellow-600 text-yellow-800 dark:text-yellow-200 hover:bg-yellow-100 dark:hover:bg-yellow-900/30'
                       : severityColor === 'orange'
@@ -232,7 +270,7 @@ export default function WarningBanner({
                   }`}
                 >
                   Community Guidelines
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -243,6 +281,17 @@ export default function WarningBanner({
           onClose={handleAppealClose}
           guestId={guestId}
           onSuccess={handleAppealSubmitSuccess}
+        />
+        <CommunityGuidelinesSheet
+          isOpen={showGuidelines}
+          onClose={() => setShowGuidelines(false)}
+          canAcknowledge={activeWarningCount === 1}
+          guestId={guestId}
+          onAcknowledge={() => {
+            setShowGuidelines(false)
+            setWarningDismissed(true)
+            if (onAppealSuccess) onAppealSuccess()
+          }}
         />
       </>
     )
@@ -255,7 +304,7 @@ export default function WarningBanner({
     console.log('[WarningBanner] ✅ Showing soft suspension banner')
     return (
       <>
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-lg p-4 mt-4 mb-4">
+        <div className="-mx-2 sm:mx-0 w-[calc(100%+1rem)] sm:w-full bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-lg p-4 mt-4 mb-4">
           <div className="flex items-start">
             <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-400 mt-0.5 mr-3 flex-shrink-0" />
             <div className="flex-1">
@@ -312,7 +361,7 @@ export default function WarningBanner({
     console.log('[WarningBanner] ✅ Showing hard suspension banner')
     return (
       <>
-        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-400 dark:border-orange-600 rounded-lg p-4 mt-4 mb-4">
+        <div className="-mx-2 sm:mx-0 w-[calc(100%+1rem)] sm:w-full bg-orange-50 dark:bg-orange-900/20 border border-orange-400 dark:border-orange-600 rounded-lg p-4 mt-4 mb-4">
           <div className="flex items-start">
             <AlertCircle className="w-6 h-6 text-orange-600 dark:text-orange-400 mt-0.5 mr-3 flex-shrink-0" />
             <div className="flex-1">
@@ -368,7 +417,7 @@ export default function WarningBanner({
   if (suspensionLevel === 'BANNED') {
     console.log('[WarningBanner] ✅ Showing permanent ban banner')
     return (
-      <div className="bg-red-50 dark:bg-red-900/20 border border-red-500 dark:border-red-700 rounded-lg p-4 mt-4 mb-4">
+      <div className="-mx-2 sm:mx-0 w-[calc(100%+1rem)] sm:w-full bg-red-50 dark:bg-red-900/20 border border-red-500 dark:border-red-700 rounded-lg p-4 mt-4 mb-4">
         <div className="flex items-start">
           <XCircle className="w-6 h-6 text-red-600 dark:text-red-400 mt-0.5 mr-3 flex-shrink-0" />
           <div className="flex-1">
