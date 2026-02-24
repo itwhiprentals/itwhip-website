@@ -114,6 +114,7 @@ export async function approveBooking(params: {
         guestPhone: true,
         guestName: true,
         reviewerProfileId: true,
+        renterId: true,
         startDate: true,
         endDate: true,
         car: { select: { year: true, make: true, model: true } },
@@ -157,7 +158,26 @@ export async function approveBooking(params: {
         bookingId: booking.id,
         hostId: booking.hostId,
       }).catch(e => console.error('[fleet-approval] SMS failed:', e))
-    }).catch(() => {})
+    }).catch(e => console.error('[SMS] sms-triggers import failed:', e))
+
+    // Bell notifications for guest + host (fire-and-forget)
+    import('@/app/lib/notifications/booking-bell').then(({ createBookingNotificationPair }) => {
+      const carName = `${booking.car.year} ${booking.car.make} ${booking.car.model}`
+      createBookingNotificationPair({
+        bookingId: booking.id,
+        guestId: booking.reviewerProfileId,
+        userId: booking.renterId,
+        hostId: booking.hostId,
+        type: 'BOOKING_CONFIRMED',
+        guestTitle: 'Booking confirmed!',
+        guestMessage: `Your booking #${booking.bookingCode} for the ${carName} has been confirmed.`,
+        hostTitle: `Booking ${booking.bookingCode} confirmed`,
+        hostMessage: `Booking #${booking.bookingCode} for your ${carName} has been confirmed by fleet.`,
+        guestActionUrl: `/rentals/dashboard/bookings/${booking.id}`,
+        hostActionUrl: `/partner/bookings/${booking.id}`,
+        priority: 'HIGH',
+      }).catch(e => console.error('[fleet-approval] Bell notification failed:', e))
+    }).catch(e => console.error('[fleet-approval] booking-bell import failed:', e))
 
     return {
       success: true,

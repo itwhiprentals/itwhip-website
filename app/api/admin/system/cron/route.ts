@@ -216,7 +216,76 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // 8. Update system metrics
+    // 8. Auto-complete bookings past their endDate
+    try {
+      const autoCompleteResponse = await fetch(`${baseUrl}/api/cron/auto-complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${cronSecret}`
+        }
+      })
+      const autoCompleteResult = await autoCompleteResponse.json()
+      results.push({
+        task: 'auto-complete',
+        status: autoCompleteResult.success ? 'success' : 'failed',
+        processed: autoCompleteResult.processed || 0
+      })
+    } catch (error) {
+      results.push({
+        task: 'auto-complete',
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    }
+
+    // 9. Pickup reminders (24h before trip start)
+    try {
+      const pickupResponse = await fetch(`${baseUrl}/api/cron/pickup-reminder`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${cronSecret}`
+        }
+      })
+      const pickupResult = await pickupResponse.json()
+      results.push({
+        task: 'pickup-reminder',
+        status: pickupResult.success ? 'success' : 'failed',
+        processed: pickupResult.processed || 0
+      })
+    } catch (error) {
+      results.push({
+        task: 'pickup-reminder',
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    }
+
+    // 10. Return reminders (24h + 3h before trip end)
+    try {
+      const returnResponse = await fetch(`${baseUrl}/api/cron/return-reminder`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${cronSecret}`
+        }
+      })
+      const returnResult = await returnResponse.json()
+      results.push({
+        task: 'return-reminder',
+        status: returnResult.success ? 'success' : 'failed',
+        processed: returnResult.processed || 0
+      })
+    } catch (error) {
+      results.push({
+        task: 'return-reminder',
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    }
+
+    // 11. Update system metrics
     try {
       const { prisma } = await import('@/app/lib/database/prisma')
       const now = new Date()

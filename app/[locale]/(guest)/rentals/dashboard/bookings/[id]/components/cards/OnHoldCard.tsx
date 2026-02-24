@@ -36,7 +36,56 @@ export const OnHoldCard: React.FC<OnHoldCardProps> = ({
   onAgreement,
 }) => {
   const t = useTranslations('BookingDetail')
+  const tTrip = useTranslations('TripActiveCard')
   const [copiedCode, setCopiedCode] = React.useState(false)
+  const [timeRemaining, setTimeRemaining] = React.useState('')
+  const [isOverdue, setIsOverdue] = React.useState(false)
+
+  // Timer: calculate time remaining until trip endDate
+  React.useEffect(() => {
+    const combineDateTime = (dateString: string, timeString: string): Date => {
+      const date = new Date(dateString)
+      let hours = 0, minutes = 0
+      if (timeString?.includes(':')) {
+        const timeParts = timeString.split(':')
+        let hourPart = parseInt(timeParts[0])
+        const minutePart = parseInt(timeParts[1]?.replace(/\D/g, '') || '0')
+        if (timeString.toLowerCase().includes('pm') && hourPart !== 12) hourPart += 12
+        if (timeString.toLowerCase().includes('am') && hourPart === 12) hourPart = 0
+        hours = hourPart
+        minutes = minutePart
+      }
+      const combined = new Date(date)
+      combined.setHours(hours, minutes, 0, 0)
+      return combined
+    }
+
+    const updateTimer = () => {
+      const returnDate = combineDateTime(booking.endDate, booking.endTime || '10:00')
+      const remaining = returnDate.getTime() - Date.now()
+
+      if (remaining <= 0) {
+        setTimeRemaining(tTrip('overdue'))
+        setIsOverdue(true)
+      } else {
+        setIsOverdue(false)
+        const days = Math.floor(remaining / (1000 * 60 * 60 * 24))
+        const hrs = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+        const mins = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60))
+        if (days > 0) {
+          setTimeRemaining(tTrip('timeRemainingDaysHours', { days, hours: hrs }))
+        } else if (hrs > 0) {
+          setTimeRemaining(tTrip('timeRemainingHoursMinutes', { hours: hrs, minutes: mins }))
+        } else {
+          setTimeRemaining(tTrip('timeRemainingMinutes', { minutes: mins }))
+        }
+      }
+    }
+
+    updateTimer()
+    const interval = setInterval(updateTimer, 60000)
+    return () => clearInterval(interval)
+  }, [booking.endDate, booking.endTime, tTrip])
 
   const copyBookingCode = () => {
     navigator.clipboard.writeText(booking.bookingCode)
@@ -68,17 +117,28 @@ export const OnHoldCard: React.FC<OnHoldCardProps> = ({
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <CarPhotoOverlay car={booking.car} />
         <div className="p-4">
-          {/* ON HOLD badge */}
+          {/* ON HOLD badge + time remaining */}
           <div className="flex items-center gap-2 mb-4">
             <div className="bg-red-100 dark:bg-red-900/30 rounded-full p-1">
               <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-red-900 dark:text-red-200">
-                {t('onHoldBadge')}
-              </p>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold text-red-900 dark:text-red-200">
+                  {t('onHoldBadge')}
+                </p>
+                {timeRemaining && (
+                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                    isOverdue
+                      ? 'bg-red-600 text-white'
+                      : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                  }`}>
+                    {timeRemaining}
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-red-600 dark:text-red-400">
                 {t('verificationHoldDesc')}
               </p>

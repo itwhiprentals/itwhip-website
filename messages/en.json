@@ -4509,7 +4509,9 @@
     "bonusRestoredLabel": "Bonus restored",
     "depositReleasedLabel": "Security deposit released",
     "refundProcessingNote": "Card refunds typically appear within 5–10 business days. Credits and bonus are restored instantly.",
-    "cancelled": "Cancelled"
+    "cancelled": "Cancelled",
+    "totalCharged": "Total charged",
+    "contactSupportForQuestions": "Questions about this charge? Call (855) 703-0806 or visit itwhip.com/support."
   },
   "TripStartCard": {
     "statusUpcoming": "Trip Not Started Yet",

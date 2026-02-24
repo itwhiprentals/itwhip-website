@@ -4527,7 +4527,9 @@
     "bonusRestoredLabel": "Bonificación restaurada",
     "depositReleasedLabel": "Depósito de seguridad liberado",
     "refundProcessingNote": "Los reembolsos a tarjeta suelen aparecer en 5–10 días hábiles. Los créditos y bonificaciones se restauran al instante.",
-    "cancelled": "Cancelada"
+    "cancelled": "Cancelada",
+    "totalCharged": "Total cobrado",
+    "contactSupportForQuestions": "¿Preguntas sobre este cargo? Llama al (855) 703-0806 o visita itwhip.com/support."
   },
   "TripStartCard": {
     "statusUpcoming": "Viaje aún no iniciado",

@@ -88,21 +88,21 @@ export default function StatusProgression({
     },
     {
       name: isOnHold ? t('stepStripe') : hasIssues ? t('stepIssues') : t('stepVerified'),
-      complete: isVerified && !isOnHold && !hasIssues,
+      complete: isVerified && !isOnHold && !hasIssues && !isNoShow,
       active: false,
       description: isOnHold ? t('verificationRequired') : hasIssues ? t('issuesDesc') : isVerified ? t('documentsApproved') : t('underReview'),
-      error: hasIssues || paymentFailed
+      error: hasIssues || paymentFailed || isNoShow
     },
     {
       name: isOnHold ? t('stepOnHold') : hasPendingCharges ? t('stepCharges') : t('stepConfirmed'),
-      complete: isConfirmed && !hasPendingCharges && !isOnHold,
+      complete: isConfirmed && !hasPendingCharges && !isOnHold && !isNoShow,
       active: false,
       description: isOnHold ? t('awaitingDocs') :
                    hasPendingCharges ? t('processingFinalCharges') :
                    (isConfirmed && isHandoffDone) ? t('handoffComplete') :
                    isConfirmed ? t('paymentSuccessful') :
                    paymentFailed ? t('paymentFailed') : t('processingPayment'),
-      error: isOnHold || paymentFailed
+      error: isOnHold || paymentFailed || isNoShow
     },
     {
       name: t('stepActive'),
@@ -168,10 +168,15 @@ export default function StatusProgression({
         <div className="absolute top-[15px] sm:top-[20px] left-[10%] right-[10%] h-1.5 sm:h-2 bg-gray-200/80 dark:bg-gray-700 rounded-full shadow-inner">
           {/* Green gradient filled portion */}
           <motion.div
-            className="h-full bg-gradient-to-r from-green-400 via-green-500 to-emerald-500 rounded-full relative shadow-[0_1px_3px_rgba(34,197,94,0.4)]"
+            className={`h-full rounded-full relative ${
+              isNoShow
+                ? 'bg-gradient-to-r from-red-400 via-red-500 to-red-600 shadow-[0_1px_3px_rgba(239,68,68,0.4)]'
+                : 'bg-gradient-to-r from-green-400 via-green-500 to-emerald-500 shadow-[0_1px_3px_rgba(34,197,94,0.4)]'
+            }`}
             initial={{ width: '0%' }}
             animate={{
-              width: isOnHold ? '35%' :
+              width: isNoShow ? '100%' :
+                     isOnHold ? '35%' :
                      isCompleted ? '100%' :
                      isActive ? '85%' :
                      (isConfirmed && isHandoffDone) ? '73%' :
@@ -182,11 +187,13 @@ export default function StatusProgression({
             transition={{ duration: 0.8, ease: 'easeOut' }}
           >
             {/* Shimmer effect on the bar */}
-            <div className="absolute inset-0 rounded-full overflow-hidden">
-              <div className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-white/25 to-transparent animate-shimmer" />
-            </div>
+            {!isNoShow && (
+              <div className="absolute inset-0 rounded-full overflow-hidden">
+                <div className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-white/25 to-transparent animate-shimmer" />
+              </div>
+            )}
             {/* Arrow at the leading edge */}
-            {!isCompleted && (isVerified || isConfirmed || isActive || isOnHold || paymentAuthorized) && (
+            {!isCompleted && !isNoShow && (isVerified || isConfirmed || isActive || isOnHold || paymentAuthorized) && (
               <div className="absolute -right-1.5 top-1/2 -translate-y-1/2">
                 <motion.div
                   animate={{ x: [0, 3, 0] }}
@@ -238,6 +245,7 @@ export default function StatusProgression({
                 <p className={`text-[10px] sm:text-xs font-semibold tracking-wide ${
                   step.complete ? 'text-green-700 dark:text-green-400' :
                   step.active ? 'text-amber-700 dark:text-amber-400' :
+                  step.error ? 'text-red-700 dark:text-red-400' :
                   'text-gray-400 dark:text-gray-500'
                 }`}>
                   {step.name}

@@ -45,11 +45,11 @@ interface UnreadCountResponse {
   };
 }
 
-// ✅ FIXED: Route to correct endpoint based on user role
+// Route to correct endpoint based on user role
 async function fetchNotifications(userRole: string): Promise<Notification[]> {
-  let endpoint = `/api/notifications?userRole=${userRole}`;
+  // GUEST: booking lifecycle notifications only (for now — account notifications added later)
+  let endpoint = '/api/notifications/booking?limit=20';
 
-  // ✅ Use role-specific endpoints
   if (userRole === 'HOST') {
     endpoint = '/api/host/notifications?limit=10';
   } else if (userRole === 'ADMIN') {
@@ -99,15 +99,15 @@ async function fetchNotifications(userRole: string): Promise<Notification[]> {
   return data.success && data.notifications ? data.notifications : [];
 }
 
-// ✅ FIXED: Fetch unread count with role-specific endpoints
+// Fetch unread count with role-specific endpoints
 async function fetchUnreadCount(userRole: string): Promise<number> {
-  let endpoint = '/api/notifications/unread-count';
-  
-  // ✅ Use role-specific endpoints
+  // GUEST: booking bell endpoint returns unreadCount directly
+  let endpoint = '/api/notifications/booking?limit=1';
+
   if (userRole === 'HOST') {
-    endpoint = '/api/host/notifications?limit=1'; // Just to get summary
+    endpoint = '/api/host/notifications?limit=1';
   } else if (userRole === 'ADMIN') {
-    endpoint = '/api/admin/notifications?limit=1'; // Just to get summary
+    endpoint = '/api/admin/notifications?limit=1';
   }
 
   const response = await fetch(endpoint, {
@@ -128,23 +128,23 @@ async function fetchUnreadCount(userRole: string): Promise<number> {
   return data.success ? (data.unreadCount || 0) : 0;
 }
 
-// ✅ FIXED: Dismiss notification with role-specific endpoints
+// Dismiss notification with role-specific endpoints
 async function dismissNotificationApi(notificationId: string, userRole: string): Promise<void> {
-  let endpoint = '/api/notifications/dismiss';
-  let body: any = { notificationId };
-  
-  // ✅ Use role-specific endpoints with correct structure
+  // GUEST: booking notification dismiss endpoint
+  let endpoint = '/api/notifications/booking/read';
+  let body: any = { notificationId, action: 'dismiss' };
+
   if (userRole === 'HOST') {
     endpoint = '/api/host/notifications';
     body = {
       notificationIds: [notificationId],
-      action: 'read' // Mark as read to dismiss
+      action: 'read',
     };
   } else if (userRole === 'ADMIN') {
     endpoint = '/api/admin/notifications';
     body = {
       notificationIds: [notificationId],
-      action: 'read'
+      action: 'read',
     };
   }
 

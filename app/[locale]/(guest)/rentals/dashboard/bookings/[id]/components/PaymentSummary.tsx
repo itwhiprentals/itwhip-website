@@ -98,6 +98,23 @@ function PaymentStatusBanner({
     )
   }
 
+  // No-Show — 100% penalty, no refund
+  if (booking.status === 'NO_SHOW') {
+    return (
+      <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg">
+        <div className="flex items-start">
+          <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mr-2 flex-shrink-0 mt-0.5" />
+          <div className="text-xs sm:text-sm text-red-800 dark:text-red-200">
+            <p className="font-medium mb-1">{t('tierNoRefundLabel')}</p>
+            <p className="text-xs text-red-700 dark:text-red-300">
+              {t('noShowForfeits')}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // Payment Successful
   if (ps === 'PAID' || ps === 'paid' || ps === 'CAPTURED' || ps === 'captured') {
     return (

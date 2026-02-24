@@ -71,7 +71,17 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    if (expiredHolds.length === 0) {
+    // Filter by selected booking codes if provided
+    let toProcess = expiredHolds
+    try {
+      const body = await request.json().catch(() => null)
+      if (body?.bookingCodes?.length) {
+        const codes = new Set(body.bookingCodes as string[])
+        toProcess = expiredHolds.filter(b => codes.has(b.bookingCode))
+      }
+    } catch { /* no body = process all */ }
+
+    if (toProcess.length === 0) {
       return NextResponse.json({
         success: true,
         message: 'No expired holds found',
@@ -81,7 +91,7 @@ export async function POST(request: NextRequest) {
 
     const results: Array<{ bookingCode: string; status: string; error?: string }> = []
 
-    for (const booking of expiredHolds) {
+    for (const booking of toProcess) {
       try {
         // Mark as NO_SHOW — trip expired, guest could not verify identity
         // No refund: follows cancellation policy (past trip = <12 hours = 100% penalty)

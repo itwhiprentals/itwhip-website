@@ -4527,7 +4527,9 @@
     "bonusRestoredLabel": "Bonus restauré",
     "depositReleasedLabel": "Dépôt de garantie libéré",
     "refundProcessingNote": "Les remboursements sur carte apparaissent généralement sous 5 à 10 jours ouvrables. Les crédits et bonus sont restaurés instantanément.",
-    "cancelled": "Annulée"
+    "cancelled": "Annulée",
+    "totalCharged": "Total facturé",
+    "contactSupportForQuestions": "Des questions sur ce montant ? Appelez le (855) 703-0806 ou visitez itwhip.com/support."
   },
   "TripStartCard": {
     "statusUpcoming": "Voyage pas encore commencé",

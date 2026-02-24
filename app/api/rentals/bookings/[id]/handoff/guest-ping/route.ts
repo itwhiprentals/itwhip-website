@@ -166,7 +166,7 @@ export async function POST(
           bookingId: booking.id,
           hostId: booking.hostId,
         }).catch(e => console.error('[Guest Ping] SMS failed:', e))
-      }).catch(() => {})
+      }).catch(e => console.error('[SMS] sms-triggers import failed:', e))
     }
 
     return NextResponse.json({

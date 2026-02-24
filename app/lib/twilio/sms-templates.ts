@@ -12,6 +12,35 @@ export const CHOE_FOOTER: Record<Locale, string> = {
   fr: '\n\nBesoin d\'aide? Chattez avec Choe: itwhip.com/choe',
 }
 
+// ─── Booking Received (guest) ────────────────────────────────────────
+
+export function bookingReceivedGuest(data: {
+  carName: string
+  dates: string
+  bookingCode: string
+}, locale: Locale = 'en'): string {
+  const templates: Record<Locale, string> = {
+    en: `ItWhip: Your booking for the ${data.carName} (${data.dates}) has been received and is under review. Code: ${data.bookingCode}. Track: itwhip.com/dashboard`,
+    es: `ItWhip: Tu reserva del ${data.carName} (${data.dates}) fue recibida y esta en revision. Codigo: ${data.bookingCode}. Seguimiento: itwhip.com/dashboard`,
+    fr: `ItWhip: Votre reservation du ${data.carName} (${data.dates}) a ete recue et est en cours d'examen. Code: ${data.bookingCode}. Suivi: itwhip.com/dashboard`,
+  }
+  return templates[locale] + CHOE_FOOTER[locale]
+}
+
+// ─── Booking Auto-Completed (guest) ─────────────────────────────────
+
+export function bookingAutoCompletedGuest(data: {
+  carName: string
+  bookingCode: string
+}, locale: Locale = 'en'): string {
+  const templates: Record<Locale, string> = {
+    en: `Your ${data.carName} rental (${data.bookingCode}) has been completed. Trip period has ended. Questions? Visit itwhip.com/trip/${data.bookingCode}`,
+    es: `Tu renta del ${data.carName} (${data.bookingCode}) fue completada. El periodo del viaje termino. Preguntas? Visita itwhip.com/trip/${data.bookingCode}`,
+    fr: `Votre location ${data.carName} (${data.bookingCode}) a ete completee. La periode du trajet est terminee. Questions? Visitez itwhip.com/trip/${data.bookingCode}`,
+  }
+  return templates[locale] + CHOE_FOOTER[locale]
+}
+
 // ─── Booking Confirmed (guest) ─────────────────────────────────────
 
 export function bookingConfirmedGuest(data: {

@@ -268,8 +268,11 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
         },
         select: {
           id: true, bookingCode: true, previousStatus: true,
-          guestEmail: true, guestName: true, hostId: true,
-          car: { select: { make: true, model: true, year: true } }
+          guestEmail: true, guestName: true, guestPhone: true,
+          reviewerProfileId: true, renterId: true, hostId: true,
+          startDate: true, endDate: true,
+          car: { select: { make: true, model: true, year: true } },
+          host: { select: { name: true, phone: true } }
         }
       })
 
@@ -286,6 +289,25 @@ async function handleVerificationSuccess(session: Stripe.Identity.VerificationSe
           }
         })
         console.log(`[Stripe Identity] Auto-released booking ${held.bookingCode} from ON_HOLD → ${held.previousStatus || 'CONFIRMED'}`)
+
+        // SMS + email + bell for hold released (fire-and-forget)
+        import('@/app/lib/notifications/hold-notifications').then(({ sendBookingHoldReleasedNotifications }) => {
+          sendBookingHoldReleasedNotifications({
+            bookingId: held.id,
+            bookingCode: held.bookingCode,
+            guestPhone: held.guestPhone,
+            guestEmail: held.guestEmail || '',
+            guestName: held.guestName || 'Guest',
+            guestId: held.reviewerProfileId,
+            userId: held.renterId,
+            hostId: held.hostId,
+            hostName: held.host?.name || 'Host',
+            hostPhone: held.host?.phone || null,
+            car: { year: held.car.year, make: held.car.make, model: held.car.model },
+            startDate: held.startDate,
+            endDate: held.endDate,
+          }).catch(e => console.error('[Stripe Identity] Hold released notification failed:', e))
+        }).catch(e => console.error('[Stripe Identity] hold-notifications import failed:', e))
 
         // Send fleet notification
         try {

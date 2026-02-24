@@ -1897,6 +1897,38 @@ model RentalBooking {
   bookingDocuments           BookingDocument[]
   tripPhotos                 TripPhoto[]
   dlVerificationLogs         DLVerificationLog[] @relation("dlVerificationLogs")
+
+  // ===== REMINDER DEDUP FLAGS =====
+  pickupReminderSent         Boolean               @default(false)
+  returnReminder24hSent      Boolean               @default(false)
+  returnReminder3hSent       Boolean               @default(false)
+
+  // ===== BELL NOTIFICATIONS =====
+  bookingNotifications       BookingNotification[]
+}
+
+// ===== BOOKING NOTIFICATION MODEL =====
+// In-app bell notifications for booking lifecycle events (guest + host)
+model BookingNotification {
+  id            String         @id @default(cuid())
+  bookingId     String
+  recipientType String         // 'GUEST' | 'HOST'
+  recipientId   String         // reviewerProfileId or hostId
+  userId        String?        // User.id (for guest auth lookup)
+  type          String         // 'BOOKING_CONFIRMED', 'BOOKING_ON_HOLD', etc.
+  title         String
+  message       String
+  actionUrl     String?
+  priority      String         @default("MEDIUM") // HIGH, MEDIUM, LOW
+  readAt        DateTime?
+  dismissedAt   DateTime?
+  createdAt     DateTime       @default(now())
+
+  booking       RentalBooking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, recipientType, readAt])
+  @@index([userId, readAt])
+  @@index([bookingId])
 }
 
 // ===== BOOKING DOCUMENT MODEL =====

@@ -480,8 +480,11 @@ export async function PATCH(request: NextRequest) {
           where: { id: bookingId },
           select: {
             id: true, bookingCode: true, status: true,
-            guestEmail: true, guestName: true,
-            car: { select: { make: true, model: true, year: true } }
+            guestEmail: true, guestName: true, guestPhone: true,
+            reviewerProfileId: true, renterId: true, hostId: true,
+            startDate: true, endDate: true,
+            car: { select: { make: true, model: true, year: true } },
+            host: { select: { name: true, phone: true } }
           }
         })
         if (!holdBooking) {
@@ -556,6 +559,26 @@ export async function PATCH(request: NextRequest) {
           sendEmail(holdBooking.guestEmail, emailSubject, emailHtml, emailText)
             .catch(err => console.error('[Fleet] Verification request email error:', err))
         }
+
+        // SMS + bell notifications for ON_HOLD (fire-and-forget)
+        import('@/app/lib/notifications/hold-notifications').then(({ sendBookingOnHoldNotifications }) => {
+          sendBookingOnHoldNotifications({
+            bookingId: holdBooking.id,
+            bookingCode: holdBooking.bookingCode,
+            guestPhone: holdBooking.guestPhone,
+            guestEmail: holdBooking.guestEmail || '',
+            guestName: holdBooking.guestName || 'Guest',
+            guestId: holdBooking.reviewerProfileId,
+            userId: holdBooking.renterId,
+            hostId: holdBooking.hostId,
+            hostName: holdBooking.host?.name || 'Host',
+            hostPhone: holdBooking.host?.phone || null,
+            car: { year: holdBooking.car.year, make: holdBooking.car.make, model: holdBooking.car.model },
+            holdReason: message || 'Identity verification required',
+            startDate: holdBooking.startDate,
+            endDate: holdBooking.endDate,
+          }).catch(e => console.error('[Fleet] ON_HOLD notification failed:', e))
+        }).catch(e => console.error('[Fleet] hold-notifications import failed:', e))
         break
       }
 

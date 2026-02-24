@@ -97,8 +97,12 @@ export async function POST(request: NextRequest) {
         renterId: true,
         hostFinalReviewStatus: true,
         hostFinalReviewDeadline: true,
+        guestPhone: true,
+        reviewerProfileId: true,
+        hostId: true,
         car: {
           select: {
+            year: true,
             make: true,
             model: true,
           },
@@ -136,6 +140,16 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // Filter by selected booking codes if provided
+    let toProcess = eligibleBookings
+    try {
+      const body = await request.json().catch(() => null)
+      if (body?.bookingCodes?.length) {
+        const codes = new Set(body.bookingCodes as string[])
+        toProcess = eligibleBookings.filter(b => codes.has(b.bookingCode))
+      }
+    } catch { /* no body = process all */ }
+
     let released = 0
     let skipped = 0
     let failed = 0
@@ -146,7 +160,7 @@ export async function POST(request: NextRequest) {
       amount?: number
     }> = []
 
-    for (const booking of eligibleBookings) {
+    for (const booking of toProcess) {
       try {
         // Skip if host filed a claim — deposit held pending claim resolution
         if (booking.hostFinalReviewStatus === 'CLAIM_FILED') {
@@ -310,6 +324,22 @@ export async function POST(request: NextRequest) {
           walletReturnAmount: walletPortion,
           tripEndDate: booking.tripEndedAt!,
         }).catch(() => {}) // Fire-and-forget, errors logged inside
+
+        // SMS + bell for deposit released (fire-and-forget)
+        if (booking.guestPhone && booking.reviewerProfileId) {
+          import('@/app/lib/notifications/deposit-notifications').then(({ sendDepositReleasedNotifications }) => {
+            sendDepositReleasedNotifications({
+              bookingId: booking.id,
+              bookingCode: booking.bookingCode,
+              guestPhone: booking.guestPhone!,
+              guestId: booking.reviewerProfileId!,
+              userId: booking.renterId || '',
+              hostId: booking.hostId || '',
+              car: { year: booking.car?.year || 0, make: booking.car?.make || '', model: booking.car?.model || '' },
+              depositAmount: netDeposit,
+            }).catch(e => console.error(`[Deposit Release] Notification failed for ${booking.bookingCode}:`, e))
+          }).catch(e => console.error('[Deposit Release] deposit-notifications import failed:', e))
+        }
 
         released++
         results.push({

@@ -364,6 +364,24 @@ export async function POST(
       }).catch(() => {})
     }
 
+    // Guest cancellation email + bell (fire-and-forget)
+    import('@/app/lib/notifications/cancellation-notifications').then(({ sendBookingCancelledNotifications }) => {
+      sendBookingCancelledNotifications({
+        bookingId: booking.id,
+        bookingCode: booking.bookingCode,
+        guestEmail: booking.guestEmail!,
+        guestName: booking.guestName || 'Guest',
+        guestId: booking.reviewerProfileId,
+        userId: user?.id || null,
+        hostId: booking.hostId,
+        car: { year: booking.car.year, make: booking.car.make, model: booking.car.model },
+        cancellationReason: reason,
+        cancelledBy: 'GUEST',
+        totalAmount: Number(booking.totalAmount || 0),
+        refundAmount: distribution.cardRefund,
+      }).catch(e => console.error('[Cancel] Guest notification failed:', e))
+    }).catch(e => console.error('[Cancel] cancellation-notifications import failed:', e))
+
     // SMS notifications (fire-and-forget)
     import('@/app/lib/twilio/sms-triggers').then(({ sendBookingCancelledSms }) => {
       sendBookingCancelledSms({
@@ -376,7 +394,7 @@ export async function POST(
         bookingId: booking.id,
         hostId: booking.hostId,
       }).catch(e => console.error('[Cancel] SMS failed:', e))
-    }).catch(() => {})
+    }).catch(e => console.error('[SMS] sms-triggers import failed:', e))
 
     console.log(`[Cancel ${booking.bookingCode}] SUMMARY: ${cancellation.label} | refund=$${distribution.cardRefund} | penalty=$${cancellation.penaltyAmount} | credits=$${distribution.creditsRestored} | deposit=$${depositFromWallet} | PI=${cancelledBooking.paymentIntentId || 'none'}`)
 

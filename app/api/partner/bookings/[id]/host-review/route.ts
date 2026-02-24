@@ -72,6 +72,9 @@ export async function POST(
         paymentIntentId: true,
         guestEmail: true,
         guestName: true,
+        guestPhone: true,
+        reviewerProfileId: true,
+        renterId: true,
         startDate: true,
         endDate: true,
         totalAmount: true,
@@ -90,7 +93,8 @@ export async function POST(
         host: {
           select: {
             name: true,
-            email: true
+            email: true,
+            phone: true
           }
         }
       }
@@ -250,6 +254,38 @@ export async function POST(
           console.error('[Host Review] Error sending confirmation:', error)
         })
       }
+
+      // SMS notification to guest + host (fire-and-forget)
+      import('@/app/lib/twilio/sms-triggers').then(({ sendBookingConfirmedSms }) => {
+        sendBookingConfirmedSms({
+          bookingCode: booking.bookingCode,
+          guestPhone: booking.guestPhone,
+          guestName: booking.guestName,
+          guestId: booking.reviewerProfileId,
+          hostPhone: booking.host?.phone,
+          car: booking.car,
+          bookingId: booking.id,
+          hostId: booking.hostId,
+        }).catch(e => console.error('[Host Review] SMS failed:', e))
+      }).catch(e => console.error('[Host Review] sms-triggers import failed:', e))
+
+      // Bell notifications for guest + host (fire-and-forget)
+      import('@/app/lib/notifications/booking-bell').then(({ createBookingNotificationPair }) => {
+        createBookingNotificationPair({
+          bookingId: booking.id,
+          guestId: booking.reviewerProfileId,
+          userId: booking.renterId,
+          hostId: booking.hostId,
+          type: 'BOOKING_CONFIRMED',
+          guestTitle: 'Booking confirmed!',
+          guestMessage: `Your booking #${booking.bookingCode} for the ${carName} has been confirmed.`,
+          hostTitle: `Booking ${booking.bookingCode} confirmed`,
+          hostMessage: `You approved booking #${booking.bookingCode} for your ${carName}.`,
+          guestActionUrl: `/rentals/dashboard/bookings/${booking.id}`,
+          hostActionUrl: `/partner/bookings/${booking.id}`,
+          priority: 'HIGH',
+        }).catch(e => console.error('[Host Review] Bell notification failed:', e))
+      }).catch(e => console.error('[Host Review] booking-bell import failed:', e))
 
       return NextResponse.json({
         booking: updatedBooking,

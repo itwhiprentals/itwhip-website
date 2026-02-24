@@ -8,11 +8,18 @@ import { normalizePhone } from './phone'
 // ─── Types ─────────────────────────────────────────────────────────
 
 export type SmsType =
+  | 'BOOKING_RECEIVED'
   | 'BOOKING_CONFIRMED'
+  | 'BOOKING_AUTO_COMPLETED'
+  | 'BOOKING_ON_HOLD'
+  | 'BOOKING_HOLD_RELEASED'
   | 'TRIP_STARTED'
   | 'TRIP_ENDED'
   | 'GUEST_APPROACHING'
   | 'BOOKING_CANCELLED'
+  | 'DEPOSIT_RELEASED'
+  | 'PICKUP_REMINDER'
+  | 'RETURN_REMINDER'
   | 'CLAIM_FILED'
   | 'MISSED_MESSAGE'
   | 'EMERGENCY'

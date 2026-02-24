@@ -1396,6 +1396,19 @@ export async function POST(request: NextRequest) {
       console.error('Error sending pending review email:', error)
     })
 
+    // Send booking received SMS to guest (fire-and-forget, same time as email)
+    import('@/app/lib/twilio/sms-triggers').then(({ sendBookingReceivedSms }) => {
+      sendBookingReceivedSms({
+        bookingCode: booking.booking.bookingCode,
+        guestPhone: booking.booking.guestPhone,
+        guestId: booking.booking.reviewerProfileId,
+        car: booking.booking.car,
+        startDate: booking.booking.startDate,
+        endDate: booking.booking.endDate,
+        bookingId: booking.booking.id,
+      }).catch(e => console.error('[booking] Booking received SMS failed:', e))
+    }).catch(e => console.error('[SMS] sms-triggers import failed:', e))
+
     // Host is NOT notified here — only after fleet approval (PATCH 'approve' → sendHostReviewEmail)
 
     // ALL bookings are pending review — return 202 Accepted

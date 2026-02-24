@@ -879,7 +879,21 @@ export async function POST(
 
       if (booking.guestEmail) {
         console.log(`[Trip End] Sending trip summary to guest ${booking.guestEmail}`)
-        // TODO: Send email to guest
+        import('@/app/lib/notifications/completion-notifications').then(({ sendTripCompletedNotifications }) => {
+          sendTripCompletedNotifications({
+            bookingId: booking.id,
+            bookingCode: booking.bookingCode,
+            guestEmail: booking.guestEmail!,
+            guestName: booking.guestName || 'Guest',
+            guestId: booking.reviewerProfileId,
+            userId: booking.renterId,
+            hostId: booking.hostId,
+            car: { year: booking.car.year, make: booking.car.make, model: booking.car.model },
+            totalAmount: Number(charges.total || 0),
+            startDate: booking.startDate,
+            endDate: booking.endDate,
+          }).catch(e => console.error('[Trip End] Guest completion notification failed:', e))
+        }).catch(e => console.error('[Trip End] completion-notifications import failed:', e))
       }
 
       // SMS notifications (fire-and-forget)
@@ -895,7 +909,7 @@ export async function POST(
           bookingId: booking.id,
           hostId: booking.hostId,
         }).catch(e => console.error('[Trip End] SMS failed:', e))
-      }).catch(() => {})
+      }).catch(e => console.error('[SMS] sms-triggers import failed:', e))
     } catch (notificationError) {
       console.error('[Trip End] Notification error (non-blocking):', notificationError)
     }

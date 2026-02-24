@@ -16,6 +16,40 @@ function carLabel(car: { year?: number; make?: string; model?: string }): string
   return `${car.year || ''} ${car.make || ''} ${car.model || ''}`.trim()
 }
 
+// ─── Trigger: Booking Received (at booking creation time) ───────────
+
+interface BookingReceivedData {
+  bookingCode: string
+  guestPhone: string | null
+  guestId: string | null
+  car: { year?: number; make?: string; model?: string }
+  startDate: Date | string
+  endDate: Date | string
+  bookingId: string
+}
+
+export async function sendBookingReceivedSms(data: BookingReceivedData): Promise<void> {
+  if (!data.guestPhone) { console.warn('[SMS] No guest phone: BOOKING_RECEIVED', data.bookingCode); return }
+  if (!(await canSendToGuest(data.guestId))) { console.warn('[SMS] Blocked by preference: BOOKING_RECEIVED for guest', data.guestId); return }
+
+  const car = carLabel(data.car)
+  const dates = formatDateRange(data.startDate, data.endDate)
+  const locale = await getGuestLocale(data.guestId)
+
+  const body = templates.bookingReceivedGuest({
+    carName: car,
+    dates,
+    bookingCode: data.bookingCode,
+  }, locale)
+
+  await sendSms(data.guestPhone, body, {
+    type: 'BOOKING_RECEIVED',
+    bookingId: data.bookingId,
+    guestId: data.guestId || undefined,
+    locale,
+  })
+}
+
 // ─── Trigger: Booking Confirmed ────────────────────────────────────
 
 interface BookingConfirmedData {
@@ -37,7 +71,11 @@ export async function sendBookingConfirmedSms(data: BookingConfirmedData): Promi
   const dates = formatDateRange(data.startDate, data.endDate)
 
   // SMS to guest
-  if (data.guestPhone && await canSendToGuest(data.guestId)) {
+  if (!data.guestPhone) {
+    console.warn('[SMS] No guest phone: BOOKING_CONFIRMED', data.bookingCode)
+  } else if (!(await canSendToGuest(data.guestId))) {
+    console.warn('[SMS] Blocked by preference: BOOKING_CONFIRMED for guest', data.guestId)
+  } else {
     const locale = await getGuestLocale(data.guestId)
     const body = templates.bookingConfirmedGuest({
       carName: car,
@@ -88,7 +126,11 @@ export async function sendTripStartedSms(data: TripStartedData): Promise<void> {
   const car = carLabel(data.car)
 
   // SMS to guest
-  if (data.guestPhone && await canSendToGuest(data.guestId)) {
+  if (!data.guestPhone) {
+    console.warn('[SMS] No guest phone: TRIP_STARTED', data.bookingCode)
+  } else if (!(await canSendToGuest(data.guestId))) {
+    console.warn('[SMS] Blocked by preference: TRIP_STARTED for guest', data.guestId)
+  } else {
     const locale = await getGuestLocale(data.guestId)
     const body = templates.tripStartedGuest({
       carName: car,
@@ -137,7 +179,11 @@ export async function sendTripEndedSms(data: TripEndedData): Promise<void> {
   const car = carLabel(data.car)
 
   // SMS to guest
-  if (data.guestPhone && await canSendToGuest(data.guestId)) {
+  if (!data.guestPhone) {
+    console.warn('[SMS] No guest phone: TRIP_ENDED', data.bookingCode)
+  } else if (!(await canSendToGuest(data.guestId))) {
+    console.warn('[SMS] Blocked by preference: TRIP_ENDED for guest', data.guestId)
+  } else {
     const locale = await getGuestLocale(data.guestId)
     const body = templates.tripEndedGuest({
       carName: car,
@@ -211,7 +257,11 @@ export async function sendBookingCancelledSms(data: BookingCancelledData): Promi
   const car = carLabel(data.car)
 
   // SMS to guest
-  if (data.guestPhone && await canSendToGuest(data.guestId)) {
+  if (!data.guestPhone) {
+    console.warn('[SMS] No guest phone: BOOKING_CANCELLED', data.bookingCode)
+  } else if (!(await canSendToGuest(data.guestId))) {
+    console.warn('[SMS] Blocked by preference: BOOKING_CANCELLED for guest', data.guestId)
+  } else {
     const locale = await getGuestLocale(data.guestId)
     const body = templates.bookingCancelledGuest({
       carName: car,
@@ -253,8 +303,8 @@ interface ClaimFiledData {
 }
 
 export async function sendClaimFiledSms(data: ClaimFiledData): Promise<void> {
-  if (!data.guestPhone) return
-  if (!(await canSendToGuest(data.guestId))) return
+  if (!data.guestPhone) { console.warn('[SMS] No guest phone: CLAIM_FILED', data.bookingCode); return }
+  if (!(await canSendToGuest(data.guestId))) { console.warn('[SMS] Blocked by preference: CLAIM_FILED for guest', data.guestId); return }
 
   const locale = await getGuestLocale(data.guestId)
   const body = templates.claimFiledGuest({
@@ -283,7 +333,10 @@ interface MissedMessageData {
 
 export async function sendMissedMessageSms(data: MissedMessageData): Promise<void> {
   // Only check preferences for guests
-  if (data.recipientType === 'guest' && !(await canSendToGuest(data.recipientId))) return
+  if (data.recipientType === 'guest' && !(await canSendToGuest(data.recipientId))) {
+    console.warn('[SMS] Blocked by preference: MISSED_MESSAGE for guest', data.recipientId)
+    return
+  }
 
   const locale = data.recipientType === 'guest' ? await getGuestLocale(data.recipientId) : 'en'
   const body = templates.missedMessage({
