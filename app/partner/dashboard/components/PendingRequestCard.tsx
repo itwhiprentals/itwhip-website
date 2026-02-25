@@ -13,7 +13,6 @@ import {
   IoLocationOutline,
   IoCashOutline,
   IoCheckmarkCircle,
-  IoEllipseOutline,
   IoArrowForwardOutline,
   IoCloseCircleOutline,
   IoWarningOutline,
@@ -462,61 +461,6 @@ export default function PendingRequestCard() {
         {/* ── Divider ─────────────────────────────────────── */}
         <div className="border-t border-gray-200 dark:border-gray-700" />
 
-        {/* ── Add Your Car / Car Added ────────────────────── */}
-        <div className="px-4 py-5">
-          {/* Status dot */}
-          <div className="flex items-center gap-2 mb-4">
-            <div className={`w-2.5 h-2.5 rounded-full ${progress.hasVehicle ? 'bg-green-500' : 'bg-orange-500 animate-pulse'}`} />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {progress.hasVehicle ? t('prCarListedReady') : t('prNextStepAddCar')}
-            </span>
-          </div>
-
-          {!progress.hasVehicle ? (
-            <div className="space-y-4">
-              <p className="font-semibold text-gray-900 dark:text-white text-base">
-                {t('prAddCarToReceive')}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {t('prListVehicleDesc', { vehicle: request?.vehicleInfo || 'vehicle' })}
-              </p>
-              <div className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
-                <p className="text-xs text-gray-700 dark:text-gray-300 font-medium flex items-center gap-1.5">
-                  <IoEllipseOutline className="w-3 h-3" />
-                  {t('prNotPublic')}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-4.5">
-                  {t('prOnlyGuestSees', { guest: request?.guestName || 'this guest' })}
-                </p>
-              </div>
-              <Link
-                href="/partner/fleet"
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
-              >
-                <IoCarOutline className="w-5 h-5" />
-                {t('prAddYourCar')}
-              </Link>
-            </div>
-          ) : (
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200/70 dark:border-green-800/50">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
-                  <IoCheckmarkCircle className="w-6 h-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-green-800 dark:text-green-200">{t('prCarAddedSuccess')}</p>
-                  <p className="text-sm text-green-700 dark:text-green-300">
-                    {t('prVehicleWithPhotos', { vehicleCount: progress.vehicleCount, photoCount: progress.photoCount })}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ── Divider ─────────────────────────────────────── */}
-        <div className="border-t border-gray-200 dark:border-gray-700" />
-
         {/* ── How This Works ──────────────────────────────── */}
         <div className="px-4 py-5">
           <div className="flex items-center gap-2 mb-4">
@@ -550,45 +494,12 @@ export default function PendingRequestCard() {
             href={`/partner/requests/${request?.id || ''}`}
             className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-semibold transition-colors text-base shadow-sm"
           >
-            {progress.hasVehicle ? (
-              <>
-                {t('prContinueToRequest')}
-                <IoArrowForwardOutline className="w-5 h-5" />
-              </>
-            ) : (
-              <>{t('prViewFullRequest')}</>
-            )}
+            {t('prViewRequestDetails')}
+            <IoArrowForwardOutline className="w-5 h-5" />
           </Link>
         </div>
       </div>
 
-      {/* I Can't Do This — separate card below */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500 dark:text-gray-400">{t('prChangedMind')}</p>
-          <button
-            onClick={async () => {
-              if (confirm('Are you sure you want to decline this request? This action cannot be undone.')) {
-                try {
-                  const response = await fetch('/api/partner/onboarding/decline', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include'
-                  })
-                  if (response.ok) {
-                    window.location.reload()
-                  }
-                } catch (error) {
-                  console.error('Failed to decline:', error)
-                }
-              }
-            }}
-            className="px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg font-medium transition-colors text-sm"
-          >
-            {t('prICantDoThis')}
-          </button>
-        </div>
-      </div>
     </div>
   )
 }

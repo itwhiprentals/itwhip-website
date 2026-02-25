@@ -163,6 +163,7 @@ export default function PartnerDashboardPage() {
     hostType: string | null
     memberSince: string | null
     lastLogin: string | null
+    previousLogin: string | null
     isActive?: boolean
     isExternalRecruit?: boolean
     recruitedVia?: string | null
@@ -234,6 +235,7 @@ export default function PartnerDashboardPage() {
             hostType: data.user.hostType,
             memberSince: data.user.memberSince,
             lastLogin: data.user.lastLogin,
+            previousLogin: data.user.previousLogin || null,
             isActive: data.user.isActive,
             isExternalRecruit: data.user.isExternalRecruit,
             recruitedVia: data.user.recruitedVia,
@@ -853,7 +855,10 @@ export default function PartnerDashboardPage() {
             {t('dashboardTitle')}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {t('welcomeBackFleet', { name: userInfo?.name ? `, ${userInfo.name.split(' ')[0]}` : '' })}
+            {userInfo?.previousLogin
+              ? t('welcomeBackFleet', { name: userInfo?.name ? `, ${userInfo.name.split(' ')[0]}` : '' })
+              : t('welcomeFirstFleet', { name: userInfo?.name ? userInfo.name.split(' ')[0] : '' })
+            }
           </p>
         </div>
         <div className="hidden sm:flex items-center gap-2">
