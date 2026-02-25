@@ -860,7 +860,7 @@ export default function BookingDetailsPage() {
             address: booking.car?.address || booking.pickupLocation || 'Phoenix, AZ',
             host: {
               name: booking.host?.name || '',
-              profilePhoto: booking.host?.profilePhoto ?? undefined,
+              profilePhoto: booking.host?.partnerLogo || booking.host?.profilePhoto || undefined,
               responseTime: booking.host?.responseTime
             }
           }}

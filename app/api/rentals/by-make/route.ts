@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
             photos: car.photos || [],
             host: car.host ? {
               name: car.host.name,
-              profilePhoto: car.host.profilePhoto
+              profilePhoto: car.host.partnerLogo || car.host.profilePhoto
             } : null
           }))
         }

@@ -1162,7 +1162,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
           location={car.location}
           hostId={car.hostId || car.host?.id}
           hostName={car.host?.partnerCompanyName || car.host?.name}
-          hostProfilePhoto={car.host?.profilePhoto || (car.host as any)?.profileImage}
+          hostProfilePhoto={car.host?.partnerLogo || car.host?.profilePhoto || (car.host as any)?.profileImage}
           isCompany={car.host?.isBusinessHost || car.host?.isCompany || car.host?.hostType === 'FLEET_PARTNER' || car.host?.hostType === 'BUSINESS'}
           initialSimilarCars={initialSimilarCars as any}
           initialHostCars={initialHostCars as any}

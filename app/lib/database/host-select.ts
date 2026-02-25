@@ -12,6 +12,8 @@ export const HOST_CARD_SELECT = {
   profilePhoto: true,
   isBusinessHost: true,
   partnerCompanyName: true,
+  partnerLogo: true,
+  partnerSlug: true,
   hostType: true,
 } satisfies Prisma.RentalHostSelect
 
@@ -38,6 +40,8 @@ export function transformHostForCard(host: {
   avatar?: string | null
   isBusinessHost?: boolean | null
   partnerCompanyName?: string | null
+  partnerLogo?: string | null
+  partnerSlug?: string | null
   hostType?: string | null
 } | null | undefined) {
   if (!host) return null
@@ -46,6 +50,8 @@ export function transformHostForCard(host: {
     profilePhoto: host.profilePhoto || (host as any).avatar || null,
     isBusinessHost: host.isBusinessHost ?? false,
     partnerCompanyName: host.partnerCompanyName ?? null,
+    partnerLogo: host.partnerLogo ?? null,
+    partnerSlug: host.partnerSlug ?? null,
     hostType: host.hostType ?? null,
   }
 }

@@ -100,7 +100,7 @@ export async function GET(
     const responseData = {
       id: host.id,
       name: host.name,
-      profilePhoto: host.profilePhoto,
+      profilePhoto: host.partnerLogo || host.profilePhoto,
       city: host.city,
       state: host.state,
       memberSince: host.joinedAt,

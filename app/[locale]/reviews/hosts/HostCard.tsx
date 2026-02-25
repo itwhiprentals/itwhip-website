@@ -16,6 +16,7 @@ interface HostCardProps {
     id: string
     name: string
     profilePhoto: string | null
+    partnerLogo?: string | null
     bio: string | null
     rating: number | null
     totalTrips: number
@@ -79,9 +80,9 @@ export default function HostCard({ host }: HostCardProps) {
             {/* Host Photo */}
             <div className="relative flex-shrink-0">
               <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                {host.profilePhoto ? (
+                {(host.partnerLogo || host.profilePhoto) ? (
                   <Image
-                    src={host.profilePhoto}
+                    src={host.partnerLogo || host.profilePhoto!}
                     alt={displayName}
                     width={64}
                     height={64}

@@ -120,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   name: data.host.name,
                   email: data.host.email,
                   role: 'BUSINESS',
-                  profilePhoto: data.host.profilePhoto
+                  profilePhoto: data.host.partnerLogo || data.host.profilePhoto
                 },
                 currentRole: 'host',
                 hasBothProfiles: dualRole.hasGuestProfile || false,

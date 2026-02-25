@@ -267,6 +267,8 @@ function transformCar(car: any): HomePageCar {
       ? {
           name: car.host.name,
           profilePhoto: car.host.profilePhoto || null,
+          partnerLogo: car.host.partnerLogo || null,
+          partnerSlug: car.host.partnerSlug || null,
           isBusinessHost: car.host.isBusinessHost,
           partnerCompanyName: car.host.partnerCompanyName,
           hostType: car.host.hostType,

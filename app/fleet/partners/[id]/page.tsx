@@ -964,6 +964,13 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ id: st
 
             {/* Action buttons - stack on mobile, horizontal on desktop */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-2 sm:ml-auto">
+              <Link
+                href={`/fleet/partners/${partner.id}/edit?key=${apiKey}`}
+                className="flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors min-h-[44px] sm:min-h-0"
+              >
+                <IoCreateOutline className="w-4 h-4" />
+                Edit Profile
+              </Link>
               {partner.active ? (
                 <button
                   onClick={() => setShowSuspendModal(true)}

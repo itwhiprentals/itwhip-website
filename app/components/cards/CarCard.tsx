@@ -98,7 +98,7 @@ export default function CarCard({ car, showHostAvatar = false }: CarCardProps) {
             const isBusiness = car.host.isBusinessHost || car.host.hostType === 'FLEET_PARTNER' || car.host.hostType === 'BUSINESS' || isCompanyName(name)
             const hostFirstName = isBusiness ? name : name.split(' ')[0]
             const hostInitial = hostFirstName.charAt(0).toUpperCase()
-            const hostPhotoUrl = car.host.profilePhoto || car.host.avatar
+            const hostPhotoUrl = car.host.partnerLogo || car.host.profilePhoto || car.host.avatar
             const hasValidPhoto = isValidHostPhoto(hostPhotoUrl) && !hostAvatarError
             return (
               <div className="absolute bottom-3 left-3">

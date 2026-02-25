@@ -126,7 +126,7 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
   // Host info
   const hostDisplayName = getHostDisplayName(car.host)
   const hostInitial = hostDisplayName ? hostDisplayName.charAt(0).toUpperCase() : null
-  const hostPhotoUrl = car.host?.profilePhoto
+  const hostPhotoUrl = car.host?.partnerLogo || car.host?.profilePhoto
   const hasValidHostPhoto = isValidHostPhoto(hostPhotoUrl) && !hostAvatarError
 
   // Parse rating and trips safely (ensure numeric)

@@ -174,6 +174,8 @@ export async function PATCH(
       partnerBio,
       partnerSupportEmail,
       partnerSupportPhone,
+      partnerLogo,
+      name,
       autoApproveListings
     } = body
 
@@ -209,12 +211,14 @@ export async function PATCH(
     const partner = await prisma.rentalHost.update({
       where: { id },
       data: {
-        partnerCompanyName,
-        partnerSlug: partnerSlug?.toLowerCase(),
-        partnerBio,
-        partnerSupportEmail,
-        partnerSupportPhone,
-        autoApproveListings
+        ...(partnerCompanyName !== undefined && { partnerCompanyName }),
+        ...(partnerSlug !== undefined && { partnerSlug: partnerSlug?.toLowerCase() }),
+        ...(partnerBio !== undefined && { partnerBio }),
+        ...(partnerSupportEmail !== undefined && { partnerSupportEmail }),
+        ...(partnerSupportPhone !== undefined && { partnerSupportPhone }),
+        ...(partnerLogo !== undefined && { partnerLogo }),
+        ...(name !== undefined && { name }),
+        ...(autoApproveListings !== undefined && { autoApproveListings }),
       }
     })
 

@@ -45,8 +45,8 @@ export const HostMessagesCard: React.FC<HostMessagesCardProps> = ({
       <div className="p-4">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 border-[3px] border-gray-300 dark:border-gray-600">
-            {booking.host.profilePhoto ? (
-              <img src={booking.host.profilePhoto} alt={booking.host.name} className="w-10 h-10 rounded-full object-cover" />
+            {(booking.host.partnerLogo || booking.host.profilePhoto) ? (
+              <img src={booking.host.partnerLogo || booking.host.profilePhoto} alt={booking.host.name} className="w-10 h-10 rounded-full object-cover" />
             ) : (
               <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             )}

@@ -388,9 +388,9 @@ export default function ManageRentalsPage() {
                         {/* Host Info and Actions */}
                         <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                           <div className="flex items-center space-x-3">
-                            {booking.host.profilePhoto ? (
+                            {(booking.host.partnerLogo || booking.host.profilePhoto) ? (
                               <Image
-                                src={booking.host.profilePhoto}
+                                src={booking.host.partnerLogo || booking.host.profilePhoto}
                                 alt={booking.host.name}
                                 width={40}
                                 height={40}

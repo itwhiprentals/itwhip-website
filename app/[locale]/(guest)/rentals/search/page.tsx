@@ -224,13 +224,15 @@ async function getInitialCars(location: string, pickupDate: string, returnDate: 
         },
         host: {
           name: car.host.name,
-          avatar: car.host.profilePhoto || '/default-avatar.svg',
+          avatar: car.host.partnerLogo || car.host.profilePhoto || '/default-avatar.svg',
           verified: car.host.isVerified,
           responseRate: car.host.responseRate || 95,
           responseTime: car.host.responseTime || 60,
           totalTrips: actualTripCount,
           isBusinessHost: car.host.isBusinessHost || false,
           partnerCompanyName: car.host.partnerCompanyName || null,
+          partnerLogo: car.host.partnerLogo || null,
+          partnerSlug: car.host.partnerSlug || null,
           hostType: car.host.hostType || null
         },
         photos: car.photos.map((photo: any) => ({

@@ -444,7 +444,7 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking, compact }) 
           address: booking.onboardingCompletedAt ? booking.pickupLocation : 'Phoenix, AZ',
           host: booking.host ? {
             name: booking.host.name,
-            profilePhoto: booking.host.profilePhoto ?? undefined,
+            profilePhoto: booking.host.partnerLogo || booking.host.profilePhoto || undefined,
             responseTime: booking.host.responseTime
           } : undefined
         }}

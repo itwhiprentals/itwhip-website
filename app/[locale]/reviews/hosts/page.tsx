@@ -131,6 +131,7 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
       id: true,
       name: true,
       profilePhoto: true,
+      partnerLogo: true,
       bio: true,
       rating: true,
       totalTrips: true,
@@ -194,7 +195,7 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
         name: host.name,
         url: `https://itwhip.com/hosts/${host.id}`,
         description: `Verified car rental host in ${host.city || 'Phoenix'}, AZ with ${host.totalTrips} completed trips`,
-        image: host.profilePhoto || 'https://itwhip.com/images/default-avatar.jpg',
+        image: host.partnerLogo || host.profilePhoto || 'https://itwhip.com/images/default-avatar.jpg',
         jobTitle: 'Car Rental Host',
         worksFor: {
           '@type': 'Organization',

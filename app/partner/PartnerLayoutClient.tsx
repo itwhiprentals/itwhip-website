@@ -457,7 +457,7 @@ export default function PartnerLayoutClient({
 
               {/* Role Switcher - includes avatar, replaces profile menu */}
               <RoleSwitcher
-                profilePhoto={partner?.profilePhoto}
+                profilePhoto={partner?.partnerLogo || partner?.hostManagerLogo || partner?.profilePhoto}
                 userName={partner?.name}
               />
             </div>

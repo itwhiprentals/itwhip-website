@@ -188,6 +188,8 @@ function transformCar(car: any): SimilarCarData {
     host: car.host ? {
       name: car.host.name,
       profilePhoto: car.host.profilePhoto,
+      partnerLogo: car.host.partnerLogo,
+      partnerSlug: car.host.partnerSlug,
       isVerified: car.host.isVerified,
       isBusinessHost: car.host.isBusinessHost,
       partnerCompanyName: car.host.partnerCompanyName,

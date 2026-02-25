@@ -623,7 +623,7 @@ export default function ClaimDetailPage() {
               </h3>
               <div className="flex items-center">
                 <img
-                  src={claim.host.profilePhoto || '/default-avatar.svg'}
+                  src={claim.host.partnerLogo || claim.host.profilePhoto || '/default-avatar.svg'}
                   alt={claim.host.name}
                   className="w-12 h-12 rounded-full object-cover"
                   onError={(e) => {

@@ -177,9 +177,9 @@ export default function GuestReviewDisplay({ review, onClose }: GuestReviewDispl
         <div className="border-l-4 border-blue-400 pl-4 bg-blue-50 dark:bg-blue-900/20 rounded-r-lg p-4">
           <div className="flex items-start gap-3 mb-2">
             <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-blue-100 dark:bg-blue-900">
-              {review.host?.profilePhoto ? (
+              {(review.host?.partnerLogo || review.host?.profilePhoto) ? (
                 <img
-                  src={review.host.profilePhoto}
+                  src={review.host.partnerLogo || review.host.profilePhoto}
                   alt={review.host.name}
                   className="w-full h-full object-cover"
                 />

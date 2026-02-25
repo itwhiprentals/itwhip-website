@@ -358,9 +358,9 @@ export default function ReviewSection({ carId, reviews = [] }: ReviewSectionProp
                     <div className="mb-3 pl-3 border-l-2 border-blue-400">
                       <div className="flex items-start gap-2 mb-1">
                         <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 bg-blue-100 dark:bg-blue-900">
-                          {review.host?.profilePhoto ? (
+                          {(review.host?.partnerLogo || review.host?.profilePhoto) ? (
                             <img
-                              src={review.host.profilePhoto}
+                              src={review.host.partnerLogo || review.host.profilePhoto}
                               alt="Host"
                               className="w-full h-full object-cover"
                             />

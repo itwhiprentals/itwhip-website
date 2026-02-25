@@ -120,7 +120,7 @@ export default function CarCard({
                   {car.host && (
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {t('hostedBy', { name: formatPrivateName(car.host.name, car.host.isCompany) })}
+                        {t('hostedBy', { name: formatPrivateName(car.host.partnerCompanyName || car.host.name, car.host.isCompany || car.host.isBusinessHost) })}
                       </span>
                       {car.host.isVerified && (
                         <IoShieldCheckmarkOutline className="w-4 h-4 text-blue-500" />
@@ -292,7 +292,7 @@ export default function CarCard({
           {car.host && (
             <div className="flex items-center justify-between mt-1">
               <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
-                <span>{formatPrivateName(car.host.name, car.host.isCompany)}</span>
+                <span>{formatPrivateName(car.host.partnerCompanyName || car.host.name, car.host.isCompany || car.host.isBusinessHost)}</span>
                 {car.host.isVerified && (
                   <IoShieldCheckmarkOutline className="w-4 h-4 text-blue-500" />
                 )}

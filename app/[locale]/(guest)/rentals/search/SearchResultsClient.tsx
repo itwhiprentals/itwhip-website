@@ -714,6 +714,8 @@ export default function SearchResultsClient({
                               profilePhoto: car.host.avatar || car.host.profilePhoto,
                               isBusinessHost: car.host.isBusinessHost,
                               partnerCompanyName: car.host.partnerCompanyName,
+                              partnerLogo: car.host.partnerLogo,
+                              partnerSlug: car.host.partnerSlug,
                               hostType: car.host.hostType
                             } : null
                           }}
@@ -768,6 +770,8 @@ export default function SearchResultsClient({
                               profilePhoto: car.host.avatar || car.host.profilePhoto,
                               isBusinessHost: car.host.isBusinessHost,
                               partnerCompanyName: car.host.partnerCompanyName,
+                              partnerLogo: car.host.partnerLogo,
+                              partnerSlug: car.host.partnerSlug,
                               hostType: car.host.hostType
                             } : null
                           }}

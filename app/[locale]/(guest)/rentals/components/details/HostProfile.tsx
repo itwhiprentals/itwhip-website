@@ -114,7 +114,7 @@ export default function HostProfile({ host }: HostProfileProps) {
   const processedHost = {
     name: host.name || (host.firstName && host.lastName ? `${host.firstName} ${host.lastName}` : 'Host'),
     displayName: displayName,  // Use formatted display name
-    profilePhoto: host.profilePhoto || host.profileImage || null,
+    profilePhoto: host.partnerLogo || host.profilePhoto || host.profileImage || null,
     verificationStatus: host.verificationStatus || host.verificationLevel || (host.isVerified ? 'id_verified' : ''),
     city: host.city || 'Phoenix',
     state: host.state || 'AZ',

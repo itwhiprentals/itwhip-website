@@ -48,8 +48,8 @@ export async function GET(
           select: {
             name: true,
             profilePhoto: true,
+            partnerLogo: true,
             rating: true
-            // Removed responseTime and totalTrips as discussed
           }
         }
       }

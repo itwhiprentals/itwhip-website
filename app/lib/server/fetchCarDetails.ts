@@ -128,6 +128,8 @@ export async function getCarForSSR(carId: string) {
       profilePhoto: car.host.profilePhoto,
       isBusinessHost: car.host.isBusinessHost,
       partnerCompanyName: car.host.partnerCompanyName,
+      partnerLogo: car.host.partnerLogo,
+      partnerSlug: car.host.partnerSlug,
       hostType: car.host.hostType,
     } : null,
     hostId: car.hostId,

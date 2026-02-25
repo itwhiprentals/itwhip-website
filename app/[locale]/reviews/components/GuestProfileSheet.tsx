@@ -412,9 +412,9 @@ export default function GuestProfileSheet({ isOpen, onClose, guest }: GuestProfi
                             {review.hostResponse && (
                               <div className="mt-1.5 ml-12 pl-2 border-l-2 border-blue-400">
                                 <div className="flex items-center gap-1 mb-0.5">
-                                  {review.host?.profilePhoto ? (
+                                  {(review.host?.partnerLogo || review.host?.profilePhoto) ? (
                                     <img
-                                      src={review.host.profilePhoto}
+                                      src={review.host.partnerLogo || review.host.profilePhoto}
                                       alt={review.host.name || t('host')}
                                       className="w-3 h-3 rounded-full object-cover"
                                     />

@@ -228,9 +228,9 @@ export default function BookingConfirmation({ bookingId, booking: initialBooking
             </h3>
             <div className="flex items-start justify-between">
               <div className="flex items-start space-x-3">
-                {booking.host?.profilePhoto && (
-                  <img 
-                    src={booking.host.profilePhoto} 
+                {(booking.host?.partnerLogo || booking.host?.profilePhoto) && (
+                  <img
+                    src={booking.host.partnerLogo || booking.host.profilePhoto}
                     alt={booking.host.name}
                     className="w-12 h-12 rounded-full"
                   />

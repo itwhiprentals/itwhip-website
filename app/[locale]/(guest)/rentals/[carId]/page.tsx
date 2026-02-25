@@ -226,7 +226,7 @@ export default async function CarDetailsPage({
           "seller": {
             "@type": "Organization",
             "name": car.host?.name || "ItWhip",
-            "image": car.host?.profilePhoto || "https://itwhip.com/logo.png"
+            "image": car.host?.partnerLogo || car.host?.profilePhoto || "https://itwhip.com/logo.png"
           },
           // Merchant Return Policy (Cancellation Policy for rentals)
           // 72+ hours before pickup = full refund per ItWhip Terms of Service
