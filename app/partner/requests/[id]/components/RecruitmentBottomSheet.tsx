@@ -76,6 +76,9 @@ export default function RecruitmentBottomSheet({
 
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('SECURE_ACCOUNT')
   const [completedSteps, setCompletedSteps] = useState<Set<OnboardingStep>>(new Set())
+  const [finalizing, setFinalizing] = useState(false)
+  const [finalizeError, setFinalizeError] = useState('')
+  const [bookingCode, setBookingCode] = useState('')
   const [missingFields, setMissingFields] = useState<MissingFields>({
     needsPhone: false,
     needsEmail: false,
@@ -113,7 +116,36 @@ export default function RecruitmentBottomSheet({
     }
   }, [])
 
+  const handleFinalize = useCallback(async () => {
+    setFinalizing(true)
+    setFinalizeError('')
+    try {
+      const response = await fetch('/api/partner/onboarding/finalize', {
+        method: 'POST'
+      })
+      const data = await response.json()
+
+      if (data.success) {
+        setBookingCode(data.booking?.bookingCode || '')
+        setCompletedSteps(prev => new Set([...prev, 'ADD_CAR']))
+        setCurrentStep('CONGRATS')
+      } else {
+        setFinalizeError(data.error || t('bsFailedToFinalize'))
+      }
+    } catch {
+      setFinalizeError(t('bsFailedToFinalize'))
+    } finally {
+      setFinalizing(false)
+    }
+  }, [t])
+
   const handleStepComplete = useCallback((step: OnboardingStep) => {
+    // When ADD_CAR completes, trigger finalization instead of just advancing
+    if (step === 'ADD_CAR') {
+      handleFinalize()
+      return
+    }
+
     setCompletedSteps(prev => new Set([...prev, step]))
 
     // Advance to next step
@@ -121,7 +153,7 @@ export default function RecruitmentBottomSheet({
     if (currentIndex < STEPS.length - 1) {
       setCurrentStep(STEPS[currentIndex + 1])
     }
-  }, [])
+  }, [handleFinalize])
 
   const handleSecureAccountComplete = useCallback(() => {
     handleStepComplete('SECURE_ACCOUNT')
@@ -219,13 +251,41 @@ export default function RecruitmentBottomSheet({
       )}
 
       {currentStep === 'ADD_CAR' && (
-        <AddCarWizard
-          mode="bottomsheet"
-          prefillDailyRate={requestData.offeredRate || undefined}
-          defaultPublicListing={false}
-          showListingToggle={false}
-          onComplete={() => handleStepComplete('ADD_CAR')}
-        />
+        <>
+          {finalizing ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-8 h-8 border-3 border-orange-600 border-t-transparent rounded-full animate-spin" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                {t('bsFinalizing')}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {t('bsFinalizingDesc')}
+              </p>
+            </div>
+          ) : finalizeError ? (
+            <div className="text-center py-12">
+              <div className="p-3 mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-700 dark:text-red-300">{finalizeError}</p>
+              </div>
+              <button
+                onClick={handleFinalize}
+                className="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors"
+              >
+                {t('bsRetry')}
+              </button>
+            </div>
+          ) : (
+            <AddCarWizard
+              mode="bottomsheet"
+              prefillDailyRate={requestData.offeredRate || undefined}
+              defaultPublicListing={false}
+              showListingToggle={false}
+              onComplete={() => handleStepComplete('ADD_CAR')}
+            />
+          )}
+        </>
       )}
 
       {currentStep === 'CONGRATS' && (
@@ -239,6 +299,11 @@ export default function RecruitmentBottomSheet({
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
             {t('bsCongratsDesc', { guest: requestData.guestName || 'the guest' })}
           </p>
+          {bookingCode && (
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-4 font-mono">
+              {bookingCode}
+            </p>
+          )}
           <button
             onClick={() => {
               onClose()

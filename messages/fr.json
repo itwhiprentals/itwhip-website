@@ -16323,7 +16323,11 @@
     "bsPayoutConnected": "Compte de Paiement Connecté !",
     "bsPayoutConnectedDesc": "Votre compte bancaire est configuré et prêt à recevoir des paiements.",
     "bsFailedToSavePreference": "Échec de l'enregistrement de la préférence de paiement",
-    "bsFailedToConnectStripe": "Échec de la connexion avec Stripe"
+    "bsFailedToConnectStripe": "Échec de la connexion avec Stripe",
+    "bsFinalizing": "Configuration de Votre Réservation...",
+    "bsFinalizingDesc": "Création de la réservation et notification du client. Cela ne prendra qu'un instant.",
+    "bsFailedToFinalize": "Échec de la configuration de la réservation. Veuillez réessayer.",
+    "bsRetry": "Réessayer"
   },
   "TrackingDemo": {
     "back": "Retour",

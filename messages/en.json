@@ -16323,7 +16323,11 @@
     "bsPayoutConnected": "Payout Account Connected!",
     "bsPayoutConnectedDesc": "Your bank account is set up and ready to receive payments.",
     "bsFailedToSavePreference": "Failed to save payment preference",
-    "bsFailedToConnectStripe": "Failed to connect with Stripe"
+    "bsFailedToConnectStripe": "Failed to connect with Stripe",
+    "bsFinalizing": "Setting Up Your Booking...",
+    "bsFinalizingDesc": "Creating the booking and notifying the guest. This will just take a moment.",
+    "bsFailedToFinalize": "Failed to set up booking. Please try again.",
+    "bsRetry": "Try Again"
   },
   "TrackingDemo": {
     "back": "Back",

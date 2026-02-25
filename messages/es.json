@@ -16323,7 +16323,11 @@
     "bsPayoutConnected": "¡Cuenta de Pagos Conectada!",
     "bsPayoutConnectedDesc": "Tu cuenta bancaria está configurada y lista para recibir pagos.",
     "bsFailedToSavePreference": "Error al guardar la preferencia de pago",
-    "bsFailedToConnectStripe": "Error al conectar con Stripe"
+    "bsFailedToConnectStripe": "Error al conectar con Stripe",
+    "bsFinalizing": "Configurando Tu Reserva...",
+    "bsFinalizingDesc": "Creando la reserva y notificando al huésped. Solo tomará un momento.",
+    "bsFailedToFinalize": "Error al configurar la reserva. Por favor intenta de nuevo.",
+    "bsRetry": "Intentar de Nuevo"
   },
   "TrackingDemo": {
     "back": "Volver",
