@@ -352,16 +352,31 @@ export default function PendingRequestCard() {
           </div>
         </div>
 
-        {/* ── Your Potential Payout ────────────────────────── */}
+        {/* ── Your Potential Payout + Daily Rate ──────────── */}
         {potentialEarnings && request && (
           <div className="px-4 pt-5">
-            <p className="text-xs text-green-600 dark:text-green-400 uppercase tracking-wide font-medium mb-1">{t('prYourPotentialPayout')}</p>
-            <p className="text-4xl font-extrabold text-green-700 dark:text-green-300 tracking-tight">
-              ${Math.round(potentialEarnings).toLocaleString()}<span className="text-2xl">.00</span>
-            </p>
+            <div className="flex items-center">
+              <div className="flex-1">
+                <p className="text-xs text-green-600 dark:text-green-400 uppercase tracking-wide font-medium mb-1">{t('prYourPotentialPayout')}</p>
+                <p className="text-3xl font-extrabold text-green-700 dark:text-green-300 tracking-tight">
+                  ${fmt(potentialEarnings || 0)}
+                </p>
+              </div>
+              {request.offeredRate && (
+                <>
+                  <div className="w-px self-stretch my-1 bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
+                  <div className="flex-1 text-right pl-4">
+                    <p className="text-xs text-orange-600 dark:text-orange-400 uppercase tracking-wide font-medium mb-1">{t('prDailyRate')}</p>
+                    <p className="text-3xl font-extrabold text-orange-600 dark:text-orange-400 tracking-tight">
+                      ${fmt(request.offeredRate)}<span className="text-lg font-bold">/{t('prPerDay')}</span>
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
             <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-300">{t('prDaysAtRate', { days: request.durationDays || 0, rate: request.offeredRate?.toFixed(2) || '0' })}</span>
+                <span className="text-gray-600 dark:text-gray-300">{t('prDaysAtRate', { days: request.durationDays || 0, rate: fmt(request.offeredRate || 0) })}</span>
                 <span className="font-medium text-gray-700 dark:text-gray-200">${fmt(totalAmount)}</span>
               </div>
               <div className="flex justify-between text-sm">
@@ -461,13 +476,6 @@ export default function PendingRequestCard() {
             </div>
           </div>
 
-          {/* Daily Rate — highlighted strip */}
-          {request?.offeredRate && (
-            <div className="mt-3 flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/10 border border-orange-200/60 dark:border-orange-800/40 rounded-lg">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('prDailyRate')}</span>
-              <span className="text-lg font-bold text-orange-600 dark:text-orange-400">{t('prRatePerDay', { rate: request.offeredRate.toFixed(2) })}</span>
-            </div>
-          )}
         </div>
 
         {/* ── Divider ─────────────────────────────────────── */}
