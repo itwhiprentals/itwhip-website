@@ -7779,7 +7779,10 @@
     "addSubmitting": "Submitting...",
     "addAddVehicleToFleet": "Add Vehicle to Fleet",
     "addFailedToAdd": "Failed to add vehicle",
-    "addFailedToAddRetry": "Failed to add vehicle. Please try again."
+    "addFailedToAddRetry": "Failed to add vehicle. Please try again.",
+    "addListPublicly": "List this car publicly on ItWhip",
+    "addListPubliclyOnDesc": "Your car will appear in search results and be available for anyone to book.",
+    "addListPubliclyOffDesc": "Your car will only be used for this specific booking and won't appear in search."
   },
   "PartnerBookings": {
     "bookingsTitle": "Bookings",

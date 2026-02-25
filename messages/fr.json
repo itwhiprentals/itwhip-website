@@ -7718,7 +7718,10 @@
     "addSubmitting": "Envoi en cours...",
     "addAddVehicleToFleet": "Ajouter le véhicule à la flotte",
     "addFailedToAdd": "Échec de l'ajout du véhicule",
-    "addFailedToAddRetry": "Échec de l'ajout du véhicule. Veuillez réessayer."
+    "addFailedToAddRetry": "Échec de l'ajout du véhicule. Veuillez réessayer.",
+    "addListPublicly": "Afficher ce véhicule publiquement sur ItWhip",
+    "addListPubliclyOnDesc": "Votre véhicule apparaîtra dans les résultats de recherche et sera disponible pour tous.",
+    "addListPubliclyOffDesc": "Votre véhicule sera utilisé uniquement pour cette réservation spécifique et n'apparaîtra pas dans la recherche."
   },
   "PartnerBookings": {
     "bookingsTitle": "Réservations",

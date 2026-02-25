@@ -173,6 +173,7 @@ export default function AddCarWizard({
     return INITIAL_VEHICLE_DATA
   })
   const [photos, setPhotos] = useState<PhotoItem[]>([])
+  const [isPublicListing, setIsPublicListing] = useState(defaultPublicListing)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
@@ -523,7 +524,8 @@ export default function AddCarWizard({
           insuranceProvider: vehicleData.insuranceProvider || null,
           insurancePolicyNumber: vehicleData.insurancePolicyNumber || null,
           insuranceExpiryDate: vehicleData.insuranceExpiryDate || null,
-          useForRentals: vehicleData.useForRentals
+          useForRentals: vehicleData.useForRentals,
+          isPublicListing
         })
       })
 
@@ -1573,6 +1575,33 @@ export default function AddCarWizard({
               </div>
             </div>
           </div>
+
+          {/* Listing Visibility Toggle */}
+          {showListingToggle && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 mr-4">
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+                    {t('addListPublicly')}
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    {isPublicListing ? t('addListPubliclyOnDesc') : t('addListPubliclyOffDesc')}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPublicListing(!isPublicListing)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    isPublicListing ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-600'
+                  }`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    isPublicListing ? 'translate-x-6' : 'translate-x-1'
+                  }`} />
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Partner Benefits */}
           <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6 border border-green-200 dark:border-green-800">

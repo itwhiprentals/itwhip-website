@@ -257,7 +257,10 @@ export async function POST(request: NextRequest) {
       insuranceProvider,    // Insurance provider name
       insurancePolicyNumber, // Policy number
       insuranceExpiryDate,  // Policy expiry date
-      useForRentals         // Use this vehicle's insurance during rentals
+      useForRentals,        // Use this vehicle's insurance during rentals
+
+      // Listing visibility (recruitment bottomsheet passes false to keep car unlisted)
+      isPublicListing
     } = body
 
     // Validate VIN (REQUIRED for partners)
@@ -384,7 +387,7 @@ export async function POST(request: NextRequest) {
           const specs = getVehicleSpecData(make, model, year)
           return specs?.seats || 5
         })(),
-        isActive: isAutoApproved,
+        isActive: isPublicListing === false ? false : isAutoApproved,
         instantBook: true,
         advanceNotice: 2,
         // Rideshare vehicles require minimum 3 day bookings
