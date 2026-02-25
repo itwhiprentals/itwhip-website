@@ -13,7 +13,7 @@ import {
   IoCheckmarkCircle,
   IoBanOutline,
   IoCameraOutline,
-  IoCarOutline
+  IoRocketOutline
 } from 'react-icons/io5'
 import { useTranslations, useLocale } from 'next-intl'
 
@@ -204,7 +204,7 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
             <div className="flex items-center gap-1">
               <IoCalendarOutline className="w-3.5 h-3.5" />
               {isExternalRecruit ? (
-                <span className="text-amber-600 dark:text-amber-400 font-medium">{t('uiNotJoined')}</span>
+                <span className="text-purple-600 dark:text-purple-400 font-medium">{t('uiSetupRequired')}</span>
               ) : (
                 <span>{t('uiJoined', { date: formatDate(user.memberSince) })}</span>
               )}
@@ -219,9 +219,9 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
         {/* Status Badge - Top Right Corner */}
         <div className="flex-shrink-0">
           {isExternalRecruit && !hasCars ? (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
-              <IoCarOutline className="w-3.5 h-3.5" />
-              {t('uiNotActiveCar')}
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
+              <IoRocketOutline className="w-3.5 h-3.5" />
+              {t('uiOnboarding')}
             </span>
           ) : isActive ? (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">

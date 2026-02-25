@@ -68,6 +68,15 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const skip = (page - 1) * limit
 
+    // Build visibility filter: only show requests that are either
+    // open marketplace (no linked prospects) or targeted to current host
+    const visibilityFilter = {
+      OR: [
+        { invitedProspects: { none: {} } },
+        { invitedProspects: { some: { convertedHostId: host.id } } }
+      ]
+    }
+
     // Get counts for stats
     const [openCount, myClaimsCount, myActiveClaimCount] = await Promise.all([
       prisma.reservationRequest.count({
@@ -76,7 +85,8 @@ export async function GET(request: NextRequest) {
           OR: [
             { expiresAt: null },
             { expiresAt: { gt: new Date() } }
-          ]
+          ],
+          AND: [visibilityFilter]
         }
       }),
       prisma.requestClaim.count({
@@ -182,13 +192,14 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Build where clause - only show OPEN requests
+    // Build where clause - only show OPEN requests visible to this host
     const where: any = {
       status: 'OPEN',
       OR: [
         { expiresAt: null },
         { expiresAt: { gt: new Date() } }
-      ]
+      ],
+      AND: [visibilityFilter]
     }
 
     // Optional filters
@@ -196,10 +207,12 @@ export async function GET(request: NextRequest) {
       where.pickupCity = { contains: city, mode: 'insensitive' }
     }
     if (vehicleType) {
-      where.OR = [
-        { vehicleType: { contains: vehicleType, mode: 'insensitive' } },
-        { vehicleMake: { contains: vehicleType, mode: 'insensitive' } }
-      ]
+      where.AND.push({
+        OR: [
+          { vehicleType: { contains: vehicleType, mode: 'insensitive' } },
+          { vehicleMake: { contains: vehicleType, mode: 'insensitive' } }
+        ]
+      })
     }
 
     // Get requests with claim info for this host

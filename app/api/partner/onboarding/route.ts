@@ -168,6 +168,7 @@ export async function GET(request: NextRequest) {
         guestName: fleetRequest.guestName,
         guestRating: (fleetRequest as any).guestRating ?? null,
         guestTrips: (fleetRequest as any).guestTrips ?? null,
+        guestVerified: (fleetRequest as any).guestVerified ?? false,
         startDate: fleetRequest.startDate,
         endDate: fleetRequest.endDate,
         durationDays: fleetRequest.durationDays,
