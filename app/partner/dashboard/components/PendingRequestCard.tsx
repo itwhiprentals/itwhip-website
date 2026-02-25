@@ -479,23 +479,49 @@ export default function PendingRequestCard() {
             <IoInformationCircleOutline className="w-5 h-5 text-gray-400 dark:text-gray-500" />
             <p className="text-sm font-semibold text-gray-900 dark:text-white">{t('prHowThisWorks')}</p>
           </div>
-          <div className="flex items-start gap-4">
+
+          {/* Animated step indicator */}
+          <style>{`
+            @keyframes arrowPulse {
+              0%, 100% { opacity: 0.3; transform: translateX(0); }
+              50% { opacity: 1; transform: translateX(3px); }
+            }
+            .step-arrow { animation: arrowPulse 1.8s ease-in-out infinite; }
+            .step-arrow:nth-child(2) { animation-delay: 0.15s; }
+            .step-arrow:nth-child(3) { animation-delay: 0.3s; }
+          `}</style>
+
+          <div className="flex items-start">
             {/* Step 1 */}
             <div className="flex-1 text-center">
-              <div className="w-10 h-10 mx-auto rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold text-sm">1</div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 leading-tight">{t('prStep1Recruit')}</p>
+              <div className="w-10 h-10 mx-auto rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold text-sm ring-2 ring-orange-200 dark:ring-orange-800/50">1</div>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 leading-tight font-medium">{t('prStep1Recruit')}</p>
             </div>
-            <div className="flex-shrink-0 mt-4 w-8 border-t-2 border-dashed border-gray-300 dark:border-gray-600" />
+
+            {/* Arrow connector 1→2 */}
+            <div className="flex items-center gap-0.5 mt-3 flex-shrink-0 px-1">
+              <span className="step-arrow text-orange-400 dark:text-orange-500 text-sm">›</span>
+              <span className="step-arrow text-orange-400 dark:text-orange-500 text-sm">›</span>
+              <span className="step-arrow text-orange-400 dark:text-orange-500 text-sm">›</span>
+            </div>
+
             {/* Step 2 */}
             <div className="flex-1 text-center">
-              <div className="w-10 h-10 mx-auto rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold text-sm">2</div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 leading-tight">{t('prStep2Recruit')}</p>
+              <div className="w-10 h-10 mx-auto rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold text-sm ring-2 ring-orange-200 dark:ring-orange-800/50">2</div>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 leading-tight font-medium">{t('prStep2Recruit')}</p>
             </div>
-            <div className="flex-shrink-0 mt-4 w-8 border-t-2 border-dashed border-gray-300 dark:border-gray-600" />
+
+            {/* Arrow connector 2→3 */}
+            <div className="flex items-center gap-0.5 mt-3 flex-shrink-0 px-1">
+              <span className="step-arrow text-green-400 dark:text-green-500 text-sm">›</span>
+              <span className="step-arrow text-green-400 dark:text-green-500 text-sm">›</span>
+              <span className="step-arrow text-green-400 dark:text-green-500 text-sm">›</span>
+            </div>
+
             {/* Step 3 */}
             <div className="flex-1 text-center">
-              <div className="w-10 h-10 mx-auto rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 font-bold text-sm">3</div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 leading-tight">{t('prStep3Recruit')}</p>
+              <div className="w-10 h-10 mx-auto rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 font-bold text-sm ring-2 ring-green-200 dark:ring-green-800/50">3</div>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 leading-tight font-medium">{t('prStep3Recruit')}</p>
             </div>
           </div>
         </div>
