@@ -479,6 +479,7 @@
     "goToLogin": "Go to Login",
     "accountSecured": "Account Secured!",
     "passwordSetRedirect": "Your password has been set. Redirecting to login...",
+    "redirectingToBooking": "Your password has been set. Redirecting to your booking...",
     "secureYourAccount": "Secure Your Account",
     "setPasswordDesc": "Set a password to sign in from any device",
     "createPassword": "Create Password",

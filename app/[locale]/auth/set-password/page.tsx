@@ -34,6 +34,7 @@ function SetPasswordForm() {
   const [isDark, setIsDark] = useState(false)
 
   const token = searchParams.get('token')
+  const redirectTo = searchParams.get('redirect')
 
   // Initialize dark mode from system preference or localStorage
   useEffect(() => {
@@ -131,7 +132,7 @@ function SetPasswordForm() {
       setSuccess(true)
 
       setTimeout(() => {
-        router.push('/auth/login')
+        router.push(redirectTo || '/auth/login')
       }, 3000)
 
     } catch (err: any) {
@@ -243,7 +244,7 @@ function SetPasswordForm() {
               <IoCheckmarkCircle className="w-10 h-10 text-green-500 dark:text-green-400 mx-auto mb-3" />
               <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('accountSecured')}</h2>
               <p className="text-gray-600 dark:text-gray-400 text-sm mb-5">
-                {t('passwordSetRedirect')}
+                {redirectTo ? t('redirectingToBooking') : t('passwordSetRedirect')}
               </p>
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-500 dark:border-green-400 mx-auto"></div>
             </div>

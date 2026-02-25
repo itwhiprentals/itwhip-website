@@ -479,6 +479,7 @@
     "goToLogin": "Ir al Inicio de Sesión",
     "accountSecured": "¡Cuenta Asegurada!",
     "passwordSetRedirect": "Tu contraseña ha sido configurada. Redirigiendo al inicio de sesión...",
+    "redirectingToBooking": "Tu contraseña ha sido configurada. Redirigiendo a tu reserva...",
     "secureYourAccount": "Asegura tu Cuenta",
     "setPasswordDesc": "Establece una contraseña para iniciar sesión desde cualquier dispositivo",
     "createPassword": "Crear Contraseña",

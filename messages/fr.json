@@ -479,6 +479,7 @@
     "goToLogin": "Aller à la connexion",
     "accountSecured": "Compte sécurisé !",
     "passwordSetRedirect": "Votre mot de passe a été défini. Redirection vers la connexion...",
+    "redirectingToBooking": "Votre mot de passe a été défini. Redirection vers votre réservation...",
     "secureYourAccount": "Sécurisez votre compte",
     "setPasswordDesc": "Définissez un mot de passe pour vous connecter depuis n'importe quel appareil",
     "createPassword": "Créer un mot de passe",

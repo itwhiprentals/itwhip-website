@@ -8,6 +8,9 @@ import { verify } from 'jsonwebtoken'
 import { nanoid } from 'nanoid'
 import { randomBytes } from 'crypto'
 import { logProspectActivity } from '@/app/lib/auth/host-tokens'
+import { GuestTokenHandler } from '@/app/lib/auth/guest-tokens'
+import { sendEmail } from '@/app/lib/email/sender'
+import { emailConfig, logEmail, generateEmailReference, getEmailFooterHtml, getEmailFooterText } from '@/app/lib/email/config'
 
 const JWT_SECRET = process.env.JWT_SECRET!
 
@@ -286,8 +289,199 @@ export async function POST(request: NextRequest) {
       isCash
     })
 
-    // TODO: Send guest email with auto-login link
-    // TODO: Send host confirmation email
+    // ═══════════════════════════════════════════════════
+    // STEP 6: Send emails (non-blocking)
+    // ═══════════════════════════════════════════════════
+    const baseUrl = emailConfig.websiteUrl
+    const vehicleDesc = `${car.year} ${car.make} ${car.model}`
+    const startDateStr = fleetRequest.startDate
+      ? new Date(fleetRequest.startDate).toLocaleDateString('en-US', { dateStyle: 'medium' })
+      : 'TBD'
+    const endDateStr = fleetRequest.endDate
+      ? new Date(fleetRequest.endDate).toLocaleDateString('en-US', { dateStyle: 'medium' })
+      : 'TBD'
+
+    // Send guest email with auto-login link
+    if (guestEmail) {
+      try {
+        // Create a GuestAccessToken for auto-login
+        const guestAccessToken = await GuestTokenHandler.createGuestToken(bookingId, guestEmail)
+        const autoLoginUrl = `${baseUrl}/api/auth/guest-auto-login?token=${guestAccessToken}`
+        const guestFirstName = guestName.split(' ')[0]
+        const guestRefId = generateEmailReference('GI')
+
+        await sendEmail(
+          guestEmail,
+          `Your Car Rental is ${isCash ? 'Confirmed' : 'Almost Ready'}! — ${vehicleDesc}`,
+          `
+          <!DOCTYPE html>
+          <html>
+            <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; background-color: #ffffff; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
+                <img src="${emailConfig.logos.default}" alt="ItWhip" style="height: 28px; margin-bottom: 8px;" />
+                <p style="margin: 0 0 4px 0; font-size: 12px; color: ${isCash ? '#16a34a' : '#ea580c'}; text-transform: uppercase; letter-spacing: 0.5px;">
+                  ${isCash ? 'Booking Confirmed' : 'Booking Created'}
+                </p>
+                <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #111827;">
+                  Your ${vehicleDesc} Rental
+                </h1>
+              </div>
+
+              <p style="font-size: 16px; margin: 0 0 16px 0;">Hi ${guestFirstName},</p>
+              <p style="font-size: 15px; margin: 0 0 16px 0; color: #374151;">
+                Great news! A ${vehicleDesc} has been ${isCash ? 'booked' : 'reserved'} for you through ItWhip.
+              </p>
+
+              <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <table style="width: 100%; font-size: 14px; color: #374151;">
+                  <tr><td style="padding: 4px 0; font-weight: 600;">Vehicle</td><td style="padding: 4px 0; text-align: right;">${vehicleDesc}</td></tr>
+                  <tr><td style="padding: 4px 0; font-weight: 600;">Dates</td><td style="padding: 4px 0; text-align: right;">${startDateStr} — ${endDateStr}</td></tr>
+                  <tr><td style="padding: 4px 0; font-weight: 600;">Duration</td><td style="padding: 4px 0; text-align: right;">${durationDays} days</td></tr>
+                  <tr><td style="padding: 4px 0; font-weight: 600;">Rate</td><td style="padding: 4px 0; text-align: right;">$${dailyRate}/day</td></tr>
+                  <tr style="border-top: 1px solid #e5e7eb;"><td style="padding: 8px 0 4px; font-weight: 700;">Total</td><td style="padding: 8px 0 4px; text-align: right; font-weight: 700;">$${totalAmount.toFixed(2)}</td></tr>
+                </table>
+                <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">Booking Code: ${booking.bookingCode}</p>
+              </div>
+
+              <p style="font-size: 14px; color: #374151; margin: 0 0 8px 0;">
+                To view your booking details and secure your account, click the button below:
+              </p>
+
+              <div style="text-align: center; margin: 24px 0;">
+                <a href="${autoLoginUrl}" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
+                  View My Booking
+                </a>
+              </div>
+
+              <p style="font-size: 12px; color: #9ca3af; text-align: center; margin: 0 0 20px 0;">
+                This link expires in 7 days. You'll be asked to set a password on your first visit.
+              </p>
+
+              ${getEmailFooterHtml(guestRefId)}
+            </body>
+          </html>
+          `,
+          `
+YOUR CAR RENTAL IS ${isCash ? 'CONFIRMED' : 'ALMOST READY'}
+
+Hi ${guestFirstName},
+
+A ${vehicleDesc} has been ${isCash ? 'booked' : 'reserved'} for you through ItWhip.
+
+BOOKING DETAILS:
+Vehicle: ${vehicleDesc}
+Dates: ${startDateStr} — ${endDateStr}
+Duration: ${durationDays} days
+Rate: $${dailyRate}/day
+Total: $${totalAmount.toFixed(2)}
+Booking Code: ${booking.bookingCode}
+
+View your booking: ${autoLoginUrl}
+
+This link expires in 7 days. You'll be asked to set a password on your first visit.
+
+${getEmailFooterText(guestRefId)}
+          `.trim()
+        )
+
+        await logEmail({
+          recipientEmail: guestEmail,
+          recipientName: guestName,
+          subject: `Your Car Rental is ${isCash ? 'Confirmed' : 'Almost Ready'}!`,
+          emailType: 'BOOKING_CONFIRMATION',
+          relatedType: 'RentalBooking',
+          relatedId: bookingId,
+          referenceId: guestRefId
+        })
+
+        console.log(`[Finalize] Guest email sent to ${guestEmail}`)
+      } catch (emailErr) {
+        console.error('[Finalize] Failed to send guest email:', emailErr)
+      }
+    }
+
+    // Send host confirmation email
+    try {
+      const hostEmail = host.email
+      const hostFirstName = host.name?.split(' ')[0] || 'Host'
+      const hostRefId = generateEmailReference('BC')
+
+      if (hostEmail) {
+        await sendEmail(
+          hostEmail,
+          `Booking Confirmed — ${vehicleDesc} for ${guestName}`,
+          `
+          <!DOCTYPE html>
+          <html>
+            <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; background-color: #ffffff; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
+                <img src="${emailConfig.logos.default}" alt="ItWhip" style="height: 28px; margin-bottom: 8px;" />
+                <p style="margin: 0 0 4px 0; font-size: 12px; color: #16a34a; text-transform: uppercase; letter-spacing: 0.5px;">Booking Confirmed</p>
+                <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #111827;">You're All Set, ${hostFirstName}!</h1>
+              </div>
+
+              <p style="font-size: 15px; margin: 0 0 16px 0; color: #374151;">
+                Your onboarding is complete and the booking has been created. Here are the details:
+              </p>
+
+              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <table style="width: 100%; font-size: 14px; color: #374151;">
+                  <tr><td style="padding: 4px 0; font-weight: 600;">Guest</td><td style="padding: 4px 0; text-align: right;">${guestName}</td></tr>
+                  <tr><td style="padding: 4px 0; font-weight: 600;">Vehicle</td><td style="padding: 4px 0; text-align: right;">${vehicleDesc}</td></tr>
+                  <tr><td style="padding: 4px 0; font-weight: 600;">Dates</td><td style="padding: 4px 0; text-align: right;">${startDateStr} — ${endDateStr}</td></tr>
+                  <tr><td style="padding: 4px 0; font-weight: 600;">Your Earnings</td><td style="padding: 4px 0; text-align: right; font-weight: 700; color: #16a34a;">$${hostEarnings.toFixed(2)}</td></tr>
+                  <tr><td style="padding: 4px 0; font-weight: 600;">Payment</td><td style="padding: 4px 0; text-align: right;">${isCash ? 'Cash (collect from guest)' : 'Platform (direct deposit)'}</td></tr>
+                </table>
+                <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">Booking Code: ${booking.bookingCode}</p>
+              </div>
+
+              <div style="text-align: center; margin: 24px 0;">
+                <a href="${baseUrl}/partner/dashboard" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
+                  Go to Dashboard
+                </a>
+              </div>
+
+              ${getEmailFooterHtml(hostRefId)}
+            </body>
+          </html>
+          `,
+          `
+BOOKING CONFIRMED — YOU'RE ALL SET, ${hostFirstName.toUpperCase()}!
+
+Your onboarding is complete and the booking has been created.
+
+BOOKING DETAILS:
+Guest: ${guestName}
+Vehicle: ${vehicleDesc}
+Dates: ${startDateStr} — ${endDateStr}
+Your Earnings: $${hostEarnings.toFixed(2)}
+Payment: ${isCash ? 'Cash (collect from guest)' : 'Platform (direct deposit)'}
+Booking Code: ${booking.bookingCode}
+
+Go to Dashboard: ${baseUrl}/partner/dashboard
+
+${getEmailFooterText(hostRefId)}
+          `.trim()
+        )
+
+        await logEmail({
+          recipientEmail: hostEmail,
+          recipientName: host.name || 'Host',
+          subject: `Booking Confirmed — ${vehicleDesc} for ${guestName}`,
+          emailType: 'BOOKING_CONFIRMATION',
+          relatedType: 'RentalBooking',
+          relatedId: bookingId,
+          referenceId: hostRefId
+        })
+
+        console.log(`[Finalize] Host email sent to ${hostEmail}`)
+      }
+    } catch (emailErr) {
+      console.error('[Finalize] Failed to send host email:', emailErr)
+    }
+
     console.log(`[Finalize] Booking ${booking.bookingCode} created for host ${host.id}, guest ${guestEmail}`)
 
     return NextResponse.json({
