@@ -94,21 +94,15 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Missing conferenceSid' }, { status: 400 })
         }
         const participants = await twilioClient.conferences(conferenceSid).participants.list()
-        const enriched = await Promise.all(participants.map(async (p) => {
-          let phoneNumber: string | null = null
-          try {
-            const call = await twilioClient!.calls(p.callSid).fetch()
-            phoneNumber = call.to || null
-          } catch {}
-          return {
-            callSid: p.callSid,
-            label: p.label || phoneNumber || p.callSid.slice(0, 12),
-            muted: p.muted,
-            hold: p.hold,
-            startTime: p.dateCreated,
-            phoneNumber,
-            isClient: phoneNumber?.startsWith('client:') || false,
-          }
+        // Use label from Twilio directly — avoids N extra API calls per poll
+        const enriched = participants.map((p) => ({
+          callSid: p.callSid,
+          label: p.label || p.callSid.slice(0, 12),
+          muted: p.muted,
+          hold: p.hold,
+          startTime: p.dateCreated,
+          phoneNumber: null,
+          isClient: p.label?.startsWith('client:') || false,
         }))
         return NextResponse.json({ success: true, participants: enriched })
       }

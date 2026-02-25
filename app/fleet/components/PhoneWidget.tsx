@@ -93,6 +93,7 @@ export default function PhoneWidget() {
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const confPollRef = useRef<NodeJS.Timeout | null>(null)
   const activePollRef = useRef<NodeJS.Timeout | null>(null)
+  const conferenceSidRef = useRef<string | null>(null)
 
   // ─── Device init ─────────────────────────────────────────────
   const initDevice = useCallback(async () => {
@@ -280,7 +281,13 @@ export default function PhoneWidget() {
   }, [state])
 
   // ─── Conference discovery & polling ──────────────────────────
+  // Keep conferenceSidRef in sync for stable callbacks
+  useEffect(() => {
+    conferenceSidRef.current = conference?.sid || null
+  }, [conference?.sid])
+
   const discoverConference = useCallback(async () => {
+    if (document.hidden) return
     try {
       const callSid = callRef.current?.parameters?.CallSid
       const data = await confAction({ action: 'find-conference', ...(callSid ? { callSid } : {}) })
@@ -291,44 +298,47 @@ export default function PhoneWidget() {
   }, [])
 
   const refreshParticipants = useCallback(async () => {
-    if (!conference?.sid) return
+    const sid = conferenceSidRef.current
+    if (!sid || document.hidden) return
     try {
-      const data = await confAction({ action: 'participants', conferenceSid: conference.sid })
+      const data = await confAction({ action: 'participants', conferenceSid: sid })
       if (data.success) {
         setConference(prev => prev ? { ...prev, participants: data.participants } : null)
       }
     } catch {
-      setConference(null)
+      // Don't null out conference on transient errors — just skip this cycle
+      console.warn('[PhoneWidget] Participant refresh failed, will retry next cycle')
     }
-  }, [conference?.sid])
+  }, [])
 
-  // Discover conference 2s after call goes active
+  // Discover conference 3s after call goes active
   useEffect(() => {
     if (state === 'active' && !conference) {
-      const t = setTimeout(discoverConference, 2000)
+      const t = setTimeout(discoverConference, 3000)
       return () => clearTimeout(t)
     }
   }, [state, conference, discoverConference])
 
-  // Poll participants every 5s while in conference
+  // Poll participants every 15s while in conference (stable — uses ref, not conference object)
   useEffect(() => {
-    if (state === 'active' && conference) {
-      confPollRef.current = setInterval(refreshParticipants, 5000)
+    if (state === 'active' && conference?.sid) {
+      confPollRef.current = setInterval(refreshParticipants, 15000)
       return () => { if (confPollRef.current) clearInterval(confPollRef.current) }
     }
-  }, [state, conference, refreshParticipants])
+  }, [state, conference?.sid, refreshParticipants])
 
-  // Poll active conferences when idle
+  // Poll active conferences every 30s when idle (NOT when collapsed)
   useEffect(() => {
     if (state === 'idle') {
-      const fetch = async () => {
+      const pollActiveConfs = async () => {
+        if (document.hidden) return
         try {
           const data = await confAction({ action: 'active-conferences' })
           if (data.success) setActiveConfs(data.conferences || [])
         } catch { setActiveConfs([]) }
       }
-      fetch()
-      activePollRef.current = setInterval(fetch, 10000)
+      pollActiveConfs()
+      activePollRef.current = setInterval(pollActiveConfs, 30000)
       return () => { if (activePollRef.current) clearInterval(activePollRef.current) }
     } else {
       setActiveConfs([])
