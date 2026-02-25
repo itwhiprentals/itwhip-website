@@ -16308,7 +16308,22 @@
     "bsFailedToSendCode": "Échec de l'envoi du code de vérification",
     "bsFailedToSecureAccount": "Échec de la sécurisation du compte",
     "bsSaving": "Enregistrement...",
-    "bsSecureAndContinue": "Sécuriser et Continuer"
+    "bsSecureAndContinue": "Sécuriser et Continuer",
+    "bsChoosePaymentMethod": "Comment Souhaitez-Vous Être Payé ?",
+    "bsChoosePaymentDesc": "Choisissez comment vous souhaitez recevoir le paiement pour cette réservation.",
+    "bsCashOption": "Paiement en Espèces",
+    "bsCashOptionDesc": "Encaissez le paiement directement du client lors de la remise. Simple et immédiat.",
+    "bsPlatformOption": "Paiement via la Plateforme",
+    "bsPlatformOptionDesc": "Nous gérons les paiements en toute sécurité. Vous recevez des virements directs sur votre compte bancaire.",
+    "bsNoFees": "Sans frais de plateforme",
+    "bsRequiresStripe": "Configuration Stripe requise",
+    "bsWaitingForStripe": "Configuration de Votre Compte de Paiement...",
+    "bsCompleteStripeInOtherTab": "Complétez la configuration Stripe dans l'autre onglet. Nous le détecterons automatiquement.",
+    "bsSkipStripeForNow": "Continuer sans configurer les paiements — vous pourrez le faire plus tard",
+    "bsPayoutConnected": "Compte de Paiement Connecté !",
+    "bsPayoutConnectedDesc": "Votre compte bancaire est configuré et prêt à recevoir des paiements.",
+    "bsFailedToSavePreference": "Échec de l'enregistrement de la préférence de paiement",
+    "bsFailedToConnectStripe": "Échec de la connexion avec Stripe"
   },
   "TrackingDemo": {
     "back": "Retour",

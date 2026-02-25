@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import BottomSheet from '@/app/components/BottomSheet'
 import SecureAccountStep from './SecureAccountStep'
+import PaymentPreferenceStep from './PaymentPreferenceStep'
 import {
   IoShieldCheckmarkOutline,
   IoWalletOutline,
@@ -209,21 +210,11 @@ export default function RecruitmentBottomSheet({
       )}
 
       {currentStep === 'PAYMENT_PREFERENCE' && (
-        <div className="text-center py-12">
-          <IoWalletOutline className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            {t('bsPaymentComingSoon')}
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            {t('bsPaymentComingSoonDesc')}
-          </p>
-          <button
-            onClick={() => handleStepComplete('PAYMENT_PREFERENCE')}
-            className="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors"
-          >
-            {t('bsContinue')}
-          </button>
-        </div>
+        <PaymentPreferenceStep
+          hostData={{ id: hostData.id, name: hostData.name }}
+          requestData={{ hostEarnings: requestData.hostEarnings, durationDays: requestData.durationDays }}
+          onComplete={() => handleStepComplete('PAYMENT_PREFERENCE')}
+        />
       )}
 
       {currentStep === 'ADD_CAR' && (

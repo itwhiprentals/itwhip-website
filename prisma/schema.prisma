@@ -4144,6 +4144,9 @@ model HostProspect {
   counterOfferReviewedBy String? // Admin who reviewed
   counterOfferReviewedAt DateTime? // When reviewed
 
+  // Payment preference (chosen during onboarding bottomsheet)
+  paymentPreference     String?   // 'CASH' or 'PLATFORM'
+
   // Onboarding progress (tracks what host has completed)
   onboardingStartedAt   DateTime? // When they clicked "Start"
   carPhotosUploaded     Boolean   @default(false)

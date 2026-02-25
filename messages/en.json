@@ -16308,7 +16308,22 @@
     "bsFailedToSendCode": "Failed to send verification code",
     "bsFailedToSecureAccount": "Failed to secure account",
     "bsSaving": "Saving...",
-    "bsSecureAndContinue": "Secure & Continue"
+    "bsSecureAndContinue": "Secure & Continue",
+    "bsChoosePaymentMethod": "How Would You Like to Get Paid?",
+    "bsChoosePaymentDesc": "Choose how you'd like to receive payment for this booking.",
+    "bsCashOption": "Get Paid in Cash",
+    "bsCashOptionDesc": "Collect payment directly from the guest at pickup. Simple and immediate.",
+    "bsPlatformOption": "Get Paid via Platform",
+    "bsPlatformOptionDesc": "We handle payments securely. You get direct deposits to your bank account.",
+    "bsNoFees": "No platform fees",
+    "bsRequiresStripe": "Requires Stripe setup",
+    "bsWaitingForStripe": "Setting Up Your Payout Account...",
+    "bsCompleteStripeInOtherTab": "Complete the Stripe setup in the other tab. We'll detect it automatically.",
+    "bsSkipStripeForNow": "Continue without payout setup — you can connect later",
+    "bsPayoutConnected": "Payout Account Connected!",
+    "bsPayoutConnectedDesc": "Your bank account is set up and ready to receive payments.",
+    "bsFailedToSavePreference": "Failed to save payment preference",
+    "bsFailedToConnectStripe": "Failed to connect with Stripe"
   },
   "TrackingDemo": {
     "back": "Back",

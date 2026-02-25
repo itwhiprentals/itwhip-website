@@ -16308,7 +16308,22 @@
     "bsFailedToSendCode": "Error al enviar el código de verificación",
     "bsFailedToSecureAccount": "Error al asegurar la cuenta",
     "bsSaving": "Guardando...",
-    "bsSecureAndContinue": "Asegurar y Continuar"
+    "bsSecureAndContinue": "Asegurar y Continuar",
+    "bsChoosePaymentMethod": "¿Cómo Te Gustaría Recibir el Pago?",
+    "bsChoosePaymentDesc": "Elige cómo te gustaría recibir el pago por esta reserva.",
+    "bsCashOption": "Cobrar en Efectivo",
+    "bsCashOptionDesc": "Cobra el pago directamente del huésped en la entrega. Simple e inmediato.",
+    "bsPlatformOption": "Cobrar vía Plataforma",
+    "bsPlatformOptionDesc": "Nosotros manejamos los pagos de forma segura. Recibes depósitos directos en tu cuenta bancaria.",
+    "bsNoFees": "Sin comisiones",
+    "bsRequiresStripe": "Requiere configurar Stripe",
+    "bsWaitingForStripe": "Configurando Tu Cuenta de Pagos...",
+    "bsCompleteStripeInOtherTab": "Completa la configuración de Stripe en la otra pestaña. Lo detectaremos automáticamente.",
+    "bsSkipStripeForNow": "Continuar sin configurar pagos — puedes conectarlo después",
+    "bsPayoutConnected": "¡Cuenta de Pagos Conectada!",
+    "bsPayoutConnectedDesc": "Tu cuenta bancaria está configurada y lista para recibir pagos.",
+    "bsFailedToSavePreference": "Error al guardar la preferencia de pago",
+    "bsFailedToConnectStripe": "Error al conectar con Stripe"
   },
   "TrackingDemo": {
     "back": "Volver",
