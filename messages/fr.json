@@ -4729,7 +4729,24 @@
     "needHelpContact": "Besoin d'aide ? Contactez support@itwhip.com",
     "selfieUnderReview": "Selfie en Cours d'Examen",
     "selfieUnderReviewDesc": "Votre selfie est en cours d'examen. Vous pouvez continuer la réservation maintenant — remplissez vos détails et complétez le paiement ci-dessous.",
-    "confirmAfterApproval": "Nous confirmerons votre réservation une fois la vérification approuvée."
+    "confirmAfterApproval": "Nous confirmerons votre réservation une fois la vérification approuvée.",
+    "paymentChoiceTitle": "Choisissez votre mode de paiement",
+    "paymentChoiceSubtitle": "Sélectionnez comment vous souhaitez payer votre location.",
+    "payWithCard": "Payer par carte",
+    "payWithCardDesc": "Autorisation sécurisée par carte — débité à la prise en charge",
+    "payCashAtPickup": "Payer en espèces à la prise en charge",
+    "payCashDesc": "Payez l'hôte directement en espèces lors de la prise en charge du véhicule",
+    "paymentChoiceOnce": "Le mode de paiement ne peut pas être modifié après sélection.",
+    "cashConfirmDialog": "Êtes-vous sûr de vouloir payer en espèces ? Vous paierez l'hôte directement en espèces à la prise en charge.",
+    "cardAuthorizedTitle": "Paiement autorisé",
+    "cardAuthorizedDesc": "Votre carte a été autorisée. L'hôte confirmera votre réservation sous peu.",
+    "cashConfirmedTitle": "Paiement en espèces confirmé",
+    "cashConfirmedDesc": "Vous paierez l'hôte en espèces à la prise en charge. L'hôte confirmera votre réservation sous peu.",
+    "addPaymentMethod": "Ajouter un mode de paiement",
+    "cardAuthHoldDesc": "Une retenue de {amount} sera effectuée sur votre carte. Vous ne serez pas débité avant la confirmation de l'hôte.",
+    "stripeSecureNote": "Sécurisé par Stripe. Vos informations de carte ne sont jamais stockées sur nos serveurs.",
+    "authorizePayment": "Autoriser {amount}",
+    "processing": "Traitement en cours..."
   },
   "StatusProgression": {
     "bookingStatus": "Statut de Réservation",
@@ -7471,6 +7488,9 @@
     "prStep1AddVehicle": "Ajoutez votre véhicule à votre flotte",
     "prStep2GuestReviews": "Le client examine et confirme la réservation",
     "prStep3GetPaid": "Vous recevez le paiement après le trajet",
+    "prStep1Recruit": "Ajoutez votre véhicule et sécurisez votre compte",
+    "prStep2Recruit": "Le client sélectionne son mode de paiement",
+    "prStep3Recruit": "Vous confirmez et recevez le paiement",
     "prYourVehicle": "Votre Véhicule",
     "prVehicleAdded": "Véhicule Ajouté",
     "prNotListed": "Non Listé",
@@ -7540,7 +7560,11 @@
     "foViewAllVehicles": "Voir les {count} véhicules",
     "isFailedToLoad": "Échec du chargement des invitations",
     "isRefresh": "Actualiser",
-    "ilFailedToLoad": "Échec du chargement des invitations"
+    "ilFailedToLoad": "Échec du chargement des invitations",
+    "prStandardPlatformFee": "Frais de plateforme standard (25 %)",
+    "prWelcomeDiscount": "Remise de bienvenue partenaire",
+    "prWelcomeDiscountNote": "Tarif de bienvenue pour les nouveaux partenaires — 10 % au lieu de 25 %. Les futures réservations du marketplace suivront votre niveau de commission.",
+    "tierWelcomeRateNote": "Votre première réservation bénéficie d'un tarif spécial de bienvenue de 10 %"
   },
   "PartnerFleet": {
     "fleetManagement": "Gestion de la Flotte",
@@ -7985,7 +8009,16 @@
     "bdReturnTime": "Heure de Retour",
     "bdEnterPickupLocation": "Entrez le lieu de prise en charge",
     "bdAdditionalNotes": "Notes supplémentaires...",
-    "bdSaveChanges": "Enregistrer les Modifications"
+    "bdSaveChanges": "Enregistrer les Modifications",
+    "bdWaitingForPayment": "En attente de la sélection de paiement par le client",
+    "bdWaitingForAuthorization": "En attente de l'autorisation de paiement du client",
+    "bdPaymentAuthorized": "Paiement autorisé — Prêt à confirmer",
+    "bdCashAtPickup": "Le client paiera en espèces à la prise en charge",
+    "bdAwaitingPaymentSelection": "En attente de la sélection de paiement du client",
+    "bdStandardPlatformFee": "Frais de plateforme standard (25 %)",
+    "bdWelcomeDiscount": "Remise de bienvenue partenaire",
+    "bdWelcomeDiscountNote": "Tarif de bienvenue pour les nouveaux partenaires — 10 % au lieu de 25 %. Les futures réservations du marketplace suivront votre niveau de commission.",
+    "cash": "Espèces"
   },
   "PartnerCustomers": {
     "customersTitle": "Clients",
@@ -14872,6 +14905,19 @@
     "chevroletFaq4Answer": "Certains sites proposent la Bolt EV pour les chauffeurs de covoiturage souhaitant éliminer les frais de carburant. Avec une autonomie de 259 miles, vous pouvez effectuer une journée complète de conduite sur une seule charge. Combinée à l'infrastructure de recharge de Phoenix et à notre assurance incluse, la Bolt offre une proposition unique pour les chauffeurs soucieux de l'environnement.",
     "chevroletFaq5Question": "Quel support le réseau de concessionnaires Chevrolet apporte-t-il ?",
     "chevroletFaq5Answer": "Chevrolet dispose de l'un des plus grands réseaux de concessionnaires en Amérique, ce qui signifie que les pièces et le service sont facilement disponibles. Pour l'entretien courant inclus dans votre location, nous nous occupons de tout dans des établissements certifiés. En cas de problème imprévu, l'assistance routière 24h/24 et 7j/7 vous remet rapidement en route."
+  },
+  "RentalTypeIndex": {
+    "metaTitle": "Parcourir les Voitures par Type | Location de Voitures à Phoenix | ItWhip",
+    "metaDescription": "Parcourez tous les types de véhicules disponibles à la location à Phoenix, AZ. Des berlines économiques aux supercars exotiques.",
+    "heroTitle": "Parcourir par Type de Véhicule",
+    "heroSubtitle": "Des berlines économiques aux supercars exotiques — trouvez le véhicule idéal pour votre voyage en Arizona.",
+    "totalAvailable": "Total des Véhicules",
+    "vehicleCount": "{count} voitures",
+    "chooseType": "Choisissez un Type de Véhicule",
+    "breadcrumbAllTypes": "Tous les Types",
+    "ctaTitle": "Vous ne savez pas ce qu'il vous faut ?",
+    "ctaSubtitle": "Parcourez toutes les voitures disponibles et filtrez par date, prix et caractéristiques.",
+    "ctaButton": "Rechercher Toutes les Voitures"
   },
   "RentalType": {
     "breadcrumbHome": "Accueil",

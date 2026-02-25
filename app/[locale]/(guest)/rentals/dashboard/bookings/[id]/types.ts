@@ -67,6 +67,8 @@ export interface Booking {
     cardBrand?: string | null
     cardLast4?: string | null
     paymentStatus: string
+    paymentType?: string | null
+    isRecruitedBooking?: boolean
     tripStatus?: string
     tripStartedAt?: string | Date | null
     tripEndedAt?: string | Date | null

@@ -220,18 +220,39 @@ async function processSinglePayout(payout: any): Promise<boolean> {
         data: { status: 'PROCESSING' }
       })
 
-      // Create Stripe Transfer
+      // Check for pending platform fees owed (e.g. cash booking commissions)
+      const pendingFees = await prisma.platformFeeOwed.findMany({
+        where: {
+          hostId: payout.hostId,
+          status: 'PENDING'
+        }
+      })
+
+      const totalFeesOwed = pendingFees.reduce((sum, fee) => sum + Number(fee.amount), 0)
+      const deductionAmount = Math.min(totalFeesOwed, payout.amount)
+      const netPayoutAmount = Math.max(0, payout.amount - deductionAmount)
+
+      if (deductionAmount > 0) {
+        console.log(`[Payout Processor] Deducting $${deductionAmount.toFixed(2)} in platform fees from payout ${payout.id}`)
+      }
+
+      // Create Stripe Transfer (with fee deduction applied)
       const transfer = await stripe.transfers.create({
-        amount: Math.round(payout.amount * 100), // Convert to cents
+        amount: Math.round(netPayoutAmount * 100), // Convert to cents
         currency: 'usd',
         destination: payout.host.stripeConnectAccountId,
-        description: `Payout for booking ${payout.booking?.bookingCode || 'N/A'}`,
+        description: `Payout for booking ${payout.booking?.bookingCode || 'N/A'}${deductionAmount > 0 ? ` (less $${deductionAmount.toFixed(2)} platform fees)` : ''}`,
         metadata: {
           payoutId: payout.id,
           bookingId: payout.bookingId || '',
           hostId: payout.hostId,
           bookingCode: payout.booking?.bookingCode || '',
-          platform: 'itwhip'
+          platform: 'itwhip',
+          ...(deductionAmount > 0 ? {
+            originalAmount: payout.amount.toFixed(2),
+            feeDeduction: deductionAmount.toFixed(2),
+            netAmount: netPayoutAmount.toFixed(2)
+          } : {})
         }
       })
 
@@ -262,6 +283,46 @@ async function processSinglePayout(payout: any): Promise<boolean> {
             totalPayoutsAmount: { increment: payout.amount }
           }
         })
+
+        // Mark platform fees as deducted
+        if (deductionAmount > 0) {
+          let remainingDeduction = deductionAmount
+          for (const fee of pendingFees) {
+            if (remainingDeduction <= 0) break
+            const feeAmount = Number(fee.amount)
+            if (feeAmount <= remainingDeduction) {
+              await tx.platformFeeOwed.update({
+                where: { id: fee.id },
+                data: {
+                  status: 'DEDUCTED',
+                  deductedFromPayoutId: payout.id,
+                  deductedAt: new Date()
+                }
+              })
+              remainingDeduction -= feeAmount
+            } else {
+              // Partial deduction — split the fee record
+              await tx.platformFeeOwed.update({
+                where: { id: fee.id },
+                data: {
+                  amount: feeAmount - remainingDeduction,
+                }
+              })
+              await tx.platformFeeOwed.create({
+                data: {
+                  hostId: fee.hostId,
+                  bookingId: fee.bookingId,
+                  amount: remainingDeduction,
+                  reason: fee.reason,
+                  status: 'DEDUCTED',
+                  deductedFromPayoutId: payout.id,
+                  deductedAt: new Date()
+                }
+              })
+              remainingDeduction = 0
+            }
+          }
+        }
 
         // Create audit log
         await tx.activityLog.create({

@@ -1628,6 +1628,7 @@ model RentalBooking {
   chargesAdjustedAmount      Decimal?              @db.Decimal(10, 2)
   status                     RentalBookingStatus   @default(PENDING)
   paymentStatus              PaymentStatus         @default(PENDING)
+  paymentType                String?               // 'CARD' | 'CASH' | null (null = guest hasn't chosen yet)
   paymentIntentId            String?
   stripeCustomerId           String?
   stripePaymentMethodId      String?
@@ -1863,6 +1864,8 @@ model RentalBooking {
   requestClaim               RequestClaim?
   // Converted from prospect (if booking came from recruitment)
   convertedFromProspect      HostProspect?         @relation("prospect_to_booking")
+  // Platform fee tracking (for cash bookings)
+  platformFeesOwed           PlatformFeeOwed[]
   // Twilio communication logs
   smsLogs                    SmsLog[]
   callLogs                   CallLog[]
@@ -1877,6 +1880,7 @@ model RentalBooking {
   @@index([guestEmail])
   @@index([hostId])
   @@index([paymentStatus])
+  @@index([paymentType])
   @@index([renterId])
   @@index([reviewerProfileId])
   @@index([riskScore])
@@ -2449,6 +2453,12 @@ model RentalHost {
   isExternalRecruit             Boolean                @default(false)
   recruitedVia                  String? // FB_MARKETPLACE, TURO, REFERRAL, etc.
   recruitedAt                   DateTime?
+  // Acquisition tracking (for investor metrics)
+  acquisitionChannel            String? // 'organic', 'prospect_outreach', 'fleet_partner', 'referral'
+  acquisitionSource             String? // 'facebook', 'instagram', 'craigslist', 'word_of_mouth'
+  acquisitionDate               DateTime?
+  firstBookingDate              DateTime?
+  firstBookingEarnings          Float?
   agreementTemplateCustom       Json?
 
   // ═══════════════════════════════════════════════════════════════
@@ -2506,6 +2516,8 @@ model RentalHost {
   // Reservation request system relations
   requestClaims              RequestClaim[]
   convertedFromProspect      HostProspect?                @relation("prospect_to_host")
+  // Platform fee tracking (for cash bookings)
+  platformFeesOwed           PlatformFeeOwed[]
   // Smartcar vehicle tracking
   smartcarVehicles           SmartcarVehicle[]
   // Bouncie OBD device tracking
@@ -2534,6 +2546,30 @@ model RentalHost {
   @@index([stripeConnectAccountId])
   @@index([stripeCustomerId])
   @@index([usingLegacyInsurance])
+}
+
+// Track platform fees owed by hosts from cash bookings
+// Deducted from host's next platform payout
+model PlatformFeeOwed {
+  id                   String        @id @default(cuid())
+  hostId               String
+  bookingId            String
+  amount               Decimal       @db.Decimal(10, 2)
+  reason               String        // 'cash_booking_commission'
+  status               String        @default("PENDING") // PENDING | DEDUCTED | WAIVED
+  deductedFromPayoutId String?
+  deductedAt           DateTime?
+  waivedAt             DateTime?
+  waivedBy             String?
+  waivedReason         String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  host                 RentalHost    @relation(fields: [hostId], references: [id])
+  booking              RentalBooking @relation(fields: [bookingId], references: [id])
+
+  @@index([hostId])
+  @@index([bookingId])
+  @@index([status])
 }
 
 model RentalMessage {

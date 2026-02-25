@@ -20,6 +20,7 @@ interface TierProgressCardProps {
     nextTier: string | null
     nextTierRate: number | null
   }
+  isExternalRecruit?: boolean
 }
 
 const tiers = [
@@ -32,7 +33,8 @@ const tiers = [
 export default function TierProgressCard({
   currentRate,
   fleetSize,
-  tier
+  tier,
+  isExternalRecruit = false
 }: TierProgressCardProps) {
   const t = useTranslations('PartnerDashboard')
   const currentTierIndex = tiers.findIndex(tc => tc.name === tier.current)
@@ -101,6 +103,11 @@ export default function TierProgressCard({
               <p className="text-sm text-green-600 dark:text-green-400">
                 {t('tierYouKeep', { percent: ((1 - currentRate) * 100).toFixed(0) })}
               </p>
+              {isExternalRecruit && (
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
+                  {t('tierWelcomeRateNote')}
+                </p>
+              )}
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-500 dark:text-gray-400">{t('tierFleetSize')}</p>

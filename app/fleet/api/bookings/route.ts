@@ -217,6 +217,7 @@ export async function GET(request: NextRequest) {
       // Status
       status: booking.status,
       paymentStatus: booking.paymentStatus,
+      paymentType: booking.paymentType || null,
       fleetStatus: booking.fleetStatus,
       hostStatus: booking.hostStatus,
       verificationStatus: booking.verificationStatus,

@@ -4729,7 +4729,24 @@
     "needHelpContact": "¿Necesitas ayuda? Contacta support@itwhip.com",
     "selfieUnderReview": "Selfie en Revisión",
     "selfieUnderReviewDesc": "Tu selfie está en revisión. Puedes continuar con la reserva ahora — completa tus datos y el pago a continuación.",
-    "confirmAfterApproval": "Confirmaremos tu reserva una vez que la verificación sea aprobada."
+    "confirmAfterApproval": "Confirmaremos tu reserva una vez que la verificación sea aprobada.",
+    "paymentChoiceTitle": "Elige tu método de pago",
+    "paymentChoiceSubtitle": "Selecciona cómo deseas pagar tu renta.",
+    "payWithCard": "Pagar con tarjeta",
+    "payWithCardDesc": "Autorización segura con tarjeta — se cobra al recoger",
+    "payCashAtPickup": "Pagar en efectivo al recoger",
+    "payCashDesc": "Paga al anfitrión directamente en efectivo cuando recojas el vehículo",
+    "paymentChoiceOnce": "El método de pago no se puede cambiar después de seleccionarlo.",
+    "cashConfirmDialog": "¿Estás seguro de que quieres pagar en efectivo? Pagarás al anfitrión directamente en efectivo al recoger.",
+    "cardAuthorizedTitle": "Pago autorizado",
+    "cardAuthorizedDesc": "Tu tarjeta ha sido autorizada. El anfitrión confirmará tu reserva en breve.",
+    "cashConfirmedTitle": "Pago en efectivo confirmado",
+    "cashConfirmedDesc": "Pagarás al anfitrión en efectivo al recoger. El anfitrión confirmará tu reserva en breve.",
+    "addPaymentMethod": "Agregar método de pago",
+    "cardAuthHoldDesc": "Se realizará una retención de {amount} en tu tarjeta. No se te cobrará hasta que el anfitrión confirme.",
+    "stripeSecureNote": "Protegido por Stripe. Los datos de tu tarjeta nunca se almacenan en nuestros servidores.",
+    "authorizePayment": "Autorizar {amount}",
+    "processing": "Procesando..."
   },
   "StatusProgression": {
     "bookingStatus": "Estado de Reserva",
@@ -7471,6 +7488,9 @@
     "prStep1AddVehicle": "Agrega tu vehículo a tu flota",
     "prStep2GuestReviews": "El huésped revisa y confirma la reserva",
     "prStep3GetPaid": "Recibes el pago después del viaje",
+    "prStep1Recruit": "Agrega tu vehículo y asegura tu cuenta",
+    "prStep2Recruit": "El huésped selecciona método de pago",
+    "prStep3Recruit": "Tú confirmas y recibes el pago",
     "prYourVehicle": "Tu Vehículo",
     "prVehicleAdded": "Vehículo Agregado",
     "prNotListed": "No Listado",
@@ -7540,7 +7560,11 @@
     "foViewAllVehicles": "Ver los {count} vehículos",
     "isFailedToLoad": "Error al cargar invitaciones",
     "isRefresh": "Actualizar",
-    "ilFailedToLoad": "Error al cargar invitaciones"
+    "ilFailedToLoad": "Error al cargar invitaciones",
+    "prStandardPlatformFee": "Tarifa estándar de plataforma (25%)",
+    "prWelcomeDiscount": "Descuento de bienvenida",
+    "prWelcomeDiscountNote": "Tarifa de bienvenida para nuevos socios — 10% en lugar de 25%. Las reservas futuras del marketplace siguen tu nivel de comisión.",
+    "tierWelcomeRateNote": "Tu primera reserva usa una tarifa especial de bienvenida del 10%"
   },
   "PartnerFleet": {
     "fleetManagement": "Gestión de Flota",
@@ -7985,7 +8009,16 @@
     "bdReturnTime": "Hora de Devolución",
     "bdEnterPickupLocation": "Ingresa el lugar de recogida",
     "bdAdditionalNotes": "Notas adicionales...",
-    "bdSaveChanges": "Guardar Cambios"
+    "bdSaveChanges": "Guardar Cambios",
+    "bdWaitingForPayment": "Esperando que el huésped seleccione pago",
+    "bdWaitingForAuthorization": "Esperando autorización de pago del huésped",
+    "bdPaymentAuthorized": "Pago autorizado — Listo para confirmar",
+    "bdCashAtPickup": "El huésped pagará en efectivo al recoger",
+    "bdAwaitingPaymentSelection": "Esperando selección de pago del huésped",
+    "bdStandardPlatformFee": "Tarifa estándar de plataforma (25%)",
+    "bdWelcomeDiscount": "Descuento de bienvenida",
+    "bdWelcomeDiscountNote": "Tarifa de bienvenida para nuevos socios — 10% en lugar de 25%. Las reservas futuras del marketplace siguen tu nivel de comisión.",
+    "cash": "Efectivo"
   },
   "PartnerCustomers": {
     "customersTitle": "Clientes",
@@ -14872,6 +14905,19 @@
     "chevroletFaq4Answer": "Ubicaciones selectas ofrecen el Bolt EV para conductores de rideshare que quieren cero costos de gasolina. Con 259 millas de autonomía, puedes completar un día completo de manejo con una sola carga. Combinado con la infraestructura de carga de Phoenix y nuestro seguro incluido, el Bolt ofrece una propuesta única para conductores eco-conscientes.",
     "chevroletFaq5Question": "¿Qué soporte ofrece la red de distribuidores de Chevrolet?",
     "chevroletFaq5Answer": "Chevrolet tiene una de las redes de distribuidores más grandes de Estados Unidos, lo que significa que las piezas y el servicio están fácilmente disponibles. Para el mantenimiento de rutina incluido en tu renta, nos encargamos de todo en instalaciones certificadas. Para problemas inesperados, la asistencia en carretera 24/7 te pone de vuelta en el camino rápidamente."
+  },
+  "RentalTypeIndex": {
+    "metaTitle": "Buscar Autos por Tipo | Renta de Autos en Phoenix | ItWhip",
+    "metaDescription": "Explora todos los tipos de vehículos disponibles para rentar en Phoenix, AZ. Desde sedanes económicos hasta superautos exóticos.",
+    "heroTitle": "Buscar por Tipo de Vehículo",
+    "heroSubtitle": "Desde sedanes económicos hasta superautos exóticos — encuentra el auto perfecto para tu viaje en Arizona.",
+    "totalAvailable": "Total de Vehículos",
+    "vehicleCount": "{count} autos",
+    "chooseType": "Elige un Tipo de Vehículo",
+    "breadcrumbAllTypes": "Todos los Tipos",
+    "ctaTitle": "¿No sabes qué necesitas?",
+    "ctaSubtitle": "Explora todos los autos disponibles y filtra por fecha, precio y características.",
+    "ctaButton": "Buscar Todos los Autos"
   },
   "RentalType": {
     "breadcrumbHome": "Inicio",

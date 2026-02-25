@@ -306,7 +306,10 @@ export default function PendingRequestCard() {
   const completionPercent = onboardingData.onboardingProgress?.percentComplete || 0
 
   const totalAmount = request?.totalAmount || (request?.offeredRate && request?.durationDays ? request.offeredRate * request.durationDays : 0)
-  const platformFee = Math.round(totalAmount * 0.1)
+  const platformFee = totalAmount * 0.10
+  const standardFee = totalAmount * 0.25
+  const discountSavings = standardFee - platformFee
+  const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   return (
     <div className="space-y-4">
@@ -359,16 +362,25 @@ export default function PendingRequestCard() {
             <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600 dark:text-gray-300">{t('prDaysAtRate', { days: request.durationDays || 0, rate: request.offeredRate?.toFixed(2) || '0' })}</span>
-                <span className="font-medium text-gray-700 dark:text-gray-200">${totalAmount.toLocaleString()}</span>
+                <span className="font-medium text-gray-700 dark:text-gray-200">${fmt(totalAmount)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400 dark:text-gray-500 line-through">{t('prStandardPlatformFee')}</span>
+                <span className="text-gray-400 dark:text-gray-500 line-through">-${fmt(standardFee)}</span>
+              </div>
+              <div className="flex justify-between text-sm bg-green-50 dark:bg-green-900/20 rounded-lg px-2 py-1.5 -mx-2">
+                <span className="text-green-700 dark:text-green-400 font-medium">{t('prWelcomeDiscount')}</span>
+                <span className="text-green-700 dark:text-green-400 font-medium">+${fmt(discountSavings)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 dark:text-gray-400">{t('prPlatformFee')}</span>
-                <span className="text-gray-500 dark:text-gray-400">-${platformFee.toLocaleString()}</span>
+                <span className="text-gray-500 dark:text-gray-400">-${fmt(platformFee)}</span>
               </div>
               <div className="flex justify-between text-sm font-bold text-green-700 dark:text-green-300 pt-2 border-t border-gray-200 dark:border-gray-700">
                 <span>{t('prYouReceive')}</span>
-                <span>${Math.round(potentialEarnings).toLocaleString()}</span>
+                <span>${fmt(potentialEarnings || 0)}</span>
               </div>
+              <p className="text-xs text-gray-400 dark:text-gray-500 italic pt-1">{t('prWelcomeDiscountNote')}</p>
             </div>
           </div>
         )}
@@ -471,19 +483,19 @@ export default function PendingRequestCard() {
             {/* Step 1 */}
             <div className="flex-1 text-center">
               <div className="w-10 h-10 mx-auto rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold text-sm">1</div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 leading-tight">{t('prStep1AddVehicle')}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 leading-tight">{t('prStep1Recruit')}</p>
             </div>
             <div className="flex-shrink-0 mt-4 w-8 border-t-2 border-dashed border-gray-300 dark:border-gray-600" />
             {/* Step 2 */}
             <div className="flex-1 text-center">
               <div className="w-10 h-10 mx-auto rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold text-sm">2</div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 leading-tight">{t('prStep2GuestReviews')}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 leading-tight">{t('prStep2Recruit')}</p>
             </div>
             <div className="flex-shrink-0 mt-4 w-8 border-t-2 border-dashed border-gray-300 dark:border-gray-600" />
             {/* Step 3 */}
             <div className="flex-1 text-center">
               <div className="w-10 h-10 mx-auto rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 font-bold text-sm">3</div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 leading-tight">{t('prStep3GetPaid')}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 leading-tight">{t('prStep3Recruit')}</p>
             </div>
           </div>
         </div>

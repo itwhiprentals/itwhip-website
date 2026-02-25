@@ -34,6 +34,7 @@ interface Booking {
   totalAmount: number
   createdAt: string
   days: number
+  paymentType: string | null
 }
 
 type FilterStatus = 'all' | 'confirmed' | 'pending' | 'active' | 'completed' | 'cancelled'
@@ -383,10 +384,17 @@ export default function PartnerBookingsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}>
-                          <StatusIcon className="w-3.5 h-3.5" />
-                          {statusConfig.label}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}>
+                            <StatusIcon className="w-3.5 h-3.5" />
+                            {statusConfig.label}
+                          </span>
+                          {booking.paymentType === 'CASH' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                              {t('cash')}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm font-semibold text-gray-900 dark:text-white">

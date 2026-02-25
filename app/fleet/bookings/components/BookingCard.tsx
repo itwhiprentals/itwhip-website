@@ -82,6 +82,11 @@ export function BookingCard({ booking, onSelect, onAction }: BookingCardProps) {
               <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(booking.status)}`}>
                 {getStatusLabel(booking.status)}
               </span>
+              {booking.paymentType === 'CASH' && (
+                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                  Cash
+                </span>
+              )}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Created {formatDate(booking.createdAt)}

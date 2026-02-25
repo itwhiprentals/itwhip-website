@@ -365,6 +365,7 @@ export default function DashboardContent({
         currentRate={stats.currentCommissionRate}
         fleetSize={stats.fleetSize}
         tier={stats.tier}
+        isExternalRecruit={isExternalRecruit}
       />
     )
   }

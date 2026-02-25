@@ -57,6 +57,7 @@ export interface FleetBooking {
   // Status
   status: BookingStatus
   paymentStatus: PaymentStatus
+  paymentType?: string | null
   fleetStatus?: string
   hostStatus?: string | null
   verificationStatus: VerificationStatus

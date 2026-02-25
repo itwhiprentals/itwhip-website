@@ -128,7 +128,8 @@ export async function GET(request: NextRequest) {
         status: mapBookingStatus(booking.status),
         totalAmount: Number(booking.totalAmount) || 0,
         createdAt: booking.createdAt.toISOString(),
-        days
+        days,
+        paymentType: booking.paymentType || null
       }
     })
 

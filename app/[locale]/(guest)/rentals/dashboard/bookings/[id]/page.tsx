@@ -21,7 +21,7 @@ import { BookingOnboarding } from './components/BookingOnboarding'
 import { ModifyBookingSheet } from './components/ModifyBookingSheet'
 import { SecureAccountBanner } from './components/SecureAccountBanner'
 import RentalAgreementModal from '../../../components/modals/RentalAgreementModal'
-import { BookedCard, VerifiedCard, IssuesCard, OnHoldCard, ConfirmedCard, CompletedCard, CancelledCard, NoShowCard } from './components/cards'
+import { BookedCard, VerifiedCard, IssuesCard, OnHoldCard, ConfirmedCard, CompletedCard, CancelledCard, NoShowCard, PaymentChoiceCard } from './components/cards'
 import { MinimalLegalFooter } from './components/cards/SharedCardSections'
 import { getVehicleClass, formatFuelTypeBadge } from '@/app/lib/utils/vehicleClassification'
 import {
@@ -563,8 +563,25 @@ export default function BookingDetailsPage() {
           </div>
         )}
 
+        {/* PAYMENT CHOICE — Recruited booking, guest hasn't chosen payment method yet */}
+        {booking.status === 'PENDING' && booking.isRecruitedBooking && !booking.paymentType && (
+          <PaymentChoiceCard
+            booking={{
+              id: booking.id,
+              bookingCode: booking.bookingCode,
+              totalAmount: booking.totalAmount,
+              subtotal: booking.subtotal || booking.totalAmount,
+              numberOfDays: booking.numberOfDays || 1,
+              dailyRate: booking.dailyRate,
+              carName: `${booking.car.year} ${booking.car.make} ${booking.car.model}`,
+            }}
+            onComplete={loadBooking}
+          />
+        )}
+
         {/* BOOKED CARD — PENDING status, not yet verified, no issues */}
-        {booking.status === 'PENDING' && !isVerifiedPending && !hasIssues && (
+        {booking.status === 'PENDING' && !isVerifiedPending && !hasIssues &&
+          !(booking.isRecruitedBooking && !booking.paymentType) && (
           <BookedCard
             booking={booking}
             onCancel={() => setShowCancelDialog(true)}

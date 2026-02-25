@@ -41,42 +41,44 @@ export default function BrowseByTypeSection() {
   const [makesData, setMakesData] = useState<MakeData[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
+  const CLD = 'https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_210,h_158,c_fill,g_auto'
+
   const carTypes = [
     {
       type: 'sedan',
       label: t('typeSedanLabel'),
       price: t('typeSedanPrice'),
-      image: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=210&h=158&fit=crop&fm=webp&q=60'
+      image: `${CLD}/vehicle-types/sedan-car-rental.jpg`
     },
     {
       type: 'suv',
       label: t('typeSuvLabel'),
       price: t('typeSuvPrice'),
-      image: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=210&h=158&fit=crop&fm=webp&q=60'
+      image: `${CLD}/vehicle-types/suv-car-rental.jpg`
     },
     {
       type: 'luxury',
       label: t('typeLuxuryLabel'),
       price: t('typeLuxuryPrice'),
-      image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=210&h=158&fit=crop&fm=webp&q=60'
+      image: `${CLD}/vehicle-types/luxury-car-rental.jpg`
     },
     {
       type: 'sports',
       label: t('typeSportsLabel'),
       price: t('typeSportsPrice'),
-      image: 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=210&h=158&fit=crop&fm=webp&q=60'
+      image: `${CLD}/vehicle-types/sports-car-rental.jpg`
     },
     {
       type: 'electric',
       label: t('typeElectricLabel'),
       price: t('typeElectricPrice'),
-      image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=210&h=158&fit=crop&fm=webp&q=60'
+      image: `${CLD}/vehicle-types/electric-car-rental.jpg`
     },
     {
       type: 'truck',
       label: t('typeTruckLabel'),
       price: t('typeTruckPrice'),
-      image: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=210&h=158&fit=crop&fm=webp&q=60'
+      image: `${CLD}/vehicle-types/truck-car-rental.jpg`
     }
   ]
 

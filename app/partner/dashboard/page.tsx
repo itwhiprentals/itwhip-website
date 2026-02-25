@@ -1112,6 +1112,7 @@ export default function PartnerDashboardPage() {
             currentRate={stats.currentCommissionRate}
             fleetSize={stats.fleetSize}
             tier={stats.tier}
+            isExternalRecruit={isExternalRecruit}
           />
         )
       )}

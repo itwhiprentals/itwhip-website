@@ -4711,7 +4711,24 @@
     "needHelpContact": "Need help? Contact support@itwhip.com",
     "selfieUnderReview": "Selfie Under Review",
     "selfieUnderReviewDesc": "Your selfie is under review. You can continue booking now — fill in your details and complete payment below.",
-    "confirmAfterApproval": "We'll confirm your booking once verification is approved."
+    "confirmAfterApproval": "We'll confirm your booking once verification is approved.",
+    "paymentChoiceTitle": "Choose Your Payment Method",
+    "paymentChoiceSubtitle": "Select how you'd like to pay for your rental.",
+    "payWithCard": "Pay with Card",
+    "payWithCardDesc": "Secure card authorization — charged at pickup",
+    "payCashAtPickup": "Pay Cash at Pickup",
+    "payCashDesc": "Pay the host directly in cash when you pick up the vehicle",
+    "paymentChoiceOnce": "Payment method cannot be changed after selection.",
+    "cashConfirmDialog": "Are you sure you want to pay cash? You will pay the host directly in cash at pickup.",
+    "cardAuthorizedTitle": "Payment Authorized",
+    "cardAuthorizedDesc": "Your card has been authorized. The host will confirm your booking shortly.",
+    "cashConfirmedTitle": "Cash Payment Confirmed",
+    "cashConfirmedDesc": "You'll pay the host in cash at pickup. The host will confirm your booking shortly.",
+    "addPaymentMethod": "Add Payment Method",
+    "cardAuthHoldDesc": "A hold of {amount} will be placed on your card. You will not be charged until the host confirms.",
+    "stripeSecureNote": "Secured by Stripe. Your card details are never stored on our servers.",
+    "authorizePayment": "Authorize {amount}",
+    "processing": "Processing..."
   },
   "StatusProgression": {
     "bookingStatus": "Booking Status",
@@ -7532,6 +7549,9 @@
     "prStep1AddVehicle": "Add your vehicle to your fleet",
     "prStep2GuestReviews": "Guest reviews and confirms the booking",
     "prStep3GetPaid": "You receive payment after the trip",
+    "prStep1Recruit": "Add your vehicle & secure your account",
+    "prStep2Recruit": "Guest selects payment method",
+    "prStep3Recruit": "You confirm & receive payment",
     "prYourVehicle": "Your Vehicle",
     "prVehicleAdded": "Vehicle Added",
     "prNotListed": "Not Listed",
@@ -7601,7 +7621,11 @@
     "foViewAllVehicles": "View all {count} vehicles",
     "isFailedToLoad": "Failed to load invitations",
     "isRefresh": "Refresh",
-    "ilFailedToLoad": "Failed to load invitations"
+    "ilFailedToLoad": "Failed to load invitations",
+    "prStandardPlatformFee": "Standard Platform Fee (25%)",
+    "prWelcomeDiscount": "Welcome Partner Discount",
+    "prWelcomeDiscountNote": "New partner welcome rate — 10% instead of 25%. Future marketplace bookings follow your Commission Tier.",
+    "tierWelcomeRateNote": "Your first booking uses a special 10% welcome rate"
   },
   "PartnerFleet": {
     "fleetManagement": "Fleet Management",
@@ -8046,7 +8070,16 @@
     "bdReturnTime": "Return Time",
     "bdEnterPickupLocation": "Enter pickup location",
     "bdAdditionalNotes": "Additional notes...",
-    "bdSaveChanges": "Save Changes"
+    "bdSaveChanges": "Save Changes",
+    "bdWaitingForPayment": "Waiting for guest to select payment",
+    "bdWaitingForAuthorization": "Waiting for guest payment authorization",
+    "bdPaymentAuthorized": "Payment Authorized — Ready to confirm",
+    "bdCashAtPickup": "Guest will pay cash at pickup",
+    "bdAwaitingPaymentSelection": "Awaiting guest payment selection",
+    "bdStandardPlatformFee": "Standard Platform Fee (25%)",
+    "bdWelcomeDiscount": "Welcome Partner Discount",
+    "bdWelcomeDiscountNote": "New partner welcome rate — 10% instead of 25%. Future marketplace bookings follow your Commission Tier.",
+    "cash": "Cash"
   },
   "PartnerCustomers": {
     "customersTitle": "Customers",
@@ -14872,6 +14905,19 @@
     "chevroletFaq4Answer": "Select locations offer the Bolt EV for rideshare drivers wanting zero gas costs. With 259 miles of range, you can complete a full day of driving on one charge. Combined with Phoenix’s charging infrastructure and our included insurance, the Bolt offers a unique proposition for eco-conscious drivers.",
     "chevroletFaq5Question": "What support does Chevrolet’s dealer network provide?",
     "chevroletFaq5Answer": "Chevrolet has one of the largest dealer networks in America, meaning parts and service are readily available. For routine maintenance included in your rental, we handle everything at certified facilities. For unexpected issues, 24/7 roadside assistance gets you back on the road fast."
+  },
+  "RentalTypeIndex": {
+    "metaTitle": "Browse Cars by Type | Phoenix Car Rentals | ItWhip",
+    "metaDescription": "Browse all vehicle types available for rent in Phoenix, AZ. From economy sedans to exotic supercars, find the perfect car for your trip.",
+    "heroTitle": "Browse by Vehicle Type",
+    "heroSubtitle": "From budget-friendly sedans to exotic supercars — find the perfect ride for your Arizona trip.",
+    "totalAvailable": "Total Vehicles",
+    "vehicleCount": "{count} cars",
+    "chooseType": "Choose a Vehicle Type",
+    "breadcrumbAllTypes": "All Vehicle Types",
+    "ctaTitle": "Not sure what you need?",
+    "ctaSubtitle": "Browse all available cars and filter by date, price, and features.",
+    "ctaButton": "Search All Cars"
   },
   "RentalType": {
     "breadcrumbHome": "Home",

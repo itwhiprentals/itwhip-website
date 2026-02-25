@@ -216,9 +216,10 @@ export async function POST(request: NextRequest) {
         depositHeld: 0,
         totalAmount,
 
-        // Status — cash gets auto-confirmed, platform stays pending
-        status: isCash ? 'CONFIRMED' : 'PENDING',
-        paymentStatus: isCash ? 'PENDING' : 'PENDING',
+        // Status — all recruited bookings start PENDING (guest chooses payment, host confirms)
+        status: 'PENDING',
+        paymentStatus: 'PENDING',
+        paymentType: null, // Guest selects CARD or CASH after auto-login
         fleetStatus: 'APPROVED',
 
         // Mark as request-based booking
@@ -249,7 +250,13 @@ export async function POST(request: NextRequest) {
         canViewBookings: true,
         canSetPricing: true,
         canEditCalendar: true,
-        canMessageGuests: true
+        canMessageGuests: true,
+        // Acquisition tracking
+        acquisitionChannel: 'prospect_outreach',
+        acquisitionSource: prospect.source?.toLowerCase() || null,
+        acquisitionDate: prospect.createdAt,
+        firstBookingDate: now,
+        firstBookingEarnings: hostEarnings,
       }
     })
 

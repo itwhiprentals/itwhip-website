@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
+import { capturePayment } from '@/app/lib/booking/services/payment-service'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
@@ -13,6 +14,7 @@ const JWT_SECRET = new TextEncoder().encode(
 async function getPartnerFromToken() {
   const cookieStore = await cookies()
   const token = cookieStore.get('partner_token')?.value
+    || cookieStore.get('hostAccessToken')?.value
 
   if (!token) return null
 
@@ -24,7 +26,7 @@ async function getPartnerFromToken() {
       where: { id: hostId }
     })
 
-    if (!partner || (partner.hostType !== 'FLEET_PARTNER' && partner.hostType !== 'PARTNER')) {
+    if (!partner || !['FLEET_PARTNER', 'PARTNER', 'EXTERNAL'].includes(partner.hostType || '')) {
       return null
     }
 
@@ -102,6 +104,22 @@ export async function POST(request: NextRequest) {
         { error: 'Vehicle is no longer available for these dates' },
         { status: 409 }
       )
+    }
+
+    // For card bookings with authorized payment: capture before confirming
+    if (booking.paymentIntentId && booking.paymentStatus === 'AUTHORIZED') {
+      const captureResult = await capturePayment({
+        bookingId,
+        paymentIntentId: booking.paymentIntentId,
+      })
+      if (!captureResult.success) {
+        console.error(`[Confirm Booking] Payment capture failed for ${bookingId}:`, captureResult.error)
+        return NextResponse.json(
+          { error: `Payment capture failed: ${captureResult.error}` },
+          { status: 400 }
+        )
+      }
+      console.log(`[Confirm Booking] Payment captured for ${bookingId}: ${captureResult.chargeId}`)
     }
 
     // Update booking to CONFIRMED

@@ -44,6 +44,10 @@ interface BookingDetails {
   id: string
   status: string
   paymentStatus: string
+  paymentType: string | null
+  isRecruitedBooking: boolean
+  recruitmentPaymentPreference: string | null
+  recruitmentSource: string | null
   isGuestDriven: boolean
   hostApproval: string
   hostNotes: string | null
@@ -684,18 +688,36 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               ) : (
                 <>
                   {booking.status === 'PENDING' && !isGuestDriven && (
-                    <button
-                      onClick={confirmBooking}
-                      disabled={confirming}
-                      className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-medium flex items-center gap-2"
-                    >
-                      {confirming ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                      ) : (
-                        <IoCheckmarkOutline className="w-4 h-4" />
-                      )}
-                      {t('bdConfirmBooking')}
-                    </button>
+                    booking.isRecruitedBooking && !booking.paymentType ? (
+                      <button
+                        disabled
+                        className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 rounded-lg font-medium flex items-center gap-2 cursor-not-allowed"
+                      >
+                        <IoTimeOutline className="w-4 h-4" />
+                        {t('bdWaitingForPayment')}
+                      </button>
+                    ) : booking.isRecruitedBooking && booking.paymentType === 'CARD' && booking.paymentStatus !== 'AUTHORIZED' ? (
+                      <button
+                        disabled
+                        className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 rounded-lg font-medium flex items-center gap-2 cursor-not-allowed"
+                      >
+                        <IoTimeOutline className="w-4 h-4" />
+                        {t('bdWaitingForAuthorization')}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={confirmBooking}
+                        disabled={confirming}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-medium flex items-center gap-2"
+                      >
+                        {confirming ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                        ) : (
+                          <IoCheckmarkOutline className="w-4 h-4" />
+                        )}
+                        {t('bdConfirmBooking')}
+                      </button>
+                    )
                   )}
                   {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && !isGuestDriven && (
                     <button
@@ -715,6 +737,30 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               )}
             </div>
           </div>
+
+          {/* Recruited Booking Badges */}
+          {booking.isRecruitedBooking && booking.status === 'PENDING' && (
+            <div className="mt-2 sm:mt-3">
+              {booking.paymentStatus === 'AUTHORIZED' && (
+                <div className="flex items-center gap-2 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg px-3 py-2">
+                  <IoCheckmarkCircleOutline className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium">{t('bdPaymentAuthorized')}</span>
+                </div>
+              )}
+              {booking.paymentType === 'CASH' && (
+                <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
+                  <IoWalletOutline className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium">{t('bdCashAtPickup')}</span>
+                </div>
+              )}
+              {!booking.paymentType && (
+                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
+                  <IoTimeOutline className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium">{t('bdAwaitingPaymentSelection')}</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Reservation Expiry Notice - For PENDING bookings */}
           {booking.status === 'PENDING' && (
@@ -765,18 +811,36 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
             ) : (
               <>
                 {booking.status === 'PENDING' && !isGuestDriven && (
-                  <button
-                    onClick={confirmBooking}
-                    disabled={confirming}
-                    className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-medium flex items-center justify-center gap-2 text-sm"
-                  >
-                    {confirming ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                    ) : (
-                      <IoCheckmarkOutline className="w-4 h-4" />
-                    )}
-                    {t('bdConfirm')}
-                  </button>
+                  booking.isRecruitedBooking && !booking.paymentType ? (
+                    <button
+                      disabled
+                      className="flex-1 px-3 py-2 bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 rounded-lg font-medium flex items-center justify-center gap-2 text-sm cursor-not-allowed"
+                    >
+                      <IoTimeOutline className="w-4 h-4" />
+                      {t('bdWaitingForPayment')}
+                    </button>
+                  ) : booking.isRecruitedBooking && booking.paymentType === 'CARD' && booking.paymentStatus !== 'AUTHORIZED' ? (
+                    <button
+                      disabled
+                      className="flex-1 px-3 py-2 bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 rounded-lg font-medium flex items-center justify-center gap-2 text-sm cursor-not-allowed"
+                    >
+                      <IoTimeOutline className="w-4 h-4" />
+                      {t('bdWaitingForAuthorization')}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={confirmBooking}
+                      disabled={confirming}
+                      className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-medium flex items-center justify-center gap-2 text-sm"
+                    >
+                      {confirming ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                      ) : (
+                        <IoCheckmarkOutline className="w-4 h-4" />
+                      )}
+                      {t('bdConfirm')}
+                    </button>
+                  )
                 )}
                 {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && !isGuestDriven && (
                   <button
@@ -1604,6 +1668,87 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                         </div>
                       )}
 
+                    </>
+                  ) : booking.isRecruitedBooking ? (
+                    <>
+                      {/* Recruited Booking: Welcome discount pricing */}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600 dark:text-gray-400">
+                          {t('bdRateTimesDays', { rate: formatCurrency(booking.dailyRate), days: booking.numberOfDays })}
+                        </span>
+                        <span className="text-gray-900 dark:text-white">{formatCurrency(booking.subtotal)}</span>
+                      </div>
+
+                      {booking.deliveryFee > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600 dark:text-gray-400">{t('bdDeliveryFee')}</span>
+                          <span className="text-gray-900 dark:text-white">{formatCurrency(booking.deliveryFee)}</span>
+                        </div>
+                      )}
+
+                      {/* Earnings breakdown with welcome discount */}
+                      <div className="border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('bdYourEarnings')}</p>
+
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600 dark:text-gray-400">{t('bdRental')}</span>
+                          <span className="text-gray-900 dark:text-white">{formatCurrency(booking.subtotal)}</span>
+                        </div>
+
+                        {booking.deliveryFee > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600 dark:text-gray-400">{t('bdDelivery')}</span>
+                            <span className="text-gray-900 dark:text-white">{formatCurrency(booking.deliveryFee)}</span>
+                          </div>
+                        )}
+
+                        {/* Standard fee strikethrough */}
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-400 dark:text-gray-500 line-through">{t('bdStandardPlatformFee')}</span>
+                          <span className="text-gray-400 dark:text-gray-500 line-through">
+                            -{formatCurrency(booking.subtotal * PLATFORM_COMMISSION_RATE)}
+                          </span>
+                        </div>
+
+                        {/* Welcome discount highlight */}
+                        <div className="flex justify-between text-sm bg-green-50 dark:bg-green-900/20 rounded-lg px-2 py-1.5 -mx-2">
+                          <span className="text-green-700 dark:text-green-400 font-medium">{t('bdWelcomeDiscount')}</span>
+                          <span className="text-green-700 dark:text-green-400 font-medium">
+                            +{formatCurrency(booking.subtotal * PLATFORM_COMMISSION_RATE - booking.subtotal * 0.10)}
+                          </span>
+                        </div>
+
+                        {/* Actual fee at 10% */}
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600 dark:text-gray-400">{t('bdPlatformFee')} (10%)</span>
+                          <span className="text-red-600 dark:text-red-400">
+                            -{formatCurrency(booking.subtotal * 0.10)}
+                          </span>
+                        </div>
+
+                        <div className="border-t border-gray-200 dark:border-gray-700 pt-2 flex justify-between font-semibold">
+                          <span className="text-gray-900 dark:text-white">{t('bdYouReceive')}</span>
+                          <span className="text-lg text-green-600 dark:text-green-400">
+                            {formatCurrency(booking.subtotal + booking.deliveryFee - (booking.subtotal * 0.10))}
+                          </span>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-gray-400 dark:text-gray-500 italic">
+                        {t('bdWelcomeDiscountNote')}
+                      </p>
+
+                      <div className="pt-2">
+                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                          booking.paymentType === 'CASH'
+                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                            : booking.paymentStatus === 'AUTHORIZED' || booking.paymentStatus === 'PAID'
+                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                              : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                        }`}>
+                          {booking.paymentType === 'CASH' ? t('bdCashAtPickup') : `${t('bdPaymentColon')} ${booking.paymentStatus}`}
+                        </span>
+                      </div>
                     </>
                   ) : (
                     <>

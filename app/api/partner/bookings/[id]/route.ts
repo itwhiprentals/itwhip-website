@@ -173,6 +173,13 @@ export async function GET(
             createdAt: true
           },
           orderBy: { createdAt: 'desc' }
+        },
+        convertedFromProspect: {
+          select: {
+            id: true,
+            paymentPreference: true,
+            source: true
+          }
         }
       }
     })
@@ -215,6 +222,12 @@ export async function GET(
         id: booking.id,
         status: booking.status,
         paymentStatus: booking.paymentStatus,
+        paymentType: booking.paymentType || null,
+
+        // Recruited booking fields
+        isRecruitedBooking: !!booking.convertedFromProspect,
+        recruitmentPaymentPreference: booking.convertedFromProspect?.paymentPreference || null,
+        recruitmentSource: booking.convertedFromProspect?.source || null,
 
         // Computed flags (no raw internal fields exposed)
         // A booking is guest-driven (ItWhip platform) if it has a renter AND a Stripe payment intent
