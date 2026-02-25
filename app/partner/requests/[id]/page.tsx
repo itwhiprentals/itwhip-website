@@ -44,13 +44,16 @@ import CounterOfferModal from './components/CounterOfferModal'
 import DeclineModal from './components/DeclineModal'
 import OnboardingWizard from './components/OnboardingWizard'
 import AgreementUpload from './components/AgreementUpload'
+import RecruitmentBottomSheet from './components/RecruitmentBottomSheet'
 
 interface RequestData {
   host: {
     id: string
     name: string
     email: string
+    phone: string | null
     hasPassword: boolean
+    emailVerified: boolean
     onboardingStartedAt: string | null
     onboardingCompletedAt: string | null
     declinedRequestAt: string | null
@@ -132,6 +135,7 @@ export default function RequestDetailPage() {
   const [sendingTestPdf, setSendingTestPdf] = useState(false)
   const [showAgreementPreview, setShowAgreementPreview] = useState(false)
   const [connectingPayout, setConnectingPayout] = useState(false)
+  const [showRecruitmentSheet, setShowRecruitmentSheet] = useState(false)
 
   // Expandable sections
   const [expandedSections, setExpandedSections] = useState({
@@ -233,6 +237,11 @@ export default function RequestDetailPage() {
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false)
+    fetchRequest()
+  }
+
+  const handleRecruitmentComplete = () => {
+    setShowRecruitmentSheet(false)
     fetchRequest()
   }
 
@@ -402,13 +411,13 @@ export default function RequestDetailPage() {
             <div className="hidden sm:flex items-center gap-2">
               {!isExpired && !hasDeclined && !hasCompleted && (
                 <>
-                  <Link
-                    href="/partner/fleet/add"
+                  <button
+                    onClick={() => setShowRecruitmentSheet(true)}
                     className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium flex items-center gap-2"
                   >
                     <IoArrowForwardOutline className="w-4 h-4" />
                     {t('continueAddingCar')}
-                  </Link>
+                  </button>
                   <button
                     onClick={() => setShowDecline(true)}
                     className="px-4 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -459,13 +468,13 @@ export default function RequestDetailPage() {
           <div className="sm:hidden mt-3 flex gap-2">
             {!isExpired && !hasDeclined && !hasCompleted && (
               <>
-                <Link
-                  href="/partner/fleet/add"
+                <button
+                  onClick={() => setShowRecruitmentSheet(true)}
                   className="flex-1 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 text-sm"
                 >
                   <IoArrowForwardOutline className="w-4 h-4" />
                   {t('continueAddingCar')}
-                </Link>
+                </button>
                 <button
                   onClick={() => setShowDecline(true)}
                   className="px-3 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-50 dark:hover:bg-red-900/20 text-sm"
@@ -877,13 +886,13 @@ export default function RequestDetailPage() {
                     : t('addPhotosAndRate')}
                 </p>
                 {!(onboardingProgress.carPhotosUploaded && onboardingProgress.ratesConfigured) && (
-                  <Link
-                    href="/partner/fleet/add"
+                  <button
+                    onClick={() => setShowRecruitmentSheet(true)}
                     className="w-full mt-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg flex items-center justify-center gap-1"
                   >
                     <IoCarOutline className="w-3 h-3" />
                     {t('addCar')}
-                  </Link>
+                  </button>
                 )}
               </div>
 
@@ -1128,6 +1137,36 @@ export default function RequestDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Recruitment Bottomsheet */}
+      <RecruitmentBottomSheet
+        isOpen={showRecruitmentSheet}
+        onClose={() => setShowRecruitmentSheet(false)}
+        onComplete={handleRecruitmentComplete}
+        hostData={{
+          id: host.id,
+          name: host.name,
+          email: host.email,
+          hasPassword: host.hasPassword,
+          phone: host.phone || undefined
+        }}
+        prospectData={{
+          id: prospect.id,
+          status: prospect.status
+        }}
+        requestData={{
+          id: request.id,
+          guestName: request.guestName,
+          offeredRate: request.offeredRate,
+          startDate: request.startDate,
+          endDate: request.endDate,
+          durationDays: request.durationDays,
+          pickupCity: request.pickupCity,
+          pickupState: request.pickupState,
+          totalAmount: request.totalAmount,
+          hostEarnings: request.hostEarnings
+        }}
+      />
 
       {/* Agreement Preview Modal */}
       {showAgreementPreview && data && (
