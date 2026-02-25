@@ -330,7 +330,7 @@ export default function PendingRequestCard() {
       {/* Main Card */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
         {/* ── Header ───────────────────────────────────────── */}
-        <div className={`px-6 py-4 ${isExpiringSoon ? 'bg-red-50 dark:bg-red-900/20' : 'bg-orange-50 dark:bg-orange-900/20'}`}>
+        <div className={`px-4 py-4 ${isExpiringSoon ? 'bg-red-50 dark:bg-red-900/20' : 'bg-orange-50 dark:bg-orange-900/20'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isExpiringSoon ? 'bg-red-100 dark:bg-red-900/40' : 'bg-orange-100 dark:bg-orange-900/40'}`}>
@@ -352,7 +352,7 @@ export default function PendingRequestCard() {
 
         {/* ── Your Potential Payout ────────────────────────── */}
         {potentialEarnings && request && (
-          <div className="px-6 pt-5">
+          <div className="px-4 pt-5">
             <p className="text-xs text-green-600 dark:text-green-400 uppercase tracking-wide font-medium mb-1">{t('prYourPotentialPayout')}</p>
             <p className="text-4xl font-extrabold text-green-700 dark:text-green-300 tracking-tight">
               ${Math.round(potentialEarnings).toLocaleString()}<span className="text-2xl">.00</span>
@@ -375,8 +375,8 @@ export default function PendingRequestCard() {
         )}
 
         {/* ── Booking Details ─────────────────────────────── */}
-        <div className="px-6 py-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="px-4 py-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Guest */}
             {request?.guestName && (
               <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
@@ -452,7 +452,7 @@ export default function PendingRequestCard() {
 
           {/* Daily Rate — highlighted strip */}
           {request?.offeredRate && (
-            <div className="mt-4 flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/10 border border-orange-200/60 dark:border-orange-800/40 rounded-lg">
+            <div className="mt-3 flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/10 border border-orange-200/60 dark:border-orange-800/40 rounded-lg">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('prDailyRate')}</span>
               <span className="text-lg font-bold text-orange-600 dark:text-orange-400">{t('prRatePerDay', { rate: request.offeredRate.toFixed(2) })}</span>
             </div>
@@ -463,7 +463,7 @@ export default function PendingRequestCard() {
         <div className="border-t border-gray-200 dark:border-gray-700" />
 
         {/* ── Add Your Car / Car Added ────────────────────── */}
-        <div className="px-6 py-5">
+        <div className="px-4 py-5">
           {/* Status dot */}
           <div className="flex items-center gap-2 mb-4">
             <div className={`w-2.5 h-2.5 rounded-full ${progress.hasVehicle ? 'bg-green-500' : 'bg-orange-500 animate-pulse'}`} />
@@ -518,7 +518,7 @@ export default function PendingRequestCard() {
         <div className="border-t border-gray-200 dark:border-gray-700" />
 
         {/* ── How This Works ──────────────────────────────── */}
-        <div className="px-6 py-5">
+        <div className="px-4 py-5">
           <div className="flex items-center gap-2 mb-4">
             <IoInformationCircleOutline className="w-5 h-5 text-gray-400 dark:text-gray-500" />
             <p className="text-sm font-semibold text-gray-900 dark:text-white">{t('prHowThisWorks')}</p>
@@ -545,7 +545,7 @@ export default function PendingRequestCard() {
         </div>
 
         {/* ── Action Button ───────────────────────────────── */}
-        <div className="px-6 pb-5">
+        <div className="px-4 pb-5">
           <Link
             href={`/partner/requests/${request?.id || ''}`}
             className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-semibold transition-colors text-base shadow-sm"

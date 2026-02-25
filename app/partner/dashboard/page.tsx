@@ -366,7 +366,7 @@ export default function PartnerDashboardPage() {
   // Fleet Manager View - For hosts who signed up to manage others' vehicles
   if (isHostManager && !isFleetPartner) {
     return (
-      <div className="p-4 sm:p-6 space-y-6">
+      <div className="p-3 sm:p-4 space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -529,7 +529,7 @@ export default function PartnerDashboardPage() {
   // Vehicle Owner Lite View - Simplified dashboard for passive vehicle owners
   if (isVehicleOwner && !isFleetPartner) {
     return (
-      <div className="p-4 sm:p-6 space-y-6">
+      <div className="p-3 sm:p-4 space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -845,7 +845,7 @@ export default function PartnerDashboardPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    <div className="p-3 sm:p-4 space-y-4 sm:space-y-6">
       {/* Dashboard Header - Title and Welcome */}
       <div className="flex items-center justify-between">
         <div>

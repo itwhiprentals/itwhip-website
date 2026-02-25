@@ -225,14 +225,14 @@ export default function PartnerLandingPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-[400px]">
+      <div className="p-3 sm:p-4 flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 relative">
+    <div className="p-3 sm:p-4 space-y-4 sm:space-y-6 relative">
       {/* Business Gate Popup — shows for 2 minutes, then fades to grayed-out preview */}
       {isBusinessHost === false && showBusinessGatePopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -413,7 +413,7 @@ export default function PartnerLandingPage() {
       )}
 
       {/* Page URL */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
         <div className="flex items-center gap-2 sm:gap-3">
           <IoLinkOutline className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" />
           <div className="min-w-0 flex-1">

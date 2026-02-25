@@ -336,7 +336,7 @@ export default function PartnerSettingsPage() {
 
         {/* Content */}
         <div className="lg:col-span-3">
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             {activeSection === 'account' && (
               <AccountTab
                 settings={settings}

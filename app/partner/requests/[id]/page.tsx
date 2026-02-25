@@ -303,7 +303,7 @@ export default function RequestDetailPage() {
   // Error state
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-3 sm:p-4">
         <div className="max-w-4xl mx-auto">
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
             <IoAlertCircleOutline className="w-12 h-12 text-red-500 mx-auto mb-3" />
@@ -361,7 +361,7 @@ export default function RequestDetailPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header - Mirrors booking details page header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+        <div className="px-3 sm:px-4 py-3 sm:py-4">
           {/* Top row - Back button, title, status */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
@@ -479,14 +479,14 @@ export default function RequestDetailPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+      <div className="px-3 sm:px-4 py-4 sm:py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Main Info */}
           <div className="lg:col-span-2 space-y-6">
             {/* Vehicle & Guest Info Card */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
               {/* Vehicle Section */}
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-start gap-4">
                   {/* Vehicle Photo / Placeholder */}
                   {host.cars.length > 0 && host.cars[0].photos?.[0]?.url ? (
@@ -535,7 +535,7 @@ export default function RequestDetailPage() {
               </div>
 
               {/* Guest Section */}
-              <div className="p-6">
+              <div className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4">
                     <div className="w-14 h-14 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center">
@@ -584,7 +584,7 @@ export default function RequestDetailPage() {
             </div>
 
             {/* Rental Period */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
               <div className="flex items-center gap-2 mb-4">
                 <IoCalendarOutline className="w-5 h-5 text-gray-400" />
                 <h3 className="font-semibold text-gray-900 dark:text-white">{t('rentalPeriod')}</h3>
@@ -656,7 +656,7 @@ export default function RequestDetailPage() {
               </button>
 
               {hasCarListed && expandedSections.verification && (
-                <div className="px-6 pb-6 space-y-4">
+                <div className="px-4 pb-4 space-y-4">
                   {/* Pre-verification badges */}
                   <div className="flex flex-wrap gap-2">
                     <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm rounded-lg">
@@ -700,7 +700,7 @@ export default function RequestDetailPage() {
               </button>
 
               {expandedSections.agreement && (
-                <div className="px-6 pb-6 space-y-4">
+                <div className="px-4 pb-4 space-y-4">
                   {/* Host's Agreement - with AI validation */}
                   <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
@@ -781,7 +781,7 @@ export default function RequestDetailPage() {
               </button>
 
               {expandedSections.pricing && (
-                <div className="px-6 pb-6 space-y-3">
+                <div className="px-4 pb-4 space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">
                       {formatCurrency(dailyRate)} × {t('durationDays', { count: durationDays })}
@@ -850,7 +850,7 @@ export default function RequestDetailPage() {
 
         {/* What's Needed Checklist - Bottom Section */}
         {!isExpired && !hasDeclined && !hasCompleted && (
-          <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="mt-4 sm:mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <IoAlertCircleOutline className="w-5 h-5 text-orange-500" />
               {t('whatsNeeded')}
@@ -968,7 +968,7 @@ export default function RequestDetailPage() {
         )}
 
         {/* Help Section - Bottom */}
-        <div className="mt-6 bg-gray-100 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="mt-4 sm:mt-6 bg-gray-100 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-start gap-3">
             <IoChatbubbleOutline className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
             <div>

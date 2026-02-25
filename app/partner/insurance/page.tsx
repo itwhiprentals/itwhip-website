@@ -275,7 +275,7 @@ export default function InsurancePage() {
 
   if (loading) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8">
+      <div className="p-3 sm:p-4">
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600" />
         </div>
@@ -284,7 +284,7 @@ export default function InsurancePage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-3 sm:p-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
@@ -478,7 +478,7 @@ export default function InsurancePage() {
         {/* Left Column - Main Settings */}
         <div className="lg:col-span-2 space-y-6">
           {/* Partner Insurance Toggle */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               {t('yourBusinessInsurance')}
             </h2>
@@ -522,7 +522,7 @@ export default function InsurancePage() {
 
           {/* Insurance Details Form - Only show if has insurance */}
           {hasInsurance && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <IoDocumentTextOutline className="w-5 h-5" />
                 {t('insurancePolicyDetails')}
@@ -585,7 +585,7 @@ export default function InsurancePage() {
 
           {/* Coverage Options - Only show if has insurance */}
           {hasInsurance && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 {t('coverageOptions')}
               </h2>
@@ -790,7 +790,7 @@ export default function InsurancePage() {
             if (hasAnyCoverage) return null
 
             return (
-              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6">
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
                 <div className="flex items-start gap-3 mb-4">
                   <IoAlertCircleOutline className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                   <div>
@@ -825,7 +825,7 @@ export default function InsurancePage() {
           })()}
 
           {/* Vehicles Coverage Section */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
@@ -1159,7 +1159,7 @@ export default function InsurancePage() {
         {/* Right Column - Info Panel */}
         <div className="space-y-6">
           {/* Current Status */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('currentCoverageStatus')}</h3>
 
             <div className="space-y-3">
@@ -1211,7 +1211,7 @@ export default function InsurancePage() {
           </div>
 
           {/* How It Works */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <IoInformationCircleOutline className="w-5 h-5 text-blue-600" />
               {t('howItWorks')}
@@ -1231,7 +1231,7 @@ export default function InsurancePage() {
           </div>
 
           {/* Technology Integration */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <IoCodeSlashOutline className="w-5 h-5 text-purple-600" />
               {t('technology')}
