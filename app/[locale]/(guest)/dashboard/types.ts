@@ -104,12 +104,12 @@ export interface SuspensionInfo {
     },
     LUXURY_CARS: {
       label: 'Luxury Cars Restricted',
-      description: 'Cannot book cars $100+/day',
+      description: 'Cannot book Luxury, Exotic, or Convertible vehicles',
       icon: '💎'
     },
     PREMIUM_CARS: {
       label: 'Premium Cars Restricted',
-      description: 'Cannot book cars $200+/day',
+      description: 'Cannot book Exotic vehicles',
       icon: '👑'
     },
     MANUAL_APPROVAL: {

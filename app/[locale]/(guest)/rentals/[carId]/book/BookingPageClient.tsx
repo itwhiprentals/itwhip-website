@@ -1094,19 +1094,20 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     // ✅ FIXED: Add null check for restrictions
     if (!moderationStatus.restrictions) return { allowed: true }
     
-    // Check luxury restrictions
-    if (car?.carType === 'LUXURY' && !moderationStatus.restrictions.canBookLuxury) {
+    // Check luxury restrictions (Luxury, Exotic, Convertible car types)
+    const carTypeUpper = (car?.carType || '').toUpperCase()
+    if (['LUXURY', 'EXOTIC', 'CONVERTIBLE'].includes(carTypeUpper) && !moderationStatus.restrictions.canBookLuxury) {
       return {
         allowed: false,
-        reason: 'You currently cannot book luxury vehicles. This restriction may be due to active warnings or account issues.'
+        reason: 'You currently cannot book luxury vehicles (Luxury, Exotic, or Convertible). Clear your warning by reviewing the Community Guidelines.'
       }
     }
-    
-    // Check premium restrictions
-    if (car?.carType === 'PREMIUM' && !moderationStatus.restrictions.canBookPremium) {
+
+    // Check premium restrictions (Exotic car types only)
+    if (carTypeUpper === 'EXOTIC' && !moderationStatus.restrictions.canBookPremium) {
       return {
         allowed: false,
-        reason: 'You currently cannot book premium vehicles. This restriction may be due to active warnings or account issues.'
+        reason: 'You currently cannot book exotic/premium vehicles. Clear your warning by reviewing the Community Guidelines.'
       }
     }
     

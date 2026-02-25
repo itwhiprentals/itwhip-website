@@ -2,7 +2,7 @@
 // Compact monitoring widget for fleet dashboard
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   IoShieldCheckmarkOutline,
@@ -41,9 +41,15 @@ export default function MonitoringWidget() {
   const [data, setData] = useState<MonitoringData | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+
   const fetchData = async () => {
     try {
       const response = await fetch('/api/fleet/monitoring?range=24h')
+      if (response.status === 401 || response.status === 403) {
+        if (intervalRef.current) clearInterval(intervalRef.current)
+        return
+      }
       const result = await response.json()
       if (result.success) {
         setData(result.data)
@@ -57,9 +63,8 @@ export default function MonitoringWidget() {
 
   useEffect(() => {
     fetchData()
-    // Auto-refresh every 60 seconds
-    const interval = setInterval(fetchData, 60000)
-    return () => clearInterval(interval)
+    intervalRef.current = setInterval(fetchData, 60000)
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [])
 
   const healthStatus = data?.health?.criticalErrors === 0 && data?.alerts?.totalActive === 0

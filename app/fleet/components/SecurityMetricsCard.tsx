@@ -2,7 +2,7 @@
 // Security metrics card for fleet dashboard
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   IoLockClosedOutline,
@@ -107,10 +107,16 @@ export default function SecurityMetricsCard() {
   const [loading, setLoading] = useState(true)
   const [showEvents, setShowEvents] = useState(false)
 
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+
   const fetchData = async () => {
     setLoading(true)
     try {
       const response = await fetch('/api/fleet/security/stats?hours=24')
+      if (response.status === 401 || response.status === 403) {
+        if (intervalRef.current) clearInterval(intervalRef.current)
+        return
+      }
       const result = await response.json()
       if (result.success) {
         setData(result)
@@ -124,9 +130,8 @@ export default function SecurityMetricsCard() {
 
   useEffect(() => {
     fetchData()
-    // Auto-refresh every 2 minutes
-    const interval = setInterval(fetchData, 120000)
-    return () => clearInterval(interval)
+    intervalRef.current = setInterval(fetchData, 120000)
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [])
 
   const threatConfig = data ? threatLevelColors[data.threatLevel] : threatLevelColors.none

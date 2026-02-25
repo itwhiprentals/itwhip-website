@@ -72,14 +72,14 @@ const RESTRICTIONS = [
   },
   { 
     value: 'LUXURY_CARS', 
-    label: 'Disable Luxury Cars', 
-    description: 'Cannot book cars $100+/day',
+    label: 'Disable Luxury Cars',
+    description: 'Cannot book Luxury, Exotic, or Convertible vehicles',
     icon: IoDiamondOutline
   },
   { 
     value: 'PREMIUM_CARS', 
-    label: 'Disable Premium Cars', 
-    description: 'Cannot book cars $200+/day',
+    label: 'Disable Premium Cars',
+    description: 'Cannot book Exotic vehicles',
     icon: IoTrophyOutline
   },
   { 

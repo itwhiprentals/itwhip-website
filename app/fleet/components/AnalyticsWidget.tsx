@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   IoAnalyticsOutline,
@@ -44,10 +44,16 @@ export default function AnalyticsWidget() {
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
         const response = await fetch('/api/fleet/analytics/stats?range=24h')
+        if (response.status === 401 || response.status === 403) {
+          if (intervalRef.current) clearInterval(intervalRef.current)
+          return
+        }
         if (response.ok) {
           const result = await response.json()
           setData(result)
@@ -61,9 +67,8 @@ export default function AnalyticsWidget() {
 
     fetchAnalytics()
 
-    // Refresh every 2 minutes
-    const interval = setInterval(fetchAnalytics, 120000)
-    return () => clearInterval(interval)
+    intervalRef.current = setInterval(fetchAnalytics, 120000)
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [])
 
   // Skeleton loader

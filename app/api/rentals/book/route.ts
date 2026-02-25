@@ -197,7 +197,7 @@ export async function POST(request: NextRequest) {
     // Look up ReviewerProfile and User by email so bookings are properly linked
     const guestProfile = await prisma.reviewerProfile.findUnique({
       where: { email: bookingData.guestEmail },
-      select: { id: true, userId: true, documentsVerified: true },
+      select: { id: true, userId: true, documentsVerified: true, canBookLuxury: true, canBookPremium: true },
     })
     const reviewerProfileId = guestProfile?.id || null
     const renterId = guestProfile?.userId || null
@@ -303,6 +303,33 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // ========== GUEST RESTRICTION CHECK ==========
+    // Enforce luxury/premium booking restrictions from active warnings
+    if (guestProfile) {
+      const carTypeUpper = (car.carType || '').toUpperCase()
+
+      // Luxury restriction: blocks LUXURY, EXOTIC, CONVERTIBLE car types
+      if (guestProfile.canBookLuxury === false && ['LUXURY', 'EXOTIC', 'CONVERTIBLE'].includes(carTypeUpper)) {
+        console.warn(`[book] Luxury-restricted guest attempted booking: ${bookingData.guestEmail}, carType: ${car.carType}`)
+        return NextResponse.json({
+          error: 'Booking restricted',
+          message: 'You currently cannot book luxury vehicles (Luxury, Exotic, or Convertible). This restriction is due to active account warnings. Please review your Community Guidelines to clear this restriction.',
+          code: 'LUXURY_RESTRICTED',
+        }, { status: 403 })
+      }
+
+      // Premium restriction: blocks EXOTIC car types only
+      if (guestProfile.canBookPremium === false && carTypeUpper === 'EXOTIC') {
+        console.warn(`[book] Premium-restricted guest attempted booking: ${bookingData.guestEmail}, carType: ${car.carType}`)
+        return NextResponse.json({
+          error: 'Booking restricted',
+          message: 'You currently cannot book exotic/premium vehicles. This restriction is due to active account warnings. Please review your Community Guidelines to clear this restriction.',
+          code: 'PREMIUM_RESTRICTED',
+        }, { status: 403 })
+      }
+    }
+    // ========== END GUEST RESTRICTION CHECK ==========
 
     // ========== SELF-BOOKING PREVENTION GUARD ==========
     // Prevent guests from booking their own host vehicles

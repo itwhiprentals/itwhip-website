@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     // Look up guest's ReviewerProfile for linking + balances
     const reviewerProfile = await prisma.reviewerProfile.findUnique({
       where: { email: user.email! },
-      select: { id: true, creditBalance: true, bonusBalance: true, depositWalletBalance: true },
+      select: { id: true, creditBalance: true, bonusBalance: true, depositWalletBalance: true, canBookLuxury: true, canBookPremium: true },
     })
 
     // Parse request
@@ -86,6 +86,7 @@ export async function POST(request: NextRequest) {
         model: true,
         year: true,
         dailyRate: true,
+        carType: true,
         city: true,
         hostId: true,
         noDeposit: true,
@@ -106,6 +107,28 @@ export async function POST(request: NextRequest) {
     if (!car) {
       return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 })
     }
+
+    // ========== GUEST RESTRICTION CHECK ==========
+    if (reviewerProfile) {
+      const carTypeUpper = (car.carType || '').toUpperCase()
+
+      if (reviewerProfile.canBookLuxury === false && ['LUXURY', 'EXOTIC', 'CONVERTIBLE'].includes(carTypeUpper)) {
+        console.warn(`[ai-book] Luxury-restricted guest attempted booking: ${user.email}, carType: ${car.carType}`)
+        return NextResponse.json({
+          error: 'You cannot book luxury vehicles (Luxury, Exotic, or Convertible) due to active account restrictions.',
+          code: 'LUXURY_RESTRICTED',
+        }, { status: 403 })
+      }
+
+      if (reviewerProfile.canBookPremium === false && carTypeUpper === 'EXOTIC') {
+        console.warn(`[ai-book] Premium-restricted guest attempted booking: ${user.email}, carType: ${car.carType}`)
+        return NextResponse.json({
+          error: 'You cannot book exotic/premium vehicles due to active account restrictions.',
+          code: 'PREMIUM_RESTRICTED',
+        }, { status: 403 })
+      }
+    }
+    // ========== END GUEST RESTRICTION CHECK ==========
 
     // Availability is checked INSIDE the transaction below (serializable isolation)
     // to prevent race conditions where two concurrent bookings pass the check

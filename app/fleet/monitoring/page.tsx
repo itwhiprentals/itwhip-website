@@ -4,7 +4,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   IoShieldCheckmarkOutline,
   IoRefreshOutline,
@@ -77,11 +77,18 @@ export default function MonitoringPage() {
   const [timeRange, setTimeRange] = useState('24h')
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+
   // Fetch monitoring data
   const fetchData = useCallback(async () => {
     try {
       setError(null)
       const response = await fetch(`/api/fleet/monitoring?range=${timeRange}`)
+
+      if (response.status === 401 || response.status === 403) {
+        if (intervalRef.current) clearInterval(intervalRef.current)
+        return
+      }
 
       if (!response.ok) {
         throw new Error('Failed to fetch monitoring data')
@@ -108,8 +115,8 @@ export default function MonitoringPage() {
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
-    const interval = setInterval(fetchData, 30000)
-    return () => clearInterval(interval)
+    intervalRef.current = setInterval(fetchData, 30000)
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [fetchData])
 
   // Handle alert acknowledge

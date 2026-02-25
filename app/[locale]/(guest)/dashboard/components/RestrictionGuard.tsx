@@ -23,7 +23,8 @@ interface RestrictionGuardProps {
   children: ReactNode
   onRestricted?: () => void
   showInlineMessage?: boolean
-  carPrice?: number // For luxury/premium car checks
+  carPrice?: number // For legacy compatibility
+  carType?: string  // Car type for luxury/premium checks
 }
 
 export default function RestrictionGuard({
@@ -32,7 +33,8 @@ export default function RestrictionGuard({
   children,
   onRestricted,
   showInlineMessage = true,
-  carPrice
+  carPrice,
+  carType
 }: RestrictionGuardProps) {
   
   // If no suspension info, allow everything
@@ -86,19 +88,23 @@ export default function RestrictionGuard({
         restrictionMessage = 'Instant booking is disabled. You must wait for host approval.'
         break
 
-      case 'LUXURY_CARS':
-        if (carPrice && carPrice >= 100) {
+      case 'LUXURY_CARS': {
+        const ct = (carType || '').toUpperCase()
+        if (['LUXURY', 'EXOTIC', 'CONVERTIBLE'].includes(ct)) {
           isRestricted = suspensionInfo.canBookLuxury === false
-          restrictionMessage = 'You cannot book luxury cars at this time due to account restrictions.'
+          restrictionMessage = 'You cannot book luxury vehicles (Luxury, Exotic, or Convertible) at this time due to account restrictions.'
         }
         break
+      }
 
-      case 'PREMIUM_CARS':
-        if (carPrice && carPrice >= 200) {
+      case 'PREMIUM_CARS': {
+        const ct = (carType || '').toUpperCase()
+        if (ct === 'EXOTIC') {
           isRestricted = suspensionInfo.canBookPremium === false
-          restrictionMessage = 'You cannot book premium cars at this time due to account restrictions.'
+          restrictionMessage = 'You cannot book exotic/premium vehicles at this time due to account restrictions.'
         }
         break
+      }
 
       case 'MANUAL_APPROVAL':
         isRestricted = suspensionInfo.requiresManualApproval === true
@@ -149,11 +155,13 @@ export default function RestrictionGuard({
 
 // Helper hook for checking restrictions programmatically
 export function useRestrictionCheck(suspensionInfo: SuspensionInfo | null) {
-  const checkRestriction = (restrictionType: RestrictionType, carPrice?: number): boolean => {
+  const checkRestriction = (restrictionType: RestrictionType, carType?: string): boolean => {
     if (!suspensionInfo) return false
 
     // Check if banned or suspended
     if (suspensionInfo.suspensionLevel) return true
+
+    const ct = (carType || '').toUpperCase()
 
     // Check specific restrictions
     switch (restrictionType) {
@@ -161,13 +169,13 @@ export function useRestrictionCheck(suspensionInfo: SuspensionInfo | null) {
         return suspensionInfo.requiresManualApproval === true
 
       case 'LUXURY_CARS':
-        if (carPrice && carPrice >= 100) {
+        if (['LUXURY', 'EXOTIC', 'CONVERTIBLE'].includes(ct)) {
           return suspensionInfo.canBookLuxury === false
         }
         return false
 
       case 'PREMIUM_CARS':
-        if (carPrice && carPrice >= 200) {
+        if (ct === 'EXOTIC') {
           return suspensionInfo.canBookPremium === false
         }
         return false
@@ -181,8 +189,8 @@ export function useRestrictionCheck(suspensionInfo: SuspensionInfo | null) {
   }
 
   const canInstantBook = !checkRestriction('INSTANT_BOOK')
-  const canBookLuxury = (price: number) => !checkRestriction('LUXURY_CARS', price)
-  const canBookPremium = (price: number) => !checkRestriction('PREMIUM_CARS', price)
+  const canBookLuxury = (carType: string) => !checkRestriction('LUXURY_CARS', carType)
+  const canBookPremium = (carType: string) => !checkRestriction('PREMIUM_CARS', carType)
   const needsManualApproval = checkRestriction('MANUAL_APPROVAL')
 
   return {

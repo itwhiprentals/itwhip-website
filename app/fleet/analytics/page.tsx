@@ -4,7 +4,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { IoRefreshOutline, IoAnalyticsOutline } from 'react-icons/io5'
 import {
   StatsCards,
@@ -94,6 +94,8 @@ export default function FleetAnalyticsPage() {
   const [timeRange, setTimeRange] = useState('7d')
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+
   // Fetch analytics data
   const fetchData = useCallback(async () => {
     try {
@@ -101,6 +103,11 @@ export default function FleetAnalyticsPage() {
       setError(null)
 
       const response = await fetch(`/api/fleet/analytics/stats?range=${timeRange}`)
+
+      if (response.status === 401 || response.status === 403) {
+        if (intervalRef.current) clearInterval(intervalRef.current)
+        return
+      }
 
       if (!response.ok) {
         throw new Error('Failed to fetch analytics')
@@ -123,8 +130,8 @@ export default function FleetAnalyticsPage() {
 
   // Auto-refresh every 60 seconds
   useEffect(() => {
-    const interval = setInterval(fetchData, 60000)
-    return () => clearInterval(interval)
+    intervalRef.current = setInterval(fetchData, 60000)
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [fetchData])
 
   // Handle range change

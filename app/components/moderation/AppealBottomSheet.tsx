@@ -173,6 +173,7 @@ export default function AppealBottomSheet({
       setEvidence([])
       setSelectedModerationId(moderationId || null)
       setExpandedWarnings(new Set())
+      setUploadError(null)
     }
   }, [isOpen, moderationId])
 
@@ -230,36 +231,51 @@ export default function AppealBottomSheet({
     setReason('')
     setEvidence([])
     setError(null)
+    setUploadError(null)
   }
+
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     if (evidence.length >= 5) {
-      alert('Maximum 5 files allowed')
+      setUploadError('Maximum 5 photos allowed')
+      return
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Please select an image file (JPG, PNG, etc.)')
+      return
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('Image must be under 10MB')
       return
     }
 
     setUploading(true)
+    setUploadError(null)
     try {
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'guest_appeals')
-      formData.append('folder', 'guest_appeals')
 
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-        { method: 'POST', body: formData }
-      )
+      const res = await fetch('/api/guest/appeals/upload', {
+        method: 'POST',
+        body: formData
+      })
       const data = await res.json()
-      if (data.secure_url) {
-        setEvidence(prev => [...prev, data.secure_url])
+      if (res.ok && data.url) {
+        setEvidence(prev => [...prev, data.url])
+        setUploadError(null)
       } else {
-        throw new Error('Upload failed')
+        throw new Error(data.error || 'Upload failed')
       }
     } catch (err) {
       console.error('Evidence upload failed:', err)
-      alert('Failed to upload image. Please try again.')
+      setUploadError(err instanceof Error ? err.message : 'Failed to upload image. Please try again.')
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -786,7 +802,7 @@ export default function AppealBottomSheet({
                       <textarea
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
-                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white resize-none text-sm"
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white resize-none text-sm placeholder:text-xs"
                         rows={4}
                         placeholder="Explain why you believe this action should be reconsidered. Be specific and provide details that support your case."
                         disabled={submitting}
@@ -805,18 +821,18 @@ export default function AppealBottomSheet({
                       {evidence.length > 0 && (
                         <div className="flex flex-wrap gap-2 mb-3">
                           {evidence.map((url, index) => (
-                            <div key={index} className="relative">
+                            <div key={index} className="relative group">
                               <img
                                 src={url}
                                 alt={`Evidence ${index + 1}`}
-                                className="w-16 h-16 rounded-lg object-cover"
+                                className="w-20 h-20 rounded-lg object-cover border border-gray-200 dark:border-gray-600"
                               />
                               <button
                                 onClick={() => removeEvidence(index)}
                                 disabled={submitting}
-                                className="absolute -top-1.5 -right-1.5 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                                className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-sm transition-colors"
                               >
-                                ×
+                                <Trash className="w-3 h-3" />
                               </button>
                             </div>
                           ))}
@@ -836,14 +852,35 @@ export default function AppealBottomSheet({
                           <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={submitting || uploading}
-                            className="w-full px-4 py-2.5 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-gray-400 dark:hover:border-gray-500 transition-colors text-sm"
+                            className={`w-full px-4 py-3 border-2 border-dashed rounded-lg transition-colors text-sm ${
+                              uploading
+                                ? 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
+                                : 'border-gray-300 dark:border-gray-600 hover:border-green-400 dark:hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/10'
+                            }`}
                           >
-                            <div className="flex items-center justify-center text-gray-500 dark:text-gray-400">
-                              <Upload className="w-4 h-4 mr-2" />
-                              <span>{uploading ? 'Uploading...' : `Upload Photo (${evidence.length}/5)`}</span>
+                            <div className="flex items-center justify-center gap-2 text-gray-600 dark:text-gray-300">
+                              {uploading ? (
+                                <>
+                                  <div className="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+                                  <span className="font-medium">Uploading...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Upload className="w-5 h-5" />
+                                  <span className="font-medium">Upload Photo</span>
+                                  <span className="text-gray-400 dark:text-gray-500">({evidence.length}/5)</span>
+                                </>
+                              )}
                             </div>
                           </button>
                         </>
+                      )}
+
+                      {uploadError && (
+                        <p className="text-xs text-red-600 dark:text-red-400 mt-1.5 flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                          {uploadError}
+                        </p>
                       )}
                     </div>
 
