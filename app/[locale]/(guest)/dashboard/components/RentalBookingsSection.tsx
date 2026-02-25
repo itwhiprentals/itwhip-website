@@ -88,7 +88,7 @@ export default function RentalBookingsSection() {
   // Loading state
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 mb-4 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
         <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-4">
           {t('yourCarRentals')}
         </h2>
@@ -102,7 +102,7 @@ export default function RentalBookingsSection() {
   // Error state
   if (error) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 mb-4 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
         <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-4">
           {t('yourCarRentals')}
         </h2>
@@ -123,7 +123,7 @@ export default function RentalBookingsSection() {
   // No bookings state
   if (!bookings || bookings.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 mb-4 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
         <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-4">
           {t('yourCarRentals')}
         </h2>
@@ -145,7 +145,7 @@ export default function RentalBookingsSection() {
   return (
     <>
       {/* Header */}
-      <div className="-mx-2 sm:mx-0 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 mb-4 border border-gray-200 dark:border-gray-700">
+      <div className="-mx-2 sm:mx-0 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 mb-3 border border-gray-200 dark:border-gray-700">
         <div className="flex justify-between items-center">
           <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">
             {t('yourCarRentalsCount', { count: bookings.length })}
@@ -160,8 +160,8 @@ export default function RentalBookingsSection() {
       </div>
       
       {/* MOBILE: Horizontal scrollable square cards */}
-      <div className="sm:hidden mb-4 -mx-2">
-        <div className="flex gap-3 overflow-x-auto pb-4 px-2 snap-x snap-mandatory scrollbar-hide">
+      <div className="sm:hidden -mx-2">
+        <div className="flex gap-3 overflow-x-auto pb-1 px-2 snap-x snap-mandatory scrollbar-hide">
           {bookings.slice(0, 3).map(booking => (
             <div
               key={booking.id}
@@ -247,7 +247,7 @@ export default function RentalBookingsSection() {
       </div>
 
       {/* DESKTOP: List view with container */}
-      <div className="hidden sm:block bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 mb-4 border border-gray-200 dark:border-gray-700">
+      <div className="hidden sm:block bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
         <div className="space-y-3">
           {bookings.slice(0, 3).map(booking => (
             <div 

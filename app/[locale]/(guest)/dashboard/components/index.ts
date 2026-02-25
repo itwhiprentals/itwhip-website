@@ -10,6 +10,15 @@ export { default as GoodStandingBanner } from './GoodStandingBanner'
 export { default as VerificationAlert } from './VerificationAlert'
 export { default as RestrictionGuard } from './RestrictionGuard'
 
+// Dashboard UI components
+export { default as ProfileCard } from './ProfileCard'
+export { default as FeaturedCards } from './FeaturedCards'
+export { default as StatsGrid } from './StatsGrid'
+export { default as QuickActions } from './QuickActions'
+export { default as RecentTrips } from './RecentTrips'
+export { default as SupportCard } from './SupportCard'
+export { default as DisclaimerCard } from './DisclaimerCard'
+
 // Context and hooks
 export {
   RentalContext,
