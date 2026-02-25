@@ -2202,7 +2202,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   // ============================================
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900" style={{ overflowX: 'clip' }}>
       {/* Main Header */}
       <Header />
 
@@ -2216,7 +2216,6 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       />
 
       <HeaderBar onBack={() => router.back()} />
-      
       <CarInfoCard car={car} />
       
       {/* Main Content */}

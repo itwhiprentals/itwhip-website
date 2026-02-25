@@ -3045,6 +3045,7 @@
     "seats": "places",
     "newListing": "Nouveau",
     "trips": "voyages",
+    "trip": "voyage",
     "vehicleUnavailable": "Véhicule Actuellement Indisponible",
     "vehicleUnavailableDesc": "Ce véhicule est temporairement indisponible à la réservation. Cela peut être dû à :",
     "vehicleUnavailableReason1": "Réclamation d'assurance en cours de traitement",

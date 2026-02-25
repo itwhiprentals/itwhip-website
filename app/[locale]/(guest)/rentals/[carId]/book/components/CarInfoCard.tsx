@@ -20,7 +20,7 @@ export function CarInfoCard({ car }: CarInfoCardProps) {
   const t = useTranslations('BookingPage')
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700">
+    <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-16 z-40">
       <div className="max-w-4xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -32,8 +32,8 @@ export function CarInfoCard({ car }: CarInfoCardProps) {
               />
             )}
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {car.year} {capitalizeCarMake(car.make)} {normalizeModelName(car.model, car.make)}
+              <p className="text-sm text-gray-900 dark:text-white">
+                <span className="font-medium">{car.year} {capitalizeCarMake(car.make)}</span> {normalizeModelName(car.model, car.make)}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {car.carType} • {car.seats} {t('seats')}
@@ -58,7 +58,7 @@ export function CarInfoCard({ car }: CarInfoCardProps) {
                   </span>
                 )}
                 <span className="text-xs text-gray-500">
-                  {car.totalTrips || 0} {t('trips')}
+                  {(car.totalTrips || 0) === 1 ? `1 ${t('trip')}` : `${car.totalTrips || 0} ${t('trips')}`}
                 </span>
               </div>
             </div>

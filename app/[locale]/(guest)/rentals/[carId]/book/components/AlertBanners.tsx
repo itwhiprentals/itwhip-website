@@ -87,7 +87,9 @@ export function AlertBanners({ carIsActive, eligibility }: AlertBannersProps) {
               <li>• <span dangerouslySetInnerHTML={{ __html: t.raw('bookWithoutAccount') }} />{' '}
                 <a href="/help/guest-account" className="text-amber-700 dark:text-amber-300 underline hover:no-underline">{t('learnMore')}</a>
               </li>
-              <li>• <span dangerouslySetInnerHTML={{ __html: t.raw('quickVerification') }} /></li>
+              <li>• <span dangerouslySetInnerHTML={{ __html: t.raw('quickVerification') }} />{' '}
+                <a href="https://itwhip.com/help/identity-verification" className="text-amber-700 dark:text-amber-300 underline hover:no-underline">{t('learnMore')}</a>
+              </li>
               <li>• <span dangerouslySetInnerHTML={{ __html: t.raw('noChargesUntilApproved') }} /></li>
             </ul>
           </div>

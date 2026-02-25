@@ -3027,6 +3027,7 @@
     "seats": "seats",
     "newListing": "New",
     "trips": "trips",
+    "trip": "trip",
     "vehicleUnavailable": "Vehicle Currently Unavailable",
     "vehicleUnavailableDesc": "This vehicle is temporarily unavailable for booking. This may be due to:",
     "vehicleUnavailableReason1": "Active insurance claim being processed",
