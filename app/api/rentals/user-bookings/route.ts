@@ -143,7 +143,7 @@ export async function GET(request: NextRequest) {
         b."paymentStatus",
         b."paymentType",
         b."paymentIntentId",
-        (SELECT EXISTS(SELECT 1 FROM "HostProspect" hp WHERE hp."convertedBookingId" = b.id)) as "isRecruitedBooking",
+        (SELECT EXISTS(SELECT 1 FROM "host_prospects" hp WHERE hp."convertedBookingId" = b.id)) as "isRecruitedBooking",
         b."stripeCustomerId",
         b."stripePaymentMethodId",
         b."insuranceSelection",
