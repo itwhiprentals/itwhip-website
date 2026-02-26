@@ -7,7 +7,16 @@ const nextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
   // Allow phones on local network to access dev server (for VIN scanning)
-  allowedDevOrigins: ['10.165.1.231'],
+  // Allow phones on local network — use .local hostname + common IP ranges
+  allowedDevOrigins: [
+    'MacBook-Pro-2.local',
+    '10.165.1.231',
+    '10.166.1.72',
+    '10.166.1.73',
+    '10.166.1.74',
+    '192.168.1.1',
+    '192.168.0.1',
+  ],
 
   // Exclude geoip-lite from webpack bundling (use native Node.js require)
   serverExternalPackages: ['geoip-lite', 'zxing-wasm'],

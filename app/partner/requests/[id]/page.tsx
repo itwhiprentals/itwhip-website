@@ -5,46 +5,33 @@
 'use client'
 
 import { useLocale, useTranslations } from 'next-intl'
-
+import Link from 'next/link'
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
 import {
   IoArrowBackOutline,
   IoTimeOutline,
-  IoCarOutline,
-  IoCalendarOutline,
-  IoLocationOutline,
-  IoCheckmarkCircleOutline,
   IoArrowForwardOutline,
-  IoImageOutline,
-  IoWalletOutline,
-  IoDocumentTextOutline,
-  IoStarOutline,
-  IoShieldCheckmarkOutline,
-  IoShieldOutline,
-  IoCardOutline,
-  IoHandLeftOutline,
+  IoCheckmarkCircleOutline,
   IoChatbubbleOutline,
   IoRefreshOutline,
   IoCopyOutline,
-  IoMailOutline,
-  IoCallOutline,
-  IoChevronDownOutline,
-  IoChevronUpOutline,
   IoAlertCircleOutline,
-  IoCashOutline,
-  IoAddOutline,
-  IoEyeOutline,
-  IoCloseOutline,
-  IoSendOutline,
-  IoDocumentOutline
 } from 'react-icons/io5'
 import CounterOfferModal from './components/CounterOfferModal'
 import DeclineModal from './components/DeclineModal'
 import OnboardingWizard from './components/OnboardingWizard'
-import AgreementUpload from './components/AgreementUpload'
+import BottomSheet from '@/app/components/BottomSheet'
 import RecruitmentBottomSheet from './components/RecruitmentBottomSheet'
+import AgreementPreferenceStep from './components/AgreementPreferenceStep'
+import PaymentPreferenceStep from './components/PaymentPreferenceStep'
+import VehicleGuestCard from './components/VehicleGuestCard'
+import RentalPeriodCard from './components/RentalPeriodCard'
+import GuestVerificationCard from './components/GuestVerificationCard'
+import RentalAgreementCard from './components/RentalAgreementCard'
+import ProgressStepper from './components/ProgressStepper'
+import TestPdfModal from './components/TestPdfModal'
+import AgreementPreviewModal from './components/AgreementPreviewModal'
 
 interface RequestData {
   host: {
@@ -97,6 +84,9 @@ interface RequestData {
     ratesConfigured: boolean
     payoutConnected: boolean
     agreementUploaded: boolean
+    agreementPreference: string | null
+    paymentPreference: string | null
+    firstCarName: string | null
     percentComplete: number
   }
   agreement?: {
@@ -132,10 +122,11 @@ export default function RequestDetailPage() {
   const [startingOnboarding, setStartingOnboarding] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showTestPdfModal, setShowTestPdfModal] = useState(false)
-  const [sendingTestPdf, setSendingTestPdf] = useState(false)
   const [showAgreementPreview, setShowAgreementPreview] = useState(false)
   const [connectingPayout, setConnectingPayout] = useState(false)
   const [showRecruitmentSheet, setShowRecruitmentSheet] = useState(false)
+  const [showEditAgreement, setShowEditAgreement] = useState(false)
+  const [showEditPayment, setShowEditPayment] = useState(false)
 
   // Expandable sections
   const [expandedSections, setExpandedSections] = useState({
@@ -413,7 +404,7 @@ export default function RequestDetailPage() {
                 <>
                   <button
                     onClick={() => setShowRecruitmentSheet(true)}
-                    className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium flex items-center gap-2"
+                    className="px-4 py-2 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-lg font-medium flex items-center gap-2"
                   >
                     <IoArrowForwardOutline className="w-4 h-4" />
                     {t('continueAddingCar')}
@@ -436,22 +427,6 @@ export default function RequestDetailPage() {
             </div>
           </div>
 
-          {/* Reservation Expiry Notice */}
-          {!isExpired && !hasDeclined && !hasCompleted && timeDisplay && (
-            <div className="mt-2 sm:mt-3 flex items-center gap-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
-              <IoTimeOutline className="w-4 h-4 flex-shrink-0" />
-              <span className="text-xs sm:text-sm flex-1">
-                <strong>{t('reservationExpires')}</strong>{' '}
-                {isExpiringSoon ? (
-                  <span className="text-red-600 dark:text-red-400">
-                    {t('expiringUrgent', { timeDisplay })}
-                  </span>
-                ) : (
-                  <span>{t('expiringNormal', { timeDisplay })}</span>
-                )}
-              </span>
-            </div>
-          )}
 
           {/* Counter-offer pending notice */}
           {hasPendingCounterOffer && (
@@ -470,7 +445,7 @@ export default function RequestDetailPage() {
               <>
                 <button
                   onClick={() => setShowRecruitmentSheet(true)}
-                  className="flex-1 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 text-sm"
+                  className="flex-1 px-3 py-2 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-lg font-medium flex items-center justify-center gap-2 text-sm"
                 >
                   <IoArrowForwardOutline className="w-4 h-4" />
                   {t('continueAddingCar')}
@@ -489,490 +464,107 @@ export default function RequestDetailPage() {
 
       {/* Main Content */}
       <div className="px-3 sm:px-4 py-4 sm:py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Main Info */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Vehicle & Guest Info Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-              {/* Vehicle Section */}
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-start gap-4">
-                  {/* Vehicle Photo / Placeholder */}
-                  {host.cars.length > 0 && host.cars[0].photos?.[0]?.url ? (
-                    <img
-                      src={host.cars[0].photos[0].url}
-                      alt={`${host.cars[0].year} ${host.cars[0].make} ${host.cars[0].model}`}
-                      className="w-32 h-24 object-cover rounded-lg"
-                    />
-                  ) : (
-                    <div className="w-32 h-24 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
-                      <IoCarOutline className="w-10 h-10 text-gray-400" />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                        {host.cars.length > 0
-                          ? `${host.cars[0].year} ${host.cars[0].make} ${host.cars[0].model}`
-                          : request.vehicleInfo || t('vehicle')}
-                      </h3>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        hasCarListed
-                          ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
-                          : 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
-                      }`}>
-                        {hasCarListed ? t('ready') : t('awaitingSetup')}
-                      </span>
-                    </div>
-                    {!hasCarListed && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                        {t('addPhotosAndRate')}
-                      </p>
-                    )}
-                    {hasCarListed && (
-                      <div className="flex flex-wrap items-center gap-3">
-                        <Link
-                          href={`/partner/fleet/${host.cars[0]?.id}`}
-                          className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                        >
-                          {t('viewVehicle')}
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Guest Section */}
-              <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                        {request.guestName?.charAt(0) || 'G'}
-                      </span>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
-                        {request.guestName || t('guest')}
-                      </h3>
-                      {request.guestRating && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                          <IoStarOutline className="w-4 h-4 text-yellow-500 fill-current" />
-                          <span className="font-medium">{request.guestRating.toFixed(1)}</span>
-                          {request.guestTrips && (
-                            <span>({request.guestTrips} {t('trips')})</span>
-                          )}
-                        </div>
-                      )}
-                      {/* Contact details - locked until car listed */}
-                      {hasCarListed ? (
-                        <div className="mt-2 space-y-1">
-                          {request.guestEmail && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                              <IoMailOutline className="w-4 h-4" />
-                              {request.guestEmail}
-                            </div>
-                          )}
-                          {request.guestPhone && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                              <IoCallOutline className="w-4 h-4" />
-                              {request.guestPhone}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                          {t('contactDetailsLocked')}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Rental Period */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <IoCalendarOutline className="w-5 h-5 text-gray-400" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">{t('rentalPeriod')}</h3>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('pickup')}</p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {formatDate(request.startDate)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('return')}</p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {formatDate(request.endDate)}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <IoLocationOutline className="w-5 h-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{t('pickupLocation')}</p>
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {request.pickupCity || 'Phoenix'}, {request.pickupState || 'AZ'}
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
-                        {t('guestWillComeToYou')}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    {t('durationDays', { count: durationDays })}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Guest Verification - Grayed out until car listed */}
-            <div className={`bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden ${!hasCarListed ? 'opacity-60' : ''}`}>
-              <button
-                onClick={() => hasCarListed && toggleSection('verification')}
-                className={`w-full p-4 flex items-center justify-between text-left ${!hasCarListed ? 'cursor-not-allowed' : ''}`}
-                disabled={!hasCarListed}
-              >
-                <div className="flex items-center gap-2">
-                  <IoShieldOutline className="w-5 h-5 text-gray-400" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('guestVerification')}</h3>
-                  {hasCarListed ? (
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
-                      {t('pending')}
-                    </span>
-                  ) : (
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400">
-                      {t('listCarFirst')}
-                    </span>
-                  )}
-                </div>
-                {hasCarListed && (
-                  expandedSections.verification ? (
-                    <IoChevronUpOutline className="w-5 h-5 text-gray-400" />
-                  ) : (
-                    <IoChevronDownOutline className="w-5 h-5 text-gray-400" />
-                  )
-                )}
-              </button>
-
-              {hasCarListed && expandedSections.verification && (
-                <div className="px-4 pb-4 space-y-4">
-                  {/* Pre-verification badges */}
-                  <div className="flex flex-wrap gap-2">
-                    <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm rounded-lg">
-                      <IoShieldCheckmarkOutline className="w-4 h-4" />
-                      {t('identityVerified')}
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm rounded-lg">
-                      <IoCardOutline className="w-4 h-4" />
-                      {t('paymentOnFile')}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {t('guestWillCompleteVerification')}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Rental Agreement Section */}
-            <div id="agreement-section" className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <button
-                onClick={() => toggleSection('agreement')}
-                className="w-full p-4 flex items-center justify-between text-left"
-              >
-                <div className="flex items-center gap-2">
-                  <IoDocumentTextOutline className="w-5 h-5 text-gray-400" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('rentalAgreement')}</h3>
-                  <span className={`px-2 py-0.5 text-xs rounded-full ${
-                    onboardingProgress.agreementUploaded
-                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                      : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                  }`}>
-                    {onboardingProgress.agreementUploaded ? t('uploaded') : t('notUploaded')}
-                  </span>
-                </div>
-                {expandedSections.agreement ? (
-                  <IoChevronUpOutline className="w-5 h-5 text-gray-400" />
-                ) : (
-                  <IoChevronDownOutline className="w-5 h-5 text-gray-400" />
-                )}
-              </button>
-
-              {expandedSections.agreement && (
-                <div className="px-4 pb-4 space-y-4">
-                  {/* Host's Agreement - with AI validation */}
-                  <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900 dark:text-white">{t('yourRentalAgreement')}</h4>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">{t('optional')}</span>
-                    </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                      {t('uploadAgreementDesc')}
-                    </p>
-
-                    <AgreementUpload
-                      onUploadSuccess={fetchRequest}
-                      existingAgreement={data?.agreement}
-                    />
-
-                    {/* Test E-Sign button - only available after uploading PDF */}
-                    {onboardingProgress.agreementUploaded && (
-                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-                        <button
-                          onClick={() => setShowTestPdfModal(true)}
-                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 text-sm font-medium"
-                        >
-                          <IoSendOutline className="w-4 h-4" />
-                          {t('testESignExperience')}
-                        </button>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                          {t('previewGuestSigning')}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* ItWhip Agreement */}
-                  <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900 dark:text-white">{t('itwhipStandardAgreement')}</h4>
-                      <span className="text-xs text-purple-600 dark:text-purple-400">{t('required')}</span>
-                    </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                      {t('standardTermsDesc')}
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setShowAgreementPreview(true)}
-                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-sm"
-                      >
-                        <IoEyeOutline className="w-4 h-4" />
-                        {t('previewAgreement')}
-                      </button>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-gray-400 dark:text-gray-500">
-                    {t('guestWillSignBoth')}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column - Sidebar */}
+        <div className="space-y-6 max-w-3xl">
           <div className="space-y-6">
-            {/* Pricing Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <button
-                onClick={() => toggleSection('pricing')}
-                className="w-full p-4 flex items-center justify-between text-left"
-              >
-                <div className="flex items-center gap-2">
-                  <IoWalletOutline className="w-5 h-5 text-gray-400" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('pricing')}</h3>
-                </div>
-                {expandedSections.pricing ? (
-                  <IoChevronUpOutline className="w-5 h-5 text-gray-400" />
-                ) : (
-                  <IoChevronDownOutline className="w-5 h-5 text-gray-400" />
-                )}
-              </button>
-
-              {expandedSections.pricing && (
-                <div className="px-4 pb-4 space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">
-                      {formatCurrency(dailyRate)} × {t('durationDays', { count: durationDays })}
-                    </span>
-                    <span className="text-gray-900 dark:text-white">{formatCurrency(totalAmount)}</span>
-                  </div>
-
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">{t('platformFee')}</span>
-                    <span className="text-gray-500 dark:text-gray-400">-{formatCurrency(platformFee)}</span>
-                  </div>
-
-                  <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold text-gray-900 dark:text-white">{t('yourEarnings')}</span>
-                      <span className="text-xl font-bold text-green-600 dark:text-green-400">
-                        {formatCurrency(hostEarnings)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {prospect.counterOfferStatus === 'APPROVED' && (
-                    <p className="text-xs text-green-600 dark:text-green-400">
-                      {t('counterOfferApproved')}
-                    </p>
-                  )}
-
-                  {!hasPendingCounterOffer && !isExpired && !hasDeclined && !hasCompleted && (
-                    <button
-                      onClick={() => setShowCounterOffer(true)}
-                      className="w-full mt-3 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 flex items-center justify-center gap-2 text-sm font-medium"
-                    >
-                      <IoHandLeftOutline className="w-4 h-4" />
-                      {t('requestDifferentRate')}
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Connect Payout - Single Quick Action */}
-            {!isExpired && !hasDeclined && !hasCompleted && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('connectPayout')}</h3>
-                <button
-                  onClick={handleConnectPayoutDirect}
-                  disabled={connectingPayout || hasPendingCounterOffer || onboardingProgress.payoutConnected}
-                  className="w-full px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium flex items-center justify-center gap-2"
-                >
-                  {connectingPayout ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : onboardingProgress.payoutConnected ? (
-                    <IoCheckmarkCircleOutline className="w-5 h-5" />
-                  ) : (
-                    <IoWalletOutline className="w-5 h-5" />
-                  )}
-                  {connectingPayout ? t('connecting') : onboardingProgress.payoutConnected ? t('payoutConnected') : t('connectPayoutAccount')}
-                </button>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-                  {t('requiredToReceivePayments')}
+            {/* Expiration Countdown Banner */}
+            {!isExpired && !hasDeclined && !hasCompleted && timeRemaining && timeDisplay && (
+              <div className={`rounded-lg px-3 py-2.5 sm:px-4 sm:py-3 border flex items-center gap-2.5 ${
+                timeRemaining.hours < 6
+                  ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                  : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
+              }`}>
+                <IoTimeOutline className={`w-4 h-4 flex-shrink-0 ${
+                  timeRemaining.hours < 6
+                    ? 'text-red-500 dark:text-red-400'
+                    : 'text-gray-400'
+                }`} />
+                <p className={`text-xs flex-1 min-w-0 ${
+                  timeRemaining.hours < 6
+                    ? 'text-red-700 dark:text-red-300'
+                    : 'text-gray-600 dark:text-gray-400'
+                }`}>
+                  {t('completeSetupBefore')}
                 </p>
+                <span className={`text-sm font-semibold flex-shrink-0 ${
+                  timeRemaining.hours < 6
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-gray-900 dark:text-white'
+                }`}>
+                  {timeDisplay}
+                </span>
               </div>
             )}
+
+            <VehicleGuestCard
+              car={host.cars[0]}
+              vehicleInfo={request.vehicleInfo}
+              hasCarListed={hasCarListed}
+              guestName={request.guestName}
+              guestRating={request.guestRating}
+              guestTrips={request.guestTrips}
+              guestEmail={request.guestEmail}
+              guestPhone={request.guestPhone}
+            />
+
+            <RentalPeriodCard
+              startDate={request.startDate}
+              endDate={request.endDate}
+              pickupCity={request.pickupCity}
+              pickupState={request.pickupState}
+              durationDays={durationDays}
+              dailyRate={dailyRate}
+              totalAmount={totalAmount}
+              platformFee={platformFee}
+              hostEarnings={hostEarnings}
+              counterOfferStatus={prospect.counterOfferStatus}
+              hasPendingCounterOffer={hasPendingCounterOffer}
+              isExpired={isExpired}
+              hasDeclined={hasDeclined}
+              hasCompleted={hasCompleted}
+              onRequestDifferentRate={() => setShowCounterOffer(true)}
+              formatDate={formatDate}
+              formatCurrency={formatCurrency}
+            />
+
+            <GuestVerificationCard
+              hasCarListed={hasCarListed}
+              expanded={expandedSections.verification}
+              onToggle={() => toggleSection('verification')}
+            />
+
+            <RentalAgreementCard
+              agreementUploaded={onboardingProgress.agreementUploaded}
+              expanded={expandedSections.agreement}
+              onToggle={() => toggleSection('agreement')}
+              onShowTestPdf={() => setShowTestPdfModal(true)}
+              onShowPreview={() => setShowAgreementPreview(true)}
+              onRefresh={fetchRequest}
+              existingAgreement={data?.agreement}
+            />
           </div>
+
         </div>
 
-        {/* What's Needed Checklist - Bottom Section */}
+
+        {/* What's Needed — Interactive Progress Stepper */}
         {!isExpired && !hasDeclined && !hasCompleted && (
-          <div className="mt-4 sm:mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <IoAlertCircleOutline className="w-5 h-5 text-orange-500" />
-              {t('whatsNeeded')}
-            </h3>
+          <ProgressStepper
+            onboardingProgress={onboardingProgress}
+            onOpenRecruitmentSheet={() => setShowRecruitmentSheet(true)}
+            onEditAgreement={() => setShowEditAgreement(true)}
+            onEditPayment={() => setShowEditPayment(true)}
+            onConnectPayout={handleConnectPayoutDirect}
+            connectingPayout={connectingPayout}
+            hasPendingCounterOffer={hasPendingCounterOffer}
+          />
+        )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* List Your Car */}
-              <div className={`p-4 rounded-lg border ${
-                onboardingProgress.carPhotosUploaded && onboardingProgress.ratesConfigured
-                  ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
-                  : 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
-              }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('listYourCar')}</span>
-                  {onboardingProgress.carPhotosUploaded && onboardingProgress.ratesConfigured ? (
-                    <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
-                  ) : (
-                    <IoAlertCircleOutline className="w-5 h-5 text-amber-600" />
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {onboardingProgress.carPhotosUploaded && onboardingProgress.ratesConfigured
-                    ? t('carListedSuccessfully')
-                    : t('addPhotosAndRate')}
-                </p>
-                {!(onboardingProgress.carPhotosUploaded && onboardingProgress.ratesConfigured) && (
-                  <button
-                    onClick={() => setShowRecruitmentSheet(true)}
-                    className="w-full mt-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg flex items-center justify-center gap-1"
-                  >
-                    <IoCarOutline className="w-3 h-3" />
-                    {t('addCar')}
-                  </button>
-                )}
-              </div>
-
-              {/* Upload Rental Agreement */}
-              <div className={`p-4 rounded-lg border ${
-                onboardingProgress.agreementUploaded
-                  ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
-                  : 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
-              }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('rentalAgreement')}</span>
-                  {onboardingProgress.agreementUploaded ? (
-                    <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
-                  ) : (
-                    <IoAlertCircleOutline className="w-5 h-5 text-amber-600" />
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {onboardingProgress.agreementUploaded ? t('agreementUploadedTested') : t('uploadPdfAndTest')}
-                </p>
-                {!onboardingProgress.agreementUploaded && (
-                  <button
-                    onClick={() => {
-                      setExpandedSections(prev => ({ ...prev, agreement: true }))
-                      setTimeout(() => {
-                        const element = document.getElementById('agreement-section')
-                        if (element) {
-                          const y = element.getBoundingClientRect().top + window.scrollY - 80
-                          window.scrollTo({ top: y, behavior: 'smooth' })
-                        }
-                      }, 100)
-                    }}
-                    className="w-full mt-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg flex items-center justify-center gap-1"
-                  >
-                    <IoDocumentTextOutline className="w-3 h-3" />
-                    {t('uploadAgreement')}
-                  </button>
-                )}
-              </div>
-
-              {/* Connect Payout */}
-              <div className={`p-4 rounded-lg border ${
-                onboardingProgress.payoutConnected
-                  ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
-                  : 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
-              }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('connectPayout')}</span>
-                  {onboardingProgress.payoutConnected ? (
-                    <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
-                  ) : (
-                    <IoAlertCircleOutline className="w-5 h-5 text-amber-600" />
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {onboardingProgress.payoutConnected ? t('bankConnected') : t('connectToReceivePayments')}
-                </p>
-                {!onboardingProgress.payoutConnected && (
-                  <button
-                    onClick={handleConnectPayoutDirect}
-                    disabled={connectingPayout || hasPendingCounterOffer}
-                    className="w-full mt-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg flex items-center justify-center gap-1"
-                  >
-                    {connectingPayout ? (
-                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <IoWalletOutline className="w-3 h-3" />
-                    )}
-                    {connectingPayout ? t('connecting') : t('connectPayout')}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Important Note */}
-            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                <strong>{t('noteLabel')}</strong> {t('noteCarNotPublic')}
-              </p>
-            </div>
+        {/* Important Note - Standalone */}
+        {!isExpired && !hasDeclined && !hasCompleted && (
+          <div className="mt-4 sm:mt-6 p-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              <strong>{t('noteLabel')}</strong> {t('noteCarNotPublic')}
+            </p>
           </div>
         )}
 
@@ -1020,123 +612,11 @@ export default function RequestDetailPage() {
         />
       )}
 
-      {/* Test PDF Modal - Tests the user's uploaded agreement */}
-      {showTestPdfModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <IoDocumentOutline className="w-5 h-5 text-blue-600" />
-                {t('testESignExperience')}
-              </h2>
-              <button
-                onClick={() => setShowTestPdfModal(false)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <IoCloseOutline className="w-6 h-6 text-gray-500" />
-              </button>
-            </div>
-
-            <div className="p-4 space-y-4">
-              {/* What will be sent */}
-              <div className="space-y-3">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('testWillSendEmail')}
-                </p>
-                <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <IoDocumentTextOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white text-sm">{t('yourRentalAgreement')}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('thePdfYouUploaded')}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <IoDocumentTextOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white text-sm">{t('itwhipStandardAgreement')}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('requiredPlatformTerms')}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Email destination */}
-              <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <IoMailOutline className="w-5 h-5 text-gray-500" />
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('testEmailSentTo')}</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{host.email}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Info Box */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  <strong>{t('previewWhatGuestsSee')}</strong> {t('previewWhatGuestsSeeDesc')}
-                </p>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3 p-4 border-t border-gray-200 dark:border-gray-700">
-              <button
-                onClick={() => setShowTestPdfModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
-              >
-                {t('cancel')}
-              </button>
-              <button
-                onClick={async () => {
-                  setSendingTestPdf(true)
-                  try {
-                    const response = await fetch('/api/partner/onboarding/agreement/test', {
-                      method: 'POST'
-                    })
-                    const result = await response.json()
-
-                    if (!response.ok) {
-                      alert(result.error || t('failedToSendTestEmail'))
-                      return
-                    }
-
-                    setShowTestPdfModal(false)
-                    alert(t('testEmailSentSuccess', { sentTo: result.sentTo }))
-                  } catch (err) {
-                    console.error('Test e-sign error:', err)
-                    alert(t('failedToSendTestEmail'))
-                  } finally {
-                    setSendingTestPdf(false)
-                  }
-                }}
-                disabled={sendingTestPdf}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {sendingTestPdf ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                    {t('sending')}
-                  </>
-                ) : (
-                  <>
-                    <IoSendOutline className="w-4 h-4" />
-                    {t('sendTestEmail')}
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <TestPdfModal
+        isOpen={showTestPdfModal}
+        onClose={() => setShowTestPdfModal(false)}
+        hostEmail={host.email}
+      />
 
       {/* Recruitment Bottomsheet */}
       <RecruitmentBottomSheet
@@ -1166,134 +646,64 @@ export default function RequestDetailPage() {
           totalAmount: request.totalAmount,
           hostEarnings: request.hostEarnings
         }}
+        existingAgreement={data?.agreement}
+        onboardingProgress={onboardingProgress}
       />
 
-      {/* Agreement Preview Modal */}
-      {showAgreementPreview && data && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <IoDocumentTextOutline className="w-5 h-5 text-purple-600" />
-                {t('vehicleRentalAgreement')}
-              </h2>
-              <button
-                onClick={() => setShowAgreementPreview(false)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <IoCloseOutline className="w-6 h-6 text-gray-500" />
-              </button>
-            </div>
+      {/* Standalone Edit: Agreement Preference */}
+      <BottomSheet
+        isOpen={showEditAgreement}
+        onClose={() => setShowEditAgreement(false)}
+        title={t('rentalAgreement')}
+        size="large"
+        showDragHandle={true}
+        footer={undefined}
+      >
+        <AgreementPreferenceStep
+          onComplete={() => {}}
+          existingAgreement={data?.agreement}
+          standalone
+          onSaveStandalone={() => {
+            setShowEditAgreement(false)
+            fetchRequest()
+          }}
+        />
+      </BottomSheet>
 
-            {/* Agreement Content */}
-            <div className="p-6">
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('vehicleRentalAgreement')}</h3>
-                <p className="text-sm text-gray-500 mt-1">{t('requestNumber', { id: data.prospect.id.slice(0, 8).toUpperCase() })}</p>
-              </div>
+      {/* Standalone Edit: Payment Preference */}
+      <BottomSheet
+        isOpen={showEditPayment}
+        onClose={() => setShowEditPayment(false)}
+        title={t('bsStepPayment')}
+        size="large"
+        showDragHandle={true}
+        footer={undefined}
+      >
+        <PaymentPreferenceStep
+          hostData={{ id: host.id, name: host.name }}
+          requestData={{ hostEarnings: request.hostEarnings, durationDays: request.durationDays }}
+          onComplete={() => {
+            setShowEditPayment(false)
+            fetchRequest()
+          }}
+        />
+      </BottomSheet>
 
-              <div className="space-y-4">
-                {/* Parties */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('renterGuest')}</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{data.request.guestName || t('guest')}</p>
-                  </div>
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('vehicleOwnerPartner')}</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{data.host.name}</p>
-                  </div>
-                </div>
-
-                {/* Vehicle */}
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('vehicle')}</p>
-                  <p className="font-semibold text-gray-900 dark:text-white">
-                    {data.request.vehicleInfo || t('vehicleDetailsPending')}
-                  </p>
-                </div>
-
-                {/* Dates */}
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('pickupDate')}</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">
-                      {data.request.startDate ? new Date(data.request.startDate).toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : t('tbd')}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('returnDate')}</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">
-                      {data.request.endDate ? new Date(data.request.endDate).toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : t('tbd')}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Location */}
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('pickupLocation')}</p>
-                  <p className="font-semibold text-gray-900 dark:text-white">
-                    {data.request.pickupCity && data.request.pickupState ? `${data.request.pickupCity}, ${data.request.pickupState}` : t('locationTbd')}
-                  </p>
-                </div>
-
-                {/* Duration & Rate */}
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('totalDays')}</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{t('durationDays', { count: data.request.durationDays || 0 })}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('dailyRate')}</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{t('ratePerDay', { rate: data.request.offeredRate || 0 })}</p>
-                  </div>
-                </div>
-
-                {/* Total */}
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 dark:text-gray-400">{t('totalRentalAmount')}</span>
-                      <span className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                        ${data.request.totalAmount?.toLocaleString() || 0}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Legal */}
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 text-sm text-gray-500 dark:text-gray-400 space-y-2">
-                  <p><strong>{t('governingLaw')}</strong> {t('governingLawValue')}</p>
-                  <p><strong>{t('venue')}</strong> {t('venueValue')}</p>
-                  <p className="text-xs mt-4">
-                    {t('bySigningAgreement')}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3 p-4 border-t border-gray-200 dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-800">
-              <button
-                onClick={() => setShowAgreementPreview(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
-              >
-                {t('close')}
-              </button>
-              <a
-                href="https://itwhip.com/rentals/cmjutqr7k0001ju04qwg6ds9a/book"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
-              >
-                <IoDocumentTextOutline className="w-4 h-4" />
-                {t('viewFullAgreement')}
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
+      <AgreementPreviewModal
+        isOpen={showAgreementPreview}
+        onClose={() => setShowAgreementPreview(false)}
+        prospectId={prospect.id}
+        guestName={request.guestName}
+        hostName={host.name}
+        vehicleInfo={request.vehicleInfo}
+        startDate={request.startDate}
+        endDate={request.endDate}
+        pickupCity={request.pickupCity}
+        pickupState={request.pickupState}
+        durationDays={request.durationDays}
+        offeredRate={request.offeredRate}
+        totalAmount={request.totalAmount}
+      />
     </div>
   )
 }

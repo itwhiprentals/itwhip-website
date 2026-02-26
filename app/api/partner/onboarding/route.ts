@@ -109,25 +109,42 @@ export async function GET(request: NextRequest) {
 
     // Calculate onboarding progress
     // Check host's Stripe status as fallback for payout (webhook might update host before prospect)
+    // Cash preference also counts as payout connected (no Stripe needed)
     const payoutConnected = prospect.payoutConnected ||
+      prospect.paymentPreference === 'CASH' ||
       host.stripePayoutsEnabled ||
       host.stripeChargesEnabled ||
       host.payoutsEnabled ||
       false
 
+    // Agreement is done if they chose ITWHIP (no upload needed) or actually uploaded one
+    const agreementDone = prospect.agreementPreference === 'ITWHIP' ||
+      prospect.agreementUploaded ||
+      false
+
+    // Build first car name for completed card display
+    const firstCar = host.cars?.[0]
+    const firstCarName = firstCar
+      ? `${firstCar.year} ${firstCar.make} ${firstCar.model}`
+      : null
+
     const onboardingProgress = {
       carPhotosUploaded: prospect.carPhotosUploaded,
       ratesConfigured: prospect.ratesConfigured,
       payoutConnected,
-      agreementUploaded: prospect.agreementUploaded,
+      agreementUploaded: agreementDone,
+      agreementPreference: prospect.agreementPreference || null,
+      paymentPreference: prospect.paymentPreference || null,
+      firstCarName,
       percentComplete: calculateProgressPercent({ ...prospect, payoutConnected })
     }
 
-    // Calculate time remaining (if request has expiry)
+    // Calculate time remaining — use request expiresAt or prospect inviteTokenExp
+    const expiryDate = fleetRequest.expiresAt || prospect.inviteTokenExp
     let timeRemaining = null
-    if (fleetRequest.expiresAt) {
+    if (expiryDate) {
       const now = new Date()
-      const expiry = new Date(fleetRequest.expiresAt)
+      const expiry = new Date(expiryDate)
       const msRemaining = expiry.getTime() - now.getTime()
       if (msRemaining > 0) {
         timeRemaining = {
@@ -180,7 +197,7 @@ export async function GET(request: NextRequest) {
         totalAmount: (fleetRequest as any).totalAmount ?? fleetRequest.totalBudget ?? null,
         hostEarnings: (fleetRequest as any).hostEarnings ?? null,
         platformFee: (fleetRequest as any).platformFee ?? null,
-        expiresAt: fleetRequest.expiresAt
+        expiresAt: fleetRequest.expiresAt || prospect.inviteTokenExp
       },
       onboardingProgress,
       timeRemaining,

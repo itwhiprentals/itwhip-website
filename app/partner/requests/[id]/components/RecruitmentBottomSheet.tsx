@@ -1,6 +1,6 @@
 // app/partner/requests/[id]/components/RecruitmentBottomSheet.tsx
 // Main orchestrator for the recruited host onboarding bottomsheet flow
-// Steps: Secure Account → Payment Preference → Add Car → Congrats
+// Steps: Secure Account → Agreement → Payment Preference → Add Car → Congrats
 
 'use client'
 
@@ -8,16 +8,18 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import BottomSheet from '@/app/components/BottomSheet'
 import SecureAccountStep from './SecureAccountStep'
+import AgreementPreferenceStep from './AgreementPreferenceStep'
 import PaymentPreferenceStep from './PaymentPreferenceStep'
 import AddCarWizard from '@/app/partner/fleet/add/AddCarWizard'
 import {
   IoShieldCheckmarkOutline,
+  IoDocumentTextOutline,
   IoWalletOutline,
   IoCarOutline,
   IoCheckmarkCircleOutline
 } from 'react-icons/io5'
 
-type OnboardingStep = 'SECURE_ACCOUNT' | 'PAYMENT_PREFERENCE' | 'ADD_CAR' | 'CONGRATS'
+type OnboardingStep = 'SECURE_ACCOUNT' | 'AGREEMENT' | 'PAYMENT_PREFERENCE' | 'ADD_CAR' | 'CONGRATS'
 
 interface MissingFields {
   needsPhone: boolean
@@ -53,12 +55,23 @@ interface RecruitmentBottomSheetProps {
     totalAmount: number | null
     hostEarnings: number | null
   }
+  existingAgreement?: {
+    url?: string
+    fileName?: string
+    validationScore?: number
+    validationSummary?: string
+  }
+  onboardingProgress?: {
+    agreementPreference?: string | null
+    paymentPreference?: string | null
+  }
 }
 
-const STEPS: OnboardingStep[] = ['SECURE_ACCOUNT', 'PAYMENT_PREFERENCE', 'ADD_CAR', 'CONGRATS']
+const STEPS: OnboardingStep[] = ['SECURE_ACCOUNT', 'AGREEMENT', 'PAYMENT_PREFERENCE', 'ADD_CAR', 'CONGRATS']
 
 const STEP_ICONS = {
   SECURE_ACCOUNT: IoShieldCheckmarkOutline,
+  AGREEMENT: IoDocumentTextOutline,
   PAYMENT_PREFERENCE: IoWalletOutline,
   ADD_CAR: IoCarOutline,
   CONGRATS: IoCheckmarkCircleOutline
@@ -70,7 +83,9 @@ export default function RecruitmentBottomSheet({
   onComplete,
   hostData,
   prospectData,
-  requestData
+  requestData,
+  existingAgreement,
+  onboardingProgress
 }: RecruitmentBottomSheetProps) {
   const t = useTranslations('PartnerRequestDetail')
 
@@ -105,10 +120,43 @@ export default function RecruitmentBottomSheet({
           needsEmailVerification: host.email && !host.emailVerified
         })
 
-        // If account is already fully secured, skip to next step
+        // Determine which steps are already done and find first incomplete
+        const completed = new Set<OnboardingStep>()
+        let firstIncomplete: OnboardingStep = 'SECURE_ACCOUNT'
+
+        // Check Secure Account
         if (host.hasPassword && host.phone && host.email) {
-          setCompletedSteps(prev => new Set([...prev, 'SECURE_ACCOUNT']))
-          setCurrentStep('PAYMENT_PREFERENCE')
+          completed.add('SECURE_ACCOUNT')
+        }
+
+        // Check Agreement
+        const progress = data.onboardingProgress
+        if (progress?.agreementPreference) {
+          completed.add('AGREEMENT')
+        }
+
+        // Check Payment Preference
+        if (progress?.paymentPreference) {
+          completed.add('PAYMENT_PREFERENCE')
+        }
+
+        // Check Add Car
+        if (progress?.carPhotosUploaded) {
+          completed.add('ADD_CAR')
+        }
+
+        // Find first incomplete step
+        for (const step of STEPS) {
+          if (step === 'CONGRATS') break
+          if (!completed.has(step)) {
+            firstIncomplete = step
+            break
+          }
+        }
+
+        setCompletedSteps(completed)
+        if (completed.size > 0) {
+          setCurrentStep(firstIncomplete)
         }
       }
     } catch (error) {
@@ -162,6 +210,7 @@ export default function RecruitmentBottomSheet({
   const currentStepIndex = STEPS.indexOf(currentStep)
   const stepLabels = {
     SECURE_ACCOUNT: t('bsStepSecureAccount'),
+    AGREEMENT: t('bsStepAgreement'),
     PAYMENT_PREFERENCE: t('bsStepPayment'),
     ADD_CAR: t('bsStepAddCar'),
     CONGRATS: t('bsStepDone')
@@ -193,7 +242,7 @@ export default function RecruitmentBottomSheet({
             <div key={step} className="flex items-center flex-1">
               <div className="flex flex-col items-center flex-1">
                 <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
                     isCompleted
                       ? 'bg-green-100 dark:bg-green-900/30'
                       : isActive
@@ -202,16 +251,16 @@ export default function RecruitmentBottomSheet({
                   }`}
                 >
                   {isCompleted ? (
-                    <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    <IoCheckmarkCircleOutline className="w-4.5 h-4.5 text-green-600 dark:text-green-400" />
                   ) : (
-                    <Icon className={`w-4.5 h-4.5 ${
+                    <Icon className={`w-4 h-4 ${
                       isActive
                         ? 'text-orange-600 dark:text-orange-400'
                         : 'text-gray-400 dark:text-gray-500'
                     }`} />
                   )}
                 </div>
-                <span className={`text-[10px] mt-1 text-center leading-tight ${
+                <span className={`text-[9px] mt-1 text-center leading-tight ${
                   isActive
                     ? 'text-orange-600 dark:text-orange-400 font-medium'
                     : isCompleted
@@ -222,7 +271,7 @@ export default function RecruitmentBottomSheet({
                 </span>
               </div>
               {index < STEPS.length - 1 && (
-                <div className={`flex-shrink-0 w-8 h-0.5 mx-1 -mt-4 ${
+                <div className={`flex-shrink-0 w-6 h-0.5 mx-0.5 -mt-4 ${
                   isPast || isCompleted
                     ? 'bg-green-300 dark:bg-green-700'
                     : 'bg-gray-200 dark:bg-gray-600'
@@ -239,6 +288,13 @@ export default function RecruitmentBottomSheet({
           hostData={hostData}
           missingFields={missingFields}
           onComplete={handleSecureAccountComplete}
+        />
+      )}
+
+      {currentStep === 'AGREEMENT' && (
+        <AgreementPreferenceStep
+          onComplete={() => handleStepComplete('AGREEMENT')}
+          existingAgreement={existingAgreement}
         />
       )}
 

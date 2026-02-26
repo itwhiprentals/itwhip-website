@@ -45,7 +45,7 @@ export default function BottomSheet({
     small: '40vh',
     medium: '60vh',
     large: '80vh',
-    full: '100vh'
+    full: '75vh'
   }
 
   // Lock body scroll when open
@@ -147,15 +147,39 @@ export default function BottomSheet({
     }
   }, [isDragging, showDragHandle, translateY, onClose])
 
-  if (!isOpen) return null
+  // Two-phase mount for slide animation:
+  // Phase 1: mount into DOM at translateY(100%) — off-screen
+  // Phase 2: after browser paints, set visible=true to trigger CSS transition to translateY(0)
+  const [mounted, setMounted] = useState(false)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    if (isOpen) {
+      // Phase 1: mount the component (renders at translateY(100%))
+      setMounted(true)
+      // Phase 2: after a tick so browser paints the off-screen position,
+      // trigger the slide-up transition
+      const timer = setTimeout(() => setVisible(true), 50)
+      return () => clearTimeout(timer)
+    } else {
+      // Start slide-out animation
+      setVisible(false)
+      // Remove from DOM after animation completes
+      const timer = setTimeout(() => setMounted(false), 400)
+      return () => clearTimeout(timer)
+    }
+  }, [isOpen])
+
+  if (!mounted) return null
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className={`fixed inset-0 z-50 ${!isOpen && !visible ? 'pointer-events-none' : ''}`}>
       {/* Backdrop */}
       <div
-        className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
-          isOpen ? 'opacity-100' : 'opacity-0'
+        className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity ease-out ${
+          visible ? 'opacity-100' : 'opacity-0'
         }`}
+        style={{ transitionDuration: '400ms' }}
         onClick={onClose}
         aria-hidden="true"
       />
@@ -168,14 +192,18 @@ export default function BottomSheet({
           bg-white dark:bg-gray-900
           rounded-t-2xl shadow-2xl
           flex flex-col
-          transition-transform duration-300 ease-out
-          ${isDragging ? '' : 'transition-all'}
+          ${isDragging ? '' : 'transition-transform ease-[cubic-bezier(0.32,0.72,0,1)]'}
           ${className}
         `}
         style={{
           maxHeight: sizeMap[size],
-          height: size === 'full' ? '100vh' : 'auto',
-          transform: `translateY(${isOpen ? translateY : '100%'}px)`,
+          height: size === 'full' ? '75vh' : 'auto',
+          transitionDuration: isDragging ? '0ms' : '400ms',
+          transform: visible && translateY === 0
+            ? 'translateY(0)'
+            : visible
+              ? `translateY(${translateY}px)`
+              : 'translateY(100%)',
         }}
         role="dialog"
         aria-modal="true"

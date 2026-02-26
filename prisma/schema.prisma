@@ -4183,6 +4183,9 @@ model HostProspect {
   // Payment preference (chosen during onboarding bottomsheet)
   paymentPreference     String?   // 'CASH' or 'PLATFORM'
 
+  // Agreement preference (chosen during onboarding bottomsheet)
+  agreementPreference   String?   // 'ITWHIP' | 'OWN' | 'BOTH'
+
   // Onboarding progress (tracks what host has completed)
   onboardingStartedAt   DateTime? // When they clicked "Start"
   carPhotosUploaded     Boolean   @default(false)

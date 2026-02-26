@@ -44,7 +44,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
     "child-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
-    "upgrade-insecure-requests"
+    ...(process.env.NODE_ENV === 'production' ? ["upgrade-insecure-requests"] : [])
   ].join('; ')
   response.headers.set('Content-Security-Policy', csp)
 
