@@ -355,12 +355,10 @@ function VehicleListItem({ vehicle }: { vehicle: Vehicle }) {
             <div className="flex items-center gap-2 text-sm mt-2">
               {vehicle.totalTrips && vehicle.totalTrips > 0 ? (
                 <>
-                  {vehicle.rating && vehicle.rating > 0 && (
-                    <span className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-                      <IoStarOutline className="w-4 h-4 text-yellow-500" />
-                      {Math.floor(vehicle.rating * 10) / 10}
-                    </span>
-                  )}
+                  <span className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                    <IoStarOutline className={`w-4 h-4 ${vehicle.rating && vehicle.rating > 0 ? 'text-yellow-500' : 'text-gray-300 dark:text-gray-500'}`} />
+                    {vehicle.rating && vehicle.rating > 0 ? (Math.floor(vehicle.rating * 10) / 10) : '0.0'}
+                  </span>
                   <span className="text-gray-400">•</span>
                   <span className="text-gray-500 dark:text-gray-400">{vehicle.totalTrips} trips</span>
                 </>

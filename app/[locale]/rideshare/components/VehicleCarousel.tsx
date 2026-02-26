@@ -101,11 +101,11 @@ export default function VehicleCarousel({ vehicles, partnerSlug, maxVisible = 4 
                 {t('carouselRideshareBadge')}
               </div>
 
-              {/* Rating Badge */}
-              {vehicle.rating > 0 && (
+              {/* Rating Badge — show when trips exist */}
+              {vehicle.trips > 0 && (
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-white text-xs font-medium rounded-full">
-                  <IoStarOutline className="w-3 h-3 text-yellow-500" />
-                  {vehicle.rating.toFixed(1)}
+                  <IoStarOutline className={`w-3 h-3 ${vehicle.rating > 0 ? 'text-yellow-500' : 'text-gray-300 dark:text-gray-500'}`} />
+                  {vehicle.rating > 0 ? vehicle.rating.toFixed(1) : '0.0'}
                 </div>
               )}
             </div>

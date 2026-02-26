@@ -2045,7 +2045,7 @@ model RentalCar {
   insuranceIncluded          Boolean                    @default(false)
   insuranceDaily             Float                      @default(25)
   totalTrips                 Int                        @default(0)
-  rating                     Float                      @default(5.0)
+  rating                     Float                      @default(0)
   createdAt                  DateTime                   @default(now())
   updatedAt                  DateTime
   classificationId           String?
@@ -2224,7 +2224,7 @@ model RentalHost {
   responseRate                  Float?
   acceptanceRate                Float?
   totalTrips                    Int                    @default(0)
-  rating                        Float                  @default(5.0)
+  rating                        Float                  @default(0)
   city                          String
   state                         String
   zipCode                       String?

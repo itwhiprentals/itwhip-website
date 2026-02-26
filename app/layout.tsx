@@ -4,6 +4,7 @@
 
 import { Inter } from 'next/font/google'
 import '@/app/globals.css'
+import ScrollToTop from '@/app/components/ScrollToTop'
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
@@ -19,6 +20,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
       </head>
       <body className={`${inter.className} antialiased`}>
+        <ScrollToTop />
         {children}
       </body>
     </html>
