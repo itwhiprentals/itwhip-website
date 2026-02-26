@@ -4206,6 +4206,7 @@ model HostProspect {
   testAgreementExpiresAt DateTime? // 1 day expiry
   testAgreementSentAt    DateTime? // When test email was sent
   testAgreementSignedAt  DateTime? // When host signed the test
+  testEsignCount         Int       @default(0) // How many test e-signs sent (max 2)
 
   // Link to specific request they were invited for
   requestId String?

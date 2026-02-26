@@ -8,6 +8,7 @@ import { verify } from 'jsonwebtoken'
 import { hash } from 'argon2'
 import { nanoid } from 'nanoid'
 import { logProspectActivity } from '@/app/lib/auth/host-tokens'
+import { verifyPhoneToken } from '@/app/lib/firebase/admin'
 
 const JWT_SECRET = process.env.JWT_SECRET!
 
@@ -108,6 +109,64 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json({ success: true })
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Action: Verify phone via Firebase SMS
+    // ─────────────────────────────────────────────────────────
+    if (action === 'verifyPhone') {
+      const { idToken } = body
+
+      if (!idToken || typeof idToken !== 'string') {
+        return NextResponse.json(
+          { error: 'Firebase ID token is required' },
+          { status: 400 }
+        )
+      }
+
+      let verifiedPhone: string
+      try {
+        const result = await verifyPhoneToken(idToken)
+        verifiedPhone = result.phoneNumber
+        console.log(`[Secure Account] Firebase verified phone: ${verifiedPhone} for host: ${host.id}`)
+      } catch (error: any) {
+        console.error('[Secure Account] Firebase phone verification failed:', error)
+        return NextResponse.json(
+          { error: 'Phone verification failed. Please try again.' },
+          { status: 400 }
+        )
+      }
+
+      // Update host with verified phone
+      await prisma.rentalHost.update({
+        where: { id: host.id },
+        data: {
+          phone: verifiedPhone,
+          phoneVerified: true,
+          phoneVerifiedAt: new Date()
+        }
+      })
+
+      // Also update linked User if exists
+      if (host.userId) {
+        await prisma.user.update({
+          where: { id: host.userId },
+          data: {
+            phone: verifiedPhone,
+            phoneVerified: true,
+          }
+        })
+      }
+
+      // Log activity
+      if (host.convertedFromProspect) {
+        await logProspectActivity(host.convertedFromProspect.id, 'PHONE_VERIFIED', {
+          hostId: host.id,
+          phone: verifiedPhone
+        })
+      }
+
+      return NextResponse.json({ success: true, phone: verifiedPhone })
     }
 
     // ─────────────────────────────────────────────────────────

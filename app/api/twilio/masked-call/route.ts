@@ -205,7 +205,7 @@ export async function POST(request: NextRequest) {
       url: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/masked-caller?room=${encodeURIComponent(roomName)}&target=${user.role}`,
       method: 'POST',
       timeout: 30,
-      machineDetection: 'Enable',
+      // AMD disabled — was falsely detecting real humans as voicemail
       statusCallback: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/masked-status?room=${encodeURIComponent(roomName)}&otherLeg=${user.role}`,
       statusCallbackEvent: ['completed', 'busy', 'no-answer', 'failed', 'canceled'],
       statusCallbackMethod: 'POST',

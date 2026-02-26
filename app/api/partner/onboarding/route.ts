@@ -168,6 +168,7 @@ export async function GET(request: NextRequest) {
         phone: host.phone || null,
         hasPassword: host.hasPassword,
         emailVerified: host.emailVerified || false,
+        phoneVerified: host.phoneVerified || false,
         onboardingStartedAt: host.onboardingStartedAt,
         onboardingCompletedAt: host.onboardingCompletedAt,
         declinedRequestAt: host.declinedRequestAt,

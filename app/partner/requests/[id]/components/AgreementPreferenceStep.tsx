@@ -4,9 +4,11 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import AgreementUpload from './AgreementUpload'
+import AgreementFullPreview from './AgreementFullPreview'
+import TestEsignButton from './TestEsignButton'
 import {
   IoShieldCheckmarkOutline,
   IoDocumentTextOutline,
@@ -16,6 +18,19 @@ import {
 } from 'react-icons/io5'
 
 type AgreementPref = 'ITWHIP' | 'OWN' | 'BOTH'
+
+interface RequestData {
+  id: string
+  guestName: string | null
+  offeredRate: number | null
+  startDate: string | null
+  endDate: string | null
+  durationDays: number | null
+  pickupCity: string | null
+  pickupState: string | null
+  totalAmount: number | null
+  hostEarnings: number | null
+}
 
 interface AgreementPreferenceStepProps {
   onComplete: (preference: AgreementPref) => void
@@ -28,18 +43,48 @@ interface AgreementPreferenceStepProps {
   /** When true, renders standalone (no Continue button — used in edit modal) */
   standalone?: boolean
   onSaveStandalone?: (preference: AgreementPref) => void
+  /** Request data for preview context */
+  requestData?: RequestData
+  /** Host name for preview */
+  hostName?: string
+  /** Host email for test e-sign hint */
+  hostEmail?: string
 }
 
 export default function AgreementPreferenceStep({
   onComplete,
   existingAgreement,
   standalone = false,
-  onSaveStandalone
+  onSaveStandalone,
+  requestData,
+  hostName,
+  hostEmail
 }: AgreementPreferenceStepProps) {
   const t = useTranslations('PartnerRequestDetail')
   const [selected, setSelected] = useState<AgreementPref>('ITWHIP')
   const [saving, setSaving] = useState(false)
   const [uploaded, setUploaded] = useState(!!existingAgreement?.url)
+  const [showPreview, setShowPreview] = useState(false)
+  const [testCount, setTestCount] = useState(0)
+
+  // Fetch current test count on mount
+  useEffect(() => {
+    fetchTestCount()
+  }, [])
+
+  const fetchTestCount = async () => {
+    try {
+      const response = await fetch('/api/partner/onboarding/agreement-preference')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.testEsignCount != null) {
+          setTestCount(data.testEsignCount)
+        }
+      }
+    } catch {
+      // Non-critical — count defaults to 0
+    }
+  }
 
   const handleContinue = async () => {
     setSaving(true)
@@ -104,6 +149,23 @@ export default function AgreementPreferenceStep({
     }
   ]
 
+  // Show test button when: ITWHIP selected, or OWN/BOTH with uploaded agreement
+  const canShowTest = selected === 'ITWHIP' || ((selected === 'OWN' || selected === 'BOTH') && uploaded)
+
+  // Default request data fallback
+  const defaultRequestData: RequestData = {
+    id: '',
+    guestName: null,
+    offeredRate: null,
+    startDate: null,
+    endDate: null,
+    durationDays: null,
+    pickupCity: null,
+    pickupState: null,
+    totalAmount: null,
+    hostEarnings: null
+  }
+
   return (
     <div className="space-y-5">
       {/* Header */}
@@ -167,46 +229,33 @@ export default function AgreementPreferenceStep({
                 </div>
               </button>
 
-              {/* Expanded content when selected */}
-              {isSelected && option.value === 'ITWHIP' && (
-                <div className="mt-2 ml-8 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <button
-                    type="button"
-                    onClick={() => window.open('/agreement/preview', '_blank')}
-                    className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium"
-                  >
-                    <IoEyeOutline className="w-4 h-4" />
-                    {t('previewItwhipAgreement')}
-                  </button>
-                </div>
-              )}
-
-              {isSelected && option.value === 'OWN' && (
-                <div className="mt-2 ml-8 space-y-2">
-                  <AgreementUpload
-                    onUploadSuccess={() => setUploaded(true)}
-                    existingAgreement={existingAgreement}
-                  />
-                  {!uploaded && (
-                    <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-                      {t('uploadLater')}
-                    </p>
+              {/* Preview button + full preview for ITWHIP and BOTH */}
+              {isSelected && (option.value === 'ITWHIP' || option.value === 'BOTH') && (
+                <div className="mt-2 space-y-2">
+                  {showPreview ? (
+                    <AgreementFullPreview
+                      requestData={requestData || defaultRequestData}
+                      hostName={hostName}
+                      onClose={() => setShowPreview(false)}
+                    />
+                  ) : (
+                    <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <button
+                        type="button"
+                        onClick={() => setShowPreview(true)}
+                        className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium"
+                      >
+                        <IoEyeOutline className="w-4 h-4" />
+                        {t('previewItwhipAgreement')}
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
 
-              {isSelected && option.value === 'BOTH' && (
-                <div className="mt-2 ml-8 space-y-3">
-                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <button
-                      type="button"
-                      onClick={() => window.open('/agreement/preview', '_blank')}
-                      className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium"
-                    >
-                      <IoEyeOutline className="w-4 h-4" />
-                      {t('previewItwhipAgreement')}
-                    </button>
-                  </div>
+              {/* Agreement upload for OWN and BOTH */}
+              {isSelected && (option.value === 'OWN' || option.value === 'BOTH') && (
+                <div className="mt-2 space-y-2">
                   <AgreementUpload
                     onUploadSuccess={() => setUploaded(true)}
                     existingAgreement={existingAgreement}
@@ -222,6 +271,16 @@ export default function AgreementPreferenceStep({
           )
         })}
       </div>
+
+      {/* Test E-Sign Button */}
+      {canShowTest && (
+        <TestEsignButton
+          preference={selected}
+          testCount={testCount}
+          onTestSent={(newCount) => setTestCount(newCount)}
+          hostEmail={hostEmail}
+        />
+      )}
 
       {/* Continue Button */}
       <button

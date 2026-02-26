@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
           url: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/join-conference?room=${encodeURIComponent(roomName)}&lang=en&endOnExit=false`,
           method: 'POST',
           timeout: 30,
-          machineDetection: 'Enable',
+          // AMD disabled — was falsely detecting real humans as voicemail
           statusCallback: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice/conference-status?room=${encodeURIComponent(roomName)}&callerSid=${callSid}&lang=en`,
           statusCallbackEvent: ['completed', 'busy', 'no-answer', 'failed', 'canceled'],
           statusCallbackMethod: 'POST',

@@ -92,8 +92,17 @@ export async function POST() {
       )
     }
 
-    // Check if host has uploaded their agreement
-    if (!prospect.hostAgreementUrl) {
+    // Check test count (max 2 tests)
+    if (prospect.testEsignCount >= 2) {
+      return NextResponse.json(
+        { error: 'Maximum test limit reached (2/2)', testCount: prospect.testEsignCount },
+        { status: 429 }
+      )
+    }
+
+    // For OWN or BOTH preference, require uploaded agreement
+    const pref = prospect.agreementPreference
+    if ((pref === 'OWN' || pref === 'BOTH') && !prospect.hostAgreementUrl) {
       return NextResponse.json(
         { error: 'Please upload your rental agreement PDF first' },
         { status: 400 }
@@ -104,13 +113,14 @@ export async function POST() {
     const agreementToken = generateAgreementToken()
     const expiresAt = getTokenExpiryDate(1) // 1 day for test
 
-    // Store the test agreement token in the prospect
+    // Store the test agreement token + increment count
     await prisma.hostProspect.update({
       where: { id: prospect.id },
       data: {
         testAgreementToken: agreementToken,
         testAgreementExpiresAt: expiresAt,
         testAgreementSentAt: new Date(),
+        testEsignCount: { increment: 1 },
         lastActivityAt: new Date()
       }
     })
@@ -164,8 +174,9 @@ export async function POST() {
                 <strong>What you'll see:</strong>
               </p>
               <ul style="color: #374151; font-size: 14px; padding-left: 20px; margin-bottom: 20px;">
-                <li>Your uploaded rental agreement</li>
-                <li>ItWhip Standard Agreement terms</li>
+                ${pref === 'OWN' ? '<li>Your uploaded rental agreement</li>' : ''}
+                ${pref !== 'OWN' ? '<li>ItWhip Standard Agreement terms</li>' : ''}
+                ${pref === 'BOTH' ? '<li>Your uploaded rental agreement</li>' : ''}
                 <li>Signature capture area</li>
               </ul>
 
@@ -206,6 +217,7 @@ export async function POST() {
       sentTo: host.email,
       signingUrl,
       expiresAt,
+      testCount: prospect.testEsignCount + 1,
       message: emailSent
         ? `Test e-sign email sent to ${host.email}`
         : `Test link generated but email failed. Try this URL: ${signingUrl}`

@@ -26,6 +26,7 @@ interface MissingFields {
   needsEmail: boolean
   needsPassword: boolean
   needsEmailVerification: boolean
+  needsPhoneVerification: boolean
 }
 
 interface RecruitmentBottomSheetProps {
@@ -98,7 +99,8 @@ export default function RecruitmentBottomSheet({
     needsPhone: false,
     needsEmail: false,
     needsPassword: !hostData.hasPassword,
-    needsEmailVerification: false
+    needsEmailVerification: false,
+    needsPhoneVerification: true
   })
 
   // Detect missing fields on mount
@@ -117,15 +119,16 @@ export default function RecruitmentBottomSheet({
           needsPhone: !host.phone,
           needsEmail: !host.email,
           needsPassword: !host.hasPassword,
-          needsEmailVerification: host.email && !host.emailVerified
+          needsEmailVerification: host.email && !host.emailVerified,
+          needsPhoneVerification: !host.phoneVerified
         })
 
         // Determine which steps are already done and find first incomplete
         const completed = new Set<OnboardingStep>()
         let firstIncomplete: OnboardingStep = 'SECURE_ACCOUNT'
 
-        // Check Secure Account
-        if (host.hasPassword && host.phone && host.email) {
+        // Check Secure Account (requires password + phone verified + email)
+        if (host.hasPassword && host.phone && host.email && host.phoneVerified) {
           completed.add('SECURE_ACCOUNT')
         }
 
@@ -230,17 +233,23 @@ export default function RecruitmentBottomSheet({
       showDragHandle={true}
       footer={undefined}
     >
-      {/* Step Progress Indicator */}
+      {/* Step Progress Indicator — completed steps are tappable */}
       <div className="flex items-center justify-between mb-6 px-1">
         {STEPS.map((step, index) => {
           const Icon = STEP_ICONS[step]
           const isActive = step === currentStep
           const isCompleted = completedSteps.has(step)
           const isPast = index < currentStepIndex
+          const canNavigate = isCompleted && !isActive && step !== 'CONGRATS'
 
           return (
             <div key={step} className="flex items-center flex-1">
-              <div className="flex flex-col items-center flex-1">
+              <button
+                type="button"
+                disabled={!canNavigate}
+                onClick={() => canNavigate && setCurrentStep(step)}
+                className={`flex flex-col items-center flex-1 ${canNavigate ? 'cursor-pointer' : 'cursor-default'}`}
+              >
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
                     isCompleted
@@ -248,7 +257,7 @@ export default function RecruitmentBottomSheet({
                       : isActive
                         ? 'bg-orange-100 dark:bg-orange-900/30'
                         : 'bg-gray-100 dark:bg-gray-700'
-                  }`}
+                  } ${canNavigate ? 'ring-2 ring-green-300 dark:ring-green-600 ring-offset-1 dark:ring-offset-gray-900' : ''}`}
                 >
                   {isCompleted ? (
                     <IoCheckmarkCircleOutline className="w-4.5 h-4.5 text-green-600 dark:text-green-400" />
@@ -269,7 +278,7 @@ export default function RecruitmentBottomSheet({
                 }`}>
                   {stepLabels[step]}
                 </span>
-              </div>
+              </button>
               {index < STEPS.length - 1 && (
                 <div className={`flex-shrink-0 w-6 h-0.5 mx-0.5 -mt-4 ${
                   isPast || isCompleted
@@ -295,6 +304,9 @@ export default function RecruitmentBottomSheet({
         <AgreementPreferenceStep
           onComplete={() => handleStepComplete('AGREEMENT')}
           existingAgreement={existingAgreement}
+          requestData={requestData}
+          hostName={hostData.name}
+          hostEmail={hostData.email}
         />
       )}
 

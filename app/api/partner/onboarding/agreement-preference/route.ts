@@ -31,6 +31,40 @@ async function getCurrentHost() {
   }
 }
 
+// GET — Return current agreement preference + test e-sign count
+export async function GET() {
+  try {
+    const host = await getCurrentHost()
+
+    if (!host) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const prospect = host.convertedFromProspect
+    if (!prospect) {
+      return NextResponse.json(
+        { error: 'No linked prospect found' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({
+      preference: prospect.agreementPreference,
+      testEsignCount: prospect.testEsignCount,
+      hostAgreementUrl: prospect.hostAgreementUrl
+    })
+  } catch (error: any) {
+    console.error('[Agreement Preference API] GET Error:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch agreement preference' },
+      { status: 500 }
+    )
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const host = await getCurrentHost()
