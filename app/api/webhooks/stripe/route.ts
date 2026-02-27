@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     console.error(`  Guest: ${guestEmail}`)
     console.error(`  Car: ${carId}`)
     console.error(`  Status: ${paymentIntent.status}`)
-    console.error(`  Age: ${ageMinutes.toFixed(1)} minutes`)
+    console.error(`  Age: ${eventAgeMinutes.toFixed(1)} minutes`)
 
     // Try to auto-create the booking from PI metadata
     let autoCreated = false
