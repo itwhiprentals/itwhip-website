@@ -130,6 +130,37 @@ export async function POST(request: NextRequest) {
       if (existingProfile) {
         reviewerProfileId = existingProfile.id
         guestUserId = existingProfile.userId
+
+        // Profile exists but no linked User — create one so guest can log in
+        if (!guestUserId) {
+          const existingUser = await prisma.user.findUnique({ where: { email: guestEmail } })
+          if (existingUser) {
+            guestUserId = existingUser.id
+            // Link profile to existing user
+            await prisma.reviewerProfile.update({
+              where: { id: existingProfile.id },
+              data: { userId: existingUser.id }
+            })
+          } else {
+            const newUserId = nanoid()
+            await prisma.user.create({
+              data: {
+                id: newUserId,
+                email: guestEmail,
+                name: guestName,
+                phone: guestPhone,
+                role: 'CLAIMED',
+                emailVerified: false,
+                updatedAt: new Date()
+              }
+            })
+            guestUserId = newUserId
+            await prisma.reviewerProfile.update({
+              where: { id: existingProfile.id },
+              data: { userId: newUserId }
+            })
+          }
+        }
       } else {
         // Create new ReviewerProfile for the guest
         const profileId = randomBytes(16).toString('hex')

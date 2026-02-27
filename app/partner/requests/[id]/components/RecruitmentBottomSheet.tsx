@@ -10,7 +10,7 @@ import BottomSheet from '@/app/components/BottomSheet'
 import SecureAccountStep from './SecureAccountStep'
 import AgreementPreferenceStep from './AgreementPreferenceStep'
 import PaymentPreferenceStep from './PaymentPreferenceStep'
-import AddCarWizard from '@/app/partner/fleet/add/AddCarWizard'
+import AddCarSimple from './AddCarSimple'
 import {
   IoShieldCheckmarkOutline,
   IoDocumentTextOutline,
@@ -71,6 +71,8 @@ interface RecruitmentBottomSheetProps {
 }
 
 const STEPS: OnboardingStep[] = ['SECURE_ACCOUNT', 'AGREEMENT', 'PAYMENT_PREFERENCE', 'ADD_CAR', 'CONGRATS']
+// Visible progress steps (CONGRATS is a result screen, not a numbered step)
+const PROGRESS_STEPS: OnboardingStep[] = ['SECURE_ACCOUNT', 'AGREEMENT', 'PAYMENT_PREFERENCE', 'ADD_CAR']
 
 const STEP_ICONS = {
   SECURE_ACCOUNT: IoShieldCheckmarkOutline,
@@ -115,76 +117,11 @@ export default function RecruitmentBottomSheet({
     needsPhoneVerification: true
   })
 
-  // Detect missing fields on mount
-  useEffect(() => {
-    detectMissingFields()
-  }, [hostData])
-
   // Cleanup Stripe polling on unmount
   useEffect(() => {
     return () => {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
       if (timerRef.current) clearInterval(timerRef.current)
-    }
-  }, [])
-
-  const detectMissingFields = useCallback(async () => {
-    try {
-      const response = await fetch('/api/partner/onboarding')
-      const data = await response.json()
-
-      if (data.success) {
-        const host = data.host
-        setMissingFields({
-          needsPhone: !host.phone,
-          needsEmail: !host.email,
-          needsPassword: !host.hasPassword,
-          needsEmailVerification: host.email && !host.emailVerified,
-          needsPhoneVerification: !host.phoneVerified
-        })
-
-        // Determine which steps are already done and find first incomplete
-        const completed = new Set<OnboardingStep>()
-        let firstIncomplete: OnboardingStep = 'SECURE_ACCOUNT'
-
-        // Check Secure Account (requires password + phone verified + email)
-        if (host.hasPassword && host.phone && host.email && host.phoneVerified) {
-          completed.add('SECURE_ACCOUNT')
-        }
-
-        // Check Agreement
-        const progress = data.onboardingProgress
-        if (progress?.agreementPreference) {
-          completed.add('AGREEMENT')
-        }
-
-        // Check Payment Preference
-        if (progress?.paymentPreference) {
-          completed.add('PAYMENT_PREFERENCE')
-          setPaymentPref(progress.paymentPreference as 'CASH' | 'PLATFORM')
-        }
-
-        // Check Add Car
-        if (progress?.carPhotosUploaded) {
-          completed.add('ADD_CAR')
-        }
-
-        // Find first incomplete step
-        for (const step of STEPS) {
-          if (step === 'CONGRATS') break
-          if (!completed.has(step)) {
-            firstIncomplete = step
-            break
-          }
-        }
-
-        setCompletedSteps(completed)
-        if (completed.size > 0) {
-          setCurrentStep(firstIncomplete)
-        }
-      }
-    } catch (error) {
-      console.error('Failed to detect missing fields:', error)
     }
   }, [])
 
@@ -254,6 +191,85 @@ export default function RecruitmentBottomSheet({
     }
   }, [t])
 
+  // Detect missing fields on mount only (runs once when bottomsheet opens)
+  // NOT on every parent re-render — the parent's countdown timer re-renders every second,
+  // creating new hostData references, which was triggering this repeatedly and resetting
+  // currentStep during finalize (killing the spinner and causing a loop).
+  const hasInitialized = useRef(false)
+  useEffect(() => {
+    if (hasInitialized.current) return
+    hasInitialized.current = true
+
+    const detect = async () => {
+      try {
+        const response = await fetch('/api/partner/onboarding')
+        const data = await response.json()
+
+        if (data.success) {
+          const host = data.host
+          setMissingFields({
+            needsPhone: !host.phone,
+            needsEmail: !host.email,
+            needsPassword: !host.hasPassword,
+            needsEmailVerification: host.email && !host.emailVerified,
+            needsPhoneVerification: !host.phoneVerified
+          })
+
+          // Determine which steps are already done and find first incomplete
+          const completed = new Set<OnboardingStep>()
+          let firstIncomplete: OnboardingStep = 'SECURE_ACCOUNT'
+
+          // Check Secure Account (requires password + phone verified + email)
+          if (host.hasPassword && host.phone && host.email && host.phoneVerified) {
+            completed.add('SECURE_ACCOUNT')
+          }
+
+          // Check Agreement
+          const progress = data.onboardingProgress
+          if (progress?.agreementPreference) {
+            completed.add('AGREEMENT')
+          }
+
+          // Check Payment Preference
+          if (progress?.paymentPreference) {
+            completed.add('PAYMENT_PREFERENCE')
+            setPaymentPref(progress.paymentPreference as 'CASH' | 'PLATFORM')
+          }
+
+          // Check Add Car
+          if (progress?.carPhotosUploaded) {
+            completed.add('ADD_CAR')
+          }
+
+          // Find first incomplete step
+          let allStepsComplete = true
+          for (const step of STEPS) {
+            if (step === 'CONGRATS') break
+            if (!completed.has(step)) {
+              firstIncomplete = step
+              allStepsComplete = false
+              break
+            }
+          }
+
+          setCompletedSteps(completed)
+          if (allStepsComplete && completed.size === PROGRESS_STEPS.length) {
+            // All 4 steps done but finalize never completed (e.g. previous crash)
+            // Set to ADD_CAR and trigger finalize
+            setCurrentStep('ADD_CAR')
+            handleFinalize()
+          } else if (completed.size > 0) {
+            setCurrentStep(firstIncomplete)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to detect missing fields:', error)
+      }
+    }
+
+    detect()
+  }, [handleFinalize])
+
   const handleStepComplete = useCallback((step: OnboardingStep) => {
     // When ADD_CAR completes, trigger finalization instead of just advancing
     if (step === 'ADD_CAR') {
@@ -274,7 +290,7 @@ export default function RecruitmentBottomSheet({
     handleStepComplete('SECURE_ACCOUNT')
   }, [handleStepComplete])
 
-  const currentStepIndex = STEPS.indexOf(currentStep)
+  const currentStepIndex = PROGRESS_STEPS.indexOf(currentStep)
   const stepLabels = {
     SECURE_ACCOUNT: t('bsStepSecureAccount'),
     AGREEMENT: t('bsStepAgreement'),
@@ -284,7 +300,8 @@ export default function RecruitmentBottomSheet({
   }
 
   const getSubtitle = () => {
-    return t('bsStepOf', { current: currentStepIndex + 1, total: STEPS.length })
+    if (currentStep === 'CONGRATS') return ''
+    return t('bsStepOf', { current: currentStepIndex + 1, total: PROGRESS_STEPS.length })
   }
 
   return (
@@ -297,63 +314,65 @@ export default function RecruitmentBottomSheet({
       showDragHandle={true}
       footer={undefined}
     >
-      {/* Step Progress Indicator — completed steps are tappable */}
-      <div className="flex items-center justify-between mb-6 px-1">
-        {STEPS.map((step, index) => {
-          const Icon = STEP_ICONS[step]
-          const isActive = step === currentStep
-          const isCompleted = completedSteps.has(step)
-          const isPast = index < currentStepIndex
-          const canNavigate = isCompleted && !isActive && step !== 'CONGRATS'
+      {/* Step Progress Indicator — hidden on CONGRATS (it's a result screen, not a step) */}
+      {currentStep !== 'CONGRATS' && (
+        <div className="flex items-center justify-between mb-6 px-1">
+          {PROGRESS_STEPS.map((step, index) => {
+            const Icon = STEP_ICONS[step]
+            const isActive = step === currentStep
+            const isCompleted = completedSteps.has(step)
+            const isPast = index < currentStepIndex
+            const canNavigate = isCompleted && !isActive
 
-          return (
-            <div key={step} className="flex items-center flex-1">
-              <button
-                type="button"
-                disabled={!canNavigate}
-                onClick={() => canNavigate && setCurrentStep(step)}
-                className={`flex flex-col items-center flex-1 ${canNavigate ? 'cursor-pointer' : 'cursor-default'}`}
-              >
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                    isCompleted
-                      ? 'bg-green-100 dark:bg-green-900/30'
-                      : isActive
-                        ? 'bg-orange-100 dark:bg-orange-900/30'
-                        : 'bg-gray-100 dark:bg-gray-700'
-                  } ${canNavigate ? 'ring-2 ring-green-300 dark:ring-green-600 ring-offset-1 dark:ring-offset-gray-900' : ''}`}
+            return (
+              <div key={step} className="flex items-center flex-1">
+                <button
+                  type="button"
+                  disabled={!canNavigate}
+                  onClick={() => canNavigate && setCurrentStep(step)}
+                  className={`flex flex-col items-center flex-1 ${canNavigate ? 'cursor-pointer' : 'cursor-default'}`}
                 >
-                  {isCompleted ? (
-                    <IoCheckmarkCircleOutline className="w-4.5 h-4.5 text-green-600 dark:text-green-400" />
-                  ) : (
-                    <Icon className={`w-4 h-4 ${
-                      isActive
-                        ? 'text-orange-600 dark:text-orange-400'
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                      isCompleted
+                        ? 'bg-green-100 dark:bg-green-900/30'
+                        : isActive
+                          ? 'bg-orange-100 dark:bg-orange-900/30'
+                          : 'bg-gray-100 dark:bg-gray-700'
+                    } ${canNavigate ? 'ring-2 ring-green-300 dark:ring-green-600 ring-offset-1 dark:ring-offset-gray-900' : ''}`}
+                  >
+                    {isCompleted ? (
+                      <IoCheckmarkCircleOutline className="w-4.5 h-4.5 text-green-600 dark:text-green-400" />
+                    ) : (
+                      <Icon className={`w-4 h-4 ${
+                        isActive
+                          ? 'text-orange-600 dark:text-orange-400'
+                          : 'text-gray-400 dark:text-gray-500'
+                      }`} />
+                    )}
+                  </div>
+                  <span className={`text-[9px] mt-1 text-center leading-tight ${
+                    isActive
+                      ? 'text-orange-600 dark:text-orange-400 font-medium'
+                      : isCompleted
+                        ? 'text-green-600 dark:text-green-400'
                         : 'text-gray-400 dark:text-gray-500'
-                    }`} />
-                  )}
-                </div>
-                <span className={`text-[9px] mt-1 text-center leading-tight ${
-                  isActive
-                    ? 'text-orange-600 dark:text-orange-400 font-medium'
-                    : isCompleted
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-gray-400 dark:text-gray-500'
-                }`}>
-                  {stepLabels[step]}
-                </span>
-              </button>
-              {index < STEPS.length - 1 && (
-                <div className={`flex-shrink-0 w-6 h-0.5 mx-0.5 -mt-4 ${
-                  isPast || isCompleted
-                    ? 'bg-green-300 dark:bg-green-700'
-                    : 'bg-gray-200 dark:bg-gray-600'
-                }`} />
-              )}
-            </div>
-          )
-        })}
-      </div>
+                  }`}>
+                    {stepLabels[step]}
+                  </span>
+                </button>
+                {index < PROGRESS_STEPS.length - 1 && (
+                  <div className={`flex-shrink-0 w-6 h-0.5 mx-0.5 -mt-4 ${
+                    isPast || isCompleted
+                      ? 'bg-green-300 dark:bg-green-700'
+                      : 'bg-gray-200 dark:bg-gray-600'
+                  }`} />
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Step Content */}
       {currentStep === 'SECURE_ACCOUNT' && (
@@ -412,11 +431,8 @@ export default function RecruitmentBottomSheet({
               </button>
             </div>
           ) : (
-            <AddCarWizard
-              mode="bottomsheet"
+            <AddCarSimple
               prefillDailyRate={requestData.offeredRate || undefined}
-              defaultPublicListing={false}
-              showListingToggle={false}
               onComplete={() => handleStepComplete('ADD_CAR')}
             />
           )}
