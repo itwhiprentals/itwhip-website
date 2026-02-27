@@ -5,7 +5,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
-import { sendEmail } from '@/app/lib/email/send-email'
+import { sendEmail } from '@/app/lib/email/sender'
+import { logEmail, generateEmailReference, getEmailFooterHtml, getEmailFooterText } from '@/app/lib/email/config'
 import {
   generateAgreementToken,
   getTokenExpiryDate,
@@ -135,78 +136,108 @@ export async function POST() {
       : (request as any).vehicleInfo || 'Your Vehicle'
 
     // Send test email to host
+    const hostFirstName = host.name?.split(' ')[0] || 'Host'
+    const emailRefId = generateEmailReference('TE')
+    const testSubject = `[TEST] Preview Your E-Sign Experience — ${vehicleName}`
+
+    // Build what-you'll-see list based on agreement preference
+    const whatYoullSee: string[] = []
+    if (pref !== 'OWN') whatYoullSee.push('ItWhip Standard Agreement terms')
+    if (pref === 'OWN' || pref === 'BOTH') whatYoullSee.push('Your uploaded rental agreement')
+    whatYoullSee.push('Signature capture area')
+
     let emailSent = false
     try {
-      await sendEmail({
-        to: host.email,
-        subject: `[TEST] Preview Your E-Sign Experience - ${vehicleName}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
-              <h1 style="color: white; margin: 0; font-size: 24px;">🧪 Test E-Sign Preview</h1>
+      const emailResult = await sendEmail(
+        host.email,
+        testSubject,
+        `
+        <!DOCTYPE html>
+        <html>
+          <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; background-color: #ffffff; max-width: 600px; margin: 0 auto; padding: 20px;">
+
+            <!-- Header -->
+            <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
+              <p style="margin: 0 0 4px 0; font-size: 12px; color: #ea580c; text-transform: uppercase; letter-spacing: 0.5px;">Test Preview</p>
+              <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ea580c;">E-Sign Experience Preview</h1>
             </div>
 
-            <div style="background: #fff; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
-              <div style="background: #dbeafe; border: 1px solid #93c5fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                <p style="color: #1e40af; font-size: 14px; margin: 0;">
-                  <strong>This is a TEST email.</strong> Click below to see exactly what your guests will experience when signing agreements.
-                </p>
-              </div>
-
-              <p style="color: #374151; font-size: 16px; margin-bottom: 20px;">
-                Hi ${host.name},
-              </p>
-
-              <p style="color: #374151; font-size: 16px; margin-bottom: 20px;">
-                You requested a preview of the e-signature experience. This is what your guests will see when signing the rental agreement.
-              </p>
-
-              <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                <p style="color: #111827; font-size: 18px; font-weight: bold; margin: 0 0 10px 0;">
-                  ${vehicleName}
-                </p>
-                <p style="color: #6b7280; font-size: 14px; margin: 0;">
-                  Sample booking dates for testing
-                </p>
-              </div>
-
-              <p style="color: #374151; font-size: 16px; margin-bottom: 20px;">
-                <strong>What you'll see:</strong>
-              </p>
-              <ul style="color: #374151; font-size: 14px; padding-left: 20px; margin-bottom: 20px;">
-                ${pref === 'OWN' ? '<li>Your uploaded rental agreement</li>' : ''}
-                ${pref !== 'OWN' ? '<li>ItWhip Standard Agreement terms</li>' : ''}
-                ${pref === 'BOTH' ? '<li>Your uploaded rental agreement</li>' : ''}
-                <li>Signature capture area</li>
-              </ul>
-
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${signingUrl}"
-                   style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
-                  Preview E-Sign Experience →
-                </a>
-              </div>
-
-              <p style="color: #dc2626; font-size: 12px; margin-top: 20px;">
-                <strong>This test link expires in 24 hours.</strong>
-              </p>
-
-              <p style="color: #9ca3af; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-                This is a test preview only. Your signature here won't create a real agreement.
+            <!-- Test notice -->
+            <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 0 0 20px 0; text-align: center;">
+              <p style="margin: 0; font-size: 14px; color: #374151;">
+                <strong>This is a TEST email.</strong> Click below to see exactly what your guests will experience when signing agreements.
               </p>
             </div>
 
-            <div style="background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
-              <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-                Powered by <a href="https://itwhip.com" style="color: #f97316;">ItWhip</a> - The trusted car rental marketplace
-              </p>
+            <!-- Main content -->
+            <p style="font-size: 16px; margin: 0 0 16px 0; color: #1f2937;">
+              Hi ${hostFirstName},
+            </p>
+
+            <p style="font-size: 16px; margin: 0 0 16px 0; color: #111827;">
+              You requested a preview of the e-signature experience for your <strong>${vehicleName}</strong>. This is what your guests will see when signing the rental agreement.
+            </p>
+
+            <!-- What you'll see -->
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin: 16px 0;">
+              ${whatYoullSee.map(item => `
+              <tr>
+                <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">
+                  <span style="color: #16a34a; margin-right: 8px;">&#10003;</span> ${item}
+                </td>
+              </tr>`).join('')}
+            </table>
+
+            <!-- CTA Button -->
+            <div style="text-align: center; margin: 28px 0;">
+              <a href="${signingUrl}" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
+                Preview E-Sign Experience
+              </a>
             </div>
-          </div>
+
+            <p style="font-size: 14px; color: #111827; margin: 20px 0;">
+              <strong>This test link expires in 24 hours.</strong> Your signature here won't create a real agreement.
+            </p>
+
+            ${getEmailFooterHtml(emailRefId)}
+          </body>
+        </html>
         `,
-        text: `TEST E-Sign Preview\n\nHi ${host.name},\n\nYou requested a preview of the e-signature experience.\n\nPreview the signing experience: ${signingUrl}\n\nThis test link expires in 24 hours.\n\nPowered by ItWhip`
-      })
-      emailSent = true
+        `
+TEST — E-SIGN EXPERIENCE PREVIEW
+
+Hi ${hostFirstName},
+
+This is a TEST email. Click below to see exactly what your guests will experience when signing agreements.
+
+You requested a preview of the e-signature experience for your ${vehicleName}.
+
+What you'll see:
+${whatYoullSee.map(item => `- ${item}`).join('\n')}
+
+Preview the signing experience: ${signingUrl}
+
+This test link expires in 24 hours. Your signature here won't create a real agreement.
+
+${getEmailFooterText(emailRefId)}
+        `.trim()
+      )
+
+      emailSent = emailResult.success
       console.log(`[Test E-Sign] Email sent to ${host.email}`)
+
+      await logEmail({
+        recipientEmail: host.email,
+        recipientName: host.name || 'Host',
+        subject: testSubject,
+        emailType: 'SYSTEM',
+        relatedType: 'host_prospect',
+        relatedId: prospect.id,
+        messageId: emailResult.messageId,
+        referenceId: emailRefId,
+        metadata: { testEsignCount: prospect.testEsignCount + 1, vehicleName }
+      })
     } catch (emailError) {
       console.error('[Test E-Sign] Email send error:', emailError)
     }

@@ -317,45 +317,62 @@ export async function POST(request: NextRequest) {
         const guestFirstName = guestName.split(' ')[0]
         const guestRefId = generateEmailReference('GI')
 
-        await sendEmail(
+        const guestSubject = `Your Car Rental is ${isCash ? 'Confirmed' : 'Almost Ready'}! — ${vehicleDesc}`
+        const guestEmailResult = await sendEmail(
           guestEmail,
-          `Your Car Rental is ${isCash ? 'Confirmed' : 'Almost Ready'}! — ${vehicleDesc}`,
+          guestSubject,
           `
           <!DOCTYPE html>
           <html>
             <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
             <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; background-color: #ffffff; max-width: 600px; margin: 0 auto; padding: 20px;">
+
+              <!-- Header -->
               <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
-                <img src="${emailConfig.logos.default}" alt="ItWhip" style="height: 28px; margin-bottom: 8px;" />
                 <p style="margin: 0 0 4px 0; font-size: 12px; color: ${isCash ? '#16a34a' : '#ea580c'}; text-transform: uppercase; letter-spacing: 0.5px;">
-                  ${isCash ? 'Booking Confirmed' : 'Booking Created'}
+                  ${isCash ? 'Booking Confirmed' : 'Booking Created'} • ${booking.bookingCode}
                 </p>
-                <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #111827;">
+                <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ea580c;">
                   Your ${vehicleDesc} Rental
                 </h1>
               </div>
 
-              <p style="font-size: 16px; margin: 0 0 16px 0;">Hi ${guestFirstName},</p>
-              <p style="font-size: 15px; margin: 0 0 16px 0; color: #374151;">
-                Great news! A ${vehicleDesc} has been ${isCash ? 'booked' : 'reserved'} for you through ItWhip.
+              <!-- Main content -->
+              <p style="font-size: 16px; margin: 0 0 16px 0; color: #1f2937;">Hi ${guestFirstName},</p>
+              <p style="font-size: 16px; margin: 0 0 16px 0; color: #111827;">
+                Great news! A <strong>${vehicleDesc}</strong> has been ${isCash ? 'booked' : 'reserved'} for you through ItWhip.
               </p>
 
-              <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 20px 0;">
-                <table style="width: 100%; font-size: 14px; color: #374151;">
-                  <tr><td style="padding: 4px 0; font-weight: 600;">Vehicle</td><td style="padding: 4px 0; text-align: right;">${vehicleDesc}</td></tr>
-                  <tr><td style="padding: 4px 0; font-weight: 600;">Dates</td><td style="padding: 4px 0; text-align: right;">${startDateStr} — ${endDateStr}</td></tr>
-                  <tr><td style="padding: 4px 0; font-weight: 600;">Duration</td><td style="padding: 4px 0; text-align: right;">${durationDays} days</td></tr>
-                  <tr><td style="padding: 4px 0; font-weight: 600;">Rate</td><td style="padding: 4px 0; text-align: right;">$${dailyRate}/day</td></tr>
-                  <tr style="border-top: 1px solid #e5e7eb;"><td style="padding: 8px 0 4px; font-weight: 700;">Total</td><td style="padding: 8px 0 4px; text-align: right; font-weight: 700;">$${totalAmount.toFixed(2)}</td></tr>
-                </table>
-                <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">Booking Code: ${booking.bookingCode}</p>
-              </div>
+              <!-- Booking Details -->
+              <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin: 16px 0;">
+                <tr>
+                  <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Vehicle</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${vehicleDesc}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Rental Dates</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${startDateStr} — ${endDateStr}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Duration</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${durationDays} days</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Daily Rate</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 700; text-align: right; border-bottom: 1px solid #e5e7eb;">$${dailyRate}/day</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #374151;">Total</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 700; text-align: right;">$${totalAmount.toFixed(2)}</td>
+                </tr>
+              </table>
 
-              <p style="font-size: 14px; color: #374151; margin: 0 0 8px 0;">
+              <p style="font-size: 14px; color: #111827; margin: 20px 0;">
                 To view your booking details and secure your account, click the button below:
               </p>
 
-              <div style="text-align: center; margin: 24px 0;">
+              <!-- CTA Button -->
+              <div style="text-align: center; margin: 28px 0;">
                 <a href="${autoLoginUrl}" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
                   View My Booking
                 </a>
@@ -370,19 +387,18 @@ export async function POST(request: NextRequest) {
           </html>
           `,
           `
-YOUR CAR RENTAL IS ${isCash ? 'CONFIRMED' : 'ALMOST READY'}
+YOUR CAR RENTAL IS ${isCash ? 'CONFIRMED' : 'ALMOST READY'} • ${booking.bookingCode}
 
 Hi ${guestFirstName},
 
-A ${vehicleDesc} has been ${isCash ? 'booked' : 'reserved'} for you through ItWhip.
+Great news! A ${vehicleDesc} has been ${isCash ? 'booked' : 'reserved'} for you through ItWhip.
 
 BOOKING DETAILS:
-Vehicle: ${vehicleDesc}
-Dates: ${startDateStr} — ${endDateStr}
-Duration: ${durationDays} days
-Rate: $${dailyRate}/day
-Total: $${totalAmount.toFixed(2)}
-Booking Code: ${booking.bookingCode}
+- Vehicle: ${vehicleDesc}
+- Rental Dates: ${startDateStr} — ${endDateStr}
+- Duration: ${durationDays} days
+- Daily Rate: $${dailyRate}/day
+- Total: $${totalAmount.toFixed(2)}
 
 View your booking: ${autoLoginUrl}
 
@@ -395,10 +411,11 @@ ${getEmailFooterText(guestRefId)}
         await logEmail({
           recipientEmail: guestEmail,
           recipientName: guestName,
-          subject: `Your Car Rental is ${isCash ? 'Confirmed' : 'Almost Ready'}!`,
+          subject: guestSubject,
           emailType: 'BOOKING_CONFIRMATION',
           relatedType: 'RentalBooking',
           relatedId: bookingId,
+          messageId: guestEmailResult.messageId,
           referenceId: guestRefId
         })
 
@@ -415,36 +432,60 @@ ${getEmailFooterText(guestRefId)}
       const hostRefId = generateEmailReference('BC')
 
       if (hostEmail) {
-        await sendEmail(
+        const hostSubject = `Booking Confirmed — ${vehicleDesc} for ${guestName}`
+        const hostEmailResult = await sendEmail(
           hostEmail,
-          `Booking Confirmed — ${vehicleDesc} for ${guestName}`,
+          hostSubject,
           `
           <!DOCTYPE html>
           <html>
             <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
             <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; background-color: #ffffff; max-width: 600px; margin: 0 auto; padding: 20px;">
+
+              <!-- Header -->
               <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
-                <img src="${emailConfig.logos.default}" alt="ItWhip" style="height: 28px; margin-bottom: 8px;" />
-                <p style="margin: 0 0 4px 0; font-size: 12px; color: #16a34a; text-transform: uppercase; letter-spacing: 0.5px;">Booking Confirmed</p>
-                <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #111827;">You're All Set, ${hostFirstName}!</h1>
+                <p style="margin: 0 0 4px 0; font-size: 12px; color: #16a34a; text-transform: uppercase; letter-spacing: 0.5px;">Booking Confirmed • ${booking.bookingCode}</p>
+                <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ea580c;">You're All Set, ${hostFirstName}!</h1>
               </div>
 
-              <p style="font-size: 15px; margin: 0 0 16px 0; color: #374151;">
+              <!-- Main content -->
+              <p style="font-size: 16px; margin: 0 0 16px 0; color: #1f2937;">
+                Hi ${hostFirstName},
+              </p>
+
+              <p style="font-size: 16px; margin: 0 0 16px 0; color: #111827;">
                 Your onboarding is complete and the booking has been created. Here are the details:
               </p>
 
-              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 20px 0;">
-                <table style="width: 100%; font-size: 14px; color: #374151;">
-                  <tr><td style="padding: 4px 0; font-weight: 600;">Guest</td><td style="padding: 4px 0; text-align: right;">${guestName}</td></tr>
-                  <tr><td style="padding: 4px 0; font-weight: 600;">Vehicle</td><td style="padding: 4px 0; text-align: right;">${vehicleDesc}</td></tr>
-                  <tr><td style="padding: 4px 0; font-weight: 600;">Dates</td><td style="padding: 4px 0; text-align: right;">${startDateStr} — ${endDateStr}</td></tr>
-                  <tr><td style="padding: 4px 0; font-weight: 600;">Your Earnings</td><td style="padding: 4px 0; text-align: right; font-weight: 700; color: #16a34a;">$${hostEarnings.toFixed(2)}</td></tr>
-                  <tr><td style="padding: 4px 0; font-weight: 600;">Payment</td><td style="padding: 4px 0; text-align: right;">${isCash ? 'Cash (collect from guest)' : 'Platform (direct deposit)'}</td></tr>
-                </table>
-                <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">Booking Code: ${booking.bookingCode}</p>
+              <!-- Earnings highlight -->
+              <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+                <p style="margin: 0 0 4px 0; font-size: 13px; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">Your Earnings</p>
+                <p style="margin: 0; font-size: 36px; font-weight: 700; color: #1f2937;">$${hostEarnings.toFixed(2)}</p>
+                <p style="margin: 8px 0 0 0; font-size: 14px; color: #374151;">${durationDays} days @ $${dailyRate}/day</p>
               </div>
 
-              <div style="text-align: center; margin: 24px 0;">
+              <!-- Booking details table -->
+              <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin: 16px 0;">
+                <tr>
+                  <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Guest</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${guestName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Vehicle</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${vehicleDesc}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Rental Dates</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${startDateStr} — ${endDateStr}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #374151;">Payment</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right;">${isCash ? 'Cash (collect from guest)' : 'Platform (direct deposit)'}</td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <div style="text-align: center; margin: 28px 0;">
                 <a href="${baseUrl}/partner/dashboard" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
                   Go to Dashboard
                 </a>
@@ -455,17 +496,20 @@ ${getEmailFooterText(guestRefId)}
           </html>
           `,
           `
-BOOKING CONFIRMED — YOU'RE ALL SET, ${hostFirstName.toUpperCase()}!
+BOOKING CONFIRMED • ${booking.bookingCode}
+
+Hi ${hostFirstName},
 
 Your onboarding is complete and the booking has been created.
 
+YOUR EARNINGS: $${hostEarnings.toFixed(2)}
+${durationDays} days @ $${dailyRate}/day
+
 BOOKING DETAILS:
-Guest: ${guestName}
-Vehicle: ${vehicleDesc}
-Dates: ${startDateStr} — ${endDateStr}
-Your Earnings: $${hostEarnings.toFixed(2)}
-Payment: ${isCash ? 'Cash (collect from guest)' : 'Platform (direct deposit)'}
-Booking Code: ${booking.bookingCode}
+- Guest: ${guestName}
+- Vehicle: ${vehicleDesc}
+- Rental Dates: ${startDateStr} — ${endDateStr}
+- Payment: ${isCash ? 'Cash (collect from guest)' : 'Platform (direct deposit)'}
 
 Go to Dashboard: ${baseUrl}/partner/dashboard
 
@@ -476,10 +520,11 @@ ${getEmailFooterText(hostRefId)}
         await logEmail({
           recipientEmail: hostEmail,
           recipientName: host.name || 'Host',
-          subject: `Booking Confirmed — ${vehicleDesc} for ${guestName}`,
+          subject: hostSubject,
           emailType: 'BOOKING_CONFIRMATION',
           relatedType: 'RentalBooking',
           relatedId: bookingId,
+          messageId: hostEmailResult.messageId,
           referenceId: hostRefId
         })
 

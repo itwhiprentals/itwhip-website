@@ -287,39 +287,120 @@ export function getEmailDisclaimer(): string {
 }
 
 /**
- * Standard email footer (HTML)
+ * Standard email footer (HTML) — matches prospect invite template
+ * Includes: divider, logo, help link, about, insurance, social icons, company info, ref ID
+ * @param referenceId - The email reference ID (e.g. REF-HO-ABCDEF)
+ * @param trackingId - Optional ID for tracking pixel (e.g. prospect ID)
  */
-export function getEmailFooterHtml(referenceId: string): string {
+export function getEmailFooterHtml(referenceId: string, trackingId?: string): string {
+  const baseUrl = emailConfig.websiteUrl
   return `
-    <p style="color: #9ca3af; font-size: 11px; margin-top: 8px; text-align: center;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 24px 0 12px 0;">
+      <tr><td style="height: 1px; background-color: #e5e7eb; line-height: 1px; font-size: 1px;">&nbsp;</td></tr>
+    </table>
+
+    <!-- Footer Logo -->
+    <div style="text-align: center; margin: 0 0 16px 0;">
+      <img src="${emailConfig.logos.default}" alt="ItWhip" width="36" style="max-width: 36px; height: auto; display: block; margin: 0 auto 2px auto;" />
+      <span style="font-size: 9px; font-weight: 600; color: #374151; letter-spacing: 0.3px;">ITWHIP CAR RENTALS AND RIDESHARES</span>
+    </div>
+
+    <p style="color: #374151; font-size: 13px; margin-bottom: 0; text-align: center;">
+      Questions? Reply to this email or visit <a href="${emailConfig.helpUrl}" style="color: #ea580c; font-weight: 600;">itwhip.com/help</a>
+    </p>
+
+    <!-- About Us -->
+    <p style="color: #4b5563; font-size: 10px; margin-top: 16px; text-align: center; line-height: 1.4;">
+      ItWhip is a peer-to-peer vehicle rental marketplace connecting vehicle owners with verified renters.
+      We help hosts monetize their vehicles while providing guests with unique rental options.
+      <a href="https://itwhip.com/host-benefits" style="color: #ea580c;">Host Benefits</a> |
+      <a href="https://itwhip.com/list-your-car" style="color: #ea580c;">Calculate Your Earnings</a>
+    </p>
+
+    <!-- Communication Footer -->
+    <p style="color: #4b5563; font-size: 11px; margin-top: 12px; text-align: center; line-height: 1.5;">
+      All hosts are welcome to finalize bookings directly with guests outside the platform.
+      We just ask that you communicate clearly with the guest to ensure a smooth experience.
+      <a href="https://itwhip.com/corporate" style="color: #ea580c;">Learn more about corporate rentals</a>
+    </p>
+
+    <!-- Insurance Disclaimer -->
+    <p style="color: #4b5563; font-size: 10px; margin-top: 8px; text-align: center; line-height: 1.4;">
+      <strong>Insurance:</strong> Hosts are responsible for maintaining valid insurance coverage on their vehicles.
+      ItWhip does not provide primary insurance. Please ensure your policy covers peer-to-peer rentals.
+      <a href="https://itwhip.com/support/insurance" style="color: #ea580c;">Insurance Support</a> |
+      <a href="https://itwhip.com/insurance-guide" style="color: #ea580c;">Insurance Guide</a> |
+      <a href="https://itwhip.com/host/insurance-options" style="color: #ea580c;">Insurance Options</a>
+    </p>
+
+    <!-- Social Links -->
+    <table cellpadding="0" cellspacing="0" style="margin: 16px auto;">
+      <tr>
+        <td style="padding: 0 10px;">
+          <a href="${emailConfig.social.instagram}" target="_blank" style="text-decoration: none;">
+            <img src="${emailConfig.socialIcons.instagram}" alt="Instagram" width="20" height="20" style="display: block; border: 0;" />
+          </a>
+        </td>
+        <td style="padding: 0 10px;">
+          <a href="${emailConfig.social.facebook}" target="_blank" style="text-decoration: none;">
+            <img src="${emailConfig.socialIcons.facebook}" alt="Facebook" width="20" height="20" style="display: block; border: 0;" />
+          </a>
+        </td>
+        <td style="padding: 0 10px;">
+          <a href="${emailConfig.social.twitter}" target="_blank" style="text-decoration: none;">
+            <img src="${emailConfig.socialIcons.twitter}" alt="X" width="20" height="20" style="display: block; border: 0;" />
+          </a>
+        </td>
+        <td style="padding: 0 10px;">
+          <a href="${emailConfig.social.linkedin}" target="_blank" style="text-decoration: none;">
+            <img src="${emailConfig.socialIcons.linkedin}" alt="LinkedIn" width="20" height="20" style="display: block; border: 0;" />
+          </a>
+        </td>
+      </tr>
+    </table>
+
+    <p style="color: #4b5563; font-size: 11px; margin-top: 8px; text-align: center;">
       ${emailConfig.companyName} | ${emailConfig.companyAddress} | <a href="${emailConfig.websiteUrl}" style="color: #ea580c;">itwhip.com</a>
       <br/>
-      <a href="${emailConfig.aboutUrl}" style="color: #9ca3af;">About</a> |
-      <a href="${emailConfig.termsUrl}" style="color: #9ca3af;">Terms</a> |
-      <a href="${emailConfig.privacyUrl}" style="color: #9ca3af;">Privacy</a> |
-      <a href="${emailConfig.helpUrl}" style="color: #9ca3af;">Help</a>
+      <a href="${emailConfig.aboutUrl}" style="color: #4b5563;">About</a> |
+      <a href="${emailConfig.termsUrl}" style="color: #4b5563;">Terms</a> |
+      <a href="${emailConfig.privacyUrl}" style="color: #4b5563;">Privacy</a>
     </p>
 
-    <p style="color: #9ca3af; font-size: 9px; margin-top: 12px; text-align: center; line-height: 1.4;">
-      ${getEmailDisclaimer()}
+    <!-- Reference ID -->
+    <p style="color: #374151; font-size: 11px; margin-top: 16px; text-align: center;">
+      <a href="${baseUrl}/verify-email?ref=${referenceId}" style="color: #374151; text-decoration: none;">
+        Ref: <strong style="color: #ea580c;">${referenceId}</strong>
+      </a>
     </p>
 
-    <p style="color: #d1d5db; font-size: 8px; margin-top: 8px; text-align: center;">
-      Reference: ${referenceId}
-    </p>
+    ${trackingId ? `<!-- Tracking pixel -->\n    <img src="${baseUrl}/api/tracking/pixel/${trackingId}" width="1" height="1" style="display:none;width:1px;height:1px;border:0;" alt="" />` : ''}
   `
 }
 
 /**
- * Standard email footer (plain text)
+ * Standard email footer (plain text) — matches prospect invite template
  */
 export function getEmailFooterText(referenceId: string): string {
   return `
+---
+
+Questions? Reply to this email or visit itwhip.com/help
+
+ItWhip is a peer-to-peer vehicle rental marketplace connecting vehicle owners with verified renters. We help hosts monetize their vehicles while providing guests with unique rental options.
+Host Benefits: https://itwhip.com/host-benefits | Calculate Your Earnings: https://itwhip.com/list-your-car
+
+All hosts are welcome to finalize bookings directly with guests outside the platform. We just ask that you communicate clearly with the guest to ensure a smooth experience.
+Learn more about corporate rentals: https://itwhip.com/corporate
+
+INSURANCE: Hosts are responsible for maintaining valid insurance coverage on their vehicles. ItWhip does not provide primary insurance. Please ensure your policy covers peer-to-peer rentals.
+Insurance Support: https://itwhip.com/support/insurance | Insurance Guide: https://itwhip.com/insurance-guide | Insurance Options: https://itwhip.com/host/insurance-options
+
+Follow us: Instagram @itwhipofficial | Facebook | X @itwhipofficial | LinkedIn
+
 ${emailConfig.companyName} | ${emailConfig.companyAddress} | itwhip.com
 About: ${emailConfig.aboutUrl} | Terms: ${emailConfig.termsUrl} | Privacy: ${emailConfig.privacyUrl}
 
-Credits are distributed after account verification via Stripe Identity. Terms and conditions are subject to change at any time.
-
-Reference: ${referenceId}
+Ref: ${referenceId} - ${emailConfig.websiteUrl}/verify-email?ref=${referenceId}
   `.trim()
 }

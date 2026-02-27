@@ -4,7 +4,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import BottomSheet from '@/app/components/BottomSheet'
 import SecureAccountStep from './SecureAccountStep'
@@ -16,7 +16,9 @@ import {
   IoDocumentTextOutline,
   IoWalletOutline,
   IoCarOutline,
-  IoCheckmarkCircleOutline
+  IoCheckmarkCircleOutline,
+  IoCardOutline,
+  IoTimeOutline
 } from 'react-icons/io5'
 
 type OnboardingStep = 'SECURE_ACCOUNT' | 'AGREEMENT' | 'PAYMENT_PREFERENCE' | 'ADD_CAR' | 'CONGRATS'
@@ -95,6 +97,16 @@ export default function RecruitmentBottomSheet({
   const [finalizing, setFinalizing] = useState(false)
   const [finalizeError, setFinalizeError] = useState('')
   const [bookingCode, setBookingCode] = useState('')
+  const [paymentPref, setPaymentPref] = useState<'CASH' | 'PLATFORM' | null>(
+    (onboardingProgress?.paymentPreference as 'CASH' | 'PLATFORM') || null
+  )
+  // Stripe Connect state (shown in CONGRATS for PLATFORM users)
+  const [stripePolling, setStripePolling] = useState(false)
+  const [stripeConnected, setStripeConnected] = useState(false)
+  const [stripeSkipped, setStripeSkipped] = useState(false)
+  const [pollingSeconds, setPollingSeconds] = useState(0)
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
   const [missingFields, setMissingFields] = useState<MissingFields>({
     needsPhone: false,
     needsEmail: false,
@@ -107,6 +119,14 @@ export default function RecruitmentBottomSheet({
   useEffect(() => {
     detectMissingFields()
   }, [hostData])
+
+  // Cleanup Stripe polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [])
 
   const detectMissingFields = useCallback(async () => {
     try {
@@ -141,6 +161,7 @@ export default function RecruitmentBottomSheet({
         // Check Payment Preference
         if (progress?.paymentPreference) {
           completed.add('PAYMENT_PREFERENCE')
+          setPaymentPref(progress.paymentPreference as 'CASH' | 'PLATFORM')
         }
 
         // Check Add Car
@@ -165,6 +186,49 @@ export default function RecruitmentBottomSheet({
     } catch (error) {
       console.error('Failed to detect missing fields:', error)
     }
+  }, [])
+
+  // ─── Stripe Connect handlers (for PLATFORM users, shown in CONGRATS) ───
+  const startStripePolling = useCallback(() => {
+    setStripePolling(true)
+    setPollingSeconds(0)
+    timerRef.current = setInterval(() => setPollingSeconds(prev => prev + 1), 1000)
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        const response = await fetch('/api/partner/banking/connect')
+        const data = await response.json()
+        if (data.payoutsEnabled || data.chargesEnabled) {
+          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+          if (timerRef.current) clearInterval(timerRef.current)
+          setStripePolling(false)
+          setStripeConnected(true)
+        }
+      } catch { /* continue polling */ }
+    }, 5000)
+  }, [])
+
+  const handleConnectStripe = useCallback(async () => {
+    try {
+      const response = await fetch('/api/partner/banking/connect', { method: 'POST' })
+      const data = await response.json()
+      if (data.onboardingRequired === false) {
+        setStripeConnected(true)
+        return
+      }
+      if (data.success && data.onboardingUrl) {
+        window.open(data.onboardingUrl, '_blank')
+        startStripePolling()
+      }
+    } catch {
+      // Non-blocking — they can skip
+    }
+  }, [startStripePolling])
+
+  const handleSkipStripe = useCallback(() => {
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+    if (timerRef.current) clearInterval(timerRef.current)
+    setStripePolling(false)
+    setStripeSkipped(true)
   }, [])
 
   const handleFinalize = useCallback(async () => {
@@ -314,7 +378,10 @@ export default function RecruitmentBottomSheet({
         <PaymentPreferenceStep
           hostData={{ id: hostData.id, name: hostData.name }}
           requestData={{ hostEarnings: requestData.hostEarnings, durationDays: requestData.durationDays }}
-          onComplete={() => handleStepComplete('PAYMENT_PREFERENCE')}
+          onComplete={(pref) => {
+            setPaymentPref(pref)
+            handleStepComplete('PAYMENT_PREFERENCE')
+          }}
         />
       )}
 
@@ -357,31 +424,113 @@ export default function RecruitmentBottomSheet({
       )}
 
       {currentStep === 'CONGRATS' && (
-        <div className="text-center py-12">
-          <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-            <IoCheckmarkCircleOutline className="w-10 h-10 text-green-600 dark:text-green-400" />
-          </div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-            {t('bsCongratsTitle')}
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            {t('bsCongratsDesc', { guest: requestData.guestName || 'the guest' })}
-          </p>
-          {bookingCode && (
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-4 font-mono">
-              {bookingCode}
-            </p>
+        <>
+          {/* PLATFORM users: show Stripe Connect before congrats */}
+          {paymentPref === 'PLATFORM' && !stripeConnected && !stripeSkipped ? (
+            <div className="text-center py-8 space-y-6">
+              {stripePolling ? (
+                <>
+                  <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto">
+                    <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      {t('bsWaitingForStripe')}
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {t('bsCompleteStripeInOtherTab')}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 text-sm text-gray-400 dark:text-gray-500">
+                    <IoTimeOutline className="w-4 h-4" />
+                    <span>{Math.floor(pollingSeconds / 60)}:{(pollingSeconds % 60).toString().padStart(2, '0')}</span>
+                  </div>
+                  {pollingSeconds >= 60 && (
+                    <button
+                      onClick={handleSkipStripe}
+                      className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 underline"
+                    >
+                      {t('bsSkipStripeForNow')}
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
+                    <IoCheckmarkCircleOutline className="w-10 h-10 text-green-600 dark:text-green-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                    {t('bsCongratsTitle')}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {t('bsCongratsDesc', { guest: requestData.guestName || 'the guest' })}
+                  </p>
+                  {bookingCode && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
+                      {bookingCode}
+                    </p>
+                  )}
+
+                  {/* Stripe Connect CTA */}
+                  <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <IoCardOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      <h4 className="font-semibold text-gray-900 dark:text-white">
+                        {t('bsConnectStripeTitle')}
+                      </h4>
+                    </div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                      {t('bsConnectStripeDesc')}
+                    </p>
+                    <button
+                      onClick={handleConnectStripe}
+                      className="w-full px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                    >
+                      {t('bsConnectStripeButton')}
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={handleSkipStripe}
+                    className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 underline"
+                  >
+                    {t('bsSkipStripeForNow')}
+                  </button>
+                </>
+              )}
+            </div>
+          ) : (
+            /* CASH users or Stripe already handled: show congrats */
+            <div className="text-center py-12">
+              <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <IoCheckmarkCircleOutline className="w-10 h-10 text-green-600 dark:text-green-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                {stripeConnected ? t('bsPayoutConnected') : t('bsCongratsTitle')}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                {stripeConnected
+                  ? t('bsPayoutConnectedDesc')
+                  : t('bsCongratsDesc', { guest: requestData.guestName || 'the guest' })
+                }
+              </p>
+              {bookingCode && (
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-4 font-mono">
+                  {bookingCode}
+                </p>
+              )}
+              <button
+                onClick={() => {
+                  onClose()
+                  onComplete()
+                }}
+                className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+              >
+                {t('bsViewBooking')}
+              </button>
+            </div>
           )}
-          <button
-            onClick={() => {
-              onClose()
-              onComplete()
-            }}
-            className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
-          >
-            {t('bsViewBooking')}
-          </button>
-        </div>
+        </>
       )}
     </BottomSheet>
   )
