@@ -102,11 +102,28 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('[Confirm Saved Payment] Error:', error)
 
-    // Handle specific Stripe errors
+    // Handle specific Stripe errors with decline codes
     if (error.type === 'StripeCardError') {
+      const declineCode = error.decline_code || error.code || 'unknown'
+      const friendlyMessages: Record<string, string> = {
+        'insufficient_funds': 'Your card has insufficient funds. Please try a different card or add funds.',
+        'card_declined': 'Your card was declined. Please try a different card.',
+        'expired_card': 'Your card has expired. Please use a different card.',
+        'incorrect_cvc': 'Incorrect security code (CVC). Please check and try again.',
+        'incorrect_number': 'Incorrect card number. Please check and try again.',
+        'processing_error': 'A processing error occurred. Please try again in a moment.',
+        'lost_card': 'This card has been reported lost. Please use a different card.',
+        'stolen_card': 'This card cannot be used. Please use a different card.',
+        'do_not_honor': 'Your bank declined the transaction. Please contact your bank or try a different card.',
+        'generic_decline': 'Your card was declined. Please try a different card or contact your bank.',
+        'authentication_required': 'Additional authentication is required. Please try again.',
+        'try_again_later': 'Your card issuer is temporarily unavailable. Please try again in a few minutes.',
+      }
       return NextResponse.json({
         success: false,
-        error: error.message || 'Your card was declined'
+        error: friendlyMessages[declineCode] || error.message || 'Your card was declined',
+        declineCode,
+        isCardError: true,
       })
     }
 

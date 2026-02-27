@@ -326,10 +326,41 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         setPaymentIntentId(piId)
         setPaymentAlreadyConfirmed(true)
         setBookingError(null)
-        setPaymentError('Your payment was confirmed. Please click "Book Now" to complete your reservation.')
         sessionStorage.removeItem('_expected_pi')
+
+        // Restore driver form data saved before the 3DS redirect
+        try {
+          const savedFormData = sessionStorage.getItem('_checkout_form_data')
+          if (savedFormData) {
+            const fd = JSON.parse(savedFormData)
+            if (fd.driverFirstName) setDriverFirstName(fd.driverFirstName)
+            if (fd.driverLastName) setDriverLastName(fd.driverLastName)
+            if (fd.driverEmail) setDriverEmail(fd.driverEmail)
+            if (fd.driverPhone) setDriverPhone(fd.driverPhone)
+            if (fd.driverLicense) setDriverLicense(fd.driverLicense)
+            if (fd.driverAge) setDriverAge(new Date(fd.driverAge))
+            if (fd.licensePhotoUrl) { setLicensePhotoUrl(fd.licensePhotoUrl); setLicenseUploaded(true) }
+            if (fd.licenseBackPhotoUrl) setLicenseBackPhotoUrl(fd.licenseBackPhotoUrl)
+            if (fd.insurancePhotoUrl) { setInsurancePhotoUrl(fd.insurancePhotoUrl); setInsuranceUploaded(true) }
+            if (fd.selfiePhotoUrl) { setSelfiePhotoUrl(fd.selfiePhotoUrl); setSelfieUploaded(true) }
+            if (fd.aiVerificationResult) setAiVerificationResult(fd.aiVerificationResult)
+            if (fd.guestName) setGuestName(fd.guestName)
+            if (fd.guestLastName) setGuestLastName(fd.guestLastName)
+            if (fd.guestEmail) setGuestEmail(fd.guestEmail)
+            if (fd.guestPhone) setGuestPhone(fd.guestPhone)
+            if (fd.agreedToTerms) setAgreedToTerms(true)
+            console.log('[3DS Return] Restored form data from sessionStorage')
+          }
+        } catch (e) {
+          console.warn('[3DS Return] Failed to restore form data:', e)
+        }
+
+        // Mark for auto-submit — the useEffect below will trigger once data is ready
+        autoSubmitRef.current = true
+        setPaymentError('Completing your booking...')
       } else if (redirectStatus === 'failed') {
         setPaymentError('Payment failed during verification. Please try again.')
+        sessionStorage.removeItem('_checkout_form_data')
       }
 
       // Clean URL params
@@ -345,6 +376,9 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   // Refs for scroll to incomplete sections
   const documentsRef = useRef<HTMLDivElement>(null)
   const paymentRef = useRef<HTMLDivElement>(null)
+
+  // Ref for auto-submitting booking after 3DS redirect return
+  const autoSubmitRef = useRef(false)
 
   // Ref for Stripe Payment Element confirm function
   const confirmPaymentRef = useRef<(() => Promise<{ success: boolean; error?: string; paymentIntentId?: string }>) | null>(null)
@@ -1829,7 +1863,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       return
     }
     
-    if (!paymentComplete) {
+    if (!paymentComplete && !paymentAlreadyConfirmed) {
       paymentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       // No alert - inline errors show under each field
       return
@@ -1842,6 +1876,19 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       setBookingError(t('insuranceRequired'))
       return
     }
+
+    // Save driver form data to sessionStorage before payment confirmation
+    // This survives 3DS redirect (page reload) so we can auto-submit after return
+    try {
+      sessionStorage.setItem('_checkout_form_data', JSON.stringify({
+        driverFirstName, driverLastName, driverEmail, driverPhone,
+        driverLicense, driverAge: driverAge?.toISOString() || null,
+        licensePhotoUrl, licenseBackPhotoUrl, insurancePhotoUrl, selfiePhotoUrl,
+        aiVerificationResult,
+        guestName, guestLastName, guestEmail, guestPhone,
+        agreedToTerms: true,
+      }))
+    } catch {}
 
     setIsProcessing(true)
     setPaymentError(null)
@@ -1889,6 +1936,12 @@ export default function BookingPageClient({ carId }: { carId: string }) {
 
         const confirmData = await confirmRes.json()
         if (!confirmData.success) {
+          if (confirmData.isCardError) {
+            // Card-specific errors — show near payment section, not as generic booking error
+            setPaymentError(confirmData.error || 'Your card was declined')
+            setIsProcessing(false)
+            return
+          }
           throw new Error(confirmData.error || 'Payment confirmation failed')
         }
 
@@ -2100,6 +2153,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       
       if (response.ok && data.booking) {
         sessionStorage.removeItem('rentalBookingDetails')
+        sessionStorage.removeItem('_checkout_form_data')
         setBookingError(null)
         setBookingSuccess({
           bookingCode: data.booking.bookingCode,
@@ -2130,18 +2184,44 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           setBookingError(errorMessage)
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Booking submission error:', error)
-      setBookingError(t('failedToSubmitBooking'))
+      setBookingError(error?.message || t('failedToSubmitBooking'))
     } finally {
       setIsProcessing(false)
     }
   }
   
   // ============================================
+  // AUTO-SUBMIT AFTER 3DS REDIRECT RETURN
+  // ============================================
+  // When returning from a 3DS redirect, form data is restored from sessionStorage
+  // and we auto-trigger the booking submission so the guest doesn't have to click again.
+
+  useEffect(() => {
+    if (!autoSubmitRef.current) return
+    if (!paymentAlreadyConfirmed || !paymentIntentId) return
+    if (!savedBookingDetails) return
+    if (isProcessing) return
+
+    // For logged-in users, wait for profile data to load (auto-fills driver info)
+    if (profileLoading) return
+
+    // Small delay to ensure all state has settled after restoration
+    const timer = setTimeout(() => {
+      if (!autoSubmitRef.current) return
+      autoSubmitRef.current = false
+      console.log('[3DS Return] Auto-submitting booking...')
+      handleCheckoutClick()
+    }, 1500)
+
+    return () => clearTimeout(timer)
+  }, [paymentAlreadyConfirmed, paymentIntentId, savedBookingDetails, isProcessing, profileLoading])
+
+  // ============================================
   // LOADING STATES
   // ============================================
-  
+
   if (isLoading || !car || !savedBookingDetails || profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">

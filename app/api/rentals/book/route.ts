@@ -1400,7 +1400,7 @@ export async function POST(request: NextRequest) {
       })
 
       return { booking: newBooking, token: accessToken.token }
-    }, { isolationLevel: 'Serializable' }) as any
+    }, { isolationLevel: 'Serializable', timeout: 15000 }) as any
 
     // ALL bookings are now pending review (three-tier approval: fleet → host → confirmed)
     // Send pending review email to guest — never instant confirmation
@@ -1505,8 +1505,11 @@ export async function POST(request: NextRequest) {
     // ========== ORPHAN PREVENTION: Cancel PI if booking creation failed ==========
     // If payment was already confirmed (requires_capture or succeeded) but the booking
     // failed to create, we must cancel/refund the PI to prevent orphaned holds.
+    // EXCEPTION: Do NOT void on transaction timeouts (P2028) — these are transient and
+    // the webhook safety net will create the booking. Voiding would lose the payment.
+    const isTransactionTimeout = error?.code === 'P2028'
     const piToCancel = stripePaymentIntentId || bookingData?.paymentIntentId
-    if (piToCancel) {
+    if (piToCancel && !isTransactionTimeout) {
       try {
         const orphanedPI = await stripe.paymentIntents.retrieve(piToCancel)
         if (orphanedPI.status === 'requires_capture') {
@@ -1519,6 +1522,8 @@ export async function POST(request: NextRequest) {
       } catch (cancelErr) {
         console.error(`[book] CRITICAL: Failed to cancel orphaned PI ${piToCancel}:`, cancelErr)
       }
+    } else if (piToCancel && isTransactionTimeout) {
+      console.warn(`[book] Transaction timeout (P2028) — NOT voiding PI ${piToCancel}. Webhook safety net will handle it.`)
     }
     // ========== END ORPHAN PREVENTION ==========
 

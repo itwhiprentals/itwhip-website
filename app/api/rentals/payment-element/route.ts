@@ -176,6 +176,8 @@ export async function POST(request: NextRequest) {
       type: 'car_rental_booking',
       guestEmail: email || 'unknown',
       carId,
+      startDate: startDate,
+      endDate: endDate,
       serverTotal: serverRawTotalCents.toString(),
       days: days.toString(),
       subtotal: pricing.basePrice.toFixed(2),
