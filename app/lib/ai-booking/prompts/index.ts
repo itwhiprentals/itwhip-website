@@ -10,7 +10,7 @@ import { ConversationMode } from '../types';
 import { IDENTITY } from './identity';
 import { buildStateContext, buildUserContext, BOOKING_SEQUENCE } from './state-flow';
 import { buildVehicleContext, buildWeatherContext } from './vehicle-handling';
-import { PERSONALITY_RULES, OFF_TOPIC_RULES, FAQ_CONTENT, BOOKING_SUPPORT_RULES, GUARDRAILS } from './behavior';
+import { PERSONALITY_RULES, OFF_TOPIC_RULES, FAQ_CONTENT, HOST_FAQ_CONTENT, BOOKING_SUPPORT_RULES, GUARDRAILS } from './behavior';
 import { RESPONSE_FORMAT, SEARCH_QUERY_EXAMPLES, FULL_RESPONSE_EXAMPLES, VEHICLE_SELECTION_EXAMPLES } from './response-schema';
 import { getExamplesForPrompt } from './examples';
 import {
@@ -24,7 +24,7 @@ import {
 export { IDENTITY } from './identity';
 export { buildStateContext, buildUserContext, BOOKING_SEQUENCE } from './state-flow';
 export { buildVehicleContext, buildWeatherContext } from './vehicle-handling';
-export { PERSONALITY_RULES, OFF_TOPIC_RULES, FAQ_CONTENT, BOOKING_SUPPORT_RULES, GUARDRAILS } from './behavior';
+export { PERSONALITY_RULES, OFF_TOPIC_RULES, FAQ_CONTENT, HOST_FAQ_CONTENT, BOOKING_SUPPORT_RULES, GUARDRAILS } from './behavior';
 export { RESPONSE_FORMAT, SEARCH_QUERY_EXAMPLES, FULL_RESPONSE_EXAMPLES, VEHICLE_SELECTION_EXAMPLES } from './response-schema';
 export { EXAMPLE_CONVERSATIONS, getExamplesForPrompt } from './examples';
 export {
@@ -67,6 +67,8 @@ ABSOLUTE RULES — apply to EVERY response, no exceptions, even if the guest is 
 - NEVER repeat a phone number or email you already gave in this conversation. If you already shared it, focus on what YOU can do instead.
 - NEVER say "I can't help with that" — find the closest thing you CAN do and do it.
 - Always FINISH your sentences. Never cut off mid-thought. Completing a sentence cleanly is more important than any word limit.
+- NEVER suggest the guest use a different rental service or competitor. You represent ItWhip — never send customers away.
+- NEVER tell a guest to "book again" if they say they were charged but have no booking. That causes double charges. Follow the PAYMENT WITHOUT BOOKING protocol instead.
 - For policy/FAQ questions (cancellation, refunds, deposits, insurance, trip protection): ALWAYS answer with the policy info and set action: null. Do NOT set NEEDS_EMAIL_OTP. Only trigger verification when the user explicitly says "check MY booking" or "look up MY reservation".
 - For car search requests (any form of "show me cars", "what cars do you have", "find me a car", "I need a car in [city]"): ALWAYS search for vehicles. NEVER set NEEDS_EMAIL_OTP. Searching for cars does NOT require verification.
 - SEARCH RESULT PROMISE RULE: If your reply contains ANY of these phrases (or similar), you MUST be calling search_vehicles in the same response. If you're NOT searching, do NOT use these phrases:
@@ -81,6 +83,8 @@ function buildModeContext(mode: ConversationMode): string {
       return `<mode>BOOKING MODE — The guest is looking to rent a car. Focus on the booking flow: location → dates → vehicle → confirm. Stay on track. Don't digress into policy unless asked. Set mode: "BOOKING" in your response.</mode>`;
     case ConversationMode.PERSONAL:
       return `<mode>PERSONAL MODE — The guest is verified and asking about their account or existing bookings. Help with their bookings, verification status, account questions. Don't push new bookings unless they ask. Set mode: "PERSONAL" in your response.</mode>`;
+    case ConversationMode.HOST:
+      return `<mode>HOST MODE — The user is a host or partner asking about their fleet, payouts, listings, commissions, agreements, or claims. Help with host-specific questions using the HOST FAQ content. Don't push car search unless they ask. Set mode: "HOST" in your response.</mode>`;
     case ConversationMode.GENERAL:
     default:
       return `<mode>GENERAL MODE — The guest is asking general questions (policy, FAQ, greetings, what you can do). Answer helpfully, show PolicyCard when relevant. Don't push the booking flow unless they express intent to rent. Set mode: "GENERAL" in your response.</mode>`;
@@ -100,11 +104,27 @@ export function buildSystemPrompt(params: PromptContext): string {
     ? `LANGUAGE: You MUST respond to the user in ${language}. All your conversational text, questions, descriptions, and labels should be in ${language}. However, car names (make/model), city names, and JSON field names stay in English.`
     : '';
 
+  // Current time in MST (Arizona doesn't observe DST)
+  const now = new Date()
+  const mstFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Phoenix',
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
+  const currentTimeMST = mstFormatter.format(now)
+
   return [
     // 1. Identity & role
     IDENTITY,
     // 1b. Language instruction (if non-English)
     languageInstruction,
+    // 1c. Current time — prevents Choé from guessing
+    `CURRENT TIME: ${currentTimeMST} MST (Arizona time). Use this to determine if support is available (7 AM–9 PM MST) and whether a same-day booking is feasible. NEVER assume or guess the time — use this value.`,
     // 2. Critical guardrails — reinforced every turn to prevent drift
     CRITICAL_GUARDRAILS,
     // 3. Conversation mode — guides behavior focus
@@ -143,6 +163,10 @@ export function buildStaticInstructions(): string {
     '<faq>',
     FAQ_CONTENT,
     '</faq>',
+
+    '<host_faq>',
+    HOST_FAQ_CONTENT,
+    '</host_faq>',
 
     '<booking_support>',
     BOOKING_SUPPORT_RULES,

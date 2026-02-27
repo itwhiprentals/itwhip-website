@@ -10,6 +10,7 @@ export enum ConversationMode {
   GENERAL = 'GENERAL',
   BOOKING = 'BOOKING',
   PERSONAL = 'PERSONAL',
+  HOST = 'HOST',
 }
 
 // =============================================================================
