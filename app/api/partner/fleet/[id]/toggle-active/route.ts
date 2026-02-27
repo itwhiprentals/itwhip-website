@@ -26,7 +26,7 @@ async function getPartnerFromToken() {
       where: { id: hostId }
     })
 
-    if (!partner || (partner.hostType !== 'FLEET_PARTNER' && partner.hostType !== 'PARTNER')) {
+    if (!partner || !['FLEET_PARTNER', 'PARTNER', 'EXTERNAL'].includes(partner.hostType)) {
       return null
     }
 

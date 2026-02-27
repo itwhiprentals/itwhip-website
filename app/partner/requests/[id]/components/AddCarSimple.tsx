@@ -83,6 +83,8 @@ export default function AddCarSimple({ prefillDailyRate, onComplete }: AddCarSim
 
   // Manual fields
   const [color, setColor] = useState('')
+  const [licensePlate, setLicensePlate] = useState('')
+  const [currentMileage, setCurrentMileage] = useState('')
   const [address, setAddress] = useState('')
   const [city, setCity] = useState('')
   const [state, setState] = useState('')
@@ -291,6 +293,9 @@ export default function AddCarSimple({ prefillDailyRate, onComplete }: AddCarSim
           driveType: vehicle.driveType,
           carType: vehicle.carType,
           vehicleType: 'RENTAL',
+          color,
+          licensePlate: licensePlate || null,
+          currentMileage: currentMileage || null,
           address, city, state, zipCode,
           latitude, longitude,
           dailyRate,
@@ -524,6 +529,36 @@ export default function AddCarSimple({ prefillDailyRate, onComplete }: AddCarSim
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
+          </div>
+
+          {/* ─── License Plate & Mileage ─── */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-5 border border-gray-200 dark:border-gray-700">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {t('addLicensePlate')}
+                </label>
+                <input
+                  type="text"
+                  value={licensePlate}
+                  onChange={(e) => setLicensePlate(e.target.value.toUpperCase())}
+                  placeholder="ABC 1234"
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white uppercase"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {t('addCurrentMileage')}
+                </label>
+                <input
+                  type="number"
+                  value={currentMileage}
+                  onChange={(e) => setCurrentMileage(e.target.value)}
+                  placeholder="45,000"
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+            </div>
           </div>
 
           {/* ─── Location ─── */}
