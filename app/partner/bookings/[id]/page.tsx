@@ -722,7 +722,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
         <div className="p-3 sm:p-4">
           {/* Top row - Back button, title, status */}
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start gap-2">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <Link
                 href="/partner/bookings"
@@ -737,30 +737,31 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
 
-            {/* Status badges — far right, aligned with title */}
-            <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
-              <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-medium whitespace-nowrap uppercase ${getStatusColor(booking.status)}`}>
-                {booking.status}
-              </span>
-              {isManualBooking && (
-                <span className="px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap uppercase bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                  MANUAL BOOKING
+            {/* Status badges + Quick Actions — far right */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ml-auto">
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className={`px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap uppercase ${getStatusColor(booking.status)}`}>
+                  {booking.status}
                 </span>
-              )}
-              {isManualBooking && booking.paymentType === 'CASH' && (
-                <span className="px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap uppercase bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                  CASH
-                </span>
-              )}
-              {isManualBooking && booking.paymentType === 'CARD' && (
-                <span className="px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap uppercase bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                  CARD
-                </span>
-              )}
-            </div>
+                {isManualBooking && (
+                  <span className="px-2 py-0.5 rounded text-[9px] font-medium whitespace-nowrap uppercase bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                    MANUAL BOOKING
+                  </span>
+                )}
+                {isManualBooking && booking.paymentType === 'CASH' && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap uppercase bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                    CASH
+                  </span>
+                )}
+                {isManualBooking && booking.paymentType === 'CARD' && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap uppercase bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                    CARD
+                  </span>
+                )}
+              </div>
 
-            {/* Quick Actions - Hidden on mobile, shown inline on desktop */}
-            <div className="hidden sm:flex items-center gap-2">
+              {/* Quick Actions - Hidden on mobile, shown inline on desktop */}
+              <div className="hidden sm:flex items-center gap-2">
               {isGuestDriven && booking.hostApproval === 'PENDING' ? (
                 <>
                   <button
@@ -833,6 +834,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   )}
                 </>
               )}
+              </div>
             </div>
           </div>
 
@@ -2324,6 +2326,22 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                     </div>
                   )}
                 </div>
+
+                {/* Cancel Booking — available before handoff starts (PENDING or CONFIRMED) */}
+                {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && (
+                  <button
+                    onClick={cancelBooking}
+                    disabled={cancelling}
+                    className="w-full px-4 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                  >
+                    {cancelling ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500" />
+                    ) : (
+                      <IoCloseOutline className="w-4 h-4" />
+                    )}
+                    {t('bdCancelBooking')}
+                  </button>
+                )}
 
                 {/* New Booking */}
                 <Link
