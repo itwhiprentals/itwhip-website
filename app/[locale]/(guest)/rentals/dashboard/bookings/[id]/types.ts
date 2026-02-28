@@ -37,6 +37,8 @@ export interface Booking {
       rating: number
       responseTime: number
       profilePhoto?: string | null
+      partnerLogo?: string | null
+      partnerCompanyName?: string | null
     }
     startDate: string
     endDate: string
@@ -102,6 +104,12 @@ export interface Booking {
     cancelledAt?: string | Date | null
     cancelledBy?: string | null
     cancellationReason?: string | null
+    // Agreement fields
+    agreementStatus?: string | null
+    agreementSentAt?: string | Date | null
+    agreementSignedAt?: string | Date | null
+    agreementSignedPdfUrl?: string | null
+    bookingType?: string
   }
   
   export interface Message {

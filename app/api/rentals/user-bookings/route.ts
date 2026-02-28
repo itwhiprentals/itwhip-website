@@ -160,6 +160,11 @@ export async function GET(request: NextRequest) {
         b."cancelledAt",
         b."cancelledBy",
         b."cancellationReason",
+        b."agreementStatus",
+        b."agreementSentAt",
+        b."agreementSignedAt",
+        b."agreementSignedPdfUrl",
+        b."bookingType",
 
         (
           SELECT json_build_object(
@@ -206,6 +211,8 @@ export async function GET(request: NextRequest) {
           'email', h.email,
           'phone', h.phone,
           'profilePhoto', h."profilePhoto",
+          'partnerLogo', h."partnerLogo",
+          'partnerCompanyName', h."partnerCompanyName",
           'rating', h.rating,
           'responseTime', h."responseTime",
           'isVerified', h."isVerified"
@@ -545,6 +552,12 @@ export async function GET(request: NextRequest) {
         handoffStatus: booking.handoffStatus || null,
         hostFinalReviewStatus: booking.hostFinalReviewStatus || null,
         hostFinalReviewDeadline: booking.hostFinalReviewDeadline || null,
+        // Agreement fields
+        agreementStatus: booking.agreementStatus || 'not_sent',
+        agreementSentAt: booking.agreementSentAt || null,
+        agreementSignedAt: booking.agreementSignedAt || null,
+        agreementSignedPdfUrl: booking.agreementSignedPdfUrl || null,
+        bookingType: booking.bookingType || 'STANDARD',
         // Card identity (only populated for single-booking detail view)
         ...(isSingleBooking ? { cardBrand, cardLast4 } : {})
       }

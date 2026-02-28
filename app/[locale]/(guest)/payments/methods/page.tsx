@@ -17,7 +17,8 @@ import {
   IoCheckmarkCircle,
   IoShieldCheckmarkOutline,
   IoInformationCircleOutline,
-  IoCloseOutline
+  IoCloseOutline,
+  IoCashOutline
 } from 'react-icons/io5'
 
 // Initialize Stripe with publishable key
@@ -128,10 +129,28 @@ export default function PaymentMethodsPage() {
   const [loading, setLoading] = useState(true)
   const [showAddCard, setShowAddCard] = useState(false)
   const [processing, setProcessing] = useState(false)
+  const [hasCashBookings, setHasCashBookings] = useState(false)
 
   useEffect(() => {
     fetchPaymentMethods()
+    checkCashBookings()
   }, [])
+
+  const checkCashBookings = async () => {
+    try {
+      const res = await fetch('/api/rentals/user-bookings', { credentials: 'include' })
+      const data = await res.json()
+      if (data.bookings) {
+        const activeCash = data.bookings.some(
+          (b: { paymentType?: string; status?: string }) =>
+            b.paymentType === 'CASH' && ['PENDING', 'CONFIRMED', 'ACTIVE'].includes(b.status || '')
+        )
+        setHasCashBookings(activeCash)
+      }
+    } catch {
+      // Silent — non-critical
+    }
+  }
 
   const fetchPaymentMethods = async () => {
     try {
@@ -225,6 +244,23 @@ export default function PaymentMethodsPage() {
           </div>
         </div>
       </div>
+
+      {/* Cash Booking Info */}
+      {hasCashBookings && (
+        <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
+          <div className="flex items-start gap-3">
+            <IoCashOutline className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                {t('cashPaymentsTitle')}
+              </h3>
+              <p className="text-xs text-amber-800 dark:text-amber-300 mt-0.5">
+                {t('cashPaymentsDesc')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Payment Methods List */}
       {paymentMethods.length > 0 ? (

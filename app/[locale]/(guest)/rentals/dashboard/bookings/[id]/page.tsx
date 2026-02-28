@@ -22,6 +22,7 @@ import { ModifyBookingSheet } from './components/ModifyBookingSheet'
 import { SecureAccountBanner } from './components/SecureAccountBanner'
 import RentalAgreementModal from '../../../components/modals/RentalAgreementModal'
 import { BookedCard, VerifiedCard, IssuesCard, OnHoldCard, ConfirmedCard, CompletedCard, CancelledCard, NoShowCard, PaymentChoiceCard } from './components/cards'
+import ManualBookingGuestView from './components/ManualBookingGuestView'
 import { MinimalLegalFooter } from './components/cards/SharedCardSections'
 import { getVehicleClass, formatFuelTypeBadge } from '@/app/lib/utils/vehicleClassification'
 import {
@@ -449,6 +450,195 @@ export default function BookingDetailsPage() {
     vsLower === 'rejected' ||
     (booking as any).disputeCount > 0
   ) && booking.status !== 'ON_HOLD' && booking.status !== 'CANCELLED'
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MANUAL / RECRUITED BOOKING — completely separate guest experience
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (booking.isRecruitedBooking) {
+    return (
+      <div className="bg-gray-50 dark:bg-gray-950 min-h-screen">
+        {/* Toast Notification */}
+        {toast && (
+          <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg animate-in slide-in-from-top-2 ${
+            toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-blue-600 text-white'
+          }`}>
+            <CheckCircle className="w-5 h-5 flex-shrink-0" />
+            <p className="text-sm font-medium">{toast.message}</p>
+            <button onClick={() => setToast(null)} className="ml-2 text-white/80 hover:text-white">
+              <XCircle className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 pt-2 pb-3 sm:pt-3 sm:pb-6">
+          {/* Header */}
+          <div className="mb-2 sm:mb-3 mt-4 sm:mt-5">
+            <div className="flex items-center gap-3 mb-3">
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 flex items-center text-sm sm:text-base transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 mr-1" />
+                <span className="hidden sm:inline">{t('backToDashboard')}</span>
+                <span className="sm:hidden">{t('back')}</span>
+              </button>
+              <h1 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 ml-auto pr-1">{t('bookingStatus')}</h1>
+            </div>
+          </div>
+
+          {/* Secure Account Banner */}
+          <SecureAccountBanner hasPassword={hasPassword} />
+
+          {/* Active trip / Completed / Cancelled use shared cards */}
+          {isTripActive ? (
+            <>
+              <TripActiveCard
+                booking={booking}
+                onExtend={() => setShowModifyModal(true)}
+                onViewAgreement={() => setShowAgreement(true)}
+              />
+              <details className="mt-3 group">
+                <summary className="flex items-center justify-between cursor-pointer bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2.5 select-none">
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Messages</span>
+                  <svg className="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <div className="mt-2">
+                  <MessagesPanel
+                    bookingId={bookingId}
+                    messages={messages}
+                    loading={messagesLoading}
+                    sending={messageSending}
+                    error={messageError}
+                    onSendMessage={sendMessage}
+                    onFileUpload={handleMessageFileUpload}
+                    uploadingFile={messageUploading}
+                  />
+                </div>
+              </details>
+            </>
+          ) : isCompletedTrip ? (
+            <CompletedCard
+              booking={booking}
+              messages={messages}
+              messagesLoading={messagesLoading}
+              messageSending={messageSending}
+              messageError={messageError}
+              messageUploading={messageUploading}
+              onSendMessage={sendMessage}
+              onFileUpload={handleMessageFileUpload}
+              onViewAgreement={() => setShowAgreement(true)}
+            />
+          ) : booking.status === 'CANCELLED' ? (
+            <CancelledCard
+              booking={booking}
+              messages={messages}
+              messagesLoading={messagesLoading}
+              messageSending={messageSending}
+              messageError={messageError}
+              messageUploading={messageUploading}
+              onSendMessage={sendMessage}
+              onFileUpload={handleFileUpload}
+              onViewAgreement={() => setShowAgreement(true)}
+            />
+          ) : (
+            <ManualBookingGuestView
+              booking={booking}
+              messages={messages}
+              messagesLoading={messagesLoading}
+              messageSending={messageSending}
+              messageError={messageError}
+              messageUploading={messageUploading}
+              onSendMessage={sendMessage}
+              onFileUpload={handleMessageFileUpload}
+              onBookingRefresh={loadBooking}
+              onCancel={() => setShowCancelDialog(true)}
+              onModify={() => setShowModifyModal(true)}
+              onViewAgreement={() => setShowAgreement(true)}
+            />
+          )}
+        </div>
+
+        {/* Shared Modals */}
+        <ModifyBookingSheet
+          booking={booking}
+          isOpen={showModifyModal}
+          onClose={() => setShowModifyModal(false)}
+          onSuccess={() => {
+            loadBooking()
+            setShowModifyModal(false)
+          }}
+          extendOnly={isTripActive}
+        />
+        <CancellationDialog
+          booking={booking}
+          isOpen={showCancelDialog}
+          onClose={() => setShowCancelDialog(false)}
+          onConfirm={(reason) => {
+            handleCancellation(reason)
+            setShowCancelDialog(false)
+          }}
+        />
+        <RentalAgreementModal
+          isOpen={showAgreement}
+          onClose={() => setShowAgreement(false)}
+          carDetails={{
+            id: booking.car.id || '',
+            make: booking.car.make,
+            model: booking.car.model,
+            year: booking.car.year,
+            carType: booking.car.type || 'standard',
+            seats: booking.car.seats || 4,
+            dailyRate: booking.dailyRate,
+            city: booking.car?.city || 'Phoenix',
+            address: booking.car?.address || booking.pickupLocation || 'Phoenix, AZ',
+            host: {
+              name: booking.host?.name || '',
+              profilePhoto: booking.host?.partnerLogo || booking.host?.profilePhoto || undefined,
+              responseTime: booking.host?.responseTime
+            }
+          }}
+          bookingDetails={{
+            carId: booking.car.id || '',
+            carClass: booking.car.type || 'standard',
+            startDate: booking.startDate,
+            endDate: booking.endDate,
+            startTime: booking.startTime || '10:00 AM',
+            endTime: booking.endTime || '10:00 AM',
+            deliveryType: booking.pickupType || 'pickup',
+            deliveryAddress: booking.exactAddress || booking.car?.address || booking.pickupLocation || 'Phoenix, AZ',
+            insuranceType: booking.insuranceType || 'basic',
+            addOns: { refuelService: false, additionalDriver: false, extraMiles: false, vipConcierge: false },
+            pricing: {
+              days: Math.ceil((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / (1000 * 60 * 60 * 24)),
+              dailyRate: booking.dailyRate,
+              basePrice: booking.dailyRate * Math.ceil((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / (1000 * 60 * 60 * 24)),
+              insurancePrice: booking.insuranceFee,
+              deliveryFee: booking.deliveryFee,
+              serviceFee: booking.serviceFee,
+              taxes: booking.taxes,
+              total: booking.totalAmount,
+              deposit: booking.depositAmount,
+              creditsApplied: booking.creditsApplied || 0,
+              bonusApplied: booking.bonusApplied || 0,
+              chargeAmount: booking.chargeAmount ?? null,
+              breakdown: { refuelService: 0, additionalDriver: 0, extraMiles: 0, vipConcierge: 0 }
+            }
+          }}
+          guestDetails={{
+            name: booking.guestName || '',
+            email: booking.guestEmail || '',
+            bookingCode: booking.bookingCode,
+            verificationStatus: (booking.verificationStatus?.toUpperCase() as 'PENDING' | 'APPROVED' | 'REJECTED') || 'PENDING'
+          }}
+          context="dashboard"
+          isDraft={booking.status === 'PENDING'}
+          bookingStatus={booking.status}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className={`bg-gray-50 dark:bg-gray-950 ${isTripActive ? 'pb-4' : 'min-h-screen'}`}>

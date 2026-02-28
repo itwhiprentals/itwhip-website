@@ -1344,7 +1344,9 @@
     "aboutAcceptedCards": "Aceptamos Visa, Mastercard, American Express y Discover",
     "aboutDeposits": "Los depósitos se retienen temporalmente y se liberan después de completar el viaje",
     "aboutSecure": "Todos los pagos se procesan de forma segura a través de Stripe",
-    "weAccept": "Aceptamos"
+    "weAccept": "Aceptamos",
+    "cashPaymentsTitle": "Reserva con Pago en Efectivo",
+    "cashPaymentsDesc": "Tienes una reserva activa con pago en efectivo. Paga directamente a tu anfitrión al recoger el vehículo."
   },
   "DepositWallet": {
     "cancel": "Cancelar",
@@ -16902,5 +16904,49 @@
     "faqHeading": "Preguntas Frecuentes sobre Alquiler en {code}",
     "otherAirportsHeading": "Otros Aeropuertos de Arizona",
     "otherAirportsSubtitle": "Alquiler de autos en otros aeropuertos de Arizona"
+  },
+  "ManualBookingProgress": {
+    "stepBooked": "Reservado",
+    "bookedDesc": "Reserva creada",
+    "stepPayment": "Pago",
+    "cardAuthorized": "Tarjeta autorizada",
+    "cashSelected": "Efectivo al recoger",
+    "awaitingPayment": "Elige método",
+    "stepConfirmed": "Confirmado",
+    "hostConfirmed": "Anfitrión confirmó",
+    "awaitingConfirmation": "Esperando anfitrión",
+    "stepAgreement": "Acuerdo",
+    "agreementSigned": "Firmado",
+    "agreementSent": "Enviado por email",
+    "agreementPending": "Pendiente",
+    "stepTrip": "Viaje",
+    "tripCompleted": "Completado",
+    "tripInProgress": "En progreso",
+    "readyForPickup": "Listo para recoger",
+    "tripPending": "Pendiente"
+  },
+  "ManualBooking": {
+    "statusAwaitingPayment": "Elige Tu Método de Pago",
+    "statusAwaitingPaymentDesc": "Selecciona tarjeta o efectivo para continuar con tu reserva.",
+    "statusAwaitingConfirmation": "Esperando Confirmación del Anfitrión",
+    "statusAwaitingConfirmationDesc": "Tu método de pago está configurado. Tu anfitrión confirmará tu reserva pronto.",
+    "statusConfirmed": "Reserva Confirmada — Firma Tu Acuerdo",
+    "statusConfirmedDesc": "Revisa tu email para el enlace del contrato de alquiler. Fírmalo para completar tu reserva.",
+    "statusAllSet": "¡Todo Listo!",
+    "statusAllSetDesc": "Tu reserva está confirmada y el acuerdo está firmado. Tu alquiler está listo.",
+    "paymentMethodCard": "Tarjeta de Crédito/Débito",
+    "paymentMethodCash": "Efectivo al Recoger",
+    "cardDetail": "{brand} terminada en {last4}",
+    "paymentMethodCardDesc": "Pago autorizado",
+    "paymentMethodCashDesc": "Paga directamente a tu anfitrión al recoger",
+    "agreementSigned": "Acuerdo Firmado",
+    "signedOn": "Firmado el {date}",
+    "download": "Descargar",
+    "agreementSent": "Acuerdo Enviado",
+    "agreementSentDesc": "Revisa tu email para revisar y firmar el contrato de alquiler.",
+    "openAgreement": "Abrir Acuerdo",
+    "agreementTitle": "Contrato de Alquiler",
+    "agreementPendingSend": "El acuerdo se enviará a tu email en breve.",
+    "agreementNotSent": "El acuerdo se enviará después de que tu anfitrión confirme la reserva."
   }
 }

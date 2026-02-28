@@ -1344,7 +1344,9 @@
     "aboutAcceptedCards": "We accept Visa, Mastercard, American Express, and Discover",
     "aboutDeposits": "Deposits are held temporarily and released after trip completion",
     "aboutSecure": "All payments are processed securely through Stripe",
-    "weAccept": "We accept"
+    "weAccept": "We accept",
+    "cashPaymentsTitle": "Cash Payment Booking",
+    "cashPaymentsDesc": "You have an active cash booking. Pay your host directly at pickup."
   },
   "DepositWallet": {
     "cancel": "Cancel",
@@ -16902,5 +16904,49 @@
     "faqHeading": "{code} Car Rental FAQs",
     "otherAirportsHeading": "Other Arizona Airports",
     "otherAirportsSubtitle": "Car rentals at other Arizona airports"
+  },
+  "ManualBookingProgress": {
+    "stepBooked": "Booked",
+    "bookedDesc": "Booking created",
+    "stepPayment": "Payment",
+    "cardAuthorized": "Card authorized",
+    "cashSelected": "Cash at pickup",
+    "awaitingPayment": "Choose method",
+    "stepConfirmed": "Confirmed",
+    "hostConfirmed": "Host confirmed",
+    "awaitingConfirmation": "Awaiting host",
+    "stepAgreement": "Agreement",
+    "agreementSigned": "Signed",
+    "agreementSent": "Sent to email",
+    "agreementPending": "Pending",
+    "stepTrip": "Trip",
+    "tripCompleted": "Completed",
+    "tripInProgress": "In progress",
+    "readyForPickup": "Ready for pickup",
+    "tripPending": "Pending"
+  },
+  "ManualBooking": {
+    "statusAwaitingPayment": "Choose Your Payment Method",
+    "statusAwaitingPaymentDesc": "Select card or cash to continue with your booking.",
+    "statusAwaitingConfirmation": "Waiting for Host Confirmation",
+    "statusAwaitingConfirmationDesc": "Your payment method is set. Your host will confirm your booking shortly.",
+    "statusConfirmed": "Booking Confirmed — Sign Your Agreement",
+    "statusConfirmedDesc": "Check your email for the rental agreement link. Sign it to complete your booking.",
+    "statusAllSet": "You're All Set!",
+    "statusAllSetDesc": "Your booking is confirmed and agreement is signed. Your rental is ready.",
+    "paymentMethodCard": "Credit/Debit Card",
+    "paymentMethodCash": "Cash at Pickup",
+    "cardDetail": "{brand} ending in {last4}",
+    "paymentMethodCardDesc": "Payment authorized",
+    "paymentMethodCashDesc": "Pay your host directly at pickup",
+    "agreementSigned": "Agreement Signed",
+    "signedOn": "Signed on {date}",
+    "download": "Download",
+    "agreementSent": "Agreement Sent",
+    "agreementSentDesc": "Check your email to review and sign the rental agreement.",
+    "openAgreement": "Open Agreement",
+    "agreementTitle": "Rental Agreement",
+    "agreementPendingSend": "Agreement will be sent to your email shortly.",
+    "agreementNotSent": "Agreement will be sent after your host confirms the booking."
   }
 }

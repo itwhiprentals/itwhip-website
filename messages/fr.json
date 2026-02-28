@@ -1344,7 +1344,9 @@
     "aboutAcceptedCards": "Nous acceptons Visa, Mastercard, American Express et Discover",
     "aboutDeposits": "Les dépôts sont retenus temporairement et libérés après la fin du trajet",
     "aboutSecure": "Tous les paiements sont traités en toute sécurité via Stripe",
-    "weAccept": "Nous acceptons"
+    "weAccept": "Nous acceptons",
+    "cashPaymentsTitle": "Réservation avec Paiement en Espèces",
+    "cashPaymentsDesc": "Vous avez une réservation active avec paiement en espèces. Payez directement votre hôte lors de la prise en charge."
   },
   "DepositWallet": {
     "cancel": "Annuler",
@@ -16902,5 +16904,49 @@
     "faqHeading": "FAQ Location de Voitures à {code}",
     "otherAirportsHeading": "Autres Aéroports de l'Arizona",
     "otherAirportsSubtitle": "Location de voitures dans d'autres aéroports de l'Arizona"
+  },
+  "ManualBookingProgress": {
+    "stepBooked": "Réservé",
+    "bookedDesc": "Réservation créée",
+    "stepPayment": "Paiement",
+    "cardAuthorized": "Carte autorisée",
+    "cashSelected": "Espèces à la prise en charge",
+    "awaitingPayment": "Choisir méthode",
+    "stepConfirmed": "Confirmé",
+    "hostConfirmed": "Hôte a confirmé",
+    "awaitingConfirmation": "En attente de l'hôte",
+    "stepAgreement": "Contrat",
+    "agreementSigned": "Signé",
+    "agreementSent": "Envoyé par email",
+    "agreementPending": "En attente",
+    "stepTrip": "Trajet",
+    "tripCompleted": "Terminé",
+    "tripInProgress": "En cours",
+    "readyForPickup": "Prêt pour la prise en charge",
+    "tripPending": "En attente"
+  },
+  "ManualBooking": {
+    "statusAwaitingPayment": "Choisissez Votre Méthode de Paiement",
+    "statusAwaitingPaymentDesc": "Sélectionnez carte ou espèces pour continuer votre réservation.",
+    "statusAwaitingConfirmation": "En Attente de Confirmation de l'Hôte",
+    "statusAwaitingConfirmationDesc": "Votre méthode de paiement est configurée. Votre hôte confirmera votre réservation sous peu.",
+    "statusConfirmed": "Réservation Confirmée — Signez Votre Contrat",
+    "statusConfirmedDesc": "Vérifiez votre email pour le lien du contrat de location. Signez-le pour finaliser votre réservation.",
+    "statusAllSet": "Tout Est Prêt !",
+    "statusAllSetDesc": "Votre réservation est confirmée et le contrat est signé. Votre location est prête.",
+    "paymentMethodCard": "Carte de Crédit/Débit",
+    "paymentMethodCash": "Espèces à la Prise en Charge",
+    "cardDetail": "{brand} se terminant par {last4}",
+    "paymentMethodCardDesc": "Paiement autorisé",
+    "paymentMethodCashDesc": "Payez directement votre hôte à la prise en charge",
+    "agreementSigned": "Contrat Signé",
+    "signedOn": "Signé le {date}",
+    "download": "Télécharger",
+    "agreementSent": "Contrat Envoyé",
+    "agreementSentDesc": "Vérifiez votre email pour consulter et signer le contrat de location.",
+    "openAgreement": "Ouvrir le Contrat",
+    "agreementTitle": "Contrat de Location",
+    "agreementPendingSend": "Le contrat sera envoyé à votre email sous peu.",
+    "agreementNotSent": "Le contrat sera envoyé après la confirmation de votre réservation par l'hôte."
   }
 }
