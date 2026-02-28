@@ -40,6 +40,9 @@ import {
 } from 'react-icons/io5'
 import { formatPhoneNumber } from '@/app/utils/helpers'
 import BookingAgreementSection from './BookingAgreementSection'
+import BottomSheet from '@/app/components/BottomSheet'
+import EditBookingSheet from './EditBookingSheet'
+import AddChargeSheet from './AddChargeSheet'
 
 // ─── Interfaces ───────────────────────────────────────────────
 
@@ -208,6 +211,10 @@ export default function ManualBookingView({
     charges: false
   })
 
+  // Bottomsheet states
+  const [showTaxInfo, setShowTaxInfo] = useState(false)
+  const [showVerificationInfo, setShowVerificationInfo] = useState(false)
+
   // Communication states
   const [showCommModal, setShowCommModal] = useState<'pickup_instructions' | 'keys_instructions' | null>(null)
   const [commMessage, setCommMessage] = useState('')
@@ -229,6 +236,13 @@ export default function ManualBookingView({
 
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+
+  const formatTime12h = (time: string) => {
+    const [h, m] = time.split(':').map(Number)
+    const period = h >= 12 ? 'PM' : 'AM'
+    const hour12 = h % 12 || 12
+    return `${hour12}:${m.toString().padStart(2, '0')} ${period}`
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -439,36 +453,41 @@ export default function ManualBookingView({
               <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
                 {t('bdBookingDetails')}
               </h1>
-              <span className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap uppercase flex-shrink-0 ${
-                booking.paymentType === 'CASH'
-                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                  : booking.paymentStatus === 'AUTHORIZED' || booking.paymentStatus === 'PAID'
-                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                    : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-              }`}>
-                {booking.paymentType === 'CASH' ? 'CASH' : `PAYMENT: ${booking.paymentStatus}`}
-              </span>
-              <span className="px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap uppercase flex-shrink-0 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                MANUAL BOOKING
-              </span>
             </div>
+
+            <span className="px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap uppercase flex-shrink-0 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+              MANUAL BOOKING
+            </span>
 
             {/* Desktop Actions */}
             <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
               {booking.status === 'PENDING' && (
                 <>
-                  <button
-                    onClick={confirmBooking}
-                    disabled={confirming || !booking.paymentType}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed text-white rounded-lg font-medium flex items-center gap-2"
-                  >
-                    {confirming ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                    ) : (
-                      <IoCheckmarkOutline className="w-4 h-4" />
-                    )}
-                    {t('bdConfirm')}
-                  </button>
+                  <div className="relative group">
+                    <button
+                      onClick={confirmBooking}
+                      disabled={confirming || !booking.paymentType || (booking.paymentType === 'PLATFORM' && !partner?.stripeConnected)}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed text-white rounded-lg font-medium flex items-center gap-2"
+                    >
+                      {confirming ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                      ) : (
+                        <IoCheckmarkOutline className="w-4 h-4" />
+                      )}
+                      {t('bdConfirm')}
+                    </button>
+                    {!booking.paymentType ? (
+                      <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
+                        {t('bdSelectPaymentFirst')}
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
+                      </div>
+                    ) : booking.paymentType === 'PLATFORM' && !partner?.stripeConnected ? (
+                      <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
+                        {t('bdConnectPayoutFirst')}
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
+                      </div>
+                    ) : null}
+                  </div>
                   <button
                     onClick={cancelBooking}
                     disabled={cancelling}
@@ -513,7 +532,7 @@ export default function ManualBookingView({
               <>
                 <button
                   onClick={confirmBooking}
-                  disabled={confirming || !booking.paymentType}
+                  disabled={confirming || !booking.paymentType || (booking.paymentType === 'PLATFORM' && !partner?.stripeConnected)}
                   className="flex-1 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed text-white rounded-lg font-medium flex items-center justify-center gap-1 text-sm"
                 >
                   {confirming ? (
@@ -690,12 +709,12 @@ export default function ManualBookingView({
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('bdPickup')}</p>
                   <p className="font-medium text-gray-900 dark:text-white">{formatDate(booking.startDate)}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('bdAt')} {booking.startTime}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('bdAt')} {formatTime12h(booking.startTime)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('bdReturn')}</p>
                   <p className="font-medium text-gray-900 dark:text-white">{formatDate(booking.endDate)}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('bdAt')} {booking.endTime}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('bdAt')} {formatTime12h(booking.endTime)}</p>
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -737,6 +756,15 @@ export default function ManualBookingView({
                 <div className="flex items-center gap-2">
                   <IoWalletOutline className="w-5 h-5 text-gray-400" />
                   <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdPricing')}</h3>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap uppercase ${
+                    booking.paymentType === 'CASH'
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                      : booking.paymentStatus === 'AUTHORIZED' || booking.paymentStatus === 'PAID'
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                        : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                  }`}>
+                    {booking.paymentType === 'CASH' ? 'CASH' : `${booking.paymentStatus}`}
+                  </span>
                 </div>
                 {expandedSections.pricing ? <IoChevronUpOutline className="w-5 h-5 text-gray-400" /> : <IoChevronDownOutline className="w-5 h-5 text-gray-400" />}
               </button>
@@ -811,6 +839,16 @@ export default function ManualBookingView({
                         <p className="text-xs text-gray-400 mt-1">{t('bdWelcomeDiscountNote')}</p>
                       </>
                     )}
+                  </div>
+
+                  {/* Tax responsibility info */}
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-1">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setShowTaxInfo(true) }}
+                      className="text-xs text-orange-600 dark:text-orange-400 font-medium hover:underline"
+                    >
+                      {t('bdTaxLearnMore')}
+                    </button>
                   </div>
 
                 </div>
@@ -942,6 +980,14 @@ export default function ManualBookingView({
                         </div>
                       </div>
                     </div>
+
+                    {/* Learn more link */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setShowVerificationInfo(true) }}
+                      className="text-xs text-orange-600 dark:text-orange-400 font-medium hover:underline"
+                    >
+                      {t('bdVerificationLearnMore')}
+                    </button>
                   </div>
                 )}
               </div>
@@ -1014,33 +1060,6 @@ export default function ManualBookingView({
           {/* Right Column - Sidebar */}
           <div className="space-y-4">
 
-            {/* Insurance */}
-            {insurance && (
-              <div className={`rounded-lg border p-4 ${
-                insurance.requiresGuestInsurance
-                  ? 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
-                  : 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
-              }`}>
-                <div className="flex items-center gap-2 mb-2">
-                  {insurance.requiresGuestInsurance ? (
-                    <IoWarningOutline className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                  ) : (
-                    <IoShieldCheckmarkOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
-                  )}
-                  <h4 className={`font-medium ${insurance.requiresGuestInsurance ? 'text-amber-700 dark:text-amber-300' : 'text-green-700 dark:text-green-300'}`}>
-                    {t('bdInsurance')}
-                  </h4>
-                </div>
-                <p className={`text-sm ${insurance.requiresGuestInsurance ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400'}`}>
-                  {insurance.hasVehicleInsurance
-                    ? t('bdInsuranceVehicle', { provider: insurance.vehicleProvider || t('bdOwnPolicy') })
-                    : insurance.hasPartnerInsurance
-                    ? t('bdInsurancePartner', { provider: insurance.partnerProvider || t('bdBusinessPolicy') })
-                    : t('bdGuestMustProvideInsurance')}
-                </p>
-              </div>
-            )}
-
             {/* Quick Actions (merged with communication) */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
               <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('bdQuickActions')}</h3>
@@ -1061,7 +1080,7 @@ export default function ManualBookingView({
                   <>
                     <button
                       onClick={() => setShowExtendModal(true)}
-                      className="w-full px-4 py-2 border border-blue-300 dark:border-blue-600 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-2"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
                     >
                       <IoRefreshOutline className="w-4 h-4" />
                       {t('bdExtendRental')}
@@ -1076,6 +1095,15 @@ export default function ManualBookingView({
                     </button>
                   </>
                 )}
+
+                {/* Add Charge / Add-On */}
+                <button
+                  onClick={() => setShowChargeModal(true)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                >
+                  <IoWalletOutline className="w-4 h-4" />
+                  {t('bdAddChargeAddon')}
+                </button>
 
                 {/* Change Vehicle */}
                 <div className="relative group">
@@ -1098,39 +1126,38 @@ export default function ManualBookingView({
                   )}
                 </div>
 
-                {/* Add Charge */}
-                <button
-                  onClick={() => setShowChargeModal(true)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
-                >
-                  <IoWalletOutline className="w-4 h-4" />
-                  {t('bdAddChargeAddon')}
-                </button>
-
-                {/* Mark as Paid */}
+                {/* Mark as Paid — requires guest to have selected payment method */}
                 {booking.paymentStatus !== 'PAID' && (
-                  <button
-                    onClick={markAsPaid}
-                    disabled={markingPaid}
-                    className="w-full px-4 py-2 border border-green-300 dark:border-green-600 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 flex items-center gap-2"
-                  >
-                    {markingPaid ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500" />
-                    ) : (
-                      <IoWalletOutline className="w-4 h-4" />
+                  <div className="relative group">
+                    <button
+                      onClick={markAsPaid}
+                      disabled={markingPaid || !booking.paymentType}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {markingPaid ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500" />
+                      ) : (
+                        <IoWalletOutline className="w-4 h-4" />
+                      )}
+                      {markingPaid ? t('bdUpdating') : t('bdMarkAsPaid')}
+                    </button>
+                    {!booking.paymentType && (
+                      <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
+                        {t('bdSelectPaymentFirst')}
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
+                      </div>
                     )}
-                    {markingPaid ? t('bdUpdating') : t('bdMarkAsPaid')}
-                  </button>
+                  </div>
                 )}
 
                 {/* Send Agreement — all 3 types (ITWHIP/OWN/BOTH) */}
                 <button
                   onClick={sendAgreement}
                   disabled={sendingAgreement}
-                  className="w-full px-4 py-2 border border-purple-300 dark:border-purple-600 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 flex items-center gap-2"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
                 >
                   {sendingAgreement ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500" />
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500" />
                   ) : (
                     <IoDocumentTextOutline className="w-4 h-4" />
                   )}
@@ -1138,24 +1165,32 @@ export default function ManualBookingView({
                     ? t('bdResendAgreement') : t('bdSendAgreement')}
                 </button>
 
-                {/* Send Pickup Instructions */}
-                <button
-                  onClick={() => { setCommMessage(''); setShowCommModal('pickup_instructions') }}
-                  disabled={(commSendCounts.pickup_instructions || 0) >= 2}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  <IoLocationOutline className="w-4 h-4" />
-                  {t('bdSendPickupInstructions')}
-                  {(commSendCounts.pickup_instructions || 0) > 0 && (
-                    <span className="ml-auto text-xs text-gray-400">({commSendCounts.pickup_instructions}/2)</span>
+                {/* Send Pickup Instructions — locked until confirmed */}
+                <div className="relative group">
+                  <button
+                    onClick={() => { setCommMessage(''); setShowCommModal('pickup_instructions') }}
+                    disabled={!booking.paymentType || booking.status === 'PENDING' || (commSendCounts.pickup_instructions || 0) >= 2}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    <IoLocationOutline className="w-4 h-4" />
+                    {t('bdSendPickupInstructions')}
+                    {(commSendCounts.pickup_instructions || 0) > 0 && (
+                      <span className="ml-auto text-xs text-gray-400">({commSendCounts.pickup_instructions}/2)</span>
+                    )}
+                  </button>
+                  {(!booking.paymentType || booking.status === 'PENDING') && (
+                    <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
+                      {t('bdAvailableAfterConfirm')}
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
+                    </div>
                   )}
-                </button>
+                </div>
 
-                {/* Send Keys Instructions */}
+                {/* Send Keys Instructions — locked until confirmed + instant book only */}
                 <div className="relative group">
                   <button
                     onClick={() => { setCommMessage(''); setShowCommModal('keys_instructions') }}
-                    disabled={!vehicle?.instantBook || (commSendCounts.keys_instructions || 0) >= 2}
+                    disabled={!booking.paymentType || booking.status === 'PENDING' || !vehicle?.instantBook || (commSendCounts.keys_instructions || 0) >= 2}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     <IoKeyOutline className="w-4 h-4" />
@@ -1164,7 +1199,12 @@ export default function ManualBookingView({
                       <span className="ml-auto text-xs text-gray-400">({commSendCounts.keys_instructions}/2)</span>
                     )}
                   </button>
-                  {!vehicle?.instantBook && (
+                  {(!booking.paymentType || booking.status === 'PENDING') ? (
+                    <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
+                      {t('bdAvailableAfterConfirm')}
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
+                    </div>
+                  ) : !vehicle?.instantBook && (
                     <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
                       {t('bdKeysInstantOnly')}
                       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
@@ -1193,33 +1233,21 @@ export default function ManualBookingView({
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Insurance */}
-            <Link href="/partner/insurance" className={`block rounded-lg border overflow-hidden cursor-pointer transition-shadow hover:shadow-md ${
-              insurance?.requiresGuestInsurance
-                ? 'border-amber-200 dark:border-amber-800'
-                : 'border-green-200 dark:border-green-800'
-            }`}>
-              <div className={`px-4 py-3 flex items-center justify-between ${
-                insurance?.requiresGuestInsurance
-                  ? 'bg-amber-100 dark:bg-amber-900/30'
-                  : 'bg-green-100 dark:bg-green-900/30'
-              }`}>
+            <Link href="/partner/insurance" className="block rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer transition-shadow hover:shadow-md">
+              <div className="px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-700/50">
                 <div className="flex items-center gap-2">
-                  <IoShieldCheckmarkOutline className={`w-4 h-4 ${insurance?.requiresGuestInsurance ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400'}`} />
+                  <IoShieldCheckmarkOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('bdInsurance')}</span>
                 </div>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${
                   insurance?.requiresGuestInsurance
-                    ? 'bg-amber-500 text-white'
-                    : 'bg-green-600 text-white'
+                    ? 'bg-gray-500 text-white'
+                    : 'bg-gray-600 text-white'
                 }`}>
                   {insurance?.requiresGuestInsurance ? t('bdRequired') : t('bdCovered')}
                 </span>
               </div>
-              <div className={`px-4 py-3 ${
-                insurance?.requiresGuestInsurance
-                  ? 'bg-amber-50 dark:bg-amber-900/10'
-                  : 'bg-green-50 dark:bg-green-900/10'
-              }`}>
+              <div className="px-4 py-3">
                 <p className="text-xs text-gray-600 dark:text-gray-400">
                   {insurance?.requiresGuestInsurance ? t('bdGuestNeedsInsurance') : t('bdVehicleCovered')}
                 </p>
@@ -1230,38 +1258,29 @@ export default function ManualBookingView({
             </Link>
 
             {/* Agreement */}
-            <div className={`rounded-lg border overflow-hidden ${
-              booking.agreementStatus === 'signed'
-                ? 'border-green-200 dark:border-green-800'
-                : 'border-amber-200 dark:border-amber-800'
-            }`}>
-              <div className={`px-4 py-3 flex items-center justify-between ${
-                booking.agreementStatus === 'signed'
-                  ? 'bg-green-100 dark:bg-green-900/30'
-                  : 'bg-amber-100 dark:bg-amber-900/30'
-              }`}>
+            <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-700/50">
                 <div className="flex items-center gap-2">
-                  <IoDocumentTextOutline className={`w-4 h-4 ${booking.agreementStatus === 'signed' ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`} />
+                  <IoDocumentTextOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('bdAgreement')}</span>
                 </div>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${
                   booking.agreementStatus === 'signed'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-amber-500 text-white'
+                    ? 'bg-gray-600 text-white'
+                    : 'bg-gray-500 text-white'
                 }`}>
                   {booking.agreementStatus === 'signed' ? t('bdSigned') : t('bdPending')}
                 </span>
               </div>
-              <div className={`px-4 py-3 ${
-                booking.agreementStatus === 'signed'
-                  ? 'bg-green-50 dark:bg-green-900/10'
-                  : 'bg-amber-50 dark:bg-amber-900/10'
-              }`}>
+              <div className="px-4 py-3">
                 {booking.agreementStatus === 'signed' ? (
-                  <>
+                  <div className="space-y-2">
                     {booking.signerName && booking.agreementSignedAt && (
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        {t('bdSignedBy', { name: booking.signerName })} · {new Date(booking.agreementSignedAt).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' })}
+                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                        {t('bdSignedBy', { name: booking.signerName })}
+                        <span className="hidden sm:inline"> · </span>
+                        <br className="sm:hidden" />
+                        {new Date(booking.agreementSignedAt).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' })}
                       </p>
                     )}
                     {booking.agreementSignedPdfUrl && (
@@ -1269,13 +1288,13 @@ export default function ManualBookingView({
                         href={booking.agreementSignedPdfUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-green-600 hover:bg-green-700 text-white transition-colors"
+                        className="flex items-center justify-center gap-1.5 w-full px-3 py-1.5 rounded-md text-xs font-medium bg-gray-600 hover:bg-gray-700 text-white transition-colors"
                       >
                         <IoDownloadOutline className="w-3.5 h-3.5" />
                         {t('bdDownloadSignedAgreement')}
                       </a>
                     )}
-                  </>
+                  </div>
                 ) : (
                   <>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
@@ -1283,7 +1302,7 @@ export default function ManualBookingView({
                     </p>
                     <button
                       onClick={sendAgreement}
-                      className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white transition-colors"
+                      className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-gray-600 hover:bg-gray-700 text-white transition-colors"
                     >
                       <IoSendOutline className="w-3.5 h-3.5" />
                       {booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' ? t('bdResend') : t('bdSendForSignature')}
@@ -1294,33 +1313,21 @@ export default function ManualBookingView({
             </div>
 
             {/* Stripe Connect / Bank Account */}
-            <Link href="/partner/revenue" className={`block rounded-lg border overflow-hidden cursor-pointer transition-shadow hover:shadow-md ${
-              partner?.stripeConnected
-                ? 'border-green-200 dark:border-green-800'
-                : 'border-red-200 dark:border-red-800'
-            }`}>
-              <div className={`px-4 py-3 flex items-center justify-between ${
-                partner?.stripeConnected
-                  ? 'bg-green-100 dark:bg-green-900/30'
-                  : 'bg-red-100 dark:bg-red-900/30'
-              }`}>
+            <Link href="/partner/revenue" className="block rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer transition-shadow hover:shadow-md">
+              <div className="px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-700/50">
                 <div className="flex items-center gap-2">
-                  <IoWalletOutline className={`w-4 h-4 ${partner?.stripeConnected ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} />
+                  <IoWalletOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('bdBankAccount')}</span>
                 </div>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${
                   partner?.stripeConnected
-                    ? 'bg-green-600 text-white'
-                    : 'bg-red-600 text-white'
+                    ? 'bg-gray-600 text-white'
+                    : 'bg-gray-500 text-white'
                 }`}>
                   {partner?.stripeConnected ? t('bdConnected') : t('bdNotConnected')}
                 </span>
               </div>
-              <div className={`px-4 py-3 ${
-                partner?.stripeConnected
-                  ? 'bg-green-50 dark:bg-green-900/10'
-                  : 'bg-red-50 dark:bg-red-900/10'
-              }`}>
+              <div className="px-4 py-3">
                 <p className="text-xs text-gray-600 dark:text-gray-400">
                   {partner?.stripeConnected ? t('bdBankConnected') : t('bdBankNotConnected')}
                 </p>
@@ -1329,6 +1336,70 @@ export default function ManualBookingView({
           </div>
         </div>
       </div>
+
+      {/* Tax Responsibility BottomSheet */}
+      <BottomSheet
+        isOpen={showTaxInfo}
+        onClose={() => setShowTaxInfo(false)}
+        title={t('bdTaxInfoTitle')}
+        size="small"
+      >
+        <div className="space-y-3 px-1">
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">{t('bdManualBookings')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('bdTaxInfoManual')}</p>
+          </div>
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">{t('bdGuestTaxes')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('bdTaxInfoGuest')}</p>
+          </div>
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">1099 {t('bdStatus')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('bdTaxInfo1099')}</p>
+          </div>
+          <div>
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">{t('bdPlatformBookings')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('bdTaxInfoPlatform')}</p>
+          </div>
+        </div>
+      </BottomSheet>
+
+      {/* Guest Verification BottomSheet */}
+      <BottomSheet
+        isOpen={showVerificationInfo}
+        onClose={() => setShowVerificationInfo(false)}
+        title={t('bdVerificationInfoTitle')}
+        size="small"
+      >
+        <div className="space-y-3 px-1">
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">{t('bdVerifiedGuests')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('bdVerificationInfoVerified')}</p>
+          </div>
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">{t('bdNoDoubleVerification')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('bdVerificationInfoNoDouble')}</p>
+          </div>
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">{t('bdVerificationInfoTitle')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('bdVerificationInfoVisible')}</p>
+          </div>
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">{t('bdManualBookingVerification')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('bdVerificationInfoCost')}</p>
+          </div>
+          <div>
+            <a
+              href="https://itwhip.com/help/identity-verification"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-orange-600 dark:text-orange-400 font-medium hover:underline"
+            >
+              {t('bdLearnHowWeVerify')} →
+            </a>
+          </div>
+        </div>
+      </BottomSheet>
 
       {/* Communication Modal */}
       {showCommModal && (
@@ -1366,6 +1437,28 @@ export default function ManualBookingView({
           </div>
         </div>
       )}
+
+      {/* Edit Booking BottomSheet */}
+      <EditBookingSheet
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        bookingId={booking.id}
+        startDate={booking.startDate}
+        endDate={booking.endDate}
+        startTime={booking.startTime}
+        endTime={booking.endTime}
+        pickupLocation={booking.pickupLocation}
+        onSuccess={onRefresh}
+        showToast={showToast}
+      />
+
+      <AddChargeSheet
+        isOpen={showChargeModal}
+        onClose={() => setShowChargeModal(false)}
+        bookingId={booking.id}
+        onSuccess={onRefresh}
+        showToast={showToast}
+      />
     </div>
   )
 }

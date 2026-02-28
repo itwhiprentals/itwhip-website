@@ -42,9 +42,9 @@ export default function BottomSheet({
 
   // Size mappings (percentage of viewport height)
   const sizeMap = {
-    small: '40vh',
+    small: '45vh',
     medium: '60vh',
-    large: '80vh',
+    large: '75vh',
     full: '75vh'
   }
 
