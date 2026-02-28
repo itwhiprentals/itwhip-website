@@ -163,8 +163,8 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
             </div>
           )}
 
-          {/* Trip Locations Card - Hidden until onboarding complete */}
-          {(progressiveInfoLevel === 'full_details' || booking.tripStatus === 'ACTIVE' || booking.tripStartedAt) && booking.onboardingCompletedAt && (
+          {/* Trip Locations Card - Hidden until onboarding complete (manual bookings skip onboarding) */}
+          {(progressiveInfoLevel === 'full_details' || booking.tripStatus === 'ACTIVE' || booking.tripStartedAt) && (booking.onboardingCompletedAt || booking.bookingType === 'MANUAL') && (
             <>
               {/* Trip Locations - First Card */}
               <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
@@ -378,7 +378,7 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
               <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('location')}</p>
               {booking.status === 'ON_HOLD' ? (
                 <p className="text-xs text-gray-500 italic">{t('completeVerificationForLocation')}</p>
-              ) : booking.onboardingCompletedAt ? (
+              ) : (booking.onboardingCompletedAt || booking.bookingType === 'MANUAL') ? (
                 <>
                   <p className="text-xs text-gray-600 dark:text-gray-400">
                     {hoursUntilPickup <= TIME_THRESHOLDS.SHOW_FULL_DETAILS_HOURS

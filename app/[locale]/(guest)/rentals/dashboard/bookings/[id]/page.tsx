@@ -431,9 +431,9 @@ export default function BookingDetailsPage() {
   const timeUntilPickup = getTimeUntilPickup(booking)
 
   // Inspection phase: onboarding done, trip not started → show only essentials
-  // Cash recruited bookings skip onboarding — host verifies guest in person at pickup
+  // Manual bookings skip onboarding entirely — host manages guest verification
   const isPreTripReady = booking.status === 'CONFIRMED'
-    && (!!booking.onboardingCompletedAt || (booking.isRecruitedBooking && booking.paymentType === 'CASH'))
+    && (!!booking.onboardingCompletedAt || booking.bookingType === 'MANUAL')
     && !booking.tripStartedAt
 
   // Active trip: show only TripActiveCard + messages, hide everything else

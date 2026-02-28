@@ -1315,7 +1315,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
             {/* Handoff Verification Panel — visible for confirmed + active + completed, guest-driven bookings */}
             {(booking.status === 'CONFIRMED' || booking.status === 'ACTIVE' || booking.status === 'COMPLETED') && isGuestDriven &&
-             (booking.onboardingCompletedAt || (isManualBooking && booking.paymentType === 'CASH')) && (
+             (booking.onboardingCompletedAt || isManualBooking) && (
               <HandoffPanel
                 bookingId={booking.id}
                 bookingStatus={booking.status}

@@ -193,8 +193,8 @@ export function canStartTrip(
     }
   }
 
-  // Check onboarding is complete (DL + insurance uploaded)
-  if (!booking.onboardingCompletedAt) {
+  // Check onboarding is complete (DL + insurance uploaded) — skip for manual bookings
+  if (!booking.onboardingCompletedAt && booking.bookingType !== 'MANUAL') {
     return {
       valid: false,
       error: 'Please complete onboarding (upload driver\'s license and insurance) before starting your trip'
@@ -242,7 +242,8 @@ export function canStartHandoff(
     return { valid: false, error: 'Booking must be confirmed' }
   }
 
-  if (!booking.onboardingCompletedAt) {
+  // Skip onboarding check for manual bookings
+  if (!booking.onboardingCompletedAt && booking.bookingType !== 'MANUAL') {
     return { valid: false, error: 'Please complete onboarding first' }
   }
 
