@@ -11,6 +11,7 @@ import { logProspectActivity } from '@/app/lib/auth/host-tokens'
 import { GuestTokenHandler } from '@/app/lib/auth/guest-tokens'
 import { sendEmail } from '@/app/lib/email/sender'
 import { emailConfig, logEmail, generateEmailReference, getEmailFooterHtml, getEmailFooterText } from '@/app/lib/email/config'
+import { generateAgreementToken, getTokenExpiryDate, generateSigningUrl } from '@/app/lib/agreements/tokens'
 
 const JWT_SECRET = process.env.JWT_SECRET!
 
@@ -266,6 +267,38 @@ export async function POST(request: NextRequest) {
     })
 
     // ═══════════════════════════════════════════════════
+    // STEP 2B: Auto-send rental agreement to guest
+    // ═══════════════════════════════════════════════════
+    let signingUrl = ''
+    if (guestEmail) {
+      try {
+        const agreementToken = generateAgreementToken()
+        const agreementExpiresAt = getTokenExpiryDate(30) // 30-day expiry for initial send
+
+        const agreementType = prospect.agreementPreference || 'ITWHIP'
+        const hostAgreementUrl = prospect.hostAgreementUrl || null
+
+        await prisma.rentalBooking.update({
+          where: { id: bookingId },
+          data: {
+            agreementToken,
+            agreementStatus: 'sent',
+            agreementSentAt: new Date(),
+            agreementExpiresAt,
+            signerEmail: guestEmail,
+            agreementType,
+            hostAgreementUrl
+          }
+        })
+
+        signingUrl = generateSigningUrl(agreementToken)
+        console.log(`[Finalize] Agreement auto-sent for booking ${bookingCode} to ${guestEmail}`)
+      } catch (agreementErr) {
+        console.error('[Finalize] Failed to set up agreement:', agreementErr)
+      }
+    }
+
+    // ═══════════════════════════════════════════════════
     // STEP 3: Mark onboarding complete
     // ═══════════════════════════════════════════════════
     const now = new Date()
@@ -413,18 +446,21 @@ export async function POST(request: NextRequest) {
               </table>
 
               <p style="font-size: 14px; color: #111827; margin: 20px 0;">
-                To view your booking details and secure your account, click the button below:
+                To get started, please <strong>sign your rental agreement</strong> and view your booking:
               </p>
 
-              <!-- CTA Button -->
+              <!-- CTA Buttons -->
               <div style="text-align: center; margin: 28px 0;">
+                ${signingUrl ? `<a href="${signingUrl}" style="display: inline-block; background: #2563eb; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px; margin-bottom: 12px;">
+                  Sign Rental Agreement
+                </a><br style="line-height: 28px;">` : ''}
                 <a href="${autoLoginUrl}" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
                   View My Booking
                 </a>
               </div>
 
               <p style="font-size: 12px; color: #9ca3af; text-align: center; margin: 0 0 20px 0;">
-                This link expires in 7 days. You'll be asked to set a password on your first visit.
+                These links expire in 7 days. You'll be asked to set a password on your first visit.
               </p>
 
               ${getEmailFooterHtml(guestRefId)}
@@ -445,9 +481,9 @@ BOOKING DETAILS:
 - Daily Rate: $${dailyRate}/day
 - Total: $${totalAmount.toFixed(2)}
 
-View your booking: ${autoLoginUrl}
+${signingUrl ? `Sign your rental agreement: ${signingUrl}\n\n` : ''}View your booking: ${autoLoginUrl}
 
-This link expires in 7 days. You'll be asked to set a password on your first visit.
+These links expire in 7 days. You'll be asked to set a password on your first visit.
 
 ${getEmailFooterText(guestRefId)}
           `.trim()
@@ -565,11 +601,11 @@ ${getEmailFooterText(guestRefId)}
                 <table style="width: 100%; font-size: 14px;">
                   <tr>
                     <td style="padding: 6px 0; color: #92400e; vertical-align: top; width: 24px;">1.</td>
-                    <td style="padding: 6px 0; color: #78350f;"><strong>Guest confirms payment</strong> — ${guestName} will choose their payment method</td>
+                    <td style="padding: 6px 0; color: #78350f;"><strong>Guest signs agreement</strong> — ${guestName} will sign the rental agreement</td>
                   </tr>
                   <tr>
                     <td style="padding: 6px 0; color: #92400e; vertical-align: top;">2.</td>
-                    <td style="padding: 6px 0; color: #78350f;"><strong>Verify your guest</strong> — Check their driver's license before pickup</td>
+                    <td style="padding: 6px 0; color: #78350f;"><strong>Guest selects payment</strong> — Card (auto-confirms) or Cash (you confirm)</td>
                   </tr>
                   <tr>
                     <td style="padding: 6px 0; color: #92400e; vertical-align: top;">3.</td>
@@ -615,8 +651,8 @@ BOOKING ${booking.bookingCode}:
 - Payment: ${isCash ? 'Cash (collect from guest)' : 'Platform (direct deposit)'}
 
 WHAT'S NEXT:
-1. Guest confirms payment — ${guestName} will choose their payment method
-2. Verify your guest — Check their driver's license before pickup
+1. Guest signs agreement — ${guestName} will sign the rental agreement
+2. Guest selects payment — Card (auto-confirms) or Cash (you confirm)
 3. Hand over the keys — Meet your guest and start the rental
 
 View Booking: ${bookingUrl}

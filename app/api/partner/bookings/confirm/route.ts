@@ -129,6 +129,8 @@ export async function POST(request: NextRequest) {
       where: { id: bookingId },
       data: {
         status: 'CONFIRMED',
+        hostStatus: 'APPROVED',
+        hostReviewedAt: new Date(),
         notes: booking.notes?.replace('[Partner Manual Booking - Sent for customer review]', '[Partner Manual Booking - Confirmed]') || '[Partner Manual Booking - Confirmed]'
       }
     })

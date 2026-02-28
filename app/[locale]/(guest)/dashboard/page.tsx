@@ -184,9 +184,13 @@ interface RentalBooking {
   }
   startDate: string
   endDate: string
+  startTime?: string
   status: string
   verificationStatus?: string
   totalAmount: number
+  paymentType?: string | null
+  bookingType?: string | null
+  isRecruitedBooking?: boolean
 }
 
 interface Toast {
@@ -535,9 +539,13 @@ export default function GuestDashboard() {
           },
           startDate: b.startDate,
           endDate: b.endDate,
+          startTime: b.startTime || '10:00',
           status: b.status,
           verificationStatus: b.verificationStatus,
-          totalAmount: b.totalAmount
+          totalAmount: b.totalAmount,
+          paymentType: b.paymentType || null,
+          bookingType: b.bookingType || null,
+          isRecruitedBooking: b.isRecruitedBooking === true,
         }))
       })
 
@@ -945,7 +953,49 @@ export default function GuestDashboard() {
             )
           }
 
-          // Priority 4: Document verification
+          // Priority 4: Cash recruited booking ready for trip (before onboarding check)
+          const cashTripReady = state.rentalBookings.find(b => b.status === 'CONFIRMED' && b.isRecruitedBooking && b.paymentType === 'CASH')
+          if (cashTripReady) {
+            const startDate = new Date(cashTripReady.startDate)
+            const [h, m] = (cashTripReady.startTime || '10:00').split(':').map(Number)
+            startDate.setHours(h, m, 0, 0)
+            const isLate = new Date() > startDate
+            return (
+              <div
+                className={`-mx-2 sm:mx-0 ${isLate ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-800 dark:to-gray-750 border-green-200 dark:border-gray-700'} border rounded-lg p-4 mt-4 shadow-sm`}
+                role="alert"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={`flex-shrink-0 ${isLate ? 'bg-red-100 dark:bg-red-900/30' : 'bg-green-100 dark:bg-green-900/30'} p-2 rounded-full`}>
+                      <svg className={`w-5 h-5 ${isLate ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className={`font-semibold text-sm ${isLate ? 'text-red-900 dark:text-red-100' : 'text-gray-900 dark:text-white'}`}>
+                        {isLate ? 'Trip Overdue — Start Now' : 'Ready to Start Trip'}
+                      </p>
+                      <p className={`text-xs mt-0.5 ${isLate ? 'text-red-700 dark:text-red-300' : 'text-gray-600 dark:text-gray-400'}`}>
+                        {isLate ? 'Your scheduled pickup time has passed' : 'Meet your host and start your trip'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => router.push(`/rentals/dashboard/bookings/${cashTripReady.id}`)}
+                    className={`px-4 py-2 ${isLate ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 active:scale-95 flex-shrink-0 shadow-sm`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span>Start Trip</span>
+                  </button>
+                </div>
+              </div>
+            )
+          }
+
+          // Priority 5: Document verification
           if (state.documentVerification) {
             return (
               <VerificationAlert

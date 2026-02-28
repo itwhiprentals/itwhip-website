@@ -21,8 +21,9 @@ import { BookingOnboarding } from './components/BookingOnboarding'
 import { ModifyBookingSheet } from './components/ModifyBookingSheet'
 import { SecureAccountBanner } from './components/SecureAccountBanner'
 import RentalAgreementModal from '../../../components/modals/RentalAgreementModal'
-import { BookedCard, VerifiedCard, IssuesCard, OnHoldCard, ConfirmedCard, CompletedCard, CancelledCard, NoShowCard, PaymentChoiceCard } from './components/cards'
+import { BookedCard, VerifiedCard, IssuesCard, OnHoldCard, ConfirmedCard, CompletedCard, CancelledCard, NoShowCard } from './components/cards'
 import ManualBookingGuestView from './components/ManualBookingGuestView'
+import ManualBookingProgress from './components/ManualBookingProgress'
 import { MinimalLegalFooter } from './components/cards/SharedCardSections'
 import { getVehicleClass, formatFuelTypeBadge } from '@/app/lib/utils/vehicleClassification'
 import {
@@ -430,8 +431,9 @@ export default function BookingDetailsPage() {
   const timeUntilPickup = getTimeUntilPickup(booking)
 
   // Inspection phase: onboarding done, trip not started → show only essentials
+  // Cash recruited bookings skip onboarding — host verifies guest in person at pickup
   const isPreTripReady = booking.status === 'CONFIRMED'
-    && !!booking.onboardingCompletedAt
+    && (!!booking.onboardingCompletedAt || (booking.isRecruitedBooking && booking.paymentType === 'CASH'))
     && !booking.tripStartedAt
 
   // Active trip: show only TripActiveCard + messages, hide everything else
@@ -452,9 +454,10 @@ export default function BookingDetailsPage() {
   ) && booking.status !== 'ON_HOLD' && booking.status !== 'CANCELLED'
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // MANUAL / RECRUITED BOOKING — completely separate guest experience
+  // MANUAL / RECRUITED BOOKING — PRE-CONFIRMATION only
+  // After CONFIRMED, manual bookings merge into the standard flow below
   // ═══════════════════════════════════════════════════════════════════════════
-  if (booking.isRecruitedBooking) {
+  if (booking.isRecruitedBooking && booking.status === 'PENDING') {
     return (
       <div className="bg-gray-50 dark:bg-gray-950 min-h-screen">
         {/* Toast Notification */}
@@ -489,75 +492,21 @@ export default function BookingDetailsPage() {
           {/* Secure Account Banner */}
           <SecureAccountBanner hasPassword={hasPassword} />
 
-          {/* Active trip / Completed / Cancelled use shared cards */}
-          {isTripActive ? (
-            <>
-              <TripActiveCard
-                booking={booking}
-                onExtend={() => setShowModifyModal(true)}
-                onViewAgreement={() => setShowAgreement(true)}
-              />
-              <details className="mt-3 group">
-                <summary className="flex items-center justify-between cursor-pointer bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2.5 select-none">
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Messages</span>
-                  <svg className="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </summary>
-                <div className="mt-2">
-                  <MessagesPanel
-                    bookingId={bookingId}
-                    messages={messages}
-                    loading={messagesLoading}
-                    sending={messageSending}
-                    error={messageError}
-                    onSendMessage={sendMessage}
-                    onFileUpload={handleMessageFileUpload}
-                    uploadingFile={messageUploading}
-                  />
-                </div>
-              </details>
-            </>
-          ) : isCompletedTrip ? (
-            <CompletedCard
-              booking={booking}
-              messages={messages}
-              messagesLoading={messagesLoading}
-              messageSending={messageSending}
-              messageError={messageError}
-              messageUploading={messageUploading}
-              onSendMessage={sendMessage}
-              onFileUpload={handleMessageFileUpload}
-              onViewAgreement={() => setShowAgreement(true)}
-            />
-          ) : booking.status === 'CANCELLED' ? (
-            <CancelledCard
-              booking={booking}
-              messages={messages}
-              messagesLoading={messagesLoading}
-              messageSending={messageSending}
-              messageError={messageError}
-              messageUploading={messageUploading}
-              onSendMessage={sendMessage}
-              onFileUpload={handleFileUpload}
-              onViewAgreement={() => setShowAgreement(true)}
-            />
-          ) : (
-            <ManualBookingGuestView
-              booking={booking}
-              messages={messages}
-              messagesLoading={messagesLoading}
-              messageSending={messageSending}
-              messageError={messageError}
-              messageUploading={messageUploading}
-              onSendMessage={sendMessage}
-              onFileUpload={handleMessageFileUpload}
-              onBookingRefresh={loadBooking}
-              onCancel={() => setShowCancelDialog(true)}
-              onModify={() => setShowModifyModal(true)}
-              onViewAgreement={() => setShowAgreement(true)}
-            />
-          )}
+          {/* PENDING manual booking — agreement-first checklist */}
+          <ManualBookingGuestView
+            booking={booking}
+            messages={messages}
+            messagesLoading={messagesLoading}
+            messageSending={messageSending}
+            messageError={messageError}
+            messageUploading={messageUploading}
+            onSendMessage={sendMessage}
+            onFileUpload={handleMessageFileUpload}
+            onBookingRefresh={loadBooking}
+            onCancel={() => setShowCancelDialog(true)}
+            onModify={() => setShowModifyModal(true)}
+            onViewAgreement={() => setShowAgreement(true)}
+          />
         </div>
 
         {/* Shared Modals */}
@@ -731,20 +680,30 @@ export default function BookingDetailsPage() {
         {/* Secure Account Banner — hidden during active trip */}
         {!isTripActive && <SecureAccountBanner hasPassword={hasPassword} />}
 
-        {/* Status Progression — always visible */}
-        <StatusProgression
-          status={booking.status}
-          tripStatus={booking.tripStatus}
-          tripStartedAt={booking.tripStartedAt}
-          tripEndedAt={booking.tripEndedAt}
-          verificationStatus={booking.verificationStatus || 'pending'}
-          paymentStatus={booking.paymentStatus}
-          documentsSubmittedAt={typeof booking.documentsSubmittedAt === 'string' ? booking.documentsSubmittedAt : undefined}
-          reviewedAt={typeof booking.reviewedAt === 'string' ? booking.reviewedAt : undefined}
-          handoffStatus={booking.handoffStatus}
-          hideStatusMessage={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ON_HOLD' || booking.status === 'CANCELLED' || booking.status === 'NO_SHOW'}
-          hideTitle={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ON_HOLD' || booking.status === 'NO_SHOW'}
-        />
+        {/* Status Progression — ManualBookingProgress for recruited bookings, standard for others */}
+        {booking.isRecruitedBooking ? (
+          <ManualBookingProgress
+            status={booking.status}
+            paymentType={booking.paymentType || null}
+            agreementStatus={booking.agreementStatus || null}
+            tripStartedAt={booking.tripStartedAt}
+            tripEndedAt={booking.tripEndedAt}
+          />
+        ) : (
+          <StatusProgression
+            status={booking.status}
+            tripStatus={booking.tripStatus}
+            tripStartedAt={booking.tripStartedAt}
+            tripEndedAt={booking.tripEndedAt}
+            verificationStatus={booking.verificationStatus || 'pending'}
+            paymentStatus={booking.paymentStatus}
+            documentsSubmittedAt={typeof booking.documentsSubmittedAt === 'string' ? booking.documentsSubmittedAt : undefined}
+            reviewedAt={typeof booking.reviewedAt === 'string' ? booking.reviewedAt : undefined}
+            handoffStatus={booking.handoffStatus}
+            hideStatusMessage={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ON_HOLD' || booking.status === 'CANCELLED' || booking.status === 'NO_SHOW'}
+            hideTitle={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ON_HOLD' || booking.status === 'NO_SHOW'}
+          />
+        )}
 
         {/* Booking Onboarding - show for PENDING (grayed out) — excluded for verified-pending and CONFIRMED (rendered inside their cards) */}
         {booking.status === 'PENDING' && !isVerifiedPending && !booking.onboardingCompletedAt && (
@@ -753,25 +712,8 @@ export default function BookingDetailsPage() {
           </div>
         )}
 
-        {/* PAYMENT CHOICE — Recruited booking, guest hasn't chosen payment method yet */}
-        {booking.status === 'PENDING' && booking.isRecruitedBooking && !booking.paymentType && (
-          <PaymentChoiceCard
-            booking={{
-              id: booking.id,
-              bookingCode: booking.bookingCode,
-              totalAmount: booking.totalAmount,
-              subtotal: booking.subtotal || booking.totalAmount,
-              numberOfDays: booking.numberOfDays || 1,
-              dailyRate: booking.dailyRate,
-              carName: `${booking.car.year} ${booking.car.make} ${booking.car.model}`,
-            }}
-            onComplete={loadBooking}
-          />
-        )}
-
         {/* BOOKED CARD — PENDING status, not yet verified, no issues */}
-        {booking.status === 'PENDING' && !isVerifiedPending && !hasIssues &&
-          !(booking.isRecruitedBooking && !booking.paymentType) && (
+        {booking.status === 'PENDING' && !isVerifiedPending && !hasIssues && (
           <BookedCard
             booking={booking}
             onCancel={() => setShowCancelDialog(true)}

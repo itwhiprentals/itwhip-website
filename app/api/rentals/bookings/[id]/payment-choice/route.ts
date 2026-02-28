@@ -47,6 +47,14 @@ export async function POST(
       )
     }
 
+    // Agreement must be signed before payment selection (for bookings with agreement sent)
+    if (booking.agreementStatus && booking.agreementStatus !== 'not_sent' && booking.agreementStatus !== 'signed') {
+      return NextResponse.json(
+        { error: 'Please sign the rental agreement before selecting a payment method' },
+        { status: 400 }
+      )
+    }
+
     // Must be a recruited booking
     if (!booking.convertedFromProspect) {
       return NextResponse.json(

@@ -33,9 +33,9 @@ export default function ManualBookingProgress({
   const t = useTranslations('ManualBookingProgress')
 
   const isBooked = true
+  const isSigned = agreementStatus === 'signed'
   const hasPayment = !!paymentType
   const isConfirmed = status === 'CONFIRMED' || !!tripStartedAt || !!tripEndedAt
-  const isSigned = agreementStatus === 'signed'
   const isTripStarted = !!tripStartedAt
   const isTripCompleted = !!tripEndedAt
   const isCancelled = status === 'CANCELLED'
@@ -44,6 +44,7 @@ export default function ManualBookingProgress({
     return null // Page handles cancelled state separately
   }
 
+  // New order: Booked → Agreement → Payment → Confirmed → Start Trip
   const steps = [
     {
       name: t('stepBooked'),
@@ -52,9 +53,19 @@ export default function ManualBookingProgress({
       description: t('bookedDesc'),
     },
     {
+      name: t('stepAgreement'),
+      complete: isSigned,
+      active: !isSigned,
+      description: isSigned
+        ? t('agreementSigned')
+        : agreementStatus === 'sent' || agreementStatus === 'viewed'
+        ? t('agreementSent')
+        : t('agreementPending'),
+    },
+    {
       name: t('stepPayment'),
       complete: hasPayment,
-      active: !hasPayment,
+      active: isSigned && !hasPayment,
       description: hasPayment
         ? paymentType === 'CARD' ? t('cardAuthorized') : t('cashSelected')
         : t('awaitingPayment'),
@@ -66,35 +77,25 @@ export default function ManualBookingProgress({
       description: isConfirmed ? t('hostConfirmed') : t('awaitingConfirmation'),
     },
     {
-      name: t('stepAgreement'),
-      complete: isSigned,
-      active: isConfirmed && !isSigned,
-      description: isSigned
-        ? t('agreementSigned')
-        : agreementStatus === 'sent' || agreementStatus === 'viewed'
-        ? t('agreementSent')
-        : t('agreementPending'),
-    },
-    {
-      name: t('stepTrip'),
+      name: t('stepStartTrip'),
       complete: isTripCompleted,
-      active: isTripStarted && !isTripCompleted,
+      active: (isConfirmed && !isTripStarted) || (isTripStarted && !isTripCompleted),
       description: isTripCompleted
         ? t('tripCompleted')
         : isTripStarted
         ? t('tripInProgress')
-        : isSigned
+        : isConfirmed
         ? t('readyForPickup')
         : t('tripPending'),
     },
   ]
 
-  // Calculate progress width
+  // Calculate progress width (new order)
   const progressWidth = isTripCompleted ? '100%'
     : isTripStarted ? '90%'
-    : isSigned ? '75%'
-    : isConfirmed ? '50%'
-    : hasPayment ? '25%'
+    : isConfirmed ? '82%'
+    : hasPayment ? '50%'
+    : isSigned ? '25%'
     : '0%'
 
   return (

@@ -466,7 +466,7 @@ export default function ManualBookingView({
                   <div className="relative group">
                     <button
                       onClick={confirmBooking}
-                      disabled={confirming || !booking.paymentType || (booking.paymentType === 'PLATFORM' && !partner?.stripeConnected)}
+                      disabled={confirming || booking.paymentType !== 'CASH' || booking.agreementStatus !== 'signed'}
                       className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed text-white rounded-lg font-medium flex items-center gap-2"
                     >
                       {confirming ? (
@@ -476,14 +476,19 @@ export default function ManualBookingView({
                       )}
                       {t('bdConfirm')}
                     </button>
-                    {!booking.paymentType ? (
+                    {booking.agreementStatus !== 'signed' ? (
                       <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
-                        {t('bdSelectPaymentFirst')}
+                        Awaiting guest agreement
                         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
                       </div>
-                    ) : booking.paymentType === 'PLATFORM' && !partner?.stripeConnected ? (
+                    ) : !booking.paymentType ? (
                       <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
-                        {t('bdConnectPayoutFirst')}
+                        Awaiting guest payment selection
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
+                      </div>
+                    ) : booking.paymentType === 'CARD' ? (
+                      <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
+                        Card payments auto-confirm
                         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
                       </div>
                     ) : null}
@@ -518,10 +523,16 @@ export default function ManualBookingView({
                 <IoCopyOutline className="w-3.5 h-3.5" />
               </button>
             </div>
-            {!booking.paymentType && booking.status === 'PENDING' && (
+            {booking.status === 'PENDING' && (
               <p className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                 <IoTimeOutline className="w-4 h-4 flex-shrink-0" />
-                Awaiting guest payment selection
+                {booking.agreementStatus !== 'signed'
+                  ? 'Awaiting guest agreement'
+                  : !booking.paymentType
+                  ? 'Awaiting guest payment selection'
+                  : booking.paymentType === 'CARD'
+                  ? 'Guest paid with card'
+                  : 'Cash selected — Confirm to proceed'}
               </p>
             )}
           </div>
@@ -532,7 +543,7 @@ export default function ManualBookingView({
               <>
                 <button
                   onClick={confirmBooking}
-                  disabled={confirming || !booking.paymentType || (booking.paymentType === 'PLATFORM' && !partner?.stripeConnected)}
+                  disabled={confirming || booking.paymentType !== 'CASH' || booking.agreementStatus !== 'signed'}
                   className="flex-1 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed text-white rounded-lg font-medium flex items-center justify-center gap-1 text-sm"
                 >
                   {confirming ? (
@@ -1014,7 +1025,7 @@ export default function ManualBookingView({
                   <IoReceiptOutline className="w-5 h-5 text-gray-400" />
                   <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdTripCharges')}</h3>
                   {booking.tripCharges.length > 0 && (
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                    <span className="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
                       {booking.tripCharges.length}
                     </span>
                   )}
@@ -1239,7 +1250,7 @@ export default function ManualBookingView({
                   <IoShieldCheckmarkOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('bdInsurance')}</span>
                 </div>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${
+                <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${
                   insurance?.requiresGuestInsurance
                     ? 'bg-gray-500 text-white'
                     : 'bg-gray-600 text-white'
@@ -1264,7 +1275,7 @@ export default function ManualBookingView({
                   <IoDocumentTextOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('bdAgreement')}</span>
                 </div>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${
+                <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${
                   booking.agreementStatus === 'signed'
                     ? 'bg-gray-600 text-white'
                     : 'bg-gray-500 text-white'
@@ -1319,7 +1330,7 @@ export default function ManualBookingView({
                   <IoWalletOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('bdBankAccount')}</span>
                 </div>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${
+                <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${
                   partner?.stripeConnected
                     ? 'bg-gray-600 text-white'
                     : 'bg-gray-500 text-white'

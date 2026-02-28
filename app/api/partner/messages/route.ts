@@ -317,6 +317,7 @@ export async function POST(request: NextRequest) {
     // Create the message
     const newMessage = await prisma.rentalMessage.create({
       data: {
+        id: crypto.randomUUID(),
         bookingId,
         senderId: partner.id,
         senderType: 'host',
@@ -327,7 +328,8 @@ export async function POST(request: NextRequest) {
         isUrgent,
         isRead: true, // Host's own messages are read
         readByAdmin: true,
-        replyToId: replyToId || null
+        replyToId: replyToId || null,
+        updatedAt: new Date()
       } as any
     })
 

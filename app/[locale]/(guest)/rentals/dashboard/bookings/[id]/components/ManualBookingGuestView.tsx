@@ -1,5 +1,6 @@
-// ManualBookingGuestView — Guest experience for manual/recruited bookings
-// Separate view from standard booking flow
+// ManualBookingGuestView — Guest experience for manual/recruited bookings (PENDING only)
+// After CONFIRMED, guest falls through to standard booking flow
+// Flow: Booked → Agreement → Payment → Confirmed
 
 'use client'
 
@@ -19,9 +20,9 @@ import {
   IoCheckmarkCircleOutline,
   IoDocumentTextOutline,
   IoTimeOutline,
-  IoInformationCircleOutline,
   IoDownloadOutline,
   IoMailOutline,
+  IoLockClosedOutline,
 } from 'react-icons/io5'
 
 interface ManualBookingGuestViewProps {
@@ -57,14 +58,10 @@ export default function ManualBookingGuestView({
   const tBd = useTranslations('BookingDetail')
 
   const hasPayment = !!booking.paymentType
-  const isConfirmed = booking.status === 'CONFIRMED'
   const agreementStatus = booking.agreementStatus || 'not_sent'
   const isSigned = agreementStatus === 'signed'
 
-  // Status badge for TripDetailsBar
-  const statusBadge = isConfirmed
-    ? { label: 'CONFIRMED', color: 'text-green-600 dark:text-green-400' }
-    : { label: 'PENDING', color: 'text-blue-600 dark:text-blue-400' }
+  const statusBadge = { label: 'PENDING', color: 'text-blue-600 dark:text-blue-400' }
 
   return (
     <div className="max-w-3xl mx-auto mt-3 space-y-3">
@@ -87,22 +84,34 @@ export default function ManualBookingGuestView({
           startTime={booking.startTime}
           endTime={booking.endTime}
           statusBadge={statusBadge}
-          pickupAddress={isConfirmed ? booking.pickupLocation : undefined}
-          showLocationNote={!isConfirmed}
+          showLocationNote={true}
           locationNoteKey="locationAfterConfirmation"
         />
       </div>
 
-      {/* Status Message */}
+      {/* Status Message — Agreement-first order */}
       <StatusMessage
         hasPayment={hasPayment}
-        isConfirmed={isConfirmed}
         agreementStatus={agreementStatus}
         isSigned={isSigned}
+        paymentType={booking.paymentType}
       />
 
-      {/* Payment Choice — only when guest hasn't selected yet */}
-      {!hasPayment && (
+      {/* Agreement Status Card — always shown, before payment */}
+      <AgreementStatusCard
+        agreementStatus={agreementStatus}
+        agreementSignedAt={booking.agreementSignedAt}
+        agreementSignedPdfUrl={booking.agreementSignedPdfUrl}
+        onViewAgreement={onViewAgreement}
+      />
+
+      {/* Payment — locked until agreement signed */}
+      {!hasPayment && !isSigned && (
+        <LockedPaymentCard />
+      )}
+
+      {/* Payment Choice — unlocked after agreement signed */}
+      {!hasPayment && isSigned && (
         <PaymentChoiceCard
           booking={{
             id: booking.id,
@@ -126,30 +135,17 @@ export default function ManualBookingGuestView({
         />
       )}
 
-      {/* Agreement Status Card */}
-      {hasPayment && (
-        <AgreementStatusCard
-          agreementStatus={agreementStatus}
-          agreementSignedAt={booking.agreementSignedAt}
-          agreementSignedPdfUrl={booking.agreementSignedPdfUrl}
-          isConfirmed={isConfirmed}
-          onViewAgreement={onViewAgreement}
-        />
-      )}
-
-      {/* Host + Messages — after confirmed */}
-      {isConfirmed && (
-        <HostMessagesCard
-          booking={booking}
-          messages={messages}
-          messagesLoading={messagesLoading}
-          messageSending={messageSending}
-          messageError={messageError}
-          messageUploading={messageUploading}
-          onSendMessage={onSendMessage}
-          onFileUpload={onFileUpload}
-        />
-      )}
+      {/* Host Messages */}
+      <HostMessagesCard
+        booking={booking}
+        messages={messages}
+        messagesLoading={messagesLoading}
+        messageSending={messageSending}
+        messageError={messageError}
+        messageUploading={messageUploading}
+        onSendMessage={onSendMessage}
+        onFileUpload={onFileUpload}
+      />
 
       {/* Payment Summary */}
       <CollapsiblePaymentSummary booking={booking} />
@@ -162,22 +158,12 @@ export default function ManualBookingGuestView({
         >
           {tBd('cancel')}
         </button>
-        {isConfirmed ? (
-          <button
-            onClick={onViewAgreement}
-            className="flex items-center justify-center gap-1.5 px-3 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs font-medium"
-          >
-            <IoDocumentTextOutline className="w-3.5 h-3.5" />
-            {tBd('agreement')}
-          </button>
-        ) : (
-          <button
-            onClick={onModify}
-            className="flex items-center justify-center gap-1.5 px-3 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs font-medium"
-          >
-            {tBd('modify')}
-          </button>
-        )}
+        <button
+          onClick={onModify}
+          className="flex items-center justify-center gap-1.5 px-3 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs font-medium"
+        >
+          {tBd('modify')}
+        </button>
       </div>
 
       {/* Footer */}
@@ -192,17 +178,33 @@ export default function ManualBookingGuestView({
 
 function StatusMessage({
   hasPayment,
-  isConfirmed,
   agreementStatus,
   isSigned,
+  paymentType,
 }: {
   hasPayment: boolean
-  isConfirmed: boolean
   agreementStatus: string
   isSigned: boolean
+  paymentType?: string | null
 }) {
   const t = useTranslations('ManualBooking')
 
+  // Step 1: Agreement not signed yet
+  if (!isSigned) {
+    return (
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <IoMailOutline className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-blue-900 dark:text-blue-200">{t('statusSignAgreement')}</p>
+            <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">{t('statusSignAgreementDesc')}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Step 2: Agreement signed, no payment yet
   if (!hasPayment) {
     return (
       <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-4">
@@ -217,34 +219,22 @@ function StatusMessage({
     )
   }
 
-  if (!isConfirmed) {
-    return (
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <IoTimeOutline className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-blue-900 dark:text-blue-200">{t('statusAwaitingConfirmation')}</p>
-            <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">{t('statusAwaitingConfirmationDesc')}</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (!isSigned) {
+  // Step 3: Payment selected — waiting for host to confirm (CASH only; CARD auto-confirms)
+  if (paymentType === 'CASH') {
     return (
       <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <IoMailOutline className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+          <IoTimeOutline className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-amber-900 dark:text-amber-200">{t('statusConfirmed')}</p>
-            <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">{t('statusConfirmedDesc')}</p>
+            <p className="text-sm font-medium text-amber-900 dark:text-amber-200">{t('statusAwaitingConfirmation')}</p>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">{t('statusAwaitingConfirmationDesc')}</p>
           </div>
         </div>
       </div>
     )
   }
 
+  // Card paid — transient state, auto-confirms to CONFIRMED (which exits this component)
   return (
     <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
       <div className="flex items-start gap-3">
@@ -252,6 +242,32 @@ function StatusMessage({
         <div>
           <p className="text-sm font-medium text-green-900 dark:text-green-200">{t('statusAllSet')}</p>
           <p className="text-xs text-green-700 dark:text-green-400 mt-1">{t('statusAllSetDesc')}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Locked Payment Card ─────────────────────────────────────────────────────
+
+function LockedPaymentCard() {
+  const t = useTranslations('ManualBooking')
+
+  return (
+    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 opacity-60">
+      <div className="flex items-center gap-2 mb-3">
+        <IoLockClosedOutline className="w-4 h-4 text-gray-400" />
+        <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">{t('paymentLocked')}</p>
+      </div>
+      <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">{t('paymentLockedDesc')}</p>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-lg cursor-not-allowed">
+          <IoCardOutline className="w-5 h-5 text-gray-300 dark:text-gray-600" />
+          <span className="text-sm font-medium text-gray-300 dark:text-gray-600">{t('paymentMethodCard')}</span>
+        </div>
+        <div className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-lg cursor-not-allowed">
+          <IoCashOutline className="w-5 h-5 text-gray-300 dark:text-gray-600" />
+          <span className="text-sm font-medium text-gray-300 dark:text-gray-600">{t('paymentMethodCash')}</span>
         </div>
       </div>
     </div>
@@ -307,13 +323,11 @@ function AgreementStatusCard({
   agreementStatus,
   agreementSignedAt,
   agreementSignedPdfUrl,
-  isConfirmed,
   onViewAgreement,
 }: {
   agreementStatus: string
   agreementSignedAt?: string | Date | null
   agreementSignedPdfUrl?: string | null
-  isConfirmed: boolean
   onViewAgreement: () => void
 }) {
   const t = useTranslations('ManualBooking')
@@ -389,7 +403,7 @@ function AgreementStatusCard({
             {t('agreementTitle')}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {isConfirmed ? t('agreementPendingSend') : t('agreementNotSent')}
+            {t('agreementPendingSend')}
           </p>
         </div>
       </div>

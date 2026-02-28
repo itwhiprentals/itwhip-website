@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, useRef, use } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import {
@@ -36,10 +36,14 @@ import {
   IoChevronUpOutline,
   IoPrintOutline,
   IoDownloadOutline,
-  IoKeyOutline
+  IoKeyOutline,
+  IoChatbubbleOutline,
+  IoCheckmarkDoneOutline
 } from 'react-icons/io5'
 import { HandoffPanel } from './HandoffPanel'
 import ManualBookingView from './components/ManualBookingView'
+import AddChargeSheet from './components/AddChargeSheet'
+import { formatPhoneNumber } from '@/app/utils/helpers'
 
 interface BookingDetails {
   id: string
@@ -233,8 +237,15 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
     pricing: true,
     verification: true,
     agreement: false,
-    charges: false
+    charges: false,
+    messages: true
   })
+
+  // Messages state
+  const [bookingMessages, setBookingMessages] = useState<any[]>([])
+  const [newMessage, setNewMessage] = useState('')
+  const [sendingMessage, setSendingMessage] = useState(false)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
 
   // Onboard modal state
   const [showOnboardModal, setShowOnboardModal] = useState(false)
@@ -271,6 +282,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         setInsurance(data.insurance)
         setGuestHistory(data.guestHistory || null)
         setFleetOtherActiveCount(data.fleetOtherActiveCount || 0)
+        setBookingMessages(data.booking?.messages || data.messages || [])
         // Fetch communication send counts
         try {
           const commRes = await fetch(`/api/partner/bookings/${bookingId}/communicate`)
@@ -287,6 +299,47 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
     } finally {
       setLoading(false)
     }
+  }
+
+  // Messages: auto-scroll when messages change
+  useEffect(() => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+    }
+  }, [bookingMessages])
+
+  // Messages: mark as read on mount if unread
+  useEffect(() => {
+    if (booking && bookingMessages.some((m: any) => !m.isRead && m.senderType !== 'host')) {
+      fetch(`/api/partner/messages/${booking.id}/read`, { method: 'POST' }).catch(() => {})
+    }
+  }, [booking?.id, bookingMessages.length])
+
+  const sendBookingMessage = async () => {
+    if (!booking || !newMessage.trim() || sendingMessage) return
+    setSendingMessage(true)
+    try {
+      const response = await fetch('/api/partner/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: booking.id, message: newMessage.trim() })
+      })
+      const data = await response.json()
+      if (data.success && data.message) {
+        setBookingMessages(prev => [...prev, data.message])
+        setNewMessage('')
+      } else {
+        showToast('error', data.error || 'Failed to send message')
+      }
+    } catch {
+      showToast('error', 'Failed to send message')
+    } finally {
+      setSendingMessage(false)
+    }
+  }
+
+  const formatMessageTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
   const confirmBooking = async () => {
@@ -507,6 +560,13 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
     })
   }
 
+  const formatTime12h = (time: string) => {
+    const [h, m] = time.split(':').map(Number)
+    const period = h >= 12 ? 'PM' : 'AM'
+    const hour12 = h % 12 || 12
+    return `${hour12}:${m.toString().padStart(2, '0')} ${period}`
+  }
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat(locale, {
       style: 'currency',
@@ -580,9 +640,16 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   const isGuestDriven = booking?.isGuestDriven ?? false
   const isManualBooking = (booking?.bookingType || 'STANDARD') === 'MANUAL'
 
-  // Commission rate (Standard tier = 25%)
+  // Commission rate (Standard tier = 25%, recruited hosts use their onboarded rate)
   const PLATFORM_COMMISSION_RATE = 0.25
   const PROCESSING_FEE = 1.50
+  const commissionRate = partner?.currentCommissionRate || 0.25
+
+  // Strip system metadata prefixes from notes for display
+  const cleanNotes = (notes: string | null): string | null => {
+    if (!notes) return null
+    return notes.replace(/\[.*?\]\s*/g, '').trim() || null
+  }
 
   if (loading) {
     return (
@@ -614,8 +681,9 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
     )
   }
 
-  // ─── Manual Booking: separate view ──────────────────────────────
-  if (isManualBooking && booking) {
+  // ─── Manual Booking: separate view (PENDING only) ──────────────
+  // After CONFIRMED, manual bookings merge into standard host view with HandoffPanel
+  if (isManualBooking && booking && booking.status === 'PENDING') {
     return (
       <ManualBookingView
         booking={booking}
@@ -652,7 +720,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
         <div className="p-3 sm:p-4">
           {/* Top row - Back button, title, status */}
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <Link
                 href="/partner/bookings"
@@ -661,26 +729,32 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 <IoArrowBackOutline className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               </Link>
               <div className="min-w-0">
-                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                  <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
-                    {t('bdBookingDetails')}
-                  </h1>
-                  <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap ${getStatusColor(booking.status)}`}>
-                    {booking.status}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 mt-0.5 sm:mt-1">
-                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-mono">
-                    {booking.id.slice(0, 8).toUpperCase()}
-                  </span>
-                  <button
-                    onClick={() => copyToClipboard(booking.id)}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                  >
-                    <IoCopyOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </button>
-                </div>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
+                  {t('bdBookingDetails')}
+                </h1>
               </div>
+            </div>
+
+            {/* Status badges — far right, aligned with title */}
+            <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
+              <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-medium whitespace-nowrap uppercase ${getStatusColor(booking.status)}`}>
+                {booking.status}
+              </span>
+              {isManualBooking && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap uppercase bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                  MANUAL BOOKING
+                </span>
+              )}
+              {isManualBooking && booking.paymentType === 'CASH' && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap uppercase bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                  CASH
+                </span>
+              )}
+              {isManualBooking && booking.paymentType === 'CARD' && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap uppercase bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                  CARD
+                </span>
+              )}
             </div>
 
             {/* Quick Actions - Hidden on mobile, shown inline on desktop */}
@@ -760,32 +834,29 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-          {/* Manual Booking Banner */}
-          {isManualBooking && (
-            <div className="mt-2 sm:mt-3">
-              {booking.paymentStatus === 'AUTHORIZED' ? (
-                <div className="flex items-center gap-2 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg px-3 py-2">
-                  <IoCheckmarkCircleOutline className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm font-medium">{t('bdManualBookingCardAuthorized')}</span>
-                </div>
-              ) : booking.paymentType === 'CASH' ? (
-                <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
-                  <IoWalletOutline className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm font-medium">{t('bdManualBookingCash')}</span>
-                </div>
-              ) : !booking.paymentType ? (
-                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-2">
-                  <IoDocumentTextOutline className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm font-medium">{t('bdManualBookingAwaitingPayment')}</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-2">
-                  <IoDocumentTextOutline className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm font-medium">{t('bdManualBooking')}</span>
-                </div>
-              )}
+          {/* Booking snapshot — manual cash bookings */}
+          {isManualBooking && booking.paymentType === 'CASH' && booking.status !== 'PENDING' && renter && (
+            <div className="mt-2 sm:mt-3 flex items-center gap-2 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
+              <IoWalletOutline className="w-4 h-4 flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-medium">
+                {t('bdCashPickupMessage', { guest: renter.name, location: booking.pickupLocation || t('bdBusinessLocation') })}
+              </span>
             </div>
           )}
+
+          {/* Reservation Number */}
+          <div className="mt-2 sm:mt-3 flex items-center gap-2">
+            <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium">{t('bdReservationNumber')}:</span>
+            <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-mono">
+              {booking.id.slice(0, 8).toUpperCase()}
+            </span>
+            <button
+              onClick={() => copyToClipboard(booking.id)}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              <IoCopyOutline className="w-3.5 h-3.5" />
+            </button>
+          </div>
 
           {/* Reservation Expiry Notice - For PENDING bookings */}
           {booking.status === 'PENDING' && (
@@ -940,64 +1011,62 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
       {/* Main Content */}
       <div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left Column - Main Info */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4">
             {/* Vehicle & Customer Info */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
               {/* Vehicle Section */}
               {vehicle && (
-                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                  <div className="flex items-start gap-4">
-                    {vehicle.photo ? (
-                      <img
-                        src={vehicle.photo}
-                        alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
-                        className="w-32 h-24 object-cover rounded-lg"
-                      />
-                    ) : (
-                      <div className="w-32 h-24 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
-                        <IoCarOutline className="w-10 h-10 text-gray-400" />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <div className="mb-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                            {vehicle.year} {vehicle.make}
-                          </h3>
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                            vehicle.vehicleType === 'RIDESHARE'
-                              ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
-                              : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                          }`}>
-                            {vehicle.vehicleType}
-                          </span>
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4">
+                      {vehicle.photo ? (
+                        <img
+                          src={vehicle.photo}
+                          alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                          className="w-32 h-24 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-32 h-24 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
+                          <IoCarOutline className="w-10 h-10 text-gray-400" />
                         </div>
-                        <p className="text-base text-gray-600 dark:text-gray-400 font-medium">
-                          {vehicle.model}
+                      )}
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {vehicle.year} {vehicle.make}
                         </p>
-                      </div>
-                      <div className="flex flex-wrap gap-3 text-sm text-gray-600 dark:text-gray-400">
-                        {vehicle.licensePlate && (
-                          <span className="font-mono">{vehicle.licensePlate}</span>
-                        )}
-                        {vehicle.color && <span>{vehicle.color}</span>}
-                        {vehicle.currentMileage && (
-                          <span>{vehicle.currentMileage.toLocaleString()} {t('bdMi')}</span>
-                        )}
-                      </div>
-                      <div className="mt-2 flex items-center gap-4">
-                        <span className="text-orange-600 dark:text-orange-400 font-semibold">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                          {vehicle.model}{vehicle.color ? <span className="text-sm font-normal text-gray-500 dark:text-gray-400"> ({vehicle.color})</span> : ''}
+                        </h3>
+                        <p className="text-sm font-mono text-gray-600 dark:text-gray-400 mt-0.5">
+                          {vehicle.licensePlate || <span className="text-red-500 dark:text-red-400">MISSING PLATE</span>}
+                        </p>
+                        <span className="text-orange-600 dark:text-orange-400 font-semibold text-sm mt-1 inline-block">
                           {formatCurrency(vehicle.dailyRate)}/{t('bdDay')}
                         </span>
-                        <Link
-                          href={`/partner/fleet/${vehicle.id}`}
-                          className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                        >
-                          {t('bdViewVehicle')} →
-                        </Link>
                       </div>
+                    </div>
+                    <div className="flex flex-col items-end justify-between self-stretch flex-shrink-0">
+                      {!vehicle.isActive ? (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium uppercase border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400">
+                          INACTIVE
+                        </span>
+                      ) : (
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium uppercase ${
+                          vehicle.vehicleType === 'RIDESHARE'
+                            ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
+                            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                        }`}>
+                          {vehicle.vehicleType === 'RIDESHARE' ? 'RIDESHARE' : 'RENTAL'}
+                        </span>
+                      )}
+                      <Link
+                        href={`/partner/fleet/${vehicle.id}`}
+                        className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                      >
+                        {t('bdViewVehicle')} →
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -1005,7 +1074,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
               {/* Customer Section */}
               {renter && (
-                <div className="p-6">
+                <div className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4">
                       {renter.photo ? (
@@ -1022,9 +1091,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                         </div>
                       )}
                       <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">
-                          {renter.name}
-                        </h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">{renter.name}</h3>
                         {/* Guest-driven: hide direct contact — host communicates via platform */}
                         {!isGuestDriven ? (
                           <>
@@ -1035,7 +1102,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                             {renter.phone && (
                               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                                 <IoCallOutline className="w-4 h-4" />
-                                {renter.phone}
+                                +1 {formatPhoneNumber(renter.phone)}
                               </div>
                             )}
                             {booking && (booking.status === 'CONFIRMED') && renter.phone && (
@@ -1075,115 +1142,150 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                             {t('bdMemberSince')} {new Date(renter.memberSince).toLocaleDateString()}
                           </p>
                         )}
+                        {guestHistory && (
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {guestHistory.totalBookings} {t('bdBookingsLabel')} · {formatCurrency(guestHistory.totalSpent)} {t('bdSpentLabel')}
+                          </p>
+                        )}
                       </div>
                     </div>
-                    <Link
-                      href={`/partner/customers/${renter.id}`}
-                      className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                    >
-                      {t('bdViewProfile')} →
-                    </Link>
+                    <div className="flex flex-col items-end justify-between self-stretch flex-shrink-0">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium uppercase bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">
+                        ACTIVE MEMBER
+                      </span>
+                      <Link
+                        href={`/partner/customers/${renter.id}`}
+                        className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                      >
+                        {t('bdViewProfile')} →
+                      </Link>
+                    </div>
                   </div>
 
-                  {/* Verified ItWhip Guest Badges — guest-driven only */}
+                  {/* Guest Status Badges */}
                   {isGuestDriven && (
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {/* Verified Badge */}
-                      <div className="relative">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'verified' ? null : 'verified') }}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-full text-[10px] font-medium text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
-                        >
-                          <IoShieldCheckmarkOutline className="w-3 h-3" />
-                          {t('bdVerified')}
-                        </button>
-                        {activeTooltip === 'verified' && (
-                          <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-50">
-                            <p className="font-semibold mb-1">{t('bdIdentityVerified')}</p>
-                            <p>{t('bdIdentityVerifiedDesc')}</p>
-                            {booking.verificationMethod && (
-                              <p className="mt-2 text-gray-300">
-                                {t('bdVerifiedVia')}: {booking.verificationMethod}
-                              </p>
+                      {/* Verified Badge — reflects actual verification status */}
+                      {(() => {
+                        const isVerified = renter?.verification.identity.status === 'verified' || booking.guestStripeVerified
+                        return (
+                          <div className="relative">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'verified' ? null : 'verified') }}
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                                isVerified
+                                  ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30'
+                                  : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+                              }`}
+                            >
+                              {isVerified
+                                ? <IoShieldCheckmarkOutline className="w-3 h-3" />
+                                : <IoShieldOutline className="w-3 h-3" />
+                              }
+                              {isVerified ? t('bdVerified') : t('bdNotVerified')}
+                            </button>
+                            {activeTooltip === 'verified' && (
+                              <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-50">
+                                <p className="font-semibold mb-1">{isVerified ? t('bdIdentityVerified') : t('bdIdentityNotVerified')}</p>
+                                <p>{isVerified ? t('bdIdentityVerifiedDesc') : t('bdIdentityNotVerifiedDesc')}</p>
+                                {isVerified && booking.verificationMethod && (
+                                  <p className="mt-2 text-gray-300">
+                                    {t('bdVerifiedVia')}: {booking.verificationMethod}
+                                  </p>
+                                )}
+                                <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
+                              </div>
                             )}
-                            <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
                           </div>
-                        )}
-                      </div>
+                        )
+                      })()}
 
-                      {/* Insured Badge */}
-                      <div className="relative">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'insured' ? null : 'insured') }}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-full text-[10px] font-medium text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-                        >
-                          <IoShieldOutline className="w-3 h-3" />
-                          {t('bdInsured')}
-                        </button>
-                        {activeTooltip === 'insured' && (
-                          <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-50">
-                            <p className="font-semibold mb-1">{t('bdInsuranceCoverage')}</p>
-                            <p>{t('bdInsuranceCoverageDesc')}</p>
-                            <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
+                      {/* Insured Badge — reflects actual insurance coverage */}
+                      {(() => {
+                        const isCovered = !insurance?.requiresGuestInsurance
+                        return (
+                          <div className="relative">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'insured' ? null : 'insured') }}
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                                isCovered
+                                  ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                                  : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+                              }`}
+                            >
+                              <IoShieldOutline className="w-3 h-3" />
+                              {isCovered ? t('bdInsured') : t('bdInsuranceRequired')}
+                            </button>
+                            {activeTooltip === 'insured' && (
+                              <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-50">
+                                <p className="font-semibold mb-1">{isCovered ? t('bdInsuranceCoverage') : t('bdInsuranceNotCovered')}</p>
+                                <p>{isCovered ? t('bdInsuranceCoverageDesc') : t('bdInsuranceNotCoveredDesc')}</p>
+                                <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        )
+                      })()}
 
-                      {/* Payment Badge — conditional Hold/Charged */}
-                      <div className="relative">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'payment' ? null : 'payment') }}
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
-                            booking.paymentStatus === 'PAID'
-                              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30'
-                              : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
-                          }`}
-                        >
-                          <IoWalletOutline className="w-3 h-3" />
-                          {booking.paymentStatus === 'PAID' ? t('bdPaymentCharged') : t('bdPaymentHold')}
-                        </button>
-                        {activeTooltip === 'payment' && (
-                          <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-50">
-                            <p className="font-semibold mb-1">
-                              {booking.paymentStatus === 'PAID' ? t('bdPaymentCapturedTitle') : t('bdPaymentOnHold')}
-                            </p>
-                            <p>{booking.paymentStatus === 'PAID' ? t('bdPaymentCapturedDesc') : t('bdPaymentOnHoldDesc')}</p>
-                            <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
-                          </div>
-                        )}
-                      </div>
+                      {/* Payment Badge — standard bookings only (manual shows payment in header) */}
+                      {!isManualBooking && (
+                        <div className="relative">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'payment' ? null : 'payment') }}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                              booking.paymentStatus === 'PAID'
+                                ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30'
+                                : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+                            }`}
+                          >
+                            <IoWalletOutline className="w-3 h-3" />
+                            {booking.paymentStatus === 'PAID' ? t('bdPaymentCharged') : t('bdPaymentHold')}
+                          </button>
+                          {activeTooltip === 'payment' && (
+                            <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-50">
+                              <p className="font-semibold mb-1">
+                                {booking.paymentStatus === 'PAID' ? t('bdPaymentCapturedTitle') : t('bdPaymentOnHold')}
+                              </p>
+                              <p>{booking.paymentStatus === 'PAID' ? t('bdPaymentCapturedDesc') : t('bdPaymentOnHoldDesc')}</p>
+                              <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
+                            </div>
+                          )}
+                        </div>
+                      )}
 
-                      {/* Onboard Badge */}
-                      <div className="relative">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (booking.onboardingCompletedAt) {
-                              setShowOnboardModal(true)
-                            } else {
-                              setActiveTooltip(activeTooltip === 'onboard' ? null : 'onboard')
+                      {/* Onboard Badge — standard bookings only (no onboarding in manual bookings) */}
+                      {!isManualBooking && (
+                        <div className="relative">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (booking.onboardingCompletedAt) {
+                                setShowOnboardModal(true)
+                              } else {
+                                setActiveTooltip(activeTooltip === 'onboard' ? null : 'onboard')
+                              }
+                            }}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                              booking.onboardingCompletedAt
+                                ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30'
+                                : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30'
+                            }`}
+                          >
+                            {booking.onboardingCompletedAt
+                              ? <IoCheckmarkCircleOutline className="w-3 h-3" />
+                              : <IoCloseCircleOutline className="w-3 h-3" />
                             }
-                          }}
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
-                            booking.onboardingCompletedAt
-                              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30'
-                              : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30'
-                          }`}
-                        >
-                          {booking.onboardingCompletedAt
-                            ? <IoCheckmarkCircleOutline className="w-3 h-3" />
-                            : <IoCloseCircleOutline className="w-3 h-3" />
-                          }
-                          {booking.onboardingCompletedAt ? t('bdOnboarded') : t('bdNotOnboarded')}
-                        </button>
-                        {activeTooltip === 'onboard' && !booking.onboardingCompletedAt && (
-                          <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-50">
-                            <p className="font-semibold mb-1">{t('bdOnboardingPending')}</p>
-                            <p>{t('bdOnboardingPendingDesc')}</p>
-                            <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
-                          </div>
-                        )}
-                      </div>
+                            {booking.onboardingCompletedAt ? t('bdOnboarded') : t('bdNotOnboarded')}
+                          </button>
+                          {activeTooltip === 'onboard' && !booking.onboardingCompletedAt && (
+                            <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-50">
+                              <p className="font-semibold mb-1">{t('bdOnboardingPending')}</p>
+                              <p>{t('bdOnboardingPendingDesc')}</p>
+                              <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1191,7 +1293,8 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
             </div>
 
             {/* Handoff Verification Panel — visible for confirmed + active + completed, guest-driven bookings */}
-            {(booking.status === 'CONFIRMED' || booking.status === 'ACTIVE' || booking.status === 'COMPLETED') && isGuestDriven && booking.onboardingCompletedAt && (
+            {(booking.status === 'CONFIRMED' || booking.status === 'ACTIVE' || booking.status === 'COMPLETED') && isGuestDriven &&
+             (booking.onboardingCompletedAt || (isManualBooking && booking.paymentType === 'CASH')) && (
               <HandoffPanel
                 bookingId={booking.id}
                 bookingStatus={booking.status}
@@ -1220,36 +1323,127 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               />
             )}
 
-            {/* Guest History with Host */}
-            {guestHistory && renter && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <IoReceiptOutline className="w-5 h-5 text-gray-400" />
-                    <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdGuestHistory')}</h3>
-                  </div>
-
-                  {/* Stats Row */}
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{guestHistory.totalBookings}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('bdTotalBookings')}</p>
-                    </div>
-                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">${guestHistory.totalSpent.toFixed(2)}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('bdSpentWithYou')}</p>
-                    </div>
-                  </div>
-
-                  {guestHistory.bookings.length > 0 ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('bdReturningGuest', { count: guestHistory.bookings.length })}</p>
-                  ) : (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('bdFirstBookingWithYou')}</p>
+            {/* Messages with Guest */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <button
+                onClick={() => toggleSection('messages')}
+                className="w-full p-4 flex items-center justify-between text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <IoChatbubbleOutline className="w-5 h-5 text-gray-400" />
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdMessages')}</h3>
+                  {bookingMessages.length > 0 && (
+                    <span className="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                      {bookingMessages.length}
+                    </span>
+                  )}
+                  {bookingMessages.filter((m: any) => !m.isRead && m.senderType !== 'host').length > 0 && (
+                    <span className="w-5 h-5 bg-orange-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                      {bookingMessages.filter((m: any) => !m.isRead && m.senderType !== 'host').length}
+                    </span>
                   )}
                 </div>
-              </div>
-            )}
+                {expandedSections.messages ? <IoChevronUpOutline className="w-5 h-5 text-gray-400" /> : <IoChevronDownOutline className="w-5 h-5 text-gray-400" />}
+              </button>
 
+              {expandedSections.messages && (
+                <div className="px-4 pb-4">
+                  {/* Message Thread */}
+                  <div ref={messagesContainerRef} className="h-[300px] lg:h-[350px] overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                    {bookingMessages.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 p-4">
+                        <IoChatbubbleOutline className="w-10 h-10 mb-2" />
+                        <p className="text-sm font-medium">{t('bdNoMessagesYet')}</p>
+                        <p className="text-xs mt-1">{t('bdStartConversation')}</p>
+                      </div>
+                    ) : (
+                      <div className="p-3 space-y-3">
+                        {bookingMessages.map((msg: any, index: number) => {
+                          const isHost = msg.senderType === 'host' || msg.senderType === 'admin_as_host'
+                          const showDate = index === 0 ||
+                            new Date(msg.createdAt).toDateString() !== new Date(bookingMessages[index - 1].createdAt).toDateString()
+
+                          return (
+                            <div key={msg.id}>
+                              {showDate && (
+                                <div className="flex items-center justify-center my-2">
+                                  <span className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs rounded-full">
+                                    {new Date(msg.createdAt).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
+                                  </span>
+                                </div>
+                              )}
+                              <div className={`flex ${isHost ? 'justify-end' : 'justify-start'}`}>
+                                <div className="max-w-[80%]">
+                                  <div className={`px-4 py-2 rounded-2xl ${
+                                    isHost
+                                      ? 'bg-orange-500 text-white rounded-br-md'
+                                      : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-bl-md shadow-sm'
+                                  }`}>
+                                    {msg.isUrgent && !isHost && (
+                                      <div className="flex items-center gap-1 text-red-500 text-xs mb-1">
+                                        <IoAlertCircleOutline className="w-3 h-3" />
+                                        Urgent
+                                      </div>
+                                    )}
+                                    <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
+                                    {msg.hasAttachment && msg.attachmentUrl && (
+                                      <a
+                                        href={msg.attachmentUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`mt-1 text-xs underline block ${isHost ? 'text-orange-100' : 'text-orange-600 dark:text-orange-400'}`}
+                                      >
+                                        {msg.attachmentName || 'View attachment'}
+                                      </a>
+                                    )}
+                                  </div>
+                                  <div className={`flex items-center gap-1 mt-0.5 text-[10px] text-gray-400 ${isHost ? 'justify-end' : 'justify-start'}`}>
+                                    <IoTimeOutline className="w-3 h-3" />
+                                    {formatMessageTime(msg.createdAt)}
+                                    {isHost && msg.isRead && (
+                                      <IoCheckmarkDoneOutline className="w-3 h-3 text-blue-500" />
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Message Input */}
+                  <div className="flex gap-2 mt-3">
+                    <input
+                      type="text"
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault()
+                          sendBookingMessage()
+                        }
+                      }}
+                      placeholder={t('bdTypeMessage')}
+                      className="flex-1 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      disabled={sendingMessage}
+                    />
+                    <button
+                      onClick={sendBookingMessage}
+                      disabled={!newMessage.trim() || sendingMessage}
+                      className="p-2.5 bg-orange-500 text-white rounded-full hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {sendingMessage ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                      ) : (
+                        <IoSendOutline className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Verification Status Section — only for manual bookings */}
             {renter && !isGuestDriven && (
@@ -1262,11 +1456,11 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                     <IoShieldOutline className="w-5 h-5 text-gray-400" />
                     <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdGuestVerification')}</h3>
                     {renter.verification.identity.status === 'verified' ? (
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                      <span className="px-2 py-0.5 text-xs rounded font-medium uppercase bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
                         {t('bdVerified')}
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                      <span className="px-2 py-0.5 text-xs rounded font-medium uppercase bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
                         {t('bdPending')}
                       </span>
                     )}
@@ -1279,7 +1473,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 </button>
 
                 {expandedSections.verification && (
-                  <div className="px-6 pb-6 space-y-4">
+                  <div className="px-4 pb-4 space-y-4">
                     {/* Identity Verification */}
                     <div className={`p-4 rounded-lg ${
                       renter.verification.identity.status === 'verified'
@@ -1391,15 +1585,15 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   <IoDocumentTextOutline className="w-5 h-5 text-gray-400" />
                   <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdRentalAgreement')}</h3>
                   {booking.agreementStatus === 'signed' ? (
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                    <span className="px-2 py-0.5 text-xs rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
                       {t('bdSigned')}
                     </span>
                   ) : booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' ? (
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                    <span className="px-2 py-0.5 text-xs rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
                       {booking.agreementStatus === 'viewed' ? t('bdViewed') : t('bdSent')}
                     </span>
                   ) : (
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                    <span className="px-2 py-0.5 text-xs rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
                       {t('bdNotSent')}
                     </span>
                   )}
@@ -1412,7 +1606,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               </button>
 
               {expandedSections.agreement && (
-                <div className="px-6 pb-6">
+                <div className="px-4 pb-4">
                   {/* Agreement Status Banner */}
                   {booking.agreementStatus === 'signed' && (
                     <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
@@ -1558,7 +1752,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   <IoReceiptOutline className="w-5 h-5 text-gray-400" />
                   <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdTripCharges')}</h3>
                   {booking.tripCharges.length > 0 && (
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                    <span className="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
                       {booking.tripCharges.length}
                     </span>
                   )}
@@ -1571,7 +1765,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               </button>
 
               {expandedSections.charges && (
-                <div className="px-6 pb-6">
+                <div className="px-4 pb-4">
                   {booking.tripCharges.length > 0 ? (
                     <div className="space-y-3">
                       {booking.tripCharges.map((charge) => (
@@ -1607,7 +1801,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
                   <button
                     onClick={() => setShowChargeModal(true)}
-                    className="mt-4 w-full px-4 py-2 border border-orange-300 dark:border-orange-600 text-orange-600 dark:text-orange-400 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 flex items-center justify-center gap-2"
+                    className="mt-4 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-center gap-2"
                   >
                     <IoAddOutline className="w-4 h-4" />
                     {t('bdAddCharge')}
@@ -1615,20 +1809,10 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 </div>
               )}
             </div>
-
-            {/* Notes Section */}
-            {booking.notes && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{t('bdNotes')}</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
-                  {booking.notes}
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Right Column - Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Pricing (manual) or Earnings (guest-driven) */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
               <button
@@ -1640,6 +1824,15 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   <h3 className="font-semibold text-gray-900 dark:text-white">
                     {isGuestDriven ? t('bdEarnings') : t('bdPricing')}
                   </h3>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap uppercase ${
+                    isManualBooking && booking.paymentType === 'CASH'
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                      : booking.paymentStatus === 'AUTHORIZED' || booking.paymentStatus === 'PAID'
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                        : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                  }`}>
+                    {isManualBooking && booking.paymentType === 'CASH' ? 'CASH' : `${booking.paymentStatus}`}
+                  </span>
                 </div>
                 {expandedSections.pricing ? (
                   <IoChevronUpOutline className="w-5 h-5 text-gray-400" />
@@ -1649,7 +1842,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               </button>
 
               {expandedSections.pricing && (
-                <div className="px-6 pb-6 space-y-3">
+                <div className="px-4 pb-4 space-y-3">
                   {isGuestDriven ? (
                     <>
                       {/* Guest-Driven: What the guest paid (full breakdown) */}
@@ -1679,24 +1872,52 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                             <span className="text-gray-900 dark:text-white">{formatCurrency(booking.deliveryFee)}</span>
                           </div>
                         )}
+
+                        {/* Standard fee strikethrough */}
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">{t('bdPlatformFee')}</span>
-                          <span className="text-red-600 dark:text-red-400">
+                          <span className="text-gray-400 dark:text-gray-500 line-through">{t('bdStandardPlatformFee')}</span>
+                          <span className="text-gray-400 dark:text-gray-500 line-through">
                             -{formatCurrency(booking.subtotal * PLATFORM_COMMISSION_RATE)}
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">{t('bdProcessingFee')}</span>
-                          <span className="text-red-600 dark:text-red-400">
-                            -{formatCurrency(PROCESSING_FEE)}
+
+                        {/* Welcome discount highlight */}
+                        <div className="flex justify-between text-sm bg-green-50 dark:bg-green-900/20 rounded-lg px-2 py-1.5 -mx-2">
+                          <span className="text-green-700 dark:text-green-400 font-medium">{t('bdWelcomeDiscount')}</span>
+                          <span className="text-green-700 dark:text-green-400 font-medium">
+                            +{formatCurrency(booking.subtotal * PLATFORM_COMMISSION_RATE - booking.subtotal * commissionRate)}
                           </span>
                         </div>
+
+                        {/* Actual fee at host's rate */}
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600 dark:text-gray-400">
+                            Platform fee ({Math.round(commissionRate * 100)}%)
+                          </span>
+                          <span className="text-red-600 dark:text-red-400">
+                            -{formatCurrency(booking.subtotal * commissionRate)}
+                          </span>
+                        </div>
+
+                        {/* Processing fee — card only, not for cash */}
+                        {booking.paymentType !== 'CASH' && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600 dark:text-gray-400">{t('bdProcessingFee')}</span>
+                            <span className="text-red-600 dark:text-red-400">
+                              -{formatCurrency(PROCESSING_FEE)}
+                            </span>
+                          </div>
+                        )}
                         <div className="border-t border-gray-200 dark:border-gray-700 pt-2 flex justify-between font-semibold">
                           <span className="text-gray-900 dark:text-white">{t('bdYouReceive')}</span>
                           <span className="text-lg text-green-600 dark:text-green-400">
-                            {formatCurrency(booking.subtotal + booking.deliveryFee - (booking.subtotal * PLATFORM_COMMISSION_RATE) - PROCESSING_FEE)}
+                            {formatCurrency(booking.subtotal + booking.deliveryFee - (booking.subtotal * commissionRate) - (booking.paymentType !== 'CASH' ? PROCESSING_FEE : 0))}
                           </span>
                         </div>
+
+                        <p className="text-xs text-gray-400 mt-1">
+                          {t('bdWelcomeDiscountNote')}
+                        </p>
                       </div>
 
                       {booking.securityDeposit > 0 && (
@@ -1740,66 +1961,54 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                           </div>
                         )}
 
-                        {booking.paymentType === 'CASH' ? (
-                          /* Cash bookings: no commission, host collects directly */
-                          <div className="border-t border-gray-200 dark:border-gray-700 pt-2 flex justify-between font-semibold">
-                            <span className="text-gray-900 dark:text-white">{t('bdYouReceive')}</span>
-                            <span className="text-lg text-green-600 dark:text-green-400">
-                              {formatCurrency(booking.subtotal + booking.deliveryFee)}
+                        {/* Standard fee strikethrough */}
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-400 dark:text-gray-500 line-through">{t('bdStandardPlatformFee')}</span>
+                          <span className="text-gray-400 dark:text-gray-500 line-through">
+                            -{formatCurrency(booking.subtotal * PLATFORM_COMMISSION_RATE)}
+                          </span>
+                        </div>
+
+                        {/* Welcome discount highlight */}
+                        <div className="flex justify-between text-sm bg-green-50 dark:bg-green-900/20 rounded-lg px-2 py-1.5 -mx-2">
+                          <span className="text-green-700 dark:text-green-400 font-medium">{t('bdWelcomeDiscount')}</span>
+                          <span className="text-green-700 dark:text-green-400 font-medium">
+                            +{formatCurrency(booking.subtotal * PLATFORM_COMMISSION_RATE - booking.subtotal * commissionRate)}
+                          </span>
+                        </div>
+
+                        {/* Actual fee at host's rate */}
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600 dark:text-gray-400">
+                            Platform fee ({Math.round(commissionRate * 100)}%)
+                          </span>
+                          <span className="text-red-600 dark:text-red-400">
+                            -{formatCurrency(booking.subtotal * commissionRate)}
+                          </span>
+                        </div>
+
+                        {/* Processing fee — card only, not for cash */}
+                        {booking.paymentType !== 'CASH' && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600 dark:text-gray-400">{t('bdProcessingFee')}</span>
+                            <span className="text-red-600 dark:text-red-400">
+                              -{formatCurrency(PROCESSING_FEE)}
                             </span>
                           </div>
-                        ) : (
-                          /* Platform bookings: welcome discount (10% instead of 25%) */
-                          <>
-                            {/* Standard fee strikethrough */}
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-400 dark:text-gray-500 line-through">{t('bdStandardPlatformFee')}</span>
-                              <span className="text-gray-400 dark:text-gray-500 line-through">
-                                -{formatCurrency(booking.subtotal * PLATFORM_COMMISSION_RATE)}
-                              </span>
-                            </div>
-
-                            {/* Welcome discount highlight */}
-                            <div className="flex justify-between text-sm bg-green-50 dark:bg-green-900/20 rounded-lg px-2 py-1.5 -mx-2">
-                              <span className="text-green-700 dark:text-green-400 font-medium">{t('bdWelcomeDiscount')}</span>
-                              <span className="text-green-700 dark:text-green-400 font-medium">
-                                +{formatCurrency(booking.subtotal * PLATFORM_COMMISSION_RATE - booking.subtotal * 0.10)}
-                              </span>
-                            </div>
-
-                            {/* Actual fee at 10% */}
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600 dark:text-gray-400">{t('bdPlatformFee')} (10%)</span>
-                              <span className="text-red-600 dark:text-red-400">
-                                -{formatCurrency(booking.subtotal * 0.10)}
-                              </span>
-                            </div>
-
-                            <div className="border-t border-gray-200 dark:border-gray-700 pt-2 flex justify-between font-semibold">
-                              <span className="text-gray-900 dark:text-white">{t('bdYouReceive')}</span>
-                              <span className="text-lg text-green-600 dark:text-green-400">
-                                {formatCurrency(booking.subtotal + booking.deliveryFee - (booking.subtotal * 0.10))}
-                              </span>
-                            </div>
-
-                            <p className="text-xs text-gray-400 dark:text-gray-500 italic">
-                              {t('bdWelcomeDiscountNote')}
-                            </p>
-                          </>
                         )}
+
+                        <div className="border-t border-gray-200 dark:border-gray-700 pt-2 flex justify-between font-semibold">
+                          <span className="text-gray-900 dark:text-white">{t('bdYouReceive')}</span>
+                          <span className="text-lg text-green-600 dark:text-green-400">
+                            {formatCurrency(booking.subtotal + booking.deliveryFee - (booking.subtotal * commissionRate) - (booking.paymentType !== 'CASH' ? PROCESSING_FEE : 0))}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-gray-400 mt-1">
+                          {t('bdWelcomeDiscountNote')}
+                        </p>
                       </div>
 
-                      <div className="pt-2">
-                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                          booking.paymentType === 'CASH'
-                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                            : booking.paymentStatus === 'AUTHORIZED' || booking.paymentStatus === 'PAID'
-                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                              : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                        }`}>
-                          {booking.paymentType === 'CASH' ? t('bdCashAtPickup') : `${t('bdPaymentColon')} ${booking.paymentStatus}`}
-                        </span>
-                      </div>
                     </>
                   ) : (
                     <>
@@ -1841,16 +2050,6 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                           <span>{formatCurrency(booking.securityDeposit)}</span>
                         </div>
                       )}
-
-                      <div className="pt-3">
-                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                          booking.paymentStatus === 'PAID'
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                            : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                        }`}>
-                          {t('bdPaymentColon')} {booking.paymentStatus}
-                        </span>
-                      </div>
                     </>
                   )}
                 </div>
@@ -1858,45 +2057,31 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
             </div>
 
             {/* Rental Period */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-              <div className="flex items-center gap-2 mb-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+              <div className="flex items-center gap-2 mb-3">
                 <IoCalendarOutline className="w-5 h-5 text-gray-400" />
                 <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdRentalPeriod')}</h3>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('bdPickup')}</p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {formatDate(booking.startDate)}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('bdAt')} {booking.startTime}
-                  </p>
+                  <p className="font-medium text-gray-900 dark:text-white">{formatDate(booking.startDate)}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('bdAt')} {formatTime12h(booking.startTime)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('bdReturn')}</p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {formatDate(booking.endDate)}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('bdAt')} {booking.endTime}
-                  </p>
+                  <p className="font-medium text-gray-900 dark:text-white">{formatDate(booking.endDate)}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('bdAt')} {formatTime12h(booking.endTime)}</p>
                 </div>
               </div>
-
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <IoLocationOutline className="w-5 h-5 text-gray-400" />
                     <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {booking.pickupType === 'PARTNER_LOCATION' ? t('bdPartnerLocation') :
-                         booking.pickupType === 'AIRPORT' ? t('bdAirportPickup') : t('bdDelivery')}
-                      </p>
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {booking.pickupLocation || t('bdBusinessLocation')}
-                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Delivery/Pick Up</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{booking.pickupLocation || t('bdBusinessLocation')}</p>
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
@@ -1984,7 +2169,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   <>
                     <button
                       onClick={() => setShowExtendModal(true)}
-                      className="w-full px-4 py-2 border border-blue-300 dark:border-blue-600 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-2"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
                     >
                       <IoRefreshOutline className="w-4 h-4" />
                       {t('bdExtendRental')}
@@ -2018,9 +2203,9 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                     {t('bdChangeVehicle')}
                   </button>
                   {!fleetOtherActiveCount && (
-                    <div className="invisible group-hover:visible absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-50">
-                      <p>{t('bdNoOtherVehicles')}</p>
-                      <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
+                    <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
+                      {t('bdNoOtherVehicles')}
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
                     </div>
                   )}
                 </div>
@@ -2034,45 +2219,51 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   {t('bdAddChargeAddon')}
                 </button>
 
-                {/* Mark as Paid — for manual/cash bookings */}
-                {!isGuestDriven && booking.paymentStatus !== 'PAID' && (
-                  <button
-                    onClick={markAsPaid}
-                    disabled={markingPaid}
-                    className="w-full px-4 py-2 border border-green-300 dark:border-green-600 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 flex items-center gap-2"
-                  >
-                    {markingPaid ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500" />
-                    ) : (
-                      <IoWalletOutline className="w-4 h-4" />
+                {/* Mark as Paid — requires payment method selected */}
+                {booking.paymentStatus !== 'PAID' && (
+                  <div className="relative group">
+                    <button
+                      onClick={markAsPaid}
+                      disabled={markingPaid || !booking.paymentType}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {markingPaid ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500" />
+                      ) : (
+                        <IoWalletOutline className="w-4 h-4" />
+                      )}
+                      {markingPaid ? t('bdUpdating') : t('bdMarkAsPaid')}
+                    </button>
+                    {!booking.paymentType && (
+                      <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
+                        {t('bdSelectPaymentFirst')}
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
+                      </div>
                     )}
-                    {markingPaid ? t('bdUpdating') : t('bdMarkAsPaid')}
-                  </button>
+                  </div>
                 )}
 
-                {/* Send Agreement — manual bookings */}
-                {!isGuestDriven && (
-                  <button
-                    onClick={sendAgreement}
-                    disabled={sendingAgreement}
-                    className="w-full px-4 py-2 border border-purple-300 dark:border-purple-600 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 flex items-center gap-2"
-                  >
-                    {sendingAgreement ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500" />
-                    ) : (
-                      <IoDocumentTextOutline className="w-4 h-4" />
-                    )}
-                    {booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' || booking.agreementStatus === 'signed'
-                      ? t('bdResendAgreement')
-                      : t('bdSendAgreement')}
-                  </button>
-                )}
+                {/* Send Agreement */}
+                <button
+                  onClick={sendAgreement}
+                  disabled={sendingAgreement}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                >
+                  {sendingAgreement ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500" />
+                  ) : (
+                    <IoDocumentTextOutline className="w-4 h-4" />
+                  )}
+                  {booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' || booking.agreementStatus === 'signed'
+                    ? t('bdResendAgreement')
+                    : t('bdSendAgreement')}
+                </button>
 
-                {/* Send Pickup Instructions — guest-driven bookings */}
-                {isGuestDriven && (
+                {/* Send Pickup Instructions — locked until confirmed */}
+                <div className="relative group">
                   <button
                     onClick={() => { setCommMessage(''); setShowCommModal('pickup_instructions') }}
-                    disabled={(commSendCounts.pickup_instructions || 0) >= 2}
+                    disabled={!booking.paymentType || booking.status === 'PENDING' || (commSendCounts.pickup_instructions || 0) >= 2}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     <IoLocationOutline className="w-4 h-4" />
@@ -2081,41 +2272,48 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                       <span className="ml-auto text-xs text-gray-400">({commSendCounts.pickup_instructions}/2)</span>
                     )}
                   </button>
-                )}
+                  {(!booking.paymentType || booking.status === 'PENDING') && (
+                    <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
+                      {t('bdAvailableAfterConfirm')}
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
+                    </div>
+                  )}
+                </div>
 
-                {/* Send Keys Instructions — guest-driven + instant pickup */}
-                {isGuestDriven && (
-                  <div className="relative group">
-                    <button
-                      onClick={() => { setCommMessage(''); setShowCommModal('keys_instructions') }}
-                      disabled={!vehicle?.instantBook || (commSendCounts.keys_instructions || 0) >= 2}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                    >
-                      <IoKeyOutline className="w-4 h-4" />
-                      {t('bdSendKeysInstructions')}
-                      {(commSendCounts.keys_instructions || 0) > 0 && (
-                        <span className="ml-auto text-xs text-gray-400">({commSendCounts.keys_instructions}/2)</span>
-                      )}
-                    </button>
-                    {!vehicle?.instantBook && (
-                      <div className="invisible group-hover:visible absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-50">
-                        <p>{t('bdKeysInstantOnly')}</p>
-                        <div className="absolute bottom-0 left-6 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900 dark:bg-gray-700" />
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* New Booking — only for manual bookings */}
-                {!isGuestDriven && (
-                  <Link
-                    href={`/partner/bookings/new?customerId=${renter?.id}`}
-                    className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg flex items-center justify-center gap-2"
+                {/* Send Keys Instructions — locked until confirmed + instant book only */}
+                <div className="relative group">
+                  <button
+                    onClick={() => { setCommMessage(''); setShowCommModal('keys_instructions') }}
+                    disabled={!booking.paymentType || booking.status === 'PENDING' || !vehicle?.instantBook || (commSendCounts.keys_instructions || 0) >= 2}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    <IoAddOutline className="w-4 h-4" />
-                    {t('bdNewBooking')}
-                  </Link>
-                )}
+                    <IoKeyOutline className="w-4 h-4" />
+                    {t('bdSendKeysInstructions')}
+                    {(commSendCounts.keys_instructions || 0) > 0 && (
+                      <span className="ml-auto text-xs text-gray-400">({commSendCounts.keys_instructions}/2)</span>
+                    )}
+                  </button>
+                  {(!booking.paymentType || booking.status === 'PENDING') ? (
+                    <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
+                      {t('bdAvailableAfterConfirm')}
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
+                    </div>
+                  ) : !vehicle?.instantBook && (
+                    <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
+                      {t('bdKeysInstantOnly')}
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
+                    </div>
+                  )}
+                </div>
+
+                {/* New Booking */}
+                <Link
+                  href={`/partner/bookings/new?customerId=${renter?.id}`}
+                  className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg flex items-center justify-center gap-2"
+                >
+                  <IoAddOutline className="w-4 h-4" />
+                  {t('bdNewBooking')}
+                </Link>
               </div>
             </div>
 
@@ -2123,227 +2321,125 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         </div>
 
         {/* What's Needed - Checklist Section */}
-        <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <div className="mt-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
             <IoAlertCircleOutline className="w-5 h-5 text-orange-500" />
             {t('bdWhatsNeeded')}
           </h3>
-
-          {isGuestDriven ? (
-            /* Guest-Driven: Simplified checklist — only Payment + Trip Charges */
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Platform Handled */}
-              <div className="p-4 rounded-lg border bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bdVerification')}</span>
-                  <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Insurance */}
+            <Link href="/partner/insurance" className="block rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer transition-shadow hover:shadow-md">
+              <div className="px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-700/50">
+                <div className="flex items-center gap-2">
+                  <IoShieldCheckmarkOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('bdInsurance')}</span>
                 </div>
-                <p className="text-xs text-green-600 dark:text-green-400">{t('bdHandledByItWhip')}</p>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${
+                  insurance?.requiresGuestInsurance
+                    ? 'bg-gray-500 text-white'
+                    : 'bg-gray-600 text-white'
+                }`}>
+                  {insurance?.requiresGuestInsurance ? t('bdRequired') : t('bdCovered')}
+                </span>
               </div>
-
-              <div className="p-4 rounded-lg border bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bdInsurance')}</span>
-                  <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
-                </div>
-                <p className="text-xs text-green-600 dark:text-green-400">{t('bdHandledByItWhip')}</p>
-              </div>
-
-              {/* Payment */}
-              <div className={`p-4 rounded-lg border ${
-                booking.paymentStatus === 'PAID' || booking.paymentStatus === 'AUTHORIZED'
-                  ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
-                  : 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
-              }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bdPayment')}</span>
-                  {booking.paymentStatus === 'PAID' || booking.paymentStatus === 'AUTHORIZED' ? (
-                    <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
-                  ) : (
-                    <IoAlertCircleOutline className="w-5 h-5 text-amber-600" />
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {booking.paymentStatus === 'PAID' ? t('bdPaymentCaptured') :
-                   booking.paymentStatus === 'AUTHORIZED' ? t('bdPaymentHeldPendingApproval') :
-                   booking.paymentStatus}
+              <div className="px-4 py-3">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  {insurance?.requiresGuestInsurance ? t('bdGuestNeedsInsurance') : t('bdVehicleCovered')}
                 </p>
-              </div>
-            </div>
-          ) : (
-            /* Manual: Checklist — Insurance + Agreement (Verification shown above, Payment in banner) */
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Insurance */}
-              <div className={`p-4 rounded-lg border ${
-                !insurance?.requiresGuestInsurance
-                  ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
-                  : 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
-              }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bdInsurance')}</span>
-                  {!insurance?.requiresGuestInsurance ? (
-                    <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
-                  ) : (
-                    <IoAlertCircleOutline className="w-5 h-5 text-amber-600" />
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {insurance?.hasVehicleInsurance ? t('bdVehicleCovered') :
-                   insurance?.hasPartnerInsurance ? t('bdPartnerPolicy') : t('bdGuestNeedsInsurance')}
-                </p>
-                {insurance?.requiresGuestInsurance && (
-                  <button className="w-full mt-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg flex items-center justify-center gap-1">
-                    <IoSendOutline className="w-3 h-3" />
-                    {t('bdRequestInsurance')}
-                  </button>
+                {insurance?.vehicleProvider && (
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">{insurance.vehicleProvider}</p>
                 )}
               </div>
+            </Link>
 
-              {/* Rental Agreement */}
-              <div className={`p-4 rounded-lg border ${
-                booking.agreementStatus === 'signed'
-                  ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
-                  : 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
-              }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bdAgreement')}</span>
-                  {booking.agreementStatus === 'signed' ? (
-                    <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
-                  ) : (
-                    <IoAlertCircleOutline className="w-5 h-5 text-amber-600" />
-                  )}
+            {/* Agreement */}
+            <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-700/50">
+                <div className="flex items-center gap-2">
+                  <IoDocumentTextOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('bdAgreement')}</span>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {booking.agreementStatus === 'signed' ? t('bdSignedBy', { name: booking.signerName || '' }) :
-                   booking.agreementStatus === 'viewed' ? t('bdCustomerReviewing') :
-                   booking.agreementStatus === 'sent' ? t('bdAwaitingSignature') : t('bdNotSentYet')}
-                </p>
-                {booking.agreementStatus !== 'signed' && (
-                  <button
-                    onClick={sendAgreement}
-                    disabled={sendingAgreement}
-                    className="w-full mt-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white text-sm rounded-lg flex items-center justify-center gap-1"
-                  >
-                    {sendingAgreement ? (
-                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" />
-                    ) : (
-                      <IoSendOutline className="w-3 h-3" />
+                <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${
+                  booking.agreementStatus === 'signed'
+                    ? 'bg-gray-600 text-white'
+                    : 'bg-gray-500 text-white'
+                }`}>
+                  {booking.agreementStatus === 'signed' ? t('bdSigned') : t('bdPending')}
+                </span>
+              </div>
+              <div className="px-4 py-3">
+                {booking.agreementStatus === 'signed' ? (
+                  <div className="space-y-2">
+                    {booking.signerName && booking.agreementSignedAt && (
+                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                        {t('bdSignedBy', { name: booking.signerName })}
+                        <span className="hidden sm:inline"> · </span>
+                        <br className="sm:hidden" />
+                        {new Date(booking.agreementSignedAt).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' })}
+                      </p>
                     )}
-                    {booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' ? t('bdResend') : t('bdSendForSignature')}
-                  </button>
+                    {booking.agreementSignedPdfUrl && (
+                      <a
+                        href={booking.agreementSignedPdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1.5 w-full px-3 py-1.5 rounded-md text-xs font-medium bg-gray-600 hover:bg-gray-700 text-white transition-colors"
+                      >
+                        <IoDownloadOutline className="w-3.5 h-3.5" />
+                        {t('bdDownloadSignedAgreement')}
+                      </a>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      {booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' ? t('bdAwaitingSignature') : t('bdNotSentYet')}
+                    </p>
+                    <button
+                      onClick={sendAgreement}
+                      className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-gray-600 hover:bg-gray-700 text-white transition-colors"
+                    >
+                      <IoSendOutline className="w-3.5 h-3.5" />
+                      {booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' ? t('bdResend') : t('bdSendForSignature')}
+                    </button>
+                  </>
                 )}
               </div>
             </div>
-          )}
 
+            {/* Stripe Connect / Bank Account */}
+            <Link href="/partner/revenue" className="block rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer transition-shadow hover:shadow-md">
+              <div className="px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-700/50">
+                <div className="flex items-center gap-2">
+                  <IoWalletOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('bdBankAccount')}</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${
+                  partner?.stripeConnected
+                    ? 'bg-gray-600 text-white'
+                    : 'bg-gray-500 text-white'
+                }`}>
+                  {partner?.stripeConnected ? t('bdConnected') : t('bdNotConnected')}
+                </span>
+              </div>
+              <div className="px-4 py-3">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  {partner?.stripeConnected ? t('bdBankConnected') : t('bdBankNotConnected')}
+                </p>
+              </div>
+            </Link>
+          </div>
         </div>
       </div>
 
       {/* Add Charge Modal */}
-      {showChargeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md mx-4 p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('bdAddCharge')}</h3>
-              <button
-                onClick={() => setShowChargeModal(false)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-              >
-                <IoCloseOutline className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault()
-                const formData = new FormData(e.currentTarget)
-                const chargeType = formData.get('chargeType') as string
-                const amount = parseFloat(formData.get('amount') as string)
-                const description = formData.get('description') as string
-
-                try {
-                  const response = await fetch(`/api/partner/bookings/${booking.id}/charges`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chargeType, amount, description })
-                  })
-                  const data = await response.json()
-                  if (data.success) {
-                    showToast('success', t('bdChargeAddedSuccess'))
-                    setShowChargeModal(false)
-                    fetchBookingDetails()
-                  } else {
-                    showToast('error', data.error || t('bdFailedAddCharge'))
-                  }
-                } catch {
-                  showToast('error', t('bdFailedAddCharge'))
-                }
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('bdChargeType')}
-                </label>
-                <select
-                  name="chargeType"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value="DAMAGE">{t('bdDamage')}</option>
-                  <option value="CLEANING">{t('bdCleaning')}</option>
-                  <option value="LATE_FEE">{t('bdLateFee')}</option>
-                  <option value="MILEAGE">{t('bdMileageOverage')}</option>
-                  <option value="FUEL">{t('bdFuel')}</option>
-                  <option value="OTHER">{t('bdOther')}</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('bdAmount')}
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2 text-gray-500">$</span>
-                  <input
-                    type="number"
-                    name="amount"
-                    step="0.01"
-                    min="0"
-                    required
-                    placeholder="0.00"
-                    className="w-full pl-7 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('bdDescription')}
-                </label>
-                <textarea
-                  name="description"
-                  rows={3}
-                  placeholder={t('bdDescribeCharge')}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowChargeModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  {t('bdCancel')}
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium"
-                >
-                  {t('bdAddCharge')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <AddChargeSheet
+        isOpen={showChargeModal}
+        onClose={() => setShowChargeModal(false)}
+        bookingId={booking.id}
+        onSuccess={fetchBookingDetails}
+        showToast={showToast}
+      />
 
       {/* Extend Rental Modal */}
       {showExtendModal && (
@@ -2641,18 +2737,6 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   name="pickupLocation"
                   defaultValue={booking.pickupLocation || ''}
                   placeholder={t('bdEnterPickupLocation')}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('bdNotes')}
-                </label>
-                <textarea
-                  name="notes"
-                  rows={3}
-                  defaultValue={booking.notes || ''}
-                  placeholder={t('bdAdditionalNotes')}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>

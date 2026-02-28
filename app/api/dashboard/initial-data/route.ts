@@ -136,6 +136,9 @@ export async function GET(request: NextRequest) {
           b."createdAt",
           b."guestName",
           b."guestEmail",
+          b."paymentType",
+          b."bookingType",
+          (SELECT EXISTS(SELECT 1 FROM "host_prospects" hp WHERE hp."convertedBookingId" = b.id)) as "isRecruitedBooking",
 
           -- Car details
           json_build_object(
@@ -524,7 +527,10 @@ export async function GET(request: NextRequest) {
         car: b.car,
         host: b.host,
         unreadMessages: b.unreadMessages || 0,
-        createdAt: b.createdAt
+        createdAt: b.createdAt,
+        paymentType: b.paymentType || null,
+        bookingType: b.bookingType || null,
+        isRecruitedBooking: b.isRecruitedBooking === true,
       })),
 
       // Stats

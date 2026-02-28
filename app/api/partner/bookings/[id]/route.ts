@@ -185,6 +185,22 @@ export async function GET(
             agreementPreference: true,
             source: true
           }
+        },
+        messages: {
+          select: {
+            id: true,
+            senderId: true,
+            senderType: true,
+            senderName: true,
+            message: true,
+            isRead: true,
+            isUrgent: true,
+            hasAttachment: true,
+            attachmentUrl: true,
+            attachmentName: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'asc' as const }
         }
       }
     })
@@ -237,10 +253,14 @@ export async function GET(
         recruitmentSource: booking.convertedFromProspect?.source || null,
 
         // Computed flags (no raw internal fields exposed)
-        // A booking is guest-driven (ItWhip platform) if it has a renter AND a Stripe payment intent
-        // This covers all fleet statuses (PENDING, APPROVED) — not just approved ones
-        isGuestDriven: !!(booking.renterId && booking.paymentIntentId),
-        hostApproval: booking.hostStatus || 'PENDING',
+        // A booking is guest-driven if it has a renter AND a Stripe payment intent,
+        // OR if it's a MANUAL booking that's been confirmed (merged into standard flow)
+        isGuestDriven: !!(booking.renterId && booking.paymentIntentId)
+          || (booking.bookingType === 'MANUAL' && booking.status !== 'PENDING'),
+        // Manual confirm = host approval. Only standard bookings use the separate approve/reject flow.
+        hostApproval: (booking.bookingType === 'MANUAL' && booking.status !== 'PENDING')
+          ? 'APPROVED'
+          : (booking.hostStatus || 'PENDING'),
         hostReviewedAt: booking.hostReviewedAt?.toISOString() || null,
         hostNotes: booking.hostNotes || null,
 
@@ -433,7 +453,22 @@ export async function GET(
       },
 
       // Guest history with this host (booking history + reviews)
-      guestHistory: null as unknown // populated below
+      guestHistory: null as unknown, // populated below
+
+      // Messages
+      messages: (booking.messages || []).map((msg: any) => ({
+        id: msg.id,
+        senderId: msg.senderId,
+        senderType: msg.senderType,
+        senderName: msg.senderName,
+        message: msg.message,
+        isRead: msg.isRead,
+        isUrgent: msg.isUrgent,
+        hasAttachment: msg.hasAttachment,
+        attachmentUrl: msg.attachmentUrl,
+        attachmentName: msg.attachmentName,
+        createdAt: msg.createdAt.toISOString()
+      }))
     }
 
     // Count other active vehicles in host's fleet (for Change Vehicle gating)

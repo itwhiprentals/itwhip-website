@@ -50,16 +50,24 @@ export async function POST(
       )
     }
 
-    // Update booking to AUTHORIZED
+    // Update booking to AUTHORIZED — auto-confirm for MANUAL bookings (card payment = confirmed)
+    const updateData: Record<string, unknown> = {
+      paymentStatus: 'AUTHORIZED',
+      stripeCustomerId: typeof pi.customer === 'string' ? pi.customer : null,
+    }
+
+    if (booking.bookingType === 'MANUAL') {
+      updateData.status = 'CONFIRMED'
+      updateData.hostStatus = 'APPROVED'
+      updateData.hostReviewedAt = new Date()
+    }
+
     await prisma.rentalBooking.update({
       where: { id: bookingId },
-      data: {
-        paymentStatus: 'AUTHORIZED',
-        stripeCustomerId: typeof pi.customer === 'string' ? pi.customer : null,
-      }
+      data: updateData,
     })
 
-    console.log(`[Payment Confirm] Booking ${booking.bookingCode} payment authorized (PI: ${paymentIntentId})`)
+    console.log(`[Payment Confirm] Booking ${booking.bookingCode} payment authorized${booking.bookingType === 'MANUAL' ? ' + auto-confirmed' : ''} (PI: ${paymentIntentId})`)
 
     return NextResponse.json({
       success: true,
