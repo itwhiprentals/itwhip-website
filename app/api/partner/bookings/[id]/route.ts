@@ -98,7 +98,23 @@ export async function GET(
                 stripeVerifiedDob: true,
                 stripeVerifiedAddress: true,
                 memberSince: true,
-                profilePhotoUrl: true
+                profilePhotoUrl: true,
+                // Verification override fields
+                isVerified: true,
+                documentsVerified: true,
+                documentVerifiedAt: true,
+                documentVerifiedBy: true,
+                fullyVerified: true,
+                // Guest insurance fields
+                insuranceProvider: true,
+                policyNumber: true,
+                insuranceVerified: true,
+                insuranceVerifiedAt: true,
+                insuranceCardFrontUrl: true,
+                insuranceCardBackUrl: true,
+                expiryDate: true,
+                coverageType: true,
+                insuranceAddedAt: true,
               }
             }
           }
@@ -395,6 +411,15 @@ export async function GET(
             verifiedDOB: booking.renter.reviewerProfile?.stripeVerifiedDob?.toISOString() || null,
             verifiedAddress: booking.renter.reviewerProfile?.stripeVerifiedAddress || null
           },
+          documents: {
+            verified: booking.renter.reviewerProfile?.documentsVerified || false,
+            verifiedAt: booking.renter.reviewerProfile?.documentVerifiedAt?.toISOString() || null,
+            verifiedBy: booking.renter.reviewerProfile?.documentVerifiedBy || null,
+          },
+          adminOverride: {
+            isVerified: booking.renter.reviewerProfile?.isVerified || false,
+            fullyVerified: booking.renter.reviewerProfile?.fullyVerified || false,
+          },
           email: {
             verified: !!booking.renter.emailVerified,
             verifiedAt: null // emailVerified is boolean in User model
@@ -451,6 +476,20 @@ export async function GET(
         partnerProvider: partner.insurancePolicyNumber ? 'Partner Policy' : null,
         requiresGuestInsurance: !hasVehicleInsurance && !hasPartnerInsurance
       },
+
+      // Guest insurance (from ReviewerProfile — guest-submitted)
+      guestInsurance: booking.renter?.reviewerProfile ? {
+        provided: !!(booking.renter.reviewerProfile.insuranceProvider && booking.renter.reviewerProfile.policyNumber),
+        provider: booking.renter.reviewerProfile.insuranceProvider || null,
+        policyNumber: booking.renter.reviewerProfile.policyNumber || null,
+        verified: booking.renter.reviewerProfile.insuranceVerified || false,
+        verifiedAt: booking.renter.reviewerProfile.insuranceVerifiedAt?.toISOString() || null,
+        cardFrontUrl: booking.renter.reviewerProfile.insuranceCardFrontUrl || null,
+        cardBackUrl: booking.renter.reviewerProfile.insuranceCardBackUrl || null,
+        expiryDate: booking.renter.reviewerProfile.expiryDate?.toISOString() || null,
+        coverageType: booking.renter.reviewerProfile.coverageType || null,
+        addedAt: booking.renter.reviewerProfile.insuranceAddedAt?.toISOString() || null,
+      } : null,
 
       // Guest history with this host (booking history + reviews)
       guestHistory: null as unknown, // populated below

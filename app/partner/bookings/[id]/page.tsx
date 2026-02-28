@@ -214,6 +214,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   const [vehicle, setVehicle] = useState<Vehicle | null>(null)
   const [partner, setPartner] = useState<Partner | null>(null)
   const [insurance, setInsurance] = useState<Insurance | null>(null)
+  const [guestInsurance, setGuestInsurance] = useState<any>(null)
   const [guestHistory, setGuestHistory] = useState<GuestHistory | null>(null)
 
   // Action states
@@ -280,6 +281,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         setVehicle(data.vehicle)
         setPartner(data.partner)
         setInsurance(data.insurance)
+        setGuestInsurance(data.guestInsurance || null)
         setGuestHistory(data.guestHistory || null)
         setFleetOtherActiveCount(data.fleetOtherActiveCount || 0)
         setBookingMessages(data.booking?.messages || data.messages || [])
@@ -1153,26 +1155,24 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                       <span className="px-1.5 py-0.5 rounded text-[10px] font-medium uppercase bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">
                         ACTIVE MEMBER
                       </span>
-                      <Link
-                        href={`/partner/customers/${renter.id}`}
-                        className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                      >
-                        {t('bdViewProfile')} →
-                      </Link>
                     </div>
                   </div>
 
-                  {/* Guest Status Badges */}
+                  {/* Guest Status Badges + View Profile */}
                   {isGuestDriven && (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {/* Verified Badge — reflects actual verification status */}
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      {/* Verified Badge — Stripe Identity, admin override, or documents verified */}
                       {(() => {
-                        const isVerified = renter?.verification.identity.status === 'verified' || booking.guestStripeVerified
+                        const isVerified = booking.guestStripeVerified
+                          || renter?.verification.identity.status === 'verified'
+                          || renter?.verification.adminOverride?.isVerified
+                          || renter?.verification.adminOverride?.fullyVerified
+                          || renter?.verification.documents?.verified
                         return (
                           <div className="relative">
                             <button
                               onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'verified' ? null : 'verified') }}
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium uppercase transition-colors ${
                                 isVerified
                                   ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30'
                                   : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
@@ -1200,21 +1200,21 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                         )
                       })()}
 
-                      {/* Insured Badge — reflects actual insurance coverage */}
+                      {/* Insured Badge — checks if guest provided insurance */}
                       {(() => {
-                        const isCovered = !insurance?.requiresGuestInsurance
+                        const isCovered = guestInsurance?.provided || !insurance?.requiresGuestInsurance
                         return (
                           <div className="relative">
                             <button
                               onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'insured' ? null : 'insured') }}
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium uppercase transition-colors ${
                                 isCovered
                                   ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30'
                                   : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
                               }`}
                             >
                               <IoShieldOutline className="w-3 h-3" />
-                              {isCovered ? t('bdInsured') : t('bdInsuranceRequired')}
+                              {isCovered ? t('bdInsured') : t('bdInsuranceNotProvided')}
                             </button>
                             {activeTooltip === 'insured' && (
                               <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg z-50">
@@ -1232,7 +1232,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                         <div className="relative">
                           <button
                             onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'payment' ? null : 'payment') }}
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium uppercase transition-colors ${
                               booking.paymentStatus === 'PAID'
                                 ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30'
                                 : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
@@ -1265,7 +1265,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                                 setActiveTooltip(activeTooltip === 'onboard' ? null : 'onboard')
                               }
                             }}
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium uppercase transition-colors ${
                               booking.onboardingCompletedAt
                                 ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30'
                                 : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30'
@@ -1286,6 +1286,25 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                           )}
                         </div>
                       )}
+
+                      {/* View Profile — far right */}
+                      <Link
+                        href={`/partner/customers/${renter.id}`}
+                        className="ml-auto text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                      >
+                        {t('bdViewProfile')} →
+                      </Link>
+                    </div>
+                  )}
+                  {/* View Profile fallback for non-guest-driven */}
+                  {!isGuestDriven && (
+                    <div className="mt-3 text-right">
+                      <Link
+                        href={`/partner/customers/${renter.id}`}
+                        className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                      >
+                        {t('bdViewProfile')} →
+                      </Link>
                     </div>
                   )}
                 </div>
@@ -2327,30 +2346,58 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
             {t('bdWhatsNeeded')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Insurance */}
-            <Link href="/partner/insurance" className="block rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer transition-shadow hover:shadow-md">
+            {/* Insurance — guest-submitted */}
+            <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
               <div className="px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-700/50">
                 <div className="flex items-center gap-2">
                   <IoShieldCheckmarkOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('bdInsurance')}</span>
                 </div>
                 <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${
-                  insurance?.requiresGuestInsurance
-                    ? 'bg-gray-500 text-white'
-                    : 'bg-gray-600 text-white'
+                  guestInsurance?.provided
+                    ? 'bg-green-600 text-white'
+                    : 'bg-red-500 text-white'
                 }`}>
-                  {insurance?.requiresGuestInsurance ? t('bdRequired') : t('bdCovered')}
+                  {guestInsurance?.provided ? t('bdProvided') : t('bdNotProvidedShort')}
                 </span>
               </div>
               <div className="px-4 py-3">
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  {insurance?.requiresGuestInsurance ? t('bdGuestNeedsInsurance') : t('bdVehicleCovered')}
-                </p>
-                {insurance?.vehicleProvider && (
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">{insurance.vehicleProvider}</p>
+                {guestInsurance?.provided ? (
+                  <div className="space-y-1.5">
+                    <p className="text-xs text-gray-700 dark:text-gray-300 font-medium">{guestInsurance.provider}</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                      {t('bdPolicyNumber')}: {guestInsurance.policyNumber}
+                    </p>
+                    {guestInsurance.coverageType && (
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400">{guestInsurance.coverageType}</p>
+                    )}
+                    {guestInsurance.expiryDate && (
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                        {t('bdExpires')}: {new Date(guestInsurance.expiryDate).toLocaleDateString()}
+                      </p>
+                    )}
+                    {(guestInsurance.cardFrontUrl || guestInsurance.cardBackUrl) && (
+                      <div className="flex gap-2 mt-1">
+                        {guestInsurance.cardFrontUrl && (
+                          <a href={guestInsurance.cardFrontUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-600 hover:text-blue-700 dark:text-blue-400 underline">
+                            {t('bdCardFront')}
+                          </a>
+                        )}
+                        {guestInsurance.cardBackUrl && (
+                          <a href={guestInsurance.cardBackUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-600 hover:text-blue-700 dark:text-blue-400 underline">
+                            {t('bdCardBack')}
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    {t('bdGuestNoInsurance')}
+                  </p>
                 )}
               </div>
-            </Link>
+            </div>
 
             {/* Agreement */}
             <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -2361,8 +2408,8 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 </div>
                 <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${
                   booking.agreementStatus === 'signed'
-                    ? 'bg-gray-600 text-white'
-                    : 'bg-gray-500 text-white'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-red-500 text-white'
                 }`}>
                   {booking.agreementStatus === 'signed' ? t('bdSigned') : t('bdPending')}
                 </span>
@@ -2416,8 +2463,8 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 </div>
                 <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${
                   partner?.stripeConnected
-                    ? 'bg-gray-600 text-white'
-                    : 'bg-gray-500 text-white'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-red-500 text-white'
                 }`}>
                   {partner?.stripeConnected ? t('bdConnected') : t('bdNotConnected')}
                 </span>
