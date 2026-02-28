@@ -145,7 +145,11 @@ export async function GET(
             partnerSupportPhone: true,
             city: true,
             state: true,
-            zipCode: true
+            zipCode: true,
+            currentCommissionRate: true,
+            stripeChargesEnabled: true,
+            stripePayoutsEnabled: true,
+            stripeConnectAccountId: true
           }
         },
         InspectionPhoto: {
@@ -178,6 +182,7 @@ export async function GET(
           select: {
             id: true,
             paymentPreference: true,
+            agreementPreference: true,
             source: true
           }
         }
@@ -223,10 +228,12 @@ export async function GET(
         status: booking.status,
         paymentStatus: booking.paymentStatus,
         paymentType: booking.paymentType || null,
+        bookingType: booking.bookingType || 'STANDARD',
 
         // Recruited booking fields
         isRecruitedBooking: !!booking.convertedFromProspect,
         recruitmentPaymentPreference: booking.convertedFromProspect?.paymentPreference || null,
+        recruitmentAgreementPreference: booking.convertedFromProspect?.agreementPreference || null,
         recruitmentSource: booking.convertedFromProspect?.source || null,
 
         // Computed flags (no raw internal fields exposed)
@@ -411,7 +418,9 @@ export async function GET(
         address: null, // Not stored in schema
         city: booking.host.city,
         state: booking.host.state,
-        zipCode: booking.host.zipCode
+        zipCode: booking.host.zipCode,
+        currentCommissionRate: booking.host.currentCommissionRate || 0.25,
+        stripeConnected: !!(booking.host.stripeConnectAccountId && booking.host.stripeChargesEnabled && booking.host.stripePayoutsEnabled)
       } : null,
 
       // Insurance status

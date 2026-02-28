@@ -60,12 +60,15 @@ function generatePartnerTokens(partner: {
   approvalStatus: string
 }) {
   // Generate access token with PARTNER claims
+  // Must include role: 'BUSINESS' and isRentalHost: true for middleware verification
   const accessToken = sign(
     {
       userId: partner.userId,
       hostId: partner.id,
       email: partner.email,
       name: partner.name,
+      role: 'BUSINESS',
+      isRentalHost: true,
       hostType: partner.hostType,
       isPartner: true,
       approvalStatus: partner.approvalStatus
@@ -497,6 +500,14 @@ export async function GET(request: NextRequest) {
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
             maxAge: 7 * 24 * 60 * 60, // 7 days
+            path: '/'
+          })
+          // Also set hostAccessToken so all partner APIs recognize the session
+          response.cookies.set('hostAccessToken', partnerTokens.accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60,
             path: '/'
           })
           response.cookies.set('current_mode', 'host', {

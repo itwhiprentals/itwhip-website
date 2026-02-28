@@ -7,6 +7,7 @@ import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
 import { v2 as cloudinary } from 'cloudinary'
 import { validateAgreementPdf } from '@/app/lib/agreements/validate-pdf'
+import { extractAgreementSections } from '@/app/lib/agreements/extract-sections'
 
 const JWT_SECRET = process.env.JWT_SECRET!
 
@@ -89,7 +90,8 @@ export async function GET(request: NextRequest) {
         url: prospect.hostAgreementUrl,
         fileName: prospect.hostAgreementName,
         validationScore: prospect.agreementValidationScore,
-        validationSummary: prospect.agreementValidationSummary
+        validationSummary: prospect.agreementValidationSummary,
+        sections: prospect.hostAgreementSections || null
       }
     })
   } catch (error) {
@@ -208,7 +210,16 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Update prospect with agreement info
+    // Extract structured sections from the PDF for accordion preview
+    let sections = null
+    try {
+      sections = await extractAgreementSections(pdfUrl)
+      console.log(`[Agreement Upload] Extracted ${sections?.length || 0} sections`)
+    } catch (extractError) {
+      console.error('[Agreement Upload] Section extraction failed (non-blocking):', extractError)
+    }
+
+    // Update prospect with agreement info + extracted sections
     await prisma.hostProspect.update({
       where: { id: prospect.id },
       data: {
@@ -217,6 +228,7 @@ export async function POST(request: NextRequest) {
         agreementUploaded: true,
         agreementValidationScore: validation.score,
         agreementValidationSummary: validation.summary,
+        hostAgreementSections: sections && sections.length > 0 ? sections : undefined,
         lastActivityAt: new Date()
       }
     })
@@ -228,7 +240,8 @@ export async function POST(request: NextRequest) {
         fileName: file.name,
         validation,
         validationMethod: validationResult.aiValidated ? 'ai' : 'rules',
-        rulesVersion: validationResult.rulesVersion
+        rulesVersion: validationResult.rulesVersion,
+        sections
       },
       message: validation.score >= 80
         ? 'Agreement uploaded and validated successfully!'
@@ -286,6 +299,7 @@ export async function DELETE(request: NextRequest) {
         agreementUploaded: false,
         agreementValidationScore: null,
         agreementValidationSummary: null,
+        hostAgreementSections: null,
         lastActivityAt: new Date()
       }
     })

@@ -1,5 +1,5 @@
 // app/partner/requests/[id]/components/TestEsignButton.tsx
-// Test e-sign button with attempt tracking (max 2 tests)
+// Test e-sign button with attempt tracking (max 3 tests)
 // Calls existing /api/partner/onboarding/agreement/test endpoint
 
 'use client'
@@ -22,7 +22,7 @@ interface TestEsignButtonProps {
 export default function TestEsignButton({
   preference,
   testCount,
-  maxTests = 2,
+  maxTests = 3,
   onTestSent,
   disabled = false,
   hostEmail

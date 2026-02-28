@@ -206,7 +206,8 @@ export async function GET(request: NextRequest) {
         url: prospect.hostAgreementUrl,
         fileName: prospect.hostAgreementName,
         validationScore: prospect.agreementValidationScore,
-        validationSummary: prospect.agreementValidationSummary
+        validationSummary: prospect.agreementValidationSummary,
+        sections: prospect.hostAgreementSections || null
       } : undefined
     })
 

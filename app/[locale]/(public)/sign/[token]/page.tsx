@@ -44,10 +44,37 @@ interface AgreementData {
   }
   customClauses: string[]
   expiresAt: string
+  // Agreement preference type
+  agreementType?: string // 'ITWHIP' | 'OWN' | 'BOTH'
   // Test agreement fields
   isTest?: boolean
   hostAgreementUrl?: string
   hostAgreementName?: string
+  hostAgreementSections?: Array<{ id: string; title: string; content: string; icon: string }> | null
+}
+
+/** Inline accordion section for host agreement sections on the guest signing page */
+function HostAgreementSectionAccordion({ section }: { section: { id: string; title: string; content: string } }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+      >
+        <span className="text-sm font-medium text-gray-800 truncate pr-2">{section.title}</span>
+        <svg className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div className="px-4 pb-4 text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+          {section.content}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function SignAgreementPage() {
@@ -452,249 +479,270 @@ export default function SignAgreementPage() {
             </div>
           </div>
 
-          {/* Arizona Legal Compliance */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <div className="flex items-start">
-              <svg className="w-6 h-6 text-gray-700 mt-0.5 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-              </svg>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-2">Arizona Legal Requirements</h2>
-                <p className="text-sm text-gray-600 mb-3">
-                  This agreement complies with all applicable Arizona state laws governing vehicle rentals and peer-to-peer car sharing arrangements.
-                </p>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Driver eligibility verification required per A.R.S. §28-3472</li>
-                  <li>• Security deposits handled per A.R.S. §33-1321</li>
-                  <li>• Peer-to-peer rental compliance per A.R.S. §28-9601</li>
-                  <li>• Insurance requirements per A.R.S. §20-331</li>
-                  <li>• Transaction Privilege Tax collection per A.R.S. §42-5061</li>
-                </ul>
-              </div>
-            </div>
-          </div>
+          {/* ═══ AGREEMENT CONTENT — conditional on agreementType ═══ */}
 
-          {/* Trip Protection Coverage */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <div className="flex items-start">
-              <svg className="w-6 h-6 text-gray-700 mt-0.5 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              <div className="flex-1">
-                <h2 className="text-lg font-semibold text-gray-900 mb-2">Trip Protection Coverage</h2>
-                <p className="text-sm text-gray-600 mb-4">
-                  This rental includes comprehensive trip protection coverage. In the event of an accident or damage, you are protected with the following coverage limits:
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-sm font-medium text-gray-900">Liability Coverage</p>
-                    <p className="text-sm text-gray-600">$750,000 maximum</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-sm font-medium text-gray-900">Your Deductible</p>
-                    <p className="text-sm text-gray-600">As specified above</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-sm font-medium text-gray-900">Personal Effects</p>
-                    <p className="text-sm text-gray-600">$500 maximum</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-sm font-medium text-gray-900">Loss of Use</p>
-                    <p className="text-sm text-gray-600">Covered</p>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500 mt-3">
-                  Coverage excludes intentional damage, driving under influence, unauthorized use, and commercial activities.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Host's Custom Agreement (if uploaded) */}
-          {agreementData.hostAgreementUrl && (
+          {/* Partner's Agreement (OWN or BOTH) — sections accordion or PDF fallback */}
+          {(agreementData.agreementType === 'OWN' || agreementData.agreementType === 'BOTH') && (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-              <div className="flex items-start">
-                <svg className="w-6 h-6 text-orange-500 mt-0.5 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <div className="flex-1">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                    {agreementData.partner?.companyName || 'Host'}&apos;s Rental Agreement
-                  </h2>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Please review the rental provider&apos;s agreement before signing. This agreement contains terms specific to your rental.
-                  </p>
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                {agreementData.partner?.companyName || 'Provider'}&apos;s Rental Agreement
+              </h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Please review the rental provider&apos;s agreement below before signing.
+              </p>
+
+              {/* Sections accordion (when AI-extracted sections exist) */}
+              {agreementData.hostAgreementSections && agreementData.hostAgreementSections.length > 0 ? (
+                <div className="border border-gray-200 rounded-lg overflow-hidden divide-y divide-gray-100">
+                  {agreementData.hostAgreementSections.map((section) => (
+                    <HostAgreementSectionAccordion key={section.id} section={section} />
+                  ))}
+                </div>
+              ) : agreementData.hostAgreementUrl ? (
+                /* Fallback: PDF iframe when no sections extracted */
+                <>
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <iframe
+                      src={`${agreementData.hostAgreementUrl}#toolbar=1&navpanes=0`}
+                      className="w-full"
+                      style={{ height: '600px' }}
+                      title={`${agreementData.partner?.companyName || 'Provider'} Agreement`}
+                    />
+                  </div>
                   <a
                     href={agreementData.hostAgreementUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 bg-orange-50 border border-orange-200 text-orange-700 px-4 py-2 rounded-lg hover:bg-orange-100 transition-colors"
+                    className="inline-flex items-center gap-2 text-sm text-orange-600 hover:text-orange-700 mt-3"
                   >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
-                    View {agreementData.hostAgreementName || 'Rental Agreement'} (PDF)
+                    Open in new tab
                   </a>
-                </div>
-              </div>
+                </>
+              ) : null}
             </div>
           )}
 
-          {/* ItWhip Standard Terms Header (when host has custom agreement) */}
-          {agreementData.hostAgreementUrl && (
+          {/* BOTH: Precedence notice + ItWhip Standard Terms header */}
+          {agreementData.agreementType === 'BOTH' && (
             <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg p-4 mb-6">
               <div className="flex items-center gap-2 text-orange-800">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-                <span className="font-medium">ItWhip Standard Agreement</span>
+                <span className="font-medium">ItWhip Platform Terms</span>
               </div>
               <p className="text-sm text-orange-700 mt-1 ml-7">
-                The following terms are provided by ItWhip to protect both parties during your rental.
+                The following platform terms are provided by ItWhip to protect both parties. In case of conflict between these Platform Terms and the Provider&apos;s Additional Terms above, these Platform Terms shall prevail.
               </p>
             </div>
           )}
 
-          {/* Terms and Conditions */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Terms and Conditions</h2>
-
-            <div className="max-h-[500px] overflow-y-auto pr-2 space-y-6">
-              {/* Section 1: Driver Eligibility */}
-              <section>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">1. Driver Eligibility & Requirements</h3>
-                <p className="text-sm text-gray-600 mb-2">
-                  The renter must be at least 21 years of age and possess a valid driver&apos;s license that has been active for a minimum of one year. International renters must provide a valid passport and international driving permit if their license is not in English.
-                </p>
-              </section>
-
-              {/* Section 2: Authorized Use */}
-              <section>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">2. Authorized Use & Restrictions</h3>
-                <p className="text-sm text-gray-600 mb-2">
-                  The vehicle may only be operated on properly maintained roads and highways. The following uses are strictly prohibited:
-                </p>
-                <ul className="text-sm text-gray-600 space-y-1 ml-4">
-                  <li>• Racing, speed testing, or any type of competition</li>
-                  <li>• Towing or pushing any vehicle or trailer</li>
-                  <li>• Off-road driving or driving on unpaved surfaces</li>
-                  <li>• Commercial use including rideshare or delivery services</li>
-                  <li>• Transporting hazardous materials or illegal substances</li>
-                  <li>• Driving outside Arizona without written permission</li>
-                </ul>
-              </section>
-
-              {/* Section 3: Renter Responsibilities */}
-              <section>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">3. Renter Responsibilities</h3>
-                <ul className="text-sm text-gray-600 space-y-1 ml-4">
-                  <li>• Return the vehicle with the same fuel level as at pickup</li>
-                  <li>• Maintain the vehicle in the same condition as received</li>
-                  <li>• Lock the vehicle when unattended and safeguard keys</li>
-                  <li>• Report any mechanical issues or damage immediately</li>
-                  <li>• No smoking or vaping in the vehicle ($250 cleaning fee)</li>
-                  <li>• No pets without prior approval ($100 cleaning fee)</li>
-                  <li>• Pay all tolls, parking fees, and traffic violations</li>
-                </ul>
-              </section>
-
-              {/* Section 4: Accident & Emergency */}
-              <section>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">4. Accident & Emergency Procedures</h3>
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <p className="text-sm text-gray-700 font-medium mb-2">In case of accident or emergency:</p>
-                  <ol className="text-sm text-gray-600 space-y-1 list-decimal ml-4">
-                    <li>Ensure safety of all parties and call 911 if needed</li>
-                    <li>Contact local police and obtain report number</li>
-                    <li>Document scene with photos of all damage</li>
-                    <li>Exchange information with all parties involved</li>
-                    <li>Report to owner and ItWhip support immediately</li>
-                    <li>Do not admit fault to anyone except police</li>
-                  </ol>
-                </div>
-              </section>
-
-              {/* Section 5: Cancellation Policy */}
-              <section>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">5. Cancellation Policy</h3>
-                <div className="grid grid-cols-4 gap-2 mb-2">
-                  <div className="text-center p-2 bg-gray-50 rounded border border-gray-200">
-                    <div className="text-sm font-semibold text-gray-900">72+ hrs</div>
-                    <div className="text-xs text-gray-600">100% refund</div>
-                  </div>
-                  <div className="text-center p-2 bg-gray-50 rounded border border-gray-200">
-                    <div className="text-sm font-semibold text-gray-900">24-72 hrs</div>
-                    <div className="text-xs text-gray-600">75% refund</div>
-                  </div>
-                  <div className="text-center p-2 bg-gray-50 rounded border border-gray-200">
-                    <div className="text-sm font-semibold text-gray-900">12-24 hrs</div>
-                    <div className="text-xs text-gray-600">50% refund</div>
-                  </div>
-                  <div className="text-center p-2 bg-gray-50 rounded border border-gray-200">
-                    <div className="text-sm font-semibold text-gray-900">&lt;12 hrs</div>
-                    <div className="text-xs text-gray-600">No refund</div>
+          {/* ItWhip Standard Terms (shown for ITWHIP and BOTH, hidden for OWN) */}
+          {agreementData.agreementType !== 'OWN' && (
+            <>
+              {/* Arizona Legal Compliance */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <div className="flex items-start">
+                  <svg className="w-6 h-6 text-gray-700 mt-0.5 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                  </svg>
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900 mb-2">Arizona Legal Requirements</h2>
+                    <p className="text-sm text-gray-600 mb-3">
+                      This agreement complies with all applicable Arizona state laws governing vehicle rentals and peer-to-peer car sharing arrangements.
+                    </p>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• Driver eligibility verification required per A.R.S. §28-3472</li>
+                      <li>• Security deposits handled per A.R.S. §33-1321</li>
+                      <li>• Peer-to-peer rental compliance per A.R.S. §28-9601</li>
+                      <li>• Insurance requirements per A.R.S. §20-331</li>
+                      <li>• Transaction Privilege Tax collection per A.R.S. §42-5061</li>
+                    </ul>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500">Service fees are non-refundable. No-shows forfeit entire payment.</p>
-              </section>
+              </div>
 
-              {/* Section 6: Security Deposit */}
-              <section>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">6. Security Deposit Return Process</h3>
-                <p className="text-sm text-gray-600 mb-2">
-                  Your security deposit is fully refundable when you meet these conditions:
-                </p>
-                <ul className="text-sm text-gray-600 space-y-1 ml-4">
-                  <li>• <strong>On-Time Return:</strong> Within 30-minute grace period</li>
-                  <li>• <strong>Fuel Level:</strong> Match the level at pickup</li>
-                  <li>• <strong>Vehicle Condition:</strong> Normal wear accepted</li>
-                  <li>• <strong>Interior:</strong> No smoking odor, excessive dirt, or stains</li>
-                  <li>• <strong>Mileage:</strong> Stay within agreed mileage allowance</li>
-                </ul>
-                <div className="bg-amber-50 rounded-lg p-3 mt-3 border border-amber-200">
-                  <p className="text-sm text-amber-800">
-                    <strong>Timeline (Per A.R.S. §33-1321):</strong> Deposit released within 7-14 business days to original payment method.
-                  </p>
-                </div>
-              </section>
-
-              {/* Section 7: Platform Facilitator */}
-              <section>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">7. Platform Facilitator Disclosure</h3>
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-2">
-                    <strong>Important:</strong> This rental agreement is entered into directly between the vehicle owner and the renter. ItWhip Technologies, Inc. operates solely as a marketplace facilitator under Arizona law (A.R.S. §42-5001) and is not a party to this rental contract.
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    The platform provides technology services including payment processing, messaging, and trip coordination. Any disputes regarding vehicle condition, availability, or rental terms are between host and guest.
-                  </p>
-                </div>
-              </section>
-
-              {/* Section 8: Electronic Signature */}
-              <section>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">8. Electronic Signature Consent</h3>
-                <p className="text-sm text-gray-600">
-                  By signing this agreement electronically, the Renter consents to conduct this transaction by electronic means and agrees that their electronic signature is legally binding under the Uniform Electronic Transactions Act (UETA) and the Electronic Signatures in Global and National Commerce Act (ESIGN).
-                </p>
-              </section>
-
-              {/* Custom Clauses */}
-              {agreementData.customClauses.length > 0 && (
-                <section className="pt-4 border-t border-gray-200">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Additional Terms (Provider-Specific)</h3>
-                  {agreementData.customClauses.map((clause, index) => (
-                    <div key={index} className="mb-4 bg-orange-50 rounded-lg p-4 border border-orange-200">
-                      <h4 className="text-sm font-medium text-gray-900 mb-1">
-                        Additional Clause {index + 1}
-                      </h4>
-                      <p className="text-sm text-gray-600">{clause}</p>
+              {/* Trip Protection Coverage */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <div className="flex items-start">
+                  <svg className="w-6 h-6 text-gray-700 mt-0.5 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  <div className="flex-1">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-2">Trip Protection Coverage</h2>
+                    <p className="text-sm text-gray-600 mb-4">
+                      This rental includes comprehensive trip protection coverage. In the event of an accident or damage, you are protected with the following coverage limits:
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-sm font-medium text-gray-900">Liability Coverage</p>
+                        <p className="text-sm text-gray-600">$750,000 maximum</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-sm font-medium text-gray-900">Your Deductible</p>
+                        <p className="text-sm text-gray-600">As specified above</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-sm font-medium text-gray-900">Personal Effects</p>
+                        <p className="text-sm text-gray-600">$500 maximum</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-sm font-medium text-gray-900">Loss of Use</p>
+                        <p className="text-sm text-gray-600">Covered</p>
+                      </div>
                     </div>
-                  ))}
-                </section>
-              )}
-            </div>
-          </div>
+                    <p className="text-xs text-gray-500 mt-3">
+                      Coverage excludes intentional damage, driving under influence, unauthorized use, and commercial activities.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Terms and Conditions */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Terms and Conditions</h2>
+
+                <div className="max-h-[500px] overflow-y-auto pr-2 space-y-6">
+                  {/* Section 1: Driver Eligibility */}
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2">1. Driver Eligibility & Requirements</h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      The renter must be at least 21 years of age and possess a valid driver&apos;s license that has been active for a minimum of one year. International renters must provide a valid passport and international driving permit if their license is not in English.
+                    </p>
+                  </section>
+
+                  {/* Section 2: Authorized Use */}
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2">2. Authorized Use & Restrictions</h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      The vehicle may only be operated on properly maintained roads and highways. The following uses are strictly prohibited:
+                    </p>
+                    <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                      <li>• Racing, speed testing, or any type of competition</li>
+                      <li>• Towing or pushing any vehicle or trailer</li>
+                      <li>• Off-road driving or driving on unpaved surfaces</li>
+                      <li>• Commercial use including rideshare or delivery services</li>
+                      <li>• Transporting hazardous materials or illegal substances</li>
+                      <li>• Driving outside Arizona without written permission</li>
+                    </ul>
+                  </section>
+
+                  {/* Section 3: Renter Responsibilities */}
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2">3. Renter Responsibilities</h3>
+                    <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                      <li>• Return the vehicle with the same fuel level as at pickup</li>
+                      <li>• Maintain the vehicle in the same condition as received</li>
+                      <li>• Lock the vehicle when unattended and safeguard keys</li>
+                      <li>• Report any mechanical issues or damage immediately</li>
+                      <li>• No smoking or vaping in the vehicle ($250 cleaning fee)</li>
+                      <li>• No pets without prior approval ($100 cleaning fee)</li>
+                      <li>• Pay all tolls, parking fees, and traffic violations</li>
+                    </ul>
+                  </section>
+
+                  {/* Section 4: Accident & Emergency */}
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2">4. Accident & Emergency Procedures</h3>
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <p className="text-sm text-gray-700 font-medium mb-2">In case of accident or emergency:</p>
+                      <ol className="text-sm text-gray-600 space-y-1 list-decimal ml-4">
+                        <li>Ensure safety of all parties and call 911 if needed</li>
+                        <li>Contact local police and obtain report number</li>
+                        <li>Document scene with photos of all damage</li>
+                        <li>Exchange information with all parties involved</li>
+                        <li>Report to owner and ItWhip support immediately</li>
+                        <li>Do not admit fault to anyone except police</li>
+                      </ol>
+                    </div>
+                  </section>
+
+                  {/* Section 5: Cancellation Policy */}
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2">5. Cancellation Policy</h3>
+                    <div className="grid grid-cols-4 gap-2 mb-2">
+                      <div className="text-center p-2 bg-gray-50 rounded border border-gray-200">
+                        <div className="text-sm font-semibold text-gray-900">72+ hrs</div>
+                        <div className="text-xs text-gray-600">100% refund</div>
+                      </div>
+                      <div className="text-center p-2 bg-gray-50 rounded border border-gray-200">
+                        <div className="text-sm font-semibold text-gray-900">24-72 hrs</div>
+                        <div className="text-xs text-gray-600">75% refund</div>
+                      </div>
+                      <div className="text-center p-2 bg-gray-50 rounded border border-gray-200">
+                        <div className="text-sm font-semibold text-gray-900">12-24 hrs</div>
+                        <div className="text-xs text-gray-600">50% refund</div>
+                      </div>
+                      <div className="text-center p-2 bg-gray-50 rounded border border-gray-200">
+                        <div className="text-sm font-semibold text-gray-900">&lt;12 hrs</div>
+                        <div className="text-xs text-gray-600">No refund</div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500">Service fees are non-refundable. No-shows forfeit entire payment.</p>
+                  </section>
+
+                  {/* Section 6: Security Deposit */}
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2">6. Security Deposit Return Process</h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      Your security deposit is fully refundable when you meet these conditions:
+                    </p>
+                    <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                      <li>• <strong>On-Time Return:</strong> Within 30-minute grace period</li>
+                      <li>• <strong>Fuel Level:</strong> Match the level at pickup</li>
+                      <li>• <strong>Vehicle Condition:</strong> Normal wear accepted</li>
+                      <li>• <strong>Interior:</strong> No smoking odor, excessive dirt, or stains</li>
+                      <li>• <strong>Mileage:</strong> Stay within agreed mileage allowance</li>
+                    </ul>
+                    <div className="bg-amber-50 rounded-lg p-3 mt-3 border border-amber-200">
+                      <p className="text-sm text-amber-800">
+                        <strong>Timeline (Per A.R.S. §33-1321):</strong> Deposit released within 7-14 business days to original payment method.
+                      </p>
+                    </div>
+                  </section>
+
+                  {/* Section 7: Platform Facilitator */}
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2">7. Platform Facilitator Disclosure</h3>
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <p className="text-sm text-gray-600 mb-2">
+                        <strong>Important:</strong> This rental agreement is entered into directly between the vehicle owner and the renter. ItWhip Technologies, Inc. operates solely as a marketplace facilitator under Arizona law (A.R.S. §42-5001) and is not a party to this rental contract.
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        The platform provides technology services including payment processing, messaging, and trip coordination. Any disputes regarding vehicle condition, availability, or rental terms are between host and guest.
+                      </p>
+                    </div>
+                  </section>
+
+                  {/* Section 8: Electronic Signature */}
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2">8. Electronic Signature Consent</h3>
+                    <p className="text-sm text-gray-600">
+                      By signing this agreement electronically, the Renter consents to conduct this transaction by electronic means and agrees that their electronic signature is legally binding under the Uniform Electronic Transactions Act (UETA) and the Electronic Signatures in Global and National Commerce Act (ESIGN).
+                    </p>
+                  </section>
+
+                  {/* Custom Clauses */}
+                  {agreementData.customClauses.length > 0 && (
+                    <section className="pt-4 border-t border-gray-200">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-3">Additional Terms (Provider-Specific)</h3>
+                      {agreementData.customClauses.map((clause, index) => (
+                        <div key={index} className="mb-4 bg-orange-50 rounded-lg p-4 border border-orange-200">
+                          <h4 className="text-sm font-medium text-gray-900 mb-1">
+                            Additional Clause {index + 1}
+                          </h4>
+                          <p className="text-sm text-gray-600">{clause}</p>
+                        </div>
+                      ))}
+                    </section>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Signature Section */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -713,7 +761,12 @@ export default function SignAgreementPage() {
                 className="mt-1 w-5 h-5 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
               />
               <span className="text-sm text-gray-700">
-                I have read and agree to the terms and conditions above. I understand this is a legally binding agreement.
+                {agreementData.agreementType === 'OWN'
+                  ? `I have reviewed ${agreementData.partner?.companyName || 'the provider'}'s rental agreement and agree to be bound by its terms. I understand this is a legally binding agreement.`
+                  : agreementData.agreementType === 'BOTH'
+                    ? `I have reviewed both ${agreementData.partner?.companyName || 'the provider'}'s rental agreement and the ItWhip Platform Terms above. I agree to be bound by all terms. I understand this is a legally binding agreement.`
+                    : 'I have read and agree to the terms and conditions above. I understand this is a legally binding agreement.'
+                }
               </span>
             </label>
 

@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
       avgValidationScore,
       pendingValidation,
       recentPartnerAgreements,
+      preferenceBreakdown,
     ] = await Promise.all([
       // Total prospects with uploaded agreements
       prisma.hostProspect.count({
@@ -66,6 +67,7 @@ export async function GET(request: NextRequest) {
           hostAgreementName: true,
           agreementValidationScore: true,
           agreementValidationSummary: true,
+          agreementPreference: true,
           itwhipAgreementAccepted: true,
           testAgreementSignedAt: true,
           createdAt: true,
@@ -73,6 +75,11 @@ export async function GET(request: NextRequest) {
         },
         orderBy: { updatedAt: 'desc' },
         take: 20
+      }),
+      // Agreement preference breakdown
+      prisma.hostProspect.groupBy({
+        by: ['agreementPreference'],
+        _count: true
       })
     ])
 
@@ -119,7 +126,9 @@ export async function GET(request: NextRequest) {
           agreementViewedAt: true,
           agreementSignedAt: true,
           agreementExpiresAt: true,
-          agreementSignedPdfUrl: true,  // Include signed PDF URL for viewing
+          agreementSignedPdfUrl: true,
+          agreementType: true,
+          hostAgreementUrl: true,
           renter: {
             select: { name: true, email: true }
           },
@@ -154,7 +163,8 @@ export async function GET(request: NextRequest) {
         pending: pendingValidation,
         avgScore: avgValidationScore._avg.agreementValidationScore?.toFixed(0) || 0,
         passRate: validationPassRate,
-        recent: recentPartnerAgreements
+        recent: recentPartnerAgreements,
+        byPreference: preferenceBreakdown
       },
       bookingAgreements: {
         total: totalBookingAgreements,

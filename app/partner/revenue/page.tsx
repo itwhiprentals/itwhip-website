@@ -389,7 +389,7 @@ export default function PartnerRevenuePage() {
             ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
             : bankingStatus.stripeConnectStatus === 'restricted'
             ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-            : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+            : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
         }`}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-start gap-3">
@@ -398,14 +398,14 @@ export default function PartnerRevenuePage() {
                   ? 'bg-amber-100 dark:bg-amber-900/30'
                   : bankingStatus.stripeConnectStatus === 'restricted'
                   ? 'bg-red-100 dark:bg-red-900/30'
-                  : 'bg-blue-100 dark:bg-blue-900/30'
+                  : 'bg-amber-100 dark:bg-amber-900/30'
               }`}>
                 <IoCardOutline className={`w-5 h-5 ${
                   bankingStatus.stripeConnectStatus === 'not_connected'
                     ? 'text-amber-600 dark:text-amber-400'
                     : bankingStatus.stripeConnectStatus === 'restricted'
                     ? 'text-red-600 dark:text-red-400'
-                    : 'text-blue-600 dark:text-blue-400'
+                    : 'text-amber-600 dark:text-amber-400'
                 }`} />
               </div>
               <div>
@@ -414,7 +414,7 @@ export default function PartnerRevenuePage() {
                     ? 'text-amber-800 dark:text-amber-300'
                     : bankingStatus.stripeConnectStatus === 'restricted'
                     ? 'text-red-800 dark:text-red-300'
-                    : 'text-blue-800 dark:text-blue-300'
+                    : 'text-amber-800 dark:text-amber-300'
                 }`}>
                   {bankingStatus.stripeConnectStatus === 'not_connected'
                     ? t('setUpPayouts')
@@ -427,7 +427,7 @@ export default function PartnerRevenuePage() {
                     ? 'text-amber-700 dark:text-amber-400'
                     : bankingStatus.stripeConnectStatus === 'restricted'
                     ? 'text-red-700 dark:text-red-400'
-                    : 'text-blue-700 dark:text-blue-400'
+                    : 'text-amber-700 dark:text-amber-400'
                 }`}>
                   {bankingStatus.stripeConnectStatus === 'not_connected'
                     ? t('connectBankDescription')
@@ -439,13 +439,13 @@ export default function PartnerRevenuePage() {
             </div>
             <button
               onClick={handleConnectStripe}
-              disabled={connectingStripe || bankingStatus.stripeConnectStatus === 'pending'}
+              disabled={connectingStripe}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap disabled:opacity-50 ${
                 bankingStatus.stripeConnectStatus === 'not_connected'
                   ? 'bg-amber-600 hover:bg-amber-700 text-white'
                   : bankingStatus.stripeConnectStatus === 'restricted'
                   ? 'bg-red-600 hover:bg-red-700 text-white'
-                  : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 cursor-not-allowed'
+                  : 'bg-amber-600 hover:bg-amber-700 text-white'
               }`}
             >
               {connectingStripe ? t('connecting') : (

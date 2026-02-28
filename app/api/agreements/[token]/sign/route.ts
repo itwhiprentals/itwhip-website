@@ -11,7 +11,8 @@ import {
   isValidTokenFormat,
   extractClientInfo
 } from '@/app/lib/agreements/tokens'
-import { generateAgreementPDF } from '@/app/lib/agreements/generator'
+import { generateAgreementPDF, generateAgreementPDFBuffer } from '@/app/lib/agreements/generator'
+import { mergeAgreementPDFs } from '@/app/lib/agreements/pdf-merge'
 
 // Generate a cuid-like ID
 function generateId(): string {
@@ -218,95 +219,131 @@ export async function POST(
       customClauses = templateData.customClauses || []
     }
 
-    // Generate signed PDF
-    const pdfDataUrl = await generateAgreementPDF({
-      booking: {
-        id: booking.id,
-        bookingCode: booking.bookingCode,
-        startDate: booking.startDate,
-        endDate: booking.endDate,
-        startTime: booking.startTime,
-        endTime: booking.endTime,
-        numberOfDays: booking.numberOfDays,
-        dailyRate: Number(booking.dailyRate),
-        totalAmount: Number(booking.totalAmount),
-        securityDeposit: Number(booking.securityDeposit),
-        pickupLocation: booking.pickupLocation,
-        pickupType: booking.pickupType
-      },
-      vehicle: booking.car ? {
-        year: booking.car.year,
-        make: booking.car.make,
-        model: booking.car.model,
-        vin: booking.car.vin || undefined,
-        licensePlate: booking.car.licensePlate || undefined,
-        color: booking.car.color || undefined
-      } : {
-        year: 0,
-        make: 'Unknown',
-        model: 'Vehicle'
-      },
-      partner: {
-        companyName: booking.host?.partnerCompanyName || booking.host?.name || 'Rental Provider',
-        name: booking.host?.name || 'Provider',
-        email: booking.host?.partnerSupportEmail || booking.host?.email || '',
-        phone: booking.host?.partnerSupportPhone || undefined,
-        city: booking.host?.city || undefined,
-        state: booking.host?.state || undefined,
-        zipCode: booking.host?.zipCode || undefined
-      },
-      customer: {
-        name: signerName.trim(),
-        email: booking.renter?.email || booking.guestEmail || booking.signerEmail || '',
-        phone: booking.renter?.phone || booking.guestPhone || undefined
-      },
-      customClauses,
-      signature: {
-        signatureImage,
-        signerName: signerName.trim(),
-        signedAt,
-        ipAddress
-      }
-    })
+    // Determine agreement type
+    const agreementType = booking.agreementType || 'ITWHIP'
+    console.log(`[Agreement Sign] Agreement type: ${agreementType}`)
 
-    // Upload signed PDF to Cloudinary
     let signedPdfUrl: string | null = null
-    try {
-      // PDFs can be uploaded as 'image' type in Cloudinary for full support
-      // Use folder + public_id structure, and format: 'pdf' to ensure correct handling
-      const folder = `agreements/${booking.host?.id || 'general'}`
-      const publicId = `agreement-${booking.bookingCode}-signed`
 
-      // Fix jsPDF data URL format - remove the filename parameter that Cloudinary doesn't understand
-      // jsPDF outputs: data:application/pdf;filename=generated.pdf;base64,...
-      // Cloudinary expects: data:application/pdf;base64,...
-      let cleanDataUrl = pdfDataUrl
-      if (pdfDataUrl.includes(';filename=')) {
-        cleanDataUrl = pdfDataUrl.replace(/;filename=[^;]+/, '')
+    if (agreementType === 'OWN') {
+      // ═══ OWN: Skip ItWhip PDF generation — use partner's uploaded PDF as the record ═══
+      signedPdfUrl = booking.hostAgreementUrl || null
+      console.log('[Agreement Sign] OWN type — using partner PDF:', signedPdfUrl)
+
+    } else {
+      // ═══ ITWHIP or BOTH: Generate ItWhip PDF ═══
+      const agreementData = {
+        booking: {
+          id: booking.id,
+          bookingCode: booking.bookingCode,
+          startDate: booking.startDate,
+          endDate: booking.endDate,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          numberOfDays: booking.numberOfDays,
+          dailyRate: Number(booking.dailyRate),
+          totalAmount: Number(booking.totalAmount),
+          securityDeposit: Number(booking.securityDeposit),
+          pickupLocation: booking.pickupLocation,
+          pickupType: booking.pickupType
+        },
+        vehicle: booking.car ? {
+          year: booking.car.year,
+          make: booking.car.make,
+          model: booking.car.model,
+          vin: booking.car.vin || undefined,
+          licensePlate: booking.car.licensePlate || undefined,
+          color: booking.car.color || undefined
+        } : {
+          year: 0,
+          make: 'Unknown',
+          model: 'Vehicle'
+        },
+        partner: {
+          companyName: booking.host?.partnerCompanyName || booking.host?.name || 'Rental Provider',
+          name: booking.host?.name || 'Provider',
+          email: booking.host?.partnerSupportEmail || booking.host?.email || '',
+          phone: booking.host?.partnerSupportPhone || undefined,
+          city: booking.host?.city || undefined,
+          state: booking.host?.state || undefined,
+          zipCode: booking.host?.zipCode || undefined
+        },
+        customer: {
+          name: signerName.trim(),
+          email: booking.renter?.email || booking.guestEmail || booking.signerEmail || '',
+          phone: booking.renter?.phone || booking.guestPhone || undefined
+        },
+        customClauses,
+        signature: {
+          signatureImage,
+          signerName: signerName.trim(),
+          signedAt,
+          ipAddress
+        }
       }
 
-      console.log('[Agreement Sign] Uploading PDF to Cloudinary...')
-      console.log('[Agreement Sign] Folder:', folder, 'Public ID:', publicId)
-      console.log('[Agreement Sign] Data URL length:', cleanDataUrl.length)
-      console.log('[Agreement Sign] Data URL prefix:', cleanDataUrl.substring(0, 50))
+      if (agreementType === 'BOTH' && booking.hostAgreementUrl) {
+        // ═══ BOTH: Generate ItWhip PDF + merge with host's PDF ═══
+        console.log('[Agreement Sign] BOTH type — generating ItWhip PDF + merging with host PDF')
+        try {
+          const itwhipBuffer = await generateAgreementPDFBuffer(agreementData)
+          const hostName = booking.host?.partnerCompanyName || booking.host?.name || 'Provider'
+          const mergedBuffer = await mergeAgreementPDFs(itwhipBuffer, booking.hostAgreementUrl, hostName)
 
-      const uploadResult = await cloudinary.uploader.upload(cleanDataUrl, {
-        resource_type: 'image',
-        folder: folder,
-        public_id: publicId,
-        format: 'pdf',
-        overwrite: true,
-        access_mode: 'public'
-      })
+          // Upload merged PDF to Cloudinary
+          const folder = `agreements/${booking.host?.id || 'general'}`
+          const publicId = `agreement-${booking.bookingCode}-signed-consolidated`
+          const base64 = mergedBuffer.toString('base64')
+          const dataUrl = `data:application/pdf;base64,${base64}`
 
-      signedPdfUrl = uploadResult.secure_url
-      console.log('[Agreement Sign] PDF uploaded successfully:', signedPdfUrl)
-      console.log('[Agreement Sign] Upload result:', JSON.stringify(uploadResult, null, 2))
-    } catch (uploadError: unknown) {
-      const error = uploadError as Error & { http_code?: number; message?: string }
-      console.error('[Agreement Sign] PDF upload error:', error.message || uploadError)
-      console.error('[Agreement Sign] Error details:', JSON.stringify(uploadError, null, 2))
-      // Continue without PDF - the signature is still valid
+          const uploadResult = await cloudinary.uploader.upload(dataUrl, {
+            resource_type: 'image',
+            folder,
+            public_id: publicId,
+            format: 'pdf',
+            overwrite: true,
+            access_mode: 'public'
+          })
+
+          signedPdfUrl = uploadResult.secure_url
+          console.log('[Agreement Sign] Merged PDF uploaded:', signedPdfUrl)
+        } catch (mergeError) {
+          console.error('[Agreement Sign] PDF merge failed, falling back to ItWhip-only:', mergeError)
+          // Fall back to ItWhip-only PDF
+        }
+      }
+
+      // If ITWHIP or BOTH merge failed — generate standard ItWhip PDF
+      if (!signedPdfUrl) {
+        const pdfDataUrl = await generateAgreementPDF(agreementData)
+
+        try {
+          const folder = `agreements/${booking.host?.id || 'general'}`
+          const publicId = `agreement-${booking.bookingCode}-signed`
+
+          let cleanDataUrl = pdfDataUrl
+          if (pdfDataUrl.includes(';filename=')) {
+            cleanDataUrl = pdfDataUrl.replace(/;filename=[^;]+/, '')
+          }
+
+          console.log('[Agreement Sign] Uploading PDF to Cloudinary...')
+
+          const uploadResult = await cloudinary.uploader.upload(cleanDataUrl, {
+            resource_type: 'image',
+            folder,
+            public_id: publicId,
+            format: 'pdf',
+            overwrite: true,
+            access_mode: 'public'
+          })
+
+          signedPdfUrl = uploadResult.secure_url
+          console.log('[Agreement Sign] PDF uploaded successfully:', signedPdfUrl)
+        } catch (uploadError: unknown) {
+          const error = uploadError as Error & { http_code?: number; message?: string }
+          console.error('[Agreement Sign] PDF upload error:', error.message || uploadError)
+        }
+      }
     }
 
     // Upload signature image separately for records

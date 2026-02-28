@@ -93,10 +93,10 @@ export async function POST() {
       )
     }
 
-    // Check test count (max 2 tests)
-    if (prospect.testEsignCount >= 2) {
+    // Check test count (max 3 tests)
+    if (prospect.testEsignCount >= 3) {
       return NextResponse.json(
-        { error: 'Maximum test limit reached (2/2)', testCount: prospect.testEsignCount },
+        { error: 'Maximum test limit reached (3/3)', testCount: prospect.testEsignCount },
         { status: 429 }
       )
     }
@@ -115,12 +115,14 @@ export async function POST() {
     const expiresAt = getTokenExpiryDate(1) // 1 day for test
 
     // Store the test agreement token + increment count
+    // Reset testAgreementSignedAt so previous sign doesn't block the new test
     await prisma.hostProspect.update({
       where: { id: prospect.id },
       data: {
         testAgreementToken: agreementToken,
         testAgreementExpiresAt: expiresAt,
         testAgreementSentAt: new Date(),
+        testAgreementSignedAt: null,
         testEsignCount: { increment: 1 },
         lastActivityAt: new Date()
       }

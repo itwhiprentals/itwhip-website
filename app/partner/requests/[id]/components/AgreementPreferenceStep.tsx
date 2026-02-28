@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import AgreementUpload from './AgreementUpload'
 import AgreementFullPreview from './AgreementFullPreview'
+import HostAgreementPreview, { type AgreementSection } from './HostAgreementPreview'
 import TestEsignButton from './TestEsignButton'
 import {
   IoShieldCheckmarkOutline,
@@ -39,6 +40,7 @@ interface AgreementPreferenceStepProps {
     fileName?: string
     validationScore?: number
     validationSummary?: string
+    sections?: unknown[] | null
   }
   /** When true, renders standalone (no Continue button — used in edit modal) */
   standalone?: boolean
@@ -49,6 +51,12 @@ interface AgreementPreferenceStepProps {
   hostName?: string
   /** Host email for test e-sign hint */
   hostEmail?: string
+  /** Hide the Continue/Save button entirely (selection applies immediately) */
+  hideButton?: boolean
+  /** Initial preference to pre-select (from onboarding) */
+  initialPreference?: AgreementPref
+  /** Called immediately when selection changes (no button needed) */
+  onSelectionChange?: (preference: AgreementPref) => void
 }
 
 export default function AgreementPreferenceStep({
@@ -58,27 +66,40 @@ export default function AgreementPreferenceStep({
   onSaveStandalone,
   requestData,
   hostName,
-  hostEmail
+  hostEmail,
+  hideButton = false,
+  initialPreference,
+  onSelectionChange
 }: AgreementPreferenceStepProps) {
   const t = useTranslations('PartnerRequestDetail')
-  const [selected, setSelected] = useState<AgreementPref>('ITWHIP')
+  const [selected, setSelected] = useState<AgreementPref>(initialPreference || 'ITWHIP')
   const [saving, setSaving] = useState(false)
   const [uploaded, setUploaded] = useState(!!existingAgreement?.url)
   const [showPreview, setShowPreview] = useState(false)
   const [testCount, setTestCount] = useState(0)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [agreementSections, setAgreementSections] = useState<any[] | null>(null)
 
-  // Fetch current test count on mount
+  // Sync uploaded state when existingAgreement arrives asynchronously
   useEffect(() => {
-    fetchTestCount()
+    if (existingAgreement?.url) setUploaded(true)
+  }, [existingAgreement?.url])
+
+  // Fetch current test count + sections on mount
+  useEffect(() => {
+    fetchPreferenceData()
   }, [])
 
-  const fetchTestCount = async () => {
+  const fetchPreferenceData = async () => {
     try {
       const response = await fetch('/api/partner/onboarding/agreement-preference')
       if (response.ok) {
         const data = await response.json()
         if (data.testEsignCount != null) {
           setTestCount(data.testEsignCount)
+        }
+        if (data.hostAgreementSections) {
+          setAgreementSections(data.hostAgreementSections)
         }
       }
     } catch {
@@ -188,7 +209,7 @@ export default function AgreementPreferenceStep({
             <div key={option.value}>
               <button
                 type="button"
-                onClick={() => setSelected(option.value)}
+                onClick={() => { setSelected(option.value); onSelectionChange?.(option.value) }}
                 className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
                   isSelected
                     ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-400'
@@ -229,8 +250,8 @@ export default function AgreementPreferenceStep({
                 </div>
               </button>
 
-              {/* Preview button + full preview for ITWHIP and BOTH */}
-              {isSelected && (option.value === 'ITWHIP' || option.value === 'BOTH') && (
+              {/* ITWHIP: ItWhip agreement preview only */}
+              {isSelected && option.value === 'ITWHIP' && (
                 <div className="mt-2 space-y-2">
                   {showPreview ? (
                     <AgreementFullPreview
@@ -253,12 +274,13 @@ export default function AgreementPreferenceStep({
                 </div>
               )}
 
-              {/* Agreement upload for OWN and BOTH */}
-              {isSelected && (option.value === 'OWN' || option.value === 'BOTH') && (
+              {/* OWN: Host's own agreement upload/preview */}
+              {isSelected && option.value === 'OWN' && (
                 <div className="mt-2 space-y-2">
                   <AgreementUpload
-                    onUploadSuccess={() => setUploaded(true)}
-                    existingAgreement={existingAgreement}
+                    onUploadSuccess={() => { setUploaded(true); fetchPreferenceData() }}
+                    existingAgreement={existingAgreement ? { ...existingAgreement, sections: agreementSections || existingAgreement.sections || null } : undefined}
+                    hostName={hostName}
                   />
                   {!uploaded && (
                     <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
@@ -267,6 +289,52 @@ export default function AgreementPreferenceStep({
                   )}
                 </div>
               )}
+
+              {/* BOTH: Combined ItWhip + Host's own agreement */}
+              {isSelected && option.value === 'BOTH' && (() => {
+                const hostSections = (agreementSections || existingAgreement?.sections || null) as AgreementSection[] | null
+                const hasHostSections = hostSections && hostSections.length > 0
+                const hasHostAgreement = !!existingAgreement?.url
+
+                return (
+                  <div className="mt-2 space-y-2">
+                    {/* Combined preview: ItWhip + Host sections as ONE document */}
+                    {showPreview ? (
+                      <AgreementFullPreview
+                        requestData={requestData || defaultRequestData}
+                        hostName={hostName}
+                        onClose={() => setShowPreview(false)}
+                        hostSections={hasHostSections ? hostSections : undefined}
+                      />
+                    ) : (
+                      <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <button
+                          type="button"
+                          onClick={() => setShowPreview(true)}
+                          className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium"
+                        >
+                          <IoEyeOutline className="w-4 h-4" />
+                          {hasHostSections ? t('previewCombinedAgreement') || 'Preview Combined Agreement' : t('previewItwhipAgreement')}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Upload if no host agreement yet */}
+                    {!hasHostAgreement && (
+                      <>
+                        <AgreementUpload
+                          onUploadSuccess={() => { setUploaded(true); fetchPreferenceData() }}
+                          existingAgreement={undefined}
+                          hostName={hostName}
+                        />
+                        <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+                          {t('uploadLater')}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )
+              })()}
             </div>
           )
         })}
@@ -282,19 +350,21 @@ export default function AgreementPreferenceStep({
         />
       )}
 
-      {/* Continue Button */}
-      <button
-        onClick={handleContinue}
-        disabled={saving}
-        className="w-full py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
-      >
-        {saving ? (
-          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-        ) : (
-          <IoCheckmarkCircleOutline className="w-5 h-5" />
-        )}
-        {saving ? t('saving') : standalone ? t('saveChanges') : t('continue')}
-      </button>
+      {/* Continue Button — hidden when hideButton is true */}
+      {!hideButton && (
+        <button
+          onClick={handleContinue}
+          disabled={saving}
+          className="w-full py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+        >
+          {saving ? (
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <IoCheckmarkCircleOutline className="w-5 h-5" />
+          )}
+          {saving ? t('saving') : standalone ? t('saveChanges') : t('continue')}
+        </button>
+      )}
     </div>
   )
 }

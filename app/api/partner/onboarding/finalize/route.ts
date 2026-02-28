@@ -249,6 +249,7 @@ export async function POST(request: NextRequest) {
 
         // Status — all recruited bookings start PENDING (guest chooses payment, host confirms)
         status: 'PENDING',
+        bookingType: 'MANUAL',
         paymentStatus: 'PENDING',
         paymentType: null, // Guest selects CARD or CASH after auto-login
         fleetStatus: 'APPROVED',
@@ -282,6 +283,11 @@ export async function POST(request: NextRequest) {
         canSetPricing: true,
         canEditCalendar: true,
         canMessageGuests: true,
+        // Recruited hosts get 10% commission on first booking (15% discount off standard 25%)
+        currentCommissionRate: 0.10,
+        commissionRate: 0.10,
+        // Default to fleet-size commission tiers (most recruited hosts have their own insurance)
+        revenuePath: 'tiers',
         // Acquisition tracking
         acquisitionChannel: 'prospect_outreach',
         acquisitionSource: prospect.source?.toLowerCase() || null,
@@ -339,13 +345,21 @@ export async function POST(request: NextRequest) {
       ? new Date(fleetRequest.endDate).toLocaleDateString('en-US', { dateStyle: 'medium' })
       : 'TBD'
 
-    // Send guest email with auto-login link
+    // Send guest email + SMS with auto-login link
     if (guestEmail) {
+      // Create auto-login token (shared by email + SMS)
+      let autoLoginUrl = ''
       try {
-        // Create a GuestAccessToken for auto-login
         const guestAccessToken = await GuestTokenHandler.createGuestToken(bookingId, guestEmail)
-        const autoLoginUrl = `${baseUrl}/api/auth/guest-auto-login?token=${guestAccessToken}`
-        const guestFirstName = guestName.split(' ')[0]
+        autoLoginUrl = `${baseUrl}/api/auth/guest-auto-login?token=${guestAccessToken}`
+      } catch (tokenErr) {
+        console.error('[Finalize] Failed to create guest access token:', tokenErr)
+      }
+
+      const guestFirstName = guestName.split(' ')[0]
+
+      // ── Guest Email ──
+      try {
         const guestRefId = generateEmailReference('GI')
 
         const guestSubject = `Your Car Rental is ${isCash ? 'Confirmed' : 'Almost Ready'}! — ${vehicleDesc}`
@@ -454,16 +468,37 @@ ${getEmailFooterText(guestRefId)}
       } catch (emailErr) {
         console.error('[Finalize] Failed to send guest email:', emailErr)
       }
+
+      // ── Guest SMS ──
+      if (guestPhone && autoLoginUrl) {
+        try {
+          const { sendSms } = await import('@/app/lib/twilio/sms')
+          const smsBody = `Hi ${guestFirstName}! Your ${vehicleDesc} rental (${booking.bookingCode}) is set up on ItWhip. View your booking and choose your payment method here: ${autoLoginUrl}`
+          await sendSms(guestPhone, smsBody, {
+            type: 'SYSTEM',
+            bookingId,
+            hostId: host.id,
+            guestId: reviewerProfileId || undefined
+          })
+          console.log(`[Finalize] Guest SMS sent to ${guestPhone}`)
+        } catch (smsErr) {
+          console.error('[Finalize] Failed to send guest SMS:', smsErr)
+        }
+      }
     }
 
-    // Send host confirmation email
+    // Send host welcome email (combined welcome + booking confirmation)
     try {
       const hostEmail = host.email
       const hostFirstName = host.name?.split(' ')[0] || 'Host'
-      const hostRefId = generateEmailReference('BC')
+      const hostRefId = generateEmailReference('HW')
+      const bookingUrl = `${baseUrl}/partner/bookings/${bookingId}`
+      const dashboardUrl = `${baseUrl}/partner/dashboard`
+      const earningsFormatted = hostEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      const dailyRateFormatted = dailyRate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
       if (hostEmail) {
-        const hostSubject = `Booking Confirmed — ${vehicleDesc} for ${guestName}`
+        const hostSubject = `Welcome to ItWhip, ${hostFirstName}! Your first booking is ready`
         const hostEmailResult = await sendEmail(
           hostEmail,
           hostSubject,
@@ -474,75 +509,120 @@ ${getEmailFooterText(guestRefId)}
             <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; background-color: #ffffff; max-width: 600px; margin: 0 auto; padding: 20px;">
 
               <!-- Header -->
-              <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
-                <p style="margin: 0 0 4px 0; font-size: 12px; color: #16a34a; text-transform: uppercase; letter-spacing: 0.5px;">Booking Confirmed • ${booking.bookingCode}</p>
-                <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ea580c;">You're All Set, ${hostFirstName}!</h1>
+              <div style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border-radius: 8px 8px 0 0; padding: 28px 20px; text-align: center;">
+                <p style="margin: 0 0 8px 0; font-size: 12px; color: rgba(255,255,255,0.85); text-transform: uppercase; letter-spacing: 1px;">Welcome to ItWhip</p>
+                <h1 style="margin: 0; font-size: 22px; font-weight: 700; color: #ffffff;">
+                  You're officially a host, ${hostFirstName}!
+                </h1>
               </div>
 
-              <!-- Main content -->
-              <p style="font-size: 16px; margin: 0 0 16px 0; color: #1f2937;">
-                Hi ${hostFirstName},
-              </p>
-
-              <p style="font-size: 16px; margin: 0 0 16px 0; color: #111827;">
-                Your onboarding is complete and the booking has been created. Here are the details:
-              </p>
+              <!-- Welcome message -->
+              <div style="padding: 24px 0;">
+                <p style="font-size: 16px; margin: 0 0 16px 0; color: #1f2937;">Hi ${hostFirstName},</p>
+                <p style="font-size: 15px; margin: 0 0 12px 0; color: #111827;">
+                  Congratulations on completing your setup! Your <strong>${vehicleDesc}</strong> is now listed and your first booking is ready to go.
+                </p>
+                <p style="font-size: 15px; margin: 0 0 20px 0; color: #374151;">
+                  Here's a quick summary of everything that's set up for you:
+                </p>
+              </div>
 
               <!-- Earnings highlight -->
-              <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
-                <p style="margin: 0 0 4px 0; font-size: 13px; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">Your Earnings</p>
-                <p style="margin: 0; font-size: 36px; font-weight: 700; color: #1f2937;">$${hostEarnings.toFixed(2)}</p>
-                <p style="margin: 8px 0 0 0; font-size: 14px; color: #374151;">${durationDays} days @ $${dailyRate}/day</p>
+              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 0 0 20px 0; text-align: center;">
+                <p style="margin: 0 0 4px 0; font-size: 13px; color: #166534; text-transform: uppercase; letter-spacing: 0.5px;">Your First Booking Earnings</p>
+                <p style="margin: 0; font-size: 36px; font-weight: 700; color: #15803d;">$${earningsFormatted}</p>
+                <p style="margin: 8px 0 0 0; font-size: 14px; color: #166534;">${durationDays} days @ $${dailyRateFormatted}/day</p>
               </div>
 
               <!-- Booking details table -->
-              <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin: 16px 0;">
-                <tr>
-                  <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Guest</td>
-                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${guestName}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Vehicle</td>
-                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${vehicleDesc}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Rental Dates</td>
-                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${startDateStr} — ${endDateStr}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #374151;">Payment</td>
-                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right;">${isCash ? 'Cash (collect from guest)' : 'Platform (direct deposit)'}</td>
-                </tr>
-              </table>
-
-              <!-- CTA Button -->
-              <div style="text-align: center; margin: 28px 0;">
-                <a href="${baseUrl}/partner/dashboard" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
-                  Go to Dashboard
-                </a>
+              <div style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; margin: 0 0 20px 0;">
+                <div style="background: #f9fafb; padding: 12px 16px; border-bottom: 1px solid #e5e7eb;">
+                  <p style="margin: 0; font-size: 13px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">Booking ${booking.bookingCode}</p>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                  <tr>
+                    <td style="padding: 10px 16px; color: #374151; border-bottom: 1px solid #f3f4f6;">Guest</td>
+                    <td style="padding: 10px 16px; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${guestName}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px 16px; color: #374151; border-bottom: 1px solid #f3f4f6;">Vehicle</td>
+                    <td style="padding: 10px 16px; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${vehicleDesc}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px 16px; color: #374151; border-bottom: 1px solid #f3f4f6;">Rental Dates</td>
+                    <td style="padding: 10px 16px; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${startDateStr} — ${endDateStr}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px 16px; color: #374151;">Payment</td>
+                    <td style="padding: 10px 16px; color: #1f2937; font-weight: 600; text-align: right;">${isCash ? 'Cash (collect from guest)' : 'Platform (direct deposit)'}</td>
+                  </tr>
+                </table>
               </div>
+
+              <!-- What's Next -->
+              <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 20px; margin: 0 0 20px 0;">
+                <p style="margin: 0 0 12px 0; font-size: 15px; font-weight: 700; color: #92400e;">What's Next?</p>
+                <table style="width: 100%; font-size: 14px;">
+                  <tr>
+                    <td style="padding: 6px 0; color: #92400e; vertical-align: top; width: 24px;">1.</td>
+                    <td style="padding: 6px 0; color: #78350f;"><strong>Guest confirms payment</strong> — ${guestName} will choose their payment method</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; color: #92400e; vertical-align: top;">2.</td>
+                    <td style="padding: 6px 0; color: #78350f;"><strong>Verify your guest</strong> — Check their driver's license before pickup</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; color: #92400e; vertical-align: top;">3.</td>
+                    <td style="padding: 6px 0; color: #78350f;"><strong>Hand over the keys</strong> — Meet your guest and start the rental</td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- CTA Buttons -->
+              <div style="text-align: center; margin: 28px 0;">
+                <a href="${bookingUrl}" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
+                  View Booking
+                </a>
+                <div style="margin-top: 12px;">
+                  <a href="${dashboardUrl}" style="font-size: 14px; color: #ea580c; text-decoration: none; font-weight: 500;">
+                    Go to Dashboard
+                  </a>
+                </div>
+              </div>
+
+              <p style="font-size: 13px; color: #6b7280; text-align: center; margin: 0 0 20px 0;">
+                Questions? Reply to this email or reach us at info@itwhip.com
+              </p>
 
               ${getEmailFooterHtml(hostRefId)}
             </body>
           </html>
           `,
           `
-BOOKING CONFIRMED • ${booking.bookingCode}
+WELCOME TO ITWHIP, ${hostFirstName.toUpperCase()}!
 
 Hi ${hostFirstName},
 
-Your onboarding is complete and the booking has been created.
+Congratulations on completing your setup! Your ${vehicleDesc} is now listed and your first booking is ready to go.
 
-YOUR EARNINGS: $${hostEarnings.toFixed(2)}
-${durationDays} days @ $${dailyRate}/day
+YOUR FIRST BOOKING EARNINGS: $${earningsFormatted}
+${durationDays} days @ $${dailyRateFormatted}/day
 
-BOOKING DETAILS:
+BOOKING ${booking.bookingCode}:
 - Guest: ${guestName}
 - Vehicle: ${vehicleDesc}
 - Rental Dates: ${startDateStr} — ${endDateStr}
 - Payment: ${isCash ? 'Cash (collect from guest)' : 'Platform (direct deposit)'}
 
-Go to Dashboard: ${baseUrl}/partner/dashboard
+WHAT'S NEXT:
+1. Guest confirms payment — ${guestName} will choose their payment method
+2. Verify your guest — Check their driver's license before pickup
+3. Hand over the keys — Meet your guest and start the rental
+
+View Booking: ${bookingUrl}
+Dashboard: ${dashboardUrl}
+
+Questions? Reply to this email or reach us at info@itwhip.com
 
 ${getEmailFooterText(hostRefId)}
           `.trim()
@@ -552,17 +632,17 @@ ${getEmailFooterText(hostRefId)}
           recipientEmail: hostEmail,
           recipientName: host.name || 'Host',
           subject: hostSubject,
-          emailType: 'BOOKING_CONFIRMATION',
+          emailType: 'HOST_WELCOME',
           relatedType: 'RentalBooking',
           relatedId: bookingId,
           messageId: hostEmailResult.messageId,
           referenceId: hostRefId
         })
 
-        console.log(`[Finalize] Host email sent to ${hostEmail}`)
+        console.log(`[Finalize] Host welcome email sent to ${hostEmail}`)
       }
     } catch (emailErr) {
-      console.error('[Finalize] Failed to send host email:', emailErr)
+      console.error('[Finalize] Failed to send host welcome email:', emailErr)
     }
 
     console.log(`[Finalize] Booking ${booking.bookingCode} created for host ${host.id}, guest ${guestEmail}`)

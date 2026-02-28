@@ -1627,6 +1627,7 @@ model RentalBooking {
   chargesWaivedReason        String?
   chargesAdjustedAmount      Decimal?              @db.Decimal(10, 2)
   status                     RentalBookingStatus   @default(PENDING)
+  bookingType                String                @default("STANDARD") // "MANUAL" (recruited/host-created) or "STANDARD" (guest-driven)
   paymentStatus              PaymentStatus         @default(PENDING)
   paymentType                String?               // 'CARD' | 'CASH' | null (null = guest hasn't chosen yet)
   paymentIntentId            String?
@@ -1761,6 +1762,8 @@ model RentalBooking {
   agreementStatus            String?               @default("not_sent")
   agreementToken             String?               @unique
   agreementViewedAt          DateTime?
+  agreementType              String?               // 'ITWHIP' | 'OWN' | 'BOTH' — copied from prospect at send time
+  hostAgreementUrl           String?               // Partner's uploaded agreement PDF URL (snapshot at send time)
   signatureImageUrl          String?
   signerEmail                String?
   signerIpAddress            String?
@@ -4199,6 +4202,7 @@ model HostProspect {
   hostAgreementName          String? // Original filename
   agreementValidationScore   Int? // AI validation score 0-100
   agreementValidationSummary String? // AI summary of the agreement
+  hostAgreementSections      Json?   // AI-extracted sections [{id, title, content, icon}]
   itwhipAgreementAccepted    Boolean @default(false)
 
   // Test E-Sign (for host to preview the signing experience)

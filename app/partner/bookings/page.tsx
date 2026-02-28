@@ -308,7 +308,50 @@ export default function PartnerBookingsPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Mobile Cards */}
+          <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
+            {filteredBookings.map((booking) => {
+              const statusConfig = getStatusConfig(booking.status)
+              const StatusIcon = statusConfig.icon
+              return (
+                <Link
+                  key={booking.id}
+                  href={`/partner/bookings/${booking.id}`}
+                  className="flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 active:bg-gray-100 dark:active:bg-gray-700 transition-colors"
+                >
+                  <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <IoPersonOutline className="w-5 h-5 text-gray-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{booking.guestName}</p>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white flex-shrink-0">
+                        ${booking.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 mt-0.5">
+                      <div className="truncate">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{booking.vehicleName.split(' ').slice(0, 2).join(' ')}</p>
+                        <p className="text-xs font-medium text-gray-900 dark:text-white">{booking.vehicleName.split(' ').slice(2).join(' ')}</p>
+                      </div>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${statusConfig.color}`}>
+                        <StatusIcon className="w-3 h-3" />
+                        {t(booking.status)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                      {formatShortDate(booking.startDate)} — {formatShortDate(booking.endDate)} · {t('daysCount', { count: booking.days })}
+                    </p>
+                  </div>
+                  <IoChevronForwardOutline className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                </Link>
+              )
+            })}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-900/50">
                 <tr>
@@ -340,19 +383,22 @@ export default function PartnerBookingsPage() {
                   return (
                     <tr key={booking.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                        <Link
+                          href={`/partner/bookings/${booking.id}`}
+                          className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                        >
+                          <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
                             <IoPersonOutline className="w-5 h-5 text-gray-400" />
                           </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                               {booking.guestName}
                             </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                               {booking.guestEmail}
                             </p>
                           </div>
-                        </div>
+                        </Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Link
@@ -398,7 +444,7 @@ export default function PartnerBookingsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                          ${booking.totalAmount.toLocaleString()}
+                          ${booking.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -416,6 +462,7 @@ export default function PartnerBookingsPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 

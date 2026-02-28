@@ -69,6 +69,7 @@
     "next-themes": "^0.4.6",
     "nodemailer": "^7.0.11",
     "otpauth": "^9.4.1",
+    "pdf-lib": "^1.17.1",
     "pdf-parse": "^1.1.1",
     "pg": "^8.16.3",
     "pino": "^9.14.0",

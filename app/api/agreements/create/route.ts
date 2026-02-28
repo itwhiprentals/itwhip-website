@@ -141,7 +141,27 @@ export async function POST(request: NextRequest) {
       expiresAt = getTokenExpiryDate(7)
     }
 
-    // Update booking with agreement info
+    // Fetch host's prospect to get agreement preference
+    const prospect = await prisma.hostProspect.findFirst({
+      where: { convertedHostId: partner.id },
+      select: {
+        agreementPreference: true,
+        hostAgreementUrl: true
+      }
+    })
+
+    const agreementType = prospect?.agreementPreference || 'ITWHIP'
+    const hostAgreementUrl = prospect?.hostAgreementUrl || null
+
+    // For OWN or BOTH: require partner has uploaded their agreement
+    if ((agreementType === 'OWN' || agreementType === 'BOTH') && !hostAgreementUrl) {
+      return NextResponse.json(
+        { error: `Cannot send agreement — partner agreement PDF has not been uploaded yet. Please upload your agreement first.` },
+        { status: 400 }
+      )
+    }
+
+    // Update booking with agreement info + preference snapshot
     await prisma.rentalBooking.update({
       where: { id: bookingId },
       data: {
@@ -149,7 +169,9 @@ export async function POST(request: NextRequest) {
         agreementStatus: 'sent',
         agreementSentAt: new Date(),
         agreementExpiresAt: expiresAt,
-        signerEmail: customerEmail
+        signerEmail: customerEmail,
+        agreementType,
+        hostAgreementUrl
       }
     })
 

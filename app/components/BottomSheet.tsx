@@ -192,7 +192,7 @@ export default function BottomSheet({
           bg-white dark:bg-gray-900
           rounded-t-2xl shadow-2xl
           flex flex-col
-          ${isDragging ? '' : 'transition-transform ease-[cubic-bezier(0.32,0.72,0,1)]'}
+          ${isDragging ? '' : 'transition-transform [transition-timing-function:cubic-bezier(0.32,0.72,0,1)]'}
           ${className}
         `}
         style={{

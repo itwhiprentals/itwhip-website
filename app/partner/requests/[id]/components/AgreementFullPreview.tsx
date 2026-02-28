@@ -37,10 +37,20 @@ interface RequestData {
   hostEarnings: number | null
 }
 
+/** Section data from host's own agreement (AI-extracted) */
+interface HostSection {
+  id: string
+  title: string
+  content: string
+  icon: string
+}
+
 interface AgreementFullPreviewProps {
   requestData: RequestData
   hostName?: string
   onClose: () => void
+  /** Host's own agreement sections — renders combined in BOTH mode */
+  hostSections?: HostSection[]
 }
 
 // Format currency with commas and 2 decimals
@@ -108,10 +118,27 @@ function Section({
   )
 }
 
+// Icon map for host sections (same as HostAgreementPreview)
+const HOST_ICON_MAP: Record<string, typeof IoDocumentTextOutline> = {
+  people: IoPeopleOutline,
+  car: IoCarOutline,
+  wallet: IoWalletOutline,
+  shield: IoShieldOutline,
+  warning: IoWarningOutline,
+  document: IoDocumentTextOutline,
+  calendar: IoCalendarOutline,
+  scale: IoScaleOutline,
+  close: IoCloseCircleOutline,
+  lock: IoLockClosedOutline,
+  create: IoCreateOutline,
+  globe: IoGlobeOutline,
+}
+
 export default function AgreementFullPreview({
   requestData,
   hostName,
-  onClose
+  onClose,
+  hostSections
 }: AgreementFullPreviewProps) {
   const t = useTranslations('PartnerRequestDetail')
   const [openSections, setOpenSections] = useState<Set<string>>(new Set())
@@ -521,6 +548,34 @@ export default function AgreementFullPreview({
         </Section>
 
       </div>
+
+      {/* Host's Own Agreement Sections — merged into same document for BOTH */}
+      {hostSections && hostSections.length > 0 && (
+        <>
+          <div className="px-4 py-2.5 bg-purple-50 dark:bg-purple-900/20 border-t border-b border-purple-200 dark:border-purple-800">
+            <p className="text-xs font-semibold text-purple-700 dark:text-purple-400 uppercase tracking-wide">
+              {hostName ? `${hostName}'s Additional Terms` : 'Additional Host Terms'}
+            </p>
+          </div>
+          <div className="divide-y divide-gray-100 dark:divide-gray-700">
+            {hostSections.map((section) => {
+              const IconComponent = HOST_ICON_MAP[section.icon] || IoDocumentTextOutline
+              return (
+                <Section
+                  key={`host-${section.id}`}
+                  icon={IconComponent}
+                  title={section.title}
+                  isOpen={isOpen(`host-${section.id}`)}
+                  onToggle={() => toggle(`host-${section.id}`)}
+                  accentColor="text-purple-600 dark:text-purple-400"
+                >
+                  <div className="whitespace-pre-line">{section.content}</div>
+                </Section>
+              )
+            })}
+          </div>
+        </>
+      )}
 
       {/* Footer */}
       <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800 text-center border-t border-gray-200 dark:border-gray-700">

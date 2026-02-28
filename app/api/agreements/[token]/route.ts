@@ -145,9 +145,11 @@ export async function GET(
           phone: host?.phone || prospect.phone
         },
 
-        // Include host's uploaded agreement URL for test
+        // Agreement preference data for test
+        agreementType: prospect.agreementPreference || 'ITWHIP',
         hostAgreementUrl: prospect.hostAgreementUrl,
         hostAgreementName: prospect.hostAgreementName,
+        hostAgreementSections: prospect.hostAgreementSections || null,
 
         customClauses: [],
 
@@ -249,6 +251,16 @@ export async function GET(
       customClauses = templateData.customClauses || []
     }
 
+    // Fetch host agreement sections from prospect (for OWN/BOTH types)
+    let hostAgreementSections = null
+    if (booking.agreementType === 'OWN' || booking.agreementType === 'BOTH') {
+      const hostProspect = await prisma.hostProspect.findFirst({
+        where: { convertedHostId: booking.host?.id },
+        select: { hostAgreementSections: true }
+      })
+      hostAgreementSections = hostProspect?.hostAgreementSections || null
+    }
+
     // Format response
     const response = {
       success: true,
@@ -295,6 +307,11 @@ export async function GET(
       },
 
       customClauses,
+
+      // Agreement preference data (ITWHIP/OWN/BOTH)
+      agreementType: booking.agreementType || 'ITWHIP',
+      hostAgreementUrl: booking.hostAgreementUrl,
+      hostAgreementSections,
 
       expiresAt: booking.agreementExpiresAt?.toISOString()
     }

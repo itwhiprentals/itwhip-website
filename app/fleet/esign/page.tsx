@@ -28,6 +28,7 @@ interface PartnerAgreement {
   hostAgreementName: string | null
   agreementValidationScore: number | null
   agreementValidationSummary: string | null
+  agreementPreference: string | null
   itwhipAgreementAccepted: boolean
   testAgreementSignedAt: string | null
   createdAt: string
@@ -42,6 +43,8 @@ interface BookingAgreement {
   agreementSignedAt: string | null
   agreementExpiresAt: string | null
   agreementSignedPdfUrl: string | null
+  agreementType: string | null
+  hostAgreementUrl: string | null
   renter: { name: string; email: string } | null
   car: {
     make: string
@@ -60,6 +63,7 @@ interface ESignData {
     avgScore: number
     passRate: string
     recent: PartnerAgreement[]
+    byPreference: { agreementPreference: string | null; _count: number }[]
   }
   bookingAgreements: {
     total: number
@@ -97,6 +101,15 @@ function getStatusColor(status: string): string {
     case 'sent': return 'text-yellow-600 bg-yellow-50 dark:text-yellow-400 dark:bg-yellow-900/30'
     case 'expired': return 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/30'
     default: return 'text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-700'
+  }
+}
+
+function getPreferenceBadge(pref: string | null): { label: string; color: string } {
+  switch (pref) {
+    case 'ITWHIP': return { label: 'ItWhip', color: 'text-blue-700 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30' }
+    case 'OWN': return { label: 'Own', color: 'text-purple-700 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/30' }
+    case 'BOTH': return { label: 'Both', color: 'text-orange-700 bg-orange-50 dark:text-orange-400 dark:bg-orange-900/30' }
+    default: return { label: 'Not Set', color: 'text-gray-500 bg-gray-50 dark:text-gray-400 dark:bg-gray-700' }
   }
 }
 
@@ -433,7 +446,7 @@ export default function ESignDashboard() {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         {activeTab === 'partner' ? (
-          <PartnerAgreementsTab data={data?.partnerAgreements} onViewPdf={openPdfViewer} />
+          <PartnerAgreementsTab data={data?.partnerAgreements} onViewPdf={openPdfViewer} apiKey={apiKey} onRefresh={fetchData} />
         ) : (
           <BookingAgreementsTab data={data?.bookingAgreements} onViewPdf={openPdfViewer} />
         )}
@@ -446,10 +459,36 @@ export default function ESignDashboard() {
 function PartnerAgreementsTab({
   data,
   onViewPdf,
+  apiKey,
+  onRefresh,
 }: {
   data: ESignData['partnerAgreements'] | undefined
   onViewPdf: (url: string | null, title: string, validationScore?: number | null, validationSummary?: string | null) => void
+  apiKey: string
+  onRefresh: () => void
 }) {
+  const [changingPref, setChangingPref] = useState<string | null>(null) // prospectId being edited
+
+  const handlePreferenceChange = async (prospectId: string, newPref: string) => {
+    try {
+      const res = await fetch(`/fleet/api/esign/preference?key=${apiKey}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prospectId, preference: newPref })
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        alert(err.error || 'Failed to change preference')
+        return
+      }
+      onRefresh()
+    } catch {
+      alert('Failed to change preference')
+    } finally {
+      setChangingPref(null)
+    }
+  }
+
   if (!data) return null
 
   return (
@@ -517,6 +556,7 @@ function PartnerAgreementsTab({
             <thead className="bg-gray-50 dark:bg-gray-700/50 text-xs text-gray-500 dark:text-gray-400 uppercase">
               <tr>
                 <th className="px-4 py-3 text-left">Partner</th>
+                <th className="px-4 py-3 text-center">Preference</th>
                 <th className="px-4 py-3 text-left">File</th>
                 <th className="px-4 py-3 text-center">AI Score</th>
                 <th className="px-4 py-3 text-left">Summary</th>
@@ -527,7 +567,7 @@ function PartnerAgreementsTab({
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {data.recent.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     No partner agreements uploaded yet
                   </td>
                 </tr>
@@ -539,6 +579,28 @@ function PartnerAgreementsTab({
                         {agreement.name || 'Unnamed Prospect'}
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">{agreement.email}</div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {changingPref === agreement.id ? (
+                        <select
+                          autoFocus
+                          defaultValue={agreement.agreementPreference || ''}
+                          onChange={(e) => handlePreferenceChange(agreement.id, e.target.value)}
+                          onBlur={() => setChangingPref(null)}
+                          className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        >
+                          <option value="ITWHIP">ItWhip</option>
+                          <option value="OWN">Own</option>
+                          <option value="BOTH">Both</option>
+                        </select>
+                      ) : (
+                        <button
+                          onClick={() => setChangingPref(agreement.id)}
+                          className={`text-xs px-2 py-0.5 rounded-full font-medium cursor-pointer hover:opacity-80 ${getPreferenceBadge(agreement.agreementPreference).color}`}
+                        >
+                          {getPreferenceBadge(agreement.agreementPreference).label}
+                        </button>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <button
@@ -613,11 +675,16 @@ function PartnerAgreementsTab({
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">{agreement.email}</div>
                   </div>
-                  {agreement.agreementValidationScore !== null && (
-                    <span className={`inline-flex items-center justify-center w-10 h-6 rounded-full font-bold text-xs ${getScoreBg(agreement.agreementValidationScore)} ${getScoreColor(agreement.agreementValidationScore)}`}>
-                      {agreement.agreementValidationScore}
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${getPreferenceBadge(agreement.agreementPreference).color}`}>
+                      {getPreferenceBadge(agreement.agreementPreference).label}
                     </span>
-                  )}
+                    {agreement.agreementValidationScore !== null && (
+                      <span className={`inline-flex items-center justify-center w-10 h-6 rounded-full font-bold text-xs ${getScoreBg(agreement.agreementValidationScore)} ${getScoreColor(agreement.agreementValidationScore)}`}>
+                        {agreement.agreementValidationScore}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
                   {agreement.agreementValidationSummary || 'No summary available'}
@@ -758,6 +825,7 @@ function BookingAgreementsTab({
                 <th className="px-4 py-3 text-left">Renter</th>
                 <th className="px-4 py-3 text-left">Vehicle</th>
                 <th className="px-4 py-3 text-left">Host</th>
+                <th className="px-4 py-3 text-center">Type</th>
                 <th className="px-4 py-3 text-center">Status</th>
                 <th className="px-4 py-3 text-center">PDF</th>
                 <th className="px-4 py-3 text-right">Timeline</th>
@@ -766,7 +834,7 @@ function BookingAgreementsTab({
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {data.recent.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     No booking agreements sent yet
                   </td>
                 </tr>
@@ -796,25 +864,39 @@ function BookingAgreementsTab({
                       </div>
                     </td>
                     <td className="px-4 py-3 text-center">
+                      {agreement.agreementType ? (
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getPreferenceBadge(agreement.agreementType).color}`}>
+                          {getPreferenceBadge(agreement.agreementType).label}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400 dark:text-gray-500">-</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${getStatusColor(agreement.agreementStatus)}`}>
                         {agreement.agreementStatus.replace('_', ' ')}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      {agreement.agreementSignedPdfUrl ? (
-                        <button
-                          onClick={() => onViewPdf(
-                            agreement.agreementSignedPdfUrl,
-                            `${agreement.renter?.name || 'Renter'} - ${agreement.car?.year} ${agreement.car?.make} ${agreement.car?.model}`
-                          )}
-                          className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded hover:bg-indigo-200 dark:hover:bg-indigo-900/70 transition-colors"
-                        >
-                          <IoEye className="w-3 h-3" />
-                          View
-                        </button>
-                      ) : (
-                        <span className="text-gray-400 dark:text-gray-500 text-xs">-</span>
-                      )}
+                      {(() => {
+                        // For OWN type: show partner's PDF. For BOTH/ITWHIP: show signed PDF.
+                        const pdfUrl = agreement.agreementType === 'OWN' && !agreement.agreementSignedPdfUrl
+                          ? agreement.hostAgreementUrl
+                          : agreement.agreementSignedPdfUrl
+                        if (!pdfUrl) return <span className="text-gray-400 dark:text-gray-500 text-xs">-</span>
+                        return (
+                          <button
+                            onClick={() => onViewPdf(
+                              pdfUrl,
+                              `${agreement.renter?.name || 'Renter'} - ${agreement.car?.year} ${agreement.car?.make} ${agreement.car?.model}`
+                            )}
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded hover:bg-indigo-200 dark:hover:bg-indigo-900/70 transition-colors"
+                          >
+                            <IoEye className="w-3 h-3" />
+                            View
+                          </button>
+                        )
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-right text-sm text-gray-500 dark:text-gray-400">
                       <div className="space-y-1">
@@ -861,9 +943,16 @@ function BookingAgreementsTab({
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">{agreement.renter?.email || ''}</div>
                   </div>
-                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${getStatusColor(agreement.agreementStatus)}`}>
-                    {agreement.agreementStatus.replace('_', ' ')}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {agreement.agreementType && (
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${getPreferenceBadge(agreement.agreementType).color}`}>
+                        {getPreferenceBadge(agreement.agreementType).label}
+                      </span>
+                    )}
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${getStatusColor(agreement.agreementStatus)}`}>
+                      {agreement.agreementStatus.replace('_', ' ')}
+                    </span>
+                  </div>
                 </div>
                 {agreement.car && (
                   <div className="text-sm text-gray-600 dark:text-gray-300">
@@ -889,18 +978,24 @@ function BookingAgreementsTab({
                       <span>Sent {format(new Date(agreement.agreementSentAt), 'MMM d')}</span>
                     ) : null}
                   </div>
-                  {agreement.agreementSignedPdfUrl && (
-                    <button
-                      onClick={() => onViewPdf(
-                        agreement.agreementSignedPdfUrl,
-                        `${agreement.renter?.name || 'Renter'} - ${agreement.car?.year} ${agreement.car?.make} ${agreement.car?.model}`
-                      )}
-                      className="flex items-center gap-1 px-2 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded"
-                    >
-                      <IoEye className="w-3 h-3" />
-                      View PDF
-                    </button>
-                  )}
+                  {(() => {
+                    const pdfUrl = agreement.agreementType === 'OWN' && !agreement.agreementSignedPdfUrl
+                      ? agreement.hostAgreementUrl
+                      : agreement.agreementSignedPdfUrl
+                    if (!pdfUrl) return null
+                    return (
+                      <button
+                        onClick={() => onViewPdf(
+                          pdfUrl,
+                          `${agreement.renter?.name || 'Renter'} - ${agreement.car?.year} ${agreement.car?.make} ${agreement.car?.model}`
+                        )}
+                        className="flex items-center gap-1 px-2 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded"
+                      >
+                        <IoEye className="w-3 h-3" />
+                        View PDF
+                      </button>
+                    )
+                  })()}
                 </div>
               </div>
             ))

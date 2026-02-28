@@ -54,7 +54,8 @@ export async function GET() {
     return NextResponse.json({
       preference: prospect.agreementPreference,
       testEsignCount: prospect.testEsignCount,
-      hostAgreementUrl: prospect.hostAgreementUrl
+      hostAgreementUrl: prospect.hostAgreementUrl,
+      hostAgreementSections: prospect.hostAgreementSections || null
     })
   } catch (error: any) {
     console.error('[Agreement Preference API] GET Error:', error)
