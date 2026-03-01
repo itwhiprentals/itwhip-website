@@ -229,19 +229,38 @@ async function processSinglePayout(payout: any): Promise<boolean> {
       })
 
       const totalFeesOwed = pendingFees.reduce((sum, fee) => sum + Number(fee.amount), 0)
-      const deductionAmount = Math.min(totalFeesOwed, payout.amount)
+
+      // Check for pending host deductibles ($5 verification fees, damage claims, etc.)
+      const pendingDeductibles = await prisma.hostDeductible.findMany({
+        where: {
+          hostId: payout.hostId,
+          status: 'PENDING'
+        }
+      })
+
+      const totalDeductibles = pendingDeductibles.reduce((sum, d) => sum + Number(d.amount), 0)
+      const totalDeductions = totalFeesOwed + totalDeductibles
+      const deductionAmount = Math.min(totalDeductions, payout.amount)
       const netPayoutAmount = Math.max(0, payout.amount - deductionAmount)
 
-      if (deductionAmount > 0) {
-        console.log(`[Payout Processor] Deducting $${deductionAmount.toFixed(2)} in platform fees from payout ${payout.id}`)
+      if (totalFeesOwed > 0) {
+        console.log(`[Payout Processor] Deducting $${totalFeesOwed.toFixed(2)} in platform fees from payout ${payout.id}`)
+      }
+      if (totalDeductibles > 0) {
+        console.log(`[Payout Processor] Deducting $${totalDeductibles.toFixed(2)} in host deductibles from payout ${payout.id}`)
       }
 
-      // Create Stripe Transfer (with fee deduction applied)
+      // Create Stripe Transfer (with all deductions applied)
+      const deductionDesc = []
+      if (totalFeesOwed > 0) deductionDesc.push(`$${totalFeesOwed.toFixed(2)} platform fees`)
+      if (totalDeductibles > 0) deductionDesc.push(`$${totalDeductibles.toFixed(2)} deductibles`)
+      const deductionSuffix = deductionDesc.length > 0 ? ` (less ${deductionDesc.join(' + ')})` : ''
+
       const transfer = await stripe.transfers.create({
         amount: Math.round(netPayoutAmount * 100), // Convert to cents
         currency: 'usd',
         destination: payout.host.stripeConnectAccountId,
-        description: `Payout for booking ${payout.booking?.bookingCode || 'N/A'}${deductionAmount > 0 ? ` (less $${deductionAmount.toFixed(2)} platform fees)` : ''}`,
+        description: `Payout for booking ${payout.booking?.bookingCode || 'N/A'}${deductionSuffix}`,
         metadata: {
           payoutId: payout.id,
           bookingId: payout.bookingId || '',
@@ -250,7 +269,8 @@ async function processSinglePayout(payout: any): Promise<boolean> {
           platform: 'itwhip',
           ...(deductionAmount > 0 ? {
             originalAmount: payout.amount.toFixed(2),
-            feeDeduction: deductionAmount.toFixed(2),
+            platformFeeDeduction: totalFeesOwed.toFixed(2),
+            deductibleDeduction: totalDeductibles.toFixed(2),
             netAmount: netPayoutAmount.toFixed(2)
           } : {})
         }
@@ -322,6 +342,55 @@ async function processSinglePayout(payout: any): Promise<boolean> {
               remainingDeduction = 0
             }
           }
+        }
+
+        // Mark host deductibles as deducted
+        if (totalDeductibles > 0) {
+          let remainingDeductible = Math.min(totalDeductibles, payout.amount - Math.min(totalFeesOwed, payout.amount))
+          for (const deductible of pendingDeductibles) {
+            if (remainingDeductible <= 0) break
+            const deductibleAmount = Number(deductible.amount)
+            if (deductibleAmount <= remainingDeductible) {
+              await tx.hostDeductible.update({
+                where: { id: deductible.id },
+                data: {
+                  status: 'DEDUCTED',
+                  deductedFromPayoutId: payout.id,
+                  deductedAt: new Date()
+                }
+              })
+              remainingDeductible -= deductibleAmount
+            } else {
+              // Partial deduction — split the deductible record
+              await tx.hostDeductible.update({
+                where: { id: deductible.id },
+                data: { amount: deductibleAmount - remainingDeductible }
+              })
+              await tx.hostDeductible.create({
+                data: {
+                  hostId: deductible.hostId,
+                  bookingId: deductible.bookingId,
+                  amount: remainingDeductible,
+                  reason: deductible.reason,
+                  description: deductible.description,
+                  status: 'DEDUCTED',
+                  deductedFromPayoutId: payout.id,
+                  deductedAt: new Date()
+                }
+              })
+              remainingDeductible = 0
+            }
+          }
+
+          // Update host deductible balance
+          const remainingPendingDeductibles = await tx.hostDeductible.aggregate({
+            where: { hostId: payout.hostId, status: 'PENDING' },
+            _sum: { amount: true }
+          })
+          await tx.rentalHost.update({
+            where: { id: payout.hostId },
+            data: { deductibleBalance: Number(remainingPendingDeductibles._sum.amount || 0) }
+          })
         }
 
         // Create audit log

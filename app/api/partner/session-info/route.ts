@@ -54,6 +54,8 @@ export async function GET(request: NextRequest) {
               stripeConnectAccountId: true,
               stripeCustomerId: true,
               active: true,
+              hasPassword: true,
+              paymentPreference: true,
               lastLoginAt: true,
               previousLoginAt: true,
               recruitedVia: true,
@@ -219,7 +221,9 @@ export async function GET(request: NextRequest) {
       isActive: host.active,
       isExternalRecruit: !!host.recruitedVia,  // Derived from recruitedVia (source of truth)
       recruitedVia: host.recruitedVia || null,
-      hasCars: (host._count?.cars || 0) > 0
+      hasCars: (host._count?.cars || 0) > 0,
+      hasPassword: host.hasPassword,
+      paymentPreference: host.paymentPreference || null
     } : {
       id: (session?.user as any)?.id,
       name: session?.user?.name || 'User',

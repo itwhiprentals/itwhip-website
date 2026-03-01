@@ -1755,6 +1755,8 @@ model RentalBooking {
   promoDiscountAmount        Float?                @default(0)
   promoSource                String?               // "platform" or "host"
   chargeAmount               Float?
+  platformFeeRate            Decimal?              @db.Decimal(4, 3) // 0.10 or 0.25
+  isWelcomeDiscount          Boolean               @default(false)
   agreementExpiresAt         DateTime?
   agreementSentAt            DateTime?
   agreementSignedAt          DateTime?
@@ -1869,6 +1871,8 @@ model RentalBooking {
   convertedFromProspect      HostProspect?         @relation("prospect_to_booking")
   // Platform fee tracking (for cash bookings)
   platformFeesOwed           PlatformFeeOwed[]
+  // Host deductibles (verification fees, etc.)
+  deductibles                HostDeductible[]
   // Twilio communication logs
   smsLogs                    SmsLog[]
   callLogs                   CallLog[]
@@ -2465,6 +2469,21 @@ model RentalHost {
   agreementTemplateCustom       Json?
 
   // ═══════════════════════════════════════════════════════════════
+  // COMMISSION TIERS & WELCOME DISCOUNT
+  // ═══════════════════════════════════════════════════════════════
+  commissionTier                String                 @default("STANDARD") // STANDARD | GOLD | PLATINUM | DIAMOND
+  welcomeDiscountUsed           Boolean                @default(false)
+  welcomeDiscountBookingId      String?
+  welcomeDiscountAppliedAt      DateTime?
+
+  // ═══════════════════════════════════════════════════════════════
+  // DEDUCTIBLE & OUTSTANDING BALANCES
+  // ═══════════════════════════════════════════════════════════════
+  deductibleBalance             Decimal                @default(0) @db.Decimal(10, 2)
+  outstandingBalance            Decimal                @default(0) @db.Decimal(10, 2)
+  paymentMethodOnFile           Boolean                @default(false)
+
+  // ═══════════════════════════════════════════════════════════════
   // BUSINESS HOST / LANDING PAGE APPROVAL
   // ═══════════════════════════════════════════════════════════════
   isBusinessHost              Boolean   @default(false)
@@ -2521,6 +2540,8 @@ model RentalHost {
   convertedFromProspect      HostProspect?                @relation("prospect_to_host")
   // Platform fee tracking (for cash bookings)
   platformFeesOwed           PlatformFeeOwed[]
+  // Host deductibles ($5 verification, damage claims, etc.)
+  deductibles                HostDeductible[]
   // Smartcar vehicle tracking
   smartcarVehicles           SmartcarVehicle[]
   // Bouncie OBD device tracking
@@ -2573,6 +2594,31 @@ model PlatformFeeOwed {
   @@index([hostId])
   @@index([bookingId])
   @@index([status])
+}
+
+// Track host deductibles ($5 verification fee, damage claims, late fees, etc.)
+// Deducted from host's next payout
+model HostDeductible {
+  id                   String         @id @default(cuid())
+  hostId               String
+  bookingId            String?
+  amount               Decimal        @db.Decimal(10, 2)
+  reason               String         // 'guest_verification' | 'damage_claim' | 'late_fee' | 'platform_fee'
+  description          String?
+  status               String         @default("PENDING") // PENDING | DEDUCTED | WAIVED
+  deductedFromPayoutId String?
+  deductedAt           DateTime?
+  waivedAt             DateTime?
+  waivedBy             String?
+  waivedReason         String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  host                 RentalHost     @relation(fields: [hostId], references: [id])
+  booking              RentalBooking? @relation(fields: [bookingId], references: [id])
+
+  @@index([hostId])
+  @@index([status])
+  @@index([bookingId])
 }
 
 model RentalMessage {
@@ -2835,6 +2881,10 @@ model ReviewerProfile {
   stripeDocFrontFileId     String?
   stripeDocBackFileId      String?
   stripeSelfieFileId       String?
+  // Manual verification by host during handoff (saves $5 Stripe Identity fee)
+  manuallyVerifiedByHost     Boolean                  @default(false)
+  manualVerificationHostId   String?
+  manualVerificationDate     DateTime?
   AccountHold              AccountHold[]
   AppealNotification       AppealNotification[]
   CreditBonusTransaction   CreditBonusTransaction[]

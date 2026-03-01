@@ -168,6 +168,8 @@ export default function PartnerDashboardPage() {
     isExternalRecruit?: boolean
     recruitedVia?: string | null
     hasCars?: boolean
+    hasPassword?: boolean
+    paymentPreference?: string | null
   } | null>(null)
   const [userInfoLoading, setUserInfoLoading] = useState(true)
   const [isExternalRecruit, setIsExternalRecruit] = useState(false)
@@ -239,7 +241,9 @@ export default function PartnerDashboardPage() {
             isActive: data.user.isActive,
             isExternalRecruit: data.user.isExternalRecruit,
             recruitedVia: data.user.recruitedVia,
-            hasCars: data.user.hasCars
+            hasCars: data.user.hasCars,
+            hasPassword: data.user.hasPassword,
+            paymentPreference: data.user.paymentPreference
           })
 
           // Set external recruit flag and default section for external hosts

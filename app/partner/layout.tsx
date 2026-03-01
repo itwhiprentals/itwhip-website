@@ -49,6 +49,7 @@ function pickNamespaces(messages: typeof enMessages) {
     PartnerDiscounts: m.PartnerDiscounts,
     PartnerSettings: m.PartnerSettings,
     HandoffHost: m.HandoffHost,
+    CashHandoff: m.CashHandoff,
     RoleSwitcher: m.RoleSwitcher,
     // Detail pages
     PartnerVehicleDetail: m.PartnerVehicleDetail,

@@ -255,6 +255,10 @@ export async function POST(request: NextRequest) {
         paymentType: null, // Guest selects CARD or CASH after auto-login
         fleetStatus: 'APPROVED',
 
+        // Welcome discount: 10% platform fee on first booking
+        platformFeeRate: 0.10,
+        isWelcomeDiscount: true,
+
         // Mark as request-based booking
         notes: `[Request-Based Booking] Created from ReservationRequest ${fleetRequest.id}. Payment: ${isCash ? 'Cash/Offline' : 'Platform'}`,
         verificationSource: 'ONBOARDING'
@@ -316,11 +320,12 @@ export async function POST(request: NextRequest) {
         canSetPricing: true,
         canEditCalendar: true,
         canMessageGuests: true,
-        // Recruited hosts get 10% commission on first booking (15% discount off standard 25%)
-        currentCommissionRate: 0.10,
-        commissionRate: 0.10,
-        // Default to fleet-size commission tiers (most recruited hosts have their own insurance)
-        revenuePath: 'tiers',
+        // Standard commission tier (25%) — welcome discount is per-booking, not per-host
+        currentCommissionRate: 0.25,
+        commissionRate: 0.25,
+        commissionTier: 'STANDARD',
+        revenuePath: 'COMMISSION',
+        welcomeDiscountUsed: false,
         // Acquisition tracking
         acquisitionChannel: 'prospect_outreach',
         acquisitionSource: prospect.source?.toLowerCase() || null,

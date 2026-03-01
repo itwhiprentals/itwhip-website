@@ -29,6 +29,8 @@ interface UserInfoCardProps {
     isActive?: boolean
     isExternalRecruit?: boolean
     hasCars?: boolean
+    hasPassword?: boolean
+    paymentPreference?: string | null
   } | null
   loading?: boolean
   onPhotoChange?: (file: File) => void
@@ -128,6 +130,10 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
   const isExternalRecruit = user.isExternalRecruit || false
   const hasCars = user.hasCars !== false // Default to true if not specified
 
+  // #15 — Setup is complete when: active + has password + ≥1 car + payment preference set
+  const setupComplete = isActive && user.hasPassword !== false && hasCars && !!user.paymentPreference
+  const needsSetup = isExternalRecruit && !setupComplete
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-5">
       <div className="flex items-start gap-4">
@@ -203,7 +209,8 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-1">
               <IoCalendarOutline className="w-3.5 h-3.5" />
-              {isExternalRecruit ? (
+              {/* #15 — Only show Setup Required if external recruit AND still missing cars */}
+              {needsSetup ? (
                 <span className="text-purple-600 dark:text-purple-400 font-medium">{t('uiSetupRequired')}</span>
               ) : (
                 <span>{t('uiJoined', { date: formatDate(user.memberSince) })}</span>
@@ -218,7 +225,7 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
 
         {/* Status Badge - Top Right Corner */}
         <div className="flex-shrink-0">
-          {isExternalRecruit && !hasCars ? (
+          {needsSetup ? (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
               <IoRocketOutline className="w-3.5 h-3.5" />
               {t('uiOnboarding')}

@@ -56,6 +56,7 @@ export default function BookingDetailsPage() {
   const [hasPassword, setHasPassword] = useState<boolean | null>(null)
   const [previousStatus, setPreviousStatus] = useState<string | null>(null)
   const [endTripRedirectChecked, setEndTripRedirectChecked] = useState(false)
+  const [activeTripBannerDismissed, setActiveTripBannerDismissed] = useState(false)
 
   // Messages state
   const [messages, setMessages] = useState<Message[]>([])
@@ -385,6 +386,14 @@ export default function BookingDetailsPage() {
     return () => { cancelled = true }
   }, [booking?.tripStartedAt, booking?.tripEndedAt, bookingId, router])
 
+  // #7 — Check if active trip banner was dismissed
+  useEffect(() => {
+    if (bookingId && typeof window !== 'undefined') {
+      const dismissed = localStorage.getItem(`dismissed_active_trip_${bookingId}`)
+      if (dismissed === 'true') setActiveTripBannerDismissed(true)
+    }
+  }, [bookingId])
+
   // Load and poll messages only when booking is confirmed (not PENDING/CANCELLED)
   useEffect(() => {
     if (!booking || booking.status === 'PENDING') return
@@ -679,6 +688,32 @@ export default function BookingDetailsPage() {
 
         {/* Secure Account Banner — hidden during active trip */}
         {!isTripActive && <SecureAccountBanner hasPassword={hasPassword} />}
+
+        {/* #7 — Active Trip Banner */}
+        {isTripActive && !activeTripBannerDismissed && (
+          <div className="mb-3 bg-green-600 text-white rounded-lg px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold">{t('activeTripBanner')}</p>
+                <p className="text-xs text-white/80">
+                  {booking.car.year} {booking.car.make} {booking.car.model} — {t('returnBy')} {new Date(booking.endDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setActiveTripBannerDismissed(true)
+                localStorage.setItem(`dismissed_active_trip_${bookingId}`, 'true')
+              }}
+              className="text-white/70 hover:text-white p-1 flex-shrink-0"
+            >
+              <XCircle className="w-5 h-5" />
+            </button>
+          </div>
+        )}
 
         {/* Status Progression — ManualBookingProgress for recruited bookings, standard for others */}
         {booking.isRecruitedBooking ? (
