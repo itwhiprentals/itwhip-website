@@ -2468,6 +2468,10 @@ model RentalHost {
   firstBookingEarnings          Float?
   agreementTemplateCustom       Json?
 
+  // Host preferences (set during onboarding, persisted on RentalHost after conversion)
+  paymentPreference             String? // 'CASH' | 'PLATFORM'
+  agreementPreference           String? // 'ITWHIP' | 'OWN' | 'BOTH'
+
   // ═══════════════════════════════════════════════════════════════
   // COMMISSION TIERS & WELCOME DISCOUNT
   // ═══════════════════════════════════════════════════════════════

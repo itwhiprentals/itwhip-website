@@ -320,6 +320,9 @@ export async function POST(request: NextRequest) {
         canSetPricing: true,
         canEditCalendar: true,
         canMessageGuests: true,
+        // Copy host preferences from prospect (persist after conversion)
+        paymentPreference: prospect.paymentPreference || null,
+        agreementPreference: prospect.agreementPreference || null,
         // Standard commission tier (25%) — welcome discount is per-booking, not per-host
         currentCommissionRate: 0.25,
         commissionRate: 0.25,

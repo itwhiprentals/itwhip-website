@@ -31,6 +31,7 @@ interface UserInfoCardProps {
     hasCars?: boolean
     hasPassword?: boolean
     paymentPreference?: string | null
+    agreementPreference?: string | null
   } | null
   loading?: boolean
   onPhotoChange?: (file: File) => void

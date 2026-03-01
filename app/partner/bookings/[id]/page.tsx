@@ -887,7 +887,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                         </span>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end justify-between self-stretch flex-shrink-0">
+                    <div className="flex flex-col items-end justify-between self-stretch flex-shrink-0 pb-0.5">
                       {!vehicle.isActive ? (
                         <button
                           onClick={handleCarClick}

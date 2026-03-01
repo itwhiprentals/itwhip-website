@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
               active: true,
               hasPassword: true,
               paymentPreference: true,
+              agreementPreference: true,
               lastLoginAt: true,
               previousLoginAt: true,
               recruitedVia: true,
@@ -223,7 +224,8 @@ export async function GET(request: NextRequest) {
       recruitedVia: host.recruitedVia || null,
       hasCars: (host._count?.cars || 0) > 0,
       hasPassword: host.hasPassword,
-      paymentPreference: host.paymentPreference || null
+      paymentPreference: host.paymentPreference || null,
+      agreementPreference: host.agreementPreference || null
     } : {
       id: (session?.user as any)?.id,
       name: session?.user?.name || 'User',
