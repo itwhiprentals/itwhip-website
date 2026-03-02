@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import BottomSheet from '@/app/components/BottomSheet'
 import {
@@ -8,7 +9,6 @@ import {
   IoShieldCheckmarkOutline,
   IoWalletOutline,
   IoLockClosedOutline,
-  IoChatbubblesOutline,
   IoGiftOutline,
   IoListOutline,
   IoPersonOutline,
@@ -165,7 +165,7 @@ export default function HowItWorksSheet({ isOpen, onClose, onGetStarted }: HowIt
       {/* Section 5: AI-Powered Support — Meet Choé */}
       <div className="py-5 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-start gap-3 mb-3">
-          <IoChatbubblesOutline className="w-6 h-6 text-orange-500 flex-shrink-0 mt-0.5" />
+          <Image src="/images/choe-logo.png" alt="Choé" width={24} height={24} className="w-6 h-6 rounded flex-shrink-0 mt-0.5" />
           <h3 className="font-bold text-gray-900 dark:text-white text-base">{t('hiwSection5Title')}</h3>
         </div>
         <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-4">{t('hiwSection5Body')}</p>
@@ -173,9 +173,7 @@ export default function HowItWorksSheet({ isOpen, onClose, onGetStarted }: HowIt
         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700 space-y-3">
           {/* Choé intro message */}
           <div className="flex items-start gap-2">
-            <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-bold text-orange-600">C</span>
-            </div>
+            <Image src="/images/choe-logo.png" alt="Choé" width={32} height={32} className="w-8 h-8 rounded-full flex-shrink-0" />
             <div className="flex-1">
               <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Cho&eacute;</p>
               <div className="bg-white dark:bg-gray-700 rounded-lg px-3 py-2 shadow-sm">
@@ -191,9 +189,7 @@ export default function HowItWorksSheet({ isOpen, onClose, onGetStarted }: HowIt
           </div>
           {/* Choé reply */}
           <div className="flex items-start gap-2">
-            <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-bold text-orange-600">C</span>
-            </div>
+            <Image src="/images/choe-logo.png" alt="Choé" width={32} height={32} className="w-8 h-8 rounded-full flex-shrink-0" />
             <div className="flex-1">
               <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Cho&eacute;</p>
               <div className="bg-white dark:bg-gray-700 rounded-lg px-3 py-2 shadow-sm">
@@ -202,6 +198,13 @@ export default function HowItWorksSheet({ isOpen, onClose, onGetStarted }: HowIt
             </div>
           </div>
         </div>
+        <Link
+          href="https://itwhip.com/choe"
+          target="_blank"
+          className="inline-block text-xs text-orange-600 dark:text-orange-400 font-medium hover:underline mt-3"
+        >
+          {t('hiwChoeLink')}
+        </Link>
       </div>
 
       {/* Section 6: Your Welcome Rate */}
@@ -244,6 +247,12 @@ export default function HowItWorksSheet({ isOpen, onClose, onGetStarted }: HowIt
             </div>
           ))}
         </div>
+        <Link
+          href="/partner/revenue"
+          className="inline-block text-xs text-orange-600 dark:text-orange-400 font-medium hover:underline mt-3"
+        >
+          {t('hiwRevenueLink')}
+        </Link>
       </div>
 
       {/* Section 7: What Happens Next */}

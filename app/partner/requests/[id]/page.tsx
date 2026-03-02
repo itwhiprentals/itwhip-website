@@ -274,7 +274,11 @@ export default function RequestDetailPage() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return t('tbd')
-    return new Date(dateStr).toLocaleDateString(locale, {
+    // Extract YYYY-MM-DD portion to avoid UTC→local timezone shift
+    const datePart = dateStr.substring(0, 10)
+    const [y, m, d] = datePart.split('-').map(Number)
+    const local = new Date(y, m - 1, d)
+    return local.toLocaleDateString(locale, {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
@@ -373,34 +377,16 @@ export default function RequestDetailPage() {
               >
                 <IoArrowBackOutline className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               </Link>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                  <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
-                    {t('requestBookingDetails')}
-                  </h1>
-                  <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-medium whitespace-nowrap text-white uppercase ${
-                    hasDeclined || isExpired ? 'bg-red-600' : 'bg-gray-500 dark:bg-gray-600'
-                  }`}>
-                    {hasDeclined ? t('statusDeclined') : isExpired ? t('statusExpired') : hasPendingCounterOffer ? t('statusCounterPending') : t('statusPending')}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 mt-0.5 sm:mt-1">
-                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-mono">
-                    REQ-{request.id?.slice(0, 8).toUpperCase() || '0000'}
-                  </span>
-                  <button
-                    onClick={() => copyToClipboard(request.id || '')}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                  >
-                    {copied ? (
-                      <IoCheckmarkCircleOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500" />
-                    ) : (
-                      <IoCopyOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
+                {t('requestBookingDetails')}
+              </h1>
             </div>
+
+            <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-medium whitespace-nowrap text-white uppercase flex-shrink-0 ${
+              hasDeclined || isExpired ? 'bg-red-600' : 'bg-gray-500 dark:bg-gray-600'
+            }`}>
+              {hasDeclined ? t('statusDeclined') : isExpired ? t('statusExpired') : hasPendingCounterOffer ? t('statusCounterPending') : t('statusPending')}
+            </span>
 
             {/* Desktop Actions */}
             <div className="hidden sm:flex items-center gap-2">
@@ -431,6 +417,21 @@ export default function RequestDetailPage() {
             </div>
           </div>
 
+          <div className="flex items-center gap-2 mt-1 pl-10 sm:pl-14">
+            <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-mono">
+              REQ-{request.id?.slice(0, 8).toUpperCase() || '0000'}
+            </span>
+            <button
+              onClick={() => copyToClipboard(request.id || '')}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              {copied ? (
+                <IoCheckmarkCircleOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500" />
+              ) : (
+                <IoCopyOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              )}
+            </button>
+          </div>
 
           {/* Counter-offer pending notice */}
           {hasPendingCounterOffer && (
