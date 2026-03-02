@@ -30,6 +30,7 @@ import RentalPeriodCard from './components/RentalPeriodCard'
 import GuestVerificationCard from './components/GuestVerificationCard'
 import RentalAgreementCard from './components/RentalAgreementCard'
 import ProgressStepper from './components/ProgressStepper'
+import HowItWorksSheet from './components/HowItWorksSheet'
 
 interface RequestData {
   host: {
@@ -66,6 +67,7 @@ interface RequestData {
     guestPhone: string | null
     guestRating: number | null
     guestTrips: number | null
+    guestVerified: boolean
     startDate: string | null
     startTime: string | null
     endDate: string | null
@@ -125,6 +127,7 @@ export default function RequestDetailPage() {
   const [showRecruitmentSheet, setShowRecruitmentSheet] = useState(false)
   const [showEditAgreement, setShowEditAgreement] = useState(false)
   const [showEditPayment, setShowEditPayment] = useState(false)
+  const [showHowItWorks, setShowHowItWorks] = useState(false)
 
   // Expandable sections
   const [expandedSections, setExpandedSections] = useState({
@@ -580,7 +583,10 @@ export default function RequestDetailPage() {
         {!isExpired && !hasDeclined && !hasCompleted && (
           <div className="mt-4 sm:mt-6 p-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              <strong>{t('noteLabel')}</strong> {t('noteCarNotPublic')}
+              <strong>{t('noteLabel')}</strong> {t('noteCarNotPublic')}{' '}
+              <button onClick={() => setShowHowItWorks(true)} className="text-orange-600 dark:text-orange-400 font-medium hover:underline">
+                {t('learnHowItWorks')}
+              </button>
             </p>
           </div>
         )}
@@ -628,6 +634,17 @@ export default function RequestDetailPage() {
           onSuccess={handleDeclineSuccess}
         />
       )}
+
+      {/* How It Works Bottomsheet */}
+      <HowItWorksSheet
+        isOpen={showHowItWorks}
+        onClose={() => setShowHowItWorks(false)}
+        onGetStarted={() => {
+          setShowHowItWorks(false)
+          setShowRecruitmentSheet(true)
+        }}
+        guestVerified={request.guestVerified}
+      />
 
       {/* Recruitment Bottomsheet */}
       <RecruitmentBottomSheet
