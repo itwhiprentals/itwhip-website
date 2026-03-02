@@ -2,6 +2,7 @@
 // Pattern matches CompletedCard (NoShow), OnHoldCard, IssuesCard
 
 import React from 'react'
+import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { Booking, Message } from '../../types'
 import { CarPhotoOverlay } from './CarPhotoOverlay'
@@ -51,6 +52,24 @@ export const CancelledCard: React.FC<CancelledCardProps> = ({
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <CarPhotoOverlay car={booking.car} />
         <div className="p-4">
+          {/* Reassignment banner — blue, shown when booking was replaced by a new one */}
+          {booking.cancellationReason === 'REASSIGNED' && booking.replacedByBookingId && (
+            <div className="mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+              <p className="text-sm font-semibold text-blue-900 dark:text-blue-200">
+                {t('bookingReassigned')}
+              </p>
+              <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                {t('bookingReassignedDesc')}
+              </p>
+              <Link
+                href={`/rentals/dashboard/bookings/${booking.replacedByBookingId}`}
+                className="inline-block mt-2 text-xs font-medium text-blue-700 dark:text-blue-300 underline hover:text-blue-900 dark:hover:text-blue-100"
+              >
+                {t('viewNewBooking')}
+              </Link>
+            </div>
+          )}
+
           {/* Cancelled badge */}
           <div className="flex items-center gap-2 mb-4">
             <div className="bg-red-100 dark:bg-red-900/30 rounded-full p-1">

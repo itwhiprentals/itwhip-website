@@ -196,7 +196,7 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
               {getHostTypeLabel(user.hostType)}
             </span>
             {isExternalRecruit && (
-              <span className="px-1.5 py-0.5 text-[10px] font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded">
+              <span className="px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded">
                 {t('uiExternal')}
               </span>
             )}
@@ -212,7 +212,7 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
               <IoCalendarOutline className="w-3.5 h-3.5" />
               {/* #15 — Only show Setup Required if external recruit AND still missing cars */}
               {needsSetup ? (
-                <span className="text-purple-600 dark:text-purple-400 font-medium">{t('uiSetupRequired')}</span>
+                <span className="text-amber-600 dark:text-amber-400 font-medium">{t('uiSetupRequired')}</span>
               ) : (
                 <span>{t('uiJoined', { date: formatDate(user.memberSince) })}</span>
               )}
@@ -227,7 +227,7 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
         {/* Status Badge - Top Right Corner */}
         <div className="flex-shrink-0">
           {needsSetup ? (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
               <IoRocketOutline className="w-3.5 h-3.5" />
               {t('uiOnboarding')}
             </span>

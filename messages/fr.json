@@ -4555,7 +4555,10 @@
     "processing": "Traitement en cours...",
     "authorizePayment": "Autoriser le paiement {amount}",
     "activeTripBanner": "Voyage actif",
-    "returnBy": "Retour avant le"
+    "returnBy": "Retour avant le",
+    "bookingReassigned": "Votre réservation a été mise à jour",
+    "bookingReassignedDesc": "Nous avons trouvé un nouveau véhicule pour votre voyage. Votre réservation originale a été transférée.",
+    "viewNewBooking": "Voir la nouvelle réservation"
   },
   "TripStartCard": {
     "statusUpcoming": "Voyage pas encore commencé",
@@ -8159,7 +8162,12 @@
     "bdConfirmCancelWarning": "Êtes-vous sûr de vouloir annuler cette réservation ? Cette action est irréversible.",
     "bdConfirmNewBooking": "Créer une nouvelle réservation pour ce client ?",
     "bdConfirmAddCharge": "Ajouter des frais supplémentaires à cette réservation ?",
-    "bdConfirmChangeVehicle": "Cela réattribuera la réservation à un véhicule différent."
+    "bdConfirmChangeVehicle": "Cela réattribuera la réservation à un véhicule différent.",
+    "bdReassigned": "Réattribuée",
+    "bdReplacesBooking": "Remplace la réservation {code}",
+    "bdReplacedBy": "Remplacée par {code}",
+    "bdWaitingAcceptance": "En attente de l'acceptation du changement de véhicule par le client",
+    "bdGuestAccepted": "Client a accepté — envoyer le contrat"
   },
   "PartnerCustomers": {
     "customersTitle": "Clients",
@@ -16385,6 +16393,7 @@
     "rentalPeriod": "Période de Location",
     "pickup": "Prise en charge",
     "return": "Retour",
+    "atTime": "à",
     "pickupLocation": "Lieu de Prise en Charge",
     "guestWillComeToYou": "Le client viendra à votre emplacement",
     "durationDays": "{count, plural, one {# jour} other {# jours}}",
@@ -16409,7 +16418,10 @@
     "previewAgreement": "Aperçu du Contrat",
     "guestWillSignBoth": "Le client signera les deux contrats avant la prise en charge (après la publication de votre véhicule)",
     "pricing": "Tarification",
-    "platformFee": "Frais de plateforme (10 %)",
+    "prStandardPlatformFee": "Frais Standard de Plateforme (25 %)",
+    "prWelcomeDiscount": "Remise de Bienvenue Partenaire",
+    "prWelcomeDiscountNote": "Tarif de bienvenue pour les nouveaux partenaires — 10 % au lieu de 25 %. Les futures réservations suivront votre Niveau de Commission.",
+    "platformFee": "Frais de plateforme",
     "yourEarnings": "Vos Revenus",
     "counterOfferApproved": "✓ Contre-offre approuvée",
     "requestDifferentRate": "Demander un Tarif Différent",

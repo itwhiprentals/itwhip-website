@@ -4537,7 +4537,10 @@
     "processing": "Processing...",
     "authorizePayment": "Authorize Payment {amount}",
     "activeTripBanner": "Active Trip",
-    "returnBy": "Return by"
+    "returnBy": "Return by",
+    "bookingReassigned": "Your booking has been updated",
+    "bookingReassignedDesc": "We found a new vehicle for your trip. Your original booking has been transferred.",
+    "viewNewBooking": "View new booking"
   },
   "TripStartCard": {
     "statusUpcoming": "Trip Not Started Yet",
@@ -8220,7 +8223,12 @@
     "bdConfirmCancelWarning": "Are you sure you want to cancel this booking? This action cannot be undone.",
     "bdConfirmNewBooking": "Create a new booking for this guest?",
     "bdConfirmAddCharge": "Add an additional charge to this booking?",
-    "bdConfirmChangeVehicle": "This will reassign the booking to a different vehicle."
+    "bdConfirmChangeVehicle": "This will reassign the booking to a different vehicle.",
+    "bdReassigned": "Reassigned",
+    "bdReplacesBooking": "Replaces booking {code}",
+    "bdReplacedBy": "Replaced by {code}",
+    "bdWaitingAcceptance": "Waiting for guest to accept vehicle change",
+    "bdGuestAccepted": "Guest accepted — send agreement"
   },
   "PartnerCustomers": {
     "customersTitle": "Customers",
@@ -16385,6 +16393,7 @@
     "rentalPeriod": "Rental Period",
     "pickup": "Pickup",
     "return": "Return",
+    "atTime": "at",
     "pickupLocation": "Pickup Location",
     "guestWillComeToYou": "Guest will come to your location",
     "durationDays": "{count, plural, one {# day} other {# days}}",
@@ -16409,7 +16418,10 @@
     "previewAgreement": "Preview Agreement",
     "guestWillSignBoth": "Guest will sign both agreements before pickup (after you list your car)",
     "pricing": "Pricing",
-    "platformFee": "Platform fee (10%)",
+    "prStandardPlatformFee": "Standard Platform Fee (25%)",
+    "prWelcomeDiscount": "Welcome Partner Discount",
+    "prWelcomeDiscountNote": "New partner welcome rate — 10% instead of 25%. Future marketplace bookings follow your Commission Tier.",
+    "platformFee": "Platform fee",
     "yourEarnings": "Your Earnings",
     "counterOfferApproved": "✓ Counter-offer approved",
     "requestDifferentRate": "Request Different Rate",

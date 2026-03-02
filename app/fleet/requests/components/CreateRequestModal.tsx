@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { IoCloseCircleOutline } from 'react-icons/io5'
 
 interface CreateRequestModalProps {
@@ -27,7 +27,9 @@ export default function CreateRequestModal({
     vehicleModel: '',
     quantity: 1,
     startDate: '',
+    startTime: '10:00',
     endDate: '',
+    endTime: '10:00',
     durationDays: '',
     pickupCity: 'Phoenix',
     pickupState: 'AZ',
@@ -38,6 +40,14 @@ export default function CreateRequestModal({
     guestNotes: '',
     adminNotes: ''
   })
+
+  // Guest selection state
+  const [guestSelectionType, setGuestSelectionType] = useState<'NEW' | 'EXISTING'>('NEW')
+  const [guestSearchQuery, setGuestSearchQuery] = useState('')
+  const [guestSearchResults, setGuestSearchResults] = useState<any[]>([])
+  const [loadingGuests, setLoadingGuests] = useState(false)
+  const [selectedExistingGuest, setSelectedExistingGuest] = useState<any | null>(null)
+  const guestSearchTimer = useRef<NodeJS.Timeout | null>(null)
 
   // Auto-calculate duration when dates change
   useEffect(() => {
@@ -64,6 +74,53 @@ export default function CreateRequestModal({
     }
   }, [])
 
+  // Guest search functions
+  const searchGuests = async (query: string) => {
+    if (query.length < 2) { setGuestSearchResults([]); return }
+    setLoadingGuests(true)
+    try {
+      const res = await fetch(`/api/fleet/guests/available-for-reassignment?search=${encodeURIComponent(query)}`)
+      const data = await res.json()
+      if (data.success) {
+        setGuestSearchResults(data.guests || [])
+      }
+    } catch (err) {
+      console.error('Failed to search guests:', err)
+    } finally {
+      setLoadingGuests(false)
+    }
+  }
+
+  const handleGuestSearchChange = (query: string) => {
+    setGuestSearchQuery(query)
+    if (guestSearchTimer.current) clearTimeout(guestSearchTimer.current)
+    guestSearchTimer.current = setTimeout(() => searchGuests(query), 300)
+  }
+
+  // When an existing guest is selected, auto-populate form fields
+  const handleSelectGuest = (guest: any) => {
+    setSelectedExistingGuest(guest)
+    setFormData(prev => ({
+      ...prev,
+      guestName: guest.guestName || '',
+      guestEmail: guest.guestEmail || '',
+      guestPhone: guest.guestPhone || '',
+    }))
+  }
+
+  // When clearing guest selection, reset form fields
+  const handleClearGuest = () => {
+    setSelectedExistingGuest(null)
+    setGuestSearchQuery('')
+    setGuestSearchResults([])
+    setFormData(prev => ({
+      ...prev,
+      guestName: '',
+      guestEmail: '',
+      guestPhone: '',
+    }))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -78,7 +135,12 @@ export default function CreateRequestModal({
           durationDays: formData.durationDays ? Number(formData.durationDays) : undefined,
           offeredRate: formData.offeredRate ? Number(formData.offeredRate) : undefined,
           startDate: formData.startDate || undefined,
-          endDate: formData.endDate || undefined
+          startTime: formData.startTime,
+          endDate: formData.endDate || undefined,
+          endTime: formData.endTime,
+          guestSelectionType,
+          existingGuestId: selectedExistingGuest?.guestId || undefined,
+          existingBookingId: selectedExistingGuest?.activeBooking?.bookingId || undefined,
         })
       })
 
@@ -126,7 +188,160 @@ export default function CreateRequestModal({
 
           {/* Form - Scrollable */}
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* Guest Info */}
+
+            {/* Guest Type Toggle */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <label className="block text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
+                Guest Type
+              </label>
+              <div className="flex rounded-lg overflow-hidden border border-blue-300 dark:border-blue-700">
+                <button
+                  type="button"
+                  onClick={() => { setGuestSelectionType('NEW'); handleClearGuest() }}
+                  className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                    guestSelectionType === 'NEW'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  New Guest
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGuestSelectionType('EXISTING')}
+                  className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                    guestSelectionType === 'EXISTING'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  Existing Guest
+                </button>
+              </div>
+
+              {/* Existing Guest Search */}
+              {guestSelectionType === 'EXISTING' && (
+                <div className="mt-3 space-y-3">
+                  {/* Search input */}
+                  <input
+                    type="text"
+                    value={guestSearchQuery}
+                    onChange={(e) => handleGuestSearchChange(e.target.value)}
+                    placeholder="Search by name or email..."
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  />
+
+                  {/* Search results list */}
+                  {loadingGuests && (
+                    <div className="text-sm text-gray-500 py-2">Searching...</div>
+                  )}
+                  {!loadingGuests && guestSearchQuery.length >= 2 && guestSearchResults.length === 0 && (
+                    <div className="text-sm text-gray-500 py-2">No guests found</div>
+                  )}
+                  {!loadingGuests && guestSearchResults.length > 0 && !selectedExistingGuest && (
+                    <div className="max-h-48 overflow-y-auto space-y-1 border border-gray-200 dark:border-gray-700 rounded-lg">
+                      {guestSearchResults.map((g: any) => (
+                        <button
+                          key={g.guestId}
+                          type="button"
+                          onClick={() => handleSelectGuest(g)}
+                          className="w-full text-left px-3 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">{g.guestName}</span>
+                            {g.verified && (
+                              <span className="px-1 py-0.5 text-[9px] font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">VERIFIED</span>
+                            )}
+                            <span className="text-[10px] text-gray-400 ml-auto">{g.tripCount} trip{g.tripCount !== 1 ? 's' : ''}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{g.guestEmail}</p>
+                          {g.activeBooking ? (
+                            <div className="flex items-center gap-2 mt-0.5 text-[11px]">
+                              <span className="text-orange-600 dark:text-orange-400">{g.activeBooking.status}</span>
+                              <span className="text-gray-400">&middot;</span>
+                              <span className="text-gray-500">{g.activeBooking.car}</span>
+                              <span className="text-gray-400">&middot;</span>
+                              <span className="text-gray-500">{g.activeBooking.daysSinceCreated}d ago</span>
+                            </div>
+                          ) : (
+                            <p className="text-[11px] text-gray-400 mt-0.5">No active booking</p>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Selected guest info card */}
+                  {selectedExistingGuest && (
+                    <div className="bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-700 rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                            {selectedExistingGuest.guestName}
+                          </span>
+                          <span className="px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
+                            EXISTING GUEST
+                          </span>
+                          {selectedExistingGuest.verified && (
+                            <span className="px-1.5 py-0.5 text-[10px] font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">
+                              VERIFIED
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleClearGuest}
+                          className="text-xs text-gray-400 hover:text-red-500"
+                        >
+                          Change
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {selectedExistingGuest.guestEmail}{selectedExistingGuest.guestPhone ? ` · ${selectedExistingGuest.guestPhone}` : ''}
+                      </p>
+                      <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+                        <span>{selectedExistingGuest.tripCount} trip{selectedExistingGuest.tripCount !== 1 ? 's' : ''}</span>
+                        <span>Member since {new Date(selectedExistingGuest.memberSince).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+                      </div>
+                      {selectedExistingGuest.activeBooking && (
+                        <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-1">
+                          <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Active Booking</p>
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="font-medium text-gray-900 dark:text-white">{selectedExistingGuest.activeBooking.bookingCode}</span>
+                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium uppercase ${
+                              selectedExistingGuest.activeBooking.status === 'CONFIRMED' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                              selectedExistingGuest.activeBooking.status === 'PENDING' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                              'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                            }`}>{selectedExistingGuest.activeBooking.status}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                            <span>{selectedExistingGuest.activeBooking.car}</span>
+                            <span>&middot;</span>
+                            <span>Host: {selectedExistingGuest.activeBooking.host}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                            <span>{selectedExistingGuest.activeBooking.daysSinceCreated} days since created</span>
+                            {selectedExistingGuest.activeBooking.alreadyReplaced && (
+                              <span className="text-red-500 font-medium">Already replaced</span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-orange-600 dark:text-orange-400 font-medium mt-1">
+                            This will replace booking {selectedExistingGuest.activeBooking.bookingCode}
+                          </p>
+                        </div>
+                      )}
+                      {!selectedExistingGuest.activeBooking && (
+                        <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-1">
+                          <p className="text-xs text-gray-400 italic">No active booking — fresh booking will be created</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Guest Info - Manual fields for NEW, read-only for EXISTING */}
             <fieldset>
               <legend className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
                 Guest Info
@@ -141,7 +356,12 @@ export default function CreateRequestModal({
                     required
                     value={formData.guestName}
                     onChange={(e) => setFormData({ ...formData, guestName: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-base"
+                    readOnly={guestSelectionType === 'EXISTING' && !!selectedExistingGuest}
+                    className={`w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-base ${
+                      guestSelectionType === 'EXISTING' && selectedExistingGuest
+                        ? 'bg-gray-50 dark:bg-gray-700/50 cursor-not-allowed'
+                        : 'bg-white dark:bg-gray-700'
+                    }`}
                   />
                 </div>
                 <div>
@@ -152,7 +372,12 @@ export default function CreateRequestModal({
                     type="email"
                     value={formData.guestEmail}
                     onChange={(e) => setFormData({ ...formData, guestEmail: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-base"
+                    readOnly={guestSelectionType === 'EXISTING' && !!selectedExistingGuest}
+                    className={`w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-base ${
+                      guestSelectionType === 'EXISTING' && selectedExistingGuest
+                        ? 'bg-gray-50 dark:bg-gray-700/50 cursor-not-allowed'
+                        : 'bg-white dark:bg-gray-700'
+                    }`}
                   />
                 </div>
                 <div>
@@ -163,7 +388,12 @@ export default function CreateRequestModal({
                     type="tel"
                     value={formData.guestPhone}
                     onChange={(e) => setFormData({ ...formData, guestPhone: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-base"
+                    readOnly={guestSelectionType === 'EXISTING' && !!selectedExistingGuest}
+                    className={`w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-base ${
+                      guestSelectionType === 'EXISTING' && selectedExistingGuest
+                        ? 'bg-gray-50 dark:bg-gray-700/50 cursor-not-allowed'
+                        : 'bg-white dark:bg-gray-700'
+                    }`}
                   />
                 </div>
                 <div>
@@ -256,6 +486,21 @@ export default function CreateRequestModal({
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                     className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-base"
                   />
+                  <select
+                    value={formData.startTime}
+                    onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                    className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                  >
+                    {Array.from({ length: 33 }, (_, i) => {
+                      const h = Math.floor(i / 2) + 6
+                      const m = (i % 2) * 30
+                      const val = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
+                      const hour12 = h % 12 || 12
+                      const period = h >= 12 ? 'PM' : 'AM'
+                      const label = `${hour12}:${m.toString().padStart(2, '0')} ${period}`
+                      return <option key={val} value={val}>{label}</option>
+                    })}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -268,6 +513,21 @@ export default function CreateRequestModal({
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                     className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-base"
                   />
+                  <select
+                    value={formData.endTime}
+                    onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                    className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                  >
+                    {Array.from({ length: 33 }, (_, i) => {
+                      const h = Math.floor(i / 2) + 6
+                      const m = (i % 2) * 30
+                      const val = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
+                      const hour12 = h % 12 || 12
+                      const period = h >= 12 ? 'PM' : 'AM'
+                      const label = `${hour12}:${m.toString().padStart(2, '0')} ${period}`
+                      return <option key={val} value={val}>{label}</option>
+                    })}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

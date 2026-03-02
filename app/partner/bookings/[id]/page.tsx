@@ -102,6 +102,11 @@ interface BookingDetails {
   aiVerificationScore: number | null
   verificationMethod: string | null
   verificationDate: string | null
+  // Reassignment / booking bridge fields
+  originalBookingId: string | null
+  replacedByBookingId: string | null
+  vehicleAccepted: boolean
+  vehicleAcceptedAt: string | null
   // Host final review fields
   hostFinalReviewStatus: string | null
   hostFinalReviewDeadline: string | null

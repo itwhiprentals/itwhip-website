@@ -165,6 +165,11 @@ export async function GET(request: NextRequest) {
         b."agreementSignedAt",
         b."agreementSignedPdfUrl",
         b."bookingType",
+        b."replacedByBookingId",
+        b."originalBookingId",
+        b."vehicleAccepted",
+        b."vehicleChangeToken",
+        b."vehicleChangeExpiresAt",
 
         (
           SELECT json_build_object(

@@ -4555,7 +4555,10 @@
     "processing": "Procesando...",
     "authorizePayment": "Autorizar pago {amount}",
     "activeTripBanner": "Viaje Activo",
-    "returnBy": "Devolver antes del"
+    "returnBy": "Devolver antes del",
+    "bookingReassigned": "Tu reserva ha sido actualizada",
+    "bookingReassignedDesc": "Encontramos un nuevo vehículo para tu viaje. Tu reserva original ha sido transferida.",
+    "viewNewBooking": "Ver nueva reserva"
   },
   "TripStartCard": {
     "statusUpcoming": "Viaje aún no iniciado",
@@ -8159,7 +8162,12 @@
     "bdConfirmCancelWarning": "¿Estás seguro de que quieres cancelar esta reserva? Esta acción no se puede deshacer.",
     "bdConfirmNewBooking": "¿Crear una nueva reserva para este huésped?",
     "bdConfirmAddCharge": "¿Agregar un cargo adicional a esta reserva?",
-    "bdConfirmChangeVehicle": "Esto reasignará la reserva a un vehículo diferente."
+    "bdConfirmChangeVehicle": "Esto reasignará la reserva a un vehículo diferente.",
+    "bdReassigned": "Reasignada",
+    "bdReplacesBooking": "Reemplaza reserva {code}",
+    "bdReplacedBy": "Reemplazada por {code}",
+    "bdWaitingAcceptance": "Esperando que el huésped acepte el cambio de vehículo",
+    "bdGuestAccepted": "Huésped aceptó — enviar acuerdo"
   },
   "PartnerCustomers": {
     "customersTitle": "Clientes",
@@ -16385,6 +16393,7 @@
     "rentalPeriod": "Período de Alquiler",
     "pickup": "Recogida",
     "return": "Devolución",
+    "atTime": "a las",
     "pickupLocation": "Lugar de Recogida",
     "guestWillComeToYou": "El huésped irá a tu ubicación",
     "durationDays": "{count, plural, one {# día} other {# días}}",
@@ -16409,7 +16418,10 @@
     "previewAgreement": "Vista Previa del Contrato",
     "guestWillSignBoth": "El huésped firmará ambos contratos antes de la recogida (después de que publiques tu auto)",
     "pricing": "Precios",
-    "platformFee": "Tarifa de plataforma (10%)",
+    "prStandardPlatformFee": "Tarifa Estándar de Plataforma (25%)",
+    "prWelcomeDiscount": "Descuento de Bienvenida para Socio",
+    "prWelcomeDiscountNote": "Tarifa de bienvenida para nuevos socios — 10% en lugar de 25%. Las futuras reservas del marketplace seguirán tu Nivel de Comisión.",
+    "platformFee": "Tarifa de plataforma",
     "yourEarnings": "Tus Ganancias",
     "counterOfferApproved": "✓ Contraoferta aprobada",
     "requestDifferentRate": "Solicitar Tarifa Diferente",

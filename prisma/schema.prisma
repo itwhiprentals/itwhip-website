@@ -1792,6 +1792,11 @@ model RentalBooking {
   vehicleChangeExpiresAt     DateTime?             // Token expiry (48 hours)
   vehicleChangeReason        String?               // Why the vehicle was changed (host rejected, etc.)
 
+  // ===== BOOKING BRIDGE (existing guest reassignment) =====
+  replacedByBookingId        String?               // Reverse link: old booking → new booking that replaced it
+  vehicleAccepted            Boolean               @default(false) // Guest accepted vehicle swap
+  vehicleAcceptedAt          DateTime?             // When guest accepted the vehicle swap
+
   // ===== AI VERIFICATION FIELDS =====
   aiLicenseVerified          Boolean               @default(false)
   aiLicenseConfidence        Float?                // 0-100 confidence score
@@ -1903,6 +1908,7 @@ model RentalBooking {
   @@index([vehicleChangeToken])
   @@index([autoLoginToken])
   @@index([fleetReviewedBy])
+  @@index([replacedByBookingId])
 
   // Relations to new booking models
   bookingDocuments           BookingDocument[]
@@ -4125,6 +4131,8 @@ model ReservationRequest {
   // Dates & location
   startDate      DateTime?
   endDate        DateTime?
+  startTime      String?  @default("10:00")  // "HH:mm" 24h format
+  endTime        String?  @default("10:00")
   durationDays   Int?
   pickupCity     String?
   pickupState    String?
@@ -4154,6 +4162,11 @@ model ReservationRequest {
   source        String? // "contact_form", "email", "phone", "facebook"
   sourceDetails String? // FB listing URL, email subject, etc.
 
+  // Existing guest linking (set when admin selects an existing platform guest)
+  existingGuestId    String?              // User.id of existing guest
+  existingBookingId  String?              // RentalBooking.id of booking to replace (optional)
+  guestSelectionType String @default("NEW") // "NEW" | "EXISTING"
+
   // Fulfilled booking reference
   fulfilledBookingId String?        @unique
   fulfilledBooking   RentalBooking? @relation(fields: [fulfilledBookingId], references: [id])
@@ -4178,6 +4191,8 @@ model ReservationRequest {
   @@index([startDate])
   @@index([createdAt])
   @@index([expiresAt])
+  @@index([existingGuestId])
+  @@index([existingBookingId])
   @@map("reservation_requests")
 }
 
@@ -4259,6 +4274,11 @@ model HostProspect {
   hostAgreementSections      Json?   // AI-extracted sections [{id, title, content, icon}]
   itwhipAgreementAccepted    Boolean @default(false)
 
+  // ===== EXISTING GUEST BRIDGE =====
+  existingGuestId            String?               // User.id of existing guest being reassigned
+  existingBookingId          String?               // RentalBooking.id of booking being replaced
+  guestSelectionType         String  @default("NEW") // "NEW" | "EXISTING"
+
   // Test E-Sign (for host to preview the signing experience)
   testAgreementToken     String?   @unique // Token for test signing
   testAgreementExpiresAt DateTime? // 1 day expiry
@@ -4298,6 +4318,8 @@ model HostProspect {
   @@index([source])
   @@index([counterOfferStatus])
   @@index([onboardingCompletedAt])
+  @@index([existingGuestId])
+  @@index([existingBookingId])
   @@map("host_prospects")
 }
 

@@ -45,6 +45,10 @@ export interface HostProspect {
   // Expired link access tracking
   expiredAccessCount?: number
   lastExpiredAccessAt?: string
+  // Existing guest bridge
+  guestSelectionType?: string
+  existingGuestId?: string | null
+  existingBookingId?: string | null
   // Email verification - is this email linked to a verified account?
   isProspectEmailKnown?: boolean
   prospectLinkedTo?: string | null  // "John (Host - APPROVED)" or null if NEW
@@ -169,6 +173,12 @@ export default function ProspectCard({
             ) : (
               <span className="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600">
                 Not contacted
+              </span>
+            )}
+            {prospect.guestSelectionType === 'EXISTING' && (
+              <span className="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-700">
+                <IoSwapHorizontalOutline className="w-2.5 h-2.5 inline mr-0.5" />
+                Existing Guest
               </span>
             )}
           </div>

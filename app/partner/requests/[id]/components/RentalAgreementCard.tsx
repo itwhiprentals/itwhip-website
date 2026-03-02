@@ -1,43 +1,90 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import {
   IoDocumentTextOutline,
   IoChevronUpOutline,
-  IoChevronDownOutline,
-  IoSendOutline,
-  IoEyeOutline
+  IoChevronDownOutline
 } from 'react-icons/io5'
-import AgreementUpload from './AgreementUpload'
+import AgreementPreferenceStep from './AgreementPreferenceStep'
 
 interface RentalAgreementCardProps {
   agreementUploaded: boolean
+  agreementPreference: string | null
   expanded: boolean
   onToggle: () => void
-  onShowTestPdf: () => void
-  onShowPreview: () => void
   onRefresh: () => void
   existingAgreement?: {
     url?: string
     fileName?: string
     validationScore?: number
     validationSummary?: string
+    sections?: unknown[] | null
   }
+  requestData: {
+    id: string
+    guestName: string | null
+    offeredRate: number | null
+    startDate: string | null
+    endDate: string | null
+    durationDays: number | null
+    pickupCity: string | null
+    pickupState: string | null
+    totalAmount: number | null
+    hostEarnings: number | null
+  }
+  hostName?: string
+  hostEmail?: string
 }
 
 export default function RentalAgreementCard({
   agreementUploaded,
+  agreementPreference,
   expanded,
   onToggle,
-  onShowTestPdf,
-  onShowPreview,
   onRefresh,
   existingAgreement,
+  requestData,
+  hostName,
+  hostEmail,
 }: RentalAgreementCardProps) {
   const t = useTranslations('PartnerRequestDetail')
 
+  const [agreementPref, setAgreementPref] = useState<'ITWHIP' | 'OWN' | 'BOTH'>(
+    (agreementPreference as 'ITWHIP' | 'OWN' | 'BOTH') || 'ITWHIP'
+  )
+  const [localAgreement, setLocalAgreement] = useState(existingAgreement)
+
+  // Fetch existing agreement data
+  useEffect(() => {
+    const fetchAgreement = async () => {
+      try {
+        const res = await fetch('/api/partner/onboarding/agreement')
+        if (res.ok) {
+          const data = await res.json()
+          if (data.agreement?.url) {
+            setLocalAgreement({
+              url: data.agreement.url,
+              fileName: data.agreement.fileName,
+              validationScore: data.agreement.validationScore,
+              validationSummary: data.agreement.validationSummary,
+              sections: data.agreement.sections || null,
+            })
+          }
+        }
+      } catch {
+        // Non-critical
+      }
+    }
+    if (!existingAgreement?.url) {
+      fetchAgreement()
+    }
+  }, [existingAgreement])
+
   return (
     <div id="agreement-section" className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      {/* Collapsible Header — matches BookingAgreementSection */}
       <button
         onClick={onToggle}
         className="w-full p-4 flex items-center justify-between text-left"
@@ -45,77 +92,40 @@ export default function RentalAgreementCard({
         <div className="flex items-center gap-2">
           <IoDocumentTextOutline className="w-5 h-5 text-gray-400" />
           <h3 className="font-semibold text-gray-900 dark:text-white">{t('rentalAgreement')}</h3>
-          <span className={`px-2 py-0.5 text-xs rounded-full ${
-            agreementUploaded
-              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-              : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-          }`}>
-            {agreementUploaded ? t('uploaded') : t('notUploaded')}
-          </span>
         </div>
-        {expanded ? (
-          <IoChevronUpOutline className="w-5 h-5 text-gray-400" />
-        ) : (
-          <IoChevronDownOutline className="w-5 h-5 text-gray-400" />
-        )}
+        <div className="flex items-center gap-2">
+          {agreementPref === 'OWN' && (
+            <span className="px-2 py-0.5 text-xs rounded font-medium uppercase bg-purple-600 text-white">OWN</span>
+          )}
+          {agreementPref === 'BOTH' && (
+            <span className="px-2 py-0.5 text-xs rounded font-medium uppercase bg-purple-600 text-white">ITWHIP + OWN</span>
+          )}
+          <span className={`px-2 py-0.5 text-xs rounded font-medium text-white uppercase ${
+            agreementUploaded || agreementPref === 'ITWHIP' ? 'bg-green-600' : 'bg-red-600'
+          }`}>
+            {agreementUploaded || agreementPref === 'ITWHIP' ? t('uploaded') : t('notUploaded')}
+          </span>
+          {expanded ? (
+            <IoChevronUpOutline className="w-5 h-5 text-gray-400" />
+          ) : (
+            <IoChevronDownOutline className="w-5 h-5 text-gray-400" />
+          )}
+        </div>
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-4">
-          {/* Host's Agreement - with AI validation */}
-          <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium text-gray-900 dark:text-white">{t('yourRentalAgreement')}</h4>
-              <span className="text-xs text-gray-500 dark:text-gray-400">{t('optional')}</span>
-            </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-              {t('uploadAgreementDesc')}
-            </p>
-
-            <AgreementUpload
-              onUploadSuccess={onRefresh}
-              existingAgreement={existingAgreement}
-            />
-
-            {agreementUploaded && (
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-                <button
-                  onClick={onShowTestPdf}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 text-sm font-medium"
-                >
-                  <IoSendOutline className="w-4 h-4" />
-                  {t('testESignExperience')}
-                </button>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                  {t('previewGuestSigning')}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* ItWhip Agreement */}
-          <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium text-gray-900 dark:text-white">{t('itwhipStandardAgreement')}</h4>
-              <span className="text-xs text-purple-600 dark:text-purple-400">{t('required')}</span>
-            </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-              {t('standardTermsDesc')}
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={onShowPreview}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-sm"
-              >
-                <IoEyeOutline className="w-4 h-4" />
-                {t('previewAgreement')}
-              </button>
-            </div>
-          </div>
-
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            {t('guestWillSignBoth')}
-          </p>
+        <div className="px-4 pb-4">
+          {/* Agreement Preference — same as ManualBookingView */}
+          <AgreementPreferenceStep
+            hideButton
+            initialPreference={agreementPref}
+            onSelectionChange={(pref) => setAgreementPref(pref)}
+            onComplete={() => {}}
+            existingAgreement={localAgreement}
+            requestData={requestData}
+            hostName={hostName}
+            hostEmail={hostEmail}
+          />
         </div>
       )}
     </div>

@@ -21,6 +21,8 @@ interface WhatsNeededProps {
     signerName?: string | null
     agreementSignedAt?: string | null
     agreementSignedPdfUrl?: string | null
+    originalBookingId?: string | null
+    vehicleAccepted?: boolean
   }
   guestInsurance: any
   partner: { stripeConnected: boolean } | null
@@ -143,16 +145,29 @@ export function WhatsNeeded({
               </div>
             ) : (
               <>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  {booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' ? t('bdAwaitingSignature') : t('bdNotSentYet')}
-                </p>
-                <button
-                  onClick={sendAgreement}
-                  className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-gray-600 hover:bg-gray-700 text-white transition-colors"
-                >
-                  <IoSendOutline className="w-3.5 h-3.5" />
-                  {booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' ? t('bdResend') : t('bdSendForSignature')}
-                </button>
+                {booking.originalBookingId && booking.paymentType === 'CARD' && !booking.vehicleAccepted ? (
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    {t('bdWaitingAcceptance')}
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      {booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' ? t('bdAwaitingSignature') : t('bdNotSentYet')}
+                    </p>
+                    <button
+                      onClick={sendAgreement}
+                      className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-gray-600 hover:bg-gray-700 text-white transition-colors"
+                    >
+                      <IoSendOutline className="w-3.5 h-3.5" />
+                      {booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' ? t('bdResend') : t('bdSendForSignature')}
+                    </button>
+                  </>
+                )}
+                {booking.originalBookingId && booking.paymentType === 'CARD' && booking.vehicleAccepted && (
+                  <p className="mt-1.5 text-[11px] text-green-600 dark:text-green-400">
+                    {t('bdGuestAccepted')}
+                  </p>
+                )}
               </>
             )}
           </div>

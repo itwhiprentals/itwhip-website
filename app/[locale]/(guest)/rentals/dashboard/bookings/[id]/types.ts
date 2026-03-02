@@ -110,6 +110,12 @@ export interface Booking {
     agreementSignedAt?: string | Date | null
     agreementSignedPdfUrl?: string | null
     bookingType?: string
+    // Reassignment / booking bridge fields
+    replacedByBookingId?: string | null
+    originalBookingId?: string | null
+    vehicleAccepted?: boolean
+    vehicleChangeToken?: string | null
+    vehicleChangeExpiresAt?: string | Date | null
   }
   
   export interface Message {

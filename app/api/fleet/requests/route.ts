@@ -131,7 +131,9 @@ export async function POST(request: NextRequest) {
       quantity,
       // Dates & location
       startDate,
+      startTime,
       endDate,
+      endTime,
       durationDays,
       pickupCity,
       pickupState,
@@ -151,7 +153,11 @@ export async function POST(request: NextRequest) {
       source,
       sourceDetails,
       expiresAt,
-      createdBy
+      createdBy,
+      // Existing guest linking
+      guestSelectionType,
+      existingGuestId,
+      existingBookingId,
     } = body
 
     // Validate required fields
@@ -160,6 +166,19 @@ export async function POST(request: NextRequest) {
         { error: 'Guest name is required' },
         { status: 400 }
       )
+    }
+
+    // Check uniqueness of existingBookingId
+    if (existingBookingId) {
+      const existingClaim = await prisma.reservationRequest.findFirst({
+        where: { existingBookingId, status: { not: 'CANCELLED' } }
+      })
+      if (existingClaim) {
+        return NextResponse.json(
+          { error: 'This booking is already linked to another request' },
+          { status: 409 }
+        )
+      }
     }
 
     // Generate request code
@@ -188,7 +207,9 @@ export async function POST(request: NextRequest) {
         vehicleModel,
         quantity: quantity || 1,
         startDate: startDate ? new Date(startDate) : null,
+        startTime: startTime || '10:00',
         endDate: endDate ? new Date(endDate) : null,
+        endTime: endTime || '10:00',
         durationDays: calculatedDuration,
         pickupCity,
         pickupState,
@@ -206,7 +227,10 @@ export async function POST(request: NextRequest) {
         source,
         sourceDetails,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
-        createdBy
+        createdBy,
+        guestSelectionType: guestSelectionType || 'NEW',
+        existingGuestId: existingGuestId || null,
+        existingBookingId: existingBookingId || null,
       }
     })
 

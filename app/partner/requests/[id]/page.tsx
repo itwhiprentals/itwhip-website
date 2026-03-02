@@ -30,8 +30,6 @@ import RentalPeriodCard from './components/RentalPeriodCard'
 import GuestVerificationCard from './components/GuestVerificationCard'
 import RentalAgreementCard from './components/RentalAgreementCard'
 import ProgressStepper from './components/ProgressStepper'
-import TestPdfModal from './components/TestPdfModal'
-import AgreementPreviewModal from './components/AgreementPreviewModal'
 
 interface RequestData {
   host: {
@@ -69,7 +67,9 @@ interface RequestData {
     guestRating: number | null
     guestTrips: number | null
     startDate: string | null
+    startTime: string | null
     endDate: string | null
+    endTime: string | null
     durationDays: number | null
     pickupCity: string | null
     pickupState: string | null
@@ -121,8 +121,6 @@ export default function RequestDetailPage() {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [startingOnboarding, setStartingOnboarding] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [showTestPdfModal, setShowTestPdfModal] = useState(false)
-  const [showAgreementPreview, setShowAgreementPreview] = useState(false)
   const [connectingPayout, setConnectingPayout] = useState(false)
   const [showRecruitmentSheet, setShowRecruitmentSheet] = useState(false)
   const [showEditAgreement, setShowEditAgreement] = useState(false)
@@ -378,7 +376,9 @@ export default function RequestDetailPage() {
                   <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
                     {t('requestBookingDetails')}
                   </h1>
-                  <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                  <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-medium whitespace-nowrap text-white uppercase ${
+                    hasDeclined || isExpired ? 'bg-red-600' : 'bg-gray-500 dark:bg-gray-600'
+                  }`}>
                     {hasDeclined ? t('statusDeclined') : isExpired ? t('statusExpired') : hasPendingCounterOffer ? t('statusCounterPending') : t('statusPending')}
                   </span>
                 </div>
@@ -510,7 +510,9 @@ export default function RequestDetailPage() {
 
             <RentalPeriodCard
               startDate={request.startDate}
+              startTime={request.startTime}
               endDate={request.endDate}
+              endTime={request.endTime}
               pickupCity={request.pickupCity}
               pickupState={request.pickupState}
               durationDays={durationDays}
@@ -536,12 +538,25 @@ export default function RequestDetailPage() {
 
             <RentalAgreementCard
               agreementUploaded={onboardingProgress.agreementUploaded}
+              agreementPreference={onboardingProgress.agreementPreference}
               expanded={expandedSections.agreement}
               onToggle={() => toggleSection('agreement')}
-              onShowTestPdf={() => setShowTestPdfModal(true)}
-              onShowPreview={() => setShowAgreementPreview(true)}
               onRefresh={fetchRequest}
               existingAgreement={data?.agreement}
+              requestData={{
+                id: request.id,
+                guestName: request.guestName,
+                offeredRate: request.offeredRate,
+                startDate: request.startDate,
+                endDate: request.endDate,
+                durationDays: request.durationDays,
+                pickupCity: request.pickupCity,
+                pickupState: request.pickupState,
+                totalAmount: request.totalAmount,
+                hostEarnings: request.hostEarnings,
+              }}
+              hostName={host.name}
+              hostEmail={host.email}
             />
           </div>
 
@@ -614,12 +629,6 @@ export default function RequestDetailPage() {
         />
       )}
 
-      <TestPdfModal
-        isOpen={showTestPdfModal}
-        onClose={() => setShowTestPdfModal(false)}
-        hostEmail={host.email}
-      />
-
       {/* Recruitment Bottomsheet */}
       <RecruitmentBottomSheet
         isOpen={showRecruitmentSheet}
@@ -691,21 +700,6 @@ export default function RequestDetailPage() {
         />
       </BottomSheet>
 
-      <AgreementPreviewModal
-        isOpen={showAgreementPreview}
-        onClose={() => setShowAgreementPreview(false)}
-        prospectId={prospect.id}
-        guestName={request.guestName}
-        hostName={host.name}
-        vehicleInfo={request.vehicleInfo}
-        startDate={request.startDate}
-        endDate={request.endDate}
-        pickupCity={request.pickupCity}
-        pickupState={request.pickupState}
-        durationDays={request.durationDays}
-        offeredRate={request.offeredRate}
-        totalAmount={request.totalAmount}
-      />
     </div>
   )
 }

@@ -248,10 +248,10 @@ export async function POST(request: NextRequest) {
       conversationNotes,
       requestId,
       addedBy,
-      sendInviteImmediately
+      sendInviteImmediately,
     } = body
 
-    // Validate required fields
+    // Validate required fields — name/email are always required (HOST info)
     if (!name || !email) {
       return NextResponse.json(
         { error: 'Name and email are required' },
@@ -259,28 +259,64 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if prospect with this email already exists
-    const existingProspect = await prisma.hostProspect.findFirst({
-      where: { email: email.toLowerCase(), status: { not: 'ARCHIVED' } }
-    })
+    // Pull guest selection from the linked request (not from body)
+    let prospectGuestSelectionType = 'NEW'
+    let prospectExistingGuestId: string | null = null
+    let prospectExistingBookingId: string | null = null
 
-    if (existingProspect) {
-      return NextResponse.json(
-        { error: 'A prospect with this email already exists', existingId: existingProspect.id },
-        { status: 409 }
-      )
+    if (requestId) {
+      const linkedRequest = await prisma.reservationRequest.findUnique({
+        where: { id: requestId },
+        select: { existingGuestId: true, existingBookingId: true, guestSelectionType: true }
+      })
+      if (linkedRequest) {
+        prospectGuestSelectionType = linkedRequest.guestSelectionType || 'NEW'
+        prospectExistingGuestId = linkedRequest.existingGuestId || null
+        prospectExistingBookingId = linkedRequest.existingBookingId || null
+      }
     }
 
-    // Check if email is already a host
-    const existingHost = await prisma.rentalHost.findFirst({
-      where: { email: email.toLowerCase() }
-    })
+    // Check if existingBookingId is already claimed by another non-archived prospect
+    if (prospectExistingBookingId) {
+      const existingClaim = await prisma.hostProspect.findFirst({
+        where: {
+          existingBookingId: prospectExistingBookingId,
+          status: { not: 'ARCHIVED' },
+        }
+      })
+      if (existingClaim) {
+        return NextResponse.json(
+          { error: 'This booking is already assigned to another prospect' },
+          { status: 409 }
+        )
+      }
+    }
 
-    if (existingHost) {
-      return NextResponse.json(
-        { error: 'This email is already registered as a host', hostId: existingHost.id },
-        { status: 409 }
-      )
+    // Email-based checks only apply when we have an email (NEW guest flow)
+    if (email) {
+      // Check if prospect with this email already exists
+      const existingProspect = await prisma.hostProspect.findFirst({
+        where: { email: email.toLowerCase(), status: { not: 'ARCHIVED' } }
+      })
+
+      if (existingProspect) {
+        return NextResponse.json(
+          { error: 'A prospect with this email already exists', existingId: existingProspect.id },
+          { status: 409 }
+        )
+      }
+
+      // Check if email is already a host
+      const existingHost = await prisma.rentalHost.findFirst({
+        where: { email: email.toLowerCase() }
+      })
+
+      if (existingHost) {
+        return NextResponse.json(
+          { error: 'This email is already registered as a host', hostId: existingHost.id },
+          { status: 409 }
+        )
+      }
     }
 
     // Generate invite token if sending immediately
@@ -292,8 +328,8 @@ export async function POST(request: NextRequest) {
     // Create the prospect
     const prospect = await prisma.hostProspect.create({
       data: {
-        name,
-        email: email.toLowerCase(),
+        name: name || '',
+        email: email ? email.toLowerCase() : '',
         phone,
         vehicleMake,
         vehicleModel,
@@ -307,7 +343,10 @@ export async function POST(request: NextRequest) {
         status: sendInviteImmediately ? 'EMAIL_SENT' : 'DRAFT',
         inviteToken,
         inviteTokenExp,
-        inviteSentAt: sendInviteImmediately ? new Date() : null
+        inviteSentAt: sendInviteImmediately ? new Date() : null,
+        guestSelectionType: prospectGuestSelectionType,
+        existingGuestId: prospectExistingGuestId,
+        existingBookingId: prospectExistingBookingId,
       },
       include: {
         request: {

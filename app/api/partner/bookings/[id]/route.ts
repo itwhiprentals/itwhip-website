@@ -362,6 +362,12 @@ export async function GET(
         guestArrivalSummary: booking.guestArrivalSummary || null,
         guestLocationTrust: booking.guestLocationTrust || null,
 
+        // Reassignment / booking bridge fields
+        originalBookingId: booking.originalBookingId || null,
+        replacedByBookingId: booking.replacedByBookingId || null,
+        vehicleAccepted: booking.vehicleAccepted || false,
+        vehicleAcceptedAt: booking.vehicleAcceptedAt?.toISOString() || null,
+
         // Host post-trip final review
         hostFinalReviewStatus: booking.hostFinalReviewStatus || null,
         hostFinalReviewAt: booking.hostFinalReviewAt?.toISOString() || null,

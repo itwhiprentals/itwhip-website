@@ -90,6 +90,9 @@ interface ReservationRequest {
   source?: string
   expiresAt?: string
   createdAt: string
+  existingGuestId?: string | null
+  existingBookingId?: string | null
+  guestSelectionType?: string
   claims: RequestClaim[]
   invitedProspects: InvitedProspect[]
 }
@@ -219,7 +222,8 @@ export default function FleetRequestsPage() {
     return new Date(dateStr).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
+      timeZone: 'UTC'
     })
   }
 
@@ -500,6 +504,9 @@ export default function FleetRequestsPage() {
                           <span className="flex items-center gap-1 truncate">
                             <IoPersonOutline className="w-3.5 h-3.5 flex-shrink-0" />
                             <span className="truncate">{request.guestName}</span>
+                            {request.guestSelectionType === 'EXISTING' && (
+                              <span className="px-1 py-0.5 text-[9px] font-medium bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 rounded flex-shrink-0">EXISTING</span>
+                            )}
                           </span>
                           {request.pickupCity && (
                             <span className="flex items-center gap-1 truncate">
@@ -568,7 +575,17 @@ export default function FleetRequestsPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Guest Info */}
                         <div>
-                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Guest Information</h4>
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                            Guest Information
+                            {request.guestSelectionType === 'EXISTING' && (
+                              <span className="px-1.5 py-0.5 text-[10px] font-medium bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 rounded">EXISTING GUEST</span>
+                            )}
+                          </h4>
+                          {request.existingBookingId && (
+                            <p className="text-xs text-orange-600 dark:text-orange-400 font-medium mb-2">
+                              Replaces booking {request.existingBookingId.slice(0, 8)}...
+                            </p>
+                          )}
                           <div className="space-y-1 text-sm">
                             <p className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                               <IoPersonOutline className="w-4 h-4" />

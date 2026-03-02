@@ -23,6 +23,10 @@ interface BookingHeaderProps {
     hostApproval: string | null
     pickupLocation: string | null
     createdAt: string
+    originalBookingId?: string | null
+    replacedByBookingId?: string | null
+    vehicleAccepted?: boolean
+    vehicleAcceptedAt?: string | null
   }
   renter: { name: string } | null
   isManualBooking: boolean
@@ -194,12 +198,41 @@ export function BookingHeader({
               <IoCopyOutline className="w-3.5 h-3.5" />
             </button>
           </div>
-          {isManualBooking && (
-            <span className="px-2 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wide bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-              {t('bdManualBooking')}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5">
+            {isManualBooking && (
+              <span className="px-2 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wide bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                {t('bdManualBooking')}
+              </span>
+            )}
+            {booking.originalBookingId && (
+              <span className="px-2 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wide bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                {t('bdReassigned')}
+              </span>
+            )}
+          </div>
         </div>
+
+        {/* Booking chain links for reassignment */}
+        {(booking.originalBookingId || booking.replacedByBookingId) && (
+          <div className="mt-1.5 flex items-center gap-3 text-[11px]">
+            {booking.originalBookingId && (
+              <Link
+                href={`/partner/bookings/${booking.originalBookingId}`}
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                {t('bdReplacesBooking', { code: booking.originalBookingId.slice(0, 8).toUpperCase() })}
+              </Link>
+            )}
+            {booking.replacedByBookingId && (
+              <Link
+                href={`/partner/bookings/${booking.replacedByBookingId}`}
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                {t('bdReplacedBy', { code: booking.replacedByBookingId.slice(0, 8).toUpperCase() })}
+              </Link>
+            )}
+          </div>
+        )}
 
         {/* Reservation Expiry Notice - For PENDING bookings */}
         {booking.status === 'PENDING' && (

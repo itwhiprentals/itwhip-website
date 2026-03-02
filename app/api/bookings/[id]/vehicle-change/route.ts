@@ -179,6 +179,9 @@ export async function POST(
             // Clear the vehicle change token (used)
             vehicleChangeToken: null,
             vehicleChangeExpiresAt: null,
+            // Track guest acceptance of vehicle swap
+            vehicleAccepted: true,
+            vehicleAcceptedAt: new Date(),
             // Set host status to PENDING for new vehicle's host
             hostStatus: 'PENDING',
             hostNotifiedAt: new Date(),

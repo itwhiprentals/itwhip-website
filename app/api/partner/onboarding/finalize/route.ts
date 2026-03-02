@@ -12,8 +12,13 @@ import { GuestTokenHandler } from '@/app/lib/auth/guest-tokens'
 import { sendEmail } from '@/app/lib/email/sender'
 import { emailConfig, logEmail, generateEmailReference, getEmailFooterHtml, getEmailFooterText } from '@/app/lib/email/config'
 import { generateAgreementToken, getTokenExpiryDate, generateSigningUrl } from '@/app/lib/agreements/tokens'
+import { sendVehicleChangeEmail } from '@/app/lib/email/booking-emails'
+import Stripe from 'stripe'
 
 const JWT_SECRET = process.env.JWT_SECRET!
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+  apiVersion: '2025-08-27.basil' as Stripe.LatestApiVersion,
+})
 
 async function getCurrentHost() {
   const cookieStore = await cookies()
@@ -99,107 +104,218 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // ═══════════════════════════════════════════════════
+    // DETECT: Existing Guest mode + scenario
+    //   Scenario A: has booking + valid payment hold → transfer payment
+    //   Scenario B: has booking + NO hold → cancel old, fresh booking
+    //   Scenario C: no booking → fresh booking only
+    // ═══════════════════════════════════════════════════
+    const isExistingGuest = prospect.guestSelectionType === 'EXISTING'
+      && !!prospect.existingGuestId
+    const hasBookingToReplace = isExistingGuest && !!prospect.existingBookingId
+
+    // Fetch existing booking or existing user data
+    let existingBooking: any = null
+    let existingUser: any = null
+    let existingReviewer: any = null
+    let hasValidHold = false
+
+    if (hasBookingToReplace) {
+      existingBooking = await prisma.rentalBooking.findUnique({
+        where: { id: prospect.existingBookingId! },
+        include: {
+          renter: { select: { id: true, email: true, name: true, phone: true } },
+          reviewerProfile: { select: { id: true } },
+          car: { select: { make: true, model: true, year: true } },
+        }
+      })
+
+      if (!existingBooking || !existingBooking.renter) {
+        return NextResponse.json(
+          { error: 'Existing booking or guest not found' },
+          { status: 404 }
+        )
+      }
+
+      // Verify the old booking hasn't already been replaced
+      if (existingBooking.replacedByBookingId) {
+        return NextResponse.json(
+          { error: 'This booking has already been reassigned' },
+          { status: 400 }
+        )
+      }
+
+      // Check payment hold status — don't fail if no hold (Scenario B)
+      if (existingBooking.paymentIntentId) {
+        try {
+          const pi = await stripe.paymentIntents.retrieve(existingBooking.paymentIntentId)
+          hasValidHold = pi.status === 'requires_capture'
+        } catch (stripeErr) {
+          console.error('[Finalize] Stripe hold check failed:', stripeErr)
+          hasValidHold = false
+        }
+      }
+      console.log(`[Finalize] Existing booking ${existingBooking.bookingCode}: hasValidHold=${hasValidHold}`)
+    } else if (isExistingGuest) {
+      // Scenario C: no booking to replace, just fetch the guest user
+      existingUser = await prisma.user.findUnique({
+        where: { id: prospect.existingGuestId! },
+        select: { id: true, email: true, name: true, phone: true }
+      })
+      existingReviewer = await prisma.reviewerProfile.findFirst({
+        where: { userId: prospect.existingGuestId! },
+        select: { id: true }
+      })
+
+      if (!existingUser) {
+        return NextResponse.json(
+          { error: 'Existing guest user not found' },
+          { status: 404 }
+        )
+      }
+    }
+
     // Determine payment preference
-    const isCash = prospect.paymentPreference === 'CASH'
+    // Existing guests always go through platform (they choose CARD/CASH on the stepper)
+    const isCash = isExistingGuest ? false : prospect.paymentPreference === 'CASH'
 
     // Calculate pricing
-    const dailyRate = prospect.counterOfferStatus === 'APPROVED' && prospect.counterOfferAmount
-      ? prospect.counterOfferAmount
-      : fleetRequest.offeredRate || 0
-    const durationDays = fleetRequest.durationDays || 14
-    const subtotal = dailyRate * durationDays
-    const serviceFee = isCash ? 0 : subtotal * 0.10
-    const totalAmount = subtotal + serviceFee
+    let dailyRate: number
+    let durationDays: number
+    let subtotal: number
+    let serviceFee: number
+    let totalAmount: number
+
+    if (hasBookingToReplace && hasValidHold && existingBooking) {
+      // Scenario A: use pricing from existing booking (guest already authorized this amount)
+      dailyRate = existingBooking.dailyRate || 0
+      durationDays = existingBooking.numberOfDays || 14
+      subtotal = existingBooking.subtotal || dailyRate * durationDays
+      serviceFee = existingBooking.serviceFee || 0
+      totalAmount = existingBooking.totalAmount || subtotal + serviceFee
+    } else {
+      // Scenarios B, C, and NEW: use request pricing
+      dailyRate = prospect.counterOfferStatus === 'APPROVED' && prospect.counterOfferAmount
+        ? prospect.counterOfferAmount
+        : fleetRequest.offeredRate || 0
+      durationDays = fleetRequest.durationDays || 14
+      subtotal = dailyRate * durationDays
+      serviceFee = isCash ? 0 : subtotal * 0.10
+      totalAmount = subtotal + serviceFee
+    }
     const hostEarnings = subtotal - (isCash ? 0 : serviceFee)
 
     // ═══════════════════════════════════════════════════
-    // STEP 1: Find or create guest account
+    // STEP 1: Resolve guest account
     // ═══════════════════════════════════════════════════
     let reviewerProfileId: string | null = null
     let guestUserId: string | null = null
-    const guestEmail = fleetRequest.guestEmail?.toLowerCase().trim()
-    const guestName = fleetRequest.guestName || 'Guest'
-    const guestPhone = fleetRequest.guestPhone || null
+    let guestEmail: string | undefined
+    let guestName: string
+    let guestPhone: string | null
 
-    if (guestEmail) {
-      // Check for existing ReviewerProfile
-      const existingProfile = await prisma.reviewerProfile.findUnique({
-        where: { email: guestEmail },
-        select: { id: true, userId: true }
-      })
+    if (isExistingGuest && hasBookingToReplace && existingBooking) {
+      // ── EXISTING GUEST (Scenario A/B): use guest from existing booking ──
+      guestUserId = existingBooking.renter.id
+      reviewerProfileId = existingBooking.reviewerProfile?.id || null
+      guestEmail = existingBooking.renter.email?.toLowerCase() || undefined
+      guestName = existingBooking.renter.name || existingBooking.guestName || 'Guest'
+      guestPhone = existingBooking.renter.phone || existingBooking.guestPhone || null
+      console.log(`[Finalize] Existing guest (has booking): ${guestEmail} (userId: ${guestUserId})`)
+    } else if (isExistingGuest && existingUser) {
+      // ── EXISTING GUEST (Scenario C): use guest from user record ──
+      guestUserId = existingUser.id
+      reviewerProfileId = existingReviewer?.id || null
+      guestEmail = existingUser.email?.toLowerCase() || undefined
+      guestName = existingUser.name || 'Guest'
+      guestPhone = existingUser.phone || null
+      console.log(`[Finalize] Existing guest (no booking): ${guestEmail} (userId: ${guestUserId})`)
+    } else {
+      // ── NEW GUEST PATH: find or create guest account ──
+      guestEmail = fleetRequest.guestEmail?.toLowerCase().trim() || undefined
+      guestName = fleetRequest.guestName || 'Guest'
+      guestPhone = fleetRequest.guestPhone || null
 
-      if (existingProfile) {
-        reviewerProfileId = existingProfile.id
-        guestUserId = existingProfile.userId
+      if (guestEmail) {
+        // Check for existing ReviewerProfile
+        const existingProfile = await prisma.reviewerProfile.findUnique({
+          where: { email: guestEmail },
+          select: { id: true, userId: true }
+        })
 
-        // Profile exists but no linked User — create one so guest can log in
-        if (!guestUserId) {
-          const existingUser = await prisma.user.findUnique({ where: { email: guestEmail } })
-          if (existingUser) {
-            guestUserId = existingUser.id
-            // Link profile to existing user
-            await prisma.reviewerProfile.update({
-              where: { id: existingProfile.id },
-              data: { userId: existingUser.id }
-            })
-          } else {
-            const newUserId = nanoid()
-            await prisma.user.create({
-              data: {
-                id: newUserId,
-                email: guestEmail,
-                name: guestName,
-                phone: guestPhone,
-                role: 'CLAIMED',
-                emailVerified: false,
-                updatedAt: new Date()
-              }
-            })
-            guestUserId = newUserId
-            await prisma.reviewerProfile.update({
-              where: { id: existingProfile.id },
-              data: { userId: newUserId }
-            })
+        if (existingProfile) {
+          reviewerProfileId = existingProfile.id
+          guestUserId = existingProfile.userId
+
+          // Profile exists but no linked User — create one so guest can log in
+          if (!guestUserId) {
+            const existingUser = await prisma.user.findUnique({ where: { email: guestEmail } })
+            if (existingUser) {
+              guestUserId = existingUser.id
+              // Link profile to existing user
+              await prisma.reviewerProfile.update({
+                where: { id: existingProfile.id },
+                data: { userId: existingUser.id }
+              })
+            } else {
+              const newUserId = nanoid()
+              await prisma.user.create({
+                data: {
+                  id: newUserId,
+                  email: guestEmail,
+                  name: guestName,
+                  phone: guestPhone,
+                  role: 'CLAIMED',
+                  emailVerified: false,
+                  updatedAt: new Date()
+                }
+              })
+              guestUserId = newUserId
+              await prisma.reviewerProfile.update({
+                where: { id: existingProfile.id },
+                data: { userId: newUserId }
+              })
+            }
           }
+        } else {
+          // Create new ReviewerProfile for the guest
+          const profileId = randomBytes(16).toString('hex')
+          const newProfile = await prisma.reviewerProfile.create({
+            data: {
+              id: profileId,
+              email: guestEmail,
+              phoneNumber: guestPhone,
+              name: guestName,
+              city: fleetRequest.pickupCity || 'Unknown',
+              state: fleetRequest.pickupState || 'AZ',
+              emailVerified: false,
+              phoneVerified: false,
+              updatedAt: new Date()
+            }
+          })
+          reviewerProfileId = newProfile.id
+
+          // Create a User record for the guest (no password — they'll set one later)
+          const userId = nanoid()
+          await prisma.user.create({
+            data: {
+              id: userId,
+              email: guestEmail,
+              name: guestName,
+              phone: guestPhone,
+              role: 'CLAIMED',
+              emailVerified: false,
+              updatedAt: new Date()
+            }
+          })
+          guestUserId = userId
+
+          // Link ReviewerProfile to User
+          await prisma.reviewerProfile.update({
+            where: { id: profileId },
+            data: { userId }
+          })
         }
-      } else {
-        // Create new ReviewerProfile for the guest
-        const profileId = randomBytes(16).toString('hex')
-        const newProfile = await prisma.reviewerProfile.create({
-          data: {
-            id: profileId,
-            email: guestEmail,
-            phoneNumber: guestPhone,
-            name: guestName,
-            city: fleetRequest.pickupCity || 'Unknown',
-            state: fleetRequest.pickupState || 'AZ',
-            emailVerified: false,
-            phoneVerified: false,
-            updatedAt: new Date()
-          }
-        })
-        reviewerProfileId = newProfile.id
-
-        // Create a User record for the guest (no password — they'll set one later)
-        const userId = nanoid()
-        await prisma.user.create({
-          data: {
-            id: userId,
-            email: guestEmail,
-            name: guestName,
-            phone: guestPhone,
-            role: 'CLAIMED',
-            emailVerified: false,
-            updatedAt: new Date()
-          }
-        })
-        guestUserId = userId
-
-        // Link ReviewerProfile to User
-        await prisma.reviewerProfile.update({
-          where: { id: profileId },
-          data: { userId }
-        })
       }
     }
 
@@ -229,8 +345,8 @@ export async function POST(request: NextRequest) {
         // Dates
         startDate: fleetRequest.startDate || new Date(),
         endDate: fleetRequest.endDate || new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000),
-        startTime: '10:00',
-        endTime: '10:00',
+        startTime: fleetRequest.startTime || '10:00',
+        endTime: fleetRequest.endTime || '10:00',
 
         // Location
         pickupLocation: fleetRequest.pickupCity
@@ -260,8 +376,34 @@ export async function POST(request: NextRequest) {
         isWelcomeDiscount: true,
 
         // Mark as request-based booking
-        notes: `[Request-Based Booking] Created from ReservationRequest ${fleetRequest.id}. Payment: ${isCash ? 'Cash/Offline' : 'Platform'}`,
-        verificationSource: 'ONBOARDING'
+        notes: hasBookingToReplace && existingBooking
+          ? `[Existing Guest] Reassigned from booking ${existingBooking?.bookingCode || existingBooking?.id}. Original host unavailable.`
+          : isExistingGuest
+            ? `[Existing Guest] Fresh booking for existing guest ${guestEmail}. No previous booking to replace.`
+            : `[Request-Based Booking] Created from ReservationRequest ${fleetRequest.id}. Payment: ${isCash ? 'Cash/Offline' : 'Platform'}`,
+        verificationSource: 'ONBOARDING',
+
+        // Scenario A: transfer payment + link to original booking
+        ...(hasBookingToReplace && hasValidHold && existingBooking && {
+          originalBookingId: existingBooking.id,
+          originalCarId: existingBooking.carId,
+          vehicleChangeReason: 'Original host unavailable — vehicle reassigned to new partner',
+          paymentIntentId: existingBooking.paymentIntentId,
+          stripeCustomerId: existingBooking.stripeCustomerId,
+          stripePaymentMethodId: existingBooking.stripePaymentMethodId,
+          paymentStatus: 'AUTHORIZED',
+          paymentType: 'CARD',
+          agreementType: 'ITWHIP',
+          agreementStatus: 'not_sent',
+        }),
+
+        // Scenario B: link to original booking but NO payment transfer
+        ...(hasBookingToReplace && !hasValidHold && existingBooking && {
+          originalBookingId: existingBooking.id,
+          originalCarId: existingBooking.carId,
+          vehicleChangeReason: 'Original host unavailable — reassigned to new partner',
+          // paymentType stays null — guest picks CARD or CASH on stepper
+        })
       },
       select: {
         id: true,
@@ -271,14 +413,85 @@ export async function POST(request: NextRequest) {
     })
 
     // ═══════════════════════════════════════════════════
-    // STEP 2B: Auto-send rental agreement to guest
+    // STEP 2B: Handle post-booking-creation actions per scenario
+    //   A: Cancel old booking + vehicle change token (payment transfer)
+    //   B: Cancel old booking + auto-send agreement (no payment transfer)
+    //   C: Auto-send agreement (no old booking)
+    //   NEW: Auto-send agreement (new guest)
     // ═══════════════════════════════════════════════════
     let signingUrl = ''
-    if (guestEmail) {
+    let vehicleChangeToken: string | null = null
+
+    if (hasBookingToReplace && hasValidHold && existingBooking) {
+      // ── SCENARIO A: Cancel old booking, transfer payment, vehicle change token ──
+      await prisma.rentalBooking.update({
+        where: { id: existingBooking.id },
+        data: {
+          status: 'CANCELLED',
+          cancellationReason: 'REASSIGNED',
+          cancelledAt: new Date(),
+          replacedByBookingId: bookingId,
+          paymentIntentId: null,
+          paymentStatus: 'CANCELLED' as any,
+        }
+      })
+      console.log(`[Finalize] Scenario A: Old booking ${existingBooking.bookingCode} cancelled (payment transferred → ${bookingCode})`)
+
+      // Generate vehicle change token so guest can accept/decline the new vehicle
+      vehicleChangeToken = crypto.randomUUID()
+      const vehicleChangeExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000) // 48 hours
+
+      await prisma.rentalBooking.update({
+        where: { id: bookingId },
+        data: { vehicleChangeToken, vehicleChangeExpiresAt }
+      })
+      console.log(`[Finalize] Vehicle change token generated for booking ${bookingCode}`)
+
+    } else if (hasBookingToReplace && !hasValidHold && existingBooking) {
+      // ── SCENARIO B: Cancel old booking (no payment to transfer), auto-send agreement ──
+      await prisma.rentalBooking.update({
+        where: { id: existingBooking.id },
+        data: {
+          status: 'CANCELLED',
+          cancellationReason: 'REASSIGNED',
+          cancelledAt: new Date(),
+          replacedByBookingId: bookingId,
+        }
+      })
+      console.log(`[Finalize] Scenario B: Old booking ${existingBooking.bookingCode} cancelled (no hold → ${bookingCode})`)
+
+      // Auto-send agreement (same as new guest path)
+      if (guestEmail) {
+        try {
+          const agreementToken = generateAgreementToken()
+          const agreementExpiresAt = getTokenExpiryDate(30)
+          const agreementType = prospect.agreementPreference || 'ITWHIP'
+          const hostAgreementUrl = prospect.hostAgreementUrl || null
+
+          await prisma.rentalBooking.update({
+            where: { id: bookingId },
+            data: {
+              agreementToken,
+              agreementStatus: 'sent',
+              agreementSentAt: new Date(),
+              agreementExpiresAt,
+              signerEmail: guestEmail,
+              agreementType,
+              hostAgreementUrl
+            }
+          })
+          signingUrl = generateSigningUrl(agreementToken)
+          console.log(`[Finalize] Scenario B: Agreement auto-sent for ${bookingCode} to ${guestEmail}`)
+        } catch (agreementErr) {
+          console.error('[Finalize] Failed to set up agreement:', agreementErr)
+        }
+      }
+
+    } else if (isExistingGuest && !hasBookingToReplace && guestEmail) {
+      // ── SCENARIO C: No old booking — just auto-send agreement ──
       try {
         const agreementToken = generateAgreementToken()
-        const agreementExpiresAt = getTokenExpiryDate(30) // 30-day expiry for initial send
-
+        const agreementExpiresAt = getTokenExpiryDate(30)
         const agreementType = prospect.agreementPreference || 'ITWHIP'
         const hostAgreementUrl = prospect.hostAgreementUrl || null
 
@@ -294,7 +507,32 @@ export async function POST(request: NextRequest) {
             hostAgreementUrl
           }
         })
+        signingUrl = generateSigningUrl(agreementToken)
+        console.log(`[Finalize] Scenario C: Agreement auto-sent for ${bookingCode} to ${guestEmail}`)
+      } catch (agreementErr) {
+        console.error('[Finalize] Failed to set up agreement:', agreementErr)
+      }
 
+    } else if (guestEmail) {
+      // ── NEW GUEST PATH: auto-send rental agreement ──
+      try {
+        const agreementToken = generateAgreementToken()
+        const agreementExpiresAt = getTokenExpiryDate(30)
+        const agreementType = prospect.agreementPreference || 'ITWHIP'
+        const hostAgreementUrl = prospect.hostAgreementUrl || null
+
+        await prisma.rentalBooking.update({
+          where: { id: bookingId },
+          data: {
+            agreementToken,
+            agreementStatus: 'sent',
+            agreementSentAt: new Date(),
+            agreementExpiresAt,
+            signerEmail: guestEmail,
+            agreementType,
+            hostAgreementUrl
+          }
+        })
         signingUrl = generateSigningUrl(agreementToken)
         console.log(`[Finalize] Agreement auto-sent for booking ${bookingCode} to ${guestEmail}`)
       } catch (agreementErr) {
@@ -371,7 +609,15 @@ export async function POST(request: NextRequest) {
       carId: car.id,
       guestEmail,
       paymentPreference: prospect.paymentPreference,
-      isCash
+      isCash,
+      isExistingGuest,
+      hasBookingToReplace,
+      hasValidHold,
+      scenario: (hasBookingToReplace && hasValidHold) ? 'A' : hasBookingToReplace ? 'B' : isExistingGuest ? 'C' : 'NEW',
+      ...(hasBookingToReplace && {
+        existingBookingId: existingBooking?.id,
+        existingBookingCode: existingBooking?.bookingCode,
+      })
     })
 
     // ═══════════════════════════════════════════════════
@@ -386,8 +632,54 @@ export async function POST(request: NextRequest) {
       ? new Date(fleetRequest.endDate).toLocaleDateString('en-US', { dateStyle: 'medium' })
       : 'TBD'
 
-    // Send guest email + SMS with auto-login link
-    if (guestEmail) {
+    // ── SCENARIO A: Send vehicle change email + SMS (payment transferred) ──
+    if (hasBookingToReplace && hasValidHold && existingBooking && guestEmail && vehicleChangeToken) {
+      const changeUrl = `${baseUrl}/bookings/${bookingId}/change?token=${vehicleChangeToken}`
+      const originalCarName = existingBooking.car
+        ? `${existingBooking.car.year} ${existingBooking.car.make} ${existingBooking.car.model}`
+        : 'your previous vehicle'
+
+      // Vehicle change email (reuse existing template)
+      try {
+        await sendVehicleChangeEmail({
+          guestEmail,
+          guestName,
+          bookingCode: booking.bookingCode,
+          originalCarName,
+          originalCarImage: '',
+          newCarName: vehicleDesc,
+          newCarImage: '',
+          newDailyRate: dailyRate,
+          startDate: (fleetRequest.startDate || new Date()).toISOString(),
+          endDate: (fleetRequest.endDate || new Date()).toISOString(),
+          changeUrl,
+          reason: 'Your original host is no longer available — we found a great new vehicle for your trip!',
+        })
+        console.log(`[Finalize] Vehicle change email sent to ${guestEmail} for booking ${booking.bookingCode}`)
+      } catch (emailErr) {
+        console.error('[Finalize] Failed to send vehicle change email:', emailErr)
+      }
+
+      // SMS notification
+      if (guestPhone) {
+        try {
+          const { sendSms } = await import('@/app/lib/twilio/sms')
+          const guestFirstName = guestName.split(' ')[0]
+          await sendSms(
+            guestPhone,
+            `ITWhip: Great news, ${guestFirstName}! We found a new vehicle for your trip on ${startDateStr}–${endDateStr}. Check your email to review and confirm.`,
+            { type: 'BOOKING_RECEIVED', bookingId, hostId: host.id, guestId: reviewerProfileId || undefined }
+          )
+          console.log(`[Finalize] Bridge SMS sent to ${guestPhone}`)
+        } catch (smsErr) {
+          console.error('[Finalize] Failed to send bridge SMS:', smsErr)
+        }
+      }
+    }
+
+    // ── SCENARIOS B, C, and NEW GUEST: Send regular booking email + SMS ──
+    const isScenarioA = hasBookingToReplace && hasValidHold
+    if (!isScenarioA && guestEmail) {
       // Create auto-login token (shared by email + SMS)
       let autoLoginUrl = ''
       try {

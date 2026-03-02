@@ -55,16 +55,14 @@ export default function VehicleGuestCard({
             </div>
           )}
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center justify-between mb-1">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                 {car
                   ? `${car.year} ${car.make} ${car.model}`
                   : vehicleInfo || t('vehicle')}
               </h3>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                hasCarListed
-                  ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
-                  : 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
+              <span className={`text-xs px-2 py-0.5 rounded font-medium text-white uppercase ${
+                hasCarListed ? 'bg-green-600' : 'bg-red-600'
               }`}>
                 {hasCarListed ? t('ready') : t('awaitingSetup')}
               </span>

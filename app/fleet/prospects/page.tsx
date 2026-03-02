@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -307,6 +307,9 @@ interface LinkedRequest {
   offeredRate?: number
   pickupCity?: string
   pickupState?: string
+  guestSelectionType?: string
+  existingGuestId?: string | null
+  existingBookingId?: string | null
 }
 
 // Create Prospect Modal Component
@@ -398,7 +401,9 @@ function CreateProspectModal({
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return null
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    // Parse as UTC to avoid timezone shift (dates stored as UTC midnight)
+    const d = new Date(dateStr)
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
   }
 
   // Check if email belongs to anyone in the system
@@ -431,6 +436,7 @@ function CreateProspectModal({
     }
   }
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -443,7 +449,7 @@ function CreateProspectModal({
         body: JSON.stringify({
           ...formData,
           vehicleYear: formData.vehicleYear ? Number(formData.vehicleYear) : undefined,
-          requestId: formData.requestId || undefined
+          requestId: formData.requestId || undefined,
         })
       })
 
@@ -594,7 +600,23 @@ function CreateProspectModal({
             )}
           </div>
 
-          {/* Contact Info */}
+          {/* Existing Guest Badge (read-only, from linked request) */}
+          {linkedRequest?.guestSelectionType === 'EXISTING' && (
+            <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg p-3">
+              <div className="flex items-center gap-2">
+                <span className="px-1.5 py-0.5 text-[10px] font-medium bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 rounded">EXISTING GUEST</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">{linkedRequest.guestName}</span>
+              </div>
+              {linkedRequest.existingBookingId && (
+                <p className="text-xs text-orange-600 dark:text-orange-400 font-medium mt-1">
+                  Replaces booking {linkedRequest.existingBookingId.slice(0, 8)}...
+                </p>
+              )}
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">Guest decision was made on the request — read-only</p>
+            </div>
+          )}
+
+          {/* Host Contact Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -865,7 +887,8 @@ function EditProspectModal({
 
   const formatDateShort = (dateStr?: string) => {
     if (!dateStr) return null
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    const d = new Date(dateStr)
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
   }
 
   // Check if email belongs to anyone (excluding current prospect being edited)

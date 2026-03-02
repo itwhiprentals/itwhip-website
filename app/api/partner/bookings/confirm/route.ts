@@ -88,6 +88,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // For Scenario A reassignment (payment transferred + vehicle change token),
+    // guest must have accepted vehicle swap before confirming
+    if (booking.vehicleChangeToken && !booking.vehicleAccepted) {
+      return NextResponse.json(
+        { error: 'Guest has not yet accepted the vehicle change' },
+        { status: 400 }
+      )
+    }
+
+    // For reassignment bookings, agreement must be signed before confirming
+    if (booking.originalBookingId && booking.agreementStatus !== 'signed') {
+      return NextResponse.json(
+        { error: 'Rental agreement must be signed before confirming a reassignment booking' },
+        { status: 400 }
+      )
+    }
+
     // Check for conflicts again (in case dates changed or another booking was made)
     const conflicts = await prisma.rentalBooking.findFirst({
       where: {
