@@ -270,9 +270,9 @@ export default function HowItWorksSheet({ isOpen, onClose, onGetStarted }: HowIt
             { step: 3, label: t('hiwStep3'), time: t('hiwStep3Time') },
             { step: 4, label: t('hiwStep4'), time: t('hiwStep4Time') },
           ].map(({ step, label, time }, idx) => (
-            <div key={step} className="flex items-start gap-3">
+            <div key={step} className="flex items-start gap-3 group cursor-default">
               <div className="flex flex-col items-center">
-                <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0 transition-transform duration-300 group-hover:scale-125 group-hover:rotate-12 group-hover:shadow-lg group-hover:shadow-orange-500/30">
                   {step}
                 </div>
                 {idx < 3 && <div className="w-0.5 h-6 bg-orange-200 dark:bg-orange-800" />}
