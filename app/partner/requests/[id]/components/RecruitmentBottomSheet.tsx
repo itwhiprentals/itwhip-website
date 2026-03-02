@@ -5,6 +5,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import BottomSheet from '@/app/components/BottomSheet'
 import SecureAccountStep from './SecureAccountStep'
@@ -93,12 +94,14 @@ export default function RecruitmentBottomSheet({
   onboardingProgress
 }: RecruitmentBottomSheetProps) {
   const t = useTranslations('PartnerRequestDetail')
+  const router = useRouter()
 
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('SECURE_ACCOUNT')
   const [completedSteps, setCompletedSteps] = useState<Set<OnboardingStep>>(new Set())
   const [finalizing, setFinalizing] = useState(false)
   const [finalizeError, setFinalizeError] = useState('')
   const [bookingCode, setBookingCode] = useState('')
+  const [bookingId, setBookingId] = useState('')
   const [paymentPref, setPaymentPref] = useState<'CASH' | 'PLATFORM' | null>(
     (onboardingProgress?.paymentPreference as 'CASH' | 'PLATFORM') || null
   )
@@ -179,6 +182,7 @@ export default function RecruitmentBottomSheet({
 
       if (data.success) {
         setBookingCode(data.booking?.bookingCode || '')
+        setBookingId(data.booking?.id || '')
         setCompletedSteps(prev => new Set([...prev, 'ADD_CAR']))
         setCurrentStep('CONGRATS')
       } else {
@@ -538,7 +542,11 @@ export default function RecruitmentBottomSheet({
               <button
                 onClick={() => {
                   onClose()
-                  onComplete()
+                  if (bookingId) {
+                    router.push(`/partner/bookings/${bookingId}`)
+                  } else {
+                    onComplete()
+                  }
                 }}
                 className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
               >

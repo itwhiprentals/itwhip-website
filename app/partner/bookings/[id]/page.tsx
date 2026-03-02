@@ -27,8 +27,9 @@ import { RentalAgreementSection } from './components/RentalAgreementSection'
 import { MessagesSection } from './components/MessagesSection'
 import { BookingModals } from './components/BookingModals'
 import { TripChargesSection } from './components/TripChargesSection'
-import ManualBookingView from './components/ManualBookingView'
+import BookingAgreementSection from './components/BookingAgreementSection'
 import AddChargeSheet from './components/AddChargeSheet'
+import BottomSheet from '@/app/components/BottomSheet'
 import { formatPhoneNumber } from '@/app/utils/helpers'
 
 interface BookingDetails {
@@ -279,6 +280,10 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   // Tooltip state
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
 
+  // Learn more bottomsheet states
+  const [showTaxInfo, setShowTaxInfo] = useState(false)
+  const [showVerificationInfo, setShowVerificationInfo] = useState(false)
+
   // Toast notification
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
@@ -334,6 +339,14 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       fetch(`/api/partner/messages/${booking.id}/read`, { method: 'POST' }).catch(() => {})
     }
   }, [booking?.id, bookingMessages.length])
+
+  // Auto-expand agreement + verification sections for PENDING manual bookings
+  useEffect(() => {
+    const manual = (booking?.bookingType || 'STANDARD') === 'MANUAL'
+    if (booking?.status === 'PENDING' && manual) {
+      setExpandedSections(prev => ({ ...prev, agreement: true, verification: true }))
+    }
+  }, [booking?.status, booking?.bookingType])
 
   const sendBookingMessage = async () => {
     if (!booking || !newMessage.trim() || sendingMessage) return
@@ -751,23 +764,8 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
     )
   }
 
-  // ─── Manual Booking: separate view (PENDING only) ──────────────
-  // After CONFIRMED, manual bookings merge into standard host view with HandoffPanel
-  if (isManualBooking && booking && booking.status === 'PENDING') {
-    return (
-      <ManualBookingView
-        booking={booking}
-        renter={renter}
-        vehicle={vehicle}
-        partner={partner}
-        insurance={insurance}
-        guestHistory={guestHistory}
-        fleetOtherActiveCount={fleetOtherActiveCount}
-        onRefresh={fetchBookingDetails}
-      />
-    )
-  }
-
+  // All booking statuses (PENDING, CONFIRMED, ACTIVE, COMPLETED) use
+  // the same unified layout — left column + right sidebar
   return (
     <div className="p-3 sm:p-4 space-y-4" onClick={() => activeTooltip && setActiveTooltip(null)}>
       {/* Toast Notification */}
@@ -1045,22 +1043,36 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 sendVerificationRequest={sendVerificationRequest}
                 sendingVerification={sendingVerification}
                 getVerificationStatusColor={getVerificationStatusColor}
+                onLearnMoreVerification={() => setShowVerificationInfo(true)}
               />
             )}
 
             {/* Rental Agreement Section — only for manual bookings */}
             {!isGuestDriven && (
-              <RentalAgreementSection
-                booking={booking}
-                renter={renter}
-                partner={partner}
-                vehicle={vehicle}
-                expanded={expandedSections.agreement}
-                onToggle={() => toggleSection('agreement')}
-                sendAgreement={sendAgreement}
-                sendingAgreement={sendingAgreement}
-                formatDate={formatDate}
-              />
+              isManualBooking && booking.status === 'PENDING' ? (
+                <BookingAgreementSection
+                  booking={booking}
+                  renterName={renter?.name || null}
+                  partnerName={partner?.companyName || partner?.name || null}
+                  partnerEmail={partner?.email || null}
+                  commissionRate={commissionRate}
+                  onRefresh={fetchBookingDetails}
+                  showToast={showToast}
+                  defaultExpanded={true}
+                />
+              ) : (
+                <RentalAgreementSection
+                  booking={booking}
+                  renter={renter}
+                  partner={partner}
+                  vehicle={vehicle}
+                  expanded={expandedSections.agreement}
+                  onToggle={() => toggleSection('agreement')}
+                  sendAgreement={sendAgreement}
+                  sendingAgreement={sendingAgreement}
+                  formatDate={formatDate}
+                />
+              )
             )}
 
             {/* Trip Charges Section */}
@@ -1099,6 +1111,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               processingFee={PROCESSING_FEE}
               formatCurrency={formatCurrency}
               insurance={insurance}
+              onLearnMoreTax={() => setShowTaxInfo(true)}
             />
 
             {/* Quick Actions */}
@@ -1180,6 +1193,70 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         showOnboardModal={showOnboardModal}
         setShowOnboardModal={setShowOnboardModal}
       />
+
+      {/* Tax Responsibility BottomSheet */}
+      <BottomSheet
+        isOpen={showTaxInfo}
+        onClose={() => setShowTaxInfo(false)}
+        title={t('bdTaxInfoTitle')}
+        size="small"
+      >
+        <div className="space-y-3 px-1">
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">{t('bdManualBookings')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('bdTaxInfoManual')}</p>
+          </div>
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">{t('bdGuestTaxes')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('bdTaxInfoGuest')}</p>
+          </div>
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">1099 {t('bdStatus')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('bdTaxInfo1099')}</p>
+          </div>
+          <div>
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">{t('bdPlatformBookings')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('bdTaxInfoPlatform')}</p>
+          </div>
+        </div>
+      </BottomSheet>
+
+      {/* Guest Verification BottomSheet */}
+      <BottomSheet
+        isOpen={showVerificationInfo}
+        onClose={() => setShowVerificationInfo(false)}
+        title={t('bdVerificationInfoTitle')}
+        size="small"
+      >
+        <div className="space-y-3 px-1">
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">{t('bdVerifiedGuests')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('bdVerificationInfoVerified')}</p>
+          </div>
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">{t('bdNoDoubleVerification')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('bdVerificationInfoNoDouble')}</p>
+          </div>
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">{t('bdVerificationInfoTitle')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('bdVerificationInfoVisible')}</p>
+          </div>
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">{t('bdManualBookingVerification')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('bdVerificationInfoCost')}</p>
+          </div>
+          <div>
+            <a
+              href="https://itwhip.com/help/identity-verification"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-orange-600 dark:text-orange-400 font-medium hover:underline"
+            >
+              {t('bdLearnHowWeVerify')} →
+            </a>
+          </div>
+        </div>
+      </BottomSheet>
     </div>
   )
 }

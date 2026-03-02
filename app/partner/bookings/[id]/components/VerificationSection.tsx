@@ -35,6 +35,7 @@ interface VerificationSectionProps {
   sendVerificationRequest: () => void
   sendingVerification: boolean
   getVerificationStatusColor: (status: string) => string
+  onLearnMoreVerification?: () => void
 }
 
 export function VerificationSection({
@@ -46,6 +47,7 @@ export function VerificationSection({
   sendVerificationRequest,
   sendingVerification,
   getVerificationStatusColor,
+  onLearnMoreVerification,
 }: VerificationSectionProps) {
   const t = useTranslations('PartnerBookings')
 
@@ -172,6 +174,16 @@ export function VerificationSection({
               </div>
             </div>
           </div>
+
+          {/* Learn more about guest verification */}
+          {onLearnMoreVerification && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onLearnMoreVerification() }}
+              className="text-xs text-orange-600 dark:text-orange-400 font-medium hover:underline"
+            >
+              {t('bdVerificationLearnMore')}
+            </button>
+          )}
         </div>
       )}
     </div>

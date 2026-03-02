@@ -73,8 +73,13 @@ export function BookingHeader({
             </Link>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
-                {t('bdBookingDetails')}
+                {isManualBooking && booking.status === 'PENDING' ? t('bdSendAgreement') : t('bdBookingDetails')}
               </h1>
+              {isManualBooking && booking.status === 'PENDING' && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  {t('bdReviewThenSend')}
+                </p>
+              )}
             </div>
           </div>
 

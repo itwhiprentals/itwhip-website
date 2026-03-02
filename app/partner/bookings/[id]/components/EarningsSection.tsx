@@ -42,6 +42,7 @@ interface EarningsSectionProps {
     partnerProvider: string | null
     requiresGuestInsurance: boolean
   } | null
+  onLearnMoreTax?: () => void
 }
 
 export default function EarningsSection({
@@ -55,6 +56,7 @@ export default function EarningsSection({
   processingFee,
   formatCurrency,
   insurance,
+  onLearnMoreTax,
 }: EarningsSectionProps) {
   const t = useTranslations('PartnerBookings')
 
@@ -319,6 +321,17 @@ export default function EarningsSection({
                   </div>
                 )}
               </>
+            )}
+            {/* Learn more about tax responsibility */}
+            {onLearnMoreTax && (
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-1">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onLearnMoreTax() }}
+                  className="text-xs text-orange-600 dark:text-orange-400 font-medium hover:underline"
+                >
+                  {t('bdTaxLearnMore')}
+                </button>
+              </div>
             )}
           </div>
         )}

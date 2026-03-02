@@ -11,7 +11,8 @@ import { logProspectActivity } from '@/app/lib/auth/host-tokens'
 import { GuestTokenHandler } from '@/app/lib/auth/guest-tokens'
 import { sendEmail } from '@/app/lib/email/sender'
 import { emailConfig, logEmail, generateEmailReference, getEmailFooterHtml, getEmailFooterText } from '@/app/lib/email/config'
-import { generateAgreementToken, getTokenExpiryDate, generateSigningUrl } from '@/app/lib/agreements/tokens'
+// Agreement token imports removed — agreement is no longer auto-sent during finalize
+// Host sends agreement manually from the booking detail page
 import { sendVehicleChangeEmail } from '@/app/lib/email/booking-emails'
 import Stripe from 'stripe'
 
@@ -415,11 +416,12 @@ export async function POST(request: NextRequest) {
     // ═══════════════════════════════════════════════════
     // STEP 2B: Handle post-booking-creation actions per scenario
     //   A: Cancel old booking + vehicle change token (payment transfer)
-    //   B: Cancel old booking + auto-send agreement (no payment transfer)
-    //   C: Auto-send agreement (no old booking)
-    //   NEW: Auto-send agreement (new guest)
+    //   B: Cancel old booking (no payment transfer)
+    //   C/NEW: No old booking — host sends agreement manually from booking page
+    //
+    // NOTE: Agreement is NOT auto-sent. Host reviews the booking page first,
+    // then sends the agreement when ready. This prevents rushing the host.
     // ═══════════════════════════════════════════════════
-    let signingUrl = ''
     let vehicleChangeToken: string | null = null
 
     if (hasBookingToReplace && hasValidHold && existingBooking) {
@@ -448,7 +450,7 @@ export async function POST(request: NextRequest) {
       console.log(`[Finalize] Vehicle change token generated for booking ${bookingCode}`)
 
     } else if (hasBookingToReplace && !hasValidHold && existingBooking) {
-      // ── SCENARIO B: Cancel old booking (no payment to transfer), auto-send agreement ──
+      // ── SCENARIO B: Cancel old booking (no payment to transfer) ──
       await prisma.rentalBooking.update({
         where: { id: existingBooking.id },
         data: {
@@ -460,83 +462,43 @@ export async function POST(request: NextRequest) {
       })
       console.log(`[Finalize] Scenario B: Old booking ${existingBooking.bookingCode} cancelled (no hold → ${bookingCode})`)
 
-      // Auto-send agreement (same as new guest path)
+      // Set agreement type from host preference but do NOT send yet
       if (guestEmail) {
         try {
-          const agreementToken = generateAgreementToken()
-          const agreementExpiresAt = getTokenExpiryDate(30)
           const agreementType = prospect.agreementPreference || 'ITWHIP'
           const hostAgreementUrl = prospect.hostAgreementUrl || null
 
           await prisma.rentalBooking.update({
             where: { id: bookingId },
             data: {
-              agreementToken,
-              agreementStatus: 'sent',
-              agreementSentAt: new Date(),
-              agreementExpiresAt,
               signerEmail: guestEmail,
               agreementType,
               hostAgreementUrl
             }
           })
-          signingUrl = generateSigningUrl(agreementToken)
-          console.log(`[Finalize] Scenario B: Agreement auto-sent for ${bookingCode} to ${guestEmail}`)
+          console.log(`[Finalize] Scenario B: Agreement prepared (not sent) for ${bookingCode} — host sends manually`)
         } catch (agreementErr) {
-          console.error('[Finalize] Failed to set up agreement:', agreementErr)
+          console.error('[Finalize] Failed to set up agreement metadata:', agreementErr)
         }
       }
 
-    } else if (isExistingGuest && !hasBookingToReplace && guestEmail) {
-      // ── SCENARIO C: No old booking — just auto-send agreement ──
-      try {
-        const agreementToken = generateAgreementToken()
-        const agreementExpiresAt = getTokenExpiryDate(30)
-        const agreementType = prospect.agreementPreference || 'ITWHIP'
-        const hostAgreementUrl = prospect.hostAgreementUrl || null
-
-        await prisma.rentalBooking.update({
-          where: { id: bookingId },
-          data: {
-            agreementToken,
-            agreementStatus: 'sent',
-            agreementSentAt: new Date(),
-            agreementExpiresAt,
-            signerEmail: guestEmail,
-            agreementType,
-            hostAgreementUrl
-          }
-        })
-        signingUrl = generateSigningUrl(agreementToken)
-        console.log(`[Finalize] Scenario C: Agreement auto-sent for ${bookingCode} to ${guestEmail}`)
-      } catch (agreementErr) {
-        console.error('[Finalize] Failed to set up agreement:', agreementErr)
-      }
-
     } else if (guestEmail) {
-      // ── NEW GUEST PATH: auto-send rental agreement ──
+      // ── SCENARIO C / NEW GUEST: Set agreement metadata, host sends manually ──
       try {
-        const agreementToken = generateAgreementToken()
-        const agreementExpiresAt = getTokenExpiryDate(30)
         const agreementType = prospect.agreementPreference || 'ITWHIP'
         const hostAgreementUrl = prospect.hostAgreementUrl || null
 
         await prisma.rentalBooking.update({
           where: { id: bookingId },
           data: {
-            agreementToken,
-            agreementStatus: 'sent',
-            agreementSentAt: new Date(),
-            agreementExpiresAt,
             signerEmail: guestEmail,
             agreementType,
             hostAgreementUrl
           }
         })
-        signingUrl = generateSigningUrl(agreementToken)
-        console.log(`[Finalize] Agreement auto-sent for booking ${bookingCode} to ${guestEmail}`)
+        console.log(`[Finalize] Agreement prepared (not sent) for ${bookingCode} — host sends manually`)
       } catch (agreementErr) {
-        console.error('[Finalize] Failed to set up agreement:', agreementErr)
+        console.error('[Finalize] Failed to set up agreement metadata:', agreementErr)
       }
     }
 
@@ -746,14 +708,11 @@ export async function POST(request: NextRequest) {
               </table>
 
               <p style="font-size: 14px; color: #111827; margin: 20px 0;">
-                To get started, please <strong>sign your rental agreement</strong> and view your booking:
+                Your host is reviewing the details and will send you a <strong>rental agreement</strong> to sign shortly. In the meantime, you can view your booking:
               </p>
 
               <!-- CTA Buttons -->
               <div style="text-align: center; margin: 28px 0;">
-                ${signingUrl ? `<a href="${signingUrl}" style="display: inline-block; background: #2563eb; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px; margin-bottom: 12px;">
-                  Sign Rental Agreement
-                </a><br style="line-height: 28px;">` : ''}
                 <a href="${autoLoginUrl}" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
                   View My Booking
                 </a>
@@ -781,7 +740,9 @@ BOOKING DETAILS:
 - Daily Rate: $${dailyRate}/day
 - Total: $${totalAmount.toFixed(2)}
 
-${signingUrl ? `Sign your rental agreement: ${signingUrl}\n\n` : ''}View your booking: ${autoLoginUrl}
+Your host is reviewing the details and will send you a rental agreement to sign shortly.
+
+View your booking: ${autoLoginUrl}
 
 These links expire in 7 days. You'll be asked to set a password on your first visit.
 
@@ -901,11 +862,11 @@ ${getEmailFooterText(guestRefId)}
                 <table style="width: 100%; font-size: 14px;">
                   <tr>
                     <td style="padding: 6px 0; color: #92400e; vertical-align: top; width: 24px;">1.</td>
-                    <td style="padding: 6px 0; color: #78350f;"><strong>Guest signs agreement</strong> — ${guestName} will sign the rental agreement</td>
+                    <td style="padding: 6px 0; color: #78350f;"><strong>Send the agreement</strong> — Review your booking, then send the agreement to ${guestName}</td>
                   </tr>
                   <tr>
                     <td style="padding: 6px 0; color: #92400e; vertical-align: top;">2.</td>
-                    <td style="padding: 6px 0; color: #78350f;"><strong>Guest selects payment</strong> — Card (auto-confirms) or Cash (you confirm)</td>
+                    <td style="padding: 6px 0; color: #78350f;"><strong>Guest signs & selects payment</strong> — Card (auto-confirms) or Cash (you confirm)</td>
                   </tr>
                   <tr>
                     <td style="padding: 6px 0; color: #92400e; vertical-align: top;">3.</td>
@@ -951,8 +912,8 @@ BOOKING ${booking.bookingCode}:
 - Payment: ${isCash ? 'Cash (collect from guest)' : 'Platform (direct deposit)'}
 
 WHAT'S NEXT:
-1. Guest signs agreement — ${guestName} will sign the rental agreement
-2. Guest selects payment — Card (auto-confirms) or Cash (you confirm)
+1. Send the agreement — Review your booking, then send the agreement to ${guestName}
+2. Guest signs & selects payment — Card (auto-confirms) or Cash (you confirm)
 3. Hand over the keys — Meet your guest and start the rental
 
 View Booking: ${bookingUrl}

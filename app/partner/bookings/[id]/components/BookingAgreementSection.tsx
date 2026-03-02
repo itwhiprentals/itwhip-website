@@ -46,6 +46,7 @@ interface BookingAgreementSectionProps {
   commissionRate: number
   onRefresh: () => void
   showToast: (type: 'success' | 'error', message: string) => void
+  defaultExpanded?: boolean
 }
 
 // ─── Component ────────────────────────────────────────────────
@@ -57,11 +58,12 @@ export default function BookingAgreementSection({
   partnerEmail,
   commissionRate,
   onRefresh,
-  showToast
+  showToast,
+  defaultExpanded
 }: BookingAgreementSectionProps) {
   const t = useTranslations('PartnerBookings')
 
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(defaultExpanded ?? false)
   const [sendingAgreement, setSendingAgreement] = useState(false)
   const [agreementPref, setAgreementPref] = useState(booking.recruitmentAgreementPreference || 'ITWHIP')
   const [existingAgreement, setExistingAgreement] = useState<{
