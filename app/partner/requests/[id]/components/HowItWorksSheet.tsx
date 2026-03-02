@@ -28,10 +28,9 @@ interface HowItWorksSheetProps {
   isOpen: boolean
   onClose: () => void
   onGetStarted: () => void
-  guestVerified?: boolean
 }
 
-export default function HowItWorksSheet({ isOpen, onClose, onGetStarted, guestVerified }: HowItWorksSheetProps) {
+export default function HowItWorksSheet({ isOpen, onClose, onGetStarted }: HowItWorksSheetProps) {
   const t = useTranslations('PartnerRequestDetail')
 
   return (
@@ -83,9 +82,8 @@ export default function HowItWorksSheet({ isOpen, onClose, onGetStarted, guestVe
         </div>
       </div>
 
-      {/* Section 2: Your Guest Is Already Verified — conditional */}
-      {guestVerified && (
-        <div className="py-5 border-b border-gray-200 dark:border-gray-700">
+      {/* Section 2: Your Guest Is Already Verified */}
+      <div className="py-5 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-start gap-3 mb-3">
             <IoShieldCheckmarkOutline className="w-6 h-6 text-orange-500 flex-shrink-0 mt-0.5" />
             <h3 className="font-bold text-gray-900 dark:text-white text-base">{t('hiwSection2Title')}</h3>
@@ -112,8 +110,7 @@ export default function HowItWorksSheet({ isOpen, onClose, onGetStarted, guestVe
           >
             {t('hiwSection2Link')}
           </Link>
-        </div>
-      )}
+      </div>
 
       {/* Section 3: Get Paid Your Way */}
       <div className="py-5 border-b border-gray-200 dark:border-gray-700">

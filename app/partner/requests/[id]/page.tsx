@@ -67,7 +67,6 @@ interface RequestData {
     guestPhone: string | null
     guestRating: number | null
     guestTrips: number | null
-    guestVerified: boolean
     startDate: string | null
     startTime: string | null
     endDate: string | null
@@ -643,7 +642,6 @@ export default function RequestDetailPage() {
           setShowHowItWorks(false)
           setShowRecruitmentSheet(true)
         }}
-        guestVerified={request.guestVerified}
       />
 
       {/* Recruitment Bottomsheet */}
