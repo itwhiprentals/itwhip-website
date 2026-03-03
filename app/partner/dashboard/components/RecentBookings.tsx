@@ -114,15 +114,9 @@ export default function RecentBookings({ bookings }: RecentBookingsProps) {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                  {booking.guestName}
-                </p>
-                <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}>
-                  <StatusIcon className="w-3 h-3" />
-                  {statusConfig.label}
-                </span>
-              </div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white truncate mb-0.5">
+                {booking.guestName}
+              </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                 {booking.vehicleYear && booking.vehicleMake
                   ? `${booking.vehicleYear} ${booking.vehicleMake}`
@@ -137,11 +131,14 @@ export default function RecentBookings({ bookings }: RecentBookingsProps) {
                 {formatDate(booking.startDate)} - {formatDate(booking.endDate)}
               </p>
             </div>
-            <div className="flex items-center gap-2 ml-4">
+            <div className="flex flex-col items-end gap-1 ml-4 flex-shrink-0">
+              <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}>
+                <StatusIcon className="w-3 h-3" />
+                {statusConfig.label}
+              </span>
               <span className="text-sm font-semibold text-gray-900 dark:text-white">
                 ${booking.totalAmount.toLocaleString()}
               </span>
-              <IoChevronForwardOutline className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
             </div>
           </Link>
         )

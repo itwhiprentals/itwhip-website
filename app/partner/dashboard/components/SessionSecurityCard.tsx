@@ -365,7 +365,7 @@ export default function SessionSecurityCard() {
         {activeTab === 'security' && (
           <div className="space-y-4">
             {/* Security Score */}
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-transparent">
               <div>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">{t('tsSecurityScore')}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">{t('tsCompleteProfile')}</p>
@@ -520,7 +520,7 @@ export default function SessionSecurityCard() {
                     {data.api.keys.map(key => (
                       <div
                         key={key.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-transparent"
                       >
                         <div>
                           <p className="text-sm font-medium text-gray-900 dark:text-white">{key.name}</p>
@@ -579,7 +579,7 @@ export default function SessionSecurityCard() {
                 {data.auditLog.map(log => (
                   <div
                     key={log.id}
-                    className="p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                    className="p-2.5 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-transparent"
                   >
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">

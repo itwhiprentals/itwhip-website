@@ -125,7 +125,7 @@ export default function InvitationsStatsCard({ onViewInvitations }: InvitationsS
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Sent Invitations */}
         <div
-          className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
+          className="p-3 bg-gray-200/70 dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-transparent cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
           onClick={() => onViewInvitations?.('sent')}
         >
           <div className="flex items-center justify-between mb-2">
@@ -157,7 +157,7 @@ export default function InvitationsStatsCard({ onViewInvitations }: InvitationsS
 
         {/* Received Invitations */}
         <div
-          className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
+          className="p-3 bg-gray-200/70 dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-transparent cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
           onClick={() => onViewInvitations?.('received')}
         >
           <div className="flex items-center justify-between mb-2">

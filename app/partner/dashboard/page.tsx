@@ -469,7 +469,7 @@ export default function PartnerDashboardPage() {
               </Link>
               <Link
                 href="/host/cars/add"
-                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="flex items-center gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-transparent hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
                   <IoCarOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -481,7 +481,7 @@ export default function PartnerDashboardPage() {
               </Link>
               <Link
                 href="/host/dashboard"
-                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="flex items-center gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-transparent hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
                   <IoSettingsOutline className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -724,7 +724,7 @@ export default function PartnerDashboardPage() {
                     </h3>
 
                     {/* Manager Info */}
-                    <div className="flex items-center gap-2 mt-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <div className="flex items-center gap-2 mt-3 p-2 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-transparent">
                       {vehicle.manager.profilePhoto ? (
                         <Image
                           src={vehicle.manager.profilePhoto}
@@ -790,7 +790,7 @@ export default function PartnerDashboardPage() {
               {recentBookings.slice(0, 5).map((booking) => (
                 <div
                   key={booking.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-transparent"
                 >
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-white dark:bg-gray-800 rounded-lg">
