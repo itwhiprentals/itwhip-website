@@ -66,6 +66,7 @@ interface RecentBooking {
     make: string
     model: string
     year: number
+    photo?: string | null
   }
   startDate: string
   endDate: string
@@ -112,10 +113,10 @@ export default function DashboardContent({
   // Loading skeleton
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
         <div className="animate-pulse">
           {/* Header skeleton */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded" />
               <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-36" />
@@ -123,7 +124,7 @@ export default function DashboardContent({
             <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24" />
           </div>
           {/* Stats grid skeleton */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                 <div className="h-8 bg-gray-200 dark:bg-gray-600 rounded w-16 mx-auto mb-2" />
@@ -173,8 +174,8 @@ export default function DashboardContent({
   // Booking section
   if (activeSection === 'booking') {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <IoCalendarNumberOutline className="w-5 h-5 text-orange-600" />
             {t('dcBookingsOverview')}
@@ -187,7 +188,7 @@ export default function DashboardContent({
             <IoArrowForwardOutline className="w-4 h-4" />
           </Link>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
           <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.totalBookings || 0}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcTotalBookings')}</p>
@@ -213,8 +214,8 @@ export default function DashboardContent({
   // Fleet section
   if (activeSection === 'fleet') {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <IoCarOutline className="w-5 h-5 text-blue-600" />
             {t('dcFleetManagement')}
@@ -227,7 +228,7 @@ export default function DashboardContent({
             <IoArrowForwardOutline className="w-4 h-4" />
           </Link>
         </div>
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-3 gap-4 mb-4">
           <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats?.fleetSize || 0}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcTotalVehicles')}</p>
@@ -260,8 +261,8 @@ export default function DashboardContent({
   // Revenue section
   if (activeSection === 'revenue') {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <IoCashOutline className="w-5 h-5 text-green-600" />
             {t('dcRevenueOverview')}
@@ -274,7 +275,7 @@ export default function DashboardContent({
             <IoArrowForwardOutline className="w-4 h-4" />
           </Link>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
           <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats?.grossRevenue || 0)}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcGrossRevenue')}</p>
@@ -300,8 +301,8 @@ export default function DashboardContent({
   // Fleet Status section
   if (activeSection === 'fleet-status') {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <IoSpeedometerOutline className="w-5 h-5 text-indigo-600" />
             {t('dcFleetStatus')}
@@ -324,14 +325,15 @@ export default function DashboardContent({
       vehicleYear: b.vehicle?.year,
       vehicleMake: b.vehicle?.make,
       vehicleModel: b.vehicle?.model,
+      vehiclePhoto: b.vehicle?.photo || null,
       startDate: b.startDate,
       endDate: b.endDate,
       status: (b.status?.toLowerCase() || 'pending') as 'confirmed' | 'pending' | 'active' | 'completed' | 'cancelled',
       totalAmount: b.totalAmount || 0
     }))
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <IoListOutline className="w-5 h-5 text-amber-600" />
             {t('dcRecentBookings')}
@@ -353,7 +355,7 @@ export default function DashboardContent({
   if (activeSection === 'commission') {
     if (!stats) {
       return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <p className="text-gray-500 dark:text-gray-400 text-center py-8">
             {t('dcLoadingCommission')}
           </p>
@@ -377,7 +379,7 @@ export default function DashboardContent({
 
   // Fallback
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
       <p className="text-gray-500 dark:text-gray-400 text-center py-8">
         {t('dcSelectSection')}
       </p>
