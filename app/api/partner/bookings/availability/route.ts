@@ -13,6 +13,7 @@ const JWT_SECRET = new TextEncoder().encode(
 async function getPartnerFromToken() {
   const cookieStore = await cookies()
   const token = cookieStore.get('partner_token')?.value
+    || cookieStore.get('hostAccessToken')?.value
 
   if (!token) return null
 
@@ -24,7 +25,7 @@ async function getPartnerFromToken() {
       where: { id: hostId }
     })
 
-    if (!partner || (partner.hostType !== 'FLEET_PARTNER' && partner.hostType !== 'PARTNER')) {
+    if (!partner || !['FLEET_PARTNER', 'PARTNER', 'EXTERNAL'].includes(partner.hostType || '')) {
       return null
     }
 
@@ -150,14 +151,8 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Check if vehicle is inactive or in maintenance
-    if (!car.isActive) {
-      return NextResponse.json({
-        available: false,
-        reason: 'Vehicle is currently inactive'
-      })
-    }
-
+    // Check if vehicle is in maintenance (safety hold or inspection)
+    // Note: inactive (unlisted) cars are still bookable for manual bookings
     if (car.safetyHold || car.requiresInspection) {
       return NextResponse.json({
         available: false,

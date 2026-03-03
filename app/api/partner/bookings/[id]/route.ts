@@ -105,6 +105,10 @@ export async function GET(
                 documentVerifiedAt: true,
                 documentVerifiedBy: true,
                 fullyVerified: true,
+                // Manual verification by host
+                manuallyVerifiedByHost: true,
+                manualVerificationHostId: true,
+                manualVerificationDate: true,
                 // Guest insurance fields
                 insuranceProvider: true,
                 policyNumber: true,
@@ -422,6 +426,11 @@ export async function GET(
             verified: booking.renter.reviewerProfile?.documentsVerified || false,
             verifiedAt: booking.renter.reviewerProfile?.documentVerifiedAt?.toISOString() || null,
             verifiedBy: booking.renter.reviewerProfile?.documentVerifiedBy || null,
+          },
+          manualVerification: {
+            verified: booking.renter.reviewerProfile?.manuallyVerifiedByHost || false,
+            verifiedAt: booking.renter.reviewerProfile?.manualVerificationDate?.toISOString() || null,
+            verifiedByHostId: booking.renter.reviewerProfile?.manualVerificationHostId || null,
           },
           adminOverride: {
             isVerified: booking.renter.reviewerProfile?.isVerified || false,

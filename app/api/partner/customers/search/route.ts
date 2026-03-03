@@ -1,5 +1,7 @@
 // app/api/partner/customers/search/route.ts
-// Search customers for manual booking - includes both partner's previous customers and all users
+// Two-tier customer search for manual booking:
+// Tier 1: "Your Customers" — users who have booked with this host (full info)
+// Tier 2: "Other Members" — other platform users (limited info, only if Tier 1 < 3)
 
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
@@ -13,6 +15,7 @@ const JWT_SECRET = new TextEncoder().encode(
 async function getPartnerFromToken() {
   const cookieStore = await cookies()
   const token = cookieStore.get('partner_token')?.value
+    || cookieStore.get('hostAccessToken')?.value
 
   if (!token) return null
 
@@ -24,7 +27,7 @@ async function getPartnerFromToken() {
       where: { id: hostId }
     })
 
-    if (!partner || (partner.hostType !== 'FLEET_PARTNER' && partner.hostType !== 'PARTNER')) {
+    if (!partner || !['FLEET_PARTNER', 'PARTNER', 'EXTERNAL'].includes(partner.hostType || '')) {
       return null
     }
 
@@ -49,83 +52,120 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         customers: [],
+        yourCustomers: [],
+        otherMembers: [],
         message: 'Enter at least 2 characters to search'
       })
     }
 
-    // Get partner's vehicles for checking previous customers
-    const vehicles = await prisma.rentalCar.findMany({
-      where: { hostId: partner.id },
-      select: { id: true }
-    })
-    const vehicleIds = vehicles.map(v => v.id)
-
-    // Get previous customers (users who have booked with this partner)
+    // ─── Tier 1: Your Customers ──────────────────────────
+    // Users who have a booking with this host (by hostId directly)
     const previousBookings = await prisma.rentalBooking.findMany({
       where: {
-        carId: { in: vehicleIds },
+        hostId: partner.id,
         renterId: { not: null }
       },
-      select: {
-        renterId: true
-      },
+      select: { renterId: true },
       distinct: ['renterId']
     })
     const previousCustomerIds = previousBookings.map(b => b.renterId).filter(Boolean) as string[]
 
-    // Search users
-    const users = await prisma.user.findMany({
-      where: {
-        OR: [
-          { email: { contains: query, mode: 'insensitive' } },
-          { name: { contains: query, mode: 'insensitive' } },
-          { phone: { contains: query } }
-        ]
-      },
-      include: {
-        reviewerProfile: {
-          select: {
-            id: true,
-            profilePhotoUrl: true,
-            city: true,
-            state: true
-          }
-        },
-        _count: {
-          select: {
-            rentalBookings: true
-          }
-        }
-      },
-      take: 10,
-      orderBy: { name: 'asc' }
-    })
+    // Search within your customers first
+    const yourCustomerUsers = previousCustomerIds.length > 0
+      ? await prisma.user.findMany({
+          where: {
+            id: { in: previousCustomerIds },
+            OR: [
+              { email: { contains: query, mode: 'insensitive' } },
+              { name: { contains: query, mode: 'insensitive' } },
+              { phone: { contains: query } }
+            ]
+          },
+          include: {
+            reviewerProfile: {
+              select: {
+                id: true,
+                profilePhotoUrl: true,
+                stripeIdentityStatus: true,
+                stripeIdentityVerifiedAt: true,
+                stripeVerifiedFirstName: true,
+                stripeVerifiedLastName: true,
+              }
+            },
+            _count: {
+              select: { rentalBookings: true }
+            }
+          },
+          take: 10,
+          orderBy: { name: 'asc' }
+        })
+      : []
 
-    // Format results with "previous customer" flag
-    const customers = users.map(user => ({
+    const yourCustomers = yourCustomerUsers.map(user => ({
       id: user.id,
       name: user.name || 'Guest',
       email: user.email || '',
       phone: user.phone || null,
       photo: user.reviewerProfile?.profilePhotoUrl || user.image || null,
-      reviewerProfileId: user.reviewerProfile?.id || null,
-      location: user.reviewerProfile?.city && user.reviewerProfile?.state
-        ? `${user.reviewerProfile.city}, ${user.reviewerProfile.state}`
-        : null,
       totalBookings: (user._count as any).rentalBookings,
-      isPreviousCustomer: previousCustomerIds.includes(user.id)
+      isPreviousCustomer: true,
+      stripeIdentityStatus: user.reviewerProfile?.stripeIdentityStatus || null,
+      stripeIdentityVerifiedAt: user.reviewerProfile?.stripeIdentityVerifiedAt?.toISOString() || null,
+      stripeVerifiedFirstName: user.reviewerProfile?.stripeVerifiedFirstName || null,
+      stripeVerifiedLastName: user.reviewerProfile?.stripeVerifiedLastName || null,
     }))
 
-    // Sort: previous customers first, then by name
-    customers.sort((a, b) => {
-      if (a.isPreviousCustomer && !b.isPreviousCustomer) return -1
-      if (!a.isPreviousCustomer && b.isPreviousCustomer) return 1
-      return a.name.localeCompare(b.name)
-    })
+    // ─── Tier 2: Other Members ───────────────────────────
+    // Only search if Tier 1 has fewer than 3 results
+    let otherMembers: any[] = []
+
+    if (yourCustomers.length < 3) {
+      const otherUsers = await prisma.user.findMany({
+        where: {
+          id: { notIn: previousCustomerIds.length > 0 ? previousCustomerIds : ['__none__'] },
+          OR: [
+            { email: { contains: query, mode: 'insensitive' } },
+            { name: { contains: query, mode: 'insensitive' } },
+            { phone: { contains: query } }
+          ]
+        },
+        include: {
+          reviewerProfile: {
+            select: {
+              id: true,
+              profilePhotoUrl: true,
+              stripeIdentityStatus: true,
+            }
+          },
+          _count: {
+            select: { rentalBookings: true }
+          }
+        },
+        take: 5,
+        orderBy: { name: 'asc' }
+      })
+
+      // Privacy: don't expose email/phone for non-customers
+      otherMembers = otherUsers.map(user => ({
+        id: user.id,
+        name: user.name || 'Guest',
+        email: null,       // Hidden until selected
+        phone: null,       // Hidden until selected
+        photo: user.reviewerProfile?.profilePhotoUrl || user.image || null,
+        totalBookings: (user._count as any).rentalBookings,
+        isPreviousCustomer: false,
+        stripeIdentityStatus: user.reviewerProfile?.stripeIdentityStatus || null,
+      }))
+    }
+
+    // Combined list for backward compatibility (yourCustomers first, then otherMembers)
+    const customers = [...yourCustomers, ...otherMembers]
 
     return NextResponse.json({
       success: true,
-      customers
+      customers,
+      yourCustomers,
+      otherMembers
     })
 
   } catch (error) {

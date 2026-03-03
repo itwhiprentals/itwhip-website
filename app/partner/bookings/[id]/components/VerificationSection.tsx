@@ -1,5 +1,5 @@
 // app/partner/bookings/[id]/components/VerificationSection.tsx
-// Extracted verification status section for manual bookings
+// Verification status section showing all verification methods
 
 'use client'
 
@@ -12,6 +12,7 @@ import {
   IoSendOutline,
   IoChevronUpOutline,
   IoChevronDownOutline,
+  IoPersonOutline,
 } from 'react-icons/io5'
 
 interface Renter {
@@ -20,6 +21,16 @@ interface Renter {
       status: string
       verifiedAt: string | null
       verifiedName: string | null
+    }
+    documents?: {
+      verified: boolean
+      verifiedAt: string | null
+      verifiedBy: string | null
+    }
+    manualVerification?: {
+      verified: boolean
+      verifiedAt: string | null
+      verifiedByHostId: string | null
     }
     email: { verified: boolean }
     phone: { verified: boolean }
@@ -51,6 +62,12 @@ export function VerificationSection({
 }: VerificationSectionProps) {
   const t = useTranslations('PartnerBookings')
 
+  // Determine overall verification status
+  const stripeVerified = renter.verification.identity.status === 'verified'
+  const documentsVerified = renter.verification.documents?.verified || false
+  const manuallyVerified = renter.verification.manualVerification?.verified || false
+  const isVerified = stripeVerified || documentsVerified || manuallyVerified
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       <button
@@ -60,7 +77,7 @@ export function VerificationSection({
         <div className="flex items-center gap-2">
           <IoShieldOutline className="w-5 h-5 text-gray-400" />
           <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdGuestVerification')}</h3>
-          {renter.verification.identity.status === 'verified' ? (
+          {isVerified ? (
             <span className="px-2 py-0.5 text-xs rounded font-medium uppercase bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
               {t('bdVerified')}
             </span>
@@ -79,9 +96,9 @@ export function VerificationSection({
 
       {expanded && (
         <div className="px-4 pb-4 space-y-4">
-          {/* Identity Verification */}
+          {/* Stripe Identity Verification */}
           <div className={`p-4 rounded-lg ${
-            renter.verification.identity.status === 'verified'
+            stripeVerified
               ? 'bg-green-50 dark:bg-green-900/20'
               : renter.verification.identity.status === 'pending'
               ? 'bg-yellow-50 dark:bg-yellow-900/20'
@@ -90,20 +107,20 @@ export function VerificationSection({
             <div className="flex items-center justify-between mb-2">
               <span className="font-medium text-gray-900 dark:text-white">{t('bdIdentityVerification')}</span>
               <span className={`flex items-center gap-1 ${getVerificationStatusColor(renter.verification.identity.status)}`}>
-                {renter.verification.identity.status === 'verified' ? (
+                {stripeVerified ? (
                   <IoCheckmarkCircleOutline className="w-5 h-5" />
                 ) : renter.verification.identity.status === 'pending' ? (
                   <IoTimeOutline className="w-5 h-5" />
                 ) : (
                   <IoCloseCircleOutline className="w-5 h-5" />
                 )}
-                {renter.verification.identity.status === 'verified' ? t('bdVerified') :
+                {stripeVerified ? t('bdVerified') :
                  renter.verification.identity.status === 'pending' ? t('bdPending') :
                  renter.verification.identity.status === 'failed' ? t('bdFailed') : t('bdNotStarted')}
               </span>
             </div>
 
-            {renter.verification.identity.status === 'verified' && (
+            {stripeVerified && (
               <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                 {renter.verification.identity.verifiedName && (
                   <p>{t('bdName')}: {renter.verification.identity.verifiedName}</p>
@@ -114,7 +131,7 @@ export function VerificationSection({
               </div>
             )}
 
-            {renter.verification.identity.status !== 'verified' && (
+            {!stripeVerified && (
               isManualBooking && !booking.paymentType ? (
                 <div className="mt-3">
                   <button
@@ -142,6 +159,49 @@ export function VerificationSection({
               )
             )}
           </div>
+
+          {/* Manual Verification by Host */}
+          {manuallyVerified && (
+            <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                  <IoPersonOutline className="w-4 h-4" />
+                  {t('bdManualVerification')}
+                </span>
+                <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                  <IoCheckmarkCircleOutline className="w-5 h-5" />
+                  {t('bdVerified')}
+                </span>
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                <p>{t('bdVerifiedByHost')}</p>
+                {renter.verification.manualVerification?.verifiedAt && (
+                  <p>{t('bdVerified')}: {new Date(renter.verification.manualVerification.verifiedAt).toLocaleDateString()}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Documents Verified */}
+          {documentsVerified && (
+            <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium text-gray-900 dark:text-white">{t('bdDocumentVerification')}</span>
+                <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                  <IoCheckmarkCircleOutline className="w-5 h-5" />
+                  {t('bdVerified')}
+                </span>
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                {renter.verification.documents?.verifiedAt && (
+                  <p>{t('bdVerified')}: {new Date(renter.verification.documents.verifiedAt).toLocaleDateString()}</p>
+                )}
+                {renter.verification.documents?.verifiedBy && (
+                  <p>{t('bdVerifiedBy')}: {renter.verification.documents.verifiedBy}</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Email & Phone Verification */}
           <div className="grid grid-cols-2 gap-4">
