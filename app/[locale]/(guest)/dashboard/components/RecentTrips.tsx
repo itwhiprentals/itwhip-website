@@ -74,7 +74,7 @@ export default function RecentTrips({ bookings, onViewAll, onBookingClick }: Rec
                 {booking.car.model}
               </p>
               <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
-                {new Date(booking.startDate).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
+                {new Date(booking.startDate.split('T')[0] + 'T12:00:00').toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
               </p>
             </div>
             <span className={`px-2.5 py-1 rounded-full text-[10px] font-semibold flex-shrink-0 ${statusBadge(booking.status)}`}>

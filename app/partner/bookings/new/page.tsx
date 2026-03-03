@@ -1657,7 +1657,7 @@ export default function NewBookingPage() {
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">{t('rentalPeriodLabel')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">
-                      {new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()}
+                      {new Date(startDate.split('T')[0] + 'T12:00:00').toLocaleDateString()} - {new Date(endDate.split('T')[0] + 'T12:00:00').toLocaleDateString()}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">{t('daysCount', { count: availability?.tripDays || 0 })}</p>
                   </div>

@@ -234,8 +234,10 @@ export default function ManualBookingView({
   const formatCurrency = (amount: number) =>
     `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
-  const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+  const formatDate = (dateStr: string) => {
+    const datePart = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr
+    return new Date(datePart + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+  }
 
   const formatTime12h = (time: string) => {
     const [h, m] = time.split(':').map(Number)

@@ -63,7 +63,8 @@ function fmt(n: number | null | undefined): string {
 function fmtDate(dateStr: string | null): string {
   if (!dateStr) return 'Pending'
   try {
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    const datePart = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr
+    return new Date(datePart + 'T12:00:00').toLocaleDateString('en-US', {
       weekday: 'short',
       month: 'short',
       day: 'numeric',

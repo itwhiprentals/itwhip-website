@@ -14,6 +14,8 @@ import {
   IoCheckmarkCircleOutline,
   IoCloseCircleOutline,
   IoAlertCircleOutline,
+  IoDocumentTextOutline,
+  IoWalletOutline,
 } from 'react-icons/io5'
 import { HandoffPanel } from './HandoffPanel'
 import { CashHandoffChecklist } from './components/CashHandoffChecklist'
@@ -186,6 +188,7 @@ interface Partner {
   state: string | null
   zipCode: string | null
   currentCommissionRate: number
+  welcomeDiscountUsed: boolean
   stripeConnected: boolean
 }
 
@@ -585,7 +588,11 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   }
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString(locale, {
+    // Extract date part and use noon local time to avoid UTC midnight timezone shift
+    // e.g. "2026-03-01T00:00:00.000Z" → "2026-03-01" → new Date("2026-03-01T12:00:00")
+    const datePart = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr
+    const d = new Date(datePart + 'T12:00:00')
+    return d.toLocaleDateString(locale, {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
@@ -723,10 +730,12 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   const isGuestDriven = booking?.isGuestDriven ?? false
   const isManualBooking = (booking?.bookingType || 'STANDARD') === 'MANUAL'
 
-  // Commission rate (Standard tier = 25%, recruited hosts use their onboarded rate)
+  // Commission rate: welcome discount (10%) for recruited hosts on first booking, else standard tier
   const PLATFORM_COMMISSION_RATE = 0.25
   const PROCESSING_FEE = 1.50
-  const commissionRate = partner?.currentCommissionRate || 0.25
+  const commissionRate = (booking?.isRecruitedBooking && partner?.welcomeDiscountUsed === false)
+    ? 0.10
+    : (partner?.currentCommissionRate || 0.25)
 
   // Strip system metadata prefixes from notes for display
   const cleanNotes = (notes: string | null): string | null => {

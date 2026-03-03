@@ -207,9 +207,9 @@ export async function POST(request: NextRequest) {
                   ${vehicleName}
                 </p>
                 <p style="color: #6b7280; font-size: 14px; margin: 0;">
-                  ${new Date(booking.startDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                  ${new Date(String(booking.startDate).split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                   to
-                  ${new Date(booking.endDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                  ${new Date(String(booking.endDate).split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                 </p>
                 <p style="color: #374151; font-size: 16px; margin: 10px 0 0 0;">
                   Total: <strong>$${Number(booking.totalAmount).toFixed(2)}</strong>
@@ -255,7 +255,7 @@ export async function POST(request: NextRequest) {
             </div>
           </div>
         `,
-        text: `Hi ${customerName},\n\n${partnerName} has prepared your rental agreement for:\n\n${vehicleName}\n${new Date(booking.startDate).toLocaleDateString()} - ${new Date(booking.endDate).toLocaleDateString()}\nTotal: $${Number(booking.totalAmount).toFixed(2)}\n\nPlease review and sign your agreement:\n${signingUrl}\n\nThis link expires in 7 days.\n\nIf you have questions, contact ${partnerName} at ${partner.partnerSupportEmail || partner.email}.\n\nPowered by ItWhip`
+        text: `Hi ${customerName},\n\n${partnerName} has prepared your rental agreement for:\n\n${vehicleName}\n${new Date(String(booking.startDate).split('T')[0] + 'T12:00:00').toLocaleDateString()} - ${new Date(String(booking.endDate).split('T')[0] + 'T12:00:00').toLocaleDateString()}\nTotal: $${Number(booking.totalAmount).toFixed(2)}\n\nPlease review and sign your agreement:\n${signingUrl}\n\nThis link expires in 7 days.\n\nIf you have questions, contact ${partnerName} at ${partner.partnerSupportEmail || partner.email}.\n\nPowered by ItWhip`
       })
       emailSent = true
       console.log(`[Agreement] Email sent to ${customerEmail}`)

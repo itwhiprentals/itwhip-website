@@ -410,9 +410,9 @@ export const ModifyBookingSheet: React.FC<ModifyBookingSheetProps> = ({
           <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg mb-3 text-center">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">{t('current')}</p>
             <p className="text-sm text-gray-900 dark:text-gray-100">
-              {new Date(booking.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              {new Date(booking.startDate.split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               {' → '}
-              {new Date(booking.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              {new Date(booking.endDate.split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               <span className="text-gray-500 ml-1">
                 ({booking.numberOfDays || Math.ceil((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / (1000 * 60 * 60 * 24))} days)
               </span>

@@ -337,6 +337,7 @@ export default function RequestDetailPage() {
   const hasDeclined = !!host.declinedRequestAt
   const hasPendingCounterOffer = prospect.counterOfferStatus === 'PENDING'
   const hasCarListed = host.cars.length > 0 && onboardingProgress.carPhotosUploaded
+  const isCarAssigned = request.status === 'CAR_ASSIGNED' && hasCompleted
 
   // Calculate earnings
   const dailyRate = prospect.counterOfferStatus === 'APPROVED' && prospect.counterOfferAmount
@@ -383,13 +384,30 @@ export default function RequestDetailPage() {
             </div>
 
             <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-medium whitespace-nowrap text-white uppercase flex-shrink-0 ${
-              hasDeclined || isExpired ? 'bg-red-600' : 'bg-gray-500 dark:bg-gray-600'
+              hasDeclined || isExpired ? 'bg-red-600' : isCarAssigned ? 'bg-green-600' : 'bg-gray-500 dark:bg-gray-600'
             }`}>
-              {hasDeclined ? t('statusDeclined') : isExpired ? t('statusExpired') : hasPendingCounterOffer ? t('statusCounterPending') : t('statusPending')}
+              {hasDeclined ? t('statusDeclined') : isExpired ? t('statusExpired') : isCarAssigned ? t('statusCarApproved') : hasPendingCounterOffer ? t('statusCounterPending') : t('statusPending')}
             </span>
 
             {/* Desktop Actions */}
             <div className="hidden sm:flex items-center gap-2">
+              {isCarAssigned && (
+                <>
+                  <button
+                    onClick={() => setShowRecruitmentSheet(true)}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center gap-2"
+                  >
+                    <IoCheckmarkCircleOutline className="w-4 h-4" />
+                    {t('confirmAndSend')}
+                  </button>
+                  <button
+                    onClick={() => setShowDecline(true)}
+                    className="px-4 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-50 dark:hover:bg-red-900/20"
+                  >
+                    {t('decline')}
+                  </button>
+                </>
+              )}
               {!isExpired && !hasDeclined && !hasCompleted && (
                 <>
                   <button
@@ -446,6 +464,23 @@ export default function RequestDetailPage() {
 
           {/* Mobile Quick Actions */}
           <div className="sm:hidden mt-3 flex gap-2">
+            {isCarAssigned && (
+              <>
+                <button
+                  onClick={() => setShowRecruitmentSheet(true)}
+                  className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 text-sm"
+                >
+                  <IoCheckmarkCircleOutline className="w-4 h-4" />
+                  {t('confirmAndSend')}
+                </button>
+                <button
+                  onClick={() => setShowDecline(true)}
+                  className="px-3 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-50 dark:hover:bg-red-900/20 text-sm"
+                >
+                  {t('decline')}
+                </button>
+              </>
+            )}
             {!isExpired && !hasDeclined && !hasCompleted && (
               <>
                 <button
@@ -471,6 +506,30 @@ export default function RequestDetailPage() {
       <div className="px-3 sm:px-4 py-4 sm:py-6">
         <div className="space-y-6 max-w-3xl">
           <div className="space-y-6">
+            {/* Car Approved — Confirm Booking Banner */}
+            {isCarAssigned && (
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <IoCheckmarkCircleOutline className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-green-800 dark:text-green-300 text-sm">
+                      {t('statusCarApproved')}
+                    </h3>
+                    <p className="text-sm text-green-700 dark:text-green-400 mt-1">
+                      {t('confirmBookingCardDesc', { guest: request.guestName || 'the guest' })}
+                    </p>
+                    <button
+                      onClick={() => setShowRecruitmentSheet(true)}
+                      className="mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"
+                    >
+                      <IoCheckmarkCircleOutline className="w-4 h-4" />
+                      {t('confirmAndSend')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Expiration Countdown Banner */}
             {!isExpired && !hasDeclined && !hasCompleted && timeRemaining && timeDisplay && (
               <div className={`rounded-lg px-3 py-2.5 sm:px-4 sm:py-3 border flex items-center gap-2.5 ${
@@ -650,6 +709,10 @@ export default function RequestDetailPage() {
         isOpen={showRecruitmentSheet}
         onClose={() => setShowRecruitmentSheet(false)}
         onComplete={handleRecruitmentComplete}
+        onDecline={() => {
+          setShowRecruitmentSheet(false)
+          setShowDecline(true)
+        }}
         hostData={{
           id: host.id,
           name: host.name,

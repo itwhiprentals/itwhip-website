@@ -109,7 +109,8 @@ export default function PartnerBookingsPage() {
   }
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString(locale, {
+    const datePart = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr
+    return new Date(datePart + 'T12:00:00').toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -117,7 +118,8 @@ export default function PartnerBookingsPage() {
   }
 
   const formatShortDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString(locale, {
+    const datePart = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr
+    return new Date(datePart + 'T12:00:00').toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric'
     })

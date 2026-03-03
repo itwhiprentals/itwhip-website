@@ -36,6 +36,7 @@ interface RecruitmentBottomSheetProps {
   isOpen: boolean
   onClose: () => void
   onComplete: () => void
+  onDecline?: () => void
   hostData: {
     id: string
     name: string
@@ -87,6 +88,7 @@ export default function RecruitmentBottomSheet({
   isOpen,
   onClose,
   onComplete,
+  onDecline,
   hostData,
   prospectData,
   requestData,
@@ -104,6 +106,12 @@ export default function RecruitmentBottomSheet({
   const [bookingId, setBookingId] = useState('')
   const [paymentPref, setPaymentPref] = useState<'CASH' | 'PLATFORM' | null>(
     (onboardingProgress?.paymentPreference as 'CASH' | 'PLATFORM') || null
+  )
+  // Create booking state (CONGRATS step — confirm & send agreement)
+  const [creatingBooking, setCreatingBooking] = useState(false)
+  const [createBookingError, setCreateBookingError] = useState('')
+  const [finalAgreementType, setFinalAgreementType] = useState<'ITWHIP' | 'OWN' | 'BOTH'>(
+    (onboardingProgress?.agreementPreference as 'ITWHIP' | 'OWN' | 'BOTH') || 'ITWHIP'
   )
   // Stripe Connect state (shown in CONGRATS for PLATFORM users)
   const [stripePolling, setStripePolling] = useState(false)
@@ -180,9 +188,8 @@ export default function RecruitmentBottomSheet({
       })
       const data = await response.json()
 
-      if (data.success) {
-        setBookingCode(data.booking?.bookingCode || '')
-        setBookingId(data.booking?.id || '')
+      if (data.success || data.alreadyComplete) {
+        // Finalize no longer creates a booking — just activates car + host
         setCompletedSteps(prev => new Set([...prev, 'ADD_CAR']))
         setCurrentStep('CONGRATS')
       } else {
@@ -194,6 +201,33 @@ export default function RecruitmentBottomSheet({
       setFinalizing(false)
     }
   }, [t])
+
+  const handleCreateBooking = useCallback(async () => {
+    setCreatingBooking(true)
+    setCreateBookingError('')
+    try {
+      const response = await fetch('/api/partner/bookings/create-from-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestId: requestData.id,
+          agreementType: finalAgreementType,
+        })
+      })
+      const data = await response.json()
+
+      if (data.success && data.booking) {
+        setBookingCode(data.booking.bookingCode || '')
+        setBookingId(data.booking.id)
+      } else {
+        setCreateBookingError(data.error || t('bsFailedToFinalize'))
+      }
+    } catch {
+      setCreateBookingError(t('bsFailedToFinalize'))
+    } finally {
+      setCreatingBooking(false)
+    }
+  }, [requestData.id, finalAgreementType, t])
 
   // Detect missing fields on mount only (runs once when bottomsheet opens)
   // NOT on every parent re-render — the parent's countdown timer re-renders every second,
@@ -258,10 +292,15 @@ export default function RecruitmentBottomSheet({
 
           setCompletedSteps(completed)
           if (allStepsComplete && completed.size === PROGRESS_STEPS.length) {
-            // All 4 steps done but finalize never completed (e.g. previous crash)
-            // Set to ADD_CAR and trigger finalize
-            setCurrentStep('ADD_CAR')
-            handleFinalize()
+            if (host.onboardingCompletedAt) {
+              // Already finalized — go straight to CONGRATS (confirm stage)
+              setCurrentStep('CONGRATS')
+            } else {
+              // All 4 steps done but finalize never completed (e.g. previous crash)
+              // Set to ADD_CAR and trigger finalize
+              setCurrentStep('ADD_CAR')
+              handleFinalize()
+            }
           } else if (completed.size > 0) {
             setCurrentStep(firstIncomplete)
           }
@@ -445,113 +484,174 @@ export default function RecruitmentBottomSheet({
 
       {currentStep === 'CONGRATS' && (
         <>
-          {/* PLATFORM users: show Stripe Connect before congrats */}
-          {paymentPref === 'PLATFORM' && !stripeConnected && !stripeSkipped ? (
-            <div className="text-center py-8 space-y-6">
-              {stripePolling ? (
-                <>
-                  <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto">
-                    <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      {t('bsWaitingForStripe')}
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {t('bsCompleteStripeInOtherTab')}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-center gap-2 text-sm text-gray-400 dark:text-gray-500">
-                    <IoTimeOutline className="w-4 h-4" />
-                    <span>{Math.floor(pollingSeconds / 60)}:{(pollingSeconds % 60).toString().padStart(2, '0')}</span>
-                  </div>
-                  {pollingSeconds >= 60 && (
-                    <button
-                      onClick={handleSkipStripe}
-                      className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 underline"
-                    >
-                      {t('bsSkipStripeForNow')}
-                    </button>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
-                    <IoCheckmarkCircleOutline className="w-10 h-10 text-green-600 dark:text-green-400" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                    {t('bsCongratsTitle')}
-                  </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {t('bsCongratsDesc', { guest: requestData.guestName || 'the guest' })}
-                  </p>
-                  {bookingCode && (
-                    <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
-                      {bookingCode}
-                    </p>
-                  )}
-
-                  {/* Stripe Connect CTA */}
-                  <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      <IoCardOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                      <h4 className="font-semibold text-gray-900 dark:text-white">
-                        {t('bsConnectStripeTitle')}
-                      </h4>
-                    </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                      {t('bsConnectStripeDesc')}
-                    </p>
-                    <button
-                      onClick={handleConnectStripe}
-                      className="w-full px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-                    >
-                      {t('bsConnectStripeButton')}
-                    </button>
-                  </div>
-
-                  <button
-                    onClick={handleSkipStripe}
-                    className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 underline"
-                  >
-                    {t('bsSkipStripeForNow')}
-                  </button>
-                </>
-              )}
+          {creatingBooking ? (
+            /* Creating booking spinner */
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-8 h-8 border-3 border-orange-600 border-t-transparent rounded-full animate-spin" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                {t('bsCreatingBooking')}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {t('bsCreatingBookingDesc')}
+              </p>
             </div>
-          ) : (
-            /* CASH users or Stripe already handled: show congrats */
+          ) : bookingId ? (
+            /* Booking created — success state */
             <div className="text-center py-12">
               <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                 <IoCheckmarkCircleOutline className="w-10 h-10 text-green-600 dark:text-green-400" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                {stripeConnected ? t('bsPayoutConnected') : t('bsCongratsTitle')}
+                {t('bsBookingCreated')}
               </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                {stripeConnected
-                  ? t('bsPayoutConnectedDesc')
-                  : t('bsCongratsDesc', { guest: requestData.guestName || 'the guest' })
-                }
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                {t('bsBookingCreatedDesc', { guest: requestData.guestName || 'the guest' })}
               </p>
               {bookingCode && (
-                <p className="text-xs text-gray-400 dark:text-gray-500 mb-4 font-mono">
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-6 font-mono">
                   {bookingCode}
                 </p>
               )}
               <button
                 onClick={() => {
                   onClose()
-                  if (bookingId) {
-                    router.push(`/partner/bookings/${bookingId}`)
-                  } else {
-                    onComplete()
-                  }
+                  router.push(`/partner/bookings/${bookingId}`)
                 }}
                 className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
               >
                 {t('bsViewBooking')}
               </button>
+            </div>
+          ) : (
+            /* Car approved — confirm booking stage */
+            <div className="space-y-6 pb-4">
+              {/* Part A: Car Approved */}
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <IoCheckmarkCircleOutline className="w-8 h-8 text-green-600 dark:text-green-400" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                  {t('bsCarApproved')}
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {t('bsOneMoreStep', { guest: requestData.guestName || 'the guest' })}
+                </p>
+              </div>
+
+              {/* Stripe Connect for PLATFORM users */}
+              {paymentPref === 'PLATFORM' && !stripeConnected && !stripeSkipped && (
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  {stripePolling ? (
+                    <div className="text-center space-y-3">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {t('bsWaitingForStripe')}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {t('bsCompleteStripeInOtherTab')}
+                      </p>
+                      {pollingSeconds >= 60 && (
+                        <button onClick={handleSkipStripe} className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 underline">
+                          {t('bsSkipStripeForNow')}
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center space-y-3">
+                      <div className="flex items-center justify-center gap-2 mb-1">
+                        <IoCardOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
+                          {t('bsConnectStripeTitle')}
+                        </h4>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {t('bsConnectStripeDesc')}
+                      </p>
+                      <div className="flex gap-2">
+                        <button onClick={handleConnectStripe} className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors">
+                          {t('bsConnectStripeButton')}
+                        </button>
+                        <button onClick={handleSkipStripe} className="px-4 py-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 text-sm">
+                          {t('bsSkipStripeForNow')}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Divider */}
+              <div className="border-t border-gray-200 dark:border-gray-700" />
+
+              {/* Agreement Selection */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                  {t('bsSelectAgreement')}
+                </h4>
+                <AgreementPreferenceStep
+                  onComplete={() => {}}
+                  existingAgreement={existingAgreement}
+                  requestData={requestData}
+                  hostName={hostData.name}
+                  hostEmail={hostData.email}
+                  hideButton
+                  initialPreference={(onboardingProgress?.agreementPreference as 'ITWHIP' | 'OWN' | 'BOTH') || 'ITWHIP'}
+                  onSelectionChange={(pref) => setFinalAgreementType(pref)}
+                />
+              </div>
+
+              {/* Request Summary */}
+              <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400 text-xs">{t('guest')}</span>
+                    <p className="font-medium text-gray-900 dark:text-white">{requestData.guestName || 'Guest'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400 text-xs">{t('duration')}</span>
+                    <p className="font-medium text-gray-900 dark:text-white">{requestData.durationDays || 14} {t('days')}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400 text-xs">{t('requestRate')}</span>
+                    <p className="font-medium text-gray-900 dark:text-white">${(requestData.offeredRate || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/{t('day')}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400 text-xs">{t('yourEarnings')}</span>
+                    <p className="font-semibold text-green-600 dark:text-green-400">${(requestData.hostEarnings || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Error message */}
+              {createBookingError && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="text-sm text-red-700 dark:text-red-300">{createBookingError}</p>
+                </div>
+              )}
+
+              {/* Confirm & Send Agreement button */}
+              <button
+                onClick={handleCreateBooking}
+                disabled={creatingBooking}
+                className="w-full py-3.5 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+              >
+                <IoCheckmarkCircleOutline className="w-5 h-5" />
+                {t('bsConfirmAndSend')}
+              </button>
+
+              {/* Decline Offer link */}
+              <div className="text-center">
+                <button
+                  onClick={() => onDecline?.()}
+                  className="text-sm text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400"
+                >
+                  {t('bsDeclineOffer')}
+                </button>
+              </div>
             </div>
           )}
         </>

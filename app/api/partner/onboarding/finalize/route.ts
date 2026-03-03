@@ -1,25 +1,17 @@
 // app/api/partner/onboarding/finalize/route.ts
-// Finalize recruited host onboarding: mark complete, create booking, auto-create guest
+// Lightweight finalize: activates car + completes host onboarding
+// Booking creation is deferred to POST /api/partner/bookings/create-from-request
+// when the host clicks "Confirm & Send Agreement"
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
-import { nanoid } from 'nanoid'
-import { randomBytes } from 'crypto'
 import { logProspectActivity } from '@/app/lib/auth/host-tokens'
-import { GuestTokenHandler } from '@/app/lib/auth/guest-tokens'
 import { sendEmail } from '@/app/lib/email/sender'
 import { emailConfig, logEmail, generateEmailReference, getEmailFooterHtml, getEmailFooterText } from '@/app/lib/email/config'
-// Agreement token imports removed — agreement is no longer auto-sent during finalize
-// Host sends agreement manually from the booking detail page
-import { sendVehicleChangeEmail } from '@/app/lib/email/booking-emails'
-import Stripe from 'stripe'
 
 const JWT_SECRET = process.env.JWT_SECRET!
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-08-27.basil' as Stripe.LatestApiVersion,
-})
 
 async function getCurrentHost() {
   const cookieStore = await cookies()
@@ -106,408 +98,10 @@ export async function POST(request: NextRequest) {
     }
 
     // ═══════════════════════════════════════════════════
-    // DETECT: Existing Guest mode + scenario
-    //   Scenario A: has booking + valid payment hold → transfer payment
-    //   Scenario B: has booking + NO hold → cancel old, fresh booking
-    //   Scenario C: no booking → fresh booking only
-    // ═══════════════════════════════════════════════════
-    const isExistingGuest = prospect.guestSelectionType === 'EXISTING'
-      && !!prospect.existingGuestId
-    const hasBookingToReplace = isExistingGuest && !!prospect.existingBookingId
-
-    // Fetch existing booking or existing user data
-    let existingBooking: any = null
-    let existingUser: any = null
-    let existingReviewer: any = null
-    let hasValidHold = false
-
-    if (hasBookingToReplace) {
-      existingBooking = await prisma.rentalBooking.findUnique({
-        where: { id: prospect.existingBookingId! },
-        include: {
-          renter: { select: { id: true, email: true, name: true, phone: true } },
-          reviewerProfile: { select: { id: true } },
-          car: { select: { make: true, model: true, year: true } },
-        }
-      })
-
-      if (!existingBooking || !existingBooking.renter) {
-        return NextResponse.json(
-          { error: 'Existing booking or guest not found' },
-          { status: 404 }
-        )
-      }
-
-      // Verify the old booking hasn't already been replaced
-      if (existingBooking.replacedByBookingId) {
-        return NextResponse.json(
-          { error: 'This booking has already been reassigned' },
-          { status: 400 }
-        )
-      }
-
-      // Check payment hold status — don't fail if no hold (Scenario B)
-      if (existingBooking.paymentIntentId) {
-        try {
-          const pi = await stripe.paymentIntents.retrieve(existingBooking.paymentIntentId)
-          hasValidHold = pi.status === 'requires_capture'
-        } catch (stripeErr) {
-          console.error('[Finalize] Stripe hold check failed:', stripeErr)
-          hasValidHold = false
-        }
-      }
-      console.log(`[Finalize] Existing booking ${existingBooking.bookingCode}: hasValidHold=${hasValidHold}`)
-    } else if (isExistingGuest) {
-      // Scenario C: no booking to replace, just fetch the guest user
-      existingUser = await prisma.user.findUnique({
-        where: { id: prospect.existingGuestId! },
-        select: { id: true, email: true, name: true, phone: true }
-      })
-      existingReviewer = await prisma.reviewerProfile.findFirst({
-        where: { userId: prospect.existingGuestId! },
-        select: { id: true }
-      })
-
-      if (!existingUser) {
-        return NextResponse.json(
-          { error: 'Existing guest user not found' },
-          { status: 404 }
-        )
-      }
-    }
-
-    // Determine payment preference
-    // Existing guests always go through platform (they choose CARD/CASH on the stepper)
-    const isCash = isExistingGuest ? false : prospect.paymentPreference === 'CASH'
-
-    // Calculate pricing
-    let dailyRate: number
-    let durationDays: number
-    let subtotal: number
-    let serviceFee: number
-    let totalAmount: number
-
-    if (hasBookingToReplace && hasValidHold && existingBooking) {
-      // Scenario A: use pricing from existing booking (guest already authorized this amount)
-      dailyRate = existingBooking.dailyRate || 0
-      durationDays = existingBooking.numberOfDays || 14
-      subtotal = existingBooking.subtotal || dailyRate * durationDays
-      serviceFee = existingBooking.serviceFee || 0
-      totalAmount = existingBooking.totalAmount || subtotal + serviceFee
-    } else {
-      // Scenarios B, C, and NEW: use request pricing
-      dailyRate = prospect.counterOfferStatus === 'APPROVED' && prospect.counterOfferAmount
-        ? prospect.counterOfferAmount
-        : fleetRequest.offeredRate || 0
-      durationDays = fleetRequest.durationDays || 14
-      subtotal = dailyRate * durationDays
-      serviceFee = isCash ? 0 : subtotal * 0.10
-      totalAmount = subtotal + serviceFee
-    }
-    const hostEarnings = subtotal - (isCash ? 0 : serviceFee)
-
-    // ═══════════════════════════════════════════════════
-    // STEP 1: Resolve guest account
-    // ═══════════════════════════════════════════════════
-    let reviewerProfileId: string | null = null
-    let guestUserId: string | null = null
-    let guestEmail: string | undefined
-    let guestName: string
-    let guestPhone: string | null
-
-    if (isExistingGuest && hasBookingToReplace && existingBooking) {
-      // ── EXISTING GUEST (Scenario A/B): use guest from existing booking ──
-      guestUserId = existingBooking.renter.id
-      reviewerProfileId = existingBooking.reviewerProfile?.id || null
-      guestEmail = existingBooking.renter.email?.toLowerCase() || undefined
-      guestName = existingBooking.renter.name || existingBooking.guestName || 'Guest'
-      guestPhone = existingBooking.renter.phone || existingBooking.guestPhone || null
-      console.log(`[Finalize] Existing guest (has booking): ${guestEmail} (userId: ${guestUserId})`)
-    } else if (isExistingGuest && existingUser) {
-      // ── EXISTING GUEST (Scenario C): use guest from user record ──
-      guestUserId = existingUser.id
-      reviewerProfileId = existingReviewer?.id || null
-      guestEmail = existingUser.email?.toLowerCase() || undefined
-      guestName = existingUser.name || 'Guest'
-      guestPhone = existingUser.phone || null
-      console.log(`[Finalize] Existing guest (no booking): ${guestEmail} (userId: ${guestUserId})`)
-    } else {
-      // ── NEW GUEST PATH: find or create guest account ──
-      guestEmail = fleetRequest.guestEmail?.toLowerCase().trim() || undefined
-      guestName = fleetRequest.guestName || 'Guest'
-      guestPhone = fleetRequest.guestPhone || null
-
-      if (guestEmail) {
-        // Check for existing ReviewerProfile
-        const existingProfile = await prisma.reviewerProfile.findUnique({
-          where: { email: guestEmail },
-          select: { id: true, userId: true }
-        })
-
-        if (existingProfile) {
-          reviewerProfileId = existingProfile.id
-          guestUserId = existingProfile.userId
-
-          // Profile exists but no linked User — create one so guest can log in
-          if (!guestUserId) {
-            const existingUser = await prisma.user.findUnique({ where: { email: guestEmail } })
-            if (existingUser) {
-              guestUserId = existingUser.id
-              // Link profile to existing user
-              await prisma.reviewerProfile.update({
-                where: { id: existingProfile.id },
-                data: { userId: existingUser.id }
-              })
-            } else {
-              const newUserId = nanoid()
-              await prisma.user.create({
-                data: {
-                  id: newUserId,
-                  email: guestEmail,
-                  name: guestName,
-                  phone: guestPhone,
-                  role: 'CLAIMED',
-                  emailVerified: false,
-                  updatedAt: new Date()
-                }
-              })
-              guestUserId = newUserId
-              await prisma.reviewerProfile.update({
-                where: { id: existingProfile.id },
-                data: { userId: newUserId }
-              })
-            }
-          }
-        } else {
-          // Create new ReviewerProfile for the guest
-          const profileId = randomBytes(16).toString('hex')
-          const newProfile = await prisma.reviewerProfile.create({
-            data: {
-              id: profileId,
-              email: guestEmail,
-              phoneNumber: guestPhone,
-              name: guestName,
-              city: fleetRequest.pickupCity || 'Unknown',
-              state: fleetRequest.pickupState || 'AZ',
-              emailVerified: false,
-              phoneVerified: false,
-              updatedAt: new Date()
-            }
-          })
-          reviewerProfileId = newProfile.id
-
-          // Create a User record for the guest (no password — they'll set one later)
-          const userId = nanoid()
-          await prisma.user.create({
-            data: {
-              id: userId,
-              email: guestEmail,
-              name: guestName,
-              phone: guestPhone,
-              role: 'CLAIMED',
-              emailVerified: false,
-              updatedAt: new Date()
-            }
-          })
-          guestUserId = userId
-
-          // Link ReviewerProfile to User
-          await prisma.reviewerProfile.update({
-            where: { id: profileId },
-            data: { userId }
-          })
-        }
-      }
-    }
-
-    // ═══════════════════════════════════════════════════
-    // STEP 2: Create the booking
-    // ═══════════════════════════════════════════════════
-    const bookingCode = `BK-${nanoid(6).toUpperCase()}`
-    const bookingId = crypto.randomUUID()
-
-    const booking = await prisma.rentalBooking.create({
-      data: {
-        id: bookingId,
-        bookingCode,
-        updatedAt: new Date(),
-
-        // Car and host
-        carId: car.id,
-        hostId: host.id,
-
-        // Guest
-        ...(guestUserId && { renterId: guestUserId }),
-        ...(reviewerProfileId && { reviewerProfileId }),
-        guestEmail: guestEmail || '',
-        guestName: guestName,
-        guestPhone: guestPhone,
-
-        // Dates
-        startDate: fleetRequest.startDate || new Date(),
-        endDate: fleetRequest.endDate || new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000),
-        startTime: fleetRequest.startTime || '10:00',
-        endTime: fleetRequest.endTime || '10:00',
-
-        // Location
-        pickupLocation: fleetRequest.pickupCity
-          ? `${fleetRequest.pickupCity}, ${fleetRequest.pickupState || 'AZ'}`
-          : car.city || '',
-        pickupType: 'pickup',
-
-        // Pricing
-        dailyRate,
-        numberOfDays: durationDays,
-        subtotal,
-        serviceFee,
-        taxes: 0,
-        securityDeposit: 0,
-        depositHeld: 0,
-        totalAmount,
-
-        // Status — all recruited bookings start PENDING (guest chooses payment, host confirms)
-        status: 'PENDING',
-        bookingType: 'MANUAL',
-        paymentStatus: 'PENDING',
-        paymentType: null, // Guest selects CARD or CASH after auto-login
-        fleetStatus: 'APPROVED',
-
-        // Welcome discount: 10% platform fee on first booking
-        platformFeeRate: 0.10,
-        isWelcomeDiscount: true,
-
-        // Mark as request-based booking
-        notes: hasBookingToReplace && existingBooking
-          ? `[Existing Guest] Reassigned from booking ${existingBooking?.bookingCode || existingBooking?.id}. Original host unavailable.`
-          : isExistingGuest
-            ? `[Existing Guest] Fresh booking for existing guest ${guestEmail}. No previous booking to replace.`
-            : `[Request-Based Booking] Created from ReservationRequest ${fleetRequest.id}. Payment: ${isCash ? 'Cash/Offline' : 'Platform'}`,
-        verificationSource: 'ONBOARDING',
-
-        // Scenario A: transfer payment + link to original booking
-        ...(hasBookingToReplace && hasValidHold && existingBooking && {
-          originalBookingId: existingBooking.id,
-          originalCarId: existingBooking.carId,
-          vehicleChangeReason: 'Original host unavailable — vehicle reassigned to new partner',
-          paymentIntentId: existingBooking.paymentIntentId,
-          stripeCustomerId: existingBooking.stripeCustomerId,
-          stripePaymentMethodId: existingBooking.stripePaymentMethodId,
-          paymentStatus: 'AUTHORIZED',
-          paymentType: 'CARD',
-          agreementType: 'ITWHIP',
-          agreementStatus: 'not_sent',
-        }),
-
-        // Scenario B: link to original booking but NO payment transfer
-        ...(hasBookingToReplace && !hasValidHold && existingBooking && {
-          originalBookingId: existingBooking.id,
-          originalCarId: existingBooking.carId,
-          vehicleChangeReason: 'Original host unavailable — reassigned to new partner',
-          // paymentType stays null — guest picks CARD or CASH on stepper
-        })
-      },
-      select: {
-        id: true,
-        bookingCode: true,
-        status: true
-      }
-    })
-
-    // ═══════════════════════════════════════════════════
-    // STEP 2B: Handle post-booking-creation actions per scenario
-    //   A: Cancel old booking + vehicle change token (payment transfer)
-    //   B: Cancel old booking (no payment transfer)
-    //   C/NEW: No old booking — host sends agreement manually from booking page
-    //
-    // NOTE: Agreement is NOT auto-sent. Host reviews the booking page first,
-    // then sends the agreement when ready. This prevents rushing the host.
-    // ═══════════════════════════════════════════════════
-    let vehicleChangeToken: string | null = null
-
-    if (hasBookingToReplace && hasValidHold && existingBooking) {
-      // ── SCENARIO A: Cancel old booking, transfer payment, vehicle change token ──
-      await prisma.rentalBooking.update({
-        where: { id: existingBooking.id },
-        data: {
-          status: 'CANCELLED',
-          cancellationReason: 'REASSIGNED',
-          cancelledAt: new Date(),
-          replacedByBookingId: bookingId,
-          paymentIntentId: null,
-          paymentStatus: 'CANCELLED' as any,
-        }
-      })
-      console.log(`[Finalize] Scenario A: Old booking ${existingBooking.bookingCode} cancelled (payment transferred → ${bookingCode})`)
-
-      // Generate vehicle change token so guest can accept/decline the new vehicle
-      vehicleChangeToken = crypto.randomUUID()
-      const vehicleChangeExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000) // 48 hours
-
-      await prisma.rentalBooking.update({
-        where: { id: bookingId },
-        data: { vehicleChangeToken, vehicleChangeExpiresAt }
-      })
-      console.log(`[Finalize] Vehicle change token generated for booking ${bookingCode}`)
-
-    } else if (hasBookingToReplace && !hasValidHold && existingBooking) {
-      // ── SCENARIO B: Cancel old booking (no payment to transfer) ──
-      await prisma.rentalBooking.update({
-        where: { id: existingBooking.id },
-        data: {
-          status: 'CANCELLED',
-          cancellationReason: 'REASSIGNED',
-          cancelledAt: new Date(),
-          replacedByBookingId: bookingId,
-        }
-      })
-      console.log(`[Finalize] Scenario B: Old booking ${existingBooking.bookingCode} cancelled (no hold → ${bookingCode})`)
-
-      // Set agreement type from host preference but do NOT send yet
-      if (guestEmail) {
-        try {
-          const agreementType = prospect.agreementPreference || 'ITWHIP'
-          const hostAgreementUrl = prospect.hostAgreementUrl || null
-
-          await prisma.rentalBooking.update({
-            where: { id: bookingId },
-            data: {
-              signerEmail: guestEmail,
-              agreementType,
-              hostAgreementUrl
-            }
-          })
-          console.log(`[Finalize] Scenario B: Agreement prepared (not sent) for ${bookingCode} — host sends manually`)
-        } catch (agreementErr) {
-          console.error('[Finalize] Failed to set up agreement metadata:', agreementErr)
-        }
-      }
-
-    } else if (guestEmail) {
-      // ── SCENARIO C / NEW GUEST: Set agreement metadata, host sends manually ──
-      try {
-        const agreementType = prospect.agreementPreference || 'ITWHIP'
-        const hostAgreementUrl = prospect.hostAgreementUrl || null
-
-        await prisma.rentalBooking.update({
-          where: { id: bookingId },
-          data: {
-            signerEmail: guestEmail,
-            agreementType,
-            hostAgreementUrl
-          }
-        })
-        console.log(`[Finalize] Agreement prepared (not sent) for ${bookingCode} — host sends manually`)
-      } catch (agreementErr) {
-        console.error('[Finalize] Failed to set up agreement metadata:', agreementErr)
-      }
-    }
-
-    // ═══════════════════════════════════════════════════
-    // STEP 3: Mark onboarding complete
+    // STEP 1: Mark host onboarding complete
     // ═══════════════════════════════════════════════════
     const now = new Date()
 
-    // Update host
     await prisma.rentalHost.update({
       where: { id: host.id },
       data: {
@@ -520,10 +114,10 @@ export async function POST(request: NextRequest) {
         canSetPricing: true,
         canEditCalendar: true,
         canMessageGuests: true,
-        // Copy host preferences from prospect (persist after conversion)
+        // Copy host preferences from prospect
         paymentPreference: prospect.paymentPreference || null,
         agreementPreference: prospect.agreementPreference || null,
-        // Standard commission tier (25%) — welcome discount is per-booking, not per-host
+        // Standard commission tier (25%) — welcome discount is per-booking
         currentCommissionRate: 0.25,
         commissionRate: 0.25,
         commissionTier: 'STANDARD',
@@ -533,269 +127,70 @@ export async function POST(request: NextRequest) {
         acquisitionChannel: 'prospect_outreach',
         acquisitionSource: prospect.source?.toLowerCase() || null,
         acquisitionDate: prospect.createdAt,
-        firstBookingDate: now,
-        firstBookingEarnings: hostEarnings,
+        // NOTE: firstBookingDate and firstBookingEarnings set when booking is created
       }
     })
 
-    // Update prospect
+    // ═══════════════════════════════════════════════════
+    // STEP 2: Activate the car
+    // ═══════════════════════════════════════════════════
+    await prisma.rentalCar.update({
+      where: { id: car.id },
+      data: {
+        isActive: true,
+        approvalStatus: 'APPROVED',
+      }
+    })
+
+    // ═══════════════════════════════════════════════════
+    // STEP 3: Update prospect (CONVERTED, not FULFILLED yet)
+    // ═══════════════════════════════════════════════════
     await prisma.hostProspect.update({
       where: { id: prospect.id },
       data: {
         status: 'CONVERTED',
         convertedAt: now,
         onboardingCompletedAt: now,
-        convertedBookingId: bookingId,
-        lastActivityAt: now
+        lastActivityAt: now,
+        // NOTE: convertedBookingId set when booking is created
       }
     })
 
     // ═══════════════════════════════════════════════════
-    // STEP 4: Fulfill the reservation request
+    // STEP 4: Update request status (CAR_ASSIGNED, not FULFILLED)
     // ═══════════════════════════════════════════════════
     await prisma.reservationRequest.update({
       where: { id: fleetRequest.id },
       data: {
-        status: 'FULFILLED',
-        fulfilledBookingId: bookingId
+        status: 'CAR_ASSIGNED',
+        // NOTE: fulfilledBookingId set when booking is created
       }
     })
 
     // ═══════════════════════════════════════════════════
     // STEP 5: Log activity
     // ═══════════════════════════════════════════════════
-    await logProspectActivity(prospect.id, 'ONBOARDING_FINALIZED', {
+    await logProspectActivity(prospect.id, 'ONBOARDING_COMPLETED', {
       hostId: host.id,
-      bookingId: booking.id,
-      bookingCode: booking.bookingCode,
       carId: car.id,
-      guestEmail,
-      paymentPreference: prospect.paymentPreference,
-      isCash,
-      isExistingGuest,
-      hasBookingToReplace,
-      hasValidHold,
-      scenario: (hasBookingToReplace && hasValidHold) ? 'A' : hasBookingToReplace ? 'B' : isExistingGuest ? 'C' : 'NEW',
-      ...(hasBookingToReplace && {
-        existingBookingId: existingBooking?.id,
-        existingBookingCode: existingBooking?.bookingCode,
-      })
+      requestId: fleetRequest.id,
     })
 
     // ═══════════════════════════════════════════════════
-    // STEP 6: Send emails (non-blocking)
+    // STEP 6: Send host-only welcome email
     // ═══════════════════════════════════════════════════
     const baseUrl = emailConfig.websiteUrl
     const vehicleDesc = `${car.year} ${car.make} ${car.model}`
-    const startDateStr = fleetRequest.startDate
-      ? new Date(fleetRequest.startDate).toLocaleDateString('en-US', { dateStyle: 'medium' })
-      : 'TBD'
-    const endDateStr = fleetRequest.endDate
-      ? new Date(fleetRequest.endDate).toLocaleDateString('en-US', { dateStyle: 'medium' })
-      : 'TBD'
+    const guestName = fleetRequest.guestName || 'your guest'
+    const requestUrl = `${baseUrl}/partner/requests/${fleetRequest.id}`
 
-    // ── SCENARIO A: Send vehicle change email + SMS (payment transferred) ──
-    if (hasBookingToReplace && hasValidHold && existingBooking && guestEmail && vehicleChangeToken) {
-      const changeUrl = `${baseUrl}/bookings/${bookingId}/change?token=${vehicleChangeToken}`
-      const originalCarName = existingBooking.car
-        ? `${existingBooking.car.year} ${existingBooking.car.make} ${existingBooking.car.model}`
-        : 'your previous vehicle'
-
-      // Vehicle change email (reuse existing template)
-      try {
-        await sendVehicleChangeEmail({
-          guestEmail,
-          guestName,
-          bookingCode: booking.bookingCode,
-          originalCarName,
-          originalCarImage: '',
-          newCarName: vehicleDesc,
-          newCarImage: '',
-          newDailyRate: dailyRate,
-          startDate: (fleetRequest.startDate || new Date()).toISOString(),
-          endDate: (fleetRequest.endDate || new Date()).toISOString(),
-          changeUrl,
-          reason: 'Your original host is no longer available — we found a great new vehicle for your trip!',
-        })
-        console.log(`[Finalize] Vehicle change email sent to ${guestEmail} for booking ${booking.bookingCode}`)
-      } catch (emailErr) {
-        console.error('[Finalize] Failed to send vehicle change email:', emailErr)
-      }
-
-      // SMS notification
-      if (guestPhone) {
-        try {
-          const { sendSms } = await import('@/app/lib/twilio/sms')
-          const guestFirstName = guestName.split(' ')[0]
-          await sendSms(
-            guestPhone,
-            `ITWhip: Great news, ${guestFirstName}! We found a new vehicle for your trip on ${startDateStr}–${endDateStr}. Check your email to review and confirm.`,
-            { type: 'BOOKING_RECEIVED', bookingId, hostId: host.id, guestId: reviewerProfileId || undefined }
-          )
-          console.log(`[Finalize] Bridge SMS sent to ${guestPhone}`)
-        } catch (smsErr) {
-          console.error('[Finalize] Failed to send bridge SMS:', smsErr)
-        }
-      }
-    }
-
-    // ── SCENARIOS B, C, and NEW GUEST: Send regular booking email + SMS ──
-    const isScenarioA = hasBookingToReplace && hasValidHold
-    if (!isScenarioA && guestEmail) {
-      // Create auto-login token (shared by email + SMS)
-      let autoLoginUrl = ''
-      try {
-        const guestAccessToken = await GuestTokenHandler.createGuestToken(bookingId, guestEmail)
-        autoLoginUrl = `${baseUrl}/api/auth/guest-auto-login?token=${guestAccessToken}`
-      } catch (tokenErr) {
-        console.error('[Finalize] Failed to create guest access token:', tokenErr)
-      }
-
-      const guestFirstName = guestName.split(' ')[0]
-
-      // ── Guest Email ──
-      try {
-        const guestRefId = generateEmailReference('GI')
-
-        const guestSubject = `Your Car Rental is ${isCash ? 'Confirmed' : 'Almost Ready'}! — ${vehicleDesc}`
-        const guestEmailResult = await sendEmail(
-          guestEmail,
-          guestSubject,
-          `
-          <!DOCTYPE html>
-          <html>
-            <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; background-color: #ffffff; max-width: 600px; margin: 0 auto; padding: 20px;">
-
-              <!-- Header -->
-              <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
-                <p style="margin: 0 0 4px 0; font-size: 12px; color: ${isCash ? '#16a34a' : '#ea580c'}; text-transform: uppercase; letter-spacing: 0.5px;">
-                  ${isCash ? 'Booking Confirmed' : 'Booking Created'} • ${booking.bookingCode}
-                </p>
-                <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ea580c;">
-                  Your ${vehicleDesc} Rental
-                </h1>
-              </div>
-
-              <!-- Main content -->
-              <p style="font-size: 16px; margin: 0 0 16px 0; color: #1f2937;">Hi ${guestFirstName},</p>
-              <p style="font-size: 16px; margin: 0 0 16px 0; color: #111827;">
-                Great news! A <strong>${vehicleDesc}</strong> has been ${isCash ? 'booked' : 'reserved'} for you through ItWhip.
-              </p>
-
-              <!-- Booking Details -->
-              <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin: 16px 0;">
-                <tr>
-                  <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Vehicle</td>
-                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${vehicleDesc}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Rental Dates</td>
-                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${startDateStr} — ${endDateStr}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Duration</td>
-                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${durationDays} days</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Daily Rate</td>
-                  <td style="padding: 8px 0; color: #1f2937; font-weight: 700; text-align: right; border-bottom: 1px solid #e5e7eb;">$${dailyRate}/day</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #374151;">Total</td>
-                  <td style="padding: 8px 0; color: #1f2937; font-weight: 700; text-align: right;">$${totalAmount.toFixed(2)}</td>
-                </tr>
-              </table>
-
-              <p style="font-size: 14px; color: #111827; margin: 20px 0;">
-                Your host is reviewing the details and will send you a <strong>rental agreement</strong> to sign shortly. In the meantime, you can view your booking:
-              </p>
-
-              <!-- CTA Buttons -->
-              <div style="text-align: center; margin: 28px 0;">
-                <a href="${autoLoginUrl}" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
-                  View My Booking
-                </a>
-              </div>
-
-              <p style="font-size: 12px; color: #9ca3af; text-align: center; margin: 0 0 20px 0;">
-                These links expire in 7 days. You'll be asked to set a password on your first visit.
-              </p>
-
-              ${getEmailFooterHtml(guestRefId)}
-            </body>
-          </html>
-          `,
-          `
-YOUR CAR RENTAL IS ${isCash ? 'CONFIRMED' : 'ALMOST READY'} • ${booking.bookingCode}
-
-Hi ${guestFirstName},
-
-Great news! A ${vehicleDesc} has been ${isCash ? 'booked' : 'reserved'} for you through ItWhip.
-
-BOOKING DETAILS:
-- Vehicle: ${vehicleDesc}
-- Rental Dates: ${startDateStr} — ${endDateStr}
-- Duration: ${durationDays} days
-- Daily Rate: $${dailyRate}/day
-- Total: $${totalAmount.toFixed(2)}
-
-Your host is reviewing the details and will send you a rental agreement to sign shortly.
-
-View your booking: ${autoLoginUrl}
-
-These links expire in 7 days. You'll be asked to set a password on your first visit.
-
-${getEmailFooterText(guestRefId)}
-          `.trim()
-        )
-
-        await logEmail({
-          recipientEmail: guestEmail,
-          recipientName: guestName,
-          subject: guestSubject,
-          emailType: 'BOOKING_CONFIRMATION',
-          relatedType: 'RentalBooking',
-          relatedId: bookingId,
-          messageId: guestEmailResult.messageId,
-          referenceId: guestRefId
-        })
-
-        console.log(`[Finalize] Guest email sent to ${guestEmail}`)
-      } catch (emailErr) {
-        console.error('[Finalize] Failed to send guest email:', emailErr)
-      }
-
-      // ── Guest SMS ──
-      if (guestPhone && autoLoginUrl) {
-        try {
-          const { sendSms } = await import('@/app/lib/twilio/sms')
-          const smsBody = `Hi ${guestFirstName}! Your ${vehicleDesc} rental (${booking.bookingCode}) is set up on ItWhip. View your booking and choose your payment method here: ${autoLoginUrl}`
-          await sendSms(guestPhone, smsBody, {
-            type: 'SYSTEM',
-            bookingId,
-            hostId: host.id,
-            guestId: reviewerProfileId || undefined
-          })
-          console.log(`[Finalize] Guest SMS sent to ${guestPhone}`)
-        } catch (smsErr) {
-          console.error('[Finalize] Failed to send guest SMS:', smsErr)
-        }
-      }
-    }
-
-    // Send host welcome email (combined welcome + booking confirmation)
     try {
       const hostEmail = host.email
       const hostFirstName = host.name?.split(' ')[0] || 'Host'
       const hostRefId = generateEmailReference('HW')
-      const bookingUrl = `${baseUrl}/partner/bookings/${bookingId}`
-      const dashboardUrl = `${baseUrl}/partner/dashboard`
-      const earningsFormatted = hostEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-      const dailyRateFormatted = dailyRate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
       if (hostEmail) {
-        const hostSubject = `Welcome to ItWhip, ${hostFirstName}! Your first booking is ready`
+        const hostSubject = `Welcome to ItWhip, ${hostFirstName}! Your car is approved`
         const hostEmailResult = await sendEmail(
           hostEmail,
           hostSubject,
@@ -804,69 +199,31 @@ ${getEmailFooterText(guestRefId)}
           <html>
             <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
             <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; background-color: #ffffff; max-width: 600px; margin: 0 auto; padding: 20px;">
-
-              <!-- Header -->
               <div style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border-radius: 8px 8px 0 0; padding: 28px 20px; text-align: center;">
                 <p style="margin: 0 0 8px 0; font-size: 12px; color: rgba(255,255,255,0.85); text-transform: uppercase; letter-spacing: 1px;">Welcome to ItWhip</p>
                 <h1 style="margin: 0; font-size: 22px; font-weight: 700; color: #ffffff;">
-                  You're officially a host, ${hostFirstName}!
+                  Your ${vehicleDesc} is approved!
                 </h1>
               </div>
-
-              <!-- Welcome message -->
               <div style="padding: 24px 0;">
                 <p style="font-size: 16px; margin: 0 0 16px 0; color: #1f2937;">Hi ${hostFirstName},</p>
                 <p style="font-size: 15px; margin: 0 0 12px 0; color: #111827;">
-                  Congratulations on completing your setup! Your <strong>${vehicleDesc}</strong> is now listed and your first booking is ready to go.
+                  Congratulations on completing your setup! Your <strong>${vehicleDesc}</strong> is now listed on ItWhip.
                 </p>
                 <p style="font-size: 15px; margin: 0 0 20px 0; color: #374151;">
-                  Here's a quick summary of everything that's set up for you:
+                  You have a booking request from <strong>${guestName}</strong> waiting for your confirmation. Review the details and send the rental agreement when you're ready.
                 </p>
               </div>
-
-              <!-- Earnings highlight -->
-              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 0 0 20px 0; text-align: center;">
-                <p style="margin: 0 0 4px 0; font-size: 13px; color: #166534; text-transform: uppercase; letter-spacing: 0.5px;">Your First Booking Earnings</p>
-                <p style="margin: 0; font-size: 36px; font-weight: 700; color: #15803d;">$${earningsFormatted}</p>
-                <p style="margin: 8px 0 0 0; font-size: 14px; color: #166534;">${durationDays} days @ $${dailyRateFormatted}/day</p>
-              </div>
-
-              <!-- Booking details table -->
-              <div style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; margin: 0 0 20px 0;">
-                <div style="background: #f9fafb; padding: 12px 16px; border-bottom: 1px solid #e5e7eb;">
-                  <p style="margin: 0; font-size: 13px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">Booking ${booking.bookingCode}</p>
-                </div>
-                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                  <tr>
-                    <td style="padding: 10px 16px; color: #374151; border-bottom: 1px solid #f3f4f6;">Guest</td>
-                    <td style="padding: 10px 16px; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${guestName}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 10px 16px; color: #374151; border-bottom: 1px solid #f3f4f6;">Vehicle</td>
-                    <td style="padding: 10px 16px; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${vehicleDesc}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 10px 16px; color: #374151; border-bottom: 1px solid #f3f4f6;">Rental Dates</td>
-                    <td style="padding: 10px 16px; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${startDateStr} — ${endDateStr}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 10px 16px; color: #374151;">Payment</td>
-                    <td style="padding: 10px 16px; color: #1f2937; font-weight: 600; text-align: right;">${isCash ? 'Cash (collect from guest)' : 'Platform (direct deposit)'}</td>
-                  </tr>
-                </table>
-              </div>
-
-              <!-- What's Next -->
               <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 20px; margin: 0 0 20px 0;">
                 <p style="margin: 0 0 12px 0; font-size: 15px; font-weight: 700; color: #92400e;">What's Next?</p>
                 <table style="width: 100%; font-size: 14px;">
                   <tr>
                     <td style="padding: 6px 0; color: #92400e; vertical-align: top; width: 24px;">1.</td>
-                    <td style="padding: 6px 0; color: #78350f;"><strong>Send the agreement</strong> — Review your booking, then send the agreement to ${guestName}</td>
+                    <td style="padding: 6px 0; color: #78350f;"><strong>Confirm the booking</strong> — Review the details and send the agreement to ${guestName}</td>
                   </tr>
                   <tr>
                     <td style="padding: 6px 0; color: #92400e; vertical-align: top;">2.</td>
-                    <td style="padding: 6px 0; color: #78350f;"><strong>Guest signs & selects payment</strong> — Card (auto-confirms) or Cash (you confirm)</td>
+                    <td style="padding: 6px 0; color: #78350f;"><strong>Guest signs & selects payment</strong> — Card (auto-confirms) or Cash (you collect)</td>
                   </tr>
                   <tr>
                     <td style="padding: 6px 0; color: #92400e; vertical-align: top;">3.</td>
@@ -874,23 +231,14 @@ ${getEmailFooterText(guestRefId)}
                   </tr>
                 </table>
               </div>
-
-              <!-- CTA Buttons -->
               <div style="text-align: center; margin: 28px 0;">
-                <a href="${bookingUrl}" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
-                  View Booking
+                <a href="${requestUrl}" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
+                  Confirm Booking
                 </a>
-                <div style="margin-top: 12px;">
-                  <a href="${dashboardUrl}" style="font-size: 14px; color: #ea580c; text-decoration: none; font-weight: 500;">
-                    Go to Dashboard
-                  </a>
-                </div>
               </div>
-
               <p style="font-size: 13px; color: #6b7280; text-align: center; margin: 0 0 20px 0;">
                 Questions? Reply to this email or reach us at info@itwhip.com
               </p>
-
               ${getEmailFooterHtml(hostRefId)}
             </body>
           </html>
@@ -900,24 +248,16 @@ WELCOME TO ITWHIP, ${hostFirstName.toUpperCase()}!
 
 Hi ${hostFirstName},
 
-Congratulations on completing your setup! Your ${vehicleDesc} is now listed and your first booking is ready to go.
+Congratulations! Your ${vehicleDesc} is approved and listed on ItWhip.
 
-YOUR FIRST BOOKING EARNINGS: $${earningsFormatted}
-${durationDays} days @ $${dailyRateFormatted}/day
-
-BOOKING ${booking.bookingCode}:
-- Guest: ${guestName}
-- Vehicle: ${vehicleDesc}
-- Rental Dates: ${startDateStr} — ${endDateStr}
-- Payment: ${isCash ? 'Cash (collect from guest)' : 'Platform (direct deposit)'}
+You have a booking request from ${guestName} waiting for your confirmation.
 
 WHAT'S NEXT:
-1. Send the agreement — Review your booking, then send the agreement to ${guestName}
-2. Guest signs & selects payment — Card (auto-confirms) or Cash (you confirm)
+1. Confirm the booking — Review details and send the agreement to ${guestName}
+2. Guest signs & selects payment — Card (auto-confirms) or Cash (you collect)
 3. Hand over the keys — Meet your guest and start the rental
 
-View Booking: ${bookingUrl}
-Dashboard: ${dashboardUrl}
+Confirm Booking: ${requestUrl}
 
 Questions? Reply to this email or reach us at info@itwhip.com
 
@@ -930,8 +270,8 @@ ${getEmailFooterText(hostRefId)}
           recipientName: host.name || 'Host',
           subject: hostSubject,
           emailType: 'HOST_WELCOME',
-          relatedType: 'RentalBooking',
-          relatedId: bookingId,
+          relatedType: 'ReservationRequest',
+          relatedId: fleetRequest.id,
           messageId: hostEmailResult.messageId,
           referenceId: hostRefId
         })
@@ -942,15 +282,11 @@ ${getEmailFooterText(hostRefId)}
       console.error('[Finalize] Failed to send host welcome email:', emailErr)
     }
 
-    console.log(`[Finalize] Booking ${booking.bookingCode} created for host ${host.id}, guest ${guestEmail}`)
+    console.log(`[Finalize] Onboarding completed for host ${host.id}, car ${car.id} activated, request ${fleetRequest.id} → CAR_ASSIGNED`)
 
     return NextResponse.json({
       success: true,
-      booking: {
-        id: booking.id,
-        bookingCode: booking.bookingCode,
-        status: booking.status
-      }
+      requestId: fleetRequest.id,
     })
 
   } catch (error: any) {

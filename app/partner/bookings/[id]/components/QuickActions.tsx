@@ -149,73 +149,79 @@ export function QuickActions({
           )}
         </div>
 
-        {/* Add Charge — with confirmation */}
-        <button
-          onClick={() => setConfirmAction({
-            title: t('bdAddChargeAddon'),
-            message: t('bdConfirmAddCharge'),
-            onConfirm: () => setShowChargeModal(true)
-          })}
-          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
-        >
-          <IoWalletOutline className="w-4 h-4" />
-          {t('bdAddChargeAddon')}
-        </button>
-
-        {/* Mark as Paid — cash+handoff = green disabled, else confirmation */}
-        {booking.paymentStatus === 'PAID' || (booking.paymentType === 'CASH' && (booking.handoffStatus === 'HANDOFF_COMPLETE' || booking.handoffStatus === 'BYPASSED' || booking.status === 'ACTIVE' || booking.status === 'COMPLETED')) ? (
-          <div className="w-full px-4 py-2 border border-green-300 dark:border-green-600 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center gap-2 cursor-default">
-            <IoCheckmarkCircleOutline className="w-4 h-4" />
-            {t('bdPaid')}
-          </div>
-        ) : (
-          <div className="relative group">
-            <button
-              onClick={() => setConfirmAction({
-                title: t('bdMarkAsPaid'),
-                message: t('bdConfirmMarkPaid'),
-                onConfirm: markAsPaid
-              })}
-              disabled={markingPaid || !booking.paymentType}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {markingPaid ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500" />
-              ) : (
-                <IoWalletOutline className="w-4 h-4" />
-              )}
-              {markingPaid ? t('bdUpdating') : t('bdMarkAsPaid')}
-            </button>
-            {!booking.paymentType && (
-              <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
-                {t('bdSelectPaymentFirst')}
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
-              </div>
-            )}
-          </div>
+        {/* Add Charge — hidden for PENDING bookings */}
+        {booking.status !== 'PENDING' && (
+          <button
+            onClick={() => setConfirmAction({
+              title: t('bdAddChargeAddon'),
+              message: t('bdConfirmAddCharge'),
+              onConfirm: () => setShowChargeModal(true)
+            })}
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+          >
+            <IoWalletOutline className="w-4 h-4" />
+            {t('bdAddChargeAddon')}
+          </button>
         )}
 
-        {/* Send/Resend Agreement — with confirmation */}
-        <button
-          onClick={() => setConfirmAction({
-            title: booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' || booking.agreementStatus === 'signed'
-              ? t('bdResendAgreement')
-              : t('bdSendAgreement'),
-            message: t('bdConfirmSendAgreement'),
-            onConfirm: sendAgreement
-          })}
-          disabled={sendingAgreement}
-          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
-        >
-          {sendingAgreement ? (
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500" />
+        {/* Mark as Paid — hidden for PENDING, cash+handoff = green, else confirmation */}
+        {booking.status !== 'PENDING' && (
+          booking.paymentStatus === 'PAID' || (booking.paymentType === 'CASH' && (booking.handoffStatus === 'HANDOFF_COMPLETE' || booking.handoffStatus === 'BYPASSED' || booking.status === 'ACTIVE' || booking.status === 'COMPLETED')) ? (
+            <div className="w-full px-4 py-2 border border-green-300 dark:border-green-600 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center gap-2 cursor-default">
+              <IoCheckmarkCircleOutline className="w-4 h-4" />
+              {t('bdPaid')}
+            </div>
           ) : (
-            <IoDocumentTextOutline className="w-4 h-4" />
-          )}
-          {booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' || booking.agreementStatus === 'signed'
-            ? t('bdResendAgreement')
-            : t('bdSendAgreement')}
-        </button>
+            <div className="relative group">
+              <button
+                onClick={() => setConfirmAction({
+                  title: t('bdMarkAsPaid'),
+                  message: t('bdConfirmMarkPaid'),
+                  onConfirm: markAsPaid
+                })}
+                disabled={markingPaid || !booking.paymentType}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {markingPaid ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500" />
+                ) : (
+                  <IoWalletOutline className="w-4 h-4" />
+                )}
+                {markingPaid ? t('bdUpdating') : t('bdMarkAsPaid')}
+              </button>
+              {!booking.paymentType && (
+                <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
+                  {t('bdSelectPaymentFirst')}
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
+                </div>
+              )}
+            </div>
+          )
+        )}
+
+        {/* Send/Resend Agreement — hidden for PENDING (agreement sent on confirm) */}
+        {booking.status !== 'PENDING' && (
+          <button
+            onClick={() => setConfirmAction({
+              title: booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' || booking.agreementStatus === 'signed'
+                ? t('bdResendAgreement')
+                : t('bdSendAgreement'),
+              message: t('bdConfirmSendAgreement'),
+              onConfirm: sendAgreement
+            })}
+            disabled={sendingAgreement}
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+          >
+            {sendingAgreement ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500" />
+            ) : (
+              <IoDocumentTextOutline className="w-4 h-4" />
+            )}
+            {booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' || booking.agreementStatus === 'signed'
+              ? t('bdResendAgreement')
+              : t('bdSendAgreement')}
+          </button>
+        )}
 
         {/* Send Pickup Instructions — locked until confirmed, with confirmation */}
         <div className="relative group">

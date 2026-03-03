@@ -1637,6 +1637,7 @@ model RentalBooking {
   stripeSetupIntentId        String?
   paymentFailureReason       String?
   paymentProcessedAt         DateTime?
+  paymentDeadline            DateTime?  // Auto-cancel if guest doesn't complete payment within deadline
   cancellationReason         String?
   cancelledBy                CancelledBy?
   cancelledAt                DateTime?

@@ -620,8 +620,8 @@ function NewClaimPageInner() {
                               </p>
                             )}
                             <p className="text-xs text-gray-500">
-                              {new Date(booking.startDate).toLocaleDateString()} -{' '}
-                              {new Date(booking.endDate).toLocaleDateString()}
+                              {new Date(booking.startDate.split('T')[0] + 'T12:00:00').toLocaleDateString()} -{' '}
+                              {new Date(booking.endDate.split('T')[0] + 'T12:00:00').toLocaleDateString()}
                             </p>
                           </div>
                         </div>

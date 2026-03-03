@@ -267,7 +267,8 @@ export default function PartnerRequestsPage() {
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return t('tbd')
-    return new Date(dateStr).toLocaleDateString(locale, {
+    const datePart = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr
+    return new Date(datePart + 'T12:00:00').toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric'
     })

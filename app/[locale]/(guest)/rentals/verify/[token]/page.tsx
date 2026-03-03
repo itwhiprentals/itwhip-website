@@ -138,13 +138,13 @@ export default function VerifyPage() {
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">{t('pickup')}</span>
                   <span className="text-gray-900 dark:text-white">
-                    {new Date(booking.startDate).toLocaleDateString()}
+                    {new Date(booking.startDate.split('T')[0] + 'T12:00:00').toLocaleDateString()}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">{t('return')}</span>
                   <span className="text-gray-900 dark:text-white">
-                    {new Date(booking.endDate).toLocaleDateString()}
+                    {new Date(booking.endDate.split('T')[0] + 'T12:00:00').toLocaleDateString()}
                   </span>
                 </div>
                 <div className="flex justify-between">

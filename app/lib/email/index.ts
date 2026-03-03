@@ -135,7 +135,7 @@ export async function sendHostNotification(
               <h3>Booking Details:</h3>
               <p><strong>Booking Code:</strong> ${data.bookingCode}</p>
               <p><strong>Guest:</strong> ${data.guestName}</p>
-              <p><strong>Dates:</strong> ${new Date(data.startDate).toLocaleDateString()} - ${new Date(data.endDate).toLocaleDateString()}</p>
+              <p><strong>Dates:</strong> ${new Date(String(data.startDate).split('T')[0] + 'T12:00:00').toLocaleDateString()} - ${new Date(String(data.endDate).split('T')[0] + 'T12:00:00').toLocaleDateString()}</p>
               <p><strong>Your Earnings:</strong> $${hostEarnings.toFixed(2)} (after platform fee)</p>
             </div>
             
@@ -163,7 +163,7 @@ export async function sendHostNotification(
       
       Booking Code: ${data.bookingCode}
       Guest: ${data.guestName}
-      Dates: ${new Date(data.startDate).toLocaleDateString()} - ${new Date(data.endDate).toLocaleDateString()}
+      Dates: ${new Date(String(data.startDate).split('T')[0] + 'T12:00:00').toLocaleDateString()} - ${new Date(String(data.endDate).split('T')[0] + 'T12:00:00').toLocaleDateString()}
       Your Earnings: $${hostEarnings.toFixed(2)} (after platform fee)
       
       Please prepare your vehicle for pickup.
@@ -428,7 +428,7 @@ export async function sendTripStartedEmail(
             
             <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <h3>⏰ Return Reminder</h3>
-              <p><strong>Return Date:</strong> ${new Date(data.endDate).toLocaleDateString()}</p>
+              <p><strong>Return Date:</strong> ${new Date(String(data.endDate).split('T')[0] + 'T12:00:00').toLocaleDateString()}</p>
               <p><strong>Return Time:</strong> ${data.endTime}</p>
               <p>Please ensure the vehicle is returned on time to avoid late fees.</p>
             </div>
@@ -455,7 +455,7 @@ export async function sendTripStartedEmail(
       Your trip with the ${data.carMake} ${data.carModel} has officially started!
       
       Return Reminder:
-      Return Date: ${new Date(data.endDate).toLocaleDateString()}
+      Return Date: ${new Date(String(data.endDate).split('T')[0] + 'T12:00:00').toLocaleDateString()}
       Return Time: ${data.endTime}
       
       Please ensure the vehicle is returned on time to avoid late fees.

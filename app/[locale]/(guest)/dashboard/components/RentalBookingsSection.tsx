@@ -223,7 +223,7 @@ export default function RentalBookingsSection() {
                 {/* Trip Dates */}
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
                   <span className="font-medium">{t('tripDates')}</span><br />
-                  {new Date(booking.startDate).toLocaleDateString(locale, { month: 'short', day: 'numeric' })} - {new Date(booking.endDate).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
+                  {new Date(booking.startDate.split('T')[0] + 'T12:00:00').toLocaleDateString(locale, { month: 'short', day: 'numeric' })} - {new Date(booking.endDate.split('T')[0] + 'T12:00:00').toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
                 </p>
 
                 {/* Price */}
@@ -276,7 +276,7 @@ export default function RentalBookingsSection() {
                       {booking.car?.model}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                      {booking.bookingCode} • {new Date(booking.startDate).toLocaleDateString(locale)} - {new Date(booking.endDate).toLocaleDateString(locale)}
+                      {booking.bookingCode} • {new Date(booking.startDate.split('T')[0] + 'T12:00:00').toLocaleDateString(locale)} - {new Date(booking.endDate.split('T')[0] + 'T12:00:00').toLocaleDateString(locale)}
                     </p>
                     {(booking.verificationStatus === 'pending' || booking.verificationStatus === 'submitted') && (
                       <span className="inline-flex items-center px-2 py-1 mt-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200">

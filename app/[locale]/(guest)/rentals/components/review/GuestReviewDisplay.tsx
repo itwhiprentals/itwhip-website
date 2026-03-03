@@ -139,7 +139,7 @@ export default function GuestReviewDisplay({ review, onClose }: GuestReviewDispl
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <IoCalendarOutline className="w-4 h-4" />
             <span>
-              {new Date(review.tripStartDate).toLocaleDateString()} - {new Date(review.tripEndDate).toLocaleDateString()}
+              {new Date(review.tripStartDate.split('T')[0] + 'T12:00:00').toLocaleDateString()} - {new Date(review.tripEndDate.split('T')[0] + 'T12:00:00').toLocaleDateString()}
             </span>
           </div>
         )}

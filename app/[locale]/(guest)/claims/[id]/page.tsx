@@ -443,8 +443,8 @@ export default function ClaimDetailPage() {
                     {t('bookingNumber', { code: claim.booking.bookingCode })}
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {new Date(claim.booking.startDate).toLocaleDateString()} -{' '}
-                    {new Date(claim.booking.endDate).toLocaleDateString()}
+                    {new Date(claim.booking.startDate.split('T')[0] + 'T12:00:00').toLocaleDateString()} -{' '}
+                    {new Date(claim.booking.endDate.split('T')[0] + 'T12:00:00').toLocaleDateString()}
                   </p>
                 </div>
               </div>

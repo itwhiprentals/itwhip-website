@@ -430,10 +430,10 @@ export default function ReviewSection({ carId, reviews = [] }: ReviewSectionProp
                         <>
                           <IoCarOutline className="w-3.5 h-3.5" />
                           <span>
-                            {new Date(review.tripStartDate).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric' 
-                            })} - {new Date(review.tripEndDate).toLocaleDateString('en-US', { 
+                            {new Date(review.tripStartDate.split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric'
+                            })} - {new Date(review.tripEndDate.split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', {
                               month: 'short', 
                               day: 'numeric',
                               year: 'numeric'

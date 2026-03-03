@@ -213,7 +213,7 @@ export async function POST(
       guestName,
       hostName: partner.name || partner.businessName || 'Your host',
       carDetails,
-      pickupDate: new Date(booking.startDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
+      pickupDate: new Date(String(booking.startDate).split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
       pickupTime: booking.startTime || 'TBD',
       pickupLocation: booking.pickupLocation || 'See booking details',
       bookingCode: booking.bookingCode || bookingId.slice(0, 8).toUpperCase(),

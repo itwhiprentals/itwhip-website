@@ -12,6 +12,7 @@ import {
   IoTimeOutline,
   IoWalletOutline,
   IoCopyOutline,
+  IoDocumentTextOutline,
 } from 'react-icons/io5'
 
 interface BookingHeaderProps {
@@ -20,6 +21,7 @@ interface BookingHeaderProps {
     status: string
     paymentType: string | null
     paymentStatus: string
+    bookingType?: string
     hostApproval: string | null
     pickupLocation: string | null
     createdAt: string
@@ -27,6 +29,7 @@ interface BookingHeaderProps {
     replacedByBookingId?: string | null
     vehicleAccepted?: boolean
     vehicleAcceptedAt?: string | null
+    agreementStatus?: string | null
   }
   renter: { name: string } | null
   isManualBooking: boolean
@@ -64,23 +67,21 @@ export function BookingHeader({
       <div className="p-3 sm:p-4">
         {/* Top row - Back button, title, status */}
         <div className="flex items-start gap-2">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <Link
-              href="/partner/bookings"
-              className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex-shrink-0"
-            >
-              <IoArrowBackOutline className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-            </Link>
-            <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
-                {isManualBooking && booking.status === 'PENDING' ? t('bdSendAgreement') : t('bdBookingDetails')}
-              </h1>
-              {isManualBooking && booking.status === 'PENDING' && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  {t('bdReviewThenSend')}
-                </p>
-              )}
-            </div>
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate flex items-center gap-2">
+              <Link
+                href="/partner/bookings"
+                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex-shrink-0"
+              >
+                <IoArrowBackOutline className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+              </Link>
+              {booking.status === 'PENDING' && !isGuestDriven && !isManualBooking ? t('bdConfirmBooking') : t('bdBookingDetails')}
+            </h1>
+            {booking.status === 'PENDING' && !isGuestDriven && !isManualBooking && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {t('bdReviewThenConfirm')}
+              </p>
+            )}
           </div>
 
           {/* Status badges + Quick Actions — far right */}
@@ -127,16 +128,8 @@ export function BookingHeader({
               </>
             ) : (
               <>
-                {booking.status === 'PENDING' && !isGuestDriven && (
-                  isManualBooking && !booking.paymentType ? (
-                    <button
-                      disabled
-                      className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 rounded-lg font-medium flex items-center gap-2 cursor-not-allowed"
-                    >
-                      <IoTimeOutline className="w-4 h-4" />
-                      {t('bdWaitingForPayment')}
-                    </button>
-                  ) : isManualBooking && booking.paymentType === 'CARD' && booking.paymentStatus !== 'AUTHORIZED' ? (
+                {booking.status === 'PENDING' && !isGuestDriven && booking.bookingType !== 'MANUAL' && (
+                  !isManualBooking && booking.paymentType === 'CARD' && booking.paymentStatus !== 'AUTHORIZED' ? (
                     <button
                       disabled
                       className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 rounded-lg font-medium flex items-center gap-2 cursor-not-allowed"
@@ -239,8 +232,8 @@ export function BookingHeader({
           </div>
         )}
 
-        {/* Reservation Expiry Notice - For PENDING bookings */}
-        {booking.status === 'PENDING' && (
+        {/* Reservation Expiry Notice - For PENDING bookings (not MANUAL — host already confirmed) */}
+        {booking.status === 'PENDING' && booking.bookingType !== 'MANUAL' && (
           <div className="mt-2 sm:mt-3 flex items-center gap-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
             <IoTimeOutline className="w-4 h-4 flex-shrink-0" />
             <span className="text-xs sm:text-sm">
@@ -287,16 +280,8 @@ export function BookingHeader({
             </>
           ) : (
             <>
-              {booking.status === 'PENDING' && !isGuestDriven && (
-                isManualBooking && !booking.paymentType ? (
-                  <button
-                    disabled
-                    className="flex-1 px-3 py-2 bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 rounded-lg font-medium flex items-center justify-center gap-2 text-sm cursor-not-allowed"
-                  >
-                    <IoTimeOutline className="w-4 h-4" />
-                    {t('bdWaitingForPayment')}
-                  </button>
-                ) : isManualBooking && booking.paymentType === 'CARD' && booking.paymentStatus !== 'AUTHORIZED' ? (
+              {booking.status === 'PENDING' && !isGuestDriven && booking.bookingType !== 'MANUAL' && (
+                !isManualBooking && booking.paymentType === 'CARD' && booking.paymentStatus !== 'AUTHORIZED' ? (
                   <button
                     disabled
                     className="flex-1 px-3 py-2 bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 rounded-lg font-medium flex items-center justify-center gap-2 text-sm cursor-not-allowed"
@@ -323,7 +308,7 @@ export function BookingHeader({
                 <button
                   onClick={cancelBooking}
                   disabled={cancelling}
-                  className={`${booking.status === 'PENDING' ? '' : 'flex-1'} px-3 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center justify-center gap-2 text-sm`}
+                  className={`${booking.status === 'PENDING' && booking.bookingType !== 'MANUAL' ? '' : 'flex-1'} px-3 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center justify-center gap-2 text-sm`}
                 >
                   {cancelling ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500" />
@@ -336,6 +321,32 @@ export function BookingHeader({
             </>
           )}
         </div>
+
+        {/* Contextual status banners for manual bookings (host already confirmed at creation) */}
+        {isManualBooking && (booking.status === 'PENDING' || booking.status === 'CONFIRMED') && !isGuestDriven && (
+          <div className="mt-3 space-y-2">
+            {/* Waiting for guest to sign agreement */}
+            {booking.agreementStatus !== 'signed' && (
+              <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 flex items-center gap-3">
+                <IoDocumentTextOutline className="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{t('bdWaitingForSignature')}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('bdAgreementSentToGuest')}</p>
+                </div>
+              </div>
+            )}
+            {/* Waiting for guest to select payment */}
+            {booking.agreementStatus === 'signed' && !booking.paymentType && (
+              <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 flex items-center gap-3">
+                <IoWalletOutline className="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{t('bdWaitingForPaymentSelection')}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('bdGuestSelectsPaymentMethod')}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

@@ -4,7 +4,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
@@ -127,9 +127,17 @@ export default function PartnerLayoutClient({
   // Skip auth check on public partner pages
   const isPublicPage = pathname === '/partner/login' || pathname === '/partner/reset-password' || pathname === '/partner/forgot-password'
 
+  // Deduplicate concurrent session fetches
+  const sessionFetchRef = useRef<Promise<void> | null>(null)
+
   useEffect(() => {
     if (!isPublicPage) {
-      checkSession()
+      // Only fetch full session once — subsequent navigations skip if already loaded
+      if (!partner) {
+        checkSession()
+      } else {
+        setLoading(false)
+      }
     } else {
       setLoading(false)
     }
@@ -157,33 +165,41 @@ export default function PartnerLayoutClient({
   }
 
   const checkSession = async () => {
-    try {
-      const response = await fetch('/api/partner/session', {
-        method: 'GET',
-        credentials: 'include'
-      })
+    // Deduplicate: if a fetch is already in flight, reuse it
+    if (sessionFetchRef.current) return sessionFetchRef.current
 
-      if (!response.ok) {
-        router.push('/partner/login')
-        return
-      }
+    const doFetch = async () => {
+      try {
+        const response = await fetch('/api/partner/session', {
+          method: 'GET',
+          credentials: 'include'
+        })
 
-      const data = await response.json()
-      if (data.authenticated && data.partner) {
-        setPartner(data.partner)
-      } else {
+        if (!response.ok) {
+          router.push('/partner/login')
+          return
+        }
+
+        const data = await response.json()
+        if (data.authenticated && data.partner) {
+          setPartner(data.partner)
+        } else {
+          router.push('/partner/login')
+        }
+      } catch (error) {
+        console.error('Session check error:', error)
         router.push('/partner/login')
+      } finally {
+        setLoading(false)
+        sessionFetchRef.current = null
       }
-    } catch (error) {
-      console.error('Session check error:', error)
-      router.push('/partner/login')
-    } finally {
-      setLoading(false)
     }
+
+    sessionFetchRef.current = doFetch()
+    return sessionFetchRef.current
   }
 
-  // Re-check partner session periodically and on tab focus
-  // Detects mid-session token expiry and redirects to login
+  // Re-check token validity periodically and on tab focus (lightweight — just checks status code)
   useEffect(() => {
     if (isPublicPage || loading) return
 
@@ -198,11 +214,18 @@ export default function PartnerLayoutClient({
       }
     }
 
-    // Check every 60 seconds
-    const interval = setInterval(recheckSession, 60_000)
+    // Check every 5 minutes (not 60 seconds — tokens don't expire that fast)
+    const interval = setInterval(recheckSession, 5 * 60_000)
 
-    // Check when tab regains focus
-    const handleFocus = () => recheckSession()
+    // Check when tab regains focus (debounced — skip if focused within last 30s)
+    let lastFocusCheck = 0
+    const handleFocus = () => {
+      const now = Date.now()
+      if (now - lastFocusCheck > 30_000) {
+        lastFocusCheck = now
+        recheckSession()
+      }
+    }
     window.addEventListener('focus', handleFocus)
 
     return () => {

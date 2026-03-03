@@ -177,10 +177,12 @@ export const formatCurrency = (amount: number): string => {
 }
 
 export const formatDate = (date: string | Date, options?: Intl.DateTimeFormatOptions): string => {
-  return new Date(date).toLocaleDateString('en-US', options || { 
-    month: 'short', 
-    day: 'numeric', 
-    year: 'numeric' 
+  const dateStr = typeof date === 'string' ? date : date.toISOString()
+  const datePart = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr
+  return new Date(datePart + 'T12:00:00').toLocaleDateString('en-US', options || {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
   })
 }
 

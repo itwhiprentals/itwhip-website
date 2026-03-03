@@ -801,7 +801,7 @@ export default function PartnerDashboardPage() {
                         {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {booking.bookingCode} • {new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}
+                        {booking.bookingCode} • {new Date(booking.startDate.split('T')[0] + 'T12:00:00').toLocaleDateString()} - {new Date(booking.endDate.split('T')[0] + 'T12:00:00').toLocaleDateString()}
                       </p>
                     </div>
                   </div>

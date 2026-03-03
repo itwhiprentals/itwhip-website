@@ -23,31 +23,53 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid choice. Must be CARD or CASH.' }, { status: 400 })
     }
 
-    // Find the booking — must belong to this guest, be PENDING, and not yet have a paymentType
-    const booking = await prisma.rentalBooking.findFirst({
-      where: {
-        id: bookingId,
-        OR: [
-          { renterId: user.id },
-          { guestEmail: user.email }
-        ],
-        status: 'PENDING',
-        paymentType: null,
-      },
+    // Step 1: Find booking by ID with all data needed
+    const booking = await prisma.rentalBooking.findUnique({
+      where: { id: bookingId },
       include: {
         convertedFromProspect: { select: { id: true } },
-        car: { select: { make: true, model: true, year: true } }
+        car: { select: { make: true, model: true, year: true } },
+        renter: { select: { id: true, email: true } },
       }
     })
 
     if (!booking) {
+      console.error(`[Payment Choice] Booking not found: ${bookingId}`)
+      return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+    }
+
+    // Step 2: Verify the authenticated user owns this booking
+    // Match by renterId, renter email, or guestEmail (case-insensitive)
+    const isOwner =
+      (booking.renterId && booking.renterId === user.id) ||
+      (booking.renter?.email && booking.renter.email.toLowerCase() === user.email.toLowerCase()) ||
+      (booking.guestEmail && booking.guestEmail.toLowerCase() === user.email.toLowerCase())
+
+    if (!isOwner) {
+      console.error('[Payment Choice] Ownership check failed:', {
+        bookingId: booking.bookingCode,
+        authUser: { id: user.id, email: user.email },
+        booking: { renterId: booking.renterId, renterEmail: booking.renter?.email, guestEmail: booking.guestEmail },
+      })
+      return NextResponse.json({ error: 'You are not authorized to modify this booking' }, { status: 403 })
+    }
+
+    // Step 3: Check booking state
+    if (booking.paymentType) {
       return NextResponse.json(
-        { error: 'Booking not found or payment method already selected' },
-        { status: 404 }
+        { error: 'Payment method already selected', paymentType: booking.paymentType },
+        { status: 409 }
       )
     }
 
-    // Agreement must be signed before payment selection (for bookings with agreement sent)
+    if (booking.status !== 'PENDING') {
+      return NextResponse.json(
+        { error: `Booking is ${booking.status}, not PENDING` },
+        { status: 400 }
+      )
+    }
+
+    // Step 4: Agreement must be signed before payment selection (for bookings with agreement sent)
     if (booking.agreementStatus && booking.agreementStatus !== 'not_sent' && booking.agreementStatus !== 'signed') {
       return NextResponse.json(
         { error: 'Please sign the rental agreement before selecting a payment method' },
@@ -55,7 +77,7 @@ export async function POST(
       )
     }
 
-    // Must be a recruited booking
+    // Step 5: Must be a recruited booking
     if (!booking.convertedFromProspect) {
       return NextResponse.json(
         { error: 'Payment choice is only available for recruited bookings' },
@@ -64,19 +86,29 @@ export async function POST(
     }
 
     if (choice === 'CASH') {
-      // Guest chose cash — status stays PENDING, host confirms later
+      // For MANUAL bookings (created via create-from-request), auto-confirm
+      // since the host already confirmed when they created the booking
+      const isManualBooking = booking.bookingType === 'MANUAL'
+
       await prisma.rentalBooking.update({
         where: { id: bookingId },
         data: {
           paymentType: 'CASH',
           serviceFee: 0,
           totalAmount: booking.subtotal, // No service fee for cash
-          notes: (booking.notes || '') + '\n[Guest selected Cash at Pickup]'
+          notes: (booking.notes || '') + '\n[Guest selected Cash at Pickup]',
+          // Auto-confirm for MANUAL bookings (host already confirmed at creation)
+          ...(isManualBooking ? {
+            status: 'CONFIRMED',
+            hostStatus: 'APPROVED',
+            hostReviewedAt: new Date(),
+          } : {}),
         }
       })
 
-      // Track the platform fee owed by the host (10% welcome rate)
-      const platformFee = Number(booking.subtotal) * 0.10
+      // Track the platform fee owed by the host
+      const feeRate = Number(booking.platformFeeRate) || 0.10
+      const platformFee = Number(booking.subtotal) * feeRate
       await prisma.platformFeeOwed.create({
         data: {
           hostId: booking.hostId,
@@ -86,11 +118,12 @@ export async function POST(
         }
       })
 
-      console.log(`[Payment Choice] Guest ${user.email} selected CASH for booking ${booking.bookingCode}`)
+      console.log(`[Payment Choice] Guest ${user.email} selected CASH for booking ${booking.bookingCode}${isManualBooking ? ' (auto-confirmed)' : ''}`)
 
       return NextResponse.json({
         success: true,
         paymentType: 'CASH',
+        autoConfirmed: isManualBooking,
       })
     }
 

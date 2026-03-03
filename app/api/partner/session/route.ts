@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch host data with all role-related fields
+    // Single query: fetch host data + vehicle counts in one round-trip
     const partner = await prisma.rentalHost.findUnique({
       where: { id: hostId },
       select: {
@@ -139,7 +139,14 @@ export async function GET(request: NextRequest) {
         phoneVerified: true,
         identityVerified: true,
         documentsVerified: true,
-        createdAt: true
+        createdAt: true,
+        // Vehicle counts (single query instead of 3 separate count queries)
+        _count: {
+          select: {
+            cars: true,
+            managedVehicles: true,
+          }
+        },
       }
     })
 
@@ -166,35 +173,31 @@ export async function GET(request: NextRequest) {
       isVehicleOwner: partner.isVehicleOwner
     })
 
-    // Get vehicle count for this host
-    const vehicleCount = await prisma.rentalCar.count({
-      where: { hostId: partner.id }
-    })
+    const vehicleCount = partner._count.cars
+    const managedCount = partner._count.managedVehicles
 
-    // Get active vehicle count for publishing status
-    const activeVehicleCount = await prisma.rentalCar.count({
-      where: { hostId: partner.id, isActive: true }
-    })
-
-    // Get managed vehicle count (for fleet managers)
-    // Query through VehicleManagement table where this partner is the manager
-    const managedCount = partner.isHostManager ? await prisma.vehicleManagement.count({
-      where: {
-        managerId: partner.id
-      }
-    }) : 0
-
-    // Calculate publishing status for landing page
+    // Active vehicle count still needs a separate query (filtered count)
+    // but only compute landing page status if the host has a slug
     const hasApproval = partner.approvalStatus === 'APPROVED'
     const hasValidSlug = !!partner.partnerSlug && partner.partnerSlug !== 'your-company-slug'
-    const hasActiveVehicles = activeVehicleCount > 0
     const hasService = partner.enableRideshare || partner.enableRentals
-    const isLandingPagePublished = hasApproval && hasValidSlug && hasActiveVehicles && hasService
+
+    let activeVehicleCount = 0
+    let isLandingPagePublished = false
+    if (hasApproval && hasValidSlug && hasService) {
+      activeVehicleCount = await prisma.rentalCar.count({
+        where: { hostId: partner.id, isActive: true }
+      })
+      isLandingPagePublished = activeVehicleCount > 0
+    }
+
+    // Strip _count from spread
+    const { _count, ...partnerData } = partner
 
     return NextResponse.json({
       authenticated: true,
       partner: {
-        ...partner,
+        ...partnerData,
         // Computed fields
         role,
         vehicleCount,

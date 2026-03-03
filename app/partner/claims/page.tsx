@@ -493,7 +493,7 @@ function NewClaimModal({
               <option value="">{t('selectBooking')}</option>
               {bookings.map((booking) => (
                 <option key={booking.id} value={booking.id}>
-                  {booking.vehicleName} - {booking.guestName} ({new Date(booking.startDate).toLocaleDateString()})
+                  {booking.vehicleName} - {booking.guestName} ({new Date(booking.startDate.split('T')[0] + 'T12:00:00').toLocaleDateString()})
                 </option>
               ))}
             </select>

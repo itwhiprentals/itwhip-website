@@ -166,10 +166,10 @@ export default function BookingDetailsPage({
               </h3>
               <div className="mt-4 space-y-2">
                 <p className="text-gray-600">
-                  <span className="font-medium">{t('pickUp')}</span> {new Date(booking.startDate).toLocaleDateString()} at {booking.startTime}
+                  <span className="font-medium">{t('pickUp')}</span> {new Date(booking.startDate.split('T')[0] + 'T12:00:00').toLocaleDateString()} at {booking.startTime}
                 </p>
                 <p className="text-gray-600">
-                  <span className="font-medium">{t('returnLabel')}</span> {new Date(booking.endDate).toLocaleDateString()} at {booking.endTime}
+                  <span className="font-medium">{t('returnLabel')}</span> {new Date(booking.endDate.split('T')[0] + 'T12:00:00').toLocaleDateString()} at {booking.endTime}
                 </p>
                 <p className="text-gray-600">
                   <span className="font-medium">{t('location')}</span> {booking.pickupLocation}

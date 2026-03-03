@@ -70,7 +70,7 @@ export default function FeaturedCards({
                 {upcomingBooking.car.year} {upcomingBooking.car.make} {upcomingBooking.car.model}
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {new Date(upcomingBooking.startDate).toLocaleDateString(locale, { month: 'short', day: 'numeric' })} - {new Date(upcomingBooking.endDate).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
+                {new Date(upcomingBooking.startDate.split('T')[0] + 'T12:00:00').toLocaleDateString(locale, { month: 'short', day: 'numeric' })} - {new Date(upcomingBooking.endDate.split('T')[0] + 'T12:00:00').toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
               </p>
             </div>
             <div className="flex-shrink-0 ml-4">

@@ -52,7 +52,7 @@ export default function BookingCelebration({
         transition={{ delay: 0.4 }}
         className="text-lg text-gray-600 mb-4"
       >
-        Your adventure with the {carName} begins on {new Date(startDate).toLocaleDateString()}
+        Your adventure with the {carName} begins on {new Date(startDate.split('T')[0] + 'T12:00:00').toLocaleDateString()}
       </motion.p>
       
       <motion.div

@@ -341,16 +341,40 @@ export default function BookingDetailsPage() {
   }, [])
 
   // ✅ FIXED: Initial load and polling - only depend on bookingId
+  // Polls every 30s when tab is active, pauses when hidden
   useEffect(() => {
     loadBooking()
+    let bookingInterval: ReturnType<typeof setInterval> | null = null
 
-    // Poll for booking updates
-    const bookingInterval = setInterval(() => {
-      loadBooking()
-    }, BOOKING_POLLING_INTERVAL)
+    const startPolling = () => {
+      if (!bookingInterval) {
+        bookingInterval = setInterval(loadBooking, 30000) // 30s
+      }
+    }
+    const stopPolling = () => {
+      if (bookingInterval) {
+        clearInterval(bookingInterval)
+        bookingInterval = null
+      }
+    }
+
+    // Start polling immediately
+    startPolling()
+
+    // Pause when tab hidden, resume when visible
+    const handleVisibility = () => {
+      if (document.hidden) {
+        stopPolling()
+      } else {
+        loadBooking() // Refresh on return
+        startPolling()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
 
     return () => {
-      clearInterval(bookingInterval)
+      stopPolling()
+      document.removeEventListener('visibilitychange', handleVisibility)
     }
   }, [bookingId]) // ✅ Only bookingId, loadBooking is stable now
 
@@ -395,15 +419,32 @@ export default function BookingDetailsPage() {
   }, [bookingId])
 
   // Load and poll messages only when booking is confirmed (not PENDING/CANCELLED)
+  // Pauses when tab hidden
   useEffect(() => {
     if (!booking || booking.status === 'PENDING') return
 
     loadMessages()
-    const messageInterval = setInterval(() => {
-      loadMessages()
-    }, MESSAGE_POLLING_INTERVAL)
+    let messageInterval: ReturnType<typeof setInterval> | null = null
 
-    return () => clearInterval(messageInterval)
+    const startMsgPolling = () => {
+      if (!messageInterval) {
+        messageInterval = setInterval(loadMessages, MESSAGE_POLLING_INTERVAL)
+      }
+    }
+    const stopMsgPolling = () => {
+      if (messageInterval) {
+        clearInterval(messageInterval)
+        messageInterval = null
+      }
+    }
+
+    startMsgPolling()
+    const handleVis = () => {
+      if (document.hidden) { stopMsgPolling() } else { loadMessages(); startMsgPolling() }
+    }
+    document.addEventListener('visibilitychange', handleVis)
+
+    return () => { stopMsgPolling(); document.removeEventListener('visibilitychange', handleVis) }
   }, [bookingId, booking?.status])
 
   // Loading state (also wait for end-trip redirect check to avoid flash)
@@ -699,7 +740,7 @@ export default function BookingDetailsPage() {
               <div>
                 <p className="text-sm font-semibold">{t('activeTripBanner')}</p>
                 <p className="text-xs text-white/80">
-                  {booking.car.year} {booking.car.make} {booking.car.model} — {t('returnBy')} {new Date(booking.endDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  {booking.car.year} {booking.car.make} {booking.car.model} — {t('returnBy')} {new Date(booking.endDate.split('T')[0] + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                 </p>
               </div>
             </div>

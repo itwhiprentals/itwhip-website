@@ -77,8 +77,8 @@ export default function RecentBookings({ bookings }: RecentBookingsProps) {
   }
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' })
+    const datePart = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr
+    return new Date(datePart + 'T12:00:00').toLocaleDateString(locale, { month: 'short', day: 'numeric' })
   }
 
   if (bookings.length === 0) {

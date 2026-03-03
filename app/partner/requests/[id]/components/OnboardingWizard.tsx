@@ -116,7 +116,8 @@ export default function OnboardingWizard({
 
   const formatShortDate = (dateStr: string | null) => {
     if (!dateStr) return 'TBD'
-    return new Date(dateStr).toLocaleDateString(locale, { month: 'short', day: 'numeric' })
+    const datePart = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr
+    return new Date(datePart + 'T12:00:00').toLocaleDateString(locale, { month: 'short', day: 'numeric' })
   }
 
   const handlePhotoUpload = async (files: FileList | null) => {

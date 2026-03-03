@@ -163,6 +163,7 @@ export async function GET(
             state: true,
             zipCode: true,
             currentCommissionRate: true,
+            welcomeDiscountUsed: true,
             stripeChargesEnabled: true,
             stripePayoutsEnabled: true,
             stripeConnectAccountId: true
@@ -471,6 +472,7 @@ export async function GET(
         state: booking.host.state,
         zipCode: booking.host.zipCode,
         currentCommissionRate: booking.host.currentCommissionRate || 0.25,
+        welcomeDiscountUsed: booking.host.welcomeDiscountUsed ?? false,
         stripeConnected: !!(booking.host.stripeConnectAccountId && booking.host.stripeChargesEnabled && booking.host.stripePayoutsEnabled)
       } : null,
 

@@ -195,7 +195,8 @@ export default function PendingRequestCard() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return null
-    return new Date(dateStr).toLocaleDateString(locale, {
+    const datePart = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr
+    return new Date(datePart + 'T12:00:00').toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric'

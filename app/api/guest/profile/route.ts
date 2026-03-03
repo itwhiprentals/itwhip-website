@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const userId = user.id
 
     // Find ReviewerProfile
-    const profile = await prisma.reviewerProfile.findFirst({
+    let profile = await prisma.reviewerProfile.findFirst({
       where: {
         OR: [
           ...(userId ? [{ userId }] : []),
@@ -48,17 +48,89 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // If no profile exists, return 404 - profile must be created through explicit signup
+    // If no profile exists, auto-create from User record (safety net for recruited guests)
     if (!profile) {
-      console.log(`[Guest Profile] No ReviewerProfile found for user ${userId}`)
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Guest profile not found. Please complete guest signup first.',
-          requiresSignup: true
-        },
-        { status: 404 }
-      )
+      console.log(`[Guest Profile] No ReviewerProfile found for user ${userId}, attempting auto-create`)
+
+      // Check if user exists in User table
+      const userRecord = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true, name: true, phone: true }
+      })
+
+      if (userRecord?.email) {
+        try {
+          const { randomBytes } = await import('crypto')
+          const newProfile = await prisma.reviewerProfile.create({
+            data: {
+              id: randomBytes(16).toString('hex'),
+              email: userRecord.email.toLowerCase(),
+              name: userRecord.name || 'Guest',
+              phoneNumber: userRecord.phone,
+              city: 'Unknown',
+              state: 'AZ',
+              emailVerified: false,
+              phoneVerified: false,
+              userId: userRecord.id,
+              updatedAt: new Date(),
+            }
+          })
+          console.log(`[Guest Profile] Auto-created ReviewerProfile ${newProfile.id} for user ${userId}`)
+
+          // Re-fetch with full includes
+          const freshProfile = await prisma.reviewerProfile.findUnique({
+            where: { id: newProfile.id },
+            include: {
+              user: {
+                select: {
+                  email: true, avatar: true, status: true,
+                  deletionScheduledFor: true, passwordHash: true, twoFactorEnabled: true
+                }
+              }
+            }
+          })
+
+          if (freshProfile) {
+            // Continue with this profile (fall through to stats calculation below)
+            profile = freshProfile
+          }
+        } catch (createErr: any) {
+          // Unique constraint — profile may already exist with this email but different userId
+          if (createErr?.code === 'P2002') {
+            const existingByEmail = await prisma.reviewerProfile.findUnique({
+              where: { email: userRecord.email.toLowerCase() },
+              include: {
+                user: {
+                  select: {
+                    email: true, avatar: true, status: true,
+                    deletionScheduledFor: true, passwordHash: true, twoFactorEnabled: true
+                  }
+                }
+              }
+            })
+            if (existingByEmail) {
+              // Link it to this user if not already linked
+              if (!existingByEmail.userId) {
+                await prisma.reviewerProfile.update({
+                  where: { id: existingByEmail.id },
+                  data: { userId: userRecord.id }
+                })
+              }
+              profile = existingByEmail
+              console.log(`[Guest Profile] Linked existing profile ${existingByEmail.id} to user ${userId}`)
+            }
+          } else {
+            console.error('[Guest Profile] Auto-create failed:', createErr)
+          }
+        }
+      }
+
+      if (!profile) {
+        return NextResponse.json(
+          { success: false, error: 'Guest profile not found.', requiresSignup: true },
+          { status: 404 }
+        )
+      }
     }
 
     let profileData = profile

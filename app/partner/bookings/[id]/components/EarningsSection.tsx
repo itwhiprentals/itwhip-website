@@ -6,8 +6,6 @@
 import { useTranslations } from 'next-intl'
 import {
   IoWalletOutline,
-  IoShieldCheckmarkOutline,
-  IoWarningOutline,
   IoChevronUpOutline,
   IoChevronDownOutline
 } from 'react-icons/io5'
@@ -129,31 +127,45 @@ export default function EarningsSection({
                     </div>
                   )}
 
-                  {/* Standard fee strikethrough */}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400 dark:text-gray-500 line-through">{t('bdStandardPlatformFee')}</span>
-                    <span className="text-gray-400 dark:text-gray-500 line-through">
-                      -{formatCurrency(booking.subtotal * platformCommissionRate)}
-                    </span>
-                  </div>
+                  {/* Welcome discount — only show when host rate differs from standard */}
+                  {commissionRate < platformCommissionRate ? (
+                    <>
+                      {/* Standard fee strikethrough */}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400 dark:text-gray-500 line-through">{t('bdStandardPlatformFee')}</span>
+                        <span className="text-gray-400 dark:text-gray-500 line-through">
+                          -{formatCurrency(booking.subtotal * platformCommissionRate)}
+                        </span>
+                      </div>
 
-                  {/* Welcome discount highlight */}
-                  <div className="flex justify-between text-sm bg-green-50 dark:bg-green-900/20 rounded-lg px-2 py-1.5 -mx-2">
-                    <span className="text-green-700 dark:text-green-400 font-medium">{t('bdWelcomeDiscount')}</span>
-                    <span className="text-green-700 dark:text-green-400 font-medium">
-                      +{formatCurrency(booking.subtotal * platformCommissionRate - booking.subtotal * commissionRate)}
-                    </span>
-                  </div>
+                      {/* Welcome discount highlight */}
+                      <div className="flex justify-between text-sm bg-green-50 dark:bg-green-900/20 rounded-lg px-2 py-1.5 -mx-2">
+                        <span className="text-green-700 dark:text-green-400 font-medium">{t('bdWelcomeDiscount')}</span>
+                        <span className="text-green-700 dark:text-green-400 font-medium">
+                          +{formatCurrency(booking.subtotal * platformCommissionRate - booking.subtotal * commissionRate)}
+                        </span>
+                      </div>
 
-                  {/* Actual fee at host's rate */}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">
-                      Platform fee ({Math.round(commissionRate * 100)}%)
-                    </span>
-                    <span className="text-red-600 dark:text-red-400">
-                      -{formatCurrency(booking.subtotal * commissionRate)}
-                    </span>
-                  </div>
+                      {/* Actual fee at host's rate */}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600 dark:text-gray-400">
+                          Platform fee ({Math.round(commissionRate * 100)}%)
+                        </span>
+                        <span className="text-red-600 dark:text-red-400">
+                          -{formatCurrency(booking.subtotal * commissionRate)}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">
+                        {t('bdStandardPlatformFee')}
+                      </span>
+                      <span className="text-red-600 dark:text-red-400">
+                        -{formatCurrency(booking.subtotal * commissionRate)}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Processing fee — card only, not for cash */}
                   {booking.paymentType !== 'CASH' && (
@@ -171,9 +183,11 @@ export default function EarningsSection({
                     </span>
                   </div>
 
-                  <p className="text-xs text-gray-400 mt-1">
-                    {t('bdWelcomeDiscountNote')}
-                  </p>
+                  {commissionRate < platformCommissionRate && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      {t('bdWelcomeDiscountNote')}
+                    </p>
+                  )}
 
                   {/* #14 — Cash platform fee note */}
                   {booking.paymentType === 'CASH' && (
@@ -224,31 +238,40 @@ export default function EarningsSection({
                     </div>
                   )}
 
-                  {/* Standard fee strikethrough */}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400 dark:text-gray-500 line-through">{t('bdStandardPlatformFee')}</span>
-                    <span className="text-gray-400 dark:text-gray-500 line-through">
-                      -{formatCurrency(booking.subtotal * platformCommissionRate)}
-                    </span>
-                  </div>
-
-                  {/* Welcome discount highlight */}
-                  <div className="flex justify-between text-sm bg-green-50 dark:bg-green-900/20 rounded-lg px-2 py-1.5 -mx-2">
-                    <span className="text-green-700 dark:text-green-400 font-medium">{t('bdWelcomeDiscount')}</span>
-                    <span className="text-green-700 dark:text-green-400 font-medium">
-                      +{formatCurrency(booking.subtotal * platformCommissionRate - booking.subtotal * commissionRate)}
-                    </span>
-                  </div>
-
-                  {/* Actual fee at host's rate */}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">
-                      Platform fee ({Math.round(commissionRate * 100)}%)
-                    </span>
-                    <span className="text-red-600 dark:text-red-400">
-                      -{formatCurrency(booking.subtotal * commissionRate)}
-                    </span>
-                  </div>
+                  {/* Welcome discount — only show when host rate differs from standard */}
+                  {commissionRate < platformCommissionRate ? (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400 dark:text-gray-500 line-through">{t('bdStandardPlatformFee')}</span>
+                        <span className="text-gray-400 dark:text-gray-500 line-through">
+                          -{formatCurrency(booking.subtotal * platformCommissionRate)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm bg-green-50 dark:bg-green-900/20 rounded-lg px-2 py-1.5 -mx-2">
+                        <span className="text-green-700 dark:text-green-400 font-medium">{t('bdWelcomeDiscount')}</span>
+                        <span className="text-green-700 dark:text-green-400 font-medium">
+                          +{formatCurrency(booking.subtotal * platformCommissionRate - booking.subtotal * commissionRate)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600 dark:text-gray-400">
+                          Platform fee ({Math.round(commissionRate * 100)}%)
+                        </span>
+                        <span className="text-red-600 dark:text-red-400">
+                          -{formatCurrency(booking.subtotal * commissionRate)}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">
+                        {t('bdStandardPlatformFee')}
+                      </span>
+                      <span className="text-red-600 dark:text-red-400">
+                        -{formatCurrency(booking.subtotal * commissionRate)}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Processing fee — card only, not for cash */}
                   {booking.paymentType !== 'CASH' && (
@@ -267,9 +290,11 @@ export default function EarningsSection({
                     </span>
                   </div>
 
-                  <p className="text-xs text-gray-400 mt-1">
-                    {t('bdWelcomeDiscountNote')}
-                  </p>
+                  {commissionRate < platformCommissionRate && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      {t('bdWelcomeDiscountNote')}
+                    </p>
+                  )}
 
                   {/* #14 — Cash platform fee note */}
                   {booking.paymentType === 'CASH' && (
@@ -337,40 +362,6 @@ export default function EarningsSection({
         )}
       </div>
 
-      {/* Insurance Status — only for manual bookings (platform handles insurance for guest-driven) */}
-      {insurance && !isGuestDriven && (
-        <div className={`rounded-lg border p-4 ${
-          insurance.requiresGuestInsurance
-            ? 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
-            : 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
-        }`}>
-          <div className="flex items-center gap-2 mb-2">
-            {insurance.requiresGuestInsurance ? (
-              <IoWarningOutline className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-            ) : (
-              <IoShieldCheckmarkOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
-            )}
-            <h4 className={`font-medium ${
-              insurance.requiresGuestInsurance
-                ? 'text-amber-700 dark:text-amber-300'
-                : 'text-green-700 dark:text-green-300'
-            }`}>
-              {t('bdInsurance')}
-            </h4>
-          </div>
-          <p className={`text-sm ${
-            insurance.requiresGuestInsurance
-              ? 'text-amber-600 dark:text-amber-400'
-              : 'text-green-600 dark:text-green-400'
-          }`}>
-            {insurance.hasVehicleInsurance
-              ? t('bdInsuranceVehicle', { provider: insurance.vehicleProvider || t('bdOwnPolicy') })
-              : insurance.hasPartnerInsurance
-              ? t('bdInsurancePartner', { provider: insurance.partnerProvider || t('bdBusinessPolicy') })
-              : t('bdGuestMustProvideInsurance')}
-          </p>
-        </div>
-      )}
     </>
   )
 }

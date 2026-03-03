@@ -292,7 +292,7 @@ export default function BookingsListPage() {
                    <div className="flex items-center text-gray-600 dark:text-gray-400">
                      <IoCalendarOutline className="w-4 h-4 mr-1.5 flex-shrink-0" />
                      <span className="text-xs">
-                       {new Date(booking.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(booking.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                       {new Date(booking.startDate.split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(booking.endDate.split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                      </span>
                    </div>
                    <p className="text-lg font-bold text-gray-900 dark:text-white">
@@ -334,7 +334,7 @@ export default function BookingsListPage() {
                        <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                          <div className="flex items-center text-gray-600 dark:text-gray-400">
                            <IoCalendarOutline className="w-4 h-4 mr-2 flex-shrink-0" />
-                           {new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}
+                           {new Date(booking.startDate.split('T')[0] + 'T12:00:00').toLocaleDateString()} - {new Date(booking.endDate.split('T')[0] + 'T12:00:00').toLocaleDateString()}
                          </div>
                          <div className="flex items-center text-gray-600 dark:text-gray-400">
                            <IoTimeOutline className="w-4 h-4 mr-2 flex-shrink-0" />
