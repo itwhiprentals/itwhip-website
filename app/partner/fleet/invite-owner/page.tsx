@@ -189,7 +189,7 @@ export default function InviteOwnerPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+          <div className="grid grid-cols-2 gap-4 p-4 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
             <div className="text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400">{t('ownerGets')}</p>
               <p className="text-xl font-bold text-orange-600">{(ownerPercent * 0.9).toFixed(0)}%</p>
@@ -225,7 +225,7 @@ export default function InviteOwnerPage() {
                 className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition ${
                   permissions[perm.key as keyof typeof permissions]
                     ? 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800'
-                    : 'bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600'
+                    : 'bg-gray-200/70 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600'
                 }`}
               >
                 <input

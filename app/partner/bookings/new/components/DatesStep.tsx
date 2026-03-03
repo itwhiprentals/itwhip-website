@@ -222,7 +222,7 @@ export default function DatesStep({
         {(startDate && endDate) && (
           <div>
             {checkingAvailability ? (
-              <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-center">
+              <div className="p-4 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg text-center">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mx-auto mb-2" />
                 <p className="text-sm text-gray-500 dark:text-gray-400">{t('checkingAvailability')}</p>
               </div>

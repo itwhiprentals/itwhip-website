@@ -370,7 +370,7 @@ export function AgreementTab() {
           {agreement.url ? (
             <div className="space-y-3">
               {/* File info */}
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+              <div className="flex items-center justify-between p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
                 <div className="flex items-center gap-3 min-w-0">
                   <IoDocumentOutline className="w-8 h-8 text-orange-500 flex-shrink-0" />
                   <div className="min-w-0">
@@ -449,7 +449,7 @@ export function AgreementTab() {
               {/* Section Preview Accordion */}
               {agreement.sections && agreement.sections.length > 0 && (
                 <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                  <p className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50">
+                  <p className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-200/70 dark:bg-gray-700/50">
                     {t('agreementSections')}
                   </p>
                   <div className="divide-y divide-gray-200 dark:divide-gray-700">

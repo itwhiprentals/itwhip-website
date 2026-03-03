@@ -403,7 +403,7 @@ export default function TrackingSecurityCard({
         <div className="animate-pulse">
           {/* Header skeleton - only show if header is not hidden */}
           {!hideHeader && (
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-200/70 dark:bg-gray-700/50">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-full" />
                 <div className="flex-1">
@@ -416,7 +416,7 @@ export default function TrackingSecurityCard({
 
           {/* Tab navigation skeleton - only show if tabs are not hidden */}
           {!hideTabNavigation && (
-            <div className="flex gap-1 p-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
+            <div className="flex gap-1 p-2 border-b border-gray-200 dark:border-gray-700 bg-gray-200/70 dark:bg-gray-700/30">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="h-8 bg-gray-200 dark:bg-gray-600 rounded-lg w-20" />
               ))}
@@ -428,7 +428,7 @@ export default function TrackingSecurityCard({
             {/* Stats row */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div key={i} className="p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                   <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-12 mx-auto mb-2" />
                   <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-16 mx-auto" />
                 </div>
@@ -437,7 +437,7 @@ export default function TrackingSecurityCard({
             {/* Content rows */}
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div key={i} className="flex items-center gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                   <div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded-lg" />
                   <div className="flex-1 space-y-2">
                     <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-32" />
@@ -473,7 +473,7 @@ export default function TrackingSecurityCard({
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Header with User Info - conditionally shown */}
       {!hideHeader && (
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-200/70 dark:bg-gray-700/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {data.user.profilePhoto ? (
@@ -711,19 +711,19 @@ export default function TrackingSecurityCard({
 
                 {/* Fleet Overview */}
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="text-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="text-center p-2 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                     <p className="text-lg font-bold text-gray-900 dark:text-white">
                       {trackedVehicles.length}/{totalVehicles}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{t('tsTracked')}</p>
                   </div>
-                  <div className="text-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="text-center p-2 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                     <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
                       {trackedVehicles.filter(v => v.status === 'moving').length}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{t('tsMoving')}</p>
                   </div>
-                  <div className="text-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="text-center p-2 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                     <p className="text-lg font-bold text-green-600 dark:text-green-400">
                       {trackedVehicles.filter(v => v.status === 'parked').length}
                     </p>
@@ -740,7 +740,7 @@ export default function TrackingSecurityCard({
                     {trackedVehicles.map(vehicle => (
                       <div
                         key={vehicle.id}
-                        className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                        className="flex items-center justify-between p-2 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg"
                       >
                         <span className="text-sm text-gray-900 dark:text-white">
                           {vehicle.year} {vehicle.make} {vehicle.model}
@@ -767,7 +767,7 @@ export default function TrackingSecurityCard({
                       {trackedVehicles.filter(v => v.guest).slice(0, 2).map(vehicle => (
                         <div
                           key={vehicle.id}
-                          className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                          className="p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg"
                         >
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-sm font-medium text-gray-900 dark:text-white">
@@ -878,7 +878,7 @@ export default function TrackingSecurityCard({
         {activeTab === 'security' && (
           <div className="space-y-4">
             {/* Security Score */}
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
               <div>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">{t('tsSecurityScore')}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">{t('tsCompleteProfile')}</p>
@@ -1035,7 +1035,7 @@ export default function TrackingSecurityCard({
                     {data.api.keys.map(key => (
                       <div
                         key={key.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg"
                       >
                         <div>
                           <p className="text-sm font-medium text-gray-900 dark:text-white">{key.name}</p>
@@ -1100,7 +1100,7 @@ export default function TrackingSecurityCard({
                   return (
                     <div
                       key={log.id}
-                      className="p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                      className="p-2.5 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg"
                     >
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
@@ -1162,7 +1162,7 @@ export default function TrackingSecurityCard({
 
       {/* Footer - also hide when collapsed */}
       {!isCollapsed && (
-        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
+        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-200/70 dark:bg-gray-700/30">
           <Link
             href={activeTab === 'tracking' ? '/partner/tracking' : '/partner/settings'}
             className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"

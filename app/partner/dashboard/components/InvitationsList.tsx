@@ -188,7 +188,7 @@ export default function InvitationsList({
             {loading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="animate-pulse flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div key={i} className="animate-pulse flex items-center gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                     <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full"></div>
                     <div className="flex-1">
                       <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-2/3 mb-2"></div>
@@ -250,7 +250,7 @@ export default function InvitationsList({
                   <Link
                     key={invitation.id}
                     href={`/partner/fleet/invitations/${invitation.token}`}
-                    className="block p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
+                    className="block p-3 bg-gray-200/70 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
                   >
                     <div className="flex items-start gap-3">
                       {/* Avatar */}

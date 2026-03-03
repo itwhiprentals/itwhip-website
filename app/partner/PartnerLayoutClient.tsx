@@ -262,7 +262,7 @@ export default function PartnerLayoutClient({
   // Show loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-200/70 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">{t('loadingPartnerPortal')}</p>
@@ -381,22 +381,22 @@ export default function PartnerLayoutClient({
           <div className="grid grid-cols-2 gap-2 mb-4">
             {(partner?.role === 'fleet_manager' || partner?.role === 'hybrid') ? (
               <>
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 text-center">
+                <div className="bg-gray-200/70 dark:bg-gray-700/50 rounded-lg p-2 text-center">
                   <p className="text-lg font-bold text-gray-900 dark:text-white">{partner?.vehicleCount || 0}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{t('myVehicles')}</p>
                 </div>
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 text-center">
+                <div className="bg-gray-200/70 dark:bg-gray-700/50 rounded-lg p-2 text-center">
                   <p className="text-lg font-bold text-gray-900 dark:text-white">{partner?.managedVehicleCount || 0}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{t('managed')}</p>
                 </div>
               </>
             ) : (
               <>
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 text-center">
+                <div className="bg-gray-200/70 dark:bg-gray-700/50 rounded-lg p-2 text-center">
                   <p className="text-lg font-bold text-gray-900 dark:text-white">{partner?.vehicleCount || partner?.partnerFleetSize || 0}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{t('vehicles')}</p>
                 </div>
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 text-center">
+                <div className="bg-gray-200/70 dark:bg-gray-700/50 rounded-lg p-2 text-center">
                   <p className="text-lg font-bold text-gray-900 dark:text-white">{partner?.partnerTotalBookings || 0}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{t('bookings')}</p>
                 </div>

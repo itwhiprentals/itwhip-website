@@ -24,7 +24,7 @@ export function NotificationsTab({ settings, setSettings, onSave, isSaving }: No
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('notificationPreferences')}</h2>
 
       <div className="space-y-4">
-        <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer">
+        <label className="flex items-center justify-between p-4 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg cursor-pointer">
           <div>
             <p className="font-medium text-gray-900 dark:text-white">{t('emailNotificationsLabel')}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">{t('emailNotificationsDesc')}</p>
@@ -37,7 +37,7 @@ export function NotificationsTab({ settings, setSettings, onSave, isSaving }: No
           />
         </label>
 
-        <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer">
+        <label className="flex items-center justify-between p-4 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg cursor-pointer">
           <div>
             <p className="font-medium text-gray-900 dark:text-white">{t('bookingAlertsLabel')}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">{t('bookingAlertsDesc')}</p>
@@ -50,7 +50,7 @@ export function NotificationsTab({ settings, setSettings, onSave, isSaving }: No
           />
         </label>
 
-        <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer">
+        <label className="flex items-center justify-between p-4 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg cursor-pointer">
           <div>
             <p className="font-medium text-gray-900 dark:text-white">{t('payoutAlertsLabel')}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">{t('payoutAlertsDesc')}</p>
@@ -63,7 +63,7 @@ export function NotificationsTab({ settings, setSettings, onSave, isSaving }: No
           />
         </label>
 
-        <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer">
+        <label className="flex items-center justify-between p-4 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg cursor-pointer">
           <div>
             <p className="font-medium text-gray-900 dark:text-white">{t('marketingEmailsLabel')}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">{t('marketingEmailsDesc')}</p>

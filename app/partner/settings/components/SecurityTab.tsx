@@ -196,7 +196,7 @@ export function SecurityTab({ onPasswordChange, isSaving, saveMessage, setSaveMe
 
           {/* Password strength indicator */}
           {passwordData.newPassword && (
-            <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="mt-3 p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
               <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{t('passwordRequirements')}</p>
               <div className="space-y-1">
                 {PASSWORD_REQUIREMENTS.map(req => {

@@ -194,7 +194,7 @@ export function CompanyTab({ settings, setSettings, onSave, isSaving }: CompanyT
   return (
     <div className="space-y-6">
       {/* Business Host Toggle */}
-      <div className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/30">
+      <div className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-200/70 dark:bg-gray-700/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">

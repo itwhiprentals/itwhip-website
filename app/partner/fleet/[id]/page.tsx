@@ -200,7 +200,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-200/70 dark:bg-gray-900 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -208,7 +208,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
 
   if (error && !vehicle) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-200/70 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <IoWarningOutline className="w-12 h-12 sm:w-16 sm:h-16 text-red-500 mx-auto mb-4" />
           <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
@@ -426,11 +426,11 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                   <p className="text-lg sm:text-2xl font-bold text-purple-600">${vehicle.dailyRate}</p>
                   <p className="text-[10px] sm:text-xs text-gray-500">{t('perDay')}</p>
                 </div>
-                <div className="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="text-center p-2 sm:p-3 bg-gray-200/70 dark:bg-gray-700 rounded-lg">
                   <p className="text-base sm:text-xl font-semibold text-gray-900 dark:text-white">${vehicle.weeklyRate || '—'}</p>
                   <p className="text-[10px] sm:text-xs text-gray-500">{t('perWeek')}</p>
                 </div>
-                <div className="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="text-center p-2 sm:p-3 bg-gray-200/70 dark:bg-gray-700 rounded-lg">
                   <p className="text-base sm:text-xl font-semibold text-gray-900 dark:text-white">${vehicle.monthlyRate || '—'}</p>
                   <p className="text-[10px] sm:text-xs text-gray-500">{t('perMonth')}</p>
                 </div>
@@ -453,7 +453,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                 </Link>
               </div>
               {/* Non-editable Info (VIN verified) */}
-              <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+              <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
                 <p className="text-[10px] sm:text-xs text-gray-500 mb-1.5 flex items-center gap-1">
                   <IoShieldCheckmark className="w-3 h-3 text-green-600" />
                   {t('vinVerified')}
@@ -641,7 +641,7 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                         alert(t('linkCopied'))
                       }
                     }}
-                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
+                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gray-200/70 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
                   >
                     <IoShareSocialOutline className="w-5 h-5" />
                     {t('shareListing')}

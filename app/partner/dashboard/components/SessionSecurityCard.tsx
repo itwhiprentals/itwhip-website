@@ -205,7 +205,7 @@ export default function SessionSecurityCard() {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Header with User Info */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-200/70 dark:bg-gray-700/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {data.user.profilePhoto ? (
@@ -638,7 +638,7 @@ export default function SessionSecurityCard() {
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
+      <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-200/70 dark:bg-gray-700/30">
         <Link
           href="/partner/settings"
           className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"

@@ -190,7 +190,7 @@ export default function InvitationsStatsCard({ onViewInvitations }: InvitationsS
 
       {/* Pending notice */}
       {(sentStats.pending > 0 || receivedStats.pending > 0) && (
-        <div className="mt-3 p-2 bg-gray-50 dark:bg-gray-700/30 border border-gray-100 dark:border-gray-700 rounded-lg">
+        <div className="mt-3 p-2 bg-gray-200/70 dark:bg-gray-700/30 border border-gray-100 dark:border-gray-700 rounded-lg">
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {receivedStats.pending > 0 && (
               <span className="font-medium">

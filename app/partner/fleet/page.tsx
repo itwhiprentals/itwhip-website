@@ -23,7 +23,8 @@ import {
   IoPlayCircleOutline,
   IoRefreshOutline,
   IoSwapHorizontalOutline,
-  IoCalendarOutline
+  IoCalendarOutline,
+  IoChevronForwardOutline
 } from 'react-icons/io5'
 
 interface Vehicle {
@@ -41,6 +42,7 @@ interface Vehicle {
   rating: number
   isActive: boolean
   vehicleType: 'RENTAL' | 'RIDESHARE'
+  trim?: string | null
 }
 
 type FilterStatus = 'all' | 'available' | 'booked' | 'maintenance' | 'inactive' | 'active'
@@ -290,7 +292,7 @@ export default function PartnerFleetPage() {
           onClick={() => setStatusFilter('inactive')}
           className={`p-3 sm:p-4 rounded-lg border transition-colors ${
             statusFilter === 'inactive'
-              ? 'border-gray-500 bg-gray-50 dark:bg-gray-700'
+              ? 'border-gray-500 bg-gray-200/70 dark:bg-gray-700'
               : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300'
           }`}
         >
@@ -339,9 +341,61 @@ export default function PartnerFleetPage() {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Mobile Cards */}
+          <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
+            {filteredVehicles.map((vehicle) => {
+              const statusConfig = getStatusConfig(vehicle)
+              const StatusIcon = statusConfig.icon
+              return (
+                <Link
+                  key={vehicle.id}
+                  href={`/partner/fleet/${vehicle.id}`}
+                  className="flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                >
+                  <div className="w-16 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
+                    {vehicle.photo ? (
+                      <img src={vehicle.photo} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <IoCarOutline className="w-5 h-5 text-gray-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{vehicle.year} {vehicle.make}</p>
+                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0 ${
+                          vehicle.vehicleType === 'RIDESHARE'
+                            ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                            : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                        }`}>
+                          {vehicle.vehicleType === 'RIDESHARE' ? <IoCarSportOutline className="w-3 h-3" /> : <IoKeyOutline className="w-3 h-3" />}
+                          {vehicle.vehicleType === 'RIDESHARE' ? t('rideshare') : t('rental')}
+                        </span>
+                      </div>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium flex-shrink-0 ${statusConfig.color}`}>
+                        <StatusIcon className="w-3 h-3" />
+                        {statusConfig.label}
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">{t('perDay', { rate: vehicle.dailyRate })}</span>
+                      <span className="text-xs text-gray-400">·</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{vehicle.totalTrips} {vehicle.totalTrips === 1 ? 'trip' : 'trips'}</span>
+                    </div>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-900/50">
+              <thead className="bg-gray-200/70 dark:bg-gray-900/50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     {t('vehicle')}
@@ -514,6 +568,7 @@ export default function PartnerFleetPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 

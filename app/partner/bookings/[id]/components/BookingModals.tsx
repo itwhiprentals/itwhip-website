@@ -201,7 +201,7 @@ export function BookingModals({
                 <IoCloseOutline className="w-5 h-5 text-gray-500" />
               </button>
             </div>
-            <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="mb-4 p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
               <p className="text-sm text-gray-600 dark:text-gray-400">{t('bdCurrentEndDate')}</p>
               <p className="font-medium text-gray-900 dark:text-white">
                 {formatDate(booking.endDate)} at {booking.endTime}
@@ -519,7 +519,7 @@ export function BookingModals({
             </div>
 
             {/* Verification Method */}
-            <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="mb-4 p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
               <p className="text-sm text-gray-500 dark:text-gray-400">{t('bdVerificationMethod')}</p>
               <p className="font-medium text-gray-900 dark:text-white">
                 {booking.verificationMethod || t('bdUnknown')}

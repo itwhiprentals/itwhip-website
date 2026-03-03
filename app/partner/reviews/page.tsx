@@ -396,7 +396,7 @@ export default function ReviewsPage() {
                         )}
 
                         {expandedReview === review.id && (
-                          <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2 p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                             {[
                               { label: t('cleanliness'), value: review.cleanliness },
                               { label: t('accuracy'), value: review.accuracy },
@@ -434,7 +434,7 @@ export default function ReviewsPage() {
                             </p>
                           </div>
                         ) : respondingTo === review.id ? (
-                          <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <div className="mt-3 p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                             <textarea
                               value={responseText}
                               onChange={(e) => setResponseText(e.target.value)}

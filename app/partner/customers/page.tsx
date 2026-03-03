@@ -478,7 +478,7 @@ function AddCustomerModal({
           </div>
 
           {/* Send Verification Checkbox */}
-          <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+          <div className="flex items-center gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
             <input
               type="checkbox"
               id="sendVerification"

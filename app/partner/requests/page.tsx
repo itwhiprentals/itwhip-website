@@ -304,7 +304,7 @@ export default function PartnerRequestsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6">
+      <div className="min-h-screen bg-gray-200/70 dark:bg-gray-900 p-4 sm:p-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-center h-64">
             <div className="text-gray-500">{t('loading')}</div>
@@ -315,9 +315,9 @@ export default function PartnerRequestsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 sm:pb-6">
+    <div className="min-h-screen bg-gray-200/70 dark:bg-gray-900 pb-20 sm:pb-6">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-gray-50 dark:bg-gray-900 px-4 pt-4 pb-2 sm:p-6">
+      <div className="sticky top-0 z-20 bg-gray-200/70 dark:bg-gray-900 px-4 pt-4 pb-2 sm:p-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-3 mb-4">
             <Link
@@ -579,7 +579,7 @@ export default function PartnerRequestsPage() {
 
                   {/* Expanded: Assign Car */}
                   {isExpanded && claimPendingCar && (
-                    <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-900/50">
+                    <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-200/70 dark:bg-gray-900/50">
                       <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
                         {t('selectVehicleToFulfill')}
                       </h4>
@@ -677,7 +677,7 @@ export default function PartnerRequestsPage() {
 
                   {/* Expanded: No Claim - Show Details */}
                   {isExpanded && !hasMyClaim && (
-                    <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-900/50">
+                    <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-200/70 dark:bg-gray-900/50">
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <span className="text-gray-500 dark:text-gray-400">{t('guest')}</span>

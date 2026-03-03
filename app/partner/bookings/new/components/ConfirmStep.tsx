@@ -664,7 +664,7 @@ export default function ConfirmStep({
 
               {/* Inline Card Entry */}
               {paymentMethod === 'platform' && (
-                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                <div className="p-4 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
                     {t('enterCardDetails')}
                   </label>

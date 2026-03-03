@@ -526,7 +526,7 @@ export default function TrackingDemoPage() {
       case 'moving': return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
       case 'parked': return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
       case 'disabled': return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
-      default: return 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700'
+      default: return 'text-gray-600 dark:text-gray-400 bg-gray-200/70 dark:bg-gray-700'
     }
   }
 
@@ -538,7 +538,7 @@ export default function TrackingDemoPage() {
       case 'success': return 'border-green-300 dark:border-green-400 bg-green-50 dark:bg-green-950 text-green-700 dark:text-white dark:shadow-[0_0_10px_rgba(34,197,94,0.3)]'
       case 'killswitch': return 'border-red-500 dark:border-red-500 bg-red-100 dark:bg-red-900 text-red-800 dark:text-white font-bold dark:shadow-[0_0_15px_rgba(239,68,68,0.5)]'
       case 'info': return 'border-blue-300 dark:border-blue-400 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-white dark:shadow-[0_0_10px_rgba(59,130,246,0.3)]'
-      default: return 'border-gray-200 dark:border-gray-500 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-white'
+      default: return 'border-gray-200 dark:border-gray-500 bg-gray-200/70 dark:bg-gray-700 text-gray-700 dark:text-white'
     }
   }
 
@@ -730,7 +730,7 @@ export default function TrackingDemoPage() {
                 <span className="text-amber-600 dark:text-amber-400">ItWhip+</span> {t('fleetStatus')}
               </h3>
               <div className="grid grid-cols-4 lg:grid-cols-2 gap-2 sm:gap-3">
-                <div className="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="text-center p-2 sm:p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                   <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{vehicles.length}</p>
                   <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('total')}</p>
                 </div>
@@ -978,7 +978,7 @@ export default function TrackingDemoPage() {
 
                 {/* Expanded Control Panel */}
                 {selectedVehicle === vehicle.id && (
-                  <div className="px-3 sm:px-4 pb-3 sm:pb-4 bg-gray-50 dark:bg-gray-800/50">
+                  <div className="px-3 sm:px-4 pb-3 sm:pb-4 bg-gray-200/70 dark:bg-gray-800/50">
                     <div className="pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700">
                       {/* Vehicle Stats */}
                       <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3 mb-4 sm:mb-6">

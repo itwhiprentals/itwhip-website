@@ -240,7 +240,7 @@ export default function InvitationDetailPage({ params }: { params: Promise<{ tok
         </div>
 
         {/* Contact Info */}
-        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+        <div className="flex items-center gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/30 rounded-lg">
           <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center flex-shrink-0">
             {isSender ? (
               invitation.recipient ? (
@@ -281,7 +281,7 @@ export default function InvitationDetailPage({ params }: { params: Promise<{ tok
           </h2>
           <div className="space-y-2">
             {invitation.vehicles.map(vehicle => (
-              <div key={vehicle.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+              <div key={vehicle.id} className="flex items-center gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/30 rounded-lg">
                 {vehicle.photos?.[0] && (
                   <Image src={vehicle.photos[0]} alt={`${vehicle.make} ${vehicle.model}`} width={64} height={48} className="rounded object-cover" />
                 )}
@@ -335,7 +335,7 @@ export default function InvitationDetailPage({ params }: { params: Promise<{ tok
           {permissions.map(perm => {
             const enabled = invitation.permissions[perm.key as keyof typeof invitation.permissions]
             return (
-              <div key={perm.key} className={`flex items-center gap-2 p-2.5 rounded-lg text-sm ${enabled ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-700/30'}`}>
+              <div key={perm.key} className={`flex items-center gap-2 p-2.5 rounded-lg text-sm ${enabled ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-200/70 dark:bg-gray-700/30'}`}>
                 {enabled ? <IoCheckmarkCircle className="w-4 h-4 text-green-600 flex-shrink-0" /> : <IoCloseCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />}
                 <span className="text-gray-700 dark:text-gray-300">{perm.label}</span>
               </div>
@@ -353,7 +353,7 @@ export default function InvitationDetailPage({ params }: { params: Promise<{ tok
           </h2>
           <div className="space-y-2">
             {invitation.negotiationHistory.map((entry, i) => (
-              <div key={i} className="flex items-start gap-2.5 p-2.5 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+              <div key={i} className="flex items-start gap-2.5 p-2.5 bg-gray-200/70 dark:bg-gray-700/30 rounded-lg">
                 <div className="w-5 h-5 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                   <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">{entry.round}</span>
                 </div>

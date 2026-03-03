@@ -598,7 +598,7 @@ export default function InsurancePage() {
                 <div className={`rounded-lg transition-colors ${
                   coversVehicles
                     ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500'
-                    : 'bg-gray-50 dark:bg-gray-700 border-2 border-transparent'
+                    : 'bg-gray-200/70 dark:bg-gray-700 border-2 border-transparent'
                 }`}>
                   <label className="flex items-center justify-between p-4 cursor-pointer">
                     <div className="flex items-center gap-3">
@@ -689,7 +689,7 @@ export default function InsurancePage() {
                 <div className={`rounded-lg transition-colors ${
                   coversDuringRentals
                     ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500'
-                    : 'bg-gray-50 dark:bg-gray-700 border-2 border-transparent'
+                    : 'bg-gray-200/70 dark:bg-gray-700 border-2 border-transparent'
                 }`}>
                   <label className="flex items-center justify-between p-4 cursor-pointer">
                     <div className="flex items-center gap-3">
@@ -958,7 +958,7 @@ export default function InsurancePage() {
                             <label className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
                               vehicleEditForm.hasOwnInsurance
                                 ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500'
-                                : 'bg-gray-50 dark:bg-gray-700 border-2 border-transparent'
+                                : 'bg-gray-200/70 dark:bg-gray-700 border-2 border-transparent'
                             }`}>
                               <div className="flex items-center gap-3">
                                 <input
@@ -1035,7 +1035,7 @@ export default function InsurancePage() {
                                 <label className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
                                   vehicleEditForm.useForRentals
                                     ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500'
-                                    : 'bg-gray-50 dark:bg-gray-700 border-2 border-transparent'
+                                    : 'bg-gray-200/70 dark:bg-gray-700 border-2 border-transparent'
                                 }`}>
                                   <div className="flex items-center gap-3">
                                     <input
@@ -1166,7 +1166,7 @@ export default function InsurancePage() {
               <div className={`flex items-center gap-2 p-3 rounded-lg ${
                 hasInsurance
                   ? 'bg-green-50 dark:bg-green-900/20'
-                  : 'bg-gray-50 dark:bg-gray-700'
+                  : 'bg-gray-200/70 dark:bg-gray-700'
               }`}>
                 {hasInsurance ? (
                   <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
@@ -1181,7 +1181,7 @@ export default function InsurancePage() {
               <div className={`flex items-center gap-2 p-3 rounded-lg ${
                 coversVehicles
                   ? 'bg-blue-50 dark:bg-blue-900/20'
-                  : 'bg-gray-50 dark:bg-gray-700'
+                  : 'bg-gray-200/70 dark:bg-gray-700'
               }`}>
                 {coversVehicles ? (
                   <IoCheckmarkCircleOutline className="w-5 h-5 text-blue-600" />
@@ -1196,7 +1196,7 @@ export default function InsurancePage() {
               <div className={`flex items-center gap-2 p-3 rounded-lg ${
                 coversDuringRentals
                   ? 'bg-green-50 dark:bg-green-900/20'
-                  : 'bg-gray-50 dark:bg-gray-700'
+                  : 'bg-gray-200/70 dark:bg-gray-700'
               }`}>
                 {coversDuringRentals ? (
                   <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
@@ -1242,7 +1242,7 @@ export default function InsurancePage() {
             </p>
 
             <div className="space-y-3">
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className="p-3 bg-gray-200/70 dark:bg-gray-700 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <IoLinkOutline className="w-4 h-4 text-gray-500" />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('apiIntegration')}</span>

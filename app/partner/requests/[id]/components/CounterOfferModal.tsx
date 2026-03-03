@@ -110,7 +110,7 @@ export default function CounterOfferModal({
 
         <div className="p-4 space-y-6">
           {/* Current Rate */}
-          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+          <div className="bg-gray-200/70 dark:bg-gray-900/50 rounded-lg p-4">
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Current Offered Rate</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">
               ${currentRate}/day

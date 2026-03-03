@@ -131,19 +131,19 @@ export function DeleteAccountModal({ isOpen, email, onClose, onDelete }: DeleteA
                   {t('whatWillBeDeleted')}
                 </h4>
                 <div className="space-y-2">
-                  <div className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="flex items-center gap-3 p-2.5 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                     <IoPersonOutline className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-700 dark:text-gray-300">{t('deleteProfileCompany')}</span>
                   </div>
-                  <div className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="flex items-center gap-3 p-2.5 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                     <IoCarOutline className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-700 dark:text-gray-300">{t('deleteFleetListings')}</span>
                   </div>
-                  <div className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="flex items-center gap-3 p-2.5 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                     <IoCardOutline className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-700 dark:text-gray-300">{t('deletePayoutHistory')}</span>
                   </div>
-                  <div className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="flex items-center gap-3 p-2.5 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                     <IoDocumentTextOutline className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-700 dark:text-gray-300">{t('deleteBookingHistory')}</span>
                   </div>

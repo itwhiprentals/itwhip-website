@@ -332,7 +332,7 @@ export default function PartnerCalendarPage() {
         </div>
 
         {/* Week Days Header */}
-        <div className="grid grid-cols-7 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+        <div className="grid grid-cols-7 bg-gray-200/70 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
           {weekDays.map(day => (
             <div key={day} className="py-2 sm:py-3 text-center text-[10px] sm:text-sm font-medium text-gray-500 dark:text-gray-400">
               {day}

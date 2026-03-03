@@ -745,7 +745,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-200/70 dark:bg-gray-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
       </div>
     )
@@ -753,7 +753,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
   if (error || !booking) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+      <div className="min-h-screen bg-gray-200/70 dark:bg-gray-900 p-6">
         <div className="max-w-4xl mx-auto">
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
             <IoAlertCircleOutline className="w-12 h-12 text-red-500 mx-auto mb-3" />

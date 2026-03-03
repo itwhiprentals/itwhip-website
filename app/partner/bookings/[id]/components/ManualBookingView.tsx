@@ -877,11 +877,11 @@ export default function ManualBookingView({
                     <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdGuestHistory')}</h3>
                   </div>
                   <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
+                    <div className="bg-gray-200/70 dark:bg-gray-700/50 rounded-lg p-3 text-center">
                       <p className="text-2xl font-bold text-gray-900 dark:text-white">{guestHistory.totalBookings}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{t('bdTotalBookings')}</p>
                     </div>
-                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
+                    <div className="bg-gray-200/70 dark:bg-gray-700/50 rounded-lg p-3 text-center">
                       <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(guestHistory.totalSpent)}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{t('bdSpentWithYou')}</p>
                     </div>
@@ -920,7 +920,7 @@ export default function ManualBookingView({
                     <div className={`p-4 rounded-lg ${
                       renter.verification.identity.status === 'verified' ? 'bg-green-50 dark:bg-green-900/20'
                       : renter.verification.identity.status === 'pending' ? 'bg-yellow-50 dark:bg-yellow-900/20'
-                      : 'bg-gray-50 dark:bg-gray-700/50'
+                      : 'bg-gray-200/70 dark:bg-gray-700/50'
                     }`}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-gray-900 dark:text-white">{t('bdIdentityVerification')}</span>
@@ -980,13 +980,13 @@ export default function ManualBookingView({
 
                     {/* Email & Phone Verification */}
                     <div className="grid grid-cols-2 gap-4">
-                      <div className={`p-4 rounded-lg ${renter.verification.email.verified ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-700/50'}`}>
+                      <div className={`p-4 rounded-lg ${renter.verification.email.verified ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-200/70 dark:bg-gray-700/50'}`}>
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bdEmail')}</span>
                           {renter.verification.email.verified ? <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" /> : <IoCloseCircleOutline className="w-5 h-5 text-gray-400" />}
                         </div>
                       </div>
-                      <div className={`p-4 rounded-lg ${renter.verification.phone.verified ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-700/50'}`}>
+                      <div className={`p-4 rounded-lg ${renter.verification.phone.verified ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-200/70 dark:bg-gray-700/50'}`}>
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bdPhone')}</span>
                           {renter.verification.phone.verified ? <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" /> : <IoCloseCircleOutline className="w-5 h-5 text-gray-400" />}
@@ -1040,7 +1040,7 @@ export default function ManualBookingView({
                   {booking.tripCharges.length > 0 ? (
                     <div className="space-y-3">
                       {booking.tripCharges.map((charge) => (
-                        <div key={charge.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <div key={charge.id} className="flex items-center justify-between p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                           <div>
                             <p className="font-medium text-gray-900 dark:text-white">{charge.description}</p>
                             <p className="text-xs text-gray-500">{charge.chargeType} • {new Date(charge.createdAt).toLocaleDateString()}</p>
@@ -1247,7 +1247,7 @@ export default function ManualBookingView({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Insurance */}
             <Link href="/partner/insurance" className="block rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer transition-shadow hover:shadow-md">
-              <div className="px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-700/50">
+              <div className="px-4 py-3 flex items-center justify-between bg-gray-200/70 dark:bg-gray-700/50">
                 <div className="flex items-center gap-2">
                   <IoShieldCheckmarkOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('bdInsurance')}</span>
@@ -1272,7 +1272,7 @@ export default function ManualBookingView({
 
             {/* Agreement */}
             <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-700/50">
+              <div className="px-4 py-3 flex items-center justify-between bg-gray-200/70 dark:bg-gray-700/50">
                 <div className="flex items-center gap-2">
                   <IoDocumentTextOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('bdAgreement')}</span>
@@ -1327,7 +1327,7 @@ export default function ManualBookingView({
 
             {/* Stripe Connect / Bank Account */}
             <Link href="/partner/revenue" className="block rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer transition-shadow hover:shadow-md">
-              <div className="px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-700/50">
+              <div className="px-4 py-3 flex items-center justify-between bg-gray-200/70 dark:bg-gray-700/50">
                 <div className="flex items-center gap-2">
                   <IoWalletOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('bdBankAccount')}</span>

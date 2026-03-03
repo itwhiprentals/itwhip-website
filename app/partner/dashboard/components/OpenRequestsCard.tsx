@@ -294,7 +294,7 @@ export default function OpenRequestsCard() {
 
       {/* Footer */}
       {requests.length > 0 && stats.openCount > 3 && (
-        <div className="p-3 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700">
+        <div className="p-3 bg-gray-200/70 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700">
           <Link
             href="/partner/requests"
             className="w-full py-2 text-center text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium flex items-center justify-center gap-1"

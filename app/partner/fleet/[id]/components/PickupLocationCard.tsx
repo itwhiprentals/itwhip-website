@@ -76,25 +76,25 @@ export default function PickupLocationCard({
 
       {/* Availability Details - 2 Column Grid */}
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
-        <div className="p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+        <div className="p-2 sm:p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
           <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-0.5">Advance notice</p>
           <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
             {advanceNotice} hours
           </p>
         </div>
-        <div className="p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+        <div className="p-2 sm:p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
           <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-0.5">Min rental</p>
           <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
             {minTripDuration} day{minTripDuration !== 1 ? 's' : ''}
           </p>
         </div>
-        <div className="p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+        <div className="p-2 sm:p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
           <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-0.5">Max rental</p>
           <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
             {maxTripDuration} day{maxTripDuration !== 1 ? 's' : ''}
           </p>
         </div>
-        <div className="p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+        <div className="p-2 sm:p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
           <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-0.5">Instant Book</p>
           <div className="mt-0.5">
             {instantBook ? (

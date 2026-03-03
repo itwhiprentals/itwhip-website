@@ -41,7 +41,7 @@ export default function InsurancePathCard({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-200/70 dark:bg-gray-700/50">
         <div className="flex items-center justify-between gap-2 mb-1">
           <div className="flex items-center gap-2">
             <IoShieldCheckmarkOutline className="w-5 h-5 text-orange-600 dark:text-orange-400" />
@@ -61,7 +61,7 @@ export default function InsurancePathCard({
       {/* Content */}
       <div className="p-4">
         {/* Rate Display */}
-        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-4">
+        <div className="bg-gray-200/70 dark:bg-gray-700/50 rounded-lg p-4 mb-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">{t('tierCommissionRate')}</p>

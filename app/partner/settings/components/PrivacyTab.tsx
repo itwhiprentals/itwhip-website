@@ -38,7 +38,7 @@ export function PrivacyTab({
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('dataAndPrivacyTitle')}</h2>
 
       {/* Download My Data */}
-      <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+      <div className="p-4 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">

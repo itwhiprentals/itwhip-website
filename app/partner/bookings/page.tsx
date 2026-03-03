@@ -256,7 +256,7 @@ export default function PartnerBookingsPage() {
           onClick={() => setStatusFilter('completed')}
           className={`p-4 rounded-lg border transition-colors ${
             statusFilter === 'completed'
-              ? 'border-gray-500 bg-gray-50 dark:bg-gray-700'
+              ? 'border-gray-500 bg-gray-200/70 dark:bg-gray-700'
               : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300'
           }`}
         >
@@ -362,7 +362,7 @@ export default function PartnerBookingsPage() {
           {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-900/50">
+              <thead className="bg-gray-200/70 dark:bg-gray-900/50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     {t('guest')}

@@ -194,7 +194,7 @@ export default function ActiveBookingCard({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-200/70 dark:bg-gray-700/50">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <IoCarSportOutline className="w-5 h-5 text-orange-500" />

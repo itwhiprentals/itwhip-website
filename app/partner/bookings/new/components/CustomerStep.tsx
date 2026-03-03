@@ -333,7 +333,7 @@ export default function CustomerStep({
                 />
               </div>
               {/* Create Account Toggle */}
-              <label className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer">
+              <label className="flex items-start gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg cursor-pointer">
                 <input
                   type="checkbox"
                   checked={createAccount}

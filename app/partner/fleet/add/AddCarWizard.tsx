@@ -733,7 +733,7 @@ export default function AddCarWizard({
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('addVehicleDetected')}</h2>
               </div>
 
-              <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className="p-4 bg-gray-200/70 dark:bg-gray-700 rounded-lg">
                 <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">{vehicleData.year} {vehicleData.make}</p>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-0.5">
                   {vehicleData.model}
@@ -1084,7 +1084,7 @@ export default function AddCarWizard({
             </p>
 
             {/* Has Own Insurance Toggle */}
-            <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer">
+            <label className="flex items-center justify-between p-4 bg-gray-200/70 dark:bg-gray-700 rounded-lg cursor-pointer">
               <div>
                 <p className="font-medium text-gray-900 dark:text-white">{t('addHasOwnInsurance')}</p>
                 <p className="text-sm text-gray-500">{t('addHasOwnInsuranceDesc')}</p>

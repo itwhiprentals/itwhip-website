@@ -534,7 +534,7 @@ export default function TrackingPage() {
       case 'moving': return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
       case 'parked': return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
       case 'disabled': return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
-      case 'offline': return 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700'
+      case 'offline': return 'text-gray-600 dark:text-gray-400 bg-gray-200/70 dark:bg-gray-700'
       default: return 'text-gray-600 dark:text-gray-400'
     }
   }
@@ -554,7 +554,7 @@ export default function TrackingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+      <div className="min-h-screen bg-gray-200/70 dark:bg-gray-900 p-6">
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse">
             <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded-lg mb-2"></div>
@@ -677,7 +677,7 @@ export default function TrackingPage() {
                 const isFullyCharged = vehicle.lastChargeState?.state === 'FULLY_CHARGED'
 
                 return (
-                  <div key={vehicle.id} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-600 transition-colors">
+                  <div key={vehicle.id} className="p-4 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-600 transition-colors">
                     {/* Header */}
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
@@ -990,7 +990,7 @@ export default function TrackingPage() {
                             className={`flex items-center gap-2 p-2 rounded-lg border ${
                               hasSmartcar
                                 ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
-                                : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 opacity-60'
+                                : 'bg-gray-200/70 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 opacity-60'
                             }`}
                           >
                             {hasSmartcar ? (
@@ -1056,7 +1056,7 @@ export default function TrackingPage() {
                             className={`flex items-center gap-2 p-2 rounded-lg border ${
                               hasBouncie
                                 ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
-                                : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 opacity-60'
+                                : 'bg-gray-200/70 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 opacity-60'
                             }`}
                           >
                             {hasBouncie ? (
@@ -1473,7 +1473,7 @@ export default function TrackingPage() {
                     {t('fleetStatus')}
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div className="text-center p-3 bg-gray-200/70 dark:bg-gray-700 rounded-lg">
                       <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {trackedVehicles.length}/{totalVehicles}
                       </p>
@@ -1491,7 +1491,7 @@ export default function TrackingPage() {
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{t('parked')}</p>
                     </div>
-                    <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div className="text-center p-3 bg-gray-200/70 dark:bg-gray-700 rounded-lg">
                       <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">
                         {trackedVehicles.filter(v => v.status === 'offline').length}
                       </p>
@@ -1641,7 +1641,7 @@ export default function TrackingPage() {
 
                       {/* Expanded Control Panel */}
                       {selectedVehicle === vehicle.id && (
-                        <div className="px-4 pb-4 bg-gray-50 dark:bg-gray-800/50">
+                        <div className="px-4 pb-4 bg-gray-200/70 dark:bg-gray-800/50">
                           <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                             {/* Vehicle Stats */}
                             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 mb-4">

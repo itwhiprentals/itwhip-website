@@ -359,7 +359,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-200/70 dark:bg-gray-900 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -367,7 +367,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
 
   if (error && !vehicle) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-200/70 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <IoWarningOutline className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
@@ -1045,7 +1045,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                     <h4 className="font-medium text-gray-900 dark:text-white mb-3">{t('mileagePolicy')}</h4>
 
                     {/* Unlimited Mileage Toggle */}
-                    <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors mb-4">
+                    <label className="flex items-center gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors mb-4">
                       <input
                         type="checkbox"
                         checked={isUnlimited}
@@ -1310,7 +1310,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
 
               <div className="space-y-3">
                 {PRESET_RULES.map(rule => (
-                  <label key={rule} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <label key={rule} className="flex items-center gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                     <input
                       type="checkbox"
                       checked={existingRules.includes(rule)}
@@ -1409,7 +1409,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
 
               {/* Has Own Insurance Toggle */}
               <div className="space-y-4">
-                <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer">
+                <label className="flex items-center justify-between p-4 bg-gray-200/70 dark:bg-gray-700 rounded-lg cursor-pointer">
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">{t('vehicleHasOwnInsurance')}</p>
                     <p className="text-sm text-gray-500">{t('vehicleHasOwnInsuranceDescription')}</p>
@@ -1520,7 +1520,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                 <div className={`p-4 rounded-lg ${
                   formData.insuranceInfo?.hasOwnInsurance && formData.insuranceInfo?.useForRentals
                     ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
-                    : 'bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600'
+                    : 'bg-gray-200/70 dark:bg-gray-700 border border-gray-200 dark:border-gray-600'
                 }`}>
                   <div className="flex items-center gap-2 mb-2">
                     {formData.insuranceInfo?.hasOwnInsurance && formData.insuranceInfo?.useForRentals ? (
@@ -1584,7 +1584,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
               <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('availabilitySettings')}</h3>
 
               <div className="space-y-4">
-                <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <label className="flex items-center justify-between p-4 bg-gray-200/70 dark:bg-gray-700 rounded-lg">
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">{t('instantBook')}</p>
                     <p className="text-sm text-gray-500">{t('instantBookDescription')}</p>
@@ -1648,19 +1648,19 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
               <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('vehicleStats')}</h3>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-center">
+                <div className="p-4 bg-gray-200/70 dark:bg-gray-700 rounded-lg text-center">
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{vehicle.totalTrips}</p>
                   <p className="text-sm text-gray-500">{t('totalTrips')}</p>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-center">
+                <div className="p-4 bg-gray-200/70 dark:bg-gray-700 rounded-lg text-center">
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{vehicle.rating.toFixed(1)}</p>
                   <p className="text-sm text-gray-500">{t('rating')}</p>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-center">
+                <div className="p-4 bg-gray-200/70 dark:bg-gray-700 rounded-lg text-center">
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{photos.length}</p>
                   <p className="text-sm text-gray-500">{t('photos')}</p>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-center">
+                <div className="p-4 bg-gray-200/70 dark:bg-gray-700 rounded-lg text-center">
                   <p className={`text-2xl font-bold ${formData.isActive ? 'text-green-600' : 'text-gray-500'}`}>
                     {formData.isActive ? t('active') : t('inactive')}
                   </p>

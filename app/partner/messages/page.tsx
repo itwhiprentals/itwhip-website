@@ -368,7 +368,7 @@ export default function PartnerMessagesPage() {
         </div>
 
         {/* Message Thread */}
-        <div className={`flex-1 flex flex-col bg-gray-50 dark:bg-gray-900 ${
+        <div className={`flex-1 flex flex-col bg-gray-200/70 dark:bg-gray-900 ${
           selectedConversation ? 'flex' : 'hidden sm:flex'
         }`}>
           {selectedConversation ? (

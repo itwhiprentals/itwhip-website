@@ -414,7 +414,7 @@ export default function AddCarSimple({ prefillDailyRate, onComplete }: AddCarSim
             <h3 className="text-base font-semibold text-gray-900 dark:text-white">{t('addVehicleDetected')}</h3>
           </div>
 
-          <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div className="p-4 bg-gray-200/70 dark:bg-gray-700 rounded-lg">
             {/* Year Make — bold, with engine badge inline */}
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white">

@@ -56,7 +56,7 @@ export function BankingTab({ stripeConnectStatus, stripeAccountId, onConnectStri
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('bankingAndPayoutsTitle')}</h2>
 
       {/* Stripe Connect Status */}
-      <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+      <div className="p-4 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
         <div className="flex items-center justify-between mb-2">
           <p className="font-medium text-gray-900 dark:text-white">{t('stripeConnect')}</p>
           {getStripeStatusBadge()}

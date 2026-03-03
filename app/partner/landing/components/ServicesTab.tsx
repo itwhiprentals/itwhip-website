@@ -181,7 +181,7 @@ export default function ServicesTab({ data, onChange, onSave, isSaving }: Servic
             return (
               <div
                 key={service.id}
-                className="flex items-center gap-4 p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+                className="flex items-center gap-4 p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-200/70 dark:bg-gray-800/50"
               >
                 <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700">
                   <Icon className="w-5 h-5 text-gray-500 dark:text-gray-400" />

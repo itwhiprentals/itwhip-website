@@ -690,7 +690,7 @@ export default function PartnerDiscountsPage() {
                   {Object.keys(depositSettings.global.makeDeposits).length > 0 && (
                     <div className="space-y-2 mb-3">
                       {Object.entries(depositSettings.global.makeDeposits).map(([make, amount]) => (
-                        <div key={make} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <div key={make} className="flex items-center gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                           <span className="font-medium text-gray-900 dark:text-white flex-1">{make}</span>
                           <span className="text-gray-600 dark:text-gray-300">${amount}</span>
                           <button
@@ -772,7 +772,7 @@ export default function PartnerDiscountsPage() {
                 </div>
               </div>
               {depositSettings.vehicles.length === 0 ? (
-                <div className="text-center py-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="text-center py-6 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                   <IoCarOutline className="w-10 h-10 text-gray-400 mx-auto mb-2" />
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     {t('noVehiclesInFleet')}
@@ -795,7 +795,7 @@ export default function PartnerDiscountsPage() {
                         className={`p-3 rounded-lg transition-all ${
                           isIndividual
                             ? 'bg-gray-100 dark:bg-gray-800 opacity-60'
-                            : 'bg-gray-50 dark:bg-gray-700/50'
+                            : 'bg-gray-200/70 dark:bg-gray-700/50'
                         }`}
                       >
                         {/* Top Row: Photo + Vehicle Name + Action Button */}
@@ -962,7 +962,7 @@ export default function PartnerDiscountsPage() {
                     return (
                       <div
                         key={vehicle.id}
-                        className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                        className="p-4 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg"
                       >
                         {/* Top Row: Photo + Vehicle Name + Back Button */}
                         <div className="flex items-start gap-3">

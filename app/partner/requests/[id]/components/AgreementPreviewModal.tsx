@@ -73,11 +73,11 @@ export default function AgreementPreviewModal({
           <div className="space-y-4">
             {/* Parties */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div className="p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('renterGuest')}</p>
                 <p className="font-semibold text-gray-900 dark:text-white">{guestName || t('guest')}</p>
               </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div className="p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('vehicleOwnerPartner')}</p>
                 <p className="font-semibold text-gray-900 dark:text-white">{hostName}</p>
               </div>

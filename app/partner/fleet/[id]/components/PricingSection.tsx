@@ -79,7 +79,7 @@ export default function PricingSection({
           {(weeklyRate || monthlyRate) && (
             <div className="grid grid-cols-2 gap-2 sm:gap-4">
               {weeklyRate && (
-                <div className="p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="p-2 sm:p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                   <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-0.5">Weekly</p>
                   <p className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white">
                     ${weeklyRate.toFixed(2)}
@@ -87,7 +87,7 @@ export default function PricingSection({
                 </div>
               )}
               {monthlyRate && (
-                <div className="p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="p-2 sm:p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                   <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-0.5">Monthly</p>
                   <p className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white">
                     ${monthlyRate.toFixed(2)}
@@ -101,19 +101,19 @@ export default function PricingSection({
         <div>
           {/* 3-Column Rate Grid */}
           <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-3 sm:mb-4">
-            <div className="p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="p-2 sm:p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
               <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-0.5">Daily</p>
               <p className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white">
                 ${dailyRate.toFixed(2)}
               </p>
             </div>
-            <div className="p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="p-2 sm:p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
               <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-0.5">Weekly</p>
               <p className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white">
                 {weeklyRate ? `$${weeklyRate.toFixed(2)}` : '--'}
               </p>
             </div>
-            <div className="p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="p-2 sm:p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
               <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-0.5">Monthly</p>
               <p className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white">
                 {monthlyRate ? `$${monthlyRate.toFixed(2)}` : '--'}
@@ -122,7 +122,7 @@ export default function PricingSection({
           </div>
 
           {/* Mileage Info */}
-          <div className="p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-1">
+          <div className="p-2 sm:p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg space-y-1">
             <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
               Included: <span className="font-medium">{includedMilesPerDay || 200} miles/day</span>
             </p>

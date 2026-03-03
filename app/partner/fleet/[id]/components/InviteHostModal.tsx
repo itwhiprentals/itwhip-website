@@ -271,7 +271,7 @@ export default function InviteHostModal({
                 {/* Content */}
                 <div className="p-4 space-y-6 flex-1 overflow-y-auto">
                   {/* Vehicle Info */}
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="flex items-center gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                     <IoCarOutline className="w-5 h-5 text-purple-600" />
                     <span className="text-sm text-gray-700 dark:text-gray-300">
                       Inviting host to manage: <strong>{vehicleName}</strong>
@@ -462,7 +462,7 @@ export default function InviteHostModal({
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Commission Split
                     </label>
-                    <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <div className="p-4 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg">
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-sm text-gray-600 dark:text-gray-400">
                           Your share (Owner)

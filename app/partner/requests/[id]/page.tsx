@@ -300,7 +300,7 @@ export default function RequestDetailPage() {
   // the component tree or the bottomsheet loses all state mid-finalize.
   if (loading && !data) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-200/70 dark:bg-gray-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
       </div>
     )
@@ -309,7 +309,7 @@ export default function RequestDetailPage() {
   // Error state
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-3 sm:p-4">
+      <div className="min-h-screen bg-gray-200/70 dark:bg-gray-900 p-3 sm:p-4">
         <div className="max-w-4xl mx-auto">
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
             <IoAlertCircleOutline className="w-12 h-12 text-red-500 mx-auto mb-3" />
@@ -535,7 +535,7 @@ export default function RequestDetailPage() {
               <div className={`rounded-lg px-3 py-2.5 sm:px-4 sm:py-3 border flex items-center gap-2.5 ${
                 timeRemaining.hours < 6
                   ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-                  : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
+                  : 'bg-gray-200/70 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
               }`}>
                 <IoTimeOutline className={`w-4 h-4 flex-shrink-0 ${
                   timeRemaining.hours < 6
@@ -640,7 +640,7 @@ export default function RequestDetailPage() {
 
         {/* Important Note - Standalone */}
         {!isExpired && !hasDeclined && !hasCompleted && (
-          <div className="mt-4 sm:mt-6 p-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+          <div className="mt-4 sm:mt-6 p-3 bg-gray-200/70 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
             <p className="text-xs text-gray-500 dark:text-gray-400">
               <strong>{t('noteLabel')}</strong> {t('noteCarNotPublic')}{' '}
               <button onClick={() => setShowHowItWorks(true)} className="text-orange-600 dark:text-orange-400 font-medium hover:underline">

@@ -748,7 +748,7 @@ export default function PartnerRevenuePage() {
               {revenueData.topVehicles.map((vehicle, index) => (
                 <div
                   key={vehicle.id}
-                  className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                  className="flex items-center gap-4 p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg"
                 >
                   <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold text-sm">
                     #{index + 1}
@@ -885,7 +885,7 @@ export default function PartnerRevenuePage() {
 
               {/* Summary Stats */}
               {payoutHistory && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-6 bg-gray-50 dark:bg-gray-900/50">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-6 bg-gray-200/70 dark:bg-gray-900/50">
                   <div className="text-center">
                     <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                       {formatCurrency(payoutHistory.stats.totalPaid)}
@@ -926,7 +926,7 @@ export default function PartnerRevenuePage() {
                   </div>
                 ) : (
                   <table className="w-full">
-                    <thead className="bg-gray-50 dark:bg-gray-900/50 sticky top-0">
+                    <thead className="bg-gray-200/70 dark:bg-gray-900/50 sticky top-0">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                           {t('periodHeader')}
@@ -1186,12 +1186,12 @@ export default function PartnerRevenuePage() {
                     <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1 uppercase tracking-wide">{t('yourTier')}</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">{currentTier.name}</p>
                   </div>
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center border border-gray-100 dark:border-gray-700">
+                  <div className="bg-gray-200/70 dark:bg-gray-700/50 rounded-lg p-4 text-center border border-gray-100 dark:border-gray-700">
                     <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1 uppercase tracking-wide">{t('commissionLabel2')}</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">{currentTier.commission}%</p>
                     <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">{t('keepPercent', { pct: 100 - currentTier.commission })}</p>
                   </div>
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center border border-gray-100 dark:border-gray-700">
+                  <div className="bg-gray-200/70 dark:bg-gray-700/50 rounded-lg p-4 text-center border border-gray-100 dark:border-gray-700">
                     <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1 uppercase tracking-wide">{t('fleetLabel')}</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">{fleetSize}</p>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('vehiclesUnit')}</p>

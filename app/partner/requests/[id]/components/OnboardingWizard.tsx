@@ -241,7 +241,7 @@ export default function OnboardingWizard({
   const hostEarnings = totalAmount * 0.9
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 sm:pb-6">
+    <div className="min-h-screen bg-gray-200/70 dark:bg-gray-900 pb-20 sm:pb-6">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
@@ -451,7 +451,7 @@ export default function OnboardingWizard({
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="p-4 bg-gray-200/70 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
                       <div className="flex items-start gap-3">
                         <IoWalletOutline className="w-6 h-6 text-gray-400 flex-shrink-0 mt-0.5" />
                         <div>
