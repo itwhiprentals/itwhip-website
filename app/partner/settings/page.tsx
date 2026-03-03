@@ -11,7 +11,8 @@ import {
   IoBusinessOutline,
   IoCardOutline,
   IoShieldCheckmarkOutline,
-  IoNotificationsOutline
+  IoNotificationsOutline,
+  IoDocumentTextOutline,
 } from 'react-icons/io5'
 
 import {
@@ -21,6 +22,7 @@ import {
   SecurityTab,
   NotificationsTab,
   PrivacyTab,
+  AgreementTab,
   DeleteAccountModal
 } from './components'
 
@@ -64,7 +66,7 @@ interface PartnerSettings {
   deletionScheduledFor?: string | null
 }
 
-type SectionId = 'account' | 'company' | 'banking' | 'security' | 'notifications' | 'privacy'
+type SectionId = 'account' | 'company' | 'banking' | 'security' | 'notifications' | 'agreement' | 'privacy'
 
 export default function PartnerSettingsPage() {
   const t = useTranslations('PartnerSettings')
@@ -110,7 +112,7 @@ export default function PartnerSettingsPage() {
     fetchSettings()
     // Check for tab query param
     const tab = searchParams.get('tab')
-    if (tab && ['account', 'company', 'banking', 'security', 'notifications', 'privacy'].includes(tab)) {
+    if (tab && ['account', 'company', 'banking', 'security', 'notifications', 'agreement', 'privacy'].includes(tab)) {
       setActiveSection(tab as SectionId)
     }
   }, [searchParams])
@@ -278,6 +280,7 @@ export default function PartnerSettingsPage() {
     { id: 'banking' as SectionId, label: t('bankingAndPayouts'), icon: IoCardOutline },
     { id: 'security' as SectionId, label: t('security'), icon: IoShieldCheckmarkOutline },
     { id: 'notifications' as SectionId, label: t('notifications'), icon: IoNotificationsOutline },
+    { id: 'agreement' as SectionId, label: t('rentalAgreement'), icon: IoDocumentTextOutline },
     { id: 'privacy' as SectionId, label: t('dataAndPrivacy'), icon: IoShieldCheckmarkOutline }
   ]
 
@@ -379,6 +382,10 @@ export default function PartnerSettingsPage() {
                 onSave={handleSave}
                 isSaving={isSaving}
               />
+            )}
+
+            {activeSection === 'agreement' && (
+              <AgreementTab />
             )}
 
             {activeSection === 'privacy' && (

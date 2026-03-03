@@ -2,9 +2,10 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import {
   IoPersonOutline,
   IoCarOutline,
@@ -20,6 +21,8 @@ import {
   IoLocationOutline,
   IoWalletOutline,
   IoMailOutline,
+  IoCashOutline,
+  IoCardOutline,
 } from 'react-icons/io5'
 import {
   Customer,
@@ -71,6 +74,18 @@ interface ConfirmStepProps {
   initialAgreementPreference?: string | null
 }
 
+// Card input styling for Stripe CardElement
+const CARD_ELEMENT_OPTIONS = {
+  style: {
+    base: {
+      fontSize: '16px',
+      color: '#1f2937',
+      '::placeholder': { color: '#9ca3af' },
+    },
+    invalid: { color: '#dc2626' },
+  },
+}
+
 export default function ConfirmStep({
   selectedCustomer,
   selectedVehicle,
@@ -104,6 +119,9 @@ export default function ConfirmStep({
   const [agreementType, setAgreementType] = useState<AgreementType>(
     (initialAgreementPreference as AgreementType) || 'ITWHIP'
   )
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'platform'>('cash')
+  const stripe = useStripe()
+  const elements = useElements()
 
   const createBooking = async () => {
     if (!selectedCustomer || !selectedVehicle || !startDate || !endDate) {
@@ -143,11 +161,36 @@ export default function ConfirmStep({
             policyNumber: guestInsurance.policyNumber,
           } : undefined,
           agreementType,
+          paymentMethod,
         })
       })
       const data = await response.json()
       if (data.success) {
-        router.push(`/partner/bookings/${data.booking.id}`)
+        if (data.clientSecret && paymentMethod === 'platform' && stripe && elements) {
+          // Confirm the card payment with Stripe
+          const cardElement = elements.getElement(CardElement)
+          if (!cardElement) {
+            setError(t('paymentFailed'))
+            setLoading(false)
+            return
+          }
+
+          const { error: stripeError } = await stripe.confirmCardPayment(data.clientSecret, {
+            payment_method: { card: cardElement }
+          })
+
+          if (stripeError) {
+            setError(stripeError.message || t('paymentFailed'))
+            setLoading(false)
+            return
+          }
+
+          // Payment confirmed — redirect to booking
+          router.push(`/partner/bookings/${data.booking.id}`)
+        } else {
+          // Cash payment: go directly to booking
+          router.push(`/partner/bookings/${data.booking.id}`)
+        }
       } else {
         setError(data.error || t('failedCreateBooking'))
       }
@@ -565,6 +608,71 @@ export default function ConfirmStep({
                   </button>
                 )
               })}
+            </div>
+          </div>
+
+          {/* Payment Method — standalone card */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+              <IoWalletOutline className="w-5 h-5" />
+              {t('paymentLabel')}
+            </label>
+            <div className="space-y-2">
+              <button
+                onClick={() => setPaymentMethod('cash')}
+                className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                  paymentMethod === 'cash'
+                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-400'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                    paymentMethod === 'cash' ? 'border-orange-500 dark:border-orange-400' : 'border-gray-300 dark:border-gray-600'
+                  }`}>
+                    {paymentMethod === 'cash' && <div className="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400" />}
+                  </div>
+                  <IoCashOutline className={`w-4 h-4 ${paymentMethod === 'cash' ? 'text-orange-600 dark:text-orange-400' : 'text-gray-400'}`} />
+                  <span className="font-medium text-sm text-gray-900 dark:text-white">{t('offlinePayment')}</span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 ml-6 mt-1">
+                  {t('offlinePaymentDescription')}
+                </p>
+              </button>
+
+              <button
+                onClick={() => setPaymentMethod('platform')}
+                className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                  paymentMethod === 'platform'
+                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-400'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                    paymentMethod === 'platform' ? 'border-orange-500 dark:border-orange-400' : 'border-gray-300 dark:border-gray-600'
+                  }`}>
+                    {paymentMethod === 'platform' && <div className="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400" />}
+                  </div>
+                  <IoCardOutline className={`w-4 h-4 ${paymentMethod === 'platform' ? 'text-orange-600 dark:text-orange-400' : 'text-gray-400'}`} />
+                  <span className="font-medium text-sm text-gray-900 dark:text-white">{t('collectLater')}</span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 ml-6 mt-1">
+                  {t('collectLaterDescription')}
+                </p>
+              </button>
+
+              {/* Inline Card Entry */}
+              {paymentMethod === 'platform' && (
+                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                    {t('enterCardDetails')}
+                  </label>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 p-3">
+                    <CardElement options={CARD_ELEMENT_OPTIONS} />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

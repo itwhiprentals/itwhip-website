@@ -2478,6 +2478,11 @@ model RentalHost {
   // Host preferences (set during onboarding, persisted on RentalHost after conversion)
   paymentPreference             String? // 'CASH' | 'PLATFORM'
   agreementPreference           String? // 'ITWHIP' | 'OWN' | 'BOTH'
+  hostAgreementUrl              String? // Cloudinary URL of uploaded PDF
+  hostAgreementName             String? // Original filename
+  agreementValidationScore      Int?    // AI validation 0-100
+  agreementValidationSummary    String? // AI summary
+  hostAgreementSections         Json?   // [{id, title, content, icon}]
 
   // ═══════════════════════════════════════════════════════════════
   // COMMISSION TIERS & WELCOME DISCOUNT

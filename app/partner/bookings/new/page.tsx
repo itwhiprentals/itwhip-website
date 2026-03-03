@@ -7,6 +7,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements } from '@stripe/react-stripe-js'
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 import {
   IoArrowBackOutline,
   IoWarningOutline,
@@ -393,33 +397,35 @@ export default function NewBookingPage() {
 
             {visitedSteps.has('confirm') && (
               <div className={currentStep === 'confirm' ? '' : 'hidden'}>
-                <ConfirmStep
-                  selectedCustomer={selectedCustomer}
-                  selectedVehicle={selectedVehicle}
-                  startDate={startDate}
-                  endDate={endDate}
-                  startTime={startTime}
-                  endTime={endTime}
-                  availability={availability}
-                  pickupType={pickupType}
-                  pickupLocation={pickupLocation}
-                  partnerAddress={partnerAddress}
-                  partnerTier={partnerTier}
-                  partnerInsurance={partnerInsurance}
-                  insuranceOption={insuranceOption}
-                  onInsuranceOptionChange={setInsuranceOption}
-                  guestInsurance={guestInsurance}
-                  notes={notes}
-                  breakdown={breakdown}
-                  formatCurrency={formatCurrency}
-                  onBack={() => goToStep('dates')}
-                  onGoToStep={goToStep}
-                  loading={loading}
-                  setLoading={setLoading}
-                  error={error}
-                  setError={setError}
-                  initialAgreementPreference={agreementPreference}
-                />
+                <Elements stripe={stripePromise}>
+                  <ConfirmStep
+                    selectedCustomer={selectedCustomer}
+                    selectedVehicle={selectedVehicle}
+                    startDate={startDate}
+                    endDate={endDate}
+                    startTime={startTime}
+                    endTime={endTime}
+                    availability={availability}
+                    pickupType={pickupType}
+                    pickupLocation={pickupLocation}
+                    partnerAddress={partnerAddress}
+                    partnerTier={partnerTier}
+                    partnerInsurance={partnerInsurance}
+                    insuranceOption={insuranceOption}
+                    onInsuranceOptionChange={setInsuranceOption}
+                    guestInsurance={guestInsurance}
+                    notes={notes}
+                    breakdown={breakdown}
+                    formatCurrency={formatCurrency}
+                    onBack={() => goToStep('dates')}
+                    onGoToStep={goToStep}
+                    loading={loading}
+                    setLoading={setLoading}
+                    error={error}
+                    setError={setError}
+                    initialAgreementPreference={agreementPreference}
+                  />
+                </Elements>
               </div>
             )}
           </div>

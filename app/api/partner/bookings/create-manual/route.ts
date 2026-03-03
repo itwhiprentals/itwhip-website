@@ -8,6 +8,7 @@ import { prisma } from '@/app/lib/database/prisma'
 import { generateAgreementToken, getTokenExpiryDate, generateSigningUrl } from '@/app/lib/agreements/tokens'
 import { GuestTokenHandler } from '@/app/lib/auth/guest-tokens'
 import { sendEmail } from '@/app/lib/email/send-email'
+import { PaymentProcessor } from '@/app/lib/stripe/payment-processor'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
@@ -81,6 +82,7 @@ export async function POST(request: NextRequest) {
       insuranceOption = 'guest',
       guestInsurance,
       agreementType = 'ITWHIP',
+      paymentMethod = 'cash',
     } = body
 
     // ─── Validate ─────────────────────────────────────────
@@ -243,6 +245,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // ─── Stripe Payment (platform payments only) ─────────
+
+    let stripeCustomerId: string | null = null
+    let stripePaymentIntentId: string | null = null
+    let clientSecret: string | null = null
+
+    if (paymentMethod === 'platform') {
+      // Create or find Stripe Customer for the guest
+      const stripeCustomer = await PaymentProcessor.createCustomer({
+        email: customer.email,
+        name: customer.name,
+        phone: customer.phone || undefined,
+        metadata: { source: 'manual_booking', hostId: partner.id }
+      })
+      stripeCustomerId = stripeCustomer.id
+
+      // Create PaymentIntent (authorize only, capture later)
+      const totalInCents = Math.round(totalAmount * 100)
+      const bookingIdForPI = crypto.randomUUID()
+      const paymentIntent = await PaymentProcessor.createPaymentIntent({
+        customerId: stripeCustomerId,
+        amount: totalInCents / 100, // PaymentProcessor expects dollars
+        bookingId: bookingIdForPI,
+        description: `${car.year} ${car.make} ${car.model} — Manual Booking by ${partner.name || 'Host'}`
+      })
+      stripePaymentIntentId = paymentIntent.id
+      clientSecret = paymentIntent.client_secret
+    }
+
     // ─── Create Booking ───────────────────────────────────
 
     const bookingId = crypto.randomUUID()
@@ -291,6 +322,9 @@ export async function POST(request: NextRequest) {
         status: 'PENDING',
         bookingType: 'MANUAL',
         paymentStatus: 'PENDING',
+        paymentType: paymentMethod === 'cash' ? 'CASH' : 'CARD',
+        ...(stripeCustomerId ? { stripeCustomerId } : {}),
+        ...(stripePaymentIntentId ? { stripePaymentIntentId } : {}),
         pickupType: pickupType || 'PARTNER_LOCATION',
         pickupLocation: pickupLocation || 'Partner Location',
         platformFeeRate,
@@ -458,7 +492,8 @@ export async function POST(request: NextRequest) {
         id: booking.id,
         bookingCode: booking.bookingCode,
         status: booking.status,
-      }
+      },
+      ...(clientSecret ? { clientSecret } : {}),
     })
 
   } catch (error) {
