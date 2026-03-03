@@ -91,7 +91,8 @@ export async function GET(request: NextRequest) {
           select: {
             make: true,
             model: true,
-            year: true
+            year: true,
+            photos: { take: 1, orderBy: { order: 'asc' as const } }
           }
         }
       },
@@ -142,7 +143,7 @@ export async function GET(request: NextRequest) {
         ? `${booking.car.year} ${booking.car.make} ${booking.car.model}`
         : 'Unknown Vehicle',
       vehicle: booking.car
-        ? { year: booking.car.year, make: booking.car.make, model: booking.car.model }
+        ? { year: booking.car.year, make: booking.car.make, model: booking.car.model, photo: booking.car.photos?.[0]?.url || null }
         : undefined,
       startDate: booking.startDate.toISOString(),
       endDate: booking.endDate.toISOString(),

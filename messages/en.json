@@ -7628,6 +7628,7 @@
     "tierGrowFleet": "Grow your fleet to unlock higher earnings",
     "tierCommissionRate": "Commission Rate",
     "tierYouKeep": "You keep {percent}%",
+    "tierYouKeepShort": "You Keep",
     "insurancePathTitle": "Your Insurance Path",
     "insurancePathSubtitle": "Your selected insurance determines your payout rate",
     "insurancePathType": "Insurance Type",

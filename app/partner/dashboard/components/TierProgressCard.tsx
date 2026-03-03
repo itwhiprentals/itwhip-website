@@ -70,52 +70,44 @@ export default function TierProgressCard({
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-      {/* Header */}
+      {/* Header + Stats Row */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <IoTrophyOutline className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                {t('tierCommissionTier')}
-              </h3>
-            </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {t('tierGrowFleet')}
-            </p>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <IoTrophyOutline className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+              {t('tierCommissionTier')}
+            </h3>
           </div>
-          <div className={`px-3 py-1.5 rounded-full text-sm font-semibold ${getTierBgColor(tier.current)}`}>
+          <div className={`px-3 py-1 rounded-full text-xs font-semibold ${getTierBgColor(tier.current)}`}>
             {t('tierPartner', { tier: tier.current })}
           </div>
         </div>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-2 mt-1">
+          <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-2.5 text-center">
+            <p className="text-xl font-bold text-gray-900 dark:text-white">{(currentRate * 100).toFixed(0)}%</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('tierCommissionRate')}</p>
+          </div>
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-2.5 text-center">
+            <p className="text-xl font-bold text-green-600 dark:text-green-400">{((1 - currentRate) * 100).toFixed(0)}%</p>
+            <p className="text-[10px] text-green-600 dark:text-green-400 uppercase tracking-wide">{t('tierYouKeepShort')}</p>
+          </div>
+          <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-2.5 text-center">
+            <p className="text-xl font-bold text-gray-900 dark:text-white">{fleetSize}</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('tierVehicles')}</p>
+          </div>
+        </div>
+        {isExternalRecruit && (
+          <p className="text-xs text-green-600 dark:text-green-400 mt-2 font-medium text-center">
+            {t('tierWelcomeRateNote')}
+          </p>
+        )}
       </div>
 
       {/* Content */}
       <div className="p-4">
-        {/* Current Rate Display */}
-        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('tierCommissionRate')}</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                {(currentRate * 100).toFixed(0)}%
-              </p>
-              <p className="text-sm text-green-600 dark:text-green-400">
-                {t('tierYouKeep', { percent: ((1 - currentRate) * 100).toFixed(0) })}
-              </p>
-              {isExternalRecruit && (
-                <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
-                  {t('tierWelcomeRateNote')}
-                </p>
-              )}
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('tierFleetSize')}</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{fleetSize}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('tierVehicles')}</p>
-            </div>
-          </div>
-        </div>
 
         {/* Progress to Next Tier */}
         {nextTier && (
@@ -142,7 +134,7 @@ export default function TierProgressCard({
         )}
 
         {/* Tier Ladder */}
-        <div className="grid grid-cols-4 gap-2 mt-4">
+        <div className="grid grid-cols-4 gap-3 mt-4">
           {tiers.map((tierConfig, index) => {
             const isCurrentTier = tierConfig.name === tier.current
             const isUnlocked = index <= currentTierIndex
@@ -151,36 +143,36 @@ export default function TierProgressCard({
             return (
               <div
                 key={tierConfig.name}
-                className={`relative p-2.5 rounded-lg text-center transition-all ${
+                className={`relative pt-5 pb-3 px-2 rounded-lg text-center transition-all ${
                   isCurrentTier
-                    ? 'bg-gray-50 dark:bg-gray-700 border-2 border-orange-500'
+                    ? 'bg-orange-50 dark:bg-orange-900/15 border-2 border-orange-500'
                     : isUnlocked
                     ? 'bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600'
-                    : 'bg-gray-100 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 opacity-60'
+                    : 'bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 opacity-50'
                 }`}
               >
                 {isCurrentTier && (
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full">
+                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-orange-500 text-white text-[10px] font-bold rounded-full whitespace-nowrap">
                     {t('tierCurrent')}
                   </div>
                 )}
                 {isNextTier && (
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full">
+                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-blue-500 text-white text-[10px] font-bold rounded-full whitespace-nowrap">
                     {t('tierNext')}
                   </div>
                 )}
 
-                <div className="mb-1">
+                <div className="mb-2">
                   {isUnlocked ? (
-                    <IoCheckmarkCircleOutline className={`w-4 h-4 mx-auto ${
+                    <IoCheckmarkCircleOutline className={`w-5 h-5 mx-auto ${
                       isCurrentTier ? 'text-orange-500' : 'text-green-500'
                     }`} />
                   ) : (
-                    <IoLockClosedOutline className="w-4 h-4 mx-auto text-gray-400" />
+                    <IoLockClosedOutline className="w-5 h-5 mx-auto text-gray-400 dark:text-gray-500" />
                   )}
                 </div>
 
-                <p className={`text-xs font-semibold ${
+                <p className={`text-xs font-semibold mb-0.5 ${
                   isCurrentTier
                     ? 'text-orange-600 dark:text-orange-400'
                     : 'text-gray-700 dark:text-gray-300'
@@ -188,7 +180,7 @@ export default function TierProgressCard({
                   {tierConfig.name}
                 </p>
 
-                <p className={`text-base font-bold ${
+                <p className={`text-lg font-bold ${
                   isCurrentTier
                     ? 'text-gray-900 dark:text-white'
                     : 'text-gray-600 dark:text-gray-400'
@@ -196,7 +188,7 @@ export default function TierProgressCard({
                   {(tierConfig.rate * 100).toFixed(0)}%
                 </p>
 
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
                   {t('tierCars', { count: tierConfig.minVehicles })}
                 </p>
               </div>

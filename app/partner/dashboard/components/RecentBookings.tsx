@@ -21,6 +21,7 @@ interface Booking {
   vehicleYear?: number
   vehicleMake?: string
   vehicleModel?: string
+  vehiclePhoto?: string | null
   startDate: string
   endDate: string
   status: 'confirmed' | 'pending' | 'active' | 'completed' | 'cancelled'
@@ -103,10 +104,17 @@ export default function RecentBookings({ bookings }: RecentBookingsProps) {
           <Link
             key={booking.id}
             href={`/partner/bookings/${booking.id}`}
-            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+            className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
           >
+            <div className="w-16 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
+              {booking.vehiclePhoto ? (
+                <img src={booking.vehiclePhoto} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <IoCarOutline className="w-5 h-5 text-gray-400" />
+              )}
+            </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-0.5">
                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                   {booking.guestName}
                 </p>

@@ -7567,6 +7567,7 @@
     "tierGrowFleet": "Développez votre flotte pour débloquer des revenus plus élevés",
     "tierCommissionRate": "Taux de Commission",
     "tierYouKeep": "Vous gardez {percent}%",
+    "tierYouKeepShort": "Vous Gardez",
     "insurancePathTitle": "Votre Voie d'Assurance",
     "insurancePathSubtitle": "Votre assurance sélectionnée détermine votre taux de paiement",
     "insurancePathType": "Type d'Assurance",
