@@ -354,7 +354,7 @@ export async function POST(request: NextRequest) {
           const guestFirstName = guest.guestName.split(' ')[0]
           await sendSms(
             guest.guestPhone,
-            `ITWhip: Great news, ${guestFirstName}! We found a new vehicle for your trip on ${startDateStr}–${endDateStr}. Check your email to review and confirm.`,
+            `ItWhip: Great news, ${guestFirstName}! We found a new vehicle for your trip on ${startDateStr}–${endDateStr}. Check your email to review and confirm.`,
             { type: 'BOOKING_RECEIVED', bookingId, hostId: host.id, guestId: guest.reviewerProfileId || undefined }
           )
         } catch (smsErr) {

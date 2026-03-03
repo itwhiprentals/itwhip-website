@@ -296,9 +296,16 @@ export default function ConfirmStep({
                 <IoCalendarOutline className="w-5 h-5 text-gray-400" />
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">{t('rentalPeriodLabel')}</p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {new Date(startDate.split('T')[0] + 'T12:00:00').toLocaleDateString()} {formatTime(startTime)} - {new Date(endDate.split('T')[0] + 'T12:00:00').toLocaleDateString()} {formatTime(endTime)}
-                  </p>
+                  <div className="space-y-0.5">
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      <span className="text-xs text-gray-400 dark:text-gray-500 font-normal mr-1">{t('startLabel')}</span>
+                      {new Date(startDate.split('T')[0] + 'T12:00:00').toLocaleDateString()} {formatTime(startTime)}
+                    </p>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      <span className="text-xs text-gray-400 dark:text-gray-500 font-normal mr-1">{t('endLabel')}</span>
+                      {new Date(endDate.split('T')[0] + 'T12:00:00').toLocaleDateString()} {formatTime(endTime)}
+                    </p>
+                  </div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">{t('daysCount', { count: availability?.tripDays || 0 })}</p>
                 </div>
               </div>
@@ -324,7 +331,13 @@ export default function ConfirmStep({
                   <p className="font-medium text-gray-900 dark:text-white">
                     {pickupType === 'partner'
                       ? (partnerAddress?.address
-                          ? `${partnerAddress.address}, ${partnerAddress.city}, ${partnerAddress.state}`
+                          ? (() => {
+                              // Build address without duplicating city/state if already in the address line
+                              const addr = partnerAddress.address
+                              const cityState = [partnerAddress.city, partnerAddress.state].filter(Boolean).join(', ')
+                              if (cityState && addr.includes(cityState)) return addr
+                              return cityState ? `${addr}, ${cityState}` : addr
+                            })()
                           : t('businessLocation'))
                       : pickupLocation || t('notSpecified')}
                   </p>
@@ -342,42 +355,12 @@ export default function ConfirmStep({
 
             {/* Current Insurance Status */}
             {selectedVehicle && (
-              <div className={`flex items-center justify-between p-4 ${
-                (() => {
-                  const hasVehicleIns = selectedVehicle.insuranceEligible && selectedVehicle.insuranceInfo?.useForRentals
-                  const hasPartnerIns = partnerInsurance?.hasInsurance &&
-                    partnerInsurance?.coversDuringRentals &&
-                    partnerInsurance.rentalCoveredVehicleIds?.includes(selectedVehicle.id)
-                  if (hasVehicleIns) return 'bg-green-50 dark:bg-green-900/20'
-                  if (hasPartnerIns) return 'bg-purple-50 dark:bg-purple-900/20'
-                  return 'bg-amber-50 dark:bg-amber-900/20'
-                })()
-              }`}>
+              <div className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-3">
-                  <IoShieldOutline className={`w-5 h-5 ${
-                    (() => {
-                      const hasVehicleIns = selectedVehicle.insuranceEligible && selectedVehicle.insuranceInfo?.useForRentals
-                      const hasPartnerIns = partnerInsurance?.hasInsurance &&
-                        partnerInsurance?.coversDuringRentals &&
-                        partnerInsurance.rentalCoveredVehicleIds?.includes(selectedVehicle.id)
-                      if (hasVehicleIns) return 'text-green-600'
-                      if (hasPartnerIns) return 'text-purple-600'
-                      return 'text-amber-600'
-                    })()
-                  }`} />
+                  <IoShieldOutline className="w-5 h-5 text-gray-400" />
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">{t('insuranceCoverageLabel')}</p>
-                    <p className={`font-medium ${
-                      (() => {
-                        const hasVehicleIns = selectedVehicle.insuranceEligible && selectedVehicle.insuranceInfo?.useForRentals
-                        const hasPartnerIns = partnerInsurance?.hasInsurance &&
-                          partnerInsurance?.coversDuringRentals &&
-                          partnerInsurance.rentalCoveredVehicleIds?.includes(selectedVehicle.id)
-                        if (hasVehicleIns) return 'text-green-700 dark:text-green-300'
-                        if (hasPartnerIns) return 'text-purple-700 dark:text-purple-300'
-                        return 'text-amber-700 dark:text-amber-300'
-                      })()
-                    }`}>
+                    <p className="font-medium text-gray-900 dark:text-white">
                       {(() => {
                         const hasVehicleIns = selectedVehicle.insuranceEligible && selectedVehicle.insuranceInfo?.useForRentals
                         const hasPartnerIns = partnerInsurance?.hasInsurance &&
@@ -429,21 +412,21 @@ export default function ConfirmStep({
               {selectedVehicle?.insuranceEligible && selectedVehicle?.insuranceInfo?.useForRentals && (
                 <button
                   onClick={() => onInsuranceOptionChange('vehicle')}
-                  className={`w-full p-3 rounded-lg text-sm text-left transition-colors border-2 ${
+                  className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
                     insuranceOption === 'vehicle'
-                      ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-600 dark:text-blue-400'
-                      : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300'
+                      ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-400'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                      insuranceOption === 'vehicle' ? 'border-blue-500' : 'border-gray-400'
+                      insuranceOption === 'vehicle' ? 'border-orange-500 dark:border-orange-400' : 'border-gray-300 dark:border-gray-600'
                     }`}>
-                      {insuranceOption === 'vehicle' && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                      {insuranceOption === 'vehicle' && <div className="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400" />}
                     </div>
-                    <span className="font-medium">{t('vehicleInsuranceOption')}</span>
+                    <span className="font-medium text-sm text-gray-900 dark:text-white">{t('vehicleInsuranceOption')}</span>
                   </div>
-                  <p className="text-xs opacity-75 ml-6 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 ml-6 mt-1">
                     {t('coveredBy', { provider: selectedVehicle.insuranceInfo.provider || t('vehiclePolicy') })}
                   </p>
                 </button>
@@ -456,21 +439,21 @@ export default function ConfirmStep({
                partnerInsurance.rentalCoveredVehicleIds?.includes(selectedVehicle.id) && (
                 <button
                   onClick={() => onInsuranceOptionChange('partner')}
-                  className={`w-full p-3 rounded-lg text-sm text-left transition-colors border-2 ${
+                  className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
                     insuranceOption === 'partner'
-                      ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-500 text-purple-600 dark:text-purple-400'
-                      : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300'
+                      ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-400'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                      insuranceOption === 'partner' ? 'border-purple-500' : 'border-gray-400'
+                      insuranceOption === 'partner' ? 'border-orange-500 dark:border-orange-400' : 'border-gray-300 dark:border-gray-600'
                     }`}>
-                      {insuranceOption === 'partner' && <div className="w-2 h-2 rounded-full bg-purple-500" />}
+                      {insuranceOption === 'partner' && <div className="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400" />}
                     </div>
-                    <span className="font-medium">{t('partnerInsuranceOption')}</span>
+                    <span className="font-medium text-sm text-gray-900 dark:text-white">{t('partnerInsuranceOption')}</span>
                   </div>
-                  <p className="text-xs opacity-75 ml-6 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 ml-6 mt-1">
                     {t('coveredByBusinessInsurance', { provider: partnerInsurance.insuranceProvider ? ` (${partnerInsurance.insuranceProvider})` : '' })}
                   </p>
                 </button>
@@ -479,21 +462,21 @@ export default function ConfirmStep({
               {/* Guest Provides Insurance */}
               <button
                 onClick={() => onInsuranceOptionChange('guest')}
-                className={`w-full p-3 rounded-lg text-sm text-left transition-colors border-2 ${
+                className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
                   insuranceOption === 'guest'
-                    ? 'bg-green-50 dark:bg-green-900/20 border-green-500 text-green-600 dark:text-green-400'
-                    : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300'
+                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-400'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                    insuranceOption === 'guest' ? 'border-green-500' : 'border-gray-400'
+                    insuranceOption === 'guest' ? 'border-orange-500 dark:border-orange-400' : 'border-gray-300 dark:border-gray-600'
                   }`}>
-                    {insuranceOption === 'guest' && <div className="w-2 h-2 rounded-full bg-green-500" />}
+                    {insuranceOption === 'guest' && <div className="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400" />}
                   </div>
-                  <span className="font-medium">{t('guestProvidesInsuranceOption')}</span>
+                  <span className="font-medium text-sm text-gray-900 dark:text-white">{t('guestProvidesInsuranceOption')}</span>
                 </div>
-                <p className="text-xs opacity-75 ml-6 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 ml-6 mt-1">
                   {t('guestProvidesInsuranceDescription')}
                 </p>
               </button>
@@ -501,21 +484,21 @@ export default function ConfirmStep({
               {/* No Insurance */}
               <button
                 onClick={() => onInsuranceOptionChange('none')}
-                className={`w-full p-3 rounded-lg text-sm text-left transition-colors border-2 ${
+                className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
                   insuranceOption === 'none'
-                    ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-500 text-amber-600 dark:text-amber-400'
-                    : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300'
+                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-400'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                    insuranceOption === 'none' ? 'border-amber-500' : 'border-gray-400'
+                    insuranceOption === 'none' ? 'border-orange-500 dark:border-orange-400' : 'border-gray-300 dark:border-gray-600'
                   }`}>
-                    {insuranceOption === 'none' && <div className="w-2 h-2 rounded-full bg-amber-500" />}
+                    {insuranceOption === 'none' && <div className="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400" />}
                   </div>
-                  <span className="font-medium">{t('noInsuranceOption')}</span>
+                  <span className="font-medium text-sm text-gray-900 dark:text-white">{t('noInsuranceOption')}</span>
                 </div>
-                <p className="text-xs opacity-75 ml-6 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 ml-6 mt-1">
                   {t('noInsuranceDescription')}
                 </p>
               </button>
