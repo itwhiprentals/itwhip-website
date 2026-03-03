@@ -161,7 +161,7 @@ export default function LiveFleetMap({
       }).setHTML(`
         <div style="padding: 8px; font-family: system-ui, sans-serif; min-width: 160px;">
           <div style="font-weight: 600; font-size: 13px; margin-bottom: 4px;">
-            ${vehicle.year} ${vehicle.make} ${vehicle.model}
+            ${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''}
           </div>
           <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: #6b7280; margin-bottom: 4px;">
             <span style="width: 6px; height: 6px; border-radius: 50%; background: ${getStatusColor(vehicle.status)};"></span>

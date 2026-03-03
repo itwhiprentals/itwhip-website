@@ -444,7 +444,7 @@ export default function TrackingMap({
             <!-- Label -->
             <div class="absolute -bottom-5 left-1/2 transform -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
               <span class="text-[8px] font-bold text-white bg-gray-900/95 px-1.5 py-0.5 rounded shadow-lg backdrop-blur border border-gray-700">
-                ${vehicle.make} ${vehicle.model}
+                ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''}
               </span>
             </div>
           </div>
@@ -633,7 +633,7 @@ export default function TrackingMap({
     }))
 
     setTripReplayData(tripData)
-    setTripReplayVehicle(`${vehicle.make} ${vehicle.model}`)
+    setTripReplayVehicle(`${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''}`)
     setTripReplayIndex(0)
     setTripReplayActive(true)
   }, [vehicles])

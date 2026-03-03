@@ -694,7 +694,7 @@ export default function TrackingPage() {
                         </div>
                         <div>
                           <p className="font-semibold text-gray-900 dark:text-white text-sm">
-                            {vehicle.year} {vehicle.make} {vehicle.model}
+                            {vehicle.year} {vehicle.make} {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
                             {vehicle.vin ? t('vinLabel', { lastSix: vehicle.vin.slice(-6) }) : t('vinPending')}
@@ -1587,7 +1587,7 @@ export default function TrackingPage() {
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="font-medium text-gray-900 dark:text-white text-sm sm:text-base truncate">
-                                {vehicle.year} {vehicle.make} {vehicle.model}
+                                {vehicle.year} {vehicle.make} {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}
                                 {vehicle.isDisabled && (
                                   <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-red-100 dark:bg-red-500/30 text-red-600 dark:text-red-400 rounded">{t('statusDisabled').toUpperCase()}</span>
                                 )}

@@ -53,7 +53,7 @@ export default function VehicleInfoOverlay({ vehicle, onClose, onStartTrip }: Ve
         {/* Header */}
         <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-orange-600 to-orange-700">
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-white truncate">{vehicle.make} {vehicle.model}</p>
+            <p className="text-xs font-bold text-white truncate">{vehicle.make} {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}</p>
             <p className="text-[10px] text-orange-200 truncate">{vehicle.location}</p>
           </div>
           <button

@@ -320,7 +320,7 @@ export default function DashboardContent({
       id: b.id,
       guestName: b.guestName || 'Unknown Guest',
       vehicleName: b.vehicle
-        ? `${b.vehicle.year} ${b.vehicle.make} ${b.vehicle.model}`
+        ? `${b.vehicle.year} ${b.vehicle.make} ${b.vehicle.model}${b.vehicle.trim ? ` ${b.vehicle.trim}` : ''}`
         : 'Unknown Vehicle',
       vehicleYear: b.vehicle?.year,
       vehicleMake: b.vehicle?.make,

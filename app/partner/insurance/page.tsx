@@ -672,7 +672,7 @@ export default function InsurancePage() {
                                 )}
                               </div>
                               <span className="text-sm text-gray-700 dark:text-gray-300">
-                                {vehicle.year} {vehicle.make} {vehicle.model}
+                                {vehicle.year} {vehicle.make} {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}
                               </span>
                             </label>
                           ))}
@@ -763,7 +763,7 @@ export default function InsurancePage() {
                                 )}
                               </div>
                               <span className="text-sm text-gray-700 dark:text-gray-300">
-                                {vehicle.year} {vehicle.make} {vehicle.model}
+                                {vehicle.year} {vehicle.make} {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}
                               </span>
                             </label>
                           ))}
@@ -923,7 +923,7 @@ export default function InsurancePage() {
                           <div className="text-left">
                             <p className="text-xs text-gray-500 dark:text-gray-400">{vehicle.year} {vehicle.make}</p>
                             <p className="font-medium text-gray-900 dark:text-white text-sm">
-                              {vehicle.model}
+                              {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}
                             </p>
                             <p className={`text-xs ${
                               hasVehicleInsurance

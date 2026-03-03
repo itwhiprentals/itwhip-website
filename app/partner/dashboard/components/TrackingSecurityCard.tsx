@@ -743,7 +743,7 @@ export default function TrackingSecurityCard({
                         className="flex items-center justify-between p-2 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg"
                       >
                         <span className="text-sm text-gray-900 dark:text-white">
-                          {vehicle.year} {vehicle.make} {vehicle.model}
+                          {vehicle.year} {vehicle.make} {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}
                         </span>
                         <button
                           onClick={() => handleSmartcarDisconnect(vehicle.id)}
@@ -771,7 +771,7 @@ export default function TrackingSecurityCard({
                         >
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              {vehicle.year} {vehicle.make} {vehicle.model}
+                              {vehicle.year} {vehicle.make} {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}
                             </span>
                             <span className={`flex items-center gap-1 text-xs ${
                               vehicle.status === 'moving'

@@ -283,11 +283,11 @@ export default function InvitationDetailPage({ params }: { params: Promise<{ tok
             {invitation.vehicles.map(vehicle => (
               <div key={vehicle.id} className="flex items-center gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/30 rounded-lg">
                 {vehicle.photos?.[0] && (
-                  <Image src={vehicle.photos[0]} alt={`${vehicle.make} ${vehicle.model}`} width={64} height={48} className="rounded object-cover" />
+                  <Image src={vehicle.photos[0]} alt={`${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''}`} width={64} height={48} className="rounded object-cover" />
                 )}
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{vehicle.year} {vehicle.make}</p>
-                  <p className="font-medium text-gray-900 dark:text-white text-sm">{vehicle.model}</p>
+                  <p className="font-medium text-gray-900 dark:text-white text-sm">{vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}</p>
                 </div>
               </div>
             ))}

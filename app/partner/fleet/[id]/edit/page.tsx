@@ -257,7 +257,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
         formData.append('file', file)
         formData.append('type', 'vehicle-photo')
         if (vehicle) {
-          formData.append('vehicleName', `${vehicle.year} ${vehicle.make} ${vehicle.model}`)
+          formData.append('vehicleName', `${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''}`)
         }
 
         const uploadRes = await fetch('/api/partner/upload', {
@@ -405,7 +405,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                 <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
                   {vehicle.year} {vehicle.make}
                 </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{vehicle.model}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}</p>
               </div>
             </div>
 
@@ -522,7 +522,7 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">{t('model')}</p>
-                  <p className="text-gray-900 dark:text-white">{vehicle.model}</p>
+                  <p className="text-gray-900 dark:text-white">{vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">{t('year')}</p>

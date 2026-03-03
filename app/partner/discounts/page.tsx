@@ -236,7 +236,7 @@ export default function PartnerDiscountsPage() {
     if (!vehicle) return
 
     // Confirm before removing from global
-    const vehicleName = `${vehicle.year} ${vehicle.make} ${vehicle.model}`
+    const vehicleName = `${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''}`
     const confirmed = window.confirm(
       t('removeFromGlobalConfirm', { vehicle: vehicleName })
     )
@@ -807,7 +807,7 @@ export default function PartnerDiscountsPage() {
                             {vehicle.photo ? (
                               <Image
                                 src={vehicle.photo}
-                                alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                                alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''}`}
                                 width={56}
                                 height={40}
                                 className="w-full h-full object-cover"
@@ -826,7 +826,7 @@ export default function PartnerDiscountsPage() {
                                 ? 'text-gray-500 dark:text-gray-400'
                                 : 'text-gray-900 dark:text-white'
                             }`}>
-                              {vehicle.year} {vehicle.make} {vehicle.model}
+                              {vehicle.year} {vehicle.make} {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}
                             </h4>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                               {t('perDay', { rate: vehicle.dailyRate })}
@@ -971,7 +971,7 @@ export default function PartnerDiscountsPage() {
                             {vehicle.photo ? (
                               <Image
                                 src={vehicle.photo}
-                                alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                                alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''}`}
                                 width={64}
                                 height={48}
                                 className="w-full h-full object-cover"
@@ -986,7 +986,7 @@ export default function PartnerDiscountsPage() {
                           {/* Vehicle Info - Full name, no truncation */}
                           <div className="flex-1 min-w-0">
                             <h4 className="font-medium text-gray-900 dark:text-white leading-tight">
-                              {vehicle.year} {vehicle.make} {vehicle.model}
+                              {vehicle.year} {vehicle.make} {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}
                             </h4>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                               {t('perDay', { rate: vehicle.dailyRate })}

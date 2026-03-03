@@ -589,7 +589,7 @@ export default function ManualBookingView({
                       {vehicle.photo ? (
                         <img
                           src={vehicle.photo}
-                          alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                          alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''}`}
                           className="w-32 h-24 object-cover rounded-lg"
                         />
                       ) : (
@@ -602,7 +602,7 @@ export default function ManualBookingView({
                           {vehicle.year} {vehicle.make}
                         </p>
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                          {vehicle.model}{vehicle.color ? <span className="text-sm font-normal text-gray-500 dark:text-gray-400"> ({vehicle.color})</span> : ''}
+                          {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}{vehicle.color ? <span className="text-sm font-normal text-gray-500 dark:text-gray-400"> ({vehicle.color})</span> : ''}
                         </h3>
                         <p className="text-sm font-mono text-gray-600 dark:text-gray-400 mt-0.5">
                           {vehicle.licensePlate || <span className="text-red-500 dark:text-red-400">MISSING PLATE</span>}

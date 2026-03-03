@@ -518,7 +518,7 @@ export default function PartnerDashboardPage() {
               id: b.id,
               guestName: b.guestName || 'Unknown Guest',
               vehicleName: b.vehicle
-                ? `${b.vehicle.year} ${b.vehicle.make} ${b.vehicle.model}`
+                ? `${b.vehicle.year} ${b.vehicle.make} ${b.vehicle.model}${b.vehicle.trim ? ` ${b.vehicle.trim}` : ''}`
                 : 'Unknown Vehicle',
               vehicleYear: b.vehicle?.year,
               vehicleMake: b.vehicle?.make,
@@ -694,7 +694,7 @@ export default function PartnerDashboardPage() {
                     {vehicle.photo ? (
                       <Image
                         src={vehicle.photo}
-                        alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                        alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''}`}
                         fill
                         className="object-cover"
                       />
@@ -720,7 +720,7 @@ export default function PartnerDashboardPage() {
                   {/* Vehicle Info */}
                   <div className="p-4">
                     <h3 className="font-semibold text-gray-900 dark:text-white">
-                      {vehicle.year} {vehicle.make} {vehicle.model}
+                      {vehicle.year} {vehicle.make} {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}
                     </h3>
 
                     {/* Manager Info */}
@@ -798,7 +798,7 @@ export default function PartnerDashboardPage() {
                     </div>
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">
-                        {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}
+                        {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}{booking.vehicle.trim ? ` ${booking.vehicle.trim}` : ''}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         {booking.bookingCode} • {new Date(booking.startDate.split('T')[0] + 'T12:00:00').toLocaleDateString()} - {new Date(booking.endDate.split('T')[0] + 'T12:00:00').toLocaleDateString()}
@@ -1112,7 +1112,7 @@ export default function PartnerDashboardPage() {
           id: b.id,
           guestName: b.guestName || 'Unknown Guest',
           vehicleName: b.vehicle
-            ? `${b.vehicle.year} ${b.vehicle.make} ${b.vehicle.model}`
+            ? `${b.vehicle.year} ${b.vehicle.make} ${b.vehicle.model}${b.vehicle.trim ? ` ${b.vehicle.trim}` : ''}`
             : 'Unknown Vehicle',
           vehicleYear: b.vehicle?.year,
           vehicleMake: b.vehicle?.make,

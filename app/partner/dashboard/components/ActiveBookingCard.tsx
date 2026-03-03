@@ -239,7 +239,7 @@ export default function ActiveBookingCard({
                   {booking.vehicle.photo ? (
                     <Image
                       src={booking.vehicle.photo}
-                      alt={`${booking.vehicle.make} ${booking.vehicle.model}`}
+                      alt={`${booking.vehicle.make} ${booking.vehicle.model}${booking.vehicle.trim ? ` ${booking.vehicle.trim}` : ''}`}
                       width={80}
                       height={56}
                       className="w-full h-full object-cover"

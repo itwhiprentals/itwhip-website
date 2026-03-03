@@ -112,7 +112,7 @@ export default function PartnerFleetPage() {
 
   const filteredVehicles = vehicles.filter(vehicle => {
     const matchesSearch =
-      `${vehicle.year} ${vehicle.make} ${vehicle.model}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      `${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vehicle.licensePlate.toLowerCase().includes(searchTerm.toLowerCase())
 
     let matchesStatus = false
@@ -448,7 +448,7 @@ export default function PartnerFleetPage() {
                               {vehicle.year} {vehicle.make}
                             </p>
                             <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              {vehicle.model}
+                              {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}
                             </p>
                           </div>
                         </div>

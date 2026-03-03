@@ -263,7 +263,7 @@ export default function AddCarSimple({ prefillDailyRate, onComplete }: AddCarSim
           const formData = new FormData()
           formData.append('file', photo.file)
           formData.append('type', 'vehicle-photo')
-          formData.append('vehicleName', `${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ' ' + vehicle.trim : ''}`)
+          formData.append('vehicleName', `${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''}`)
           const res = await fetch('/api/partner/upload', { method: 'POST', body: formData })
           if (res.ok) {
             const data = await res.json()
@@ -436,7 +436,7 @@ export default function AddCarSimple({ prefillDailyRate, onComplete }: AddCarSim
             </div>
             {/* Model + Trim — lighter weight */}
             <p className="text-lg text-gray-500 dark:text-gray-400 mt-0.5">
-              {vehicle.model}
+              {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}
               {vehicle.trim && (
                 <span className="ml-2">{vehicle.trim}</span>
               )}

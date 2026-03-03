@@ -924,7 +924,7 @@ export default function TrackingDemoPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-gray-900 dark:text-white text-sm sm:text-base truncate">
-                          {vehicle.year} {vehicle.make} {vehicle.model}
+                          {vehicle.year} {vehicle.make} {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}
                           {vehicle.isDisabled && (
                             <span className="ml-2 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs bg-red-100 dark:bg-red-500/30 text-red-600 dark:text-red-400 rounded-lg">{t('disabledBadge')}</span>
                           )}
