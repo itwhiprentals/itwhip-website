@@ -9,6 +9,7 @@ import { generateAgreementToken, getTokenExpiryDate, generateSigningUrl } from '
 import { GuestTokenHandler } from '@/app/lib/auth/guest-tokens'
 import { sendEmail } from '@/app/lib/email/send-email'
 import { PaymentProcessor } from '@/app/lib/stripe/payment-processor'
+import { calculateNoShowDeadline } from '@/app/lib/bookings/auto-complete'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
@@ -329,6 +330,7 @@ export async function POST(request: NextRequest) {
         pickupLocation: pickupLocation || 'Partner Location',
         platformFeeRate,
         paymentDeadline: new Date(Date.now() + 48 * 60 * 60 * 1000),
+        noShowDeadline: calculateNoShowDeadline(startDate, startTime, paymentMethod === 'cash' ? 'CASH' : 'CARD'),
         // Agreement
         agreementType,
         agreementToken,
