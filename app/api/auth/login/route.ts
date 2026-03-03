@@ -39,13 +39,27 @@ function formatLockoutTime(ms: number): string {
   return `${days} day${days !== 1 ? 's' : ''}`
 }
 
-// Get JWT secrets
+// Get JWT secrets — role-aware (guest vs platform)
+const GUEST_JWT_SECRET = new TextEncoder().encode(
+  process.env.GUEST_JWT_SECRET!
+)
+const GUEST_JWT_REFRESH_SECRET = new TextEncoder().encode(
+  process.env.GUEST_JWT_REFRESH_SECRET!
+)
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
 )
 const JWT_REFRESH_SECRET = new TextEncoder().encode(
   process.env.JWT_REFRESH_SECRET!
 )
+
+function getJWTSecrets(role: string) {
+  const guestRoles = ['ANONYMOUS', 'CLAIMED', 'STARTER', 'BUSINESS', 'ENTERPRISE']
+  if (guestRoles.includes(role.toUpperCase())) {
+    return { accessSecret: GUEST_JWT_SECRET, refreshSecret: GUEST_JWT_REFRESH_SECRET, userType: 'guest' }
+  }
+  return { accessSecret: JWT_SECRET, refreshSecret: JWT_REFRESH_SECRET, userType: 'platform' }
+}
 
 // Argon2 configuration (matching signup)
 const ARGON2_CONFIG = {
@@ -401,36 +415,38 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // ✅ STEP 7: Generate tokens
+    // ✅ STEP 7: Generate tokens with role-appropriate secrets
     const tokenId = nanoid()
     const refreshTokenId = nanoid()
     const refreshFamily = nanoid()
+    const { accessSecret, refreshSecret, userType } = getJWTSecrets(user.role)
 
-    // Create access token (15 minutes)
-    // SECURITY FIX: Include status for middleware enforcement
+    // Create access token
     const accessToken = await new SignJWT({
       userId: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
-      status: userLockout?.status || 'ACTIVE', // Include for runtime enforcement
+      status: userLockout?.status || 'ACTIVE',
+      userType,
       jti: tokenId
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime('7d')
-      .sign(JWT_SECRET)
+      .sign(accessSecret)
 
     // Create refresh token (7 days)
     const refreshToken = await new SignJWT({
       userId: user.id,
       family: refreshFamily,
+      userType,
       jti: refreshTokenId
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime('7d')
-      .sign(JWT_REFRESH_SECRET)
+      .sign(refreshSecret)
 
     // ✅ STEP 8: Save refresh token to database
     await db.saveRefreshToken({
