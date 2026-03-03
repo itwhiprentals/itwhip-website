@@ -14,7 +14,6 @@ import {
   IoTimeOutline,
   IoCloseCircleOutline,
   IoCarOutline,
-  IoPersonOutline,
   IoChevronForwardOutline,
   IoRefreshOutline,
   IoDownloadOutline,
@@ -28,6 +27,10 @@ interface Booking {
   guestPhone?: string
   vehicleName: string
   vehicleId: string
+  car?: {
+    id: string
+    photos?: { url: string }[]
+  } | null
   startDate: string
   endDate: string
   status: 'confirmed' | 'pending' | 'active' | 'completed' | 'cancelled'
@@ -322,8 +325,12 @@ export default function PartnerBookingsPage() {
                   href={`/partner/bookings/${booking.id}`}
                   className="flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 active:bg-gray-100 dark:active:bg-gray-700 transition-colors"
                 >
-                  <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <IoPersonOutline className="w-5 h-5 text-gray-400" />
+                  <div className="w-24 h-16 bg-gray-200 dark:bg-gray-600 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
+                    {booking.car?.photos?.[0]?.url ? (
+                      <img src={booking.car.photos[0].url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <IoCarOutline className="w-5 h-5 text-gray-400" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
@@ -389,8 +396,12 @@ export default function PartnerBookingsPage() {
                           href={`/partner/bookings/${booking.id}`}
                           className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                         >
-                          <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
-                            <IoPersonOutline className="w-5 h-5 text-gray-400" />
+                          <div className="w-24 h-16 bg-gray-200 dark:bg-gray-600 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
+                            {booking.car?.photos?.[0]?.url ? (
+                              <img src={booking.car.photos[0].url} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <IoCarOutline className="w-5 h-5 text-gray-400" />
+                            )}
                           </div>
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
