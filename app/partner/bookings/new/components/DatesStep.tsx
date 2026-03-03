@@ -126,19 +126,16 @@ export default function DatesStep({
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
               {selectedVehicle.model}{selectedVehicle.trim ? ` ${selectedVehicle.trim}` : ''}
+              {(selectedVehicle.carType || selectedVehicle.currentMileage) && (
+                <span className="text-gray-400 dark:text-gray-500">
+                  {' · '}{selectedVehicle.carType ? selectedVehicle.carType.charAt(0).toUpperCase() + selectedVehicle.carType.slice(1) : ''}{selectedVehicle.carType && selectedVehicle.currentMileage ? ', ' : ''}{selectedVehicle.currentMileage ? `${selectedVehicle.currentMileage.toLocaleString()} mi` : ''}
+                </span>
+              )}
             </p>
             <div className="flex items-center flex-wrap gap-2 mt-1">
               <span className="text-sm font-medium text-orange-600 dark:text-orange-400">
                 ${selectedVehicle.dailyRate}/{t('day')}
               </span>
-              <span className={`text-xs px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300`}>
-                {selectedVehicle.carType || t('standard')}
-              </span>
-              {selectedVehicle.currentMileage && (
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {selectedVehicle.currentMileage.toLocaleString()} {t('milesAbbr')}
-                </span>
-              )}
               <span className={`text-xs px-1.5 py-0.5 rounded ${
                 selectedVehicle.vehicleType === 'RIDESHARE'
                   ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
