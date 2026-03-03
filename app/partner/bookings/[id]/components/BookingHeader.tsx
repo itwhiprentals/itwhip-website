@@ -327,7 +327,7 @@ export function BookingHeader({
           <div className="mt-3 space-y-2">
             {/* Waiting for guest to sign agreement */}
             {booking.agreementStatus !== 'signed' && (
-              <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 flex items-center gap-3">
+              <div className="bg-gray-200/70 dark:bg-gray-700/50 border border-gray-200 dark:border-transparent rounded-lg px-3 py-2.5 flex items-center gap-3">
                 <IoDocumentTextOutline className="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{t('bdWaitingForSignature')}</p>
@@ -337,7 +337,7 @@ export function BookingHeader({
             )}
             {/* Waiting for guest to select payment */}
             {booking.agreementStatus === 'signed' && !booking.paymentType && (
-              <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 flex items-center gap-3">
+              <div className="bg-gray-200/70 dark:bg-gray-700/50 border border-gray-200 dark:border-transparent rounded-lg px-3 py-2.5 flex items-center gap-3">
                 <IoWalletOutline className="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{t('bdWaitingForPaymentSelection')}</p>

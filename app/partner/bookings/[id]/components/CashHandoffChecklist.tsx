@@ -141,7 +141,7 @@ export function CashHandoffChecklist({
                   ? 'bg-green-50 dark:bg-green-900/20'
                   : isCurrent
                     ? 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-900/30'
-                    : 'bg-gray-50 dark:bg-gray-700/30 opacity-50 cursor-not-allowed'
+                    : 'bg-gray-200/70 dark:bg-gray-700/30 opacity-50 cursor-not-allowed'
               }`}
             >
               {/* Step indicator */}

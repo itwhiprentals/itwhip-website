@@ -46,7 +46,7 @@ export function WhatsNeeded({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Insurance — guest-submitted */}
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-700/50">
+          <div className="px-4 py-3 flex items-center justify-between bg-gray-200/70 dark:bg-gray-700/50">
             <div className="flex items-center gap-2">
               <IoShieldCheckmarkOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
               <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('bdInsurance')}</span>
@@ -100,7 +100,7 @@ export function WhatsNeeded({
 
         {/* Agreement */}
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-700/50">
+          <div className="px-4 py-3 flex items-center justify-between bg-gray-200/70 dark:bg-gray-700/50">
             <div className="flex items-center gap-2">
               <IoDocumentTextOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
               <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('bdAgreement')}</span>
@@ -175,7 +175,7 @@ export function WhatsNeeded({
 
         {/* Stripe Connect / Bank Account */}
         <Link href="/partner/revenue" className="block rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer transition-shadow hover:shadow-md">
-          <div className="px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-700/50">
+          <div className="px-4 py-3 flex items-center justify-between bg-gray-200/70 dark:bg-gray-700/50">
             <div className="flex items-center gap-2">
               <IoWalletOutline className="w-4 h-4 text-gray-500 dark:text-gray-400" />
               <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('bdBankAccount')}</span>

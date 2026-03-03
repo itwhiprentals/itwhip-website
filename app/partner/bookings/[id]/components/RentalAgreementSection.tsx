@@ -118,7 +118,7 @@ export function RentalAgreementSection({
           )}
 
           {/* Agreement Preview */}
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-4 bg-gray-50 dark:bg-gray-900/50">
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-4 bg-gray-200/70 dark:bg-gray-900/50">
             <div className="text-center mb-6">
               <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('bdVehicleRentalAgreement')}</h4>
               <p className="text-sm text-gray-500">{t('bdBooking')}: {booking.id.slice(0, 8).toUpperCase()}</p>

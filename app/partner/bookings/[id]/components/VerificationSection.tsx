@@ -102,7 +102,7 @@ export function VerificationSection({
               ? 'bg-green-50 dark:bg-green-900/20'
               : renter.verification.identity.status === 'pending'
               ? 'bg-yellow-50 dark:bg-yellow-900/20'
-              : 'bg-gray-50 dark:bg-gray-700/50'
+              : 'bg-gray-200/70 dark:bg-gray-700/50'
           }`}>
             <div className="flex items-center justify-between mb-2">
               <span className="font-medium text-gray-900 dark:text-white">{t('bdIdentityVerification')}</span>
@@ -208,7 +208,7 @@ export function VerificationSection({
             <div className={`p-4 rounded-lg ${
               renter.verification.email.verified
                 ? 'bg-green-50 dark:bg-green-900/20'
-                : 'bg-gray-50 dark:bg-gray-700/50'
+                : 'bg-gray-200/70 dark:bg-gray-700/50'
             }`}>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bdEmail')}</span>
@@ -222,7 +222,7 @@ export function VerificationSection({
             <div className={`p-4 rounded-lg ${
               renter.verification.phone.verified
                 ? 'bg-green-50 dark:bg-green-900/20'
-                : 'bg-gray-50 dark:bg-gray-700/50'
+                : 'bg-gray-200/70 dark:bg-gray-700/50'
             }`}>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bdPhone')}</span>

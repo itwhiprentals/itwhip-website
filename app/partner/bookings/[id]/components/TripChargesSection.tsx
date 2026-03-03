@@ -66,7 +66,7 @@ export function TripChargesSection({
               {tripCharges.map((charge) => (
                 <div
                   key={charge.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-transparent"
                 >
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">{charge.description}</p>

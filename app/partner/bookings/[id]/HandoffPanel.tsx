@@ -833,7 +833,7 @@ export function HandoffPanel({
   // WAITING — Guest hasn't arrived yet (show live tracking if available)
   if (status === HANDOFF_STATUS.PENDING || status === null) {
     return (
-      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <div className="bg-gray-200/70 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-transparent p-4">
         <div className="flex items-center gap-2 mb-2">
           <IoLocationOutline className="w-5 h-5 text-gray-400" />
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('tripHandoff')}</h3>
@@ -1203,7 +1203,7 @@ export function HandoffPanel({
   // EXPIRED
   if (status === HANDOFF_STATUS.EXPIRED) {
     return (
-      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <div className="bg-gray-200/70 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-transparent p-4">
         <div className="flex items-center gap-2">
           <IoLocationOutline className="w-5 h-5 text-gray-400" />
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('handoffExpired')}</h3>
