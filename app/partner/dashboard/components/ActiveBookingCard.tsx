@@ -38,6 +38,7 @@ interface ActiveBooking {
     make: string
     model: string
     year: number
+    trim?: string | null
     photo: string | null
     licensePlate: string
   }
@@ -252,15 +253,12 @@ export default function ActiveBookingCard({
 
                 {/* Booking Info */}
                 <div className="flex-1 min-w-0">
-                  {/* Top row: Vehicle + Status */}
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <p className="font-medium text-gray-900 dark:text-white text-sm truncate">
-                      {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}
-                    </p>
-                    <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${statusBadge.className} flex-shrink-0`}>
-                      {statusBadge.label}
-                    </span>
-                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {booking.vehicle.year} {booking.vehicle.make}
+                  </p>
+                  <p className="font-medium text-gray-900 dark:text-white text-sm truncate">
+                    {booking.vehicle.model}{booking.vehicle.trim ? ` ${booking.vehicle.trim}` : ''}
+                  </p>
 
                   {/* Guest name + Booking # */}
                   <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
@@ -285,10 +283,10 @@ export default function ActiveBookingCard({
                   </div>
                 </div>
 
-                {/* Arrow */}
-                <div className="flex-shrink-0 self-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <IoChevronForwardOutline className="w-4 h-4 text-gray-400" />
-                </div>
+                {/* Status Badge — far right */}
+                <span className={`px-2 py-1 text-[10px] font-medium rounded uppercase flex-shrink-0 self-start ${statusBadge.className}`}>
+                  {statusBadge.label}
+                </span>
               </Link>
             )
           })}
