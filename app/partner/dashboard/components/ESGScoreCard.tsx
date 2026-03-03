@@ -176,24 +176,19 @@ export default function ESGScoreCard() {
       <div className="p-4">
         {/* Main Score Display */}
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <div className={`relative w-16 h-16 rounded-full ${getScoreBg(profile.compositeScore)} flex items-center justify-center`}>
-              <div className="text-center">
-                <div className={`text-xl font-bold ${getScoreColor(profile.compositeScore)}`}>
-                  {profile.compositeScore}
-                </div>
-                <div className="text-[10px] text-gray-500 dark:text-gray-400">/ 100</div>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className={`flex-shrink-0 w-9 h-9 rounded-full ${getScoreBg(profile.compositeScore)} flex items-center justify-center`}>
+              <span className={`text-sm font-bold leading-none ${getScoreColor(profile.compositeScore)}`}>{profile.compositeScore}</span>
             </div>
-            <div>
-              <div className={`inline-flex px-2.5 py-1 rounded-full text-sm font-bold ${getGradeColor(profile.grade)}`}>
+            <div className="flex items-center gap-2">
+              <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold leading-none ${getGradeColor(profile.grade)}`}>
                 {profile.grade}
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
                 {profile.compositeScore >= 80 ? t('esgExcellent') :
                  profile.compositeScore >= 60 ? t('esgGood') :
                  profile.compositeScore >= 40 ? t('esgFair') : t('esgNeedsImprovement')}
-              </p>
+              </span>
             </div>
           </div>
           <Link
@@ -216,7 +211,7 @@ export default function ESGScoreCard() {
           ].map(({ key, label, data: scoreData }) => {
             const Icon = categoryIcons[key as keyof typeof categoryIcons]
             return (
-              <div key={key} className="text-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div key={key} className="text-center p-2 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-transparent">
                 <Icon className={`w-3.5 h-3.5 mx-auto mb-0.5 ${getScoreColor(scoreData.score)}`} />
                 <div className={`text-xs font-bold ${getScoreColor(scoreData.score)}`}>
                   {scoreData.grade}
@@ -229,7 +224,7 @@ export default function ESGScoreCard() {
 
         {/* Environmental Impact */}
         <div className="grid grid-cols-2 gap-2 mb-4">
-          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-2.5">
+          <div className="bg-green-100 dark:bg-green-900/20 rounded-lg p-2.5 border border-green-200 dark:border-transparent">
             <div className="flex items-center gap-1.5 mb-0.5">
               <IoLeafOutline className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
               <span className="text-[10px] text-green-700 dark:text-green-400">{t('esgCO2Saved')}</span>
@@ -238,7 +233,7 @@ export default function ESGScoreCard() {
               {t('esgTons', { value: (profile.environmental.co2SavedKg / 1000).toFixed(1) })}
             </div>
           </div>
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2.5">
+          <div className="bg-blue-100 dark:bg-blue-900/20 rounded-lg p-2.5 border border-blue-200 dark:border-transparent">
             <div className="flex items-center gap-1.5 mb-0.5">
               <IoFlashOutline className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
               <span className="text-[10px] text-blue-700 dark:text-blue-400">{t('esgEvTrips')}</span>
@@ -271,7 +266,7 @@ export default function ESGScoreCard() {
 
         {/* Badges */}
         {badges.length > 0 && (
-          <div className="border-t border-gray-100 dark:border-gray-700 pt-3 mb-3">
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mb-3">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('esgBadges')}</h4>
               <IoRibbonOutline className="w-3.5 h-3.5 text-yellow-500" />
@@ -300,7 +295,7 @@ export default function ESGScoreCard() {
         )}
 
         {/* Fleet Stats */}
-        <div className="pt-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+        <div className="pt-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
               <IoCarSportOutline className="w-3.5 h-3.5" />
