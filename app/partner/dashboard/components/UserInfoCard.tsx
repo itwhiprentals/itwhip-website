@@ -177,6 +177,9 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
               </div>
             )}
           </button>
+          {onPhotoChange && (
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-1">{t('editPhoto')}</p>
+          )}
         </div>
 
         {/* User Info */}

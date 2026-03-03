@@ -877,7 +877,23 @@ export default function PartnerDashboardPage() {
       {/* NEW: Dashboard Top Section - User Info, Navigation, Dynamic Content */}
       <div className="space-y-3">
         {/* Card 1 - User/Company Information */}
-        <UserInfoCard user={userInfo} loading={userInfoLoading} />
+        <UserInfoCard
+          user={userInfo}
+          loading={userInfoLoading}
+          onPhotoChange={async (file) => {
+            try {
+              const formData = new FormData()
+              formData.append('file', file)
+              const res = await fetch('/api/partner/profile/photo', { method: 'POST', body: formData })
+              const data = await res.json()
+              if (data.success && data.url) {
+                setUserInfo(prev => prev ? { ...prev, profilePhoto: data.url } : prev)
+              }
+            } catch (err) {
+              console.error('Failed to upload photo:', err)
+            }
+          }}
+        />
 
         {/* Section 2 - Navigation Badges */}
         <DashboardNavigation
