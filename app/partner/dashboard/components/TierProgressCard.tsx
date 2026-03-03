@@ -90,7 +90,7 @@ export default function TierProgressCard({
             <p className="text-xl font-bold text-gray-900 dark:text-white">{(currentRate * 100).toFixed(0)}%</p>
             <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('tierCommissionRate')}</p>
           </div>
-          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-2.5 text-center">
+          <div className="bg-green-100 dark:bg-green-900/20 rounded-lg p-2.5 text-center">
             <p className="text-xl font-bold text-green-600 dark:text-green-400">{((1 - currentRate) * 100).toFixed(0)}%</p>
             <p className="text-[10px] text-green-600 dark:text-green-400 uppercase tracking-wide">{t('tierYouKeepShort')}</p>
           </div>
@@ -147,8 +147,8 @@ export default function TierProgressCard({
                   isCurrentTier
                     ? 'bg-orange-50 dark:bg-orange-900/15 border-2 border-orange-500'
                     : isUnlocked
-                    ? 'bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600'
-                    : 'bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 opacity-50'
+                    ? 'bg-gray-100 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600'
+                    : 'bg-gray-100 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 opacity-50'
                 }`}
               >
                 {isCurrentTier && (
@@ -198,7 +198,7 @@ export default function TierProgressCard({
 
         {/* Diamond Tier Benefits */}
         {tier.current !== 'Diamond' && (
-          <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg">
+          <div className="mt-4 p-3 bg-gray-200/70 dark:bg-gray-700/50 border border-gray-200 dark:border-transparent rounded-lg">
             <div className="flex items-center gap-2 mb-1">
               <IoTrophyOutline className="w-4 h-4 text-orange-600 dark:text-orange-400" />
               <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">

@@ -66,17 +66,17 @@ export default function FleetOverview({ vehicles }: FleetOverviewProps) {
     <div>
       {/* Status Distribution */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+        <div className="text-center p-3 bg-green-100 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-transparent">
           <IoCheckmarkCircleOutline className="w-6 h-6 text-green-600 dark:text-green-400 mx-auto mb-1" />
           <p className="text-2xl font-bold text-green-600 dark:text-green-400">{available}</p>
           <p className="text-xs text-gray-600 dark:text-gray-400">{t('foAvailable')}</p>
         </div>
-        <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+        <div className="text-center p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-transparent">
           <IoTimeOutline className="w-6 h-6 text-blue-600 dark:text-blue-400 mx-auto mb-1" />
           <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{booked}</p>
           <p className="text-xs text-gray-600 dark:text-gray-400">{t('foBooked')}</p>
         </div>
-        <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+        <div className="text-center p-3 bg-orange-100 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-transparent">
           <IoConstructOutline className="w-6 h-6 text-orange-600 dark:text-orange-400 mx-auto mb-1" />
           <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{maintenance}</p>
           <p className="text-xs text-gray-600 dark:text-gray-400">{t('foMaintenance')}</p>
@@ -111,7 +111,7 @@ export default function FleetOverview({ vehicles }: FleetOverviewProps) {
             <Link
               key={vehicle.id}
               href={`/partner/fleet/${vehicle.id}`}
-              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="flex items-center justify-between p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-transparent hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center overflow-hidden">

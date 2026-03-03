@@ -104,7 +104,7 @@ export default function RecentBookings({ bookings }: RecentBookingsProps) {
           <Link
             key={booking.id}
             href={`/partner/bookings/${booking.id}`}
-            className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+            className="flex items-center gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-transparent hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group"
           >
             <div className="w-16 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
               {booking.vehiclePhoto ? (

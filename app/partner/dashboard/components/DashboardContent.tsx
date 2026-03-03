@@ -126,7 +126,7 @@ export default function DashboardContent({
           {/* Stats grid skeleton */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div key={i} className="p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
                 <div className="h-8 bg-gray-200 dark:bg-gray-600 rounded w-16 mx-auto mb-2" />
                 <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-20 mx-auto" />
               </div>
@@ -135,7 +135,7 @@ export default function DashboardContent({
           {/* Content skeleton */}
           <div className="space-y-3">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div key={i} className="flex items-center gap-4 p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
                 <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-lg" />
                 <div className="flex-1 space-y-2">
                   <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-32" />
@@ -189,19 +189,19 @@ export default function DashboardContent({
           </Link>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-          <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+          <div className="text-center p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-transparent">
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.totalBookings || 0}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcTotalBookings')}</p>
           </div>
-          <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+          <div className="text-center p-3 bg-orange-100 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-transparent">
             <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats?.activeBookings || 0}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcActiveNow')}</p>
           </div>
-          <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+          <div className="text-center p-3 bg-green-100 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-transparent">
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats?.completedThisMonth || 0}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcThisMonth')}</p>
           </div>
-          <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <div className="text-center p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-transparent">
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats?.utilizationRate?.toFixed(0) || 0}%</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcUtilization')}</p>
           </div>
@@ -229,11 +229,11 @@ export default function DashboardContent({
           </Link>
         </div>
         <div className="grid grid-cols-3 gap-4 mb-4">
-          <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <div className="text-center p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-transparent">
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats?.fleetSize || 0}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcTotalVehicles')}</p>
           </div>
-          <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+          <div className="text-center p-3 bg-green-100 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-transparent">
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats?.activeVehicles || 0}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcActive')}</p>
           </div>
@@ -276,19 +276,19 @@ export default function DashboardContent({
           </Link>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-          <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+          <div className="text-center p-3 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-transparent">
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats?.grossRevenue || 0)}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcGrossRevenue')}</p>
           </div>
-          <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+          <div className="text-center p-3 bg-green-100 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-transparent">
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(stats?.netRevenue || 0)}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcNetRevenue')}</p>
           </div>
-          <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <div className="text-center p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-transparent">
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(stats?.thisMonthRevenue || 0)}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcThisMonth')}</p>
           </div>
-          <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+          <div className="text-center p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-transparent">
             <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{formatCurrency(stats?.lastMonthRevenue || 0)}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">{t('dcLastMonth')}</p>
           </div>

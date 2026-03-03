@@ -85,7 +85,7 @@ export default function QuickActions() {
           <Link
             key={action.nameKey}
             href={action.href}
-            className="flex flex-col items-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+            className="flex flex-col items-center p-4 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-transparent hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group"
           >
             <div className={`w-10 h-10 rounded-full ${action.color} flex items-center justify-center mb-2 group-hover:scale-110 transition-transform`}>
               <Icon className="w-5 h-5" />
@@ -104,7 +104,7 @@ export default function QuickActions() {
       {isBusinessHost ? (
         <Link
           href="/partner/landing"
-          className="flex flex-col items-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+          className="flex flex-col items-center p-4 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-transparent hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group"
         >
           <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
             <IoDocumentTextOutline className="w-5 h-5" />
@@ -114,7 +114,7 @@ export default function QuickActions() {
         </Link>
       ) : (
         <div
-          className="flex flex-col items-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg opacity-50 cursor-not-allowed relative"
+          className="flex flex-col items-center p-4 bg-gray-200/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-transparent opacity-50 cursor-not-allowed relative"
           title={t('qaEditLandingLocked')}
         >
           <div className="w-10 h-10 rounded-full bg-gray-200 text-gray-400 dark:bg-gray-600 dark:text-gray-500 flex items-center justify-center mb-2">
