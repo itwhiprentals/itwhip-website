@@ -234,6 +234,18 @@ export default function PartnerLayoutClient({
     }
   }, [isPublicPage, loading, router])
 
+  // Listen for profile photo updates from child pages (e.g. dashboard upload)
+  useEffect(() => {
+    const handlePhotoUpdate = (e: Event) => {
+      const url = (e as CustomEvent).detail?.url
+      if (url && partner) {
+        setPartner({ ...partner, profilePhoto: url })
+      }
+    }
+    window.addEventListener('partner-photo-updated', handlePhotoUpdate)
+    return () => window.removeEventListener('partner-photo-updated', handlePhotoUpdate)
+  }, [partner])
+
   const handleLogout = async () => {
     try {
       await fetch('/api/partner/logout', {

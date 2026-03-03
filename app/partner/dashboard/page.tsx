@@ -888,6 +888,8 @@ export default function PartnerDashboardPage() {
               const data = await res.json()
               if (data.success && data.url) {
                 setUserInfo(prev => prev ? { ...prev, profilePhoto: data.url } : prev)
+                // Update sidebar + header avatars
+                window.dispatchEvent(new CustomEvent('partner-photo-updated', { detail: { url: data.url } }))
               }
             } catch (err) {
               console.error('Failed to upload photo:', err)
