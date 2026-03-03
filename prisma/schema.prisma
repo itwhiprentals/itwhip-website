@@ -1836,6 +1836,15 @@ model RentalBooking {
   vehicleMatchResult         Json?                 // { sameVehicle, confidence, damageNotes }
   vehicleMatchCheckedAt      DateTime?
 
+  // ===== NO-SHOW SYSTEM =====
+  noShowDeadline             DateTime?             // Calculated: startTime + 12h (cash) or 24h (card), Arizona UTC-7
+  noShowMarkedBy             String?               // 'SYSTEM' | 'HOST' | 'ADMIN'
+  noShowMarkedAt             DateTime?
+  noShowFeeCharged           Decimal?              // Actual amount charged ($50 cash, full amount card)
+  noShowFeeStatus            String?               // 'CHARGED' | 'PENDING' | 'FAILED' | 'WAIVED'
+  pickupExtendedTo           DateTime?             // If pickup time was extended by host/guest
+  pickupExtensionCount       Int                   @default(0) // Max 1 extension per booking
+
   // ===== AUTO-LOGIN TOKEN (for visitors) =====
   autoLoginToken             String?               @unique
   autoLoginExpiresAt         DateTime?
@@ -2802,6 +2811,7 @@ model ReviewerProfile {
   averageRating            Float                    @default(0)
   bio                      String?
   canInstantBook           Boolean                  @default(false)
+  noShowCount              Int                      @default(0)
   dateOfBirth              DateTime?
   documentVerifiedAt       DateTime?
   documentVerifiedBy       String?
