@@ -4,7 +4,8 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/app/lib/database/prisma'
 import type { RentalBookingStatus } from '@/app/lib/dal/types'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
-import { stripe } from '@/app/lib/stripe/client'
+import { checkAndMarkNoShows } from '@/app/lib/bookings/auto-complete'
+import { enrichBookingWithStripe } from '@/app/lib/bookings/stripe-enrichment'
 
 // Whitelist of allowed sort columns to prevent SQL injection via column names
 const ALLOWED_SORT_COLUMNS: Record<string, string> = {
@@ -263,126 +264,17 @@ export async function GET(request: NextRequest) {
 
     const now = new Date()
 
-    // Auto-complete expired no-show bookings (CONFIRMED, past end date+time, no tripStartedAt)
-    const noShowIds: string[] = []
-    for (const booking of bookingsRaw) {
-      if (booking.status === 'CONFIRMED' && !booking.tripStartedAt) {
-        const endDate = new Date(booking.endDate)
-        const [endH, endM] = (booking.endTime || '10:00').split(':').map(Number)
-        endDate.setHours(endH || 10, endM || 0, 0, 0)
-        if (now.getTime() > endDate.getTime()) {
-          noShowIds.push(booking.id)
-          booking.status = 'COMPLETED'
-          booking.tripStatus = 'COMPLETED'
-          booking.tripEndedAt = now
-        }
-      }
-    }
-    if (noShowIds.length > 0) {
-      console.log(`[Auto-complete] Marking ${noShowIds.length} expired booking(s) as NO_SHOW:`, noShowIds)
-      try {
-        await prisma.rentalBooking.updateMany({
-          where: { id: { in: noShowIds } },
-          data: {
-            status: 'COMPLETED',
-            tripStatus: 'COMPLETED',
-            tripEndedAt: now,
-          }
-        })
-      } catch (err) {
-        console.error('[Auto-complete] No-show update error:', err)
-      }
-    }
+    // Auto-complete expired no-show bookings
+    await checkAndMarkNoShows(bookingsRaw)
 
-    // Fetch card brand + last4 + actual charge from Stripe for single-booking detail view
+    // Stripe enrichment for single-booking detail view
     const isSingleBooking = bookingId && bookingsRaw.length === 1
-    let cardBrand: string | null = null
-    let cardLast4: string | null = null
-    let stripeChargeAmount: number | null = null
-    let piMetaCredits = 0
-    let piMetaBonus = 0
-    let piMetaDepositWallet = 0
-    if (isSingleBooking) {
-      const b = bookingsRaw[0]
-      try {
-        if (b.stripePaymentMethodId) {
-          const pm = await stripe.paymentMethods.retrieve(b.stripePaymentMethodId)
-          cardBrand = (pm as any).card?.brand || null
-          cardLast4 = (pm as any).card?.last4 || null
-        }
-        if (b.paymentIntentId) {
-          const pi = await stripe.paymentIntents.retrieve(b.paymentIntentId, {
-            expand: ['payment_method']
-          })
-          // Get card info from PI if not already found
-          if (!cardBrand) {
-            const pm = pi.payment_method as any
-            if (pm && typeof pm === 'object') {
-              cardBrand = pm.card?.brand || null
-              cardLast4 = pm.card?.last4 || null
-            }
-          }
-          // Derive actual charge amount from Stripe (cents → dollars)
-          const piAmount = (pi as any).amount_received || (pi as any).amount
-          if (piAmount && piAmount > 0) {
-            stripeChargeAmount = piAmount / 100
-          }
-          // Read credit/bonus/deposit/promo from PI metadata (fallback for older bookings)
-          const meta = pi.metadata
-          if (meta) {
-            piMetaCredits = parseFloat(meta.appliedCredits || '0')
-            piMetaBonus = parseFloat(meta.appliedBonus || '0')
-            piMetaDepositWallet = parseFloat(meta.appliedDepositWallet || '0')
-            piMetaPromo = parseFloat(meta.promoDiscount || '0')
-          }
-        }
-      } catch {
-        // Non-blocking — card info is cosmetic
-      }
-    }
-
-    // For single booking with missing credits/bonus/deposit, look up actual transactions
-    let txCreditsUsed = 0
-    let txBonusUsed = 0
-    let txDepositFromWallet = 0
-    if (isSingleBooking) {
-      const b = bookingsRaw[0]
-      const dbCredits = parseFloat(b.creditsApplied || '0')
-      const dbBonus = parseFloat(b.bonusApplied || '0')
-      const dbDepositWallet = parseFloat(b.depositFromWallet || '0')
-      const total = parseFloat(b.totalAmount)
-
-      // Look up credit/bonus transactions if DB fields are empty
-      if (dbCredits === 0 && dbBonus === 0 && stripeChargeAmount !== null && stripeChargeAmount < total) {
-        try {
-          const txns = await prisma.creditBonusTransaction.findMany({
-            where: { bookingId: b.id, action: 'USE' },
-            select: { type: true, amount: true }
-          })
-          for (const tx of txns) {
-            if (tx.type === 'CREDIT') txCreditsUsed += Math.abs(tx.amount)
-            else if (tx.type === 'BONUS') txBonusUsed += Math.abs(tx.amount)
-          }
-        } catch {
-          // Non-blocking
-        }
-      }
-
-      // Look up deposit wallet transactions if DB field is empty
-      if (dbDepositWallet === 0 && parseFloat(b.depositAmount || '0') > 0) {
-        try {
-          const depTxns = await prisma.depositTransaction.findMany({
-            where: { bookingId: b.id, type: 'HOLD' },
-            select: { amount: true }
-          })
-          for (const tx of depTxns) {
-            txDepositFromWallet += Math.abs(tx.amount)
-          }
-        } catch {
-          // Non-blocking
-        }
-      }
-    }
+    const stripeData = isSingleBooking
+      ? await enrichBookingWithStripe(bookingsRaw[0])
+      : null
+    const { cardBrand = null, cardLast4 = null, stripeChargeAmount = null,
+            piMetaCredits = 0, piMetaBonus = 0, piMetaDepositWallet = 0,
+            txCreditsUsed = 0, txBonusUsed = 0, txDepositFromWallet = 0 } = stripeData || {}
 
     const transformedBookings = bookingsRaw.map(booking => {
       let bookingState: string
