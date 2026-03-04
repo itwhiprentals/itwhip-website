@@ -7,7 +7,7 @@
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import {
   IoArrowBackOutline,
   IoTimeOutline,
@@ -107,6 +107,7 @@ interface RequestData {
 export default function RequestDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   // Note: requestId from params not used - we fetch via /api/partner/onboarding which uses auth context
   void params?.id
 
@@ -159,6 +160,13 @@ export default function RequestDetailPage() {
   useEffect(() => {
     fetchRequest()
   }, [fetchRequest])
+
+  // Auto-open recruitment bottom sheet when navigating from fleet "Add Car"
+  useEffect(() => {
+    if (data && !loading && searchParams.get('addCar') === '1') {
+      setShowRecruitmentSheet(true)
+    }
+  }, [data, loading, searchParams])
 
   // Countdown timer
   useEffect(() => {

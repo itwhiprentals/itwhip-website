@@ -56,6 +56,7 @@ export default function PartnerFleetPage() {
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
   const [needsOnboarding, setNeedsOnboarding] = useState(false)
+  const [activeRequestId, setActiveRequestId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchVehicles()
@@ -65,6 +66,7 @@ export default function PartnerFleetPage() {
       .then(data => {
         if (data.success && data.user?.isExternalRecruit && !data.user?.onboardingCompletedAt) {
           setNeedsOnboarding(true)
+          setActiveRequestId(data.user.activeRequestId || null)
         }
       })
       .catch(() => {})
@@ -232,7 +234,7 @@ export default function PartnerFleetPage() {
             {t('calendar')}
           </Link>
           <Link
-            href={needsOnboarding ? '/partner/requests' : '/partner/fleet/add'}
+            href={needsOnboarding ? `/partner/requests/${activeRequestId || ''}?addCar=1` : '/partner/fleet/add'}
             className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors"
           >
             <IoAddCircleOutline className="w-5 h-5" />
@@ -342,7 +344,7 @@ export default function PartnerFleetPage() {
             </p>
             {vehicles.length === 0 && (
               <Link
-                href="/partner/fleet/add"
+                href={needsOnboarding ? `/partner/requests/${activeRequestId || ''}?addCar=1` : '/partner/fleet/add'}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors mt-4"
               >
                 <IoAddCircleOutline className="w-5 h-5" />
