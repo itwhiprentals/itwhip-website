@@ -889,6 +889,7 @@ export default function PartnerDashboardPage() {
           user={userInfo}
           loading={userInfoLoading}
           activeBookingCount={stats?.activeBookings || 0}
+          onNavigateToSection={(section) => setActiveSection(section as DashboardSection)}
           onPhotoChange={async (file) => {
             try {
               const formData = new FormData()

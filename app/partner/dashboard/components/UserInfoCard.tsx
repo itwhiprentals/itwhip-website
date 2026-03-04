@@ -46,9 +46,10 @@ interface UserInfoCardProps {
   loading?: boolean
   activeBookingCount?: number
   onPhotoChange?: (file: File) => void
+  onNavigateToSection?: (section: string) => void
 }
 
-export default function UserInfoCard({ user, loading, activeBookingCount = 0, onPhotoChange }: UserInfoCardProps) {
+export default function UserInfoCard({ user, loading, activeBookingCount = 0, onPhotoChange, onNavigateToSection }: UserInfoCardProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const t = useTranslations('PartnerDashboard')
 
@@ -292,7 +293,12 @@ export default function UserInfoCard({ user, loading, activeBookingCount = 0, on
             <div className="flex items-center gap-1">
               <IoCalendarOutline className="w-3 h-3 flex-shrink-0" />
               {needsSetup ? (
-                <span className="text-amber-600 dark:text-amber-400 font-medium">{t('uiAwaitingSetup')}</span>
+                <button
+                  onClick={() => onNavigateToSection?.('security')}
+                  className="text-[11px] text-amber-600 dark:text-amber-400 font-medium hover:underline cursor-pointer"
+                >
+                  {t('uiAwaitingSetup')}
+                </button>
               ) : (
                 <span>{t('uiJoined', { date: formatDate(user.memberSince) })}</span>
               )}
