@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useState, useEffect, useRef, use } from 'react'
+import { useState, useEffect, use } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import {
@@ -33,6 +33,9 @@ import BookingAgreementSection from './components/BookingAgreementSection'
 import AddChargeSheet from './components/AddChargeSheet'
 import BottomSheet from '@/app/components/BottomSheet'
 import { formatPhoneNumber } from '@/app/utils/helpers'
+import { useBookingModals } from './hooks/useBookingModals'
+import { useBookingMessages } from './hooks/useBookingMessages'
+import { useCommunication } from './hooks/useCommunication'
 
 interface BookingDetails {
   id: string
@@ -240,13 +243,8 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   // Host review states
   const [hostApproving, setHostApproving] = useState(false)
   const [hostRejecting, setHostRejecting] = useState(false)
-  const [showRejectModal, setShowRejectModal] = useState(false)
-  const [rejectReason, setRejectReason] = useState('')
 
   // UI states
-  const [showChargeModal, setShowChargeModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [showExtendModal, setShowExtendModal] = useState(false)
   const [markingPaid, setMarkingPaid] = useState(false)
   const [expandedSections, setExpandedSections] = useState({
     pricing: true,
@@ -256,47 +254,28 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
     messages: true
   })
 
-  // Confirmation modal state (#5)
-  const [confirmAction, setConfirmAction] = useState<{
-    title: string
-    message: string
-    onConfirm: () => void
-    isDangerous?: boolean
-  } | null>(null)
-
-  // Car activation modal state (#2)
-  const [showCarActivateModal, setShowCarActivateModal] = useState(false)
-  const [showCarNotApprovedModal, setShowCarNotApprovedModal] = useState(false)
   const [activatingCar, setActivatingCar] = useState(false)
 
   // Verify guest state (#3)
   const [verifyingGuest, setVerifyingGuest] = useState(false)
 
-  // Messages state
-  const [bookingMessages, setBookingMessages] = useState<any[]>([])
-  const [newMessage, setNewMessage] = useState('')
-  const [sendingMessage, setSendingMessage] = useState(false)
-  const messagesContainerRef = useRef<HTMLDivElement>(null)
-
-  // Onboard modal state
-  const [showOnboardModal, setShowOnboardModal] = useState(false)
   const [fleetOtherActiveCount, setFleetOtherActiveCount] = useState(0)
-
-  // Communication states
-  const [showCommModal, setShowCommModal] = useState<'pickup_instructions' | 'keys_instructions' | null>(null)
-  const [commMessage, setCommMessage] = useState('')
-  const [sendingComm, setSendingComm] = useState(false)
-  const [commSendCounts, setCommSendCounts] = useState<Record<string, number>>({})
 
   // Tooltip state
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
 
-  // Learn more bottomsheet states
-  const [showTaxInfo, setShowTaxInfo] = useState(false)
-  const [showVerificationInfo, setShowVerificationInfo] = useState(false)
-
   // Toast notification
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setToast({ type, message })
+    setTimeout(() => setToast(null), 4000)
+  }
+
+  // Extracted hooks
+  const modals = useBookingModals()
+  const messages = useBookingMessages({ bookingId: booking?.id || null, showToast })
+  const comm = useCommunication({ bookingId: booking?.id || null, showToast, t })
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -318,13 +297,13 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         setGuestInsurance(data.guestInsurance || null)
         setGuestHistory(data.guestHistory || null)
         setFleetOtherActiveCount(data.fleetOtherActiveCount || 0)
-        setBookingMessages(data.booking?.messages || data.messages || [])
+        messages.setBookingMessages(data.booking?.messages || data.messages || [])
         // Fetch communication send counts
         try {
           const commRes = await fetch(`/api/partner/bookings/${bookingId}/communicate`)
           if (commRes.ok) {
             const commData = await commRes.json()
-            if (commData.success) setCommSendCounts(commData.counts || {})
+            if (commData.success) comm.setCommSendCounts(commData.counts || {})
           }
         } catch { /* non-critical */ }
       } else {
@@ -337,20 +316,6 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
     }
   }
 
-  // Messages: auto-scroll when messages change
-  useEffect(() => {
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
-    }
-  }, [bookingMessages])
-
-  // Messages: mark as read on mount if unread
-  useEffect(() => {
-    if (booking && bookingMessages.some((m: any) => !m.isRead && m.senderType !== 'host')) {
-      fetch(`/api/partner/messages/${booking.id}/read`, { method: 'POST' }).catch(() => {})
-    }
-  }, [booking?.id, bookingMessages.length])
-
   // Auto-expand agreement + verification sections for PENDING manual bookings
   useEffect(() => {
     const manual = (booking?.bookingType || 'STANDARD') === 'MANUAL'
@@ -358,33 +323,6 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       setExpandedSections(prev => ({ ...prev, agreement: true, verification: true }))
     }
   }, [booking?.status, booking?.bookingType])
-
-  const sendBookingMessage = async () => {
-    if (!booking || !newMessage.trim() || sendingMessage) return
-    setSendingMessage(true)
-    try {
-      const response = await fetch('/api/partner/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookingId: booking.id, message: newMessage.trim() })
-      })
-      const data = await response.json()
-      if (data.success && data.message) {
-        setBookingMessages(prev => [...prev, data.message])
-        setNewMessage('')
-      } else {
-        showToast('error', data.error || 'Failed to send message')
-      }
-    } catch {
-      showToast('error', 'Failed to send message')
-    } finally {
-      setSendingMessage(false)
-    }
-  }
-
-  const formatMessageTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  }
 
   const confirmBooking = async () => {
     if (!booking) return
@@ -494,21 +432,21 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   }
 
   const hostRejectBooking = async () => {
-    if (!booking || !rejectReason.trim()) return
+    if (!booking || !modals.rejectReason.trim()) return
 
     setHostRejecting(true)
     try {
       const response = await fetch(`/api/partner/bookings/${booking.id}/host-review`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reject', notes: rejectReason.trim() })
+        body: JSON.stringify({ action: 'reject', notes: modals.rejectReason.trim() })
       })
       const data = await response.json()
 
       if (response.ok) {
-        setBooking(prev => prev ? { ...prev, hostApproval: 'REJECTED', hostNotes: rejectReason.trim() } : null)
-        setShowRejectModal(false)
-        setRejectReason('')
+        setBooking(prev => prev ? { ...prev, hostApproval: 'REJECTED', hostNotes: modals.rejectReason.trim() } : null)
+        modals.setShowRejectModal(false)
+        modals.setRejectReason('')
         showToast('success', t('bdBookingRejectedSuccess'))
       } else {
         showToast('error', data.error || t('bdFailedRejectBooking'))
@@ -582,42 +520,6 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       showToast('error', t('bdFailedSendAgreement'))
     } finally {
       setSendingAgreement(false)
-    }
-  }
-
-  const showToast = (type: 'success' | 'error', message: string) => {
-    setToast({ type, message })
-    setTimeout(() => setToast(null), 4000)
-  }
-
-  const sendCommunication = async () => {
-    if (!booking || !showCommModal || !commMessage.trim()) return
-
-    setSendingComm(true)
-    try {
-      const response = await fetch(`/api/partner/bookings/${booking.id}/communicate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: showCommModal, message: commMessage.trim() })
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        showToast('success', data.message)
-        setCommSendCounts(prev => ({
-          ...prev,
-          [showCommModal]: (prev[showCommModal] || 0) + 1
-        }))
-        setShowCommModal(null)
-        setCommMessage('')
-      } else {
-        showToast('error', data.error || t('bdFailedSend'))
-      }
-    } catch {
-      showToast('error', t('bdFailedSendCommunication'))
-    } finally {
-      setSendingComm(false)
     }
   }
 
@@ -696,9 +598,9 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   const handleCarClick = () => {
     if (!vehicle || vehicle.isActive) return
     if (vehicle.approvalStatus === 'APPROVED') {
-      setShowCarActivateModal(true)
+      modals.setShowCarActivateModal(true)
     } else {
-      setShowCarNotApprovedModal(true)
+      modals.setShowCarNotApprovedModal(true)
     }
   }
 
@@ -711,7 +613,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       if (data.success) {
         setVehicle(prev => prev ? { ...prev, isActive: true } : null)
         showToast('success', t('bdCarActivated'))
-        setShowCarActivateModal(false)
+        modals.setShowCarActivateModal(false)
       } else {
         showToast('error', data.error || t('bdFailedActivateCar'))
       }
@@ -848,7 +750,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         confirmBooking={confirmBooking}
         cancelBooking={cancelBooking}
         hostApproveBooking={hostApproveBooking}
-        setShowRejectModal={setShowRejectModal}
+        setShowRejectModal={modals.setShowRejectModal}
         copyToClipboard={copyToClipboard}
         getStatusColor={getStatusColor}
       />
@@ -1008,8 +910,8 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                   vehicle={vehicle}
                   activeTooltip={activeTooltip}
                   setActiveTooltip={setActiveTooltip}
-                  setShowOnboardModal={setShowOnboardModal}
-                  setConfirmAction={setConfirmAction}
+                  setShowOnboardModal={modals.setShowOnboardModal}
+                  setConfirmAction={modals.setConfirmAction}
                   verifyGuest={verifyGuest}
                   verifyingGuest={verifyingGuest}
                   formatCurrency={formatCurrency}
@@ -1099,15 +1001,15 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
             {/* Messages with Guest */}
             <MessagesSection
-              bookingMessages={bookingMessages}
-              newMessage={newMessage}
-              setNewMessage={setNewMessage}
-              sendingMessage={sendingMessage}
-              sendBookingMessage={sendBookingMessage}
-              messagesContainerRef={messagesContainerRef}
+              bookingMessages={messages.bookingMessages}
+              newMessage={messages.newMessage}
+              setNewMessage={messages.setNewMessage}
+              sendingMessage={messages.sendingMessage}
+              sendBookingMessage={messages.sendBookingMessage}
+              messagesContainerRef={messages.messagesContainerRef}
               expanded={expandedSections.messages}
               onToggle={() => toggleSection('messages')}
-              formatMessageTime={formatMessageTime}
+              formatMessageTime={messages.formatMessageTime}
               readOnly={booking.status === 'NO_SHOW' || booking.status === 'CANCELLED'}
             />
 
@@ -1122,7 +1024,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 sendVerificationRequest={sendVerificationRequest}
                 sendingVerification={sendingVerification}
                 getVerificationStatusColor={getVerificationStatusColor}
-                onLearnMoreVerification={() => setShowVerificationInfo(true)}
+                onLearnMoreVerification={() => modals.setShowVerificationInfo(true)}
               />
             )}
 
@@ -1159,7 +1061,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               tripCharges={booking.tripCharges}
               expanded={expandedSections.charges}
               onToggle={() => toggleSection('charges')}
-              onAddCharge={() => setShowChargeModal(true)}
+              onAddCharge={() => modals.setShowChargeModal(true)}
               formatCurrency={formatCurrency}
             />
           </div>
@@ -1190,7 +1092,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               processingFee={PROCESSING_FEE}
               formatCurrency={formatCurrency}
               insurance={insurance}
-              onLearnMoreTax={() => setShowTaxInfo(true)}
+              onLearnMoreTax={() => modals.setShowTaxInfo(true)}
             />
 
             {/* Quick Actions */}
@@ -1203,13 +1105,13 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               markingPaid={markingPaid}
               sendingAgreement={sendingAgreement}
               cancelling={cancelling}
-              commSendCounts={commSendCounts}
-              setConfirmAction={setConfirmAction}
-              setShowEditModal={setShowEditModal}
-              setShowExtendModal={setShowExtendModal}
-              setShowChargeModal={setShowChargeModal}
-              setShowCommModal={setShowCommModal}
-              setCommMessage={setCommMessage}
+              commSendCounts={comm.commSendCounts}
+              setConfirmAction={modals.setConfirmAction}
+              setShowEditModal={modals.setShowEditModal}
+              setShowExtendModal={modals.setShowExtendModal}
+              setShowChargeModal={modals.setShowChargeModal}
+              setShowCommModal={comm.setShowCommModal}
+              setCommMessage={comm.setCommMessage}
               markAsPaid={markAsPaid}
               sendAgreement={sendAgreement}
               cancelBooking={cancelBooking}
@@ -1231,8 +1133,8 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
       {/* Add Charge Modal */}
       <AddChargeSheet
-        isOpen={showChargeModal}
-        onClose={() => setShowChargeModal(false)}
+        isOpen={modals.showChargeModal}
+        onClose={() => modals.setShowChargeModal(false)}
         bookingId={booking.id}
         onSuccess={fetchBookingDetails}
         showToast={showToast}
@@ -1242,43 +1144,43 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       <BookingModals
         booking={booking}
         vehicle={vehicle}
-        confirmAction={confirmAction}
-        setConfirmAction={setConfirmAction}
-        showCarActivateModal={showCarActivateModal}
-        setShowCarActivateModal={setShowCarActivateModal}
+        confirmAction={modals.confirmAction}
+        setConfirmAction={modals.setConfirmAction}
+        showCarActivateModal={modals.showCarActivateModal}
+        setShowCarActivateModal={modals.setShowCarActivateModal}
         activateCar={activateCar}
         activatingCar={activatingCar}
-        showCarNotApprovedModal={showCarNotApprovedModal}
-        setShowCarNotApprovedModal={setShowCarNotApprovedModal}
-        showExtendModal={showExtendModal}
-        setShowExtendModal={setShowExtendModal}
+        showCarNotApprovedModal={modals.showCarNotApprovedModal}
+        setShowCarNotApprovedModal={modals.setShowCarNotApprovedModal}
+        showExtendModal={modals.showExtendModal}
+        setShowExtendModal={modals.setShowExtendModal}
         formatDate={formatDate}
         formatCurrency={formatCurrency}
         showToast={showToast}
         fetchBookingDetails={fetchBookingDetails}
-        showCommModal={showCommModal}
-        setShowCommModal={setShowCommModal}
-        commMessage={commMessage}
-        setCommMessage={setCommMessage}
-        commSendCounts={commSendCounts}
-        sendCommunication={sendCommunication}
-        sendingComm={sendingComm}
-        showRejectModal={showRejectModal}
-        setShowRejectModal={setShowRejectModal}
-        rejectReason={rejectReason}
-        setRejectReason={setRejectReason}
+        showCommModal={comm.showCommModal}
+        setShowCommModal={comm.setShowCommModal}
+        commMessage={comm.commMessage}
+        setCommMessage={comm.setCommMessage}
+        commSendCounts={comm.commSendCounts}
+        sendCommunication={comm.sendCommunication}
+        sendingComm={comm.sendingComm}
+        showRejectModal={modals.showRejectModal}
+        setShowRejectModal={modals.setShowRejectModal}
+        rejectReason={modals.rejectReason}
+        setRejectReason={modals.setRejectReason}
         hostRejectBooking={hostRejectBooking}
         hostRejecting={hostRejecting}
-        showEditModal={showEditModal}
-        setShowEditModal={setShowEditModal}
-        showOnboardModal={showOnboardModal}
-        setShowOnboardModal={setShowOnboardModal}
+        showEditModal={modals.showEditModal}
+        setShowEditModal={modals.setShowEditModal}
+        showOnboardModal={modals.showOnboardModal}
+        setShowOnboardModal={modals.setShowOnboardModal}
       />
 
       {/* Tax Responsibility BottomSheet */}
       <BottomSheet
-        isOpen={showTaxInfo}
-        onClose={() => setShowTaxInfo(false)}
+        isOpen={modals.showTaxInfo}
+        onClose={() => modals.setShowTaxInfo(false)}
         title={t('bdTaxInfoTitle')}
         size="small"
       >
@@ -1304,8 +1206,8 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
       {/* Guest Verification BottomSheet */}
       <BottomSheet
-        isOpen={showVerificationInfo}
-        onClose={() => setShowVerificationInfo(false)}
+        isOpen={modals.showVerificationInfo}
+        onClose={() => modals.setShowVerificationInfo(false)}
         title={t('bdVerificationInfoTitle')}
         size="small"
       >
