@@ -17041,7 +17041,11 @@
     "hiwSection8Title": "Contactez-Nous",
     "hiwSection8Body": "Des questions ? Notre équipe est là. Vous pouvez nous écrire depuis votre tableau de bord, envoyer un email à support@itwhip.com, ou laisser Choé vous aider instantanément. Nous ne disparaissons pas après votre inscription — nous sommes investis dans votre succès parce que quand vous gagnez, nous gagnons.",
     "hiwGetStarted": "Commencer — Ajoutez Votre Véhicule",
-    "hiwGetStartedSub": "Votre invité attend. L'inscription prend moins de 15 minutes."
+    "hiwGetStartedSub": "Votre invité attend. L'inscription prend moins de 15 minutes.",
+    "bookingExpiredBanner": "Cette réservation a expiré. La date de prise en charge est déjà passée et ne peut plus être confirmée.",
+    "bookingTodayWarning": "La prise en charge est aujourd'hui. Confirmez cette réservation dès que possible pour éviter l'expiration.",
+    "bookingWithin24hWarning": "La prise en charge est dans moins de 24 heures. Confirmez rapidement pour éviter l'expiration.",
+    "bsBookingExpired": "Cette réservation a expiré et ne peut plus être confirmée. La date de prise en charge est déjà passée."
   },
   "TrackingDemo": {
     "back": "Retour",

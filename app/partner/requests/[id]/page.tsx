@@ -347,6 +347,35 @@ export default function RequestDetailPage() {
   const hasCarListed = host.cars.length > 0 && onboardingProgress.carPhotosUploaded
   const isCarAssigned = request.status === 'CAR_ASSIGNED' && hasCompleted
 
+  // Booking date expiration (separate from the 3-day response window)
+  const isBookingExpired = (() => {
+    if (!request.startDate) return false
+    const now = new Date()
+    const datePart = request.startDate.substring(0, 10)
+    const [y, m, d] = datePart.split('-').map(Number)
+    const pickup = new Date(y, m - 1, d)
+    const [h, min] = (request.startTime || '10:00').split(':').map(Number)
+    pickup.setHours(h, min, 0, 0)
+    return pickup < now
+  })()
+  const isBookingToday = (() => {
+    if (!request.startDate || isBookingExpired) return false
+    const now = new Date()
+    const datePart = request.startDate.substring(0, 10)
+    const [y, m, d] = datePart.split('-').map(Number)
+    return now.getFullYear() === y && now.getMonth() === m - 1 && now.getDate() === d
+  })()
+  const isBookingWithin24h = (() => {
+    if (!request.startDate || isBookingExpired || isBookingToday) return false
+    const now = new Date()
+    const datePart = request.startDate.substring(0, 10)
+    const [y, m, d] = datePart.split('-').map(Number)
+    const pickup = new Date(y, m - 1, d)
+    const [h, min] = (request.startTime || '10:00').split(':').map(Number)
+    pickup.setHours(h, min, 0, 0)
+    return pickup.getTime() - now.getTime() < 24 * 60 * 60 * 1000
+  })()
+
   // Calculate earnings
   const dailyRate = prospect.counterOfferStatus === 'APPROVED' && prospect.counterOfferAmount
     ? prospect.counterOfferAmount
@@ -392,14 +421,14 @@ export default function RequestDetailPage() {
             </div>
 
             <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-medium whitespace-nowrap text-white uppercase flex-shrink-0 ${
-              hasDeclined || isExpired ? 'bg-red-600' : isCarAssigned ? 'bg-green-600' : 'bg-gray-500 dark:bg-gray-600'
+              hasDeclined || isExpired || isBookingExpired ? 'bg-red-600' : isCarAssigned ? 'bg-green-600' : 'bg-gray-500 dark:bg-gray-600'
             }`}>
-              {hasDeclined ? t('statusDeclined') : isExpired ? t('statusExpired') : isCarAssigned ? t('statusCarApproved') : hasPendingCounterOffer ? t('statusCounterPending') : t('statusPending')}
+              {hasDeclined ? t('statusDeclined') : isExpired || isBookingExpired ? t('statusExpired') : isCarAssigned ? t('statusCarApproved') : hasPendingCounterOffer ? t('statusCounterPending') : t('statusPending')}
             </span>
 
             {/* Desktop Actions */}
             <div className="hidden sm:flex items-center gap-2">
-              {isCarAssigned && (
+              {isCarAssigned && !isBookingExpired && (
                 <>
                   <button
                     onClick={() => setShowRecruitmentSheet(true)}
@@ -416,7 +445,7 @@ export default function RequestDetailPage() {
                   </button>
                 </>
               )}
-              {!isExpired && !hasDeclined && !hasCompleted && (
+              {!isExpired && !hasDeclined && !hasCompleted && !isBookingExpired && (
                 <>
                   <button
                     onClick={() => setShowRecruitmentSheet(true)}
@@ -472,7 +501,7 @@ export default function RequestDetailPage() {
 
           {/* Mobile Quick Actions */}
           <div className="sm:hidden mt-3 flex gap-2">
-            {isCarAssigned && (
+            {isCarAssigned && !isBookingExpired && (
               <>
                 <button
                   onClick={() => setShowRecruitmentSheet(true)}
@@ -489,7 +518,7 @@ export default function RequestDetailPage() {
                 </button>
               </>
             )}
-            {!isExpired && !hasDeclined && !hasCompleted && (
+            {!isExpired && !hasDeclined && !hasCompleted && !isBookingExpired && (
               <>
                 <button
                   onClick={() => setShowRecruitmentSheet(true)}
@@ -514,8 +543,32 @@ export default function RequestDetailPage() {
       <div className="px-3 sm:px-4 py-4 sm:py-6">
         <div className="space-y-6 max-w-3xl">
           <div className="space-y-6">
+            {/* Booking Expired Banner */}
+            {isBookingExpired && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <IoAlertCircleOutline className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm font-medium text-red-700 dark:text-red-300">
+                    {t('bookingExpiredBanner')}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Booking Today / Within 24h Amber Warnings */}
+            {(isBookingToday || isBookingWithin24h) && (
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <IoAlertCircleOutline className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                    {isBookingToday ? t('bookingTodayWarning') : t('bookingWithin24hWarning')}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Car Approved — Confirm Booking Banner */}
-            {isCarAssigned && (
+            {isCarAssigned && !isBookingExpired && (
               <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                 <div className="flex items-start gap-3">
                   <IoCheckmarkCircleOutline className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
@@ -634,7 +687,7 @@ export default function RequestDetailPage() {
 
 
         {/* What's Needed — Interactive Progress Stepper */}
-        {!isExpired && !hasDeclined && !hasCompleted && (
+        {!isExpired && !hasDeclined && !hasCompleted && !isBookingExpired && (
           <ProgressStepper
             onboardingProgress={onboardingProgress}
             onOpenRecruitmentSheet={() => setShowRecruitmentSheet(true)}
@@ -647,7 +700,7 @@ export default function RequestDetailPage() {
         )}
 
         {/* Important Note - Standalone */}
-        {!isExpired && !hasDeclined && !hasCompleted && (
+        {!isExpired && !hasDeclined && !hasCompleted && !isBookingExpired && (
           <div className="mt-4 sm:mt-6 p-3 bg-gray-200/70 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
             <p className="text-xs text-gray-500 dark:text-gray-400">
               <strong>{t('noteLabel')}</strong> {t('noteCarNotPublic')}{' '}
@@ -746,6 +799,7 @@ export default function RequestDetailPage() {
         }}
         existingAgreement={data?.agreement}
         onboardingProgress={onboardingProgress}
+        isBookingExpired={isBookingExpired}
       />
 
       {/* Standalone Edit: Agreement Preference */}

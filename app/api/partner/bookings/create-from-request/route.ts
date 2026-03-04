@@ -102,6 +102,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // ═══════════════════════════════════════════════════
+    // GUARD: Prevent confirming bookings where pickup date has passed
+    // ═══════════════════════════════════════════════════
+    if (fleetRequest.startDate) {
+      const now = new Date()
+      const pickupDate = new Date(fleetRequest.startDate)
+      const [h, m] = (fleetRequest.startTime || '10:00').split(':').map(Number)
+      pickupDate.setHours(h, m, 0, 0)
+
+      if (pickupDate < now) {
+        return NextResponse.json({
+          success: false,
+          error: 'BOOKING_EXPIRED',
+          message: 'The pickup date for this booking has passed. The booking can no longer be confirmed.'
+        }, { status: 400 })
+      }
+    }
+
     const car = host.cars[0]
     if (!car) {
       return NextResponse.json({ error: 'No car found' }, { status: 400 })

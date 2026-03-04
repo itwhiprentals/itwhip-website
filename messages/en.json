@@ -17041,7 +17041,11 @@
     "hiwSection8Title": "Talk To Us",
     "hiwSection8Body": "Questions? Our team is here. You can message us directly from your dashboard, email support@itwhip.com, or let Choé help you instantly. We don't disappear after you sign up — we're invested in your success because when you earn, we earn.",
     "hiwGetStarted": "Get Started — Add Your Vehicle",
-    "hiwGetStartedSub": "Your guest is waiting. Onboarding takes less than 15 minutes."
+    "hiwGetStartedSub": "Your guest is waiting. Onboarding takes less than 15 minutes.",
+    "bookingExpiredBanner": "This booking has expired. The pickup date has already passed and it can no longer be confirmed.",
+    "bookingTodayWarning": "Pickup is today. Confirm this booking as soon as possible to avoid expiration.",
+    "bookingWithin24hWarning": "Pickup is within 24 hours. Confirm soon to avoid expiration.",
+    "bsBookingExpired": "This booking has expired and can no longer be confirmed. The pickup date has already passed."
   },
   "TrackingDemo": {
     "back": "Back",

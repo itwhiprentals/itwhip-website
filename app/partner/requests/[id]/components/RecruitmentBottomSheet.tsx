@@ -19,7 +19,8 @@ import {
   IoCarOutline,
   IoCheckmarkCircleOutline,
   IoCardOutline,
-  IoTimeOutline
+  IoTimeOutline,
+  IoAlertCircleOutline
 } from 'react-icons/io5'
 
 type OnboardingStep = 'SECURE_ACCOUNT' | 'AGREEMENT' | 'PAYMENT_PREFERENCE' | 'ADD_CAR' | 'CONGRATS'
@@ -70,6 +71,7 @@ interface RecruitmentBottomSheetProps {
     agreementPreference?: string | null
     paymentPreference?: string | null
   }
+  isBookingExpired?: boolean
 }
 
 const STEPS: OnboardingStep[] = ['SECURE_ACCOUNT', 'AGREEMENT', 'PAYMENT_PREFERENCE', 'ADD_CAR', 'CONGRATS']
@@ -93,7 +95,8 @@ export default function RecruitmentBottomSheet({
   prospectData,
   requestData,
   existingAgreement,
-  onboardingProgress
+  onboardingProgress,
+  isBookingExpired
 }: RecruitmentBottomSheetProps) {
   const t = useTranslations('PartnerRequestDetail')
   const router = useRouter()
@@ -634,14 +637,23 @@ export default function RecruitmentBottomSheet({
               )}
 
               {/* Confirm & Send Agreement button */}
-              <button
-                onClick={handleCreateBooking}
-                disabled={creatingBooking}
-                className="w-full py-3.5 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
-              >
-                <IoCheckmarkCircleOutline className="w-5 h-5" />
-                {t('bsConfirmAndSend')}
-              </button>
+              {isBookingExpired ? (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
+                    <IoAlertCircleOutline className="w-4 h-4 flex-shrink-0" />
+                    {t('bsBookingExpired')}
+                  </p>
+                </div>
+              ) : (
+                <button
+                  onClick={handleCreateBooking}
+                  disabled={creatingBooking}
+                  className="w-full py-3.5 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                >
+                  <IoCheckmarkCircleOutline className="w-5 h-5" />
+                  {t('bsConfirmAndSend')}
+                </button>
+              )}
 
               {/* Decline Offer link */}
               <div className="text-center">
