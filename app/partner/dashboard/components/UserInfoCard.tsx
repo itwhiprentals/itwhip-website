@@ -42,6 +42,7 @@ interface UserInfoCardProps {
     paymentPreference?: string | null
     agreementPreference?: string | null
     onboardingCompletedAt?: string | null
+    activeRequestId?: string | null
   } | null
   loading?: boolean
   activeBookingCount?: number
@@ -205,7 +206,7 @@ export default function UserInfoCard({ user, loading, activeBookingCount = 0, on
             <div className="flex-shrink-0">
               {isExternalRecruit ? (
                 !user.onboardingCompletedAt ? (
-                  <Link href="/partner/requests" className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
+                  <Link href={user.activeRequestId ? `/partner/requests/${user.activeRequestId}` : '/partner/requests'} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
                     <IoRocketOutline className="w-3 h-3" />
                     {t('uiBookingInProgress')}
                   </Link>
@@ -249,7 +250,7 @@ export default function UserInfoCard({ user, loading, activeBookingCount = 0, on
             </span>
             {/* Setup Required badge — only during onboarding */}
             {needsSetup && (
-              <Link href="/partner/requests" className="px-1.5 py-0.5 text-[10px] font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
+              <Link href="/partner/landing" title={t('uiSetupTooltip')} className="px-1.5 py-0.5 text-[10px] font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
                 {t('uiSetupRequired')}
               </Link>
             )}
@@ -264,11 +265,17 @@ export default function UserInfoCard({ user, loading, activeBookingCount = 0, on
           <p className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
             <IoMailOutline className="w-3 h-3 flex-shrink-0" />
             {user.email}
-            <span title={user.emailVerified ? t('uiVerified') : t('uiNotVerified')} className="flex-shrink-0 cursor-help">
+            <span className="flex-shrink-0 inline-flex items-center gap-0.5">
               {user.emailVerified ? (
-                <IoCheckmarkCircleOutline className="w-3 h-3 text-green-500" />
+                <>
+                  <IoCheckmarkCircleOutline className="w-3 h-3 text-green-500" />
+                  <span className="text-[9px] text-green-500">{t('uiVerified')}</span>
+                </>
               ) : (
-                <IoCloseCircleOutline className="w-3 h-3 text-red-400" />
+                <>
+                  <IoCloseCircleOutline className="w-3 h-3 text-red-400" />
+                  <span className="text-[9px] text-red-400">{t('uiNotVerified')}</span>
+                </>
               )}
             </span>
           </p>
@@ -278,11 +285,17 @@ export default function UserInfoCard({ user, loading, activeBookingCount = 0, on
             <p className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
               <IoCallOutline className="w-3 h-3 flex-shrink-0" />
               {user.phone}
-              <span title={user.phoneVerified ? t('uiVerified') : t('uiNotVerified')} className="flex-shrink-0 cursor-help">
+              <span className="flex-shrink-0 inline-flex items-center gap-0.5">
                 {user.phoneVerified ? (
-                  <IoCheckmarkCircleOutline className="w-3 h-3 text-green-500" />
+                  <>
+                    <IoCheckmarkCircleOutline className="w-3 h-3 text-green-500" />
+                    <span className="text-[9px] text-green-500">{t('uiVerified')}</span>
+                  </>
                 ) : (
-                  <IoCloseCircleOutline className="w-3 h-3 text-red-400" />
+                  <>
+                    <IoCloseCircleOutline className="w-3 h-3 text-red-400" />
+                    <span className="text-[9px] text-red-400">{t('uiNotVerified')}</span>
+                  </>
                 )}
               </span>
             </p>

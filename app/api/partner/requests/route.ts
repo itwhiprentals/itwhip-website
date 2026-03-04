@@ -68,12 +68,12 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const skip = (page - 1) * limit
 
-    // Build visibility filter: only show requests that are either
-    // open marketplace (no linked prospects) or targeted to current host
+    // Visibility filter: hosts can only see requests targeted to them
+    // or requests they've already claimed. No open marketplace browsing.
     const visibilityFilter = {
       OR: [
-        { invitedProspects: { none: {} } },
-        { invitedProspects: { some: { convertedHostId: host.id } } }
+        { invitedProspects: { some: { convertedHostId: host.id } } },
+        { claims: { some: { hostId: host.id } } }
       ]
     }
 
@@ -245,6 +245,11 @@ export async function GET(request: NextRequest) {
           claimAttempts: true,
           createdAt: true,
           expiresAt: true,
+          // Check if this request is targeted to this host (recruited flow)
+          invitedProspects: {
+            where: { convertedHostId: host.id },
+            select: { id: true }
+          },
           // Check if this host has already claimed
           claims: {
             where: { hostId: host.id },
@@ -288,8 +293,10 @@ export async function GET(request: NextRequest) {
     // Transform response
     const transformedRequests = requests.map(r => ({
       ...r,
+      isTargeted: (r.invitedProspects?.length || 0) > 0,
       myClaim: r.claims[0] || null,
       activeClaims: r._count.claims,
+      invitedProspects: undefined,
       claims: undefined,
       _count: undefined
     }))

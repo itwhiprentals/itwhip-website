@@ -7481,6 +7481,7 @@
     "uiNotActiveCar": "Vehículo Inactivo",
     "uiOnboarding": "Incorporación",
     "uiSetupRequired": "Configuración requerida",
+    "uiSetupTooltip": "Configura tu cuenta de negocio para todas las funciones, incluyendo tu propio slug",
     "uiAwaitingSetup": "Esperando configuración",
     "uiVerified": "Verificado",
     "uiNotVerified": "No verificado",
@@ -16548,7 +16549,8 @@
     "failedToAssignCar": "Error al asignar el auto",
     "clearAll": "Borrar Todo",
     "confirmClearAll": "¿Estás seguro de que quieres retirar todos tus reclamos activos? Esta acción no se puede deshacer.",
-    "failedToClear": "Error al borrar los reclamos"
+    "failedToClear": "Error al borrar los reclamos",
+    "viewRequest": "Ver Solicitud"
   },
   "PartnerVehicleDetail": {
     "standard": "Estándar",

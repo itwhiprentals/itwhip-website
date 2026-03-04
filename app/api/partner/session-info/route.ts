@@ -68,6 +68,11 @@ export async function GET(request: NextRequest) {
                 select: {
                   cars: true
                 }
+              },
+              convertedFromProspect: {
+                select: {
+                  requestId: true
+                }
               }
             }
           })
@@ -233,7 +238,8 @@ export async function GET(request: NextRequest) {
       hasPassword: host.hasPassword,
       paymentPreference: host.paymentPreference || null,
       agreementPreference: host.agreementPreference || null,
-      onboardingCompletedAt: host.onboardingCompletedAt?.toISOString() || null
+      onboardingCompletedAt: host.onboardingCompletedAt?.toISOString() || null,
+      activeRequestId: host.convertedFromProspect?.requestId || null
     } : {
       id: (session?.user as any)?.id,
       name: session?.user?.name || 'User',

@@ -7542,6 +7542,7 @@
     "uiNotActiveCar": "Not Active Car",
     "uiOnboarding": "Onboarding",
     "uiSetupRequired": "Setup Required",
+    "uiSetupTooltip": "Set up your business account for full features, including your own slug",
     "uiAwaitingSetup": "Awaiting Setup",
     "uiVerified": "Verified",
     "uiNotVerified": "Not Verified",
@@ -16548,7 +16549,8 @@
     "failedToAssignCar": "Failed to assign car",
     "clearAll": "Clear All",
     "confirmClearAll": "Are you sure you want to withdraw all your active claims? This cannot be undone.",
-    "failedToClear": "Failed to clear claims"
+    "failedToClear": "Failed to clear claims",
+    "viewRequest": "View Request"
   },
   "PartnerVehicleDetail": {
     "standard": "Standard",

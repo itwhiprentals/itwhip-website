@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from 'next-intl'
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   IoDocumentTextOutline,
   IoSearchOutline,
@@ -25,7 +26,8 @@ import {
   IoCloseCircleOutline,
   IoFlashOutline,
   IoArrowBackOutline,
-  IoTrashOutline
+  IoTrashOutline,
+  IoArrowForwardOutline
 } from 'react-icons/io5'
 
 interface MyClaim {
@@ -65,6 +67,7 @@ interface ReservationRequest {
   viewCount: number
   claimAttempts: number
   createdAt: string
+  isTargeted?: boolean
   myClaim?: MyClaim
 }
 
@@ -80,6 +83,7 @@ interface HostCar {
 
 export default function PartnerRequestsPage() {
   const locale = useLocale()
+  const router = useRouter()
   const t = useTranslations('PartnerRequests')
 
   const [requests, setRequests] = useState<ReservationRequest[]>([])
@@ -183,8 +187,8 @@ export default function PartnerRequestsPage() {
       const data = await response.json()
 
       if (data.success) {
-        fetchRequests()
-        setExpandedRequest(requestId)
+        // Redirect to request detail page after claiming
+        router.push(`/partner/requests/${requestId}`)
       } else {
         alert(data.error || t('failedToClaim'))
       }
@@ -545,7 +549,16 @@ export default function PartnerRequestsPage() {
 
                       {/* Action/Status */}
                       <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                        {!hasMyClaim && request.status === 'OPEN' ? (
+                        {request.isTargeted ? (
+                          <Link
+                            href={`/partner/requests/${request.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                          >
+                            {t('viewRequest')}
+                            <IoArrowForwardOutline className="w-4 h-4" />
+                          </Link>
+                        ) : !hasMyClaim && request.status === 'OPEN' ? (
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
@@ -675,8 +688,45 @@ export default function PartnerRequestsPage() {
                     </div>
                   )}
 
-                  {/* Expanded: No Claim - Show Details */}
-                  {isExpanded && !hasMyClaim && (
+                  {/* Expanded: Targeted request — show details + View Request link */}
+                  {isExpanded && request.isTargeted && (
+                    <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-orange-50 dark:bg-orange-900/10">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">{t('guest')}</span>
+                          <span className="ml-2 text-gray-900 dark:text-white">{request.guestName}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">{t('duration')}</span>
+                          <span className="ml-2 text-gray-900 dark:text-white">{request.durationDays ? t('daysCount', { count: request.durationDays }) : t('tbd')}</span>
+                        </div>
+                        {request.totalBudget && (
+                          <div>
+                            <span className="text-gray-500 dark:text-gray-400">{t('totalBudget')}</span>
+                            <span className="ml-2 text-gray-900 dark:text-white">${request.totalBudget}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {request.guestNotes && (
+                        <div className="mt-3 p-2 bg-white dark:bg-gray-800 rounded text-sm">
+                          <span className="text-gray-500 dark:text-gray-400">{t('notes')} </span>
+                          <span className="text-gray-700 dark:text-gray-300">{request.guestNotes}</span>
+                        </div>
+                      )}
+
+                      <Link
+                        href={`/partner/requests/${request.id}`}
+                        className="w-full mt-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                      >
+                        {t('viewRequest')}
+                        <IoArrowForwardOutline className="w-4 h-4" />
+                      </Link>
+                    </div>
+                  )}
+
+                  {/* Expanded: No Claim - Show Details (non-targeted) */}
+                  {isExpanded && !hasMyClaim && !request.isTargeted && (
                     <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-200/70 dark:bg-gray-900/50">
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>

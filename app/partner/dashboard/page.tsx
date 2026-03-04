@@ -175,6 +175,7 @@ export default function PartnerDashboardPage() {
     paymentPreference?: string | null
     agreementPreference?: string | null
     onboardingCompletedAt?: string | null
+    activeRequestId?: string | null
   } | null>(null)
   const [userInfoLoading, setUserInfoLoading] = useState(true)
   const [isExternalRecruit, setIsExternalRecruit] = useState(false)
@@ -253,7 +254,8 @@ export default function PartnerDashboardPage() {
             hasPassword: data.user.hasPassword,
             paymentPreference: data.user.paymentPreference,
             agreementPreference: data.user.agreementPreference,
-            onboardingCompletedAt: data.user.onboardingCompletedAt || null
+            onboardingCompletedAt: data.user.onboardingCompletedAt || null,
+            activeRequestId: data.user.activeRequestId || null
           })
 
           // Set external recruit flag and default section for external hosts

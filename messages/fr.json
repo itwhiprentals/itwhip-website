@@ -7476,6 +7476,7 @@
     "uiNotActiveCar": "Véhicule Inactif",
     "uiOnboarding": "Intégration",
     "uiSetupRequired": "Configuration requise",
+    "uiSetupTooltip": "Configurez votre compte professionnel pour toutes les fonctionnalités, y compris votre propre slug",
     "uiAwaitingSetup": "En attente de configuration",
     "uiVerified": "Vérifié",
     "uiNotVerified": "Non vérifié",
@@ -16548,7 +16549,8 @@
     "failedToAssignCar": "Échec de l'attribution du véhicule",
     "clearAll": "Tout Effacer",
     "confirmClearAll": "Êtes-vous sûr de vouloir retirer toutes vos réclamations actives ? Cette action est irréversible.",
-    "failedToClear": "Échec de la suppression des réclamations"
+    "failedToClear": "Échec de la suppression des réclamations",
+    "viewRequest": "Voir la Demande"
   },
   "PartnerVehicleDetail": {
     "standard": "Standard",

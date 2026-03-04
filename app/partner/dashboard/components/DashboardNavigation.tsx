@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useRef, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { IconType } from 'react-icons'
 import {
@@ -105,6 +105,17 @@ export default function DashboardNavigation({
   badgeCounts = {}
 }: DashboardNavigationProps) {
   const t = useTranslations('PartnerDashboard')
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const badgeRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+
+  // Auto-scroll to the active badge when section changes
+  useEffect(() => {
+    const el = badgeRefs.current[activeSection]
+    if (el && scrollContainerRef.current) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+    }
+  }, [activeSection])
+
   // Get ordered and filtered badges based on user type
   const visibleBadges = useMemo(() => {
     if (isExternalRecruit) {
@@ -139,6 +150,7 @@ export default function DashboardNavigation({
     <div className="relative">
       {/* Horizontal scroll container */}
       <div
+        ref={scrollContainerRef}
         className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"
         style={{
           scrollbarWidth: 'none',
@@ -153,6 +165,7 @@ export default function DashboardNavigation({
           return (
             <button
               key={badge.id}
+              ref={(el) => { badgeRefs.current[badge.id] = el }}
               onClick={() => onSectionChange(badge.id)}
               className={`
                 flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-medium text-sm
