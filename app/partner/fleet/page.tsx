@@ -55,9 +55,19 @@ export default function PartnerFleetPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
+  const [needsOnboarding, setNeedsOnboarding] = useState(false)
 
   useEffect(() => {
     fetchVehicles()
+    // Check if recruited host still needs onboarding
+    fetch('/api/partner/session-info', { credentials: 'include' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && data.user?.isExternalRecruit && !data.user?.onboardingCompletedAt) {
+          setNeedsOnboarding(true)
+        }
+      })
+      .catch(() => {})
   }, [])
 
   const fetchVehicles = async () => {
@@ -222,7 +232,7 @@ export default function PartnerFleetPage() {
             {t('calendar')}
           </Link>
           <Link
-            href="/partner/fleet/add"
+            href={needsOnboarding ? '/partner/requests' : '/partner/fleet/add'}
             className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors"
           >
             <IoAddCircleOutline className="w-5 h-5" />

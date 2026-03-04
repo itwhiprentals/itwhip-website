@@ -158,6 +158,9 @@ export default function PartnerDashboardPage() {
   const [userInfo, setUserInfo] = useState<{
     name: string
     email: string
+    phone: string | null
+    emailVerified?: boolean
+    phoneVerified?: boolean
     companyName: string | null
     profilePhoto: string | null
     hostType: string | null
@@ -234,6 +237,9 @@ export default function PartnerDashboardPage() {
           setUserInfo({
             name: data.user.name,
             email: data.user.email,
+            phone: data.user.phone || null,
+            emailVerified: data.user.emailVerified || false,
+            phoneVerified: data.user.phoneVerified || false,
             companyName: data.user.companyName,
             profilePhoto: data.user.profilePhoto,
             hostType: data.user.hostType,

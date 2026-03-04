@@ -250,7 +250,7 @@ export async function POST(request: NextRequest) {
           role: 'BUSINESS',
           passwordHash: '', // No password - they use magic link
           isActive: true,
-          emailVerified: false,
+          emailVerified: true,  // Verified — they clicked the email link
           updatedAt: new Date()
         }
       })
@@ -278,6 +278,9 @@ export async function POST(request: NextRequest) {
         // Recruited host flags - they haven't set a password yet
         hasPassword: false,
         isRecruitedRequest: true,
+        // Email verified — they clicked the onboarding link sent to this email
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
         updatedAt: new Date()
       },
       include: {

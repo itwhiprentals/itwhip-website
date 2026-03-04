@@ -23,6 +23,9 @@ import {
   IoCheckmarkCircleOutline,
   IoCardOutline,
   IoCameraOutline,
+  IoChatbubblesOutline,
+  IoPersonAddOutline,
+  IoNavigateOutline,
   IoStarOutline,
   IoSpeedometerOutline,
   IoTrendingUpOutline,
@@ -448,7 +451,59 @@ export default function RevenueLearnMoreSheet({ isOpen, onClose }: RevenueLearnM
         <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{t('rlsBuiltBody3')}</p>
       </div>
 
-      {/* ═══ 14. Setup Required ═══ */}
+      {/* ═══ 14. Guest Messaging ═══ */}
+      <div className="py-5 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-start gap-3 mb-3">
+          <IoChatbubblesOutline className="w-6 h-6 text-orange-500 flex-shrink-0 mt-0.5" />
+          <h3 className="font-bold text-gray-900 dark:text-white text-base">{t('rlsMsgTitle')}</h3>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{t('rlsMsgBody')}</p>
+      </div>
+
+      {/* ═══ 15. Create Guests for Manual Bookings ═══ */}
+      <div className="py-5 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-start gap-3 mb-3">
+          <IoPersonAddOutline className="w-6 h-6 text-orange-500 flex-shrink-0 mt-0.5" />
+          <h3 className="font-bold text-gray-900 dark:text-white text-base">{t('rlsGuestCreateTitle')}</h3>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{t('rlsGuestCreateBody')}</p>
+      </div>
+
+      {/* ═══ 16. Handoff & Real-Time Tracking ═══ */}
+      <div className="py-5 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-start gap-3 mb-3">
+          <IoNavigateOutline className="w-6 h-6 text-orange-500 flex-shrink-0 mt-0.5" />
+          <h3 className="font-bold text-gray-900 dark:text-white text-base">{t('rlsHandoffTitle')}</h3>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-4">{t('rlsHandoffBody')}</p>
+        <div className="space-y-2">
+          {[
+            { num: '1', label: t('rlsHandoffStep1') },
+            { num: '2', label: t('rlsHandoffStep2') },
+            { num: '3', label: t('rlsHandoffStep3') },
+            { num: '4', label: t('rlsHandoffStep4') },
+            { num: '5', label: t('rlsHandoffStep5') },
+            { num: '6', label: t('rlsHandoffStep6') },
+          ].map(({ num, label }) => (
+            <div key={num} className="flex items-start gap-3 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-700">
+              <span className="w-6 h-6 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center text-xs font-bold flex-shrink-0">{num}</span>
+              <p className="text-sm text-gray-700 dark:text-gray-300">{label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ═══ 17. Return Protection ═══ */}
+      <div className="py-5 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-start gap-3 mb-3">
+          <IoCameraOutline className="w-6 h-6 text-orange-500 flex-shrink-0 mt-0.5" />
+          <h3 className="font-bold text-gray-900 dark:text-white text-base">{t('rlsReturnTitle')}</h3>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{t('rlsReturnBody')}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mt-2 font-medium">{t('rlsReturnBody2')}</p>
+      </div>
+
+      {/* ═══ 18. Setup Required ═══ */}
       <div className="py-5">
         <div className="flex items-start gap-3 mb-3">
           <IoSettingsOutline className="w-6 h-6 text-orange-500 flex-shrink-0 mt-0.5" />

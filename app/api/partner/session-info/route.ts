@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
               id: true,
               name: true,
               email: true,
+              phone: true,
               partnerCompanyName: true,
               partnerLogo: true,
               hostManagerLogo: true,
@@ -53,6 +54,8 @@ export async function GET(request: NextRequest) {
               stripeAccountId: true,
               stripeConnectAccountId: true,
               stripeCustomerId: true,
+              stripeChargesEnabled: true,
+              stripePayoutsEnabled: true,
               active: true,
               hasPassword: true,
               paymentPreference: true,
@@ -195,8 +198,8 @@ export async function GET(request: NextRequest) {
     const apiKeys: any[] = []
 
     // Calculate security score
-    // Use stripeConnectAccountId as the primary Stripe indicator (for receiving payouts)
-    const hasStripeConnected = !!(host?.stripeConnectAccountId || host?.stripeAccountId)
+    // Stripe is truly connected only if charges/payouts are enabled (account setup completed)
+    const hasStripeConnected = !!(host?.stripeChargesEnabled && host?.stripePayoutsEnabled)
 
     let securityScore = 0
     if (host?.emailVerified) securityScore += 25
@@ -212,6 +215,9 @@ export async function GET(request: NextRequest) {
       id: host.id,
       name: host.name || host.partnerCompanyName || 'Partner',
       email: host.email,
+      phone: host.phone || null,
+      emailVerified: host.emailVerified || false,
+      phoneVerified: host.phoneVerified || false,
       companyName: host.partnerCompanyName,
       hostType: host.hostType,
       // Use the best available photo: partnerLogo > hostManagerLogo > profilePhoto

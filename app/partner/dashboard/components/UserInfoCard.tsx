@@ -5,6 +5,7 @@
 
 import { useRef } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import {
   IoPersonOutline,
   IoCalendarOutline,
@@ -14,7 +15,11 @@ import {
   IoBanOutline,
   IoCameraOutline,
   IoRocketOutline,
-  IoRemoveCircleOutline
+  IoRemoveCircleOutline,
+  IoCallOutline,
+  IoMailOutline,
+  IoCheckmarkCircleOutline,
+  IoCloseCircleOutline
 } from 'react-icons/io5'
 import { useTranslations, useLocale } from 'next-intl'
 
@@ -22,6 +27,9 @@ interface UserInfoCardProps {
   user: {
     name: string
     email: string
+    phone: string | null
+    emailVerified?: boolean
+    phoneVerified?: boolean
     companyName: string | null
     profilePhoto: string | null
     hostType: string | null
@@ -188,20 +196,62 @@ export default function UserInfoCard({ user, loading, activeBookingCount = 0, on
 
         {/* User Info */}
         <div className="flex-1 min-w-0">
-          {/* Name/Company with status badge */}
-          <div className="flex items-center gap-2">
+          {/* Name + Status Badge on same row */}
+          <div className="flex items-start justify-between gap-2">
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
               {displayName}
             </h2>
-            {/* Status Badge - positioned at top right on mobile, inline on desktop */}
+            <div className="flex-shrink-0">
+              {isExternalRecruit ? (
+                !user.onboardingCompletedAt ? (
+                  <Link href="/partner/requests" className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
+                    <IoRocketOutline className="w-3 h-3" />
+                    {t('uiBookingInProgress')}
+                  </Link>
+                ) : activeBookingCount > 0 ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                    <IoCheckmarkCircle className="w-3.5 h-3.5" />
+                    {t('uiActiveReservation')}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                    <IoRemoveCircleOutline className="w-3.5 h-3.5" />
+                    {t('uiNoActiveReservation')}
+                  </span>
+                )
+              ) : (
+                needsSetup ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                    <IoRocketOutline className="w-3.5 h-3.5" />
+                    {t('uiOnboarding')}
+                  </span>
+                ) : isActive ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                    <IoCheckmarkCircle className="w-3.5 h-3.5" />
+                    {t('uiActive')}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                    <IoBanOutline className="w-3.5 h-3.5" />
+                    {t('uiSuspended')}
+                  </span>
+                )
+              )}
+            </div>
           </div>
 
-          {/* Role/Type on second line with badge */}
+          {/* Role/Type on second line with badges */}
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 uppercase">
-              <IoBriefcaseOutline className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 uppercase">
+              <IoBriefcaseOutline className="w-3 h-3 flex-shrink-0" />
               {getHostTypeLabel(user.hostType, isExternalRecruit)}
             </span>
+            {/* Setup Required badge — only during onboarding */}
+            {needsSetup && (
+              <Link href="/partner/requests" className="px-1.5 py-0.5 text-[10px] font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
+                {t('uiSetupRequired')}
+              </Link>
+            )}
             {/* External badge — only after onboarding completes */}
             {isExternalRecruit && !!user.onboardingCompletedAt && (
               <span className="px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded">
@@ -210,17 +260,39 @@ export default function UserInfoCard({ user, loading, activeBookingCount = 0, on
             )}
           </div>
 
-          <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-1">
+          <p className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
+            <IoMailOutline className="w-3 h-3 flex-shrink-0" />
             {user.email}
+            <span title={user.emailVerified ? t('uiVerified') : t('uiNotVerified')} className="flex-shrink-0 cursor-help">
+              {user.emailVerified ? (
+                <IoCheckmarkCircleOutline className="w-3 h-3 text-green-500" />
+              ) : (
+                <IoCloseCircleOutline className="w-3 h-3 text-red-400" />
+              )}
+            </span>
           </p>
+
+          {/* Phone */}
+          {user.phone && (
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
+              <IoCallOutline className="w-3 h-3 flex-shrink-0" />
+              {user.phone}
+              <span title={user.phoneVerified ? t('uiVerified') : t('uiNotVerified')} className="flex-shrink-0 cursor-help">
+                {user.phoneVerified ? (
+                  <IoCheckmarkCircleOutline className="w-3 h-3 text-green-500" />
+                ) : (
+                  <IoCloseCircleOutline className="w-3 h-3 text-red-400" />
+                )}
+              </span>
+            </p>
+          )}
 
           {/* Date Info */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[11px] text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-1">
               <IoCalendarOutline className="w-3 h-3 flex-shrink-0" />
-              {/* #15 — Only show Setup Required if external recruit AND still missing cars */}
               {needsSetup ? (
-                <span className="text-amber-600 dark:text-amber-400 font-medium">{t('uiSetupRequired')}</span>
+                <span className="text-amber-600 dark:text-amber-400 font-medium">{t('uiAwaitingSetup')}</span>
               ) : (
                 <span>{t('uiJoined', { date: formatDate(user.memberSince) })}</span>
               )}
@@ -230,47 +302,6 @@ export default function UserInfoCard({ user, loading, activeBookingCount = 0, on
               <span>{t('uiLastLogin', { time: formatRelativeTime(user.lastLogin) })}</span>
             </div>
           </div>
-        </div>
-
-        {/* Status Badge - Top Right Corner */}
-        <div className="flex-shrink-0">
-          {isExternalRecruit ? (
-            // Context-aware badge for recruited hosts
-            !user.onboardingCompletedAt ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
-                <IoRocketOutline className="w-3.5 h-3.5" />
-                {t('uiBookingInProgress')}
-              </span>
-            ) : activeBookingCount > 0 ? (
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                <IoCheckmarkCircle className="w-3.5 h-3.5" />
-                {t('uiActiveReservation')}
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
-                <IoRemoveCircleOutline className="w-3.5 h-3.5" />
-                {t('uiNoActiveReservation')}
-              </span>
-            )
-          ) : (
-            // Standard badge for non-recruited hosts
-            needsSetup ? (
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
-                <IoRocketOutline className="w-3.5 h-3.5" />
-                {t('uiOnboarding')}
-              </span>
-            ) : isActive ? (
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                <IoCheckmarkCircle className="w-3.5 h-3.5" />
-                {t('uiActive')}
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
-                <IoBanOutline className="w-3.5 h-3.5" />
-                {t('uiSuspended')}
-              </span>
-            )
-          )}
         </div>
       </div>
     </div>
