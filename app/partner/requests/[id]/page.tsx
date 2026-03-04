@@ -348,33 +348,31 @@ export default function RequestDetailPage() {
   const isCarAssigned = request.status === 'CAR_ASSIGNED' && hasCompleted
 
   // Booking date expiration (separate from the 3-day response window)
-  const isBookingExpired = (() => {
-    if (!request.startDate) return false
-    const now = new Date()
+  // pickupMs: pickup date+time as epoch. hoursOverdue: how many hours past pickup (negative = not yet).
+  const pickupMs = (() => {
+    if (!request.startDate) return null
     const datePart = request.startDate.substring(0, 10)
     const [y, m, d] = datePart.split('-').map(Number)
     const pickup = new Date(y, m - 1, d)
     const [h, min] = (request.startTime || '10:00').split(':').map(Number)
     pickup.setHours(h, min, 0, 0)
-    return pickup < now
+    return pickup.getTime()
   })()
+  const hoursUntilPickup = pickupMs ? (pickupMs - Date.now()) / (1000 * 60 * 60) : null
+  // 12h+ past pickup → truly expired, cannot confirm
+  const isBookingExpired = hoursUntilPickup !== null && hoursUntilPickup < -12
+  // 0-12h past pickup → late acceptance, host CAN still confirm
+  const isBookingLate = hoursUntilPickup !== null && hoursUntilPickup < 0 && hoursUntilPickup >= -12
+  // Pickup is today but time hasn't passed yet
   const isBookingToday = (() => {
-    if (!request.startDate || isBookingExpired) return false
+    if (!request.startDate || hoursUntilPickup === null || hoursUntilPickup < 0) return false
     const now = new Date()
     const datePart = request.startDate.substring(0, 10)
     const [y, m, d] = datePart.split('-').map(Number)
     return now.getFullYear() === y && now.getMonth() === m - 1 && now.getDate() === d
   })()
-  const isBookingWithin24h = (() => {
-    if (!request.startDate || isBookingExpired || isBookingToday) return false
-    const now = new Date()
-    const datePart = request.startDate.substring(0, 10)
-    const [y, m, d] = datePart.split('-').map(Number)
-    const pickup = new Date(y, m - 1, d)
-    const [h, min] = (request.startTime || '10:00').split(':').map(Number)
-    pickup.setHours(h, min, 0, 0)
-    return pickup.getTime() - now.getTime() < 24 * 60 * 60 * 1000
-  })()
+  // Pickup within 24h but not today and not past
+  const isBookingWithin24h = hoursUntilPickup !== null && hoursUntilPickup > 0 && hoursUntilPickup < 24 && !isBookingToday
 
   // Calculate earnings
   const dailyRate = prospect.counterOfferStatus === 'APPROVED' && prospect.counterOfferAmount
@@ -555,13 +553,13 @@ export default function RequestDetailPage() {
               </div>
             )}
 
-            {/* Booking Today / Within 24h Amber Warnings */}
-            {(isBookingToday || isBookingWithin24h) && (
+            {/* Late Acceptance / Today / Within 24h Amber Warnings */}
+            {(isBookingLate || isBookingToday || isBookingWithin24h) && (
               <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
                 <div className="flex items-start gap-3">
                   <IoAlertCircleOutline className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                   <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
-                    {isBookingToday ? t('bookingTodayWarning') : t('bookingWithin24hWarning')}
+                    {isBookingLate ? t('bookingLateWarning') : isBookingToday ? t('bookingTodayWarning') : t('bookingWithin24hWarning')}
                   </p>
                 </div>
               </div>

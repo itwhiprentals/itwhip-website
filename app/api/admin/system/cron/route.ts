@@ -285,7 +285,99 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // 11. Update system metrics
+    // 11. Expire overdue pickups (12h past pickup time)
+    try {
+      const overdueResponse = await fetch(`${baseUrl}/api/cron/expire-overdue-pickups`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${cronSecret}`
+        }
+      })
+      const overdueResult = await overdueResponse.json()
+      results.push({
+        task: 'expire-overdue-pickups',
+        status: overdueResult.success ? 'success' : 'failed',
+        processed: overdueResult.processed || 0
+      })
+    } catch (error) {
+      results.push({
+        task: 'expire-overdue-pickups',
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    }
+
+    // 12. No-show detection (cash 12h, card 24h past pickup)
+    try {
+      const noshowResponse = await fetch(`${baseUrl}/api/cron/noshow-detection`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${cronSecret}`
+        }
+      })
+      const noshowResult = await noshowResponse.json()
+      results.push({
+        task: 'noshow-detection',
+        status: noshowResult.success ? 'success' : 'failed',
+        processed: noshowResult.processed || 0
+      })
+    } catch (error) {
+      results.push({
+        task: 'noshow-detection',
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    }
+
+    // 13. Payment deadline check (48h after agreement signed)
+    try {
+      const paymentResponse = await fetch(`${baseUrl}/api/cron/payment-deadline`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${cronSecret}`
+        }
+      })
+      const paymentResult = await paymentResponse.json()
+      results.push({
+        task: 'payment-deadline',
+        status: paymentResult.success ? 'success' : 'failed',
+        processed: paymentResult.processed || 0
+      })
+    } catch (error) {
+      results.push({
+        task: 'payment-deadline',
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    }
+
+    // 14. Host acceptance reminders (24h warning + 72h auto-expire)
+    try {
+      const acceptanceResponse = await fetch(`${baseUrl}/api/cron/host-acceptance-reminders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${cronSecret}`
+        }
+      })
+      const acceptanceResult = await acceptanceResponse.json()
+      results.push({
+        task: 'host-acceptance-reminders',
+        status: acceptanceResult.success ? 'success' : 'failed',
+        processed: acceptanceResult.processed || 0
+      })
+    } catch (error) {
+      results.push({
+        task: 'host-acceptance-reminders',
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    }
+
+    // 15. Update system metrics
     try {
       const { prisma } = await import('@/app/lib/database/prisma')
       const now = new Date()

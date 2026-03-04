@@ -103,15 +103,17 @@ export async function POST(request: NextRequest) {
     }
 
     // ═══════════════════════════════════════════════════
-    // GUARD: Prevent confirming bookings where pickup date has passed
+    // GUARD: Prevent confirming bookings 12h+ past pickup time
+    // Late acceptance (0-12h past) is allowed with UI warning
     // ═══════════════════════════════════════════════════
     if (fleetRequest.startDate) {
       const now = new Date()
       const pickupDate = new Date(fleetRequest.startDate)
       const [h, m] = (fleetRequest.startTime || '10:00').split(':').map(Number)
       pickupDate.setHours(h, m, 0, 0)
+      const hoursOverdue = (now.getTime() - pickupDate.getTime()) / (1000 * 60 * 60)
 
-      if (pickupDate < now) {
+      if (hoursOverdue > 12) {
         return NextResponse.json({
           success: false,
           error: 'BOOKING_EXPIRED',

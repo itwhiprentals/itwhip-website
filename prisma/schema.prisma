@@ -1842,6 +1842,7 @@ model RentalBooking {
   noShowMarkedAt             DateTime?
   noShowFeeCharged           Decimal?              // Actual amount charged ($50 cash, full amount card)
   noShowFeeStatus            String?               // 'CHARGED' | 'PENDING' | 'FAILED' | 'WAIVED'
+  expirationReason           String?               // 'PAYMENT_DEADLINE_PASSED' | 'NO_SHOW' | 'ADMIN_CANCELLED'
   pickupExtendedTo           DateTime?             // If pickup time was extended by host/guest
   pickupExtensionCount       Int                   @default(0) // Max 1 extension per booking
 
@@ -4191,7 +4192,9 @@ model ReservationRequest {
   createdBy String?
 
   // Expiration
-  expiresAt DateTime?
+  expiresAt         DateTime?
+  expiredAt         DateTime?
+  expirationReason  String?               // 'HOST_DID_NOT_RESPOND' | 'PICKUP_DATE_PASSED' | 'ADMIN_CANCELLED'
 
   // Timestamps
   createdAt DateTime @default(now())
