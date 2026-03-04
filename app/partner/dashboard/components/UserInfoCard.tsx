@@ -198,7 +198,7 @@ export default function UserInfoCard({ user, loading, activeBookingCount = 0, on
 
           {/* Role/Type on second line with badge */}
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 uppercase">
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 uppercase">
               <IoBriefcaseOutline className="w-3.5 h-3.5 flex-shrink-0" />
               {getHostTypeLabel(user.hostType, isExternalRecruit)}
             </span>
@@ -215,9 +215,9 @@ export default function UserInfoCard({ user, loading, activeBookingCount = 0, on
           </p>
 
           {/* Date Info */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[11px] text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-1">
-              <IoCalendarOutline className="w-3.5 h-3.5" />
+              <IoCalendarOutline className="w-3 h-3 flex-shrink-0" />
               {/* #15 — Only show Setup Required if external recruit AND still missing cars */}
               {needsSetup ? (
                 <span className="text-amber-600 dark:text-amber-400 font-medium">{t('uiSetupRequired')}</span>
@@ -226,7 +226,7 @@ export default function UserInfoCard({ user, loading, activeBookingCount = 0, on
               )}
             </div>
             <div className="flex items-center gap-1">
-              <IoTimeOutline className="w-3.5 h-3.5" />
+              <IoTimeOutline className="w-3 h-3 flex-shrink-0" />
               <span>{t('uiLastLogin', { time: formatRelativeTime(user.lastLogin) })}</span>
             </div>
           </div>
