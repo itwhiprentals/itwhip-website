@@ -7615,7 +7615,12 @@
     "prStandardPlatformFee": "Frais de plateforme standard (25 %)",
     "prWelcomeDiscount": "Remise de bienvenue partenaire",
     "prWelcomeDiscountNote": "Tarif de bienvenue pour les nouveaux partenaires — 10 % au lieu de 25 %. Les futures réservations du marketplace suivront votre niveau de commission.",
-    "tierWelcomeRateNote": "Votre première réservation bénéficie d'un tarif spécial de bienvenue de 10 %"
+    "tierWelcomeRateNote": "Votre première réservation bénéficie d'un tarif spécial de bienvenue de 10 %",
+    "uiBusiness": "Entreprise",
+    "uiFacebookMarketplace": "FACEBOOK MARKETPLACE",
+    "uiBookingInProgress": "Réservation en Cours",
+    "uiActiveReservation": "Réservation Active",
+    "uiNoActiveReservation": "Aucune Réservation Active"
   },
   "PartnerFleet": {
     "fleetManagement": "Gestion de la Flotte",
@@ -8744,7 +8749,9 @@
     "insuranceP2pDisplay": "Assurance / P2P",
     "insuranceCommercialDisplay": "Assurance / Commerciale",
     "commissionTiersDisplay": "Niveaux de commission",
-    "notSelected": "Non sélectionné"
+    "notSelected": "Non sélectionné",
+    "welcomePartnerRate": "Tarif de Bienvenue : 10%",
+    "welcomeRateNote": "Première réservation uniquement — les futures réservations suivent votre tarif de niveau"
   },
   "PartnerAnalytics": {
     "title": "Analytique",

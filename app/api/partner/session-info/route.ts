@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
               lastLoginAt: true,
               previousLoginAt: true,
               recruitedVia: true,
+              onboardingCompletedAt: true,
               _count: {
                 select: {
                   cars: true
@@ -225,7 +226,8 @@ export async function GET(request: NextRequest) {
       hasCars: (host._count?.cars || 0) > 0,
       hasPassword: host.hasPassword,
       paymentPreference: host.paymentPreference || null,
-      agreementPreference: host.agreementPreference || null
+      agreementPreference: host.agreementPreference || null,
+      onboardingCompletedAt: host.onboardingCompletedAt?.toISOString() || null
     } : {
       id: (session?.user as any)?.id,
       name: session?.user?.name || 'User',

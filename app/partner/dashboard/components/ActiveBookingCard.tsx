@@ -261,17 +261,17 @@ export default function ActiveBookingCard({
                   </p>
 
                   {/* Guest name + Booking # */}
-                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <IoPersonOutline className="w-3 h-3" />
-                      {booking.guest.name}
+                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 min-w-0">
+                    <span className="flex items-center gap-1 truncate">
+                      <IoPersonOutline className="w-3 h-3 flex-shrink-0" />
+                      <span className="truncate">{booking.guest.name}</span>
                     </span>
-                    <span className="text-gray-300 dark:text-gray-600">•</span>
-                    <span>#{booking.bookingNumber}</span>
+                    <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">•</span>
+                    <span className="flex-shrink-0">#{booking.bookingNumber}</span>
                   </div>
 
                   {/* Time info */}
-                  <div className="flex items-center gap-3 mt-1 text-[11px] text-gray-400 dark:text-gray-500">
+                  <div className="flex items-center gap-3 mt-1 text-[11px] text-gray-400 dark:text-gray-500 flex-wrap">
                     <span className="flex items-center gap-1">
                       <IoTimeOutline className="w-3 h-3" />
                       {getTimeRemaining(booking.endDate)}

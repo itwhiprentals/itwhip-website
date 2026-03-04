@@ -171,6 +171,7 @@ export default function PartnerDashboardPage() {
     hasPassword?: boolean
     paymentPreference?: string | null
     agreementPreference?: string | null
+    onboardingCompletedAt?: string | null
   } | null>(null)
   const [userInfoLoading, setUserInfoLoading] = useState(true)
   const [isExternalRecruit, setIsExternalRecruit] = useState(false)
@@ -245,7 +246,8 @@ export default function PartnerDashboardPage() {
             hasCars: data.user.hasCars,
             hasPassword: data.user.hasPassword,
             paymentPreference: data.user.paymentPreference,
-            agreementPreference: data.user.agreementPreference
+            agreementPreference: data.user.agreementPreference,
+            onboardingCompletedAt: data.user.onboardingCompletedAt || null
           })
 
           // Set external recruit flag and default section for external hosts
@@ -880,6 +882,7 @@ export default function PartnerDashboardPage() {
         <UserInfoCard
           user={userInfo}
           loading={userInfoLoading}
+          activeBookingCount={stats?.activeBookings || 0}
           onPhotoChange={async (file) => {
             try {
               const formData = new FormData()

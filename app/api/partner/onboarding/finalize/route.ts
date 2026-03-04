@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
         currentCommissionRate: 0.25,
         commissionRate: 0.25,
         commissionTier: 'STANDARD',
-        revenuePath: 'COMMISSION',
+        revenuePath: 'tiers',
         welcomeDiscountUsed: false,
         // Acquisition tracking
         acquisitionChannel: 'prospect_outreach',

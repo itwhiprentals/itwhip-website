@@ -119,6 +119,8 @@ export default function PartnerRevenuePage() {
   const [isSavingTier, setIsSavingTier] = useState(false)
   const [tierPayoutPercentage, setTierPayoutPercentage] = useState<number | null>(null)
   const [fleetSize, setFleetSize] = useState(0)
+  const [welcomeDiscountUsed, setWelcomeDiscountUsed] = useState(false)
+  const [isExternalRecruit, setIsExternalRecruit] = useState(false)
 
   useEffect(() => {
     fetchRevenue()
@@ -231,6 +233,8 @@ export default function PartnerRevenuePage() {
         setSavedRevenueTier(result.revenueTier || null)
         setTierPayoutPercentage(result.payoutPercentage)
         setFleetSize(result.fleetSize ?? 0)
+        setWelcomeDiscountUsed(result.welcomeDiscountUsed ?? false)
+        setIsExternalRecruit(result.isExternalRecruit ?? false)
       }
     } catch (error) {
       console.error('Failed to fetch tier info:', error)
@@ -1260,7 +1264,17 @@ export default function PartnerRevenuePage() {
             {/* Save + Current Status */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
               <div>
-                {savedRevenuePath ? (
+                {/* Welcome discount highlight for recruited hosts */}
+                {isExternalRecruit && !welcomeDiscountUsed && savedRevenuePath === 'tiers' ? (
+                  <div>
+                    <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                      {t('welcomePartnerRate')}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {t('welcomeRateNote')}
+                    </p>
+                  </div>
+                ) : savedRevenuePath ? (
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     {t('currentPathLabel', { pathName: getTierDisplayName(savedRevenuePath, savedRevenueTier), payout: getPayoutLabel(savedRevenuePath, savedRevenueTier) })}
                   </p>

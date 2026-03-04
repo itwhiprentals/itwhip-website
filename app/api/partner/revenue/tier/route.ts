@@ -54,6 +54,8 @@ export async function GET(request: NextRequest) {
         revenueTier: true,
         commissionRate: true,
         currentCommissionRate: true,
+        welcomeDiscountUsed: true,
+        recruitedVia: true,
       }
     })
 
@@ -68,13 +70,18 @@ export async function GET(request: NextRequest) {
 
     const commissionRate = partner.currentCommissionRate ?? partner.commissionRate ?? 0.25
 
+    // Normalize legacy 'COMMISSION' value to 'tiers' (finalize route used to set uppercase)
+    const normalizedPath = partner.revenuePath === 'COMMISSION' ? 'tiers' : (partner.revenuePath || null)
+
     return NextResponse.json({
       success: true,
-      revenuePath: partner.revenuePath || null,
+      revenuePath: normalizedPath,
       revenueTier: partner.revenueTier || null,
       commissionRate,
       payoutPercentage: 1 - commissionRate,
       fleetSize,
+      welcomeDiscountUsed: partner.welcomeDiscountUsed ?? false,
+      isExternalRecruit: !!partner.recruitedVia,
     })
   } catch (error: any) {
     console.error('[Revenue Tier GET] Error:', error)

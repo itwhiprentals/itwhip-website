@@ -7470,6 +7470,11 @@
     "uiHost": "Anfitrión",
     "editPhoto": "Editar",
     "uiExternal": "Externo",
+    "uiBusiness": "Negocio",
+    "uiFacebookMarketplace": "FACEBOOK MARKETPLACE",
+    "uiBookingInProgress": "Reserva en Progreso",
+    "uiActiveReservation": "Reserva Activa",
+    "uiNoActiveReservation": "Sin Reserva Activa",
     "uiNotJoined": "NO Registrado",
     "uiJoined": "Registrado {date}",
     "uiLastLogin": "Último acceso {time}",
@@ -8744,7 +8749,9 @@
     "insuranceP2pDisplay": "Seguro / P2P",
     "insuranceCommercialDisplay": "Seguro / Comercial",
     "commissionTiersDisplay": "Niveles de comisión",
-    "notSelected": "No seleccionado"
+    "notSelected": "No seleccionado",
+    "welcomePartnerRate": "Tarifa de Bienvenida: 10%",
+    "welcomeRateNote": "Solo primera reserva — futuras reservas siguen tu tarifa de nivel"
   },
   "PartnerAnalytics": {
     "title": "Analiticas",

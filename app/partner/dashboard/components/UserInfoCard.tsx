@@ -13,7 +13,9 @@ import {
   IoCheckmarkCircle,
   IoBanOutline,
   IoCameraOutline,
-  IoRocketOutline
+  IoRocketOutline,
+  IoLogoFacebook,
+  IoRemoveCircleOutline
 } from 'react-icons/io5'
 import { useTranslations, useLocale } from 'next-intl'
 
@@ -32,12 +34,14 @@ interface UserInfoCardProps {
     hasPassword?: boolean
     paymentPreference?: string | null
     agreementPreference?: string | null
+    onboardingCompletedAt?: string | null
   } | null
   loading?: boolean
+  activeBookingCount?: number
   onPhotoChange?: (file: File) => void
 }
 
-export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoCardProps) {
+export default function UserInfoCard({ user, loading, activeBookingCount = 0, onPhotoChange }: UserInfoCardProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const t = useTranslations('PartnerDashboard')
 
@@ -69,7 +73,8 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
     return formatDate(dateString)
   }
 
-  function getHostTypeLabel(hostType: string | null): string {
+  function getHostTypeLabel(hostType: string | null, isExternal: boolean): string {
+    if (isExternal) return t('uiBusiness')
     switch (hostType) {
       case 'FLEET_PARTNER':
         return t('uiFleetPartner')
@@ -194,11 +199,20 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
 
           {/* Role/Type on second line with badge */}
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-              <IoBriefcaseOutline className="w-3.5 h-3.5" />
-              {getHostTypeLabel(user.hostType)}
+            <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1 whitespace-nowrap">
+              <IoBriefcaseOutline className="w-3.5 h-3.5 flex-shrink-0" />
+              {getHostTypeLabel(user.hostType, isExternalRecruit)}
+              {/* Facebook Marketplace indicator — next to Business, only during onboarding */}
+              {isExternalRecruit && !user.onboardingCompletedAt && (
+                <>
+                  <span className="text-gray-300 dark:text-gray-600">·</span>
+                  <IoLogoFacebook className="w-3 h-3 text-blue-600 flex-shrink-0" />
+                  <span className="text-[10px] font-medium text-blue-600 dark:text-blue-400">FB MARKETPLACE</span>
+                </>
+              )}
             </span>
-            {isExternalRecruit && (
+            {/* External badge — only after onboarding completes */}
+            {isExternalRecruit && !!user.onboardingCompletedAt && (
               <span className="px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded">
                 {t('uiExternal')}
               </span>
@@ -229,21 +243,42 @@ export default function UserInfoCard({ user, loading, onPhotoChange }: UserInfoC
 
         {/* Status Badge - Top Right Corner */}
         <div className="flex-shrink-0">
-          {needsSetup ? (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
-              <IoRocketOutline className="w-3.5 h-3.5" />
-              {t('uiOnboarding')}
-            </span>
-          ) : isActive ? (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-              <IoCheckmarkCircle className="w-3.5 h-3.5" />
-              {t('uiActive')}
-            </span>
+          {isExternalRecruit ? (
+            // Context-aware badge for recruited hosts
+            !user.onboardingCompletedAt ? (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                <IoRocketOutline className="w-3.5 h-3.5" />
+                {t('uiBookingInProgress')}
+              </span>
+            ) : activeBookingCount > 0 ? (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                <IoCheckmarkCircle className="w-3.5 h-3.5" />
+                {t('uiActiveReservation')}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                <IoRemoveCircleOutline className="w-3.5 h-3.5" />
+                {t('uiNoActiveReservation')}
+              </span>
+            )
           ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
-              <IoBanOutline className="w-3.5 h-3.5" />
-              {t('uiSuspended')}
-            </span>
+            // Standard badge for non-recruited hosts
+            needsSetup ? (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                <IoRocketOutline className="w-3.5 h-3.5" />
+                {t('uiOnboarding')}
+              </span>
+            ) : isActive ? (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                <IoCheckmarkCircle className="w-3.5 h-3.5" />
+                {t('uiActive')}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                <IoBanOutline className="w-3.5 h-3.5" />
+                {t('uiSuspended')}
+              </span>
+            )
           )}
         </div>
       </div>
