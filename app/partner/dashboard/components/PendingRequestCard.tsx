@@ -22,6 +22,7 @@ import {
   IoShieldCheckmarkOutline,
   IoInformationCircleOutline
 } from 'react-icons/io5'
+import RevenueLearnMoreSheet from './RevenueLearnMoreSheet'
 
 // Data from /api/partner/onboarding for recruited hosts
 interface OnboardingData {
@@ -102,6 +103,7 @@ export default function PendingRequestCard() {
     photoCount: 0
   })
   const [timeRemaining, setTimeRemaining] = useState<string>('')
+  const [revenueSheetOpen, setRevenueSheetOpen] = useState(false)
   const t = useTranslations('PartnerDashboard')
 
   const locale = useLocale()
@@ -396,7 +398,12 @@ export default function PendingRequestCard() {
                 <span>{t('prYouReceive')}</span>
                 <span>${fmt(potentialEarnings || 0)}</span>
               </div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 italic pt-1">{t('prWelcomeDiscountNote')}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 pt-1">
+                {t('prWelcomeDiscountNote')}{' '}
+                <button onClick={() => setRevenueSheetOpen(true)} className="text-orange-600 dark:text-orange-400 font-medium hover:underline">
+                  {t('prLearnMore')} →
+                </button>
+              </p>
             </div>
           </div>
         )}
@@ -547,6 +554,7 @@ export default function PendingRequestCard() {
         </div>
       </div>
 
+      <RevenueLearnMoreSheet isOpen={revenueSheetOpen} onClose={() => setRevenueSheetOpen(false)} />
     </div>
   )
 }
