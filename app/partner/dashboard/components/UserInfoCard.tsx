@@ -14,7 +14,6 @@ import {
   IoBanOutline,
   IoCameraOutline,
   IoRocketOutline,
-  IoLogoFacebook,
   IoRemoveCircleOutline
 } from 'react-icons/io5'
 import { useTranslations, useLocale } from 'next-intl'
@@ -199,17 +198,9 @@ export default function UserInfoCard({ user, loading, activeBookingCount = 0, on
 
           {/* Role/Type on second line with badge */}
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1 whitespace-nowrap">
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 uppercase">
               <IoBriefcaseOutline className="w-3.5 h-3.5 flex-shrink-0" />
               {getHostTypeLabel(user.hostType, isExternalRecruit)}
-              {/* Facebook Marketplace indicator — next to Business, only during onboarding */}
-              {isExternalRecruit && !user.onboardingCompletedAt && (
-                <>
-                  <span className="text-gray-300 dark:text-gray-600">·</span>
-                  <IoLogoFacebook className="w-3 h-3 text-blue-600 flex-shrink-0" />
-                  <span className="text-[10px] font-medium text-blue-600 dark:text-blue-400">FB MARKETPLACE</span>
-                </>
-              )}
             </span>
             {/* External badge — only after onboarding completes */}
             {isExternalRecruit && !!user.onboardingCompletedAt && (
@@ -246,7 +237,7 @@ export default function UserInfoCard({ user, loading, activeBookingCount = 0, on
           {isExternalRecruit ? (
             // Context-aware badge for recruited hosts
             !user.onboardingCompletedAt ? (
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
                 <IoRocketOutline className="w-3.5 h-3.5" />
                 {t('uiBookingInProgress')}
               </span>
