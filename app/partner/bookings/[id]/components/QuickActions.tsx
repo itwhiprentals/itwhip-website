@@ -17,6 +17,7 @@ import {
   IoKeyOutline,
   IoCloseOutline,
   IoAddOutline,
+  IoAlertCircleOutline,
 } from 'react-icons/io5'
 
 interface QuickActionsProps {
@@ -27,6 +28,8 @@ interface QuickActionsProps {
     paymentType: string | null
     handoffStatus: string | null
     agreementStatus: string | null
+    tripStartedAt?: string | null
+    noShowDeadline?: string | null
   }
   isGuestDriven: boolean
   vehicle: { instantBook: boolean } | null
@@ -50,6 +53,8 @@ interface QuickActionsProps {
   markAsPaid: () => void
   sendAgreement: () => void
   cancelBooking: () => void
+  markNoShow?: () => void
+  markingNoShow?: boolean
 }
 
 export function QuickActions({
@@ -71,8 +76,11 @@ export function QuickActions({
   markAsPaid,
   sendAgreement,
   cancelBooking,
+  markNoShow,
+  markingNoShow = false,
 }: QuickActionsProps) {
   const t = useTranslations('PartnerBookings')
+  const isTerminal = booking.status === 'NO_SHOW' || booking.status === 'CANCELLED' || booking.status === 'COMPLETED'
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
@@ -126,14 +134,14 @@ export function QuickActions({
         {/* Change Vehicle — gated by fleet availability, with confirmation */}
         <div className="relative group">
           <button
-            onClick={() => fleetOtherActiveCount && setConfirmAction({
+            onClick={() => fleetOtherActiveCount && !isTerminal && setConfirmAction({
               title: t('bdChangeVehicle'),
               message: t('bdConfirmChangeVehicle'),
               onConfirm: () => { /* TODO: implement vehicle change modal */ }
             })}
-            disabled={!fleetOtherActiveCount}
+            disabled={!fleetOtherActiveCount || isTerminal}
             className={`w-full px-4 py-2 border rounded-lg flex items-center gap-2 ${
-              fleetOtherActiveCount
+              fleetOtherActiveCount && !isTerminal
                 ? 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                 : 'border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed bg-gray-50 dark:bg-gray-800'
             }`}
@@ -149,8 +157,8 @@ export function QuickActions({
           )}
         </div>
 
-        {/* Add Charge — hidden for PENDING bookings */}
-        {booking.status !== 'PENDING' && (
+        {/* Add Charge — hidden for PENDING and terminal bookings */}
+        {booking.status !== 'PENDING' && !isTerminal && (
           <button
             onClick={() => setConfirmAction({
               title: t('bdAddChargeAddon'),
@@ -164,8 +172,8 @@ export function QuickActions({
           </button>
         )}
 
-        {/* Mark as Paid — hidden for PENDING, cash+handoff = green, else confirmation */}
-        {booking.status !== 'PENDING' && (
+        {/* Mark as Paid — hidden for PENDING and terminal, cash+handoff = green, else confirmation */}
+        {booking.status !== 'PENDING' && !isTerminal && (
           booking.paymentStatus === 'PAID' || (booking.paymentType === 'CASH' && (booking.handoffStatus === 'HANDOFF_COMPLETE' || booking.handoffStatus === 'BYPASSED' || booking.status === 'ACTIVE' || booking.status === 'COMPLETED')) ? (
             <div className="w-full px-4 py-2 border border-green-300 dark:border-green-600 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center gap-2 cursor-default">
               <IoCheckmarkCircleOutline className="w-4 h-4" />
@@ -199,8 +207,8 @@ export function QuickActions({
           )
         )}
 
-        {/* Send/Resend Agreement — hidden for PENDING (agreement sent on confirm) */}
-        {booking.status !== 'PENDING' && (
+        {/* Send/Resend Agreement — hidden for PENDING and terminal */}
+        {booking.status !== 'PENDING' && !isTerminal && (
           <button
             onClick={() => setConfirmAction({
               title: booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed' || booking.agreementStatus === 'signed'
@@ -231,7 +239,7 @@ export function QuickActions({
               message: t('bdConfirmSendPickup'),
               onConfirm: () => { setCommMessage(''); setShowCommModal('pickup_instructions') }
             })}
-            disabled={!booking.paymentType || booking.status === 'PENDING' || (commSendCounts.pickup_instructions || 0) >= 2}
+            disabled={!booking.paymentType || booking.status === 'PENDING' || isTerminal || (commSendCounts.pickup_instructions || 0) >= 2}
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <IoLocationOutline className="w-4 h-4" />
@@ -256,7 +264,7 @@ export function QuickActions({
               message: t('bdConfirmSendKeys'),
               onConfirm: () => { setCommMessage(''); setShowCommModal('keys_instructions') }
             })}
-            disabled={!booking.paymentType || booking.status === 'PENDING' || !vehicle?.instantBook || (commSendCounts.keys_instructions || 0) >= 2}
+            disabled={!booking.paymentType || booking.status === 'PENDING' || isTerminal || !vehicle?.instantBook || (commSendCounts.keys_instructions || 0) >= 2}
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <IoKeyOutline className="w-4 h-4" />
@@ -297,6 +305,37 @@ export function QuickActions({
             )}
             {t('bdCancelBooking')}
           </button>
+        )}
+
+        {/* Mark as No-Show — CONFIRMED bookings with no trip started */}
+        {booking.status === 'CONFIRMED' && !booking.tripStartedAt && markNoShow && (
+          <button
+            onClick={() => setConfirmAction({
+              title: t('bdMarkNoShow'),
+              message: booking.paymentType === 'CASH'
+                ? t('bdConfirmNoShowCash')
+                : t('bdConfirmNoShowCard'),
+              onConfirm: markNoShow,
+              isDangerous: true
+            })}
+            disabled={markingNoShow}
+            className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg flex items-center gap-2"
+          >
+            {markingNoShow ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+            ) : (
+              <IoAlertCircleOutline className="w-4 h-4" />
+            )}
+            {markingNoShow ? t('bdProcessing') : t('bdMarkNoShow')}
+          </button>
+        )}
+
+        {/* No-Show result banner — when already marked */}
+        {booking.status === 'NO_SHOW' && (
+          <div className="w-full px-4 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-center gap-2 cursor-default">
+            <IoAlertCircleOutline className="w-4 h-4" />
+            {t('bdNoShowStatus')}
+          </div>
         )}
 
         {/* New Booking — with confirmation */}

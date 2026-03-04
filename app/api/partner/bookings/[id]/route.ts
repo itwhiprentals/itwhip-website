@@ -396,6 +396,14 @@ export async function GET(
         guestStripeVerified: !!(booking.renter?.reviewerProfile?.stripeIdentityStatus === 'verified'),
         aiVerificationScore: booking.aiVerificationScore || null,
 
+        // No-show fields
+        tripStartedAt: booking.tripStartedAt?.toISOString() || null,
+        noShowDeadline: booking.noShowDeadline?.toISOString() || null,
+        noShowMarkedBy: booking.noShowMarkedBy || null,
+        noShowMarkedAt: booking.noShowMarkedAt?.toISOString() || null,
+        noShowFeeCharged: booking.noShowFeeCharged ? Number(booking.noShowFeeCharged) : null,
+        noShowFeeStatus: booking.noShowFeeStatus || null,
+
         // Verification method (populated below)
         verificationMethod: null as string | null,
         verificationDate: null as string | null

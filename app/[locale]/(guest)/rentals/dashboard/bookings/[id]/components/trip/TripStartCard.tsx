@@ -11,6 +11,14 @@ import { HostMessagesCard, CollapsiblePaymentSummary, RentalAgreementButton } fr
 import { Copy, CheckCircle } from '../Icons'
 import { formatDate } from '../../utils/helpers'
 
+function formatTime12h(time: string | undefined): string {
+  if (!time) return ''
+  const [h, m] = time.split(':').map(Number)
+  const period = h >= 12 ? 'PM' : 'AM'
+  const hour12 = h % 12 || 12
+  return `${hour12}:${String(m).padStart(2, '0')} ${period}`
+}
+
 interface TripStartCardProps {
   booking: any
   messages?: any[]
@@ -146,6 +154,7 @@ export function TripStartCard({
   }, [booking])
 
   if (booking.tripStartedAt) return null
+  if (booking.status === 'NO_SHOW') return null
 
   const handleStartInspection = () => {
     if (tripStatus === 'expired') return
@@ -201,6 +210,22 @@ export function TripStartCard({
               </p>
             </div>
           </div>
+
+          {/* No-show deadline warning */}
+          {booking.noShowDeadline && (tripStatus === 'grace' || tripStatus === 'late') && (
+            <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
+              <p className="text-xs font-medium text-red-900 dark:text-red-200">
+                {t('noShowDeadline', {
+                  time: new Date(booking.noShowDeadline).toLocaleString(undefined, {
+                    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+                  })
+                })}
+              </p>
+              <p className="text-xs text-red-700 dark:text-red-300 mt-0.5">
+                {booking.paymentType === 'CASH' ? t('noShowWarningCash') : t('noShowWarningCard')}
+              </p>
+            </div>
+          )}
 
           {/* Status-specific messaging */}
           {tripStatus === 'upcoming' && (
@@ -310,31 +335,33 @@ export function TripStartCard({
         <RentalAgreementButton onViewAgreement={onViewAgreement} />
       )}
 
-      {/* Cancel / Modify Actions */}
-      <div className="grid grid-cols-2 gap-2">
-        {onCancel && (
-          <button
-            onClick={onCancel}
-            className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            {t('cancel')}
-          </button>
-        )}
-        {onModify && (
-          <button
-            onClick={onModify}
-            className="flex items-center justify-center gap-1.5 px-4 py-2.5 border border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs font-medium"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            {t('modify')}
-          </button>
-        )}
-      </div>
+      {/* Cancel / Modify Actions — hidden when booking period expired */}
+      {tripStatus !== 'expired' && (
+        <div className="grid grid-cols-2 gap-2">
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              {t('cancel')}
+            </button>
+          )}
+          {onModify && (
+            <button
+              onClick={onModify}
+              className="flex items-center justify-center gap-1.5 px-4 py-2.5 border border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs font-medium"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              {t('modify')}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -375,14 +402,14 @@ function BookingInfoGrid({ booking, bookingCode, onCopyCode, copiedCode, pickupA
         <div>
           <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">{t('pickup')}</p>
           <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{formatDate(booking.startDate)}</p>
-          <p className="text-[11px] text-gray-500">{booking.startTime}</p>
+          <p className="text-[11px] text-gray-500">{formatTime12h(booking.startTime)}</p>
           <p className="text-[10px] uppercase tracking-wider text-gray-500 mt-1.5 mb-0.5">{t('location')}</p>
           <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{pickupAddress}</p>
         </div>
         <div className="text-right">
           <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">{t('dropoff')}</p>
           <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{formatDate(booking.endDate)}</p>
-          <p className="text-[11px] text-gray-500">{booking.endTime}</p>
+          <p className="text-[11px] text-gray-500">{formatTime12h(booking.endTime)}</p>
           <p className="text-[10px] uppercase tracking-wider text-gray-500 mt-1.5 mb-0.5">{t('location')}</p>
           <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{dropoffAddress}</p>
         </div>

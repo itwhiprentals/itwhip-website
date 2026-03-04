@@ -764,6 +764,7 @@ export default function BookingDetailsPage() {
             agreementStatus={booking.agreementStatus || null}
             tripStartedAt={booking.tripStartedAt}
             tripEndedAt={booking.tripEndedAt}
+            isExpired={booking.status === 'CONFIRMED' && !booking.tripStartedAt && new Date(booking.endDate) < new Date()}
           />
         ) : (
           <StatusProgression

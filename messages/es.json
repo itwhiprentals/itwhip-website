@@ -1007,7 +1007,8 @@
     "verifyRequired": "Verificación Requerida",
     "verificationRequired": "Verificación Requerida",
     "failedToLoadBookings": "Error al cargar las reservas de alquiler",
-    "confirmed": "Confirmado"
+    "confirmed": "Confirmado",
+    "noShow": "No se presentó"
   },
   "VehicleCard": {
     "localHost": "ANFITRIÓN LOCAL",
@@ -1384,6 +1385,7 @@
     "creditBalance": "Saldo de Créditos",
     "usablePerBooking": "100% utilizable por reserva",
     "lockedVerify": "Bloqueado - verifica para usar",
+    "outstandingBalance": "Saldo pendiente por cargos",
     "bonusBalance": "Saldo de Bonos",
     "maxPerBooking": "Máximo {percent}% por reserva",
     "bonusExpiring": "Bonos por Vencer Pronto",
@@ -1407,6 +1409,7 @@
     "reasonLoyalty": "Recompensa de Lealtad",
     "reasonSignup": "Bono de Registro",
     "reasonReferral": "Bono de Referido",
+    "reasonNoShowFee": "Tarifa por No Presentarse",
     "expiresDate": "Vence {date}",
     "noTransactions": "Aún no hay transacciones",
     "noFilterTransactions": "No hay transacciones de {filter}",
@@ -4606,7 +4609,10 @@
     "lateStartHours": "Inicio tardío - {hours}h restantes",
     "lateStartMinutes": "Inicio tardío - {minutes}m restantes",
     "startTrip": "Iniciar viaje",
-    "starting": "Iniciando..."
+    "starting": "Iniciando...",
+    "noShowDeadline": "La ventana de recogida cierra: {time}",
+    "noShowWarningCash": "Se cobrará una tarifa de $50.00 por no presentarse si no inicias tu viaje antes de esta fecha límite.",
+    "noShowWarningCard": "Se capturará el monto total del alquiler si no inicias tu viaje antes de esta fecha límite."
   },
   "TripActiveCard": {
     "overdue": "Vencido",
@@ -6064,6 +6070,7 @@
     "draftWatermark": "BORRADOR",
     "pendingWatermark": "VERIFICACIÓN PENDIENTE",
     "cancelledWatermark": "CANCELADO",
+    "noShowWatermark": "NO SHOW",
     "partiesHeading": "Partes del Contrato de Alquiler",
     "vehicleOwner": "Propietario del Vehículo (Anfitrión)",
     "renterGuest": "Arrendatario (Huésped)",
@@ -8174,6 +8181,24 @@
     "bdConfirmNewBooking": "¿Crear una nueva reserva para este huésped?",
     "bdConfirmAddCharge": "¿Agregar un cargo adicional a esta reserva?",
     "bdConfirmChangeVehicle": "Esto reasignará la reserva a un vehículo diferente.",
+    "bdMarkNoShow": "Marcar como no presentado",
+    "bdConfirmNoShowCash": "Esto marcará la reserva como no presentado y cobrará al huésped una tarifa de $50.00 por no presentarse. Esta acción no se puede deshacer.",
+    "bdConfirmNoShowCard": "Esto marcará la reserva como no presentado y capturará el monto total autorizado. Esta acción no se puede deshacer.",
+    "bdNoShowMarked": "Reserva marcada como no presentado",
+    "bdFailedMarkNoShow": "Error al marcar la reserva como no presentado",
+    "bdNoShowStatus": "No presentado — El huésped no recogió",
+    "bdNoShowBanner": "Reserva marcada como no presentado",
+    "bdNoShowMarkedByLabel": "Marcado por: {by}",
+    "bdNoShowByHost": "Anfitrión",
+    "bdNoShowByAdmin": "Administrador",
+    "bdNoShowBySystem": "Sistema (automático)",
+    "bdNoShowFeeLabel": "Tarifa por no presentarse: {amount}",
+    "bdProcessing": "Procesando...",
+    "bdNoShowInfoMessage": "Esta reserva fue marcada como no presentado. El huésped no recogió el vehículo.",
+    "bdCancelled": "CANCELADA",
+    "bdNoShowFeeTitle": "Tarifa por no presentarse: $50.00 cobrada por ItWhip",
+    "bdNoShowFeeExplanation": "Se cobró al huésped una penalización de $50.00 por no presentarse. Esta tarifa va a ItWhip — no se pagan ganancias al anfitrión por reservas no presentadas.",
+    "bdCancelledNoEarnings": "Esta reserva fue cancelada. No se generaron ganancias.",
     "bdReassigned": "Reasignada",
     "bdReplacesBooking": "Reemplaza reserva {code}",
     "bdReplacedBy": "Reemplazada por {code}",
@@ -16157,7 +16182,13 @@
     "booked": "Reservado: {date}",
     "perDay": "${rate}/día",
     "uploadDocumentsToConfirm": "Sube documentos para confirmar",
-    "verificationRequired": "Verificación requerida - Sube documentos para confirmar"
+    "verificationRequired": "Verificación requerida - Sube documentos para confirmar",
+    "confirmed": "Confirmada",
+    "pending": "Pendiente",
+    "active": "Activa",
+    "complete": "Completada",
+    "canceled": "Cancelada",
+    "noShow": "No se presentó"
   },
   "VerifyBooking": {
     "loadingVerification": "Cargando verificación...",
@@ -17161,10 +17192,15 @@
     "agreementSent": "Enviado por email",
     "agreementPending": "Pendiente",
     "stepStartTrip": "Iniciar Viaje",
+    "stepNoShow": "No se presentó",
+    "noShow": "No se presentó",
+    "noShowDesc": "El huésped no se presentó",
     "tripCompleted": "Completado",
     "tripInProgress": "En progreso",
     "readyForPickup": "Listo para recoger",
-    "tripPending": "Pendiente"
+    "tripPending": "Pendiente",
+    "stepExpired": "Expirado",
+    "expiredDesc": "Período de reserva finalizado"
   },
   "ManualBooking": {
     "statusAwaitingPayment": "Elige Tu Método de Pago",

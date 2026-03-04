@@ -7,7 +7,8 @@ import { useTranslations } from 'next-intl'
 import {
   IoWalletOutline,
   IoChevronUpOutline,
-  IoChevronDownOutline
+  IoChevronDownOutline,
+  IoShieldCheckmarkOutline
 } from 'react-icons/io5'
 
 interface EarningsSectionProps {
@@ -73,7 +74,11 @@ export default function EarningsSection({
             </h3>
             {/* #14 — Cash badge: PAID ✓ (green) or AWAITING PAYMENT (amber) */}
             <span className={`px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap uppercase ${
-              isManualBooking && booking.paymentType === 'CASH'
+              booking.status === 'NO_SHOW'
+                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                : booking.status === 'CANCELLED'
+                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                : isManualBooking && booking.paymentType === 'CASH'
                 ? (booking.handoffStatus === 'HANDOFF_COMPLETE' || booking.handoffStatus === 'BYPASSED' || booking.status === 'ACTIVE' || booking.status === 'COMPLETED')
                   ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                   : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
@@ -81,7 +86,11 @@ export default function EarningsSection({
                   ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                   : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
             }`}>
-              {isManualBooking && booking.paymentType === 'CASH'
+              {booking.status === 'NO_SHOW'
+                ? 'NO SHOW'
+                : booking.status === 'CANCELLED'
+                ? t('bdCancelled')
+                : isManualBooking && booking.paymentType === 'CASH'
                 ? (booking.handoffStatus === 'HANDOFF_COMPLETE' || booking.handoffStatus === 'BYPASSED' || booking.status === 'ACTIVE' || booking.status === 'COMPLETED')
                   ? t('bdCashPaid')
                   : t('bdCashAwaiting')
@@ -97,7 +106,36 @@ export default function EarningsSection({
 
         {expanded && (
           <div className="px-4 pb-4 space-y-3">
-            {isGuestDriven ? (
+            {/* NO_SHOW / CANCELLED — override all other breakdowns */}
+            {(booking.status === 'NO_SHOW' || booking.status === 'CANCELLED') ? (
+              <>
+                {/* Original booking amount — grayed out */}
+                <div className="flex justify-between text-sm opacity-50">
+                  <span className="text-gray-400 dark:text-gray-500 line-through">
+                    {t('bdRateTimesDays', { rate: formatCurrency(booking.dailyRate), days: booking.numberOfDays })}
+                  </span>
+                  <span className="text-gray-400 dark:text-gray-500 line-through">{formatCurrency(booking.subtotal)}</span>
+                </div>
+
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
+                  <div className="flex justify-between font-semibold">
+                    <span className="text-gray-900 dark:text-white">{t('bdYouReceive')}</span>
+                    <span className="text-lg text-gray-500 dark:text-gray-400">$0.00</span>
+                  </div>
+
+                  {booking.status === 'NO_SHOW' && (
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-3 mt-2">
+                      <p className="text-xs font-medium text-red-800 dark:text-red-200">{t('bdNoShowFeeTitle')}</p>
+                      <p className="text-xs text-red-600 dark:text-red-400 mt-1">{t('bdNoShowFeeExplanation')}</p>
+                    </div>
+                  )}
+
+                  {booking.status === 'CANCELLED' && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('bdCancelledNoEarnings')}</p>
+                  )}
+                </div>
+              </>
+            ) : isGuestDriven ? (
               <>
                 {/* Guest-Driven: What the guest paid (full breakdown) */}
                 <div className="flex justify-between text-sm">

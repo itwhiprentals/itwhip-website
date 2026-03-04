@@ -93,7 +93,8 @@ export default function CreditsPage() {
       PROMO: t('reasonPromo'),
       LOYALTY: t('reasonLoyalty'),
       SIGNUP: t('reasonSignup'),
-      REFERRAL: t('reasonReferral')
+      REFERRAL: t('reasonReferral'),
+      NO_SHOW_FEE: t('reasonNoShowFee')
     }
     return labels[reason] || reason
   }
@@ -168,7 +169,7 @@ export default function CreditsPage() {
       {/* Balance Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Credit Balance */}
-        <div className={`bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg p-5 text-white shadow-lg relative ${!isVerified && creditBalance > 0 ? 'opacity-75' : ''}`}>
+        <div className={`bg-gradient-to-br ${creditBalance < 0 ? 'from-red-500 to-red-600' : 'from-green-500 to-emerald-600'} rounded-lg p-5 text-white shadow-lg relative ${!isVerified && creditBalance > 0 ? 'opacity-75' : ''}`}>
           {!isVerified && creditBalance > 0 && (
             <div className="absolute top-3 right-3">
               <IoLockClosedOutline className="w-5 h-5 text-white/80" />
@@ -178,9 +179,11 @@ export default function CreditsPage() {
             <IoWalletOutline className="w-5 h-5 opacity-90" />
             <span className="text-sm font-medium opacity-90">{t('creditBalance')}</span>
           </div>
-          <p className="text-3xl font-bold mb-1">${creditBalance.toFixed(2)}</p>
+          <p className="text-3xl font-bold mb-1">
+            {creditBalance < 0 ? '-' : ''}${Math.abs(creditBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
           <p className="text-xs opacity-75">
-            {!isVerified && creditBalance > 0 ? t('lockedVerify') : t('usablePerBooking')}
+            {creditBalance < 0 ? t('outstandingBalance') : !isVerified && creditBalance > 0 ? t('lockedVerify') : t('usablePerBooking')}
           </p>
         </div>
 
@@ -195,7 +198,7 @@ export default function CreditsPage() {
             <IoGiftOutline className="w-5 h-5 opacity-90" />
             <span className="text-sm font-medium opacity-90">{t('bonusBalance')}</span>
           </div>
-          <p className="text-3xl font-bold mb-1">${bonusBalance.toFixed(2)}</p>
+          <p className="text-3xl font-bold mb-1">${bonusBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           <p className="text-xs opacity-75">
             {!isVerified && bonusBalance > 0 ? t('lockedVerify') : t('maxPerBooking', { percent: Math.round(maxBonusPercentage * 100) })}
           </p>
@@ -276,7 +279,9 @@ export default function CreditsPage() {
             {filteredTransactions.map((tx) => (
               <div key={tx.id} className="p-4 flex items-center gap-4">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  tx.type === 'CREDIT'
+                  tx.amount < 0 && tx.action === 'ADJUST'
+                    ? 'bg-red-100 dark:bg-red-900/30'
+                    : tx.type === 'CREDIT'
                     ? 'bg-green-100 dark:bg-green-900/30'
                     : 'bg-purple-100 dark:bg-purple-900/30'
                 }`}>
@@ -290,6 +295,8 @@ export default function CreditsPage() {
                     }`} />
                   ) : tx.action === 'EXPIRE' ? (
                     <IoTimeOutline className="w-4 h-4 text-gray-600" />
+                  ) : tx.amount < 0 ? (
+                    <IoWarningOutline className="w-4 h-4 text-red-600" />
                   ) : (
                     <IoGiftOutline className={`w-4 h-4 ${
                       tx.type === 'CREDIT' ? 'text-green-600' : 'text-purple-600'
@@ -333,7 +340,7 @@ export default function CreditsPage() {
                         : 'text-purple-600 dark:text-purple-400'
                       : 'text-red-600 dark:text-red-400'
                   }`}>
-                    {tx.amount >= 0 ? '+' : '-'}${Math.abs(tx.amount).toFixed(2)}
+                    {tx.amount >= 0 ? '+' : '-'}${Math.abs(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
               </div>

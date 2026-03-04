@@ -13,6 +13,7 @@ import {
   IoWalletOutline,
   IoCopyOutline,
   IoDocumentTextOutline,
+  IoAlertCircleOutline,
 } from 'react-icons/io5'
 
 interface BookingHeaderProps {
@@ -88,7 +89,7 @@ export function BookingHeader({
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ml-auto">
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className={`px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap uppercase ${getStatusColor(booking.status)}`}>
-                {booking.status}
+                {booking.status === 'NO_SHOW' ? 'NO SHOW' : booking.status === 'ON_HOLD' ? 'ON HOLD' : booking.status}
               </span>
               {isManualBooking && booking.paymentType === 'CASH' && (
                 <span className="px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap uppercase bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
@@ -173,11 +174,20 @@ export function BookingHeader({
         </div>
 
         {/* Booking snapshot — manual cash bookings */}
-        {isManualBooking && booking.paymentType === 'CASH' && booking.status !== 'PENDING' && renter && (
+        {isManualBooking && booking.paymentType === 'CASH' && booking.status !== 'PENDING' && booking.status !== 'NO_SHOW' && booking.status !== 'CANCELLED' && booking.status !== 'COMPLETED' && renter && (
           <div className="mt-2 sm:mt-3 flex items-center gap-2 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
             <IoWalletOutline className="w-4 h-4 flex-shrink-0" />
             <span className="text-xs sm:text-sm font-medium">
               {t('bdCashPickupMessage', { guest: renter.name, location: booking.pickupLocation || t('bdBusinessLocation') })}
+            </span>
+          </div>
+        )}
+
+        {booking.status === 'NO_SHOW' && (
+          <div className="mt-2 sm:mt-3 flex items-center gap-2 text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">
+            <IoAlertCircleOutline className="w-4 h-4 flex-shrink-0" />
+            <span className="text-xs sm:text-sm font-medium">
+              {t('bdNoShowInfoMessage')}
             </span>
           </div>
         )}

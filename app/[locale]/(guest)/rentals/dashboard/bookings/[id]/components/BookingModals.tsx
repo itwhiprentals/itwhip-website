@@ -314,9 +314,9 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking, compact }) 
 
   return (
     <>
-      <div className={`${compact ? 'mt-3' : 'mt-12'} bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 border-t border-gray-200 dark:border-gray-700`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center mb-8">
+      <div className={`${compact ? 'mt-3' : 'mt-12'}`}>
+        <div className="max-w-3xl mx-auto space-y-3">
+          <div className="text-center mb-4">
             <div className="flex items-center justify-center space-x-2 mb-2">
               <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('peerToPeerMarketplace')}</span>
@@ -326,7 +326,7 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking, compact }) 
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <button
               onClick={() => setShowInsuranceModal(true)}
               className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all text-left"
@@ -416,8 +416,8 @@ export const PolicyFooter: React.FC<PolicyFooterProps> = ({ booking, compact }) 
             </button>
           </div>
 
-          <div className="text-center pt-6 border-t border-gray-200 dark:border-gray-700">
-            <p className="text-xs text-gray-500 dark:text-gray-400 max-w-3xl mx-auto mb-2">
+          <div className="text-center pt-4 border-t border-gray-200 dark:border-gray-700">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
               {t('footerLegal')}
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500">

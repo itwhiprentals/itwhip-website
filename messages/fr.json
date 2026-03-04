@@ -1007,7 +1007,8 @@
     "verifyRequired": "Vérification Requise",
     "verificationRequired": "Vérification Requise",
     "failedToLoadBookings": "Échec du chargement des réservations de location",
-    "confirmed": "Confirmé"
+    "confirmed": "Confirmé",
+    "noShow": "Absence"
   },
   "VehicleCard": {
     "localHost": "HÔTE LOCAL",
@@ -1384,6 +1385,7 @@
     "creditBalance": "Solde de Crédits",
     "usablePerBooking": "100% utilisable par réservation",
     "lockedVerify": "Verrouillé - vérifiez pour utiliser",
+    "outstandingBalance": "Solde impayé dû aux frais",
     "bonusBalance": "Solde de Bonus",
     "maxPerBooking": "Maximum {percent}% par réservation",
     "bonusExpiring": "Bonus Bientôt Expirants",
@@ -1407,6 +1409,7 @@
     "reasonLoyalty": "Récompense de Fidélité",
     "reasonSignup": "Bonus d'Inscription",
     "reasonReferral": "Bonus de Parrainage",
+    "reasonNoShowFee": "Frais d'Absence",
     "expiresDate": "Expire le {date}",
     "noTransactions": "Aucune transaction pour le moment",
     "noFilterTransactions": "Aucune transaction de type {filter}",
@@ -4606,7 +4609,10 @@
     "lateStartHours": "Départ tardif - {hours}h restants",
     "lateStartMinutes": "Départ tardif - {minutes}m restants",
     "startTrip": "Démarrer le trajet",
-    "starting": "Démarrage..."
+    "starting": "Démarrage...",
+    "noShowDeadline": "La fenêtre de retrait ferme : {time}",
+    "noShowWarningCash": "Des frais d'absence de 50,00 $ seront facturés si vous ne commencez pas votre trajet avant cette échéance.",
+    "noShowWarningCard": "Le montant total de la location sera capturé si vous ne commencez pas votre trajet avant cette échéance."
   },
   "TripActiveCard": {
     "overdue": "En retard",
@@ -6064,6 +6070,7 @@
     "draftWatermark": "BROUILLON",
     "pendingWatermark": "VÉRIFICATION EN ATTENTE",
     "cancelledWatermark": "ANNULÉ",
+    "noShowWatermark": "NON PRÉSENTÉ",
     "partiesHeading": "Parties au Contrat de Location",
     "vehicleOwner": "Propriétaire du Véhicule (Hôte)",
     "renterGuest": "Locataire (Invité)",
@@ -8174,6 +8181,24 @@
     "bdConfirmNewBooking": "Créer une nouvelle réservation pour ce client ?",
     "bdConfirmAddCharge": "Ajouter des frais supplémentaires à cette réservation ?",
     "bdConfirmChangeVehicle": "Cela réattribuera la réservation à un véhicule différent.",
+    "bdMarkNoShow": "Marquer comme absence",
+    "bdConfirmNoShowCash": "Cela marquera la réservation comme absence et facturera au client des frais d'absence de 50,00 $. Cette action est irréversible.",
+    "bdConfirmNoShowCard": "Cela marquera la réservation comme absence et capturera le montant total autorisé. Cette action est irréversible.",
+    "bdNoShowMarked": "Réservation marquée comme absence",
+    "bdFailedMarkNoShow": "Échec du marquage de la réservation comme absence",
+    "bdNoShowStatus": "Absence — Le client ne s'est pas présenté",
+    "bdNoShowBanner": "Réservation marquée comme absence",
+    "bdNoShowMarkedByLabel": "Marqué par : {by}",
+    "bdNoShowByHost": "Hôte",
+    "bdNoShowByAdmin": "Administrateur",
+    "bdNoShowBySystem": "Système (automatique)",
+    "bdNoShowFeeLabel": "Frais d'absence : {amount}",
+    "bdProcessing": "Traitement...",
+    "bdNoShowInfoMessage": "Cette réservation a été marquée comme absence. Le client n'a pas récupéré le véhicule.",
+    "bdCancelled": "ANNULÉE",
+    "bdNoShowFeeTitle": "Frais d'absence : 50,00 $ perçus par ItWhip",
+    "bdNoShowFeeExplanation": "Le client a été facturé 50,00 $ de pénalité d'absence. Ces frais vont à ItWhip — aucun revenu n'est versé à l'hôte pour les réservations non honorées.",
+    "bdCancelledNoEarnings": "Cette réservation a été annulée. Aucun revenu n'a été généré.",
     "bdReassigned": "Réattribuée",
     "bdReplacesBooking": "Remplace la réservation {code}",
     "bdReplacedBy": "Remplacée par {code}",
@@ -16157,7 +16182,13 @@
     "booked": "Réservé le : {date}",
     "perDay": "${rate}/jour",
     "uploadDocumentsToConfirm": "Téléchargez les documents pour confirmer",
-    "verificationRequired": "Vérification requise - Téléchargez les documents pour confirmer"
+    "verificationRequired": "Vérification requise - Téléchargez les documents pour confirmer",
+    "confirmed": "Confirmée",
+    "pending": "En attente",
+    "active": "Active",
+    "complete": "Terminée",
+    "canceled": "Annulée",
+    "noShow": "Absence"
   },
   "VerifyBooking": {
     "loadingVerification": "Chargement de la vérification...",
@@ -17161,10 +17192,15 @@
     "agreementSent": "Envoyé par email",
     "agreementPending": "En attente",
     "stepStartTrip": "Commencer le Trajet",
+    "stepNoShow": "Absence",
+    "noShow": "Absence",
+    "noShowDesc": "Le client ne s'est pas présenté",
     "tripCompleted": "Terminé",
     "tripInProgress": "En cours",
     "readyForPickup": "Prêt pour la prise en charge",
-    "tripPending": "En attente"
+    "tripPending": "En attente",
+    "stepExpired": "Expiré",
+    "expiredDesc": "Période de réservation terminée"
   },
   "ManualBooking": {
     "statusAwaitingPayment": "Choisissez Votre Méthode de Paiement",

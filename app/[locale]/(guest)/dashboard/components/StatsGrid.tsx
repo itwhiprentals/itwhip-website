@@ -29,8 +29,10 @@ export default function StatsGrid({ statsLoaded, stats, isVerified, onStatClick 
       value: stats.creditsAndBonus,
       icon: Award,
       iconColor: 'text-purple-500',
-      textColor: 'text-purple-600 dark:text-purple-400',
-      format: (val: number) => `$${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      textColor: stats.creditsAndBonus < 0 ? 'text-red-600 dark:text-red-400' : 'text-purple-600 dark:text-purple-400',
+      format: (val: number) => val < 0
+        ? `-$${Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : `$${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       path: '/payments/credits',
       lockWhenUnverified: true,
     },

@@ -30,7 +30,7 @@ export async function processNoShow(
       where: { id: bookingId },
       include: {
         car: { select: { id: true, make: true, model: true, year: true } },
-        host: { select: { id: true, name: true, email: true, noShowFee: true } },
+        host: { select: { id: true, name: true, email: true } },
         renter: { select: { id: true, email: true } },
         reviewerProfile: { select: { id: true, noShowCount: true, canInstantBook: true } },
       }
@@ -67,7 +67,7 @@ export async function processNoShow(
       }
     } else if (isCash) {
       // CASH: Charge $50 no-show fee
-      const noShowFee = booking.host?.noShowFee || CASH_NO_SHOW_FEE
+      const noShowFee = CASH_NO_SHOW_FEE
       feeCharged = noShowFee
 
       // Try to charge card on file if guest has one
@@ -140,6 +140,41 @@ export async function processNoShow(
       console.log(`[No-Show] Guest noShowCount now ${newCount} for profile ${booking.reviewerProfile.id}`)
       if (newCount >= 2) {
         console.log(`[No-Show] Instant booking disabled for guest (2+ no-shows)`)
+      }
+
+      // 5. Record the no-show fee as a negative credit adjustment on the guest's account
+      if (feeCharged > 0) {
+        try {
+          const currentBalance = await prisma.reviewerProfile.findUnique({
+            where: { id: booking.reviewerProfile.id },
+            select: { creditBalance: true }
+          })
+          const balBefore = currentBalance?.creditBalance ?? 0
+          const balAfter = balBefore - feeCharged
+
+          await prisma.creditBonusTransaction.create({
+            data: {
+              id: crypto.randomUUID(),
+              guestId: booking.reviewerProfile.id,
+              type: 'CREDIT',
+              action: 'ADJUST',
+              amount: -feeCharged,
+              balanceAfter: balAfter,
+              reason: 'NO_SHOW_FEE',
+              bookingId: booking.id,
+            }
+          })
+
+          // Deduct from credit balance (can go negative = outstanding balance)
+          await prisma.reviewerProfile.update({
+            where: { id: booking.reviewerProfile.id },
+            data: { creditBalance: balAfter }
+          })
+
+          console.log(`[No-Show] Recorded -$${feeCharged} credit adjustment. Balance: $${balBefore} → $${balAfter}`)
+        } catch (txErr) {
+          console.error(`[No-Show] Failed to record credit transaction:`, txErr)
+        }
       }
     }
 

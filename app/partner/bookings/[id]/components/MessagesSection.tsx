@@ -25,6 +25,7 @@ interface MessagesSectionProps {
   expanded: boolean
   onToggle: () => void
   formatMessageTime: (date: string) => string
+  readOnly?: boolean
 }
 
 export function MessagesSection({
@@ -37,6 +38,7 @@ export function MessagesSection({
   expanded,
   onToggle,
   formatMessageTime,
+  readOnly = false,
 }: MessagesSectionProps) {
   const t = useTranslations('PartnerBookings')
 
@@ -130,8 +132,8 @@ export function MessagesSection({
             )}
           </div>
 
-          {/* Message Input */}
-          <div className="flex gap-2 mt-3">
+          {/* Message Input — hidden for terminal bookings */}
+          {!readOnly && <div className="flex gap-2 mt-3">
             <input
               type="text"
               value={newMessage}
@@ -157,7 +159,7 @@ export function MessagesSection({
                 <IoSendOutline className="w-4 h-4" />
               )}
             </button>
-          </div>
+          </div>}
         </div>
       )}
     </div>

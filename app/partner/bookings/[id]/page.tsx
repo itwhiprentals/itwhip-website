@@ -105,6 +105,13 @@ interface BookingDetails {
   aiVerificationScore: number | null
   verificationMethod: string | null
   verificationDate: string | null
+  // No-show fields
+  tripStartedAt: string | null
+  noShowDeadline: string | null
+  noShowMarkedBy: string | null
+  noShowMarkedAt: string | null
+  noShowFeeCharged: number | null
+  noShowFeeStatus: string | null
   // Reassignment / booking bridge fields
   originalBookingId: string | null
   replacedByBookingId: string | null
@@ -226,6 +233,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   // Action states
   const [confirming, setConfirming] = useState(false)
   const [cancelling, setCancelling] = useState(false)
+  const [markingNoShow, setMarkingNoShow] = useState(false)
   const [sendingVerification, setSendingVerification] = useState(false)
   const [sendingAgreement, setSendingAgreement] = useState(false)
 
@@ -428,6 +436,37 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
     }
   }
 
+  const markNoShow = async () => {
+    if (!booking) return
+
+    setMarkingNoShow(true)
+    try {
+      const response = await fetch(`/api/partner/bookings/${booking.id}/no-show`, {
+        method: 'POST'
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setBooking(prev => prev ? {
+          ...prev,
+          status: 'NO_SHOW',
+          noShowMarkedBy: 'HOST',
+          noShowMarkedAt: new Date().toISOString(),
+          noShowFeeCharged: data.feeCharged ?? null,
+          noShowFeeStatus: data.feeStatus ?? null,
+        } : null)
+        showToast('success', t('bdNoShowMarked'))
+      } else {
+        showToast('error', data.error || t('bdFailedMarkNoShow'))
+      }
+    } catch {
+      showToast('error', t('bdFailedMarkNoShow'))
+    } finally {
+      setMarkingNoShow(false)
+    }
+  }
+
   // Host approve/reject handlers
   const hostApproveBooking = async () => {
     if (!booking) return
@@ -627,6 +666,10 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
       case 'CANCELLED':
         return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+      case 'NO_SHOW':
+        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+      case 'ON_HOLD':
+        return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
       default:
         return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
     }
@@ -830,7 +873,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         )}
 
         {/* Host Approved Banner */}
-        {booking.hostApproval === 'APPROVED' && (
+        {booking.hostApproval === 'APPROVED' && booking.status !== 'NO_SHOW' && booking.status !== 'CANCELLED' && (
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg px-4 py-3 flex items-center gap-2">
             <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
             <span className="text-sm text-green-800 dark:text-green-200 font-medium">{t('bdYouApprovedBooking')}</span>
@@ -857,6 +900,32 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
             {booking.hostNotes && (
               <p className="text-xs text-red-700 dark:text-red-300 mt-2 ml-7">{t('bdReason')}: {booking.hostNotes}</p>
             )}
+          </div>
+        )}
+        {/* No-Show Result Banner */}
+        {booking.status === 'NO_SHOW' && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg px-4 py-3">
+            <div className="flex items-center gap-2">
+              <IoCloseCircleOutline className="w-5 h-5 text-red-600 dark:text-red-400" />
+              <span className="text-sm text-red-800 dark:text-red-200 font-medium">{t('bdNoShowBanner')}</span>
+              {booking.noShowMarkedAt && (
+                <span className="text-xs text-red-600 dark:text-red-400 ml-auto">
+                  {new Date(booking.noShowMarkedAt).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+            <div className="ml-7 mt-1 space-y-0.5">
+              {booking.noShowMarkedBy && (
+                <p className="text-xs text-red-700 dark:text-red-300">
+                  {t('bdNoShowMarkedByLabel', { by: booking.noShowMarkedBy === 'HOST' ? t('bdNoShowByHost') : booking.noShowMarkedBy === 'ADMIN' ? t('bdNoShowByAdmin') : t('bdNoShowBySystem') })}
+                </p>
+              )}
+              {booking.noShowFeeCharged != null && (
+                <p className="text-xs text-red-700 dark:text-red-300">
+                  {t('bdNoShowFeeLabel', { amount: `$${booking.noShowFeeCharged.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` })} — {booking.noShowFeeStatus}
+                </p>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -1039,6 +1108,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               expanded={expandedSections.messages}
               onToggle={() => toggleSection('messages')}
               formatMessageTime={formatMessageTime}
+              readOnly={booking.status === 'NO_SHOW' || booking.status === 'CANCELLED'}
             />
 
             {/* Verification Status Section — only for manual bookings */}
@@ -1143,6 +1213,8 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               markAsPaid={markAsPaid}
               sendAgreement={sendAgreement}
               cancelBooking={cancelBooking}
+              markNoShow={markNoShow}
+              markingNoShow={markingNoShow}
             />
 
           </div>

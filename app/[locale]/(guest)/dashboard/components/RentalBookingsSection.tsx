@@ -191,6 +191,8 @@ export default function RentalBookingsSection() {
                       ? 'bg-gray-500 text-white'
                       : booking.status === 'CANCELLED' || booking.status === 'CANCELED'
                       ? 'bg-red-500 text-white'
+                      : booking.status === 'NO_SHOW'
+                      ? 'bg-red-500 text-white'
                       : booking.status === 'PENDING'
                       ? 'bg-yellow-500 text-white'
                       : 'bg-blue-500 text-white'
@@ -200,6 +202,7 @@ export default function RentalBookingsSection() {
                      booking.status === 'ACTIVE' ? t('active') :
                      booking.status === 'PENDING' ? t('pending') :
                      booking.status === 'CONFIRMED' ? t('confirmed') :
+                     booking.status === 'NO_SHOW' ? t('noShow') :
                      booking.status}
                   </span>
                 </div>

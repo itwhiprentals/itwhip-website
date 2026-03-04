@@ -8,6 +8,7 @@ import {
  IoCarSportOutline,
  IoTimeOutline,
  IoCheckmarkCircle,
+ IoCloseCircle,
  IoWarningOutline,
  IoDocumentTextOutline,
  IoFilterOutline,
@@ -80,6 +81,8 @@ export default function BookingsListPage() {
        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
      case 'CANCELLED':
        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+     case 'NO_SHOW':
+       return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
      default:
        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
    }
@@ -98,8 +101,23 @@ export default function BookingsListPage() {
        return <IoCarSportOutline className="w-5 h-5 text-blue-600" />
      case 'COMPLETED':
        return <IoCheckmarkCircle className="w-5 h-5 text-gray-600" />
+     case 'NO_SHOW':
+       return <IoCloseCircle className="w-5 h-5 text-red-600" />
      default:
        return <IoDocumentTextOutline className="w-5 h-5 text-gray-600" />
+   }
+ }
+
+ const getStatusLabel = (status: string) => {
+   switch(status) {
+     case 'CONFIRMED': return t('confirmed')
+     case 'PENDING': return t('pending')
+     case 'ACTIVE': return t('active')
+     case 'COMPLETED': return t('complete')
+     case 'CANCELLED':
+     case 'CANCELED': return t('canceled')
+     case 'NO_SHOW': return t('noShow')
+     default: return status
    }
  }
 
@@ -283,7 +301,7 @@ export default function BookingsListPage() {
                      <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                        getStatusColor(booking.status, booking.verificationStatus)
                      }`}>
-                       {booking.verificationStatus?.toUpperCase() === 'PENDING' ? t('verifyNow') : booking.status}
+                       {booking.verificationStatus?.toUpperCase() === 'PENDING' ? t('verifyNow') : getStatusLabel(booking.status)}
                      </span>
                    </div>
                  </div>
@@ -372,7 +390,7 @@ export default function BookingsListPage() {
                        <span className={`ml-2 px-3 py-1 rounded-full text-sm font-medium ${
                          getStatusColor(booking.status, booking.verificationStatus)
                        }`}>
-                         {booking.verificationStatus?.toUpperCase() === 'PENDING' ? t('verifyNow') : booking.status}
+                         {booking.verificationStatus?.toUpperCase() === 'PENDING' ? t('verifyNow') : getStatusLabel(booking.status)}
                        </span>
                      </div>
                    </div>

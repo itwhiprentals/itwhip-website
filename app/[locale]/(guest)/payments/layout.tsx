@@ -6,8 +6,8 @@ import { redirect } from 'next/navigation'
 import { jwtVerify } from 'jose'
 import PaymentsNav from './components/PaymentsNav'
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET!
+const GUEST_JWT_SECRET = new TextEncoder().encode(
+  process.env.GUEST_JWT_SECRET || process.env.JWT_SECRET!
 )
 
 async function verifyAuth() {
@@ -19,14 +19,14 @@ async function verifyAuth() {
   }
 
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET)
+    const { payload } = await jwtVerify(token, GUEST_JWT_SECRET)
 
     if (!payload.userId) {
       redirect('/auth/login?redirect=/payments/methods')
     }
 
     return payload.userId as string
-  } catch (error) {
+  } catch {
     redirect('/auth/login?redirect=/payments/methods')
   }
 }

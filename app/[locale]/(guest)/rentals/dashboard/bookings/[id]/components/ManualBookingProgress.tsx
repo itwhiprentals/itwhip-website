@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl'
 import {
   IoCheckmarkCircle,
   IoHourglassOutline,
+  IoCloseCircle,
   IoWalletOutline,
   IoDocumentTextOutline,
   IoCarSportOutline,
@@ -21,6 +22,7 @@ interface ManualBookingProgressProps {
   agreementStatus: string | null
   tripStartedAt?: string | Date | null
   tripEndedAt?: string | Date | null
+  isExpired?: boolean
 }
 
 export default function ManualBookingProgress({
@@ -29,13 +31,15 @@ export default function ManualBookingProgress({
   agreementStatus,
   tripStartedAt,
   tripEndedAt,
+  isExpired = false,
 }: ManualBookingProgressProps) {
   const t = useTranslations('ManualBookingProgress')
 
   const isBooked = true
   const isSigned = agreementStatus === 'signed'
   const hasPayment = !!paymentType
-  const isConfirmed = status === 'CONFIRMED' || !!tripStartedAt || !!tripEndedAt
+  const isNoShow = status === 'NO_SHOW'
+  const isConfirmed = status === 'CONFIRMED' || isNoShow || !!tripStartedAt || !!tripEndedAt
   const isTripStarted = !!tripStartedAt
   const isTripCompleted = !!tripEndedAt
   const isCancelled = status === 'CANCELLED'
@@ -44,18 +48,20 @@ export default function ManualBookingProgress({
     return null // Page handles cancelled state separately
   }
 
-  // New order: Booked → Agreement → Payment → Confirmed → Start Trip
+  // New order: Booked → Agreement → Payment → Confirmed → Start Trip / No Show
   const steps = [
     {
       name: t('stepBooked'),
       complete: isBooked,
       active: false,
+      error: false,
       description: t('bookedDesc'),
     },
     {
       name: t('stepAgreement'),
-      complete: isSigned,
-      active: !isSigned,
+      complete: isNoShow || isSigned,
+      active: !isSigned && !isNoShow,
+      error: false,
       description: isSigned
         ? t('agreementSigned')
         : agreementStatus === 'sent' || agreementStatus === 'viewed'
@@ -64,23 +70,30 @@ export default function ManualBookingProgress({
     },
     {
       name: t('stepPayment'),
-      complete: hasPayment,
-      active: isSigned && !hasPayment,
+      complete: isNoShow || hasPayment,
+      active: isSigned && !hasPayment && !isNoShow,
+      error: false,
       description: hasPayment
         ? paymentType === 'CARD' ? t('cardAuthorized') : t('cashSelected')
         : t('awaitingPayment'),
     },
     {
       name: t('stepConfirmed'),
-      complete: isConfirmed,
+      complete: isConfirmed && !isNoShow,
       active: hasPayment && !isConfirmed,
-      description: isConfirmed ? t('hostConfirmed') : t('awaitingConfirmation'),
+      error: isNoShow,
+      description: isNoShow ? t('noShow') : isConfirmed ? t('hostConfirmed') : t('awaitingConfirmation'),
     },
     {
-      name: t('stepStartTrip'),
-      complete: isTripCompleted,
-      active: (isConfirmed && !isTripStarted) || (isTripStarted && !isTripCompleted),
-      description: isTripCompleted
+      name: isNoShow ? t('stepNoShow') : isExpired ? t('stepExpired') : t('stepStartTrip'),
+      complete: isTripCompleted && !isNoShow && !isExpired,
+      active: !isNoShow && !isExpired && ((isConfirmed && !isTripStarted) || (isTripStarted && !isTripCompleted)),
+      error: isNoShow || isExpired,
+      description: isNoShow
+        ? t('noShowDesc')
+        : isExpired
+        ? t('expiredDesc')
+        : isTripCompleted
         ? t('tripCompleted')
         : isTripStarted
         ? t('tripInProgress')
@@ -91,7 +104,9 @@ export default function ManualBookingProgress({
   ]
 
   // Calculate progress width (new order)
-  const progressWidth = isTripCompleted ? '100%'
+  const progressWidth = isNoShow ? '100%'
+    : isExpired ? '100%'
+    : isTripCompleted ? '100%'
     : isTripStarted ? '90%'
     : isConfirmed ? '82%'
     : hasPayment ? '50%'
@@ -105,17 +120,23 @@ export default function ManualBookingProgress({
         {/* Track line */}
         <div className="absolute top-[15px] sm:top-[20px] left-[10%] right-[10%] h-1.5 sm:h-2 bg-gray-200/80 dark:bg-gray-700 rounded-full shadow-inner">
           <motion.div
-            className="h-full rounded-full relative bg-gradient-to-r from-green-400 via-green-500 to-emerald-500 shadow-[0_1px_3px_rgba(34,197,94,0.4)]"
+            className={`h-full rounded-full relative ${
+              isNoShow || isExpired
+                ? 'bg-gradient-to-r from-red-400 via-red-500 to-red-600 shadow-[0_1px_3px_rgba(239,68,68,0.4)]'
+                : 'bg-gradient-to-r from-green-400 via-green-500 to-emerald-500 shadow-[0_1px_3px_rgba(34,197,94,0.4)]'
+            }`}
             initial={{ width: '0%' }}
             animate={{ width: progressWidth }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
           >
             {/* Shimmer */}
+            {!isNoShow && !isExpired && (
             <div className="absolute inset-0 rounded-full overflow-hidden">
               <div className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-white/25 to-transparent animate-shimmer" />
             </div>
+            )}
             {/* Arrow tip */}
-            {progressWidth !== '100%' && progressWidth !== '0%' && (
+            {!isNoShow && !isExpired && progressWidth !== '100%' && progressWidth !== '0%' && (
               <div className="absolute -right-1.5 top-1/2 -translate-y-1/2">
                 <motion.div
                   animate={{ x: [0, 3, 0] }}
@@ -141,6 +162,8 @@ export default function ManualBookingProgress({
                   transition-shadow duration-300
                   ${step.complete
                     ? 'bg-gradient-to-br from-green-400 to-green-600 shadow-[0_2px_8px_rgba(34,197,94,0.4)] ring-2 ring-green-200/50 dark:ring-green-800/50'
+                    : step.error
+                    ? 'bg-gradient-to-br from-red-400 to-red-600 shadow-[0_2px_8px_rgba(239,68,68,0.3)]'
                     : step.active
                     ? 'bg-gradient-to-br from-yellow-400 to-amber-500 shadow-[0_2px_8px_rgba(245,158,11,0.4)] ring-2 ring-yellow-200/50 dark:ring-yellow-800/50'
                     : 'bg-gray-200 dark:bg-gray-600 shadow-inner'}
@@ -148,6 +171,8 @@ export default function ManualBookingProgress({
               >
                 {step.complete ? (
                   <IoCheckmarkCircle className="w-5 h-5 sm:w-7 sm:h-7 text-white drop-shadow-sm" />
+                ) : step.error ? (
+                  <IoCloseCircle className="w-5 h-5 sm:w-7 sm:h-7 text-white drop-shadow-sm" />
                 ) : step.active ? (
                   <IoHourglassOutline className="w-4 h-4 sm:w-5 sm:h-5 text-white drop-shadow-sm animate-spin" />
                 ) : (
@@ -161,6 +186,7 @@ export default function ManualBookingProgress({
               <div className="mt-1.5 sm:mt-2 text-center">
                 <p className={`text-[10px] sm:text-xs font-semibold tracking-wide ${
                   step.complete ? 'text-green-700 dark:text-green-400' :
+                  step.error ? 'text-red-700 dark:text-red-400' :
                   step.active ? 'text-amber-700 dark:text-amber-400' :
                   'text-gray-400 dark:text-gray-500'
                 }`}>

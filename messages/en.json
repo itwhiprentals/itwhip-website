@@ -1007,7 +1007,8 @@
     "verifyRequired": "Verify Required",
     "verificationRequired": "Verification Required",
     "failedToLoadBookings": "Failed to load rental bookings",
-    "confirmed": "Confirmed"
+    "confirmed": "Confirmed",
+    "noShow": "No Show"
   },
   "VehicleCard": {
     "localHost": "LOCAL HOST",
@@ -1384,6 +1385,7 @@
     "creditBalance": "Credit Balance",
     "usablePerBooking": "100% usable per booking",
     "lockedVerify": "Locked - verify to use",
+    "outstandingBalance": "Outstanding balance from fees",
     "bonusBalance": "Bonus Balance",
     "maxPerBooking": "Max {percent}% per booking",
     "bonusExpiring": "Bonus Expiring Soon",
@@ -1407,6 +1409,7 @@
     "reasonLoyalty": "Loyalty Reward",
     "reasonSignup": "Signup Bonus",
     "reasonReferral": "Referral Bonus",
+    "reasonNoShowFee": "No-Show Fee",
     "expiresDate": "Expires {date}",
     "noTransactions": "No transactions yet",
     "noFilterTransactions": "No {filter} transactions",
@@ -4588,7 +4591,10 @@
     "lateStartHours": "Late start - {hours}h remaining",
     "lateStartMinutes": "Late start - {minutes}m remaining",
     "startTrip": "Start Trip",
-    "starting": "Starting..."
+    "starting": "Starting...",
+    "noShowDeadline": "Pickup window closes: {time}",
+    "noShowWarningCash": "A $50.00 no-show fee will be charged if you don't start your trip before this deadline.",
+    "noShowWarningCard": "The full rental amount will be captured if you don't start your trip before this deadline."
   },
   "TripActiveCard": {
     "overdue": "Overdue",
@@ -6046,6 +6052,7 @@
     "draftWatermark": "DRAFT",
     "pendingWatermark": "PENDING VERIFICATION",
     "cancelledWatermark": "CANCELLED",
+    "noShowWatermark": "NO SHOW",
     "partiesHeading": "Rental Agreement Parties",
     "vehicleOwner": "Vehicle Owner (Host)",
     "renterGuest": "Renter (Guest)",
@@ -8235,6 +8242,24 @@
     "bdConfirmNewBooking": "Create a new booking for this guest?",
     "bdConfirmAddCharge": "Add an additional charge to this booking?",
     "bdConfirmChangeVehicle": "This will reassign the booking to a different vehicle.",
+    "bdMarkNoShow": "Mark as No-Show",
+    "bdConfirmNoShowCash": "This will mark the booking as a no-show and charge the guest a $50.00 no-show fee. This action cannot be undone.",
+    "bdConfirmNoShowCard": "This will mark the booking as a no-show and capture the full authorized amount. This action cannot be undone.",
+    "bdNoShowMarked": "Booking marked as no-show",
+    "bdFailedMarkNoShow": "Failed to mark booking as no-show",
+    "bdNoShowStatus": "No Show — Guest did not pick up",
+    "bdNoShowBanner": "Booking Marked as No-Show",
+    "bdNoShowMarkedByLabel": "Marked by: {by}",
+    "bdNoShowByHost": "Host",
+    "bdNoShowByAdmin": "Admin",
+    "bdNoShowBySystem": "System (automatic)",
+    "bdNoShowFeeLabel": "No-show fee: {amount}",
+    "bdProcessing": "Processing...",
+    "bdNoShowInfoMessage": "This booking was marked as a no-show. The guest did not pick up the vehicle.",
+    "bdCancelled": "CANCELLED",
+    "bdNoShowFeeTitle": "No-show fee: $50.00 collected by ItWhip",
+    "bdNoShowFeeExplanation": "The guest was charged a $50.00 no-show penalty. This fee goes to ItWhip — no earnings are paid to the host for no-show bookings.",
+    "bdCancelledNoEarnings": "This booking was cancelled. No earnings were generated.",
     "bdReassigned": "Reassigned",
     "bdReplacesBooking": "Replaces booking {code}",
     "bdReplacedBy": "Replaced by {code}",
@@ -16128,7 +16153,13 @@
     "booked": "Booked: {date}",
     "perDay": "${rate}/day",
     "uploadDocumentsToConfirm": "Upload documents to confirm",
-    "verificationRequired": "Verification required - Upload documents to confirm"
+    "verificationRequired": "Verification required - Upload documents to confirm",
+    "confirmed": "Confirmed",
+    "pending": "Pending",
+    "active": "Active",
+    "complete": "Complete",
+    "canceled": "Canceled",
+    "noShow": "No Show"
   },
   "ManageRentals": {
     "title": "My Rentals",
@@ -17161,10 +17192,15 @@
     "agreementSent": "Sent to email",
     "agreementPending": "Pending",
     "stepStartTrip": "Start Trip",
+    "stepNoShow": "No Show",
+    "noShow": "No show",
+    "noShowDesc": "Guest did not show",
     "tripCompleted": "Completed",
     "tripInProgress": "In progress",
     "readyForPickup": "Ready for pickup",
-    "tripPending": "Pending"
+    "tripPending": "Pending",
+    "stepExpired": "Expired",
+    "expiredDesc": "Booking period ended"
   },
   "ManualBooking": {
     "statusAwaitingPayment": "Choose Your Payment Method",

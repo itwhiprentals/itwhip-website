@@ -166,6 +166,11 @@ export async function GET(request: NextRequest) {
         b."agreementSignedAt",
         b."agreementSignedPdfUrl",
         b."bookingType",
+        b."noShowDeadline",
+        b."noShowMarkedBy",
+        b."noShowMarkedAt",
+        b."noShowFeeCharged",
+        b."noShowFeeStatus",
         b."replacedByBookingId",
         b."originalBookingId",
         b."vehicleAccepted",
@@ -455,6 +460,12 @@ export async function GET(request: NextRequest) {
         agreementSignedAt: booking.agreementSignedAt || null,
         agreementSignedPdfUrl: booking.agreementSignedPdfUrl || null,
         bookingType: booking.bookingType || 'STANDARD',
+        // No-show fields
+        noShowDeadline: booking.noShowDeadline || null,
+        noShowMarkedBy: booking.noShowMarkedBy || null,
+        noShowMarkedAt: booking.noShowMarkedAt || null,
+        noShowFeeCharged: booking.noShowFeeCharged ? parseFloat(booking.noShowFeeCharged) : null,
+        noShowFeeStatus: booking.noShowFeeStatus || null,
         // Card identity (only populated for single-booking detail view)
         ...(isSingleBooking ? { cardBrand, cardLast4 } : {})
       }

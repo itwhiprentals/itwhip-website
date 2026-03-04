@@ -27,6 +27,7 @@ export default function RecentTrips({ bookings, onViewAll, onBookingClick }: Rec
       CANCELED: 'bg-rose-500 text-white',
       PENDING: 'bg-amber-500 text-white',
       CONFIRMED: 'bg-sky-500 text-white',
+      NO_SHOW: 'bg-rose-500 text-white',
     }
     return styles[status as keyof typeof styles] || 'bg-sky-500 text-white'
   }
@@ -39,6 +40,7 @@ export default function RecentTrips({ bookings, onViewAll, onBookingClick }: Rec
       case 'ACTIVE': return t('active')
       case 'PENDING': return t('pending')
       case 'CONFIRMED': return t('confirmed')
+      case 'NO_SHOW': return t('noShow')
       default: return status
     }
   }
