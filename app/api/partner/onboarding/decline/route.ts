@@ -1,5 +1,6 @@
 // app/api/partner/onboarding/decline/route.ts
 // Partner API for recruited hosts to decline a request
+// Two paths: deleteAccount=true (full removal) or false (keep account, decline booking)
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
@@ -12,7 +13,6 @@ const JWT_SECRET = process.env.JWT_SECRET!
 // Helper to get current host from auth
 async function getCurrentHost() {
   const cookieStore = await cookies()
-  // Check multiple token sources
   const token = cookieStore.get('partner_token')?.value
     || cookieStore.get('hostAccessToken')?.value
     || cookieStore.get('accessToken')?.value
@@ -20,9 +20,8 @@ async function getCurrentHost() {
   if (!token) return null
 
   try {
-    const decoded = verify(token, JWT_SECRET) as { hostId?: string; userId?: string }
+    const decoded = verify(token, JWT_SECRET) as { hostId?: string }
     const hostId = decoded.hostId
-
     if (!hostId) return null
 
     return await prisma.rentalHost.findUnique({
@@ -30,7 +29,14 @@ async function getCurrentHost() {
       include: {
         convertedFromProspect: {
           include: {
-            request: true
+            request: {
+              include: {
+                claims: {
+                  where: { status: { in: ['PENDING_CAR', 'CAR_SELECTED'] } },
+                  select: { id: true, hostId: true, status: true }
+                }
+              }
+            }
           }
         }
       }
@@ -40,27 +46,18 @@ async function getCurrentHost() {
   }
 }
 
-// POST /api/partner/onboarding/decline - Decline the request
 export async function POST(request: NextRequest) {
   try {
     const host = await getCurrentHost()
 
     if (!host) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if this is a recruited host (recruitedVia is source of truth)
     if (!host.recruitedVia) {
-      return NextResponse.json(
-        { error: 'Not a recruited host' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Not a recruited host' }, { status: 400 })
     }
 
-    // Check if already declined
     if (host.declinedRequestAt) {
       return NextResponse.json({
         success: true,
@@ -69,7 +66,6 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Check if already completed
     if (host.onboardingCompletedAt) {
       return NextResponse.json(
         { error: 'Cannot decline - onboarding already completed' },
@@ -79,21 +75,20 @@ export async function POST(request: NextRequest) {
 
     const prospect = host.convertedFromProspect
     if (!prospect) {
-      return NextResponse.json(
-        { error: 'No linked prospect found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'No linked prospect found' }, { status: 404 })
     }
 
-    // Get optional decline reason and deleteAccount flag from body
     const body = await request.json().catch(() => ({}))
     const { reason, deleteAccount } = body
-
     const now = new Date()
 
-    // If deleteAccount is true, delete the host account completely
+    // Find this host's active claim on the request
+    const hostClaim = prospect.request?.claims?.find(c => c.hostId === host.id)
+
     if (deleteAccount) {
-      // Log activity before deleting (so we have a record)
+      // === PATH 1: Delete account completely ===
+
+      // Log activity before deleting
       await logProspectActivity(prospect.id, ACTIVITY_TYPES.DECLINED, {
         hostId: host.id,
         requestId: prospect.requestId,
@@ -101,35 +96,53 @@ export async function POST(request: NextRequest) {
         accountDeleted: true
       })
 
-      const transactionOps: any[] = [
-        // Update prospect status first
+      const ops: Parameters<typeof prisma.$transaction>[0] = []
+
+      // Withdraw the host's claim if one exists
+      if (hostClaim) {
+        ops.push(
+          prisma.requestClaim.update({
+            where: { id: hostClaim.id },
+            data: { status: 'WITHDRAWN', expiredAt: now }
+          })
+        )
+      }
+
+      // Update prospect — unlink host before deletion
+      ops.push(
         prisma.hostProspect.update({
           where: { id: prospect.id },
           data: {
             status: 'DECLINED',
             lastActivityAt: now,
-            convertedHostId: null // Unlink the host before deletion
-          } as any
-        }),
-        // Delete the host account
+            convertedHostId: null
+          }
+        })
+      )
+
+      // Delete the host account
+      ops.push(
         prisma.rentalHost.delete({
           where: { id: host.id }
         })
-      ]
+      )
 
-      // Update request status if exists
+      // Update request status — check if other active claims exist
       if (prospect.requestId) {
-        transactionOps.push(
-          prisma.reservationRequest.update({
-            where: { id: prospect.requestId },
-            data: { status: 'DECLINED' as any }
-          })
-        )
+        const otherActiveClaims = prospect.request?.claims?.filter(c => c.hostId !== host.id) || []
+        if (otherActiveClaims.length === 0) {
+          ops.push(
+            prisma.reservationRequest.update({
+              where: { id: prospect.requestId },
+              data: { status: 'DECLINED' }
+            })
+          )
+        }
       }
 
-      await prisma.$transaction(transactionOps)
+      await prisma.$transaction(ops)
 
-      // Clear the auth cookie
+      // Clear auth cookies
       const cookieStore = await cookies()
       cookieStore.delete('partner_token')
       cookieStore.delete('hostAccessToken')
@@ -143,37 +156,56 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Otherwise, just decline the booking but keep the account
-    const transactionOps: any[] = [
-      // Update host
+    // === PATH 2: Keep account, decline booking only ===
+
+    const ops: Parameters<typeof prisma.$transaction>[0] = []
+
+    // Update host with decline info
+    ops.push(
       prisma.rentalHost.update({
         where: { id: host.id },
         data: {
           declinedRequestAt: now,
           declineReason: reason || null
         }
-      }),
-      // Update prospect
+      })
+    )
+
+    // Withdraw the host's claim if one exists
+    if (hostClaim) {
+      ops.push(
+        prisma.requestClaim.update({
+          where: { id: hostClaim.id },
+          data: { status: 'WITHDRAWN', expiredAt: now }
+        })
+      )
+    }
+
+    // Update prospect status
+    ops.push(
       prisma.hostProspect.update({
         where: { id: prospect.id },
         data: {
           status: 'DECLINED',
           lastActivityAt: now
-        } as any
+        }
       })
-    ]
+    )
 
-    // Update request status if exists (ReservationRequest, not FleetRequest)
+    // Update request status — only if no other active claims
     if (prospect.requestId) {
-      transactionOps.push(
-        prisma.reservationRequest.update({
-          where: { id: prospect.requestId },
-          data: { status: 'DECLINED' as any }
-        })
-      )
+      const otherActiveClaims = prospect.request?.claims?.filter(c => c.hostId !== host.id) || []
+      if (otherActiveClaims.length === 0) {
+        ops.push(
+          prisma.reservationRequest.update({
+            where: { id: prospect.requestId },
+            data: { status: 'DECLINED' }
+          })
+        )
+      }
     }
 
-    await prisma.$transaction(transactionOps)
+    await prisma.$transaction(ops)
 
     // Log activity
     await logProspectActivity(prospect.id, ACTIVITY_TYPES.DECLINED, {
@@ -190,7 +222,7 @@ export async function POST(request: NextRequest) {
       declinedAt: now
     })
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('[Partner Onboarding Decline API] Error:', error)
     return NextResponse.json(
       { error: 'Failed to decline request' },

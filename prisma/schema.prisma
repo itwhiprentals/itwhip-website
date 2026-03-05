@@ -4604,6 +4604,7 @@ enum ReservationRequestStatus {
   FULFILLED // Booking created successfully
   EXPIRED // No one claimed in time
   CANCELLED // Admin cancelled the request
+  DECLINED // Host declined the request
 }
 
 enum RequestPriority {
@@ -4638,6 +4639,7 @@ enum ProspectStatus {
   ARCHIVED // No longer pursuing
   BOUNCED // Email bounced
   UNSUBSCRIBED // Opted out
+  DECLINED // Host declined the booking request
 }
 
 enum CounterOfferStatus {
