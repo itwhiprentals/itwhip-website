@@ -17,6 +17,9 @@ import {
   IoRefreshOutline,
   IoCopyOutline,
   IoAlertCircleOutline,
+  IoChevronDownOutline,
+  IoCheckmarkOutline,
+  IoCloseOutline,
 } from 'react-icons/io5'
 import CounterOfferModal from './components/CounterOfferModal'
 import DeclineModal from './components/DeclineModal'
@@ -128,6 +131,7 @@ export default function RequestDetailPage() {
   const [showEditAgreement, setShowEditAgreement] = useState(false)
   const [showEditPayment, setShowEditPayment] = useState(false)
   const [showHowItWorks, setShowHowItWorks] = useState(false)
+  const [showOutsideInfo, setShowOutsideInfo] = useState(false)
 
   // Expandable sections
   const [expandedSections, setExpandedSections] = useState({
@@ -699,13 +703,48 @@ export default function RequestDetailPage() {
 
         {/* Important Note - Standalone */}
         {!isExpired && !hasDeclined && !hasCompleted && !isBookingExpired && (
-          <div className="mt-4 sm:mt-6 p-3 bg-gray-200/70 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+          <div className="mt-4 sm:mt-6 p-3 bg-gray-200/70 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg space-y-3">
             <p className="text-xs text-gray-500 dark:text-gray-400">
               <strong>{t('noteLabel')}</strong> {t('noteCarNotPublic')}{' '}
-              <button onClick={() => setShowHowItWorks(true)} className="text-orange-600 dark:text-orange-400 font-medium hover:underline">
+              <button onClick={() => setShowHowItWorks(true)} className="text-xs text-orange-600 dark:text-orange-400 font-medium hover:underline">
                 {t('learnHowItWorks')}
               </button>
             </p>
+
+            {/* Collapsible outside-platform info */}
+            <div className="border-t border-gray-300/50 dark:border-gray-600/50 pt-2">
+              <button
+                onClick={() => setShowOutsideInfo(!showOutsideInfo)}
+                className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+              >
+                <IoChevronDownOutline className={`w-3.5 h-3.5 transition-transform ${showOutsideInfo ? 'rotate-180' : ''}`} />
+                <span className="font-medium">{t('noteOutsideTrigger')}</span>
+              </button>
+
+              {showOutsideInfo && (
+                <div className="mt-3 space-y-3">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                    {t('noteOutsideIntro')}
+                  </p>
+                  <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                    {t('noteOutsideSubtitle')}
+                  </p>
+                  <div className="space-y-1.5">
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                      <div key={i} className="flex items-start gap-2">
+                        <IoCloseOutline className="w-3.5 h-3.5 text-red-500 flex-shrink-0 mt-0.5" />
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {t(`noteOutsideItem${i}` as any)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed italic">
+                    {t('noteOutsideClosing')}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

@@ -400,7 +400,7 @@ export default function PendingRequestCard() {
               </div>
               <p className="text-xs text-gray-400 dark:text-gray-500 pt-1">
                 {t('prWelcomeDiscountNote')}{' '}
-                <button onClick={() => setRevenueSheetOpen(true)} className="text-orange-600 dark:text-orange-400 font-medium hover:underline">
+                <button onClick={() => setRevenueSheetOpen(true)} className="text-xs text-orange-600 dark:text-orange-400 font-medium hover:underline">
                   {t('prLearnMore')} →
                 </button>
               </p>

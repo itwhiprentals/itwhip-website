@@ -31,6 +31,9 @@ import {
   IoTrendingUpOutline,
   IoBriefcaseOutline,
   IoLockClosedSharp,
+  IoWarningOutline,
+  IoCheckmarkOutline,
+  IoCloseOutline,
 } from 'react-icons/io5'
 
 interface RevenueLearnMoreSheetProps {
@@ -144,6 +147,48 @@ export default function RevenueLearnMoreSheet({ isOpen, onClose }: RevenueLearnM
             <span className="text-xs bg-gray-500 text-white px-2 py-0.5 rounded-full font-bold">25%</span>
           </div>
         </div>
+      </div>
+
+      {/* ═══ 3b. What If I Book Outside ITWhip? ═══ */}
+      <div className="py-5 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-start gap-3 mb-3">
+          <IoWarningOutline className="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" />
+          <h3 className="font-bold text-gray-900 dark:text-white text-base">{t('rlsOutsideTitle')}</h3>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-3">{t('rlsOutsideIntro')}</p>
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{t('rlsOutsideSubtitle')}</p>
+
+        {/* Two-column comparison header */}
+        <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 items-center mb-2 px-2">
+          <div />
+          <span className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase tracking-wider text-center w-16">{t('rlsOutsideOnPlatform')}</span>
+          <span className="text-[10px] font-bold text-red-500 dark:text-red-400 uppercase tracking-wider text-center w-16">{t('rlsOutsideOffPlatform')}</span>
+        </div>
+
+        {/* Comparison rows */}
+        <div className="space-y-0 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+            <div
+              key={i}
+              className={`grid grid-cols-[1fr_auto_auto] gap-x-3 items-center px-3 py-2.5 ${
+                i % 2 === 0 ? 'bg-gray-50 dark:bg-gray-800/50' : 'bg-white dark:bg-gray-900'
+              }`}
+            >
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-gray-900 dark:text-white">{t(`rlsOutsideItem${i}` as any)}</p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug">{t(`rlsOutsideItem${i}Desc` as any)}</p>
+              </div>
+              <div className="flex items-center justify-center w-16">
+                <IoCheckmarkOutline className="w-4 h-4 text-green-500" />
+              </div>
+              <div className="flex items-center justify-center w-16">
+                <IoCloseOutline className="w-4 h-4 text-red-500" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mt-4">{t('rlsOutsideClosing')}</p>
       </div>
 
       {/* ═══ 4. How to Lower Your Commission ═══ */}
