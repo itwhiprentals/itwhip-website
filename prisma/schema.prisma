@@ -5664,3 +5664,24 @@ model CallLog {
   @@index([callerType, callerId])
   @@map("call_logs")
 }
+
+// Cron execution log — tracks every cron job run for monitoring dashboard
+model CronLog {
+  id            String    @id @default(cuid())
+  jobName       String    // e.g. "noshow-detection", "payment-deadline"
+  status        String    @default("running") // running, success, failed, error
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+  durationMs    Int?      // execution time in milliseconds
+  processed     Int       @default(0) // items processed
+  failed        Int       @default(0) // items that failed
+  details       Json?     // full result payload
+  error         String?   @db.Text // error message if failed
+  triggeredBy   String    @default("cron") // cron, manual, master
+
+  @@index([jobName])
+  @@index([startedAt])
+  @@index([jobName, startedAt])
+  @@index([status])
+  @@map("cron_logs")
+}

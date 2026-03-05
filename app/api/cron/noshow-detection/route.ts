@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { processNoShow } from '@/app/lib/bookings/no-show'
+import { startCronLog } from '@/app/lib/cron/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -16,6 +17,9 @@ export async function GET(request: NextRequest) {
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const triggeredBy = request.headers.get('x-triggered-by') === 'manual' ? 'manual' as const : request.headers.get('x-triggered-by') === 'master' ? 'master' as const : 'cron' as const
+  const log = await startCronLog('noshow-detection', triggeredBy)
 
   try {
     const now = new Date()
@@ -84,6 +88,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    await log.complete({ processed: processedCount, failed: failedCount, details: { results } })
+
     return NextResponse.json({
       success: true,
       message: processedCount > 0
@@ -95,6 +101,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: unknown) {
     console.error('[No-Show Detection] Error:', error)
+    await log.fail(error instanceof Error ? error.message : 'Unknown error').catch(() => {})
     return NextResponse.json(
       { error: 'Failed to process no-show detection', details: error instanceof Error ? error.message : 'Unknown' },
       { status: 500 }

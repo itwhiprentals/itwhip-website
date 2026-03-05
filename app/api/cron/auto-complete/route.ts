@@ -6,17 +6,21 @@
 // - PENDING → CANCELLED (never approved, void payment auth)
 
 import { NextRequest, NextResponse } from 'next/server'
+import { startCronLog } from '@/app/lib/cron/logger'
 
 export async function POST(request: NextRequest) {
+  const authHeader = request.headers.get('authorization')
+  const cronSecret = process.env.CRON_SECRET || 'itwhip-cron-secret-2024'
+
+  if (authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const isPreview = request.nextUrl.searchParams.get('preview') === 'true'
+  const triggeredBy = request.headers.get('x-triggered-by') === 'manual' ? 'manual' as const : request.headers.get('x-triggered-by') === 'master' ? 'master' as const : 'cron' as const
+  const log = isPreview ? null : await startCronLog('auto-complete', triggeredBy)
+
   try {
-    const authHeader = request.headers.get('authorization')
-    const cronSecret = process.env.CRON_SECRET || 'itwhip-cron-secret-2024'
-
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const isPreview = request.nextUrl.searchParams.get('preview') === 'true'
     const { prisma } = await import('@/app/lib/database/prisma')
     const now = new Date()
 
@@ -244,6 +248,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const failedCount = results.filter(r => r.newStatus === 'error').length
+    await log?.complete({ processed: results.length, failed: failedCount, details: { results } })
+
     return NextResponse.json({
       success: true,
       processed: results.length,
@@ -251,6 +258,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('[CRON] auto-complete failed:', error)
+    await log?.fail(error instanceof Error ? error.message : 'Unknown error').catch(() => {})
     return NextResponse.json(
       { error: 'Failed to auto-complete bookings', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

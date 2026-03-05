@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { startCronLog } from '@/app/lib/cron/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -15,6 +16,9 @@ export async function GET(request: NextRequest) {
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const triggeredBy = request.headers.get('x-triggered-by') === 'manual' ? 'manual' as const : request.headers.get('x-triggered-by') === 'master' ? 'master' as const : 'cron' as const
+  const log = await startCronLog('payment-deadline', triggeredBy)
 
   try {
     const now = new Date()
@@ -107,6 +111,8 @@ export async function GET(request: NextRequest) {
       console.log(`[Payment Deadline] Would send payment reminder for ${booking.bookingCode}`)
     }
 
+    await log.complete({ processed: cancelledCount + remindersCount, details: { cancelled: cancelledCount, reminders: remindersCount } })
+
     return NextResponse.json({
       success: true,
       message: `Cancelled ${cancelledCount} bookings, sent ${remindersCount} payment reminders`,
@@ -116,6 +122,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: unknown) {
     console.error('[Payment Deadline] Error:', error)
+    await log.fail(error instanceof Error ? error.message : 'Unknown error').catch(() => {})
     return NextResponse.json(
       { error: 'Failed to process payment deadlines', details: error instanceof Error ? error.message : 'Unknown' },
       { status: 500 }

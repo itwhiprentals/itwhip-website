@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
+import { startCronLog } from '@/app/lib/cron/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,6 +17,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
+    const log = await startCronLog('master-cron', 'cron')
+
     const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'
     const results = []
     
@@ -405,16 +408,19 @@ export async function GET(request: NextRequest) {
       console.error('Failed to log cron run:', error)
     }
     
+    const failedTasks = results.filter((r: { status?: string }) => r.status === 'error' || r.status === 'failed').length
+    await log.complete({ processed: results.length, failed: failedTasks, details: { results } })
+
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
       results,
       nextRun: new Date(Date.now() + 5 * 60 * 1000).toISOString()
     })
-    
+
   } catch (error) {
     console.error('Cron job failed:', error)
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Cron job failed',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })

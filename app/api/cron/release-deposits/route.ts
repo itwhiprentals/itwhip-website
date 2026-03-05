@@ -8,6 +8,7 @@ import { prisma } from '@/app/lib/database/prisma'
 import { releaseSecurityDeposit } from '@/app/lib/booking/services/payment-service'
 import { sendDepositReleasedEmail } from '@/app/lib/email/deposit-release-email'
 import { ClaimStatus } from '@prisma/client'
+import { startCronLog } from '@/app/lib/cron/logger'
 
 const OPEN_CLAIM_STATUSES: ClaimStatus[] = [
   'PENDING',
@@ -20,16 +21,20 @@ const OPEN_CLAIM_STATUSES: ClaimStatus[] = [
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
 
+  // Verify cron secret
+  const authHeader = request.headers.get('authorization')
+  const expectedAuth = `Bearer ${process.env.CRON_SECRET}`
+
+  if (authHeader !== expectedAuth) {
+    console.error('[Deposit Release] Unauthorized cron attempt')
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const isPreview = request.nextUrl.searchParams.get('preview') === 'true'
+  const triggeredBy = request.headers.get('x-triggered-by') === 'manual' ? 'manual' as const : request.headers.get('x-triggered-by') === 'master' ? 'master' as const : 'cron' as const
+  const log = isPreview ? null : await startCronLog('release-deposits', triggeredBy)
+
   try {
-    // Verify cron secret
-    const authHeader = request.headers.get('authorization')
-    const expectedAuth = `Bearer ${process.env.CRON_SECRET}`
-
-    if (authHeader !== expectedAuth) {
-      console.error('[Deposit Release] Unauthorized cron attempt')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     console.log('[Deposit Release] Starting automated deposit release processing...')
 
     // Fetch platform settings for grace period
@@ -366,6 +371,8 @@ export async function POST(request: NextRequest) {
       `(${duration}ms)`
     )
 
+    await log?.complete({ processed: released, failed, details: { skipped, eligible: eligibleBookings.length } })
+
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
@@ -383,6 +390,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('[Deposit Release] Cron job failed:', error)
+    await log?.fail(error instanceof Error ? error.message : 'Unknown error').catch(() => {})
     return NextResponse.json(
       {
         error: 'Deposit release cron failed',

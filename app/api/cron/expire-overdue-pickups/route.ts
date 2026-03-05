@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { startCronLog } from '@/app/lib/cron/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -14,6 +15,9 @@ export async function GET(request: NextRequest) {
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const triggeredBy = request.headers.get('x-triggered-by') === 'manual' ? 'manual' as const : request.headers.get('x-triggered-by') === 'master' ? 'master' as const : 'cron' as const
+  const log = await startCronLog('expire-overdue-pickups', triggeredBy)
 
   try {
     const now = new Date()
@@ -95,6 +99,8 @@ export async function GET(request: NextRequest) {
       console.log(`[Expire Overdue Pickups] Expired claim ${claim.id} for host ${claim.host.name} — pickup was ${pickup.toISOString()}`)
     }
 
+    await log.complete({ processed: expiredCount, details: { results } })
+
     return NextResponse.json({
       success: true,
       message: expiredCount > 0
@@ -105,6 +111,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: unknown) {
     console.error('[Expire Overdue Pickups] Error:', error)
+    await log.fail(error instanceof Error ? error.message : 'Unknown error').catch(() => {})
     return NextResponse.json(
       { error: 'Failed to process overdue pickups', details: error instanceof Error ? error.message : 'Unknown' },
       { status: 500 }
