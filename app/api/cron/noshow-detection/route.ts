@@ -33,8 +33,7 @@ export async function GET(request: NextRequest) {
         status: 'CONFIRMED',
         tripStatus: 'NOT_STARTED',
         tripStartedAt: null,
-        noShowMarkedAt: null, // Not already marked
-        startDate: { not: null }
+        noShowMarkedAt: null // Not already marked
       },
       select: {
         id: true,

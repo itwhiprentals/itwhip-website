@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
         claimExpiresAt: { lt: now },
         // Only prospect claims (3-day window, not the 30-min ones)
         host: {
-          hostProspects: { some: { status: 'CONVERTED' } }
+          convertedFromProspect: { status: 'CONVERTED' }
         }
       },
       include: {
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
           lt: fortyEightFromNow
         },
         host: {
-          hostProspects: { some: { status: 'CONVERTED' } }
+          convertedFromProspect: { status: 'CONVERTED' }
         }
       },
       include: {

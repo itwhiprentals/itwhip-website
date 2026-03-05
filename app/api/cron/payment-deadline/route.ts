@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
 
         // Free the car
         if (booking.car) {
-          await prisma.car.update({
+          await prisma.rentalCar.update({
             where: { id: booking.car.id },
             data: { isActive: true }
           })

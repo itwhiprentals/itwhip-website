@@ -261,6 +261,7 @@ export async function POST(request: NextRequest) {
 
             await tx.depositTransaction.create({
               data: {
+                id: crypto.randomUUID(),
                 guestId: profile.id,
                 amount,
                 type: 'LOAD',
@@ -280,6 +281,7 @@ export async function POST(request: NextRequest) {
 
             await tx.creditBonusTransaction.create({
               data: {
+                id: crypto.randomUUID(),
                 guestId: profile.id,
                 amount,
                 type: 'CREDIT',
@@ -300,6 +302,7 @@ export async function POST(request: NextRequest) {
 
             await tx.creditBonusTransaction.create({
               data: {
+                id: crypto.randomUUID(),
                 guestId: profile.id,
                 amount,
                 type: 'BONUS',
