@@ -39,6 +39,7 @@ import {
   IoDownloadOutline
 } from 'react-icons/io5'
 import { formatPhoneNumber } from '@/app/utils/helpers'
+import { GuestInfoCard } from '@/app/partner/components/GuestInfoCard'
 import BookingAgreementSection from './BookingAgreementSection'
 import BottomSheet from '@/app/components/BottomSheet'
 import EditBookingSheet from './EditBookingSheet'
@@ -639,76 +640,16 @@ export default function ManualBookingView({
 
               {/* Customer Section — direct contact for manual bookings */}
               {renter && (
-                <div className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4">
-                      {renter.photo ? (
-                        <div className="w-14 h-14 rounded-full border border-white shadow-sm overflow-hidden">
-                          <img src={renter.photo} alt={renter.name} className="w-full h-full rounded-full object-cover" />
-                        </div>
-                      ) : (
-                        <div className="w-14 h-14 bg-gray-200 dark:bg-gray-600 rounded-full border border-white shadow-sm flex items-center justify-center">
-                          <IoPersonOutline className="w-6 h-6 text-gray-400" />
-                        </div>
-                      )}
-                      <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">{renter.name}</h3>
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                          <IoMailOutline className="w-4 h-4" />
-                          {renter.email}
-                        </div>
-                        {renter.phone && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <IoCallOutline className="w-4 h-4" />
-                            +1 {formatPhoneNumber(renter.phone)}
-                          </div>
-                        )}
-                        {booking.status === 'CONFIRMED' && renter.phone && (
-                          <button
-                            onClick={async () => {
-                              try {
-                                const res = await fetch('/api/twilio/masked-call', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  credentials: 'include',
-                                  body: JSON.stringify({ bookingId: booking.id }),
-                                })
-                                if (res.ok) {
-                                  alert(t('bdCallGuestSuccess'))
-                                } else {
-                                  const data = await res.json().catch(() => ({}))
-                                  alert(data.error || t('bdCallGuestFailed'))
-                                }
-                              } catch {
-                                alert(t('bdCallGuestFailed'))
-                              }
-                            }}
-                            className="mt-1 flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
-                          >
-                            <IoCallOutline className="w-3.5 h-3.5" />
-                            {t('bdCallGuest')}
-                          </button>
-                        )}
-                        {renter.memberSince && (
-                          <p className="text-xs text-gray-400 mt-1">
-                            {t('bdMemberSince')} {new Date(renter.memberSince).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end justify-between self-stretch flex-shrink-0">
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium uppercase bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">
-                        ACTIVE MEMBER
-                      </span>
-                      <Link
-                        href={`/partner/customers/${renter.id}`}
-                        className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                      >
-                        {t('bdViewProfile')} →
-                      </Link>
-                    </div>
-                  </div>
-                </div>
+                <GuestInfoCard
+                  renter={renter}
+                  isVerified={
+                    booking.guestStripeVerified
+                    || renter.verification.identity.status === 'verified'
+                  }
+                  guestInsurance={null}
+                  bookingId={booking.id}
+                  bookingStatus={booking.status}
+                />
               )}
             </div>
 

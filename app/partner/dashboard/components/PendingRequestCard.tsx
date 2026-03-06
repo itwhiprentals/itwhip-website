@@ -256,6 +256,8 @@ export default function PendingRequestCard() {
 
   // Check if onboarding is already completed or declined
   if (onboardingData.host.onboardingCompletedAt) {
+    const isFulfilled = onboardingData.request.status === 'FULFILLED'
+
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <div className="text-center py-8">
@@ -263,16 +265,18 @@ export default function PendingRequestCard() {
             <IoCheckmarkCircle className="w-8 h-8 text-green-600" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            {t('prOnboardingComplete')}
+            {isFulfilled ? t('prOnboardingComplete') : t('prCarApproved')}
           </h3>
           <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
-            {t('prBookingProcessing')}
+            {isFulfilled ? t('prBookingProcessing') : t('prConfirmAndSendDesc', { guest: request?.guestName || 'the guest' })}
           </p>
           <Link
-            href="/partner/bookings"
-            className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors"
+            href={isFulfilled ? '/partner/bookings' : `/partner/requests/${request?.id || ''}`}
+            className={`mt-4 inline-flex items-center gap-2 px-4 py-2 text-white rounded-lg font-medium transition-colors ${
+              isFulfilled ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'
+            }`}
           >
-            {t('prViewBookings')}
+            {isFulfilled ? t('prViewBookings') : t('prConfirmAndSend')}
             <IoArrowForwardOutline className="w-4 h-4" />
           </Link>
         </div>

@@ -1,7 +1,8 @@
 // app/api/partner/bookings/create-from-request/route.ts
-// Creates booking + guest account when host clicks "Confirm & Send Agreement"
-// This is the heavy-lifting phase that was split out of the finalize API.
-// Finalize only activates the car + host. This endpoint does everything else.
+// Sends agreement + guest notifications when host clicks "Confirm & Send Agreement"
+// Finalize creates the PENDING booking. This endpoint enriches it with scenario data,
+// sends the agreement, notifies the guest, and transitions to FULFILLED.
+// Fallback: if no booking exists (pre-migration), creates one from scratch.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
@@ -152,74 +153,35 @@ export async function POST(request: NextRequest) {
     const guest = await resolveGuestAccount(ctx, fleetRequest)
 
     // ═══════════════════════════════════════════════════
-    // STEP 4: Create the booking
+    // STEP 4: Find existing booking (from finalize) or create new
     // ═══════════════════════════════════════════════════
-    const bookingCode = `BK-${nanoid(6).toUpperCase()}`
-    const bookingId = crypto.randomUUID()
+    let booking: { id: string; bookingCode: string; status: string }
+    let bookingId: string
 
-    const booking = await prisma.rentalBooking.create({
-      data: {
-        id: bookingId,
-        bookingCode,
-        updatedAt: new Date(),
+    // Check for PENDING booking created at finalize
+    const existingPendingBooking = prospect.convertedBookingId
+      ? await prisma.rentalBooking.findFirst({
+          where: { id: prospect.convertedBookingId },
+          select: { id: true, bookingCode: true, status: true }
+        })
+      : null
 
-        // Car and host
-        carId: car.id,
-        hostId: host.id,
+    if (existingPendingBooking) {
+      // Booking exists from finalize — enrich with scenario-specific data
+      booking = existingPendingBooking
+      bookingId = existingPendingBooking.id
 
-        // Guest
-        ...(guest.guestUserId && { renterId: guest.guestUserId }),
-        ...(guest.reviewerProfileId && { reviewerProfileId: guest.reviewerProfileId }),
-        guestEmail: guest.guestEmail || '',
-        guestName: guest.guestName,
-        guestPhone: guest.guestPhone,
-
-        // Dates
-        startDate: fleetRequest.startDate || new Date(),
-        endDate: fleetRequest.endDate || new Date(Date.now() + pricing.durationDays * 24 * 60 * 60 * 1000),
-        startTime: fleetRequest.startTime || '10:00',
-        endTime: fleetRequest.endTime || '10:00',
-
-        // Location
-        pickupLocation: fleetRequest.pickupCity
-          ? `${fleetRequest.pickupCity}, ${fleetRequest.pickupState || 'AZ'}`
-          : car.city || '',
-        pickupType: 'pickup',
-
-        // Pricing
-        dailyRate: pricing.dailyRate,
-        numberOfDays: pricing.durationDays,
-        subtotal: pricing.subtotal,
-        serviceFee: pricing.serviceFee,
-        taxes: 0,
-        securityDeposit: 0,
-        depositHeld: 0,
-        totalAmount: pricing.totalAmount,
-
-        // Status
-        status: 'PENDING',
-        bookingType: 'MANUAL',
-        paymentStatus: 'PENDING',
-        paymentType: null,
-        fleetStatus: 'APPROVED',
-
-        // Welcome discount
-        platformFeeRate: 0.10,
-        isWelcomeDiscount: true,
-
-        // Payment deadline (48 hours for guest to complete)
-        paymentDeadline: new Date(Date.now() + 48 * 60 * 60 * 1000),
-
-        // Notes
+      const updateData: any = {
         notes: ctx.hasBookingToReplace && ctx.existingBooking
           ? `[Existing Guest] Reassigned from booking ${ctx.existingBooking?.bookingCode || ctx.existingBooking?.id}. Original host unavailable.`
           : ctx.isExistingGuest
             ? `[Existing Guest] Fresh booking for existing guest ${guest.guestEmail}. No previous booking to replace.`
-            : `[Request-Based Booking] Created from ReservationRequest ${fleetRequest.id}. Payment: TBD by guest`,
-        verificationSource: 'ONBOARDING',
+            : `[Request-Based Booking] Confirmed from ReservationRequest ${fleetRequest.id}. Payment: TBD by guest`,
+      }
 
-        // Scenario A: transfer payment + link to original booking
-        ...(ctx.hasBookingToReplace && ctx.hasValidHold && ctx.existingBooking && {
+      // Scenario A: transfer Stripe hold from old booking
+      if (ctx.hasBookingToReplace && ctx.hasValidHold && ctx.existingBooking) {
+        Object.assign(updateData, {
           originalBookingId: ctx.existingBooking.id,
           originalCarId: ctx.existingBooking.carId,
           vehicleChangeReason: 'Original host unavailable — vehicle reassigned to new partner',
@@ -230,21 +192,119 @@ export async function POST(request: NextRequest) {
           paymentType: 'CARD',
           agreementType: 'ITWHIP',
           agreementStatus: 'not_sent',
-        }),
-
-        // Scenario B: link to original booking but NO payment transfer
-        ...(ctx.hasBookingToReplace && !ctx.hasValidHold && ctx.existingBooking && {
+        })
+      }
+      // Scenario B: link original booking (no payment transfer)
+      else if (ctx.hasBookingToReplace && ctx.existingBooking) {
+        Object.assign(updateData, {
           originalBookingId: ctx.existingBooking.id,
           originalCarId: ctx.existingBooking.carId,
           vehicleChangeReason: 'Original host unavailable — reassigned to new partner',
         })
-      },
-      select: {
-        id: true,
-        bookingCode: true,
-        status: true,
       }
-    })
+
+      await prisma.rentalBooking.update({
+        where: { id: bookingId },
+        data: updateData,
+      })
+
+      console.log(`[CreateFromRequest] Using existing booking ${booking.bookingCode} from finalize`)
+    } else {
+      // FALLBACK: Create new booking (pre-migration data or edge case)
+      const newBookingCode = `BK-${nanoid(6).toUpperCase()}`
+      bookingId = crypto.randomUUID()
+
+      booking = await prisma.rentalBooking.create({
+        data: {
+          id: bookingId,
+          bookingCode: newBookingCode,
+          updatedAt: new Date(),
+
+          // Car and host
+          carId: car.id,
+          hostId: host.id,
+
+          // Guest
+          ...(guest.guestUserId && { renterId: guest.guestUserId }),
+          ...(guest.reviewerProfileId && { reviewerProfileId: guest.reviewerProfileId }),
+          guestEmail: guest.guestEmail || '',
+          guestName: guest.guestName,
+          guestPhone: guest.guestPhone,
+
+          // Dates
+          startDate: fleetRequest.startDate || new Date(),
+          endDate: fleetRequest.endDate || new Date(Date.now() + pricing.durationDays * 24 * 60 * 60 * 1000),
+          startTime: fleetRequest.startTime || '10:00',
+          endTime: fleetRequest.endTime || '10:00',
+
+          // Location
+          pickupLocation: fleetRequest.pickupCity
+            ? `${fleetRequest.pickupCity}, ${fleetRequest.pickupState || 'AZ'}`
+            : car.city || '',
+          pickupType: 'pickup',
+
+          // Pricing
+          dailyRate: pricing.dailyRate,
+          numberOfDays: pricing.durationDays,
+          subtotal: pricing.subtotal,
+          serviceFee: pricing.serviceFee,
+          taxes: 0,
+          securityDeposit: 0,
+          depositHeld: 0,
+          totalAmount: pricing.totalAmount,
+
+          // Status
+          status: 'PENDING',
+          bookingType: 'MANUAL',
+          paymentStatus: 'PENDING',
+          paymentType: null,
+          fleetStatus: 'APPROVED',
+
+          // Welcome discount
+          platformFeeRate: 0.10,
+          isWelcomeDiscount: true,
+
+          // Payment deadline (48 hours for guest to complete)
+          paymentDeadline: new Date(Date.now() + 48 * 60 * 60 * 1000),
+
+          // Notes
+          notes: ctx.hasBookingToReplace && ctx.existingBooking
+            ? `[Existing Guest] Reassigned from booking ${ctx.existingBooking?.bookingCode || ctx.existingBooking?.id}. Original host unavailable.`
+            : ctx.isExistingGuest
+              ? `[Existing Guest] Fresh booking for existing guest ${guest.guestEmail}. No previous booking to replace.`
+              : `[Request-Based Booking] Created from ReservationRequest ${fleetRequest.id}. Payment: TBD by guest`,
+          verificationSource: 'ONBOARDING',
+
+          // Scenario A: transfer payment + link to original booking
+          ...(ctx.hasBookingToReplace && ctx.hasValidHold && ctx.existingBooking && {
+            originalBookingId: ctx.existingBooking.id,
+            originalCarId: ctx.existingBooking.carId,
+            vehicleChangeReason: 'Original host unavailable — vehicle reassigned to new partner',
+            paymentIntentId: ctx.existingBooking.paymentIntentId,
+            stripeCustomerId: ctx.existingBooking.stripeCustomerId,
+            stripePaymentMethodId: ctx.existingBooking.stripePaymentMethodId,
+            paymentStatus: 'AUTHORIZED',
+            paymentType: 'CARD',
+            agreementType: 'ITWHIP',
+            agreementStatus: 'not_sent',
+          }),
+
+          // Scenario B: link to original booking but NO payment transfer
+          ...(ctx.hasBookingToReplace && !ctx.hasValidHold && ctx.existingBooking && {
+            originalBookingId: ctx.existingBooking.id,
+            originalCarId: ctx.existingBooking.carId,
+            vehicleChangeReason: 'Original host unavailable — reassigned to new partner',
+          })
+        },
+        select: {
+          id: true,
+          bookingCode: true,
+          status: true,
+        }
+      })
+
+      console.log(`[CreateFromRequest] Created new booking ${booking.bookingCode} (fallback)`)
+    }
 
     // ═══════════════════════════════════════════════════
     // STEP 5: Handle old booking (cancel + scenarios)
@@ -562,7 +622,7 @@ ${getEmailFooterText(guestRefId)}
       }
     })
 
-    console.log(`[CreateFromRequest] Booking ${booking.bookingCode} created for host ${host.id}, guest ${guest.guestEmail}`)
+    console.log(`[CreateFromRequest] Booking ${booking.bookingCode} confirmed for host ${host.id}, guest ${guest.guestEmail}, scenario ${ctx.scenario}`)
 
     return NextResponse.json({
       success: true,

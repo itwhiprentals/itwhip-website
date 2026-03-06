@@ -38,7 +38,13 @@ async function getCurrentHost() {
             id: true,
             make: true,
             model: true,
+            trim: true,
             year: true,
+            licensePlate: true,
+            dailyRate: true,
+            vehicleType: true,
+            isActive: true,
+            color: true,
             photos: {
               select: { url: true },
               take: 1
@@ -158,6 +164,16 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Resolve guestUserId: prefer existingGuestId, fallback to booking's renterId
+    let guestUserId = fleetRequest.existingGuestId || null
+    if (!guestUserId && (fleetRequest as any).fulfilledBookingId) {
+      const booking = await prisma.rentalBooking.findUnique({
+        where: { id: (fleetRequest as any).fulfilledBookingId },
+        select: { renterId: true }
+      })
+      if (booking?.renterId) guestUserId = booking.renterId
+    }
+
     // Build response
     return NextResponse.json({
       success: true,
@@ -186,9 +202,9 @@ export async function GET(request: NextRequest) {
         status: fleetRequest.status,
         vehicleInfo: (fleetRequest as any).vehicleInfo ?? null,
         guestName: fleetRequest.guestName,
-        guestRating: (fleetRequest as any).guestRating ?? null,
-        guestTrips: (fleetRequest as any).guestTrips ?? null,
-        guestVerified: (fleetRequest as any).guestVerified ?? false,
+        guestEmail: fleetRequest.guestEmail || null,
+        guestPhone: fleetRequest.guestPhone || null,
+        guestUserId,
         startDate: fleetRequest.startDate,
         startTime: fleetRequest.startTime || '10:00',
         endDate: fleetRequest.endDate,
@@ -202,6 +218,7 @@ export async function GET(request: NextRequest) {
         platformFee: (fleetRequest as any).platformFee ?? null,
         expiresAt: fleetRequest.expiresAt || prospect.inviteTokenExp
       },
+      bookingId: (fleetRequest as any).fulfilledBookingId || null,
       onboardingProgress,
       timeRemaining,
       agreement: prospect.hostAgreementUrl ? {

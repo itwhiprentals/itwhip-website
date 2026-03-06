@@ -1,11 +1,16 @@
 'use client'
 
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
+import Link from 'next/link'
 import {
   IoCalendarOutline,
   IoLocationOutline,
   IoWalletOutline,
-  IoHandLeftOutline
+  IoHandLeftOutline,
+  IoArrowForwardOutline,
+  IoChevronDownOutline,
+  IoCloseOutline
 } from 'react-icons/io5'
 
 interface RentalPeriodCardProps {
@@ -22,10 +27,12 @@ interface RentalPeriodCardProps {
   hostEarnings: number
   counterOfferStatus?: string
   hasPendingCounterOffer: boolean
+  isLate?: boolean
   isExpired: boolean
   hasDeclined: boolean
   hasCompleted: boolean
   onRequestDifferentRate: () => void
+  onLearnHowItWorks?: () => void
   formatDate: (date?: string) => string
   formatCurrency: (amount: number) => string
 }
@@ -44,14 +51,17 @@ export default function RentalPeriodCard({
   hostEarnings,
   counterOfferStatus,
   hasPendingCounterOffer,
+  isLate,
   isExpired,
   hasDeclined,
   hasCompleted,
   onRequestDifferentRate,
+  onLearnHowItWorks,
   formatDate,
   formatCurrency,
 }: RentalPeriodCardProps) {
   const t = useTranslations('PartnerRequestDetail')
+  const [showOutsideInfo, setShowOutsideInfo] = useState(false)
 
   const formatTime12h = (time: string) => {
     const [h, m] = time.split(':').map(Number)
@@ -66,16 +76,22 @@ export default function RentalPeriodCard({
       <div className="flex items-center gap-2 mb-3">
         <IoCalendarOutline className="w-5 h-5 text-gray-400" />
         <h3 className="font-semibold text-gray-900 dark:text-white">{t('rentalPeriod')}</h3>
+        {isLate && (
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-amber-500 text-white">
+            {t('late')}
+          </span>
+        )}
       </div>
 
-      {/* Dates Grid — matches ManualBookingView */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Dates — Pick Up → Return */}
+      <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('pickup')}</p>
           <p className="font-medium text-gray-900 dark:text-white">{formatDate(startDate)}</p>
           <p className="text-sm text-gray-600 dark:text-gray-400">{t('atTime')} {formatTime12h(startTime || '10:00')}</p>
         </div>
-        <div>
+        <IoArrowForwardOutline className="w-5 h-5 text-gray-400 flex-shrink-0" />
+        <div className="text-right">
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('return')}</p>
           <p className="font-medium text-gray-900 dark:text-white">{formatDate(endDate)}</p>
           <p className="text-sm text-gray-600 dark:text-gray-400">{t('atTime')} {formatTime12h(endTime || '10:00')}</p>
@@ -146,7 +162,14 @@ export default function RentalPeriodCard({
           </span>
         </div>
 
-        <p className="text-xs text-gray-400 mt-1">{t('prWelcomeDiscountNote')}</p>
+        <p className="text-xs text-gray-400 mt-1">
+          {t('prWelcomeDiscountNote')}{' '}
+          {onLearnHowItWorks && (
+            <button onClick={onLearnHowItWorks} className="text-xs text-orange-600 dark:text-orange-400 font-medium hover:underline">
+              {t('prTaxLearnMore')}
+            </button>
+          )}
+        </p>
 
         {counterOfferStatus === 'APPROVED' && (
           <p className="text-xs text-green-600 dark:text-green-400">{t('counterOfferApproved')}</p>
@@ -161,6 +184,41 @@ export default function RentalPeriodCard({
             {t('requestDifferentRate')}
           </button>
         )}
+
+        {/* Collapsible outside-platform info */}
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-3">
+          <button
+            onClick={() => setShowOutsideInfo(!showOutsideInfo)}
+            className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          >
+            <IoChevronDownOutline className={`w-3.5 h-3.5 transition-transform ${showOutsideInfo ? 'rotate-180' : ''}`} />
+            <span className="font-medium">{t('noteOutsideTrigger')}</span>
+          </button>
+
+          {showOutsideInfo && (
+            <div className="mt-3 space-y-3">
+              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                {t('noteOutsideIntro')}
+              </p>
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                {t('noteOutsideSubtitle')}
+              </p>
+              <div className="space-y-1.5">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                  <div key={i} className="flex items-start gap-2">
+                    <IoCloseOutline className="w-3.5 h-3.5 text-red-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {t(`noteOutsideItem${i}` as any)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed italic">
+                {t('noteOutsideClosing')}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

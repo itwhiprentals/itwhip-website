@@ -6,21 +6,18 @@
 
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import {
   IoArrowBackOutline,
   IoTimeOutline,
   IoArrowForwardOutline,
-  IoCheckmarkCircleOutline,
   IoChatbubbleOutline,
-  IoRefreshOutline,
-  IoCopyOutline,
   IoAlertCircleOutline,
-  IoChevronDownOutline,
-  IoCheckmarkOutline,
   IoCloseOutline,
+  IoCallOutline,
 } from 'react-icons/io5'
+import RequestHeader from './components/RequestHeader'
 import CounterOfferModal from './components/CounterOfferModal'
 import DeclineModal from './components/DeclineModal'
 import OnboardingWizard from './components/OnboardingWizard'
@@ -34,7 +31,9 @@ import GuestVerificationCard from './components/GuestVerificationCard'
 import RentalAgreementCard from './components/RentalAgreementCard'
 import ProgressStepper from './components/ProgressStepper'
 import HowItWorksSheet from './components/HowItWorksSheet'
-
+import ConfirmSendSheet from './components/ConfirmSendSheet'
+import { MessagesSection } from '@/app/partner/bookings/[id]/components/MessagesSection'
+import { useBookingMessages } from '@/app/partner/bookings/[id]/hooks/useBookingMessages'
 interface RequestData {
   host: {
     id: string
@@ -50,7 +49,13 @@ interface RequestData {
       id: string
       make: string
       model: string
+      trim?: string
       year: number
+      licensePlate?: string | null
+      dailyRate?: number
+      vehicleType?: string
+      isActive?: boolean
+      color?: string | null
       photos: Array<{ url: string }>
     }>
   }
@@ -68,8 +73,7 @@ interface RequestData {
     guestName: string | null
     guestEmail: string | null
     guestPhone: string | null
-    guestRating: number | null
-    guestTrips: number | null
+    guestUserId: string | null
     startDate: string | null
     startTime: string | null
     endDate: string | null
@@ -83,6 +87,7 @@ interface RequestData {
     platformFee: number | null
     expiresAt: string | null
   }
+  bookingId: string | null
   onboardingProgress: {
     carPhotosUploaded: boolean
     ratesConfigured: boolean
@@ -116,6 +121,7 @@ export default function RequestDetailPage() {
 
   const locale = useLocale()
   const t = useTranslations('PartnerRequestDetail')
+  const tBd = useTranslations('PartnerBookings')
 
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<RequestData | null>(null)
@@ -131,14 +137,54 @@ export default function RequestDetailPage() {
   const [showEditAgreement, setShowEditAgreement] = useState(false)
   const [showEditPayment, setShowEditPayment] = useState(false)
   const [showHowItWorks, setShowHowItWorks] = useState(false)
+  const [showConfirmSendSheet, setShowConfirmSendSheet] = useState(false)
   const [showOutsideInfo, setShowOutsideInfo] = useState(false)
+  const [showTaxInfo, setShowTaxInfo] = useState(false)
 
   // Expandable sections
   const [expandedSections, setExpandedSections] = useState({
     pricing: true,
     verification: true,
-    agreement: false
+    agreement: false,
+    messages: true,
   })
+
+  // Messages hook — lightweight toast for errors
+  const showToast = useCallback((type: 'success' | 'error', message: string) => {
+    if (type === 'error') console.error('[Messages]', message)
+  }, [])
+  const messages = useBookingMessages({ bookingId: data?.bookingId || null, showToast })
+
+  // Customer data for CustomerSection (fetched when guestUserId available)
+  const [customerData, setCustomerData] = useState<any>(null)
+  const fetchedGuestIdRef = useRef<string | null>(null)
+  useEffect(() => {
+    const gid = data?.request?.guestUserId
+    if (!gid || fetchedGuestIdRef.current === gid) return
+    fetchedGuestIdRef.current = gid
+    fetch(`/api/partner/customers/${gid}`)
+      .then(r => r.json())
+      .then(result => {
+        if (result.success) setCustomerData(result)
+      })
+      .catch(() => {})
+  }, [data?.request?.guestUserId])
+
+  // Fetch messages when bookingId is available
+  const fetchedBookingIdRef = useRef<string | null>(null)
+  useEffect(() => {
+    const bid = data?.bookingId
+    if (!bid || fetchedBookingIdRef.current === bid) return
+    fetchedBookingIdRef.current = bid
+    fetch(`/api/partner/messages?bookingId=${bid}`)
+      .then(r => r.json())
+      .then(result => {
+        if (result.success && result.conversations?.[0]?.messages) {
+          messages.setBookingMessages(result.conversations[0].messages)
+        }
+      })
+      .catch(() => {})
+  }, [data?.bookingId])
 
   const fetchRequest = useCallback(async () => {
     try {
@@ -147,7 +193,7 @@ export default function RequestDetailPage() {
       const result = await response.json()
 
       if (!response.ok) {
-        setError(result.error || t('failedToLoadRequest'))
+        setError(result.error || 'Failed to load request')
         return
       }
 
@@ -155,11 +201,12 @@ export default function RequestDetailPage() {
       setError(null)
     } catch (err) {
       console.error('Failed to fetch request:', err)
-      setError(t('failedToLoadRequestDetails'))
+      setError('Failed to load request details')
     } finally {
       setLoading(false)
     }
-  }, [t])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     fetchRequest()
@@ -405,141 +452,22 @@ export default function RequestDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header - Mirrors booking details page header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
-        <div className="px-3 sm:px-4 py-3 sm:py-4">
-          {/* Top row - Back button, title, status */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-              <Link
-                href="/partner/dashboard?section=requests"
-                className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex-shrink-0"
-              >
-                <IoArrowBackOutline className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-              </Link>
-              <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
-                {t('requestBookingDetails')}
-              </h1>
-            </div>
-
-            <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-medium whitespace-nowrap text-white uppercase flex-shrink-0 ${
-              hasDeclined || isExpired || isBookingExpired ? 'bg-red-600' : isCarAssigned ? 'bg-green-600' : 'bg-gray-500 dark:bg-gray-600'
-            }`}>
-              {hasDeclined ? t('statusDeclined') : isExpired || isBookingExpired ? t('statusExpired') : isCarAssigned ? t('statusCarApproved') : hasPendingCounterOffer ? t('statusCounterPending') : t('statusPending')}
-            </span>
-
-            {/* Desktop Actions */}
-            <div className="hidden sm:flex items-center gap-2">
-              {isCarAssigned && !isBookingExpired && (
-                <>
-                  <button
-                    onClick={() => setShowRecruitmentSheet(true)}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center gap-2"
-                  >
-                    <IoCheckmarkCircleOutline className="w-4 h-4" />
-                    {t('confirmAndSend')}
-                  </button>
-                  <button
-                    onClick={() => setShowDecline(true)}
-                    className="px-4 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-50 dark:hover:bg-red-900/20"
-                  >
-                    {t('decline')}
-                  </button>
-                </>
-              )}
-              {!isExpired && !hasDeclined && !hasCompleted && !isBookingExpired && (
-                <>
-                  <button
-                    onClick={() => setShowRecruitmentSheet(true)}
-                    className="px-4 py-2 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-lg font-medium flex items-center gap-2"
-                  >
-                    <IoArrowForwardOutline className="w-4 h-4" />
-                    {t('continueAddingCar')}
-                  </button>
-                  <button
-                    onClick={() => setShowDecline(true)}
-                    className="px-4 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-50 dark:hover:bg-red-900/20"
-                  >
-                    {t('decline')}
-                  </button>
-                </>
-              )}
-              <button
-                onClick={fetchRequest}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                title={t('refresh')}
-              >
-                <IoRefreshOutline className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 mt-1 pl-10 sm:pl-14">
-            <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-mono">
-              REQ-{request.id?.slice(0, 8).toUpperCase() || '0000'}
-            </span>
-            <button
-              onClick={() => copyToClipboard(request.id || '')}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            >
-              {copied ? (
-                <IoCheckmarkCircleOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500" />
-              ) : (
-                <IoCopyOutline className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              )}
-            </button>
-          </div>
-
-          {/* Counter-offer pending notice */}
-          {hasPendingCounterOffer && (
-            <div className="mt-2 sm:mt-3 flex items-center gap-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-2">
-              <IoTimeOutline className="w-4 h-4 flex-shrink-0" />
-              <span className="text-xs sm:text-sm">
-                <strong>{t('counterOfferPending')}</strong>{' '}
-                {t('counterOfferReviewing', { amount: prospect.counterOfferAmount })}
-              </span>
-            </div>
-          )}
-
-          {/* Mobile Quick Actions */}
-          <div className="sm:hidden mt-3 flex gap-2">
-            {isCarAssigned && !isBookingExpired && (
-              <>
-                <button
-                  onClick={() => setShowRecruitmentSheet(true)}
-                  className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 text-sm"
-                >
-                  <IoCheckmarkCircleOutline className="w-4 h-4" />
-                  {t('confirmAndSend')}
-                </button>
-                <button
-                  onClick={() => setShowDecline(true)}
-                  className="px-3 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-50 dark:hover:bg-red-900/20 text-sm"
-                >
-                  {t('decline')}
-                </button>
-              </>
-            )}
-            {!isExpired && !hasDeclined && !hasCompleted && !isBookingExpired && (
-              <>
-                <button
-                  onClick={() => setShowRecruitmentSheet(true)}
-                  className="flex-1 px-3 py-2 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-lg font-medium flex items-center justify-center gap-2 text-sm"
-                >
-                  <IoArrowForwardOutline className="w-4 h-4" />
-                  {t('continueAddingCar')}
-                </button>
-                <button
-                  onClick={() => setShowDecline(true)}
-                  className="px-3 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-50 dark:hover:bg-red-900/20 text-sm"
-                >
-                  {t('decline')}
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+      <RequestHeader
+        requestId={request.id}
+        isCarAssigned={isCarAssigned}
+        isExpired={isExpired}
+        hasDeclined={hasDeclined}
+        hasCompleted={hasCompleted}
+        isBookingExpired={isBookingExpired}
+        hasPendingCounterOffer={hasPendingCounterOffer}
+        counterOfferAmount={prospect.counterOfferAmount}
+        copied={copied}
+        onConfirmAndSend={() => setShowConfirmSendSheet(true)}
+        onDecline={() => setShowDecline(true)}
+        onContinueAddingCar={() => setShowRecruitmentSheet(true)}
+        onRefresh={fetchRequest}
+        onCopyId={copyToClipboard}
+      />
 
       {/* Main Content */}
       <div className="px-3 sm:px-4 py-4 sm:py-6">
@@ -565,30 +493,6 @@ export default function RequestDetailPage() {
                   <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
                     {isBookingLate ? t('bookingLateWarning') : isBookingToday ? t('bookingTodayWarning') : t('bookingWithin24hWarning')}
                   </p>
-                </div>
-              </div>
-            )}
-
-            {/* Car Approved — Confirm Booking Banner */}
-            {isCarAssigned && !isBookingExpired && (
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <IoCheckmarkCircleOutline className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-green-800 dark:text-green-300 text-sm">
-                      {t('statusCarApproved')}
-                    </h3>
-                    <p className="text-sm text-green-700 dark:text-green-400 mt-1">
-                      {t('confirmBookingCardDesc', { guest: request.guestName || 'the guest' })}
-                    </p>
-                    <button
-                      onClick={() => setShowRecruitmentSheet(true)}
-                      className="mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"
-                    >
-                      <IoCheckmarkCircleOutline className="w-4 h-4" />
-                      {t('confirmAndSend')}
-                    </button>
-                  </div>
                 </div>
               </div>
             )}
@@ -626,12 +530,39 @@ export default function RequestDetailPage() {
               car={host.cars[0]}
               vehicleInfo={request.vehicleInfo}
               hasCarListed={hasCarListed}
+              isCarAssigned={isCarAssigned}
               guestName={request.guestName}
-              guestRating={request.guestRating}
-              guestTrips={request.guestTrips}
               guestEmail={request.guestEmail}
               guestPhone={request.guestPhone}
+              renter={customerData?.customer ? {
+                id: customerData.customer.id,
+                name: customerData.customer.name,
+                email: customerData.customer.email || request.guestEmail || '',
+                phone: customerData.customer.phone,
+                photo: customerData.customer.photo,
+                memberSince: customerData.customer.memberSince,
+              } : null}
+              isVerified={customerData?.customer?.verification?.status === 'verified'}
+              guestInsurance={null}
+              bookingId={data.bookingId}
+              bookingStatus="PENDING"
+              formatCurrency={formatCurrency}
             />
+
+            {/* Messages — available at CAR_ASSIGNED when booking exists */}
+            {isCarAssigned && data.bookingId && (
+              <MessagesSection
+                bookingMessages={messages.bookingMessages}
+                newMessage={messages.newMessage}
+                setNewMessage={messages.setNewMessage}
+                sendingMessage={messages.sendingMessage}
+                sendBookingMessage={messages.sendBookingMessage}
+                messagesContainerRef={messages.messagesContainerRef}
+                expanded={expandedSections.messages}
+                onToggle={() => toggleSection('messages')}
+                formatMessageTime={messages.formatMessageTime}
+              />
+            )}
 
             <RentalPeriodCard
               startDate={request.startDate}
@@ -647,10 +578,12 @@ export default function RequestDetailPage() {
               hostEarnings={hostEarnings}
               counterOfferStatus={prospect.counterOfferStatus}
               hasPendingCounterOffer={hasPendingCounterOffer}
+              isLate={isBookingLate}
               isExpired={isExpired}
               hasDeclined={hasDeclined}
               hasCompleted={hasCompleted}
               onRequestDifferentRate={() => setShowCounterOffer(true)}
+              onLearnHowItWorks={() => setShowTaxInfo(true)}
               formatDate={formatDate}
               formatCurrency={formatCurrency}
             />
@@ -685,6 +618,65 @@ export default function RequestDetailPage() {
             />
           </div>
 
+          {/* Quick Actions */}
+          {!isExpired && !isBookingExpired && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('quickActions')}</h3>
+              <div className="space-y-2">
+                {/* Call Guest — CAR_ASSIGNED + phone available */}
+                {isCarAssigned && request.guestPhone && (
+                  <button
+                    onClick={async () => {
+                      if (!data.bookingId) return
+                      try {
+                        const res = await fetch('/api/twilio/masked-call', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          credentials: 'include',
+                          body: JSON.stringify({ bookingId: data.bookingId }),
+                        })
+                        if (res.ok) {
+                          alert(t('callGuestSuccess'))
+                        } else {
+                          const d = await res.json().catch(() => ({}))
+                          alert(d.error || t('callGuestFailed'))
+                        }
+                      } catch {
+                        alert(t('callGuestFailed'))
+                      }
+                    }}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                  >
+                    <IoCallOutline className="w-4 h-4" />
+                    {t('callGuest')}
+                  </button>
+                )}
+
+                {/* View Booking — when booking exists */}
+                {data.bookingId && (
+                  <a
+                    href={`/partner/bookings/${data.bookingId}`}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                  >
+                    <IoArrowForwardOutline className="w-4 h-4" />
+                    {t('viewBooking')}
+                  </a>
+                )}
+
+                {/* Decline Request — dangerous */}
+                {!hasDeclined && !hasCompleted && (
+                  <button
+                    onClick={() => setShowDecline(true)}
+                    className="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center gap-2"
+                  >
+                    <IoCloseOutline className="w-4 h-4" />
+                    {t('declineRequest')}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
         </div>
 
 
@@ -710,41 +702,6 @@ export default function RequestDetailPage() {
                 {t('learnHowItWorks')}
               </button>
             </p>
-
-            {/* Collapsible outside-platform info */}
-            <div className="border-t border-gray-300/50 dark:border-gray-600/50 pt-2">
-              <button
-                onClick={() => setShowOutsideInfo(!showOutsideInfo)}
-                className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-              >
-                <IoChevronDownOutline className={`w-3.5 h-3.5 transition-transform ${showOutsideInfo ? 'rotate-180' : ''}`} />
-                <span className="font-medium">{t('noteOutsideTrigger')}</span>
-              </button>
-
-              {showOutsideInfo && (
-                <div className="mt-3 space-y-3">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                    {t('noteOutsideIntro')}
-                  </p>
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                    {t('noteOutsideSubtitle')}
-                  </p>
-                  <div className="space-y-1.5">
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-                      <div key={i} className="flex items-start gap-2">
-                        <IoCloseOutline className="w-3.5 h-3.5 text-red-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {t(`noteOutsideItem${i}` as any)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed italic">
-                    {t('noteOutsideClosing')}
-                  </p>
-                </div>
-              )}
-            </div>
           </div>
         )}
 
@@ -802,15 +759,38 @@ export default function RequestDetailPage() {
         }}
       />
 
+      {/* Tax Responsibility BottomSheet */}
+      <BottomSheet
+        isOpen={showTaxInfo}
+        onClose={() => setShowTaxInfo(false)}
+        title={tBd('bdTaxInfoTitle')}
+        size="small"
+      >
+        <div className="space-y-3 px-1">
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">{tBd('bdManualBookings')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{tBd('bdTaxInfoManual')}</p>
+          </div>
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">{tBd('bdGuestTaxes')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{tBd('bdTaxInfoGuest')}</p>
+          </div>
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">1099 {tBd('bdStatus')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{tBd('bdTaxInfo1099')}</p>
+          </div>
+          <div>
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5">{tBd('bdPlatformBookings')}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{tBd('bdTaxInfoPlatform')}</p>
+          </div>
+        </div>
+      </BottomSheet>
+
       {/* Recruitment Bottomsheet */}
       <RecruitmentBottomSheet
         isOpen={showRecruitmentSheet}
         onClose={() => setShowRecruitmentSheet(false)}
         onComplete={handleRecruitmentComplete}
-        onDecline={() => {
-          setShowRecruitmentSheet(false)
-          setShowDecline(true)
-        }}
         hostData={{
           id: host.id,
           name: host.name,
@@ -836,7 +816,32 @@ export default function RequestDetailPage() {
         }}
         existingAgreement={data?.agreement}
         onboardingProgress={onboardingProgress}
-        isBookingExpired={isBookingExpired}
+      />
+
+      {/* Confirm & Send Agreement — CAR_ASSIGNED state */}
+      <ConfirmSendSheet
+        isOpen={showConfirmSendSheet}
+        onClose={() => setShowConfirmSendSheet(false)}
+        requestId={request.id}
+        guestName={request.guestName || 'Guest'}
+        guestEmail={request.guestEmail || ''}
+        hostAgreementPreference={(onboardingProgress.agreementPreference as 'ITWHIP' | 'OWN' | 'BOTH') || 'ITWHIP'}
+        hostAgreementUrl={data?.agreement?.url}
+        existingAgreement={data?.agreement}
+        requestData={{
+          id: request.id,
+          guestName: request.guestName,
+          offeredRate: request.offeredRate,
+          startDate: request.startDate,
+          endDate: request.endDate,
+          durationDays: request.durationDays,
+          pickupCity: request.pickupCity,
+          pickupState: request.pickupState,
+          totalAmount: request.totalAmount,
+          hostEarnings: request.hostEarnings,
+        }}
+        hostName={host.name}
+        hostEmail={host.email}
       />
 
       {/* Standalone Edit: Agreement Preference */}

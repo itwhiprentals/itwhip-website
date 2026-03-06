@@ -117,6 +117,12 @@ export function MessagesSection({
                             )}
                           </div>
                           <div className={`flex items-center gap-1 mt-0.5 text-[10px] text-gray-400 ${isHost ? 'justify-end' : 'justify-start'}`}>
+                            {msg.senderName && (
+                              <span className="font-medium">
+                                {msg.senderName.split(' ')[0]} ({isHost ? t('bdHost') : t('bdGuest')})
+                              </span>
+                            )}
+                            <span>·</span>
                             <IoTimeOutline className="w-3 h-3" />
                             {formatMessageTime(msg.createdAt)}
                             {isHost && msg.isRead && (
