@@ -309,7 +309,7 @@ export async function POST(request: NextRequest) {
     // STEP 5: Handle old booking (cancel + scenarios)
     // ═══════════════════════════════════════════════════
     const { vehicleChangeToken } = await handleOldBooking(
-      ctx, bookingId, bookingCode, guest.guestEmail, agreementType, hostAgreementUrl
+      ctx, bookingId, booking.bookingCode, guest.guestEmail, agreementType, hostAgreementUrl
     )
 
     // ═══════════════════════════════════════════════════
@@ -381,7 +381,7 @@ export async function POST(request: NextRequest) {
           `Hi ${guest.guestName.split(' ')[0]},\n\n${partnerName} has prepared your rental agreement.\n\n${vehicleDesc}\nTotal: $${Number(pricing.totalAmount).toFixed(2)}\n\nReview and sign: ${signingUrl}\n\nThis link expires in 7 days.`
         )
 
-        console.log(`[CreateFromRequest] Agreement sent to ${guest.guestEmail} for booking ${bookingCode}`)
+        console.log(`[CreateFromRequest] Agreement sent to ${guest.guestEmail} for booking ${booking.bookingCode}`)
       } catch (agreementErr) {
         console.error('[CreateFromRequest] Agreement send failed:', agreementErr)
       }
