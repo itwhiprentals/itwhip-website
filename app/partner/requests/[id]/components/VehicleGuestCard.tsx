@@ -129,18 +129,18 @@ export default function VehicleGuestCard({
                 </div>
               </>
             ) : (
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              <div>
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate">
                     {vehicleInfo || t('vehicle')}
                   </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {t('addPhotosAndRate')}
-                  </p>
+                  <span className="text-[10px] px-2 py-0.5 rounded font-medium text-white uppercase bg-red-600 flex-shrink-0 whitespace-nowrap">
+                    {t('awaitingSetup')}
+                  </span>
                 </div>
-                <span className="text-xs px-2 py-0.5 rounded font-medium text-white uppercase bg-red-600 flex-shrink-0">
-                  {t('awaitingSetup')}
-                </span>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {t('addPhotosAndRate')}
+                </p>
               </div>
             )}
           </div>

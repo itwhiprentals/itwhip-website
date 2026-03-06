@@ -183,7 +183,7 @@ export default function RequestHeader({
             </button>
           </div>
           <span className="px-2 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wide bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-            MANUAL BOOKING
+            {t('manualBooking')}
           </span>
         </div>
 

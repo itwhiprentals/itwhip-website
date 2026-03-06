@@ -692,11 +692,14 @@ export default function RequestDetailPage() {
               />
             )}
 
-            <GuestVerificationCard
-              hasCarListed={hasCarListed}
-              expanded={expandedSections.verification}
-              onToggle={() => toggleSection('verification')}
-            />
+            {/* Guest Verification — only shown after host accepts & adds car (other pages show it always) */}
+            {isCarAssigned && (
+              <GuestVerificationCard
+                hasCarListed={hasCarListed}
+                expanded={expandedSections.verification}
+                onToggle={() => toggleSection('verification')}
+              />
+            )}
 
             {/* Onboarding Progress Stepper */}
             {!isExpired && !hasDeclined && !hasCompleted && !isBookingExpired && (
@@ -771,8 +774,8 @@ export default function RequestDetailPage() {
               <IoChatbubbleOutline className="w-3.5 h-3.5 flex-shrink-0" />
               {t('questionsHereToHelp')}
               <a href="tel:+18557030806" className="text-orange-600 dark:text-orange-400 font-medium hover:underline">(855) 703-0806</a>
-              <span>·</span>
-              <a href="mailto:info@itwhip.com" className="text-orange-600 dark:text-orange-400 font-medium hover:underline">info@itwhip.com</a>
+              <span className="text-gray-400">{t('orChatWith')}</span>
+              <a href="/choe" className="text-orange-600 dark:text-orange-400 font-medium hover:underline">Choé</a>
             </p>
           </div>
         </div>

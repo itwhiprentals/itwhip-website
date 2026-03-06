@@ -139,8 +139,8 @@ export default function RequestQuickActions({
           </button>
         )}
 
-        {/* Edit Booking */}
-        {!isTerminal && onEdit && (
+        {/* Edit Booking — only after host has accepted & added car */}
+        {!isTerminal && isCarAssigned && onEdit && (
           <button
             onClick={onEdit}
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
@@ -150,8 +150,8 @@ export default function RequestQuickActions({
           </button>
         )}
 
-        {/* Cancel Booking */}
-        {!isTerminal && onCancel && (
+        {/* Cancel Booking — only after host has accepted & added car */}
+        {!isTerminal && isCarAssigned && onCancel && (
           <button
             onClick={onCancel}
             className="w-full px-4 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"

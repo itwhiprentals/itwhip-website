@@ -459,7 +459,7 @@ export default function ManualBookingView({
             </div>
 
             <span className="px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap uppercase flex-shrink-0 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-              MANUAL BOOKING
+              {t('bdManualBooking')}
             </span>
 
             {/* Desktop Actions */}

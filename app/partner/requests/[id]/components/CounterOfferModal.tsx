@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 
 import { useState } from 'react'
 import {
@@ -28,6 +28,7 @@ export default function CounterOfferModal({
   onSuccess
 }: CounterOfferModalProps) {
   const locale = useLocale()
+  const t = useTranslations('PartnerRequestDetail')
 
   const [amount, setAmount] = useState<string>(currentRate.toString())
   const [note, setNote] = useState('')
@@ -48,7 +49,7 @@ export default function CounterOfferModal({
 
   const handleSubmit = async () => {
     if (!isValidAmount) {
-      setError(`Rate must be between $${minRate} and $${maxRate} per day`)
+      setError(t('coRateRange', { min: minRate, max: maxRate }))
       return
     }
 
@@ -68,14 +69,14 @@ export default function CounterOfferModal({
       const result = await response.json()
 
       if (!response.ok) {
-        setError(result.error || 'Failed to submit counter-offer')
+        setError(result.error || t('coSubmitFailed'))
         return
       }
 
       onSuccess()
     } catch (err) {
       console.error('Counter-offer error:', err)
-      setError('Failed to submit counter-offer')
+      setError(t('coSubmitFailed'))
     } finally {
       setSubmitting(false)
     }
@@ -98,7 +99,7 @@ export default function CounterOfferModal({
         <div className="flex items-center justify-between px-4 pb-3 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <IoCashOutline className="w-5 h-5 text-orange-600" />
-            Request Rate Adjustment
+            {t('coTitle')}
           </h2>
           <button
             onClick={onClose}
@@ -111,19 +112,19 @@ export default function CounterOfferModal({
         <div className="p-4 space-y-6">
           {/* Current Rate */}
           <div className="bg-gray-200/70 dark:bg-gray-900/50 rounded-lg p-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Current Offered Rate</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('coCurrentRate')}</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">
               ${currentRate}/day
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Total: ${(currentRate * durationDays).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({durationDays} days)
+              {t('coTotal')}: ${(currentRate * durationDays).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({t('coDays', { days: durationDays })})
             </p>
           </div>
 
           {/* Rate Input */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Your Preferred Rate
+              {t('coPreferredRate')}
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span>
@@ -140,10 +141,10 @@ export default function CounterOfferModal({
                     : 'border-red-300 dark:border-red-600 focus:ring-2 focus:ring-red-500 focus:border-red-500'
                 } bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">/day</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">/{t('coDay')}</span>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Acceptable range: ${minRate} - ${maxRate}/day
+              {t('coAcceptableRange', { min: minRate, max: maxRate })}
             </p>
           </div>
 
@@ -152,25 +153,25 @@ export default function CounterOfferModal({
             <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
               <div className="flex items-center gap-2 mb-3">
                 <IoCalculatorOutline className="w-5 h-5 text-green-600" />
-                <span className="font-medium text-green-800 dark:text-green-300">New Earnings Estimate</span>
+                <span className="font-medium text-green-800 dark:text-green-300">{t('coNewEarnings')}</span>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">New Total</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t('coNewTotal')}</span>
                   <span className="font-medium text-gray-900 dark:text-white">${newTotal.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Platform Fee (10%)</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t('coPlatformFee')}</span>
                   <span className="text-gray-500 dark:text-gray-400">-${platformFee.toFixed(2)}</span>
                 </div>
                 <div className="border-t border-green-200 dark:border-green-700 pt-2 flex justify-between">
-                  <span className="font-medium text-green-700 dark:text-green-300">You'll Receive</span>
+                  <span className="font-medium text-green-700 dark:text-green-300">{t('coYoullReceive')}</span>
                   <span className="font-bold text-green-700 dark:text-green-300">${hostEarnings.toFixed(2)}</span>
                 </div>
               </div>
               {difference !== 0 && (
                 <p className={`text-xs mt-2 ${difference > 0 ? 'text-green-600' : 'text-orange-600'}`}>
-                  {difference > 0 ? '+' : ''}{percentChange}% from offered rate
+                  {difference > 0 ? '+' : ''}{percentChange}% {t('coFromOfferedRate')}
                 </p>
               )}
             </div>
@@ -179,12 +180,12 @@ export default function CounterOfferModal({
           {/* Note Input */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Reason (optional)
+              {t('coReason')}
             </label>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="e.g., Similar cars in my area rent for $50-60/day on Turo..."
+              placeholder={t('coReasonPlaceholder')}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none"
             />
@@ -199,7 +200,7 @@ export default function CounterOfferModal({
 
           {/* Info */}
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Our team will review your request within 2 hours and respond via email.
+            {t('coReviewNote')}
           </p>
         </div>
 
@@ -209,7 +210,7 @@ export default function CounterOfferModal({
             onClick={onClose}
             className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
           >
-            Cancel
+            {t('coCancel')}
           </button>
           <button
             onClick={handleSubmit}
@@ -219,12 +220,12 @@ export default function CounterOfferModal({
             {submitting ? (
               <>
                 <IoRefreshOutline className="w-4 h-4 animate-spin" />
-                Submitting...
+                {t('coSubmitting')}
               </>
             ) : (
               <>
                 <IoSendOutline className="w-4 h-4" />
-                Submit Request
+                {t('coSubmit')}
               </>
             )}
           </button>
