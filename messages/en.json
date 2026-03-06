@@ -16649,6 +16649,8 @@
     "statusExpired": "EXPIRED",
     "statusCounterPending": "COUNTER PENDING",
     "statusPending": "PENDING",
+    "statusCarAssigned": "CAR ASSIGNED",
+    "reservationNumber": "Reservation #",
     "statusCarApproved": "CAR APPROVED",
     "recruitedBooking": "Recruited Booking",
     "refresh": "Refresh",
@@ -17093,7 +17095,8 @@
     "callGuest": "Call Guest",
     "callGuestSuccess": "We'll call you now and connect you to the guest.",
     "callGuestFailed": "Failed to initiate call. Please try again.",
-    "viewBooking": "View Booking",
+    "editBooking": "Edit Booking",
+    "cancelBooking": "Cancel Booking",
     "declineRequest": "Decline Request",
 
     "csSendAgreementTo": "Send Agreement to {guest}",

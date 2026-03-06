@@ -10,14 +10,11 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import {
   IoArrowBackOutline,
-  IoTimeOutline,
-  IoArrowForwardOutline,
   IoChatbubbleOutline,
   IoAlertCircleOutline,
-  IoCloseOutline,
-  IoCallOutline,
 } from 'react-icons/io5'
 import RequestHeader from './components/RequestHeader'
+import RequestQuickActions from './components/RequestQuickActions'
 import CounterOfferModal from './components/CounterOfferModal'
 import DeclineModal from './components/DeclineModal'
 import OnboardingWizard from './components/OnboardingWizard'
@@ -34,6 +31,8 @@ import HowItWorksSheet from './components/HowItWorksSheet'
 import ConfirmSendSheet from './components/ConfirmSendSheet'
 import { MessagesSection } from '@/app/partner/bookings/[id]/components/MessagesSection'
 import { useBookingMessages } from '@/app/partner/bookings/[id]/hooks/useBookingMessages'
+import BookingAgreementSection from '@/app/partner/bookings/[id]/components/BookingAgreementSection'
+import { WhatsNeeded } from '@/app/partner/bookings/[id]/components/WhatsNeeded'
 interface RequestData {
   host: {
     id: string
@@ -88,6 +87,52 @@ interface RequestData {
     expiresAt: string | null
   }
   bookingId: string | null
+  bookingSnapshot: {
+    id: string
+    status: string
+    paymentType: string | null
+    paymentStatus: string
+    bookingType: string
+    agreementStatus: string | null
+    agreementSentAt: string | null
+    agreementSignedAt: string | null
+    agreementSignedPdfUrl: string | null
+    signerName: string | null
+    handoffStatus: string | null
+    pickupLocation: string | null
+    guestName: string | null
+    guestEmail: string | null
+    dailyRate: number
+    subtotal: number
+    totalAmount: number
+    numberOfDays: number
+    startDate: string | null
+    endDate: string | null
+    startTime: string | null
+    endTime: string | null
+    createdAt: string
+    tripStartedAt: string | null
+    noShowDeadline: string | null
+    recruitmentAgreementPreference: string | null
+  } | null
+  partnerInfo: {
+    stripeConnected: boolean
+    companyName: string | null
+    name: string
+    email: string
+  }
+  guestInsurance: {
+    provided: boolean
+    provider: string | null
+    policyNumber: string | null
+    verified: boolean
+    verifiedAt: string | null
+    cardFrontUrl: string | null
+    cardBackUrl: string | null
+    expiryDate: string | null
+    coverageType: string | null
+    addedAt: string | null
+  } | null
   onboardingProgress: {
     carPhotosUploaded: boolean
     ratesConfigured: boolean
@@ -133,6 +178,7 @@ export default function RequestDetailPage() {
   const [startingOnboarding, setStartingOnboarding] = useState(false)
   const [copied, setCopied] = useState(false)
   const [connectingPayout, setConnectingPayout] = useState(false)
+  const [sendingAgreement, setSendingAgreement] = useState(false)
   const [showRecruitmentSheet, setShowRecruitmentSheet] = useState(false)
   const [showEditAgreement, setShowEditAgreement] = useState(false)
   const [showEditPayment, setShowEditPayment] = useState(false)
@@ -149,9 +195,11 @@ export default function RequestDetailPage() {
     messages: true,
   })
 
-  // Messages hook — lightweight toast for errors
+  // Toast notification (lightweight — matches booking page pattern)
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const showToast = useCallback((type: 'success' | 'error', message: string) => {
-    if (type === 'error') console.error('[Messages]', message)
+    setToast({ type, message })
+    setTimeout(() => setToast(null), 4000)
   }, [])
   const messages = useBookingMessages({ bookingId: data?.bookingId || null, showToast })
 
@@ -321,6 +369,33 @@ export default function RequestDetailPage() {
     }
   }
 
+  // Send agreement handler — for WhatsNeeded and BookingAgreementSection
+  const sendAgreement = async () => {
+    if (!data?.bookingId) return
+    setSendingAgreement(true)
+    try {
+      const response = await fetch('/api/agreements/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: data.bookingId })
+      })
+      const result = await response.json()
+      if (result.success) {
+        showToast('success', result.message || tBd('bdAgreementSentSuccess'))
+        fetchRequest()
+      } else if (result.status === 'already_signed') {
+        showToast('success', tBd('bdAgreementAlreadySigned'))
+        fetchRequest()
+      } else {
+        showToast('error', result.error || tBd('bdFailedSendAgreement'))
+      }
+    } catch {
+      showToast('error', tBd('bdFailedSendAgreement'))
+    } finally {
+      setSendingAgreement(false)
+    }
+  }
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
     setCopied(true)
@@ -450,82 +525,54 @@ export default function RequestDetailPage() {
     )
   }
 
+  const bookingSnapshot = data.bookingSnapshot || null
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <RequestHeader
-        requestId={request.id}
-        isCarAssigned={isCarAssigned}
-        isExpired={isExpired}
-        hasDeclined={hasDeclined}
-        hasCompleted={hasCompleted}
-        isBookingExpired={isBookingExpired}
-        hasPendingCounterOffer={hasPendingCounterOffer}
-        counterOfferAmount={prospect.counterOfferAmount}
-        copied={copied}
-        onConfirmAndSend={() => setShowConfirmSendSheet(true)}
-        onDecline={() => setShowDecline(true)}
-        onContinueAddingCar={() => setShowRecruitmentSheet(true)}
-        onRefresh={fetchRequest}
-        onCopyId={copyToClipboard}
-      />
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 text-sm font-medium ${
+          toast.type === 'success'
+            ? 'bg-green-600 text-white'
+            : 'bg-red-600 text-white'
+        }`}>
+          {toast.message}
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="px-3 sm:px-4 py-4 sm:py-6">
-        <div className="space-y-6 max-w-3xl">
-          <div className="space-y-6">
-            {/* Booking Expired Banner */}
-            {isBookingExpired && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <IoAlertCircleOutline className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm font-medium text-red-700 dark:text-red-300">
-                    {t('bookingExpiredBanner')}
-                  </p>
-                </div>
-              </div>
-            )}
+        {/* Header — full width */}
+        <div className="space-y-4 mb-4">
+          <RequestHeader
+            requestId={request.id}
+            requestStatus={request.status}
+            isCarAssigned={isCarAssigned}
+            isExpired={isExpired}
+            hasDeclined={hasDeclined}
+            hasCompleted={hasCompleted}
+            isBookingExpired={isBookingExpired}
+            isBookingLate={isBookingLate}
+            isBookingToday={isBookingToday}
+            isBookingWithin24h={isBookingWithin24h}
+            hasPendingCounterOffer={hasPendingCounterOffer}
+            counterOfferAmount={prospect.counterOfferAmount}
+            paymentType={bookingSnapshot?.paymentType || null}
+            timeRemaining={timeRemaining}
+            timeDisplay={timeDisplay}
+            copied={copied}
+            onConfirmAndSend={() => setShowConfirmSendSheet(true)}
+            onDecline={() => setShowDecline(true)}
+            onContinueAddingCar={() => setShowRecruitmentSheet(true)}
+            onRefresh={fetchRequest}
+            onCopyId={copyToClipboard}
+          />
+        </div>
 
-            {/* Late Acceptance / Today / Within 24h Amber Warnings */}
-            {(isBookingLate || isBookingToday || isBookingWithin24h) && (
-              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <IoAlertCircleOutline className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
-                    {isBookingLate ? t('bookingLateWarning') : isBookingToday ? t('bookingTodayWarning') : t('bookingWithin24hWarning')}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Expiration Countdown Banner */}
-            {!isExpired && !hasDeclined && !hasCompleted && timeRemaining && timeDisplay && (
-              <div className={`rounded-lg px-3 py-2.5 sm:px-4 sm:py-3 border flex items-center gap-2.5 ${
-                timeRemaining.hours < 6
-                  ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-                  : 'bg-gray-200/70 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
-              }`}>
-                <IoTimeOutline className={`w-4 h-4 flex-shrink-0 ${
-                  timeRemaining.hours < 6
-                    ? 'text-red-500 dark:text-red-400'
-                    : 'text-gray-400'
-                }`} />
-                <p className={`text-xs flex-1 min-w-0 ${
-                  timeRemaining.hours < 6
-                    ? 'text-red-700 dark:text-red-300'
-                    : 'text-gray-600 dark:text-gray-400'
-                }`}>
-                  {t('completeSetupBefore')}
-                </p>
-                <span className={`text-sm font-semibold flex-shrink-0 ${
-                  timeRemaining.hours < 6
-                    ? 'text-red-600 dark:text-red-400'
-                    : 'text-gray-900 dark:text-white'
-                }`}>
-                  {timeDisplay}
-                </span>
-              </div>
-            )}
-
+        {/* Desktop Grid: left content + right sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Left Column — Main Info */}
+          <div className="lg:col-span-2 space-y-4">
             <VehicleGuestCard
               car={host.cars[0]}
               vehicleInfo={request.vehicleInfo}
@@ -543,9 +590,13 @@ export default function RequestDetailPage() {
                 memberSince: customerData.customer.memberSince,
               } : null}
               isVerified={customerData?.customer?.verification?.status === 'verified'}
-              guestInsurance={null}
+              guestInsurance={data.guestInsurance}
               bookingId={data.bookingId}
-              bookingStatus="PENDING"
+              bookingStatus={bookingSnapshot?.status || 'PENDING'}
+              guestHistory={customerData?.customer?.stats ? {
+                totalBookings: customerData.customer.stats.totalPlatformBookings || 0,
+                totalSpent: customerData.customer.stats.totalPlatformSpent || 0,
+              } : null}
               formatCurrency={formatCurrency}
             />
 
@@ -588,144 +639,157 @@ export default function RequestDetailPage() {
               formatCurrency={formatCurrency}
             />
 
+            {/* Agreement Section — BookingAgreementSection when booking exists, RentalAgreementCard for onboarding */}
+            {bookingSnapshot ? (
+              <BookingAgreementSection
+                booking={{
+                  id: data.bookingId!,
+                  agreementStatus: bookingSnapshot.agreementStatus,
+                  agreementSentAt: bookingSnapshot.agreementSentAt,
+                  agreementSignedAt: bookingSnapshot.agreementSignedAt,
+                  agreementSignedPdfUrl: bookingSnapshot.agreementSignedPdfUrl,
+                  signerName: bookingSnapshot.signerName,
+                  dailyRate: dailyRate,
+                  startDate: request.startDate || '',
+                  endDate: request.endDate || '',
+                  numberOfDays: durationDays,
+                  totalAmount: totalAmount,
+                  subtotal: totalAmount,
+                  pickupLocation: `${request.pickupCity || ''}, ${request.pickupState || ''}`,
+                  guestName: request.guestName || '',
+                  recruitmentAgreementPreference: bookingSnapshot.recruitmentAgreementPreference,
+                }}
+                renterName={request.guestName}
+                partnerName={host.name}
+                partnerEmail={host.email}
+                commissionRate={0.10}
+                onRefresh={fetchRequest}
+                showToast={showToast}
+                defaultExpanded={true}
+              />
+            ) : (
+              <RentalAgreementCard
+                agreementUploaded={onboardingProgress.agreementUploaded}
+                agreementPreference={onboardingProgress.agreementPreference}
+                expanded={expandedSections.agreement}
+                onToggle={() => toggleSection('agreement')}
+                onRefresh={fetchRequest}
+                existingAgreement={data?.agreement}
+                requestData={{
+                  id: request.id,
+                  guestName: request.guestName,
+                  offeredRate: request.offeredRate,
+                  startDate: request.startDate,
+                  endDate: request.endDate,
+                  durationDays: request.durationDays,
+                  pickupCity: request.pickupCity,
+                  pickupState: request.pickupState,
+                  totalAmount: request.totalAmount,
+                  hostEarnings: request.hostEarnings,
+                }}
+                hostName={host.name}
+                hostEmail={host.email}
+              />
+            )}
+
             <GuestVerificationCard
               hasCarListed={hasCarListed}
               expanded={expandedSections.verification}
               onToggle={() => toggleSection('verification')}
             />
 
-            <RentalAgreementCard
-              agreementUploaded={onboardingProgress.agreementUploaded}
-              agreementPreference={onboardingProgress.agreementPreference}
-              expanded={expandedSections.agreement}
-              onToggle={() => toggleSection('agreement')}
-              onRefresh={fetchRequest}
-              existingAgreement={data?.agreement}
-              requestData={{
-                id: request.id,
-                guestName: request.guestName,
-                offeredRate: request.offeredRate,
-                startDate: request.startDate,
-                endDate: request.endDate,
-                durationDays: request.durationDays,
-                pickupCity: request.pickupCity,
-                pickupState: request.pickupState,
-                totalAmount: request.totalAmount,
-                hostEarnings: request.hostEarnings,
-              }}
-              hostName={host.name}
-              hostEmail={host.email}
+            {/* Onboarding Progress Stepper */}
+            {!isExpired && !hasDeclined && !hasCompleted && !isBookingExpired && (
+              <ProgressStepper
+                onboardingProgress={onboardingProgress}
+                onOpenRecruitmentSheet={() => setShowRecruitmentSheet(true)}
+                onEditAgreement={() => setShowEditAgreement(true)}
+                onEditPayment={() => setShowEditPayment(true)}
+                onConnectPayout={handleConnectPayoutDirect}
+                connectingPayout={connectingPayout}
+                hasPendingCounterOffer={hasPendingCounterOffer}
+              />
+            )}
+
+            {/* Important Note */}
+            {!isExpired && !hasDeclined && !hasCompleted && !isBookingExpired && (
+              <div className="p-3 bg-gray-200/70 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <strong>{t('noteLabel')}</strong> {t('noteCarNotPublic')}{' '}
+                  <button onClick={() => setShowHowItWorks(true)} className="text-xs text-orange-600 dark:text-orange-400 font-medium hover:underline">
+                    {t('learnHowItWorks')}
+                  </button>
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column — Sidebar */}
+          <div className="space-y-4">
+            <RequestQuickActions
+              bookingId={data.bookingId}
+              bookingSnapshot={bookingSnapshot}
+              isCarAssigned={isCarAssigned}
+              isExpired={isExpired}
+              isBookingExpired={isBookingExpired}
+              hasDeclined={hasDeclined}
+              hasCompleted={hasCompleted}
+              hasPendingCounterOffer={hasPendingCounterOffer}
+              guestPhone={request.guestPhone}
+              onConfirmAndSend={() => setShowConfirmSendSheet(true)}
+              onDecline={() => setShowDecline(true)}
+              onContinueAddingCar={() => setShowRecruitmentSheet(true)}
+              onCounterOffer={() => setShowCounterOffer(true)}
+              onSendAgreement={data.bookingId ? sendAgreement : undefined}
+              sendingAgreement={sendingAgreement}
+              onEdit={() => setShowCounterOffer(true)}
+              onCancel={() => setShowDecline(true)}
             />
           </div>
-
-          {/* Quick Actions */}
-          {!isExpired && !isBookingExpired && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('quickActions')}</h3>
-              <div className="space-y-2">
-                {/* Call Guest — CAR_ASSIGNED + phone available */}
-                {isCarAssigned && request.guestPhone && (
-                  <button
-                    onClick={async () => {
-                      if (!data.bookingId) return
-                      try {
-                        const res = await fetch('/api/twilio/masked-call', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          credentials: 'include',
-                          body: JSON.stringify({ bookingId: data.bookingId }),
-                        })
-                        if (res.ok) {
-                          alert(t('callGuestSuccess'))
-                        } else {
-                          const d = await res.json().catch(() => ({}))
-                          alert(d.error || t('callGuestFailed'))
-                        }
-                      } catch {
-                        alert(t('callGuestFailed'))
-                      }
-                    }}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
-                  >
-                    <IoCallOutline className="w-4 h-4" />
-                    {t('callGuest')}
-                  </button>
-                )}
-
-                {/* View Booking — when booking exists */}
-                {data.bookingId && (
-                  <a
-                    href={`/partner/bookings/${data.bookingId}`}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
-                  >
-                    <IoArrowForwardOutline className="w-4 h-4" />
-                    {t('viewBooking')}
-                  </a>
-                )}
-
-                {/* Decline Request — dangerous */}
-                {!hasDeclined && !hasCompleted && (
-                  <button
-                    onClick={() => setShowDecline(true)}
-                    className="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center gap-2"
-                  >
-                    <IoCloseOutline className="w-4 h-4" />
-                    {t('declineRequest')}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
         </div>
 
+        {/* Full-width sections below grid */}
+        <div className="space-y-4 mt-4">
+          {/* What's Needed — when booking exists */}
+          {bookingSnapshot && (
+            <WhatsNeeded
+              booking={{
+                paymentType: bookingSnapshot.paymentType,
+                agreementStatus: bookingSnapshot.agreementStatus,
+                signerName: bookingSnapshot.signerName,
+                agreementSignedAt: bookingSnapshot.agreementSignedAt,
+                agreementSignedPdfUrl: bookingSnapshot.agreementSignedPdfUrl,
+                originalBookingId: null,
+                vehicleAccepted: false,
+              }}
+              guestInsurance={data.guestInsurance}
+              partner={{ stripeConnected: data.partnerInfo.stripeConnected }}
+              sendAgreement={sendAgreement}
+            />
+          )}
 
-        {/* What's Needed — Interactive Progress Stepper */}
-        {!isExpired && !hasDeclined && !hasCompleted && !isBookingExpired && (
-          <ProgressStepper
-            onboardingProgress={onboardingProgress}
-            onOpenRecruitmentSheet={() => setShowRecruitmentSheet(true)}
-            onEditAgreement={() => setShowEditAgreement(true)}
-            onEditPayment={() => setShowEditPayment(true)}
-            onConnectPayout={handleConnectPayoutDirect}
-            connectingPayout={connectingPayout}
-            hasPendingCounterOffer={hasPendingCounterOffer}
-          />
-        )}
-
-        {/* Important Note - Standalone */}
-        {!isExpired && !hasDeclined && !hasCompleted && !isBookingExpired && (
-          <div className="mt-4 sm:mt-6 p-3 bg-gray-200/70 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg space-y-3">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              <strong>{t('noteLabel')}</strong> {t('noteCarNotPublic')}{' '}
-              <button onClick={() => setShowHowItWorks(true)} className="text-xs text-orange-600 dark:text-orange-400 font-medium hover:underline">
-                {t('learnHowItWorks')}
-              </button>
-            </p>
-          </div>
-        )}
-
-        {/* Help Section - Bottom */}
-        <div className="mt-4 sm:mt-6 bg-gray-100 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-          <div className="flex items-start gap-3">
-            <IoChatbubbleOutline className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {t('questionsHereToHelp')}
-              </p>
-              <div className="flex flex-wrap gap-3 mt-2">
-                <a
-                  href="tel:+18557030806"
-                  className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"
-                >
-                  (855) 703-0806
-                </a>
-                <a
-                  href="mailto:info@itwhip.com"
-                  className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"
-                >
-                  info@itwhip.com
-                </a>
+          {/* Help Section — always last */}
+          <div className="bg-gray-100 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <div className="flex items-start gap-3">
+              <IoChatbubbleOutline className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {t('questionsHereToHelp')}
+                </p>
+                <div className="flex flex-wrap gap-3 mt-2">
+                  <a
+                    href="tel:+18557030806"
+                    className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"
+                  >
+                    (855) 703-0806
+                  </a>
+                  <a
+                    href="mailto:info@itwhip.com"
+                    className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"
+                  >
+                    info@itwhip.com
+                  </a>
+                </div>
               </div>
             </div>
           </div>

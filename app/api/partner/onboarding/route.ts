@@ -166,12 +166,90 @@ export async function GET(request: NextRequest) {
 
     // Resolve guestUserId: prefer existingGuestId, fallback to booking's renterId
     let guestUserId = fleetRequest.existingGuestId || null
-    if (!guestUserId && (fleetRequest as any).fulfilledBookingId) {
+
+    // Fetch booking snapshot when a fulfilled booking exists
+    let bookingSnapshot = null
+    let guestInsurance = null
+    const fulfilledBookingId = (fleetRequest as any).fulfilledBookingId || null
+    if (fulfilledBookingId) {
       const booking = await prisma.rentalBooking.findUnique({
-        where: { id: (fleetRequest as any).fulfilledBookingId },
-        select: { renterId: true }
+        where: { id: fulfilledBookingId },
+        select: {
+          id: true, renterId: true, status: true, paymentType: true, paymentStatus: true, bookingType: true,
+          agreementStatus: true, agreementSentAt: true, agreementSignedAt: true,
+          agreementSignedPdfUrl: true, signerName: true,
+          handoffStatus: true, pickupLocation: true, guestName: true, guestEmail: true,
+          dailyRate: true, subtotal: true, totalAmount: true, numberOfDays: true,
+          startDate: true, endDate: true, startTime: true, endTime: true, createdAt: true,
+          tripStartedAt: true, noShowDeadline: true,
+          renter: {
+            select: {
+              reviewerProfile: {
+                select: {
+                  insuranceProvider: true, policyNumber: true, insuranceVerified: true,
+                  insuranceVerifiedAt: true, insuranceCardFrontUrl: true, insuranceCardBackUrl: true,
+                  expiryDate: true, coverageType: true, insuranceAddedAt: true,
+                }
+              }
+            }
+          }
+        }
       })
-      if (booking?.renterId) guestUserId = booking.renterId
+      if (booking) {
+        // Fallback guestUserId from booking's renter
+        if (!guestUserId && booking.renterId) guestUserId = booking.renterId
+        bookingSnapshot = {
+          id: booking.id,
+          status: booking.status,
+          paymentType: booking.paymentType,
+          paymentStatus: booking.paymentStatus,
+          bookingType: booking.bookingType,
+          agreementStatus: booking.agreementStatus,
+          agreementSentAt: booking.agreementSentAt?.toISOString() || null,
+          agreementSignedAt: booking.agreementSignedAt?.toISOString() || null,
+          agreementSignedPdfUrl: booking.agreementSignedPdfUrl,
+          signerName: booking.signerName,
+          handoffStatus: booking.handoffStatus,
+          pickupLocation: booking.pickupLocation,
+          guestName: booking.guestName,
+          guestEmail: booking.guestEmail,
+          dailyRate: booking.dailyRate,
+          subtotal: booking.subtotal,
+          totalAmount: booking.totalAmount,
+          numberOfDays: booking.numberOfDays,
+          startDate: booking.startDate?.toISOString() || null,
+          endDate: booking.endDate?.toISOString() || null,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          createdAt: booking.createdAt.toISOString(),
+          tripStartedAt: booking.tripStartedAt?.toISOString() || null,
+          noShowDeadline: booking.noShowDeadline?.toISOString() || null,
+          recruitmentAgreementPreference: prospect.agreementPreference || null,
+        }
+        const rp = booking.renter?.reviewerProfile
+        if (rp) {
+          guestInsurance = {
+            provided: !!(rp.insuranceProvider && rp.policyNumber),
+            provider: rp.insuranceProvider || null,
+            policyNumber: rp.policyNumber || null,
+            verified: rp.insuranceVerified || false,
+            verifiedAt: rp.insuranceVerifiedAt?.toISOString() || null,
+            cardFrontUrl: rp.insuranceCardFrontUrl || null,
+            cardBackUrl: rp.insuranceCardBackUrl || null,
+            expiryDate: rp.expiryDate?.toISOString() || null,
+            coverageType: rp.coverageType || null,
+            addedAt: rp.insuranceAddedAt?.toISOString() || null,
+          }
+        }
+      }
+    }
+
+    // Partner info for WhatsNeeded
+    const partnerInfo = {
+      stripeConnected: !!(host.stripeConnectAccountId && (host.stripeChargesEnabled || host.stripePayoutsEnabled)),
+      companyName: host.companyName || null,
+      name: host.name,
+      email: host.email,
     }
 
     // Build response
@@ -218,7 +296,10 @@ export async function GET(request: NextRequest) {
         platformFee: (fleetRequest as any).platformFee ?? null,
         expiresAt: fleetRequest.expiresAt || prospect.inviteTokenExp
       },
-      bookingId: (fleetRequest as any).fulfilledBookingId || null,
+      bookingId: fulfilledBookingId,
+      bookingSnapshot,
+      partnerInfo,
+      guestInsurance,
       onboardingProgress,
       timeRemaining,
       agreement: prospect.hostAgreementUrl ? {

@@ -16649,6 +16649,8 @@
     "statusExpired": "EXPIRÉE",
     "statusCounterPending": "CONTRE-OFFRE EN ATTENTE",
     "statusPending": "EN ATTENTE",
+    "statusCarAssigned": "VOITURE ASSIGNÉE",
+    "reservationNumber": "Réservation #",
     "statusCarApproved": "VOITURE APPROUVÉE",
     "recruitedBooking": "Réservation Recrutée",
     "refresh": "Actualiser",
@@ -17093,7 +17095,8 @@
     "callGuest": "Appeler l'Invité",
     "callGuestSuccess": "Nous vous appelons maintenant pour vous connecter à l'invité.",
     "callGuestFailed": "Impossible de lancer l'appel. Veuillez réessayer.",
-    "viewBooking": "Voir la Réservation",
+    "editBooking": "Modifier la Réservation",
+    "cancelBooking": "Annuler la Réservation",
     "declineRequest": "Refuser la Demande",
 
     "csSendAgreementTo": "Envoyer l'accord à {guest}",

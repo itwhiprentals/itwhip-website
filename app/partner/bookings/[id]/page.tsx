@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import {
@@ -120,6 +121,8 @@ interface BookingDetails {
   replacedByBookingId: string | null
   vehicleAccepted: boolean
   vehicleAcceptedAt: string | null
+  // Reservation request link
+  reservationRequestId: string | null
   // Host final review fields
   hostFinalReviewStatus: string | null
   hostFinalReviewDeadline: string | null
@@ -220,7 +223,7 @@ interface GuestHistory {
 export default function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: bookingId } = use(params)
   const t = useTranslations('PartnerBookings')
-
+  const router = useRouter()
   const locale = useLocale()
 
   const [loading, setLoading] = useState(true)
@@ -289,6 +292,14 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       const data = await response.json()
 
       if (data.success) {
+        // Redirect to request page if request stage is still active
+        // (agreement not yet sent/viewed/signed — request page handles the onboarding)
+        const b = data.booking
+        if (b.reservationRequestId && !['sent', 'viewed', 'signed'].includes(b.agreementStatus || '')) {
+          router.replace(`/partner/requests/${b.reservationRequestId}`)
+          return
+        }
+
         setBooking(data.booking)
         setRenter(data.renter)
         setVehicle(data.vehicle)

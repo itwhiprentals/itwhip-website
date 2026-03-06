@@ -43,6 +43,7 @@ interface VehicleGuestCardProps {
   guestInsurance?: { provided: boolean } | null
   bookingId?: string | null
   bookingStatus?: string | null
+  guestHistory?: { totalBookings: number; totalSpent: number } | null
   formatCurrency?: (amount: number) => string
 }
 
@@ -59,6 +60,7 @@ export default function VehicleGuestCard({
   guestInsurance,
   bookingId,
   bookingStatus,
+  guestHistory,
   formatCurrency,
 }: VehicleGuestCardProps) {
   const t = useTranslations('PartnerRequestDetail')
@@ -147,7 +149,7 @@ export default function VehicleGuestCard({
 
       {/* Guest Section */}
       {renter ? (
-        <GuestInfoCard renter={renter} isVerified={isVerified} guestInsurance={guestInsurance} bookingId={bookingId} bookingStatus={bookingStatus} />
+        <GuestInfoCard renter={renter} isVerified={isVerified} guestInsurance={guestInsurance} bookingId={bookingId} bookingStatus={bookingStatus} guestHistory={guestHistory} formatCurrency={formatCurrency} />
       ) : (
         <div className="p-4">
           <div className="flex items-start gap-4">

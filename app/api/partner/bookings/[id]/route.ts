@@ -207,6 +207,11 @@ export async function GET(
             source: true
           }
         },
+        reservationRequest: {
+          select: {
+            id: true,
+          }
+        },
         messages: {
           select: {
             id: true,
@@ -403,6 +408,9 @@ export async function GET(
         noShowMarkedAt: booking.noShowMarkedAt?.toISOString() || null,
         noShowFeeCharged: booking.noShowFeeCharged ? Number(booking.noShowFeeCharged) : null,
         noShowFeeStatus: booking.noShowFeeStatus || null,
+
+        // Reservation request link (for redirect when request stage is active)
+        reservationRequestId: (booking as any).reservationRequest?.id || null,
 
         // Verification method (populated below)
         verificationMethod: null as string | null,

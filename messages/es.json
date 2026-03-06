@@ -16649,6 +16649,8 @@
     "statusExpired": "EXPIRADA",
     "statusCounterPending": "CONTRAOFERTA PENDIENTE",
     "statusPending": "PENDIENTE",
+    "statusCarAssigned": "AUTO ASIGNADO",
+    "reservationNumber": "Reserva #",
     "statusCarApproved": "AUTO APROBADO",
     "recruitedBooking": "Reserva Reclutada",
     "refresh": "Actualizar",
@@ -17093,7 +17095,8 @@
     "callGuest": "Llamar al Huésped",
     "callGuestSuccess": "Te llamaremos ahora y te conectaremos con el huésped.",
     "callGuestFailed": "No se pudo iniciar la llamada. Intenta de nuevo.",
-    "viewBooking": "Ver Reserva",
+    "editBooking": "Editar Reserva",
+    "cancelBooking": "Cancelar Reserva",
     "declineRequest": "Rechazar Solicitud",
 
     "csSendAgreementTo": "Enviar acuerdo a {guest}",

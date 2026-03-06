@@ -28,6 +28,8 @@ interface ActiveBooking {
   pickupLocation: string | null
   dropoffLocation: string | null
   totalAmount: number
+  reservationRequestId: string | null
+  agreementStatus: string | null
   guest: {
     name: string
     phone: string | null
@@ -88,6 +90,8 @@ export default function ActiveBookingCard({
               pickupLocation: b.pickupLocation,
               dropoffLocation: b.dropoffLocation,
               totalAmount: b.totalAmount || 0,
+              reservationRequestId: b.reservationRequestId || null,
+              agreementStatus: b.agreementStatus || null,
               guest: {
                 name: b.guest?.name || b.guestName || 'Guest',
                 phone: b.guest?.phone || b.guestPhone || null,
@@ -231,7 +235,10 @@ export default function ActiveBookingCard({
             return (
               <Link
                 key={booking.id}
-                href={`/partner/bookings/${booking.id}`}
+                href={booking.reservationRequestId && booking.agreementStatus !== 'sent' && booking.agreementStatus !== 'viewed' && booking.agreementStatus !== 'signed'
+                  ? `/partner/requests/${booking.reservationRequestId}`
+                  : `/partner/bookings/${booking.id}`
+                }
                 className="flex gap-3 p-2 -mx-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
               >
                 {/* Vehicle Photo */}

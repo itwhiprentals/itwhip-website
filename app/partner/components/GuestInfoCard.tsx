@@ -9,6 +9,8 @@ import {
   IoCallOutline,
   IoShieldCheckmarkOutline,
   IoShieldOutline,
+  IoCalendarOutline,
+  IoReceiptOutline,
 } from 'react-icons/io5'
 import { formatPhoneNumber } from '@/app/utils/helpers'
 
@@ -25,9 +27,11 @@ interface GuestInfoCardProps {
   guestInsurance?: { provided: boolean } | null
   bookingId?: string | null
   bookingStatus?: string | null
+  guestHistory?: { totalBookings: number; totalSpent: number } | null
+  formatCurrency?: (amount: number) => string
 }
 
-export function GuestInfoCard({ renter, isVerified, guestInsurance, bookingId, bookingStatus }: GuestInfoCardProps) {
+export function GuestInfoCard({ renter, isVerified, guestInsurance, bookingId, bookingStatus, guestHistory, formatCurrency }: GuestInfoCardProps) {
   const t = useTranslations('PartnerBookings')
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
 
@@ -56,20 +60,33 @@ export function GuestInfoCard({ renter, isVerified, guestInsurance, bookingId, b
                     {t('bdVerified')}
                   </span>
                 ) : (
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-medium uppercase bg-red-500 text-white">
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-red-600 text-white">
+                    <IoShieldOutline className="w-3 h-3" />
                     {t('bdNotVerified')}
                   </span>
                 )
               )}
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-              <IoMailOutline className="w-4 h-4" />
+            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 mt-1">
+              <IoMailOutline className="w-3.5 h-3.5 flex-shrink-0" />
               {renter.email}
             </div>
             {renter.phone && (
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                <IoCallOutline className="w-4 h-4" />
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                <IoCallOutline className="w-3.5 h-3.5 flex-shrink-0" />
                 +1 {formatPhoneNumber(renter.phone)}
+              </div>
+            )}
+            {renter.memberSince && (
+              <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+                <IoCalendarOutline className="w-3.5 h-3.5 flex-shrink-0" />
+                {t('bdMemberSince')} {new Date(renter.memberSince).toLocaleDateString()}
+              </div>
+            )}
+            {guestHistory && (
+              <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+                <IoReceiptOutline className="w-3.5 h-3.5 flex-shrink-0" />
+                {guestHistory.totalBookings} {t('bdBookingsLabel')} · {formatCurrency ? formatCurrency(guestHistory.totalSpent) : `$${guestHistory.totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} {t('bdSpentLabel')}
               </div>
             )}
             {bookingId && bookingStatus === 'CONFIRMED' && renter.phone && (
@@ -98,15 +115,10 @@ export function GuestInfoCard({ renter, isVerified, guestInsurance, bookingId, b
                 {t('bdCallGuest')}
               </button>
             )}
-            {renter.memberSince && (
-              <p className="text-xs text-gray-400 mt-1">
-                {t('bdMemberSince')} {new Date(renter.memberSince).toLocaleDateString()}
-              </p>
-            )}
           </div>
         </div>
         <div className="flex flex-col items-end justify-between self-stretch flex-shrink-0">
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium uppercase bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">
+          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-green-600 text-white">
             ACTIVE MEMBER
           </span>
         </div>

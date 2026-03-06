@@ -111,7 +111,7 @@ export function WhatsNeeded({
                 ? 'bg-green-600 text-white'
                 : booking.paymentType === 'CASH'
                   ? 'bg-gray-400 text-white'
-                  : 'bg-red-500 text-white'
+                  : 'bg-red-600 text-white'
             }`}>
               {booking.agreementStatus === 'signed'
                 ? t('bdSigned')
@@ -186,7 +186,7 @@ export function WhatsNeeded({
                 ? 'bg-green-600 text-white'
                 : booking.paymentType === 'CASH'
                   ? 'bg-gray-400 text-white'
-                  : 'bg-red-500 text-white'
+                  : 'bg-red-600 text-white'
             }`}>
               {partner?.stripeConnected
                 ? t('bdConnected')

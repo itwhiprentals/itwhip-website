@@ -90,6 +90,11 @@ export async function GET(request: NextRequest) {
               orderBy: { order: 'asc' }
             }
           }
+        },
+        reservationRequest: {
+          select: {
+            id: true,
+          }
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -129,7 +134,9 @@ export async function GET(request: NextRequest) {
         totalAmount: Number(booking.totalAmount) || 0,
         createdAt: booking.createdAt.toISOString(),
         days,
-        paymentType: booking.paymentType || null
+        paymentType: booking.paymentType || null,
+        reservationRequestId: (booking as any).reservationRequest?.id || null,
+        agreementStatus: booking.agreementStatus || null
       }
     })
 
