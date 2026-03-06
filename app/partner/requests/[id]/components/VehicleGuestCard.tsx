@@ -134,7 +134,7 @@ export default function VehicleGuestCard({
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                     {vehicleInfo || t('vehicle')}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {t('addPhotosAndRate')}
                   </p>
                 </div>

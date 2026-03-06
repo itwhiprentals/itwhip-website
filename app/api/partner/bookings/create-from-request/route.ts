@@ -1,7 +1,7 @@
 // app/api/partner/bookings/create-from-request/route.ts
-// Sends agreement + guest notifications when host clicks "Confirm & Send Agreement"
-// Finalize creates the PENDING booking. This endpoint enriches it with scenario data,
-// sends the agreement, notifies the guest, and transitions to FULFILLED.
+// "Confirm & Send" — sends agreement to guest and transitions to FULFILLED.
+// Finalize creates the PENDING booking and notifies the guest (email + SMS + auto-login).
+// This endpoint enriches with scenario data, sends the agreement, and marks fulfilled.
 // Fallback: if no booking exists (pre-migration), creates one from scratch.
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -10,9 +10,8 @@ import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 import { nanoid } from 'nanoid'
 import { logProspectActivity } from '@/app/lib/auth/host-tokens'
-import { GuestTokenHandler } from '@/app/lib/auth/guest-tokens'
 import { sendEmail } from '@/app/lib/email/sender'
-import { emailConfig, logEmail, generateEmailReference, getEmailFooterHtml, getEmailFooterText } from '@/app/lib/email/config'
+import { emailConfig } from '@/app/lib/email/config'
 import { generateAgreementToken, getTokenExpiryDate, generateSigningUrl } from '@/app/lib/agreements/tokens'
 import { sendVehicleChangeEmail } from '@/app/lib/email/booking-emails'
 import {
@@ -443,133 +442,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Scenarios B, C, NEW: send booking confirmation + auto-login
-    if (!isScenarioA && guest.guestEmail) {
-      let autoLoginUrl = ''
-      try {
-        const guestAccessToken = await GuestTokenHandler.createGuestToken(bookingId, guest.guestEmail)
-        autoLoginUrl = `${baseUrl}/api/auth/guest-auto-login?token=${guestAccessToken}`
-      } catch (tokenErr) {
-        console.error('[CreateFromRequest] Failed to create guest access token:', tokenErr)
-      }
-
-      const guestFirstName = guest.guestName.split(' ')[0]
-
-      try {
-        const guestRefId = generateEmailReference('GI')
-        const guestSubject = `Your Car Rental is Almost Ready! — ${vehicleDesc}`
-        const guestEmailResult = await sendEmail(
-          guest.guestEmail,
-          guestSubject,
-          `
-          <!DOCTYPE html>
-          <html>
-            <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; background-color: #ffffff; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
-                <p style="margin: 0 0 4px 0; font-size: 12px; color: #ea580c; text-transform: uppercase; letter-spacing: 0.5px;">
-                  Booking Created • ${booking.bookingCode}
-                </p>
-                <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ea580c;">
-                  Your ${vehicleDesc} Rental
-                </h1>
-              </div>
-              <p style="font-size: 16px; margin: 0 0 16px 0; color: #1f2937;">Hi ${guestFirstName},</p>
-              <p style="font-size: 16px; margin: 0 0 16px 0; color: #111827;">
-                Great news! A <strong>${vehicleDesc}</strong> has been reserved for you through ItWhip.
-              </p>
-              <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin: 16px 0;">
-                <tr>
-                  <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Vehicle</td>
-                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${vehicleDesc}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Rental Dates</td>
-                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${startDateStr} — ${endDateStr}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Duration</td>
-                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600; text-align: right; border-bottom: 1px solid #e5e7eb;">${pricing.durationDays} days</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb;">Daily Rate</td>
-                  <td style="padding: 8px 0; color: #1f2937; font-weight: 700; text-align: right; border-bottom: 1px solid #e5e7eb;">$${pricing.dailyRate}/day</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #374151;">Total</td>
-                  <td style="padding: 8px 0; color: #1f2937; font-weight: 700; text-align: right;">$${pricing.totalAmount.toFixed(2)}</td>
-                </tr>
-              </table>
-              <p style="font-size: 14px; color: #111827; margin: 20px 0;">
-                Please <strong>sign the rental agreement</strong> we sent you, then choose your payment method to finalize the booking.
-              </p>
-              <div style="text-align: center; margin: 28px 0;">
-                <a href="${autoLoginUrl}" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
-                  View My Booking
-                </a>
-              </div>
-              <p style="font-size: 12px; color: #9ca3af; text-align: center; margin: 0 0 20px 0;">
-                These links expire in 7 days. You'll be asked to set a password on your first visit.
-              </p>
-              ${getEmailFooterHtml(guestRefId)}
-            </body>
-          </html>
-          `,
-          `
-YOUR CAR RENTAL IS ALMOST READY • ${booking.bookingCode}
-
-Hi ${guestFirstName},
-
-Great news! A ${vehicleDesc} has been reserved for you through ItWhip.
-
-BOOKING DETAILS:
-- Vehicle: ${vehicleDesc}
-- Rental Dates: ${startDateStr} — ${endDateStr}
-- Duration: ${pricing.durationDays} days
-- Daily Rate: $${pricing.dailyRate}/day
-- Total: $${pricing.totalAmount.toFixed(2)}
-
-Please sign the rental agreement, then choose your payment method.
-
-View your booking: ${autoLoginUrl}
-
-${getEmailFooterText(guestRefId)}
-          `.trim()
-        )
-
-        await logEmail({
-          recipientEmail: guest.guestEmail,
-          recipientName: guest.guestName,
-          subject: guestSubject,
-          emailType: 'BOOKING_CONFIRMATION',
-          relatedType: 'RentalBooking',
-          relatedId: bookingId,
-          messageId: guestEmailResult.messageId,
-          referenceId: guestRefId
-        })
-
-        console.log(`[CreateFromRequest] Guest email sent to ${guest.guestEmail}`)
-      } catch (emailErr) {
-        console.error('[CreateFromRequest] Failed to send guest email:', emailErr)
-      }
-
-      // Guest SMS
-      if (guest.guestPhone && autoLoginUrl) {
-        try {
-          const { sendSms } = await import('@/app/lib/twilio/sms')
-          const smsBody = `Hi ${guestFirstName}! Your ${vehicleDesc} rental (${booking.bookingCode}) is set up on ItWhip. Sign your agreement and choose payment here: ${autoLoginUrl}`
-          await sendSms(guest.guestPhone, smsBody, {
-            type: 'SYSTEM',
-            bookingId,
-            hostId: host.id,
-            guestId: guest.reviewerProfileId || undefined
-          })
-          console.log(`[CreateFromRequest] Guest SMS sent to ${guest.guestPhone}`)
-        } catch (smsErr) {
-          console.error('[CreateFromRequest] Failed to send guest SMS:', smsErr)
-        }
-      }
-    }
+    // Guest notification (email + SMS + auto-login) is handled by finalize.
+    // This endpoint only sends the agreement and updates status.
 
     // ═══════════════════════════════════════════════════
     // STEP 8: Update prospect, request, host

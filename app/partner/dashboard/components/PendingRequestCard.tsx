@@ -20,7 +20,9 @@ import {
   IoPersonOutline,
   IoStarOutline,
   IoShieldCheckmarkOutline,
-  IoInformationCircleOutline
+  IoInformationCircleOutline,
+  IoChevronDownOutline,
+  IoChevronUpOutline
 } from 'react-icons/io5'
 import RevenueLearnMoreSheet from './RevenueLearnMoreSheet'
 
@@ -104,6 +106,7 @@ export default function PendingRequestCard() {
   })
   const [timeRemaining, setTimeRemaining] = useState<string>('')
   const [revenueSheetOpen, setRevenueSheetOpen] = useState(false)
+  const [detailsExpanded, setDetailsExpanded] = useState(false)
   const t = useTranslations('PartnerDashboard')
 
   const locale = useLocale()
@@ -412,82 +415,97 @@ export default function PendingRequestCard() {
           </div>
         )}
 
-        {/* ── Booking Details ─────────────────────────────── */}
-        <div className="px-4 py-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Guest */}
-            {request?.guestName && (
-              <div className="flex items-start gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-transparent">
-                <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-                  <IoPersonOutline className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">{t('prGuestRequesting')}</p>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span className="font-semibold text-gray-900 dark:text-white">{request.guestName}</span>
-                    {request.guestRating && (
-                      <span className="flex items-center gap-0.5 text-yellow-500">
-                        <IoStarOutline className="w-3.5 h-3.5 fill-current" />
-                        <span className="text-xs font-bold">{request.guestRating.toFixed(1)}</span>
-                      </span>
-                    )}
-                    {request.guestTrips !== null && request.guestTrips !== undefined && (
-                      <span className="text-[11px] text-gray-400 dark:text-gray-500">{t('prTrips', { trips: request.guestTrips })}</span>
-                    )}
-                    {request.guestVerified && (
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded text-[10px] font-semibold">
-                        <IoShieldCheckmarkOutline className="w-3 h-3" />
-                        {t('prVerified')}
-                      </span>
-                    )}
+        {/* ── Booking Details (collapsible) ───────────────── */}
+        <div className="border-t border-gray-200 dark:border-gray-700 mt-3" />
+        <div className="px-4 py-3">
+          <button
+            onClick={() => setDetailsExpanded(prev => !prev)}
+            className="w-full flex items-center justify-between text-sm font-medium text-gray-900 dark:text-white transition-colors"
+          >
+            <span className="flex items-center gap-1.5">
+              <IoPersonOutline className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+              {t('prBookingDetails')}
+            </span>
+            {detailsExpanded
+              ? <IoChevronUpOutline className="w-4 h-4" />
+              : <IoChevronDownOutline className="w-4 h-4" />
+            }
+          </button>
+          {detailsExpanded && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              {/* Guest */}
+              {request?.guestName && (
+                <div className="flex items-start gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-transparent">
+                  <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+                    <IoPersonOutline className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">{t('prGuestRequesting')}</p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <span className="font-semibold text-gray-900 dark:text-white">{request.guestName}</span>
+                      {request.guestRating && (
+                        <span className="flex items-center gap-0.5 text-yellow-500">
+                          <IoStarOutline className="w-3.5 h-3.5 fill-current" />
+                          <span className="text-xs font-bold">{request.guestRating.toFixed(1)}</span>
+                        </span>
+                      )}
+                      {request.guestTrips !== null && request.guestTrips !== undefined && (
+                        <span className="text-[11px] text-gray-400 dark:text-gray-500">{t('prTrips', { trips: request.guestTrips })}</span>
+                      )}
+                      {request.guestVerified && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded text-[10px] font-semibold">
+                          <IoShieldCheckmarkOutline className="w-3 h-3" />
+                          {t('prVerified')}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Vehicle */}
-            <div className="flex items-start gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-transparent">
-              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                <IoCarOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              {/* Vehicle */}
+              <div className="flex items-start gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-transparent">
+                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                  <IoCarOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">{t('prYourVehicle')}</p>
+                  <p className="font-semibold text-gray-900 dark:text-white mt-0.5">
+                    {progress.hasVehicle ? (request?.vehicleInfo || t('prVehicleAdded')) : (
+                      <span className="text-amber-600 dark:text-amber-400">{t('prNotListed')}</span>
+                    )}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">{t('prYourVehicle')}</p>
-                <p className="font-semibold text-gray-900 dark:text-white mt-0.5">
-                  {progress.hasVehicle ? (request?.vehicleInfo || t('prVehicleAdded')) : (
-                    <span className="text-amber-600 dark:text-amber-400">{t('prNotListed')}</span>
-                  )}
-                </p>
+
+              {/* Dates */}
+              <div className="flex items-start gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-transparent">
+                <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
+                  <IoCalendarOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">{t('prRentalPeriod')}</p>
+                  <p className="font-semibold text-gray-900 dark:text-white mt-0.5">
+                    {datesDisplay}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('prDaysCount', { days: request?.durationDays || 0 })}</p>
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="flex items-start gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-transparent">
+                <div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
+                  <IoLocationOutline className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                </div>
+                <div>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">{t('prPickupLocation')}</p>
+                  <p className="font-semibold text-gray-900 dark:text-white mt-0.5">
+                    {request?.pickupCity || 'Phoenix'}, {request?.pickupState || 'AZ'}
+                  </p>
+                </div>
               </div>
             </div>
-
-            {/* Dates */}
-            <div className="flex items-start gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-transparent">
-              <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
-                <IoCalendarOutline className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">{t('prRentalPeriod')}</p>
-                <p className="font-semibold text-gray-900 dark:text-white mt-0.5">
-                  {datesDisplay}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{t('prDaysCount', { days: request?.durationDays || 0 })}</p>
-              </div>
-            </div>
-
-            {/* Location */}
-            <div className="flex items-start gap-3 p-3 bg-gray-200/70 dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-transparent">
-              <div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
-                <IoLocationOutline className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-              </div>
-              <div>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">{t('prPickupLocation')}</p>
-                <p className="font-semibold text-gray-900 dark:text-white mt-0.5">
-                  {request?.pickupCity || 'Phoenix'}, {request?.pickupState || 'AZ'}
-                </p>
-              </div>
-            </div>
-          </div>
-
+          )}
         </div>
 
         {/* ── Divider ─────────────────────────────────────── */}

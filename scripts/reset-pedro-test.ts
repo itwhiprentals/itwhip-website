@@ -126,13 +126,15 @@ async function main() {
 
   // Credit transactions for guests
   if (renterIds.length > 0) {
-    const r8 = await prisma.creditBonusTransaction.deleteMany({ where: { userId: { in: renterIds } } })
-    console.log(`CreditBonusTransactions deleted: ${r8.count}`)
+    try {
+      const r8 = await prisma.creditBonusTransaction.deleteMany({ where: { guestId: { in: renterIds } } })
+      console.log(`CreditBonusTransactions deleted: ${r8.count}`)
+    } catch { console.log('CreditBonusTransactions: skipped') }
   }
 
   // Car photos
   if (carIds.length > 0) {
-    const r9 = await prisma.carPhoto.deleteMany({ where: { carId: { in: carIds } } })
+    const r9 = await prisma.rentalCarPhoto.deleteMany({ where: { carId: { in: carIds } } })
     console.log(`CarPhotos deleted: ${r9.count}`)
   }
 

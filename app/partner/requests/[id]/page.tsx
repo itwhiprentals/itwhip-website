@@ -711,17 +711,6 @@ export default function RequestDetailPage() {
               />
             )}
 
-            {/* Important Note */}
-            {!isExpired && !hasDeclined && !hasCompleted && !isBookingExpired && (
-              <div className="p-3 bg-gray-200/70 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  <strong>{t('noteLabel')}</strong> {t('noteCarNotPublic')}{' '}
-                  <button onClick={() => setShowHowItWorks(true)} className="text-xs text-orange-600 dark:text-orange-400 font-medium hover:underline">
-                    {t('learnHowItWorks')}
-                  </button>
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Right Column — Sidebar */}
@@ -768,30 +757,23 @@ export default function RequestDetailPage() {
             />
           )}
 
-          {/* Help Section — always last */}
-          <div className="bg-gray-100 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-            <div className="flex items-start gap-3">
-              <IoChatbubbleOutline className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {t('questionsHereToHelp')}
-                </p>
-                <div className="flex flex-wrap gap-3 mt-2">
-                  <a
-                    href="tel:+18557030806"
-                    className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"
-                  >
-                    (855) 703-0806
-                  </a>
-                  <a
-                    href="mailto:info@itwhip.com"
-                    className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 font-medium"
-                  >
-                    info@itwhip.com
-                  </a>
-                </div>
-              </div>
-            </div>
+          {/* Note + Help — always last */}
+          <div className="bg-gray-100 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+            {!isExpired && !hasDeclined && !hasCompleted && !isBookingExpired && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                <strong>{t('noteLabel')}</strong> {t('noteCarNotPublic')}{' '}
+                <button onClick={() => setShowHowItWorks(true)} className="text-xs text-orange-600 dark:text-orange-400 font-medium hover:underline">
+                  {t('learnHowItWorks')}
+                </button>
+              </p>
+            )}
+            <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center flex-wrap gap-1">
+              <IoChatbubbleOutline className="w-3.5 h-3.5 flex-shrink-0" />
+              {t('questionsHereToHelp')}
+              <a href="tel:+18557030806" className="text-orange-600 dark:text-orange-400 font-medium hover:underline">(855) 703-0806</a>
+              <span>·</span>
+              <a href="mailto:info@itwhip.com" className="text-orange-600 dark:text-orange-400 font-medium hover:underline">info@itwhip.com</a>
+            </p>
           </div>
         </div>
       </div>

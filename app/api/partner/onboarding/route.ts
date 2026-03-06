@@ -164,7 +164,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Resolve guestUserId: prefer existingGuestId, fallback to booking's renterId
+    // Guest User + ReviewerProfile created at finalize (via resolveGuestAccount).
+    // Before finalize: guestUserId is null → locked guest section on request page.
+    // After finalize: booking.renterId is set → fallback below picks it up.
     let guestUserId = fleetRequest.existingGuestId || null
 
     // Fetch booking snapshot when a fulfilled booking exists
