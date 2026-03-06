@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
+import { messageRateLimit, getClientIp } from '@/app/lib/rate-limit'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
@@ -274,6 +275,21 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required fields: bookingId, message' },
         { status: 400 }
       )
+    }
+
+    // Message length validation
+    if (message.length > 5000) {
+      return NextResponse.json(
+        { error: 'Message too long (max 5000 characters)' },
+        { status: 400 }
+      )
+    }
+
+    // Rate limit
+    const ip = getClientIp(request)
+    const { success: rlOk } = await messageRateLimit.limit(ip)
+    if (!rlOk) {
+      return NextResponse.json({ error: 'Too many messages. Try again later.' }, { status: 429 })
     }
 
     // UNIFIED PORTAL: Verify booking belongs to owned OR managed vehicle

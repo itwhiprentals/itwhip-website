@@ -1,11 +1,27 @@
 // app/api/admin/messages/reply/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/app/lib/database/prisma'  // FIXED: Correct import path
+import { prisma } from '@/app/lib/database/prisma'
 import { sendEmail } from '@/app/lib/email/sender'
+import { verifyRequest } from '@/app/lib/auth/verify-request'
+import { messageRateLimit, getClientIp } from '@/app/lib/rate-limit'
+import { escapeHtml } from '@/app/lib/utils/escape-html'
 
 // POST - Admin sends a reply
 export async function POST(request: NextRequest) {
   try {
+    // Auth: require logged-in admin
+    const user = await verifyRequest(request)
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limit
+    const ip = getClientIp(request)
+    const { success: rlOk } = await messageRateLimit.limit(ip)
+    if (!rlOk) {
+      return NextResponse.json({ error: 'Too many messages. Try again later.' }, { status: 429 })
+    }
+
     const body = await request.json()
     const { 
       messageType,      // 'booking', 'contact', 'inquiry'
@@ -24,6 +40,14 @@ export async function POST(request: NextRequest) {
     if (!message || !senderType) {
       return NextResponse.json(
         { error: 'Message and sender type are required' },
+        { status: 400 }
+      )
+    }
+
+    // Message length validation
+    if (message.length > 5000) {
+      return NextResponse.json(
+        { error: 'Message too long (max 5000 characters)' },
         { status: 400 }
       )
     }
@@ -113,7 +137,7 @@ export async function POST(request: NextRequest) {
                     <p>Hi ${booking.guestName || 'Guest'},</p>
                     
                     <div class="message-box">
-                      <p style="margin: 0;">${message.replace(/\n/g, '<br>')}</p>
+                      <p style="margin: 0;">${escapeHtml(message).replace(/\n/g, '<br>')}</p>
                     </div>
 
                     ${attachmentUrl ? `
@@ -222,7 +246,7 @@ View booking and reply: ${process.env.NEXT_PUBLIC_URL}/rentals/dashboard/booking
                 </div>
                 <div class="content">
                   <div class="message-box">
-                    <p style="margin: 0;">${message.replace(/\n/g, '<br>')}</p>
+                    <p style="margin: 0;">${escapeHtml(message).replace(/\n/g, '<br>')}</p>
                   </div>
                   <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
                     Thank you for contacting ItWhip. If you have any further questions, please don't hesitate to reach out.
@@ -292,7 +316,7 @@ View booking and reply: ${process.env.NEXT_PUBLIC_URL}/rentals/dashboard/booking
                 </div>
                 <div class="content">
                   <div class="message-box">
-                    <p style="margin: 0;">${message.replace(/\n/g, '<br>')}</p>
+                    <p style="margin: 0;">${escapeHtml(message).replace(/\n/g, '<br>')}</p>
                   </div>
                   
                   <center>

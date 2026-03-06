@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { sendEmail } from '@/app/lib/email/sender'
+import { messageRateLimit, getClientIp } from '@/app/lib/rate-limit'
+import { escapeHtml } from '@/app/lib/utils/escape-html'
 
 // GET /api/rentals/bookings/[id]/messages - Get messages for a booking
 export async function GET(
@@ -150,6 +152,14 @@ export async function POST(
       )
     }
 
+    // Message length validation
+    if (message.length > 5000) {
+      return NextResponse.json(
+        { error: 'Message too long (max 5000 characters)' },
+        { status: 400 }
+      )
+    }
+
     // Verify JWT auth
     const user = await verifyRequest(request)
     if (!user) {
@@ -205,6 +215,13 @@ export async function POST(
     const isOwner = (user.id && booking.renterId === user.id) ||
                     (user.email && booking.guestEmail === user.email)
     const isHost = booking.car.host && user.email === booking.car.host.email
+
+    // Rate limit
+    const ip = getClientIp(request)
+    const { success: rlOk } = await messageRateLimit.limit(ip)
+    if (!rlOk) {
+      return NextResponse.json({ error: 'Too many messages. Try again later.' }, { status: 429 })
+    }
 
     if (isAdmin) {
       senderType = category === 'support' ? 'support' : 'admin'
@@ -266,7 +283,7 @@ export async function POST(
           `
             <p>You have a new message from ${senderName} regarding the ${booking.car.year} ${booking.car.make} ${booking.car.model}:</p>
             <blockquote style="border-left: 3px solid #ccc; padding-left: 10px; margin: 10px 0;">
-              ${message}
+              ${escapeHtml(message)}
             </blockquote>
             <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/host/bookings/${bookingId}">View booking</a></p>
           `,
@@ -282,7 +299,7 @@ export async function POST(
           `
             <p>You have a new message from ${senderName} regarding your booking:</p>
             <blockquote style="border-left: 3px solid #ccc; padding-left: 10px; margin: 10px 0;">
-              ${message}
+              ${escapeHtml(message)}
             </blockquote>
             <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/rentals/dashboard/bookings/${bookingId}">View booking</a></p>
           `,

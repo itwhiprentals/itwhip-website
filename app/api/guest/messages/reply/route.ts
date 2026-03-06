@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { sendEmail } from '@/app/lib/email/sender'
+import { messageRateLimit, getClientIp } from '@/app/lib/rate-limit'
+import { escapeHtml } from '@/app/lib/utils/escape-html'
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,6 +34,21 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Reply message is required' },
         { status: 400 }
       )
+    }
+
+    // Message length validation
+    if (reply.length > 5000) {
+      return NextResponse.json(
+        { success: false, error: 'Message too long (max 5000 characters)' },
+        { status: 400 }
+      )
+    }
+
+    // Rate limit
+    const ip = getClientIp(request)
+    const { success: rlOk } = await messageRateLimit.limit(ip)
+    if (!rlOk) {
+      return NextResponse.json({ success: false, error: 'Too many messages. Try again later.' }, { status: 429 })
     }
 
     if (!messageId && !bookingId) {
@@ -148,7 +165,7 @@ export async function POST(request: NextRequest) {
             </div>
 
             <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin: 20px 0; border-radius: 4px;">
-              <p style="margin: 0; white-space: pre-wrap; color: #1e40af; font-size: 15px; line-height: 1.6;">${reply.trim()}</p>
+              <p style="margin: 0; white-space: pre-wrap; color: #1e40af; font-size: 15px; line-height: 1.6;">${escapeHtml(reply.trim())}</p>
             </div>
 
             <div style="text-align: center; margin-top: 30px;">

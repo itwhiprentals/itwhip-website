@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { sendEmail } from '@/app/lib/email/sender'
+import { messageRateLimit, getClientIp } from '@/app/lib/rate-limit'
+import { escapeHtml } from '@/app/lib/utils/escape-html'
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,6 +34,21 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Reply text or attachments are required' },
         { status: 400 }
       )
+    }
+
+    // Message length validation
+    if (reply && reply.length > 5000) {
+      return NextResponse.json(
+        { success: false, error: 'Message too long (max 5000 characters)' },
+        { status: 400 }
+      )
+    }
+
+    // Rate limit
+    const ip = getClientIp(request)
+    const { success: rlOk } = await messageRateLimit.limit(ip)
+    if (!rlOk) {
+      return NextResponse.json({ success: false, error: 'Too many messages. Try again later.' }, { status: 429 })
     }
 
     console.log('[FLEET REPLY] Processing reply:', { 
@@ -162,7 +179,7 @@ export async function POST(request: NextRequest) {
                 <p style="margin: 5px 0 0 0;"><strong>From:</strong> ${senderName}</p>
               </div>
               <div style="background: #eff6ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0;">
-                <p style="margin: 0; white-space: pre-wrap;">${reply || '[File attachment only]'}</p>
+                <p style="margin: 0; white-space: pre-wrap;">${reply ? escapeHtml(reply) : '[File attachment only]'}</p>
               </div>
               ${attachmentsHtml}
               <p style="margin-top: 20px;">
@@ -288,7 +305,7 @@ export async function POST(request: NextRequest) {
             <p>Hi ${contactMessage.name},</p>
             <p>Thank you for contacting ItWhip. Here's our response to your inquiry about <strong>"${contactMessage.subject}"</strong>:</p>
             <div style="background: #eff6ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0;">
-              <p style="margin: 0; white-space: pre-wrap;">${reply || '[File attachment only]'}</p>
+              <p style="margin: 0; white-space: pre-wrap;">${reply ? escapeHtml(reply) : '[File attachment only]'}</p>
             </div>
             ${attachmentsHtml}
             <p>If you have more questions, feel free to reply to this email or contact us at info@itwhip.com</p>
@@ -374,7 +391,7 @@ export async function POST(request: NextRequest) {
             <p>Hi ${hostInquiry.name},</p>
             <p>Thank you for your interest in listing your <strong>${hostInquiry.vehicleYear} ${hostInquiry.vehicleMake} ${hostInquiry.vehicleModel}</strong> on ItWhip.</p>
             <div style="background: #eff6ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0;">
-              <p style="margin: 0; white-space: pre-wrap;">${reply || '[File attachment only]'}</p>
+              <p style="margin: 0; white-space: pre-wrap;">${reply ? escapeHtml(reply) : '[File attachment only]'}</p>
             </div>
             ${attachmentsHtml}
             <p style="margin-top: 20px;">

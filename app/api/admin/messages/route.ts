@@ -1,10 +1,17 @@
 // app/api/admin/messages/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { verifyRequest } from '@/app/lib/auth/verify-request'
 
 // GET /api/admin/messages - Fetch all messages
 export async function GET(request: NextRequest) {
   try {
+    // Auth: require logged-in admin
+    const user = await verifyRequest(request)
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const searchParams = request.nextUrl.searchParams
     const type = searchParams.get('type') || 'all'
     const status = searchParams.get('status') || 'all'
@@ -215,6 +222,12 @@ export async function GET(request: NextRequest) {
 // PATCH /api/admin/messages - Mark message as read
 export async function PATCH(request: NextRequest) {
   try {
+    // Auth: require logged-in admin
+    const user = await verifyRequest(request)
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { messageId, type, action } = body
 
