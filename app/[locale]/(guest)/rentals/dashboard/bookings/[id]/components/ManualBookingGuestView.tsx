@@ -19,9 +19,7 @@ import {
   IoCashOutline,
   IoCheckmarkCircleOutline,
   IoDocumentTextOutline,
-  IoTimeOutline,
   IoDownloadOutline,
-  IoMailOutline,
   IoLockClosedOutline,
 } from 'react-icons/io5'
 
@@ -89,15 +87,20 @@ export default function ManualBookingGuestView({
         />
       </div>
 
-      {/* Status Message — Agreement-first order */}
-      <StatusMessage
-        hasPayment={hasPayment}
-        agreementStatus={agreementStatus}
-        isSigned={isSigned}
-        paymentType={booking.paymentType}
+      {/* Host Messages — right after car + trip details */}
+      <HostMessagesCard
+        booking={booking}
+        messages={messages}
+        messagesLoading={messagesLoading}
+        messageSending={messageSending}
+        messageError={messageError}
+        messageUploading={messageUploading}
+        onSendMessage={onSendMessage}
+        onFileUpload={onFileUpload}
+        defaultOpen
       />
 
-      {/* Agreement Status Card — always shown, before payment */}
+      {/* Agreement Status Card — single card for all states */}
       <AgreementStatusCard
         agreementStatus={agreementStatus}
         agreementSignedAt={booking.agreementSignedAt}
@@ -135,18 +138,6 @@ export default function ManualBookingGuestView({
         />
       )}
 
-      {/* Host Messages */}
-      <HostMessagesCard
-        booking={booking}
-        messages={messages}
-        messagesLoading={messagesLoading}
-        messageSending={messageSending}
-        messageError={messageError}
-        messageUploading={messageUploading}
-        onSendMessage={onSendMessage}
-        onFileUpload={onFileUpload}
-      />
-
       {/* Payment Summary */}
       <CollapsiblePaymentSummary booking={booking} />
 
@@ -170,80 +161,6 @@ export default function ManualBookingGuestView({
       <p className="text-center text-[10px] text-gray-400 dark:text-gray-500 mt-2">
         Need help? <a href="tel:+18557030806" className="font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">(855) 703-0806</a>
       </p>
-    </div>
-  )
-}
-
-// ─── Status Message ──────────────────────────────────────────────────────────
-
-function StatusMessage({
-  hasPayment,
-  agreementStatus,
-  isSigned,
-  paymentType,
-}: {
-  hasPayment: boolean
-  agreementStatus: string
-  isSigned: boolean
-  paymentType?: string | null
-}) {
-  const t = useTranslations('ManualBooking')
-
-  // Step 1: Agreement not signed yet
-  if (!isSigned) {
-    return (
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <IoMailOutline className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-blue-900 dark:text-blue-200">{t('statusSignAgreement')}</p>
-            <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">{t('statusSignAgreementDesc')}</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Step 2: Agreement signed, no payment yet
-  if (!hasPayment) {
-    return (
-      <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <IoCardOutline className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-purple-900 dark:text-purple-200">{t('statusAwaitingPayment')}</p>
-            <p className="text-xs text-purple-700 dark:text-purple-400 mt-1">{t('statusAwaitingPaymentDesc')}</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Step 3: Payment selected — waiting for host to confirm (CASH only; CARD auto-confirms)
-  if (paymentType === 'CASH') {
-    return (
-      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <IoTimeOutline className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-amber-900 dark:text-amber-200">{t('statusAwaitingConfirmation')}</p>
-            <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">{t('statusAwaitingConfirmationDesc')}</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Card paid — transient state, auto-confirms to CONFIRMED (which exits this component)
-  return (
-    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
-      <div className="flex items-start gap-3">
-        <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-        <div>
-          <p className="text-sm font-medium text-green-900 dark:text-green-200">{t('statusAllSet')}</p>
-          <p className="text-xs text-green-700 dark:text-green-400 mt-1">{t('statusAllSetDesc')}</p>
-        </div>
-      </div>
     </div>
   )
 }
@@ -367,22 +284,23 @@ function AgreementStatusCard({
     )
   }
 
+  // sent/viewed — green prompt to sign
   if (agreementStatus === 'sent' || agreementStatus === 'viewed') {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-blue-200 dark:border-blue-700 p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-green-200 dark:border-green-700 p-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0">
-            <IoDocumentTextOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center flex-shrink-0">
+            <IoDocumentTextOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-              {t('agreementSent')}
+            <p className="text-sm font-medium text-green-800 dark:text-green-200">
+              {t('statusSignAgreement')}
             </p>
-            <p className="text-xs text-blue-600 dark:text-blue-400">{t('agreementSentDesc')}</p>
+            <p className="text-xs text-green-600 dark:text-green-400">{t('agreementCheckInbox')}</p>
           </div>
           <button
             onClick={onViewAgreement}
-            className="text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 whitespace-nowrap"
+            className="text-xs font-medium text-green-600 hover:text-green-700 dark:text-green-400 whitespace-nowrap"
           >
             {t('openAgreement')}
           </button>
@@ -391,19 +309,19 @@ function AgreementStatusCard({
     )
   }
 
-  // not_sent
+  // not_sent — grayed out
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 opacity-60">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
           <IoDocumentTextOutline className="w-5 h-5 text-gray-400" />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
             {t('agreementTitle')}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {t('agreementPendingSend')}
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            {t('statusAgreementNotSentYet')}
           </p>
         </div>
       </div>

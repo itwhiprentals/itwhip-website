@@ -18,6 +18,14 @@ interface TripDetailsBarProps {
   latePickup?: boolean
 }
 
+// Convert 24h time "HH:MM" to 12h with AM/PM
+function formatTime12h(time: string): string {
+  const [h, m] = time.split(':').map(Number)
+  const suffix = h >= 12 ? 'PM' : 'AM'
+  const h12 = h % 12 || 12
+  return `${h12}:${m.toString().padStart(2, '0')} ${suffix}`
+}
+
 export const TripDetailsBar: React.FC<TripDetailsBarProps> = ({
   bookingCode,
   startDate,
@@ -54,7 +62,7 @@ export const TripDetailsBar: React.FC<TripDetailsBarProps> = ({
             )}
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {formatDate(startDate)} at {startTime}
+            {formatDate(startDate)} at {formatTime12h(startTime)}
           </p>
           {pickupAddress && (
             <>
@@ -72,7 +80,7 @@ export const TripDetailsBar: React.FC<TripDetailsBarProps> = ({
             </p>
           )}
         </div>
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 self-center">
           <svg
             className="w-4 h-4 text-gray-400"
             fill="none"
@@ -87,7 +95,7 @@ export const TripDetailsBar: React.FC<TripDetailsBarProps> = ({
             />
           </svg>
         </div>
-        <div className="flex-1 min-w-0 pl-4">
+        <div className="flex-1 min-w-0 text-right">
           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             {t('statusLabel')}
           </p>
@@ -98,7 +106,7 @@ export const TripDetailsBar: React.FC<TripDetailsBarProps> = ({
             {t('dropoff')}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {formatDate(endDate)} at {endTime}
+            {formatDate(endDate)} at {formatTime12h(endTime)}
           </p>
           {dropoffAddress && (
             <>

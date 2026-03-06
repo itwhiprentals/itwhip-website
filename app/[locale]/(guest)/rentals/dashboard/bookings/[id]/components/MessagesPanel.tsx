@@ -3,8 +3,8 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { Message } from '../types'
-import { Send, Paperclip, User } from './Icons'
-import { getTimeAgo, formatTime } from '../utils/helpers'
+import { Send, Paperclip } from './Icons'
+import { MessageBubble, DateSeparator } from '@/app/components/messages'
 
 interface MessagesPanelProps {
   bookingId: string
@@ -48,7 +48,7 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
 
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return
-    
+
     await onSendMessage(newMessage)
     setNewMessage('')
     setShowQuickActions(false)
@@ -57,82 +57,6 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
   const handleQuickAction = async (action: string) => {
     await onSendMessage(action)
     setShowQuickActions(false)
-  }
-
-  const renderMessage = (msg: Message, idx: number) => {
-    const isGuest = msg.senderType === 'guest' || msg.senderType === 'renter'
-    const showDate = idx === 0 || 
-      new Date(msg.createdAt).toDateString() !== new Date(messages[idx - 1].createdAt).toDateString()
-    const isAdmin = msg.senderType?.includes('admin')
-    const isHost = msg.senderType?.includes('host')
-    const isSupport = msg.senderType?.includes('support')
-    
-    return (
-      <div key={msg.id}>
-        {showDate && (
-          <div className="flex items-center justify-center my-2">
-            <span className="text-[10px] text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-800 px-2 py-0.5 rounded-full border border-gray-100 dark:border-gray-700">
-              {new Date(msg.createdAt).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
-            </span>
-          </div>
-        )}
-        
-        <div className={`flex items-start gap-1.5 ${isGuest ? 'justify-end' : 'justify-start'}`}>
-          {!isGuest && (
-            <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 mt-0.5">
-              {isHost ? (
-                <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300">H</span>
-              ) : isAdmin ? (
-                <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300">A</span>
-              ) : isSupport ? (
-                <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300">S</span>
-              ) : (
-                <User className="w-3 h-3 text-gray-500 dark:text-gray-400" />
-              )}
-            </div>
-          )}
-          
-          <div className={`max-w-[75%] lg:max-w-[60%]`}>
-            {!isGuest && msg.senderName && (
-              <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-0.5 ml-2">
-                {msg.senderName}
-              </p>
-            )}
-            <div className={`inline-block rounded-2xl px-3 py-1.5 ${
-              isGuest
-                ? 'bg-green-600 text-white'
-                : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 shadow-sm'
-            }`}>
-              <p className={`text-sm leading-relaxed ${isGuest ? 'text-white' : 'text-gray-700 dark:text-gray-200'}`}>
-                {msg.message}
-              </p>
-              {msg.attachmentUrl && (
-                <a
-                  href={msg.attachmentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`inline-flex items-center gap-1 text-[11px] mt-1 ${
-                    isGuest ? 'text-green-100 hover:text-white' : 'text-blue-600 hover:text-blue-700'
-                  } transition-colors`}
-                >
-                  <Paperclip className="w-3 h-3" />
-                  <span className="underline">{msg.attachmentName || t('viewAttachment')}</span>
-                </a>
-              )}
-            </div>
-            <p className={`text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 ${isGuest ? 'text-right mr-2' : 'ml-2'}`}>
-              {formatTime(msg.createdAt)}
-              {isGuest && !msg.isRead && (
-                <span className="ml-1">✓</span>
-              )}
-              {isGuest && msg.isRead && (
-                <span className="ml-1 text-blue-500">✓✓</span>
-              )}
-            </p>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -154,8 +78,20 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
             <p className="text-xs mt-1">{t('startConversation')}</p>
           </div>
         ) : (
-          <div className="p-3 space-y-2">
-            {messages.map((msg, idx) => renderMessage(msg, idx))}
+          <div className="p-3 space-y-3">
+            {messages.map((msg, idx) => {
+              const isGuest = msg.senderType === 'guest' || msg.senderType === 'renter'
+              const showDate = idx === 0 ||
+                new Date(msg.createdAt).toDateString() !== new Date(messages[idx - 1].createdAt).toDateString()
+              const roleLabel = isGuest ? t('guest') : t('host')
+
+              return (
+                <React.Fragment key={msg.id}>
+                  {showDate && <DateSeparator date={msg.createdAt} locale={locale} />}
+                  <MessageBubble message={msg} isSelf={isGuest} roleLabel={roleLabel} theme="green" />
+                </React.Fragment>
+              )
+            })}
           </div>
         )}
       </div>

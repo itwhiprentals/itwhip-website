@@ -4364,6 +4364,7 @@
     "depositRefundNote": "Refundable • Released 2-7 days after trip",
     "depositRefundInfo": "Refundable hold • Released 2-7 days after trip • Covers damages up to {amount}",
     "host": "Host",
+    "guest": "Guest",
     "contactHost": "Contact Host: {phone}",
     "callHost": "Call Host",
     "callingHost": "Calling...",
@@ -17464,6 +17465,8 @@
     "agreementNotSent": "Agreement will be sent after your host confirms the booking.",
     "statusSignAgreement": "Sign Your Rental Agreement",
     "statusSignAgreementDesc": "Sign your rental agreement to unlock payment options.",
+    "statusAgreementNotSentYet": "Your host will send the rental agreement shortly.",
+    "agreementCheckInbox": "Check your inbox to review and sign.",
     "paymentLocked": "Choose Payment Method",
     "paymentLockedDesc": "Sign your rental agreement first to unlock payment selection."
   }

@@ -22,6 +22,7 @@ interface HostMessagesCardProps {
   readOnly?: boolean
   readOnlyLabel?: string
   readOnlyVariant?: 'gray' | 'red'
+  defaultOpen?: boolean
 }
 
 export const HostMessagesCard: React.FC<HostMessagesCardProps> = ({
@@ -36,8 +37,23 @@ export const HostMessagesCard: React.FC<HostMessagesCardProps> = ({
   readOnly = false,
   readOnlyLabel,
   readOnlyVariant = 'gray',
+  defaultOpen = false,
 }) => {
   const t = useTranslations('BookingDetail')
+  const detailsRef = React.useRef<HTMLDetailsElement>(null)
+
+  const handleMessageHostClick = () => {
+    if (detailsRef.current) {
+      detailsRef.current.open = true
+      setTimeout(() => {
+        const input = detailsRef.current?.querySelector('#message-input') as HTMLInputElement | null
+        if (input) {
+          input.focus()
+          input.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 100)
+    }
+  }
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -60,17 +76,17 @@ export const HostMessagesCard: React.FC<HostMessagesCardProps> = ({
               <span className="text-xs text-gray-600 dark:text-gray-400">~{booking.host.responseTime}min</span>
             </div>
           </div>
-          <a
-            href="/messages"
+          <button
+            onClick={handleMessageHostClick}
             className="flex-shrink-0 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors inline-flex items-center gap-1.5"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
             {t('messageHost')}
-          </a>
+          </button>
         </div>
       </div>
       {/* Collapsible messages section */}
-      <details className="group border-t border-gray-200 dark:border-gray-700">
+      <details ref={detailsRef} className="group border-t border-gray-200 dark:border-gray-700" open={defaultOpen || undefined}>
         <summary className="flex items-center justify-between cursor-pointer px-4 py-3 select-none hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('messages')}</span>

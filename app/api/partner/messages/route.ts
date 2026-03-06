@@ -193,7 +193,7 @@ export async function GET(request: NextRequest) {
         id: msg.id,
         senderId: msg.senderId,
         senderType: msg.senderType,
-        senderName: msg.senderName || (msg.senderType === 'guest' ? conversation.guestName : partner.name),
+        senderName: msg.senderName || ((msg.senderType === 'guest' || msg.senderType === 'renter') ? conversation.guestName : partner.name),
         message: msg.message,
         category: msg.category,
         isRead: msg.isRead,
@@ -205,8 +205,8 @@ export async function GET(request: NextRequest) {
         replyToId: msg.replyToId
       })
 
-      // Track unread from guests
-      if (!msg.isRead && msg.senderType === 'guest') {
+      // Track unread from guests (guest + renter sender types)
+      if (!msg.isRead && (msg.senderType === 'guest' || msg.senderType === 'renter')) {
         conversation.unreadCount++
       }
 
@@ -333,11 +333,11 @@ export async function POST(request: NextRequest) {
       } as any
     })
 
-    // Mark any unread guest messages in this booking as read
+    // Mark any unread guest messages in this booking as read (guest + renter)
     await prisma.rentalMessage.updateMany({
       where: {
         bookingId,
-        senderType: 'guest',
+        senderType: { in: ['guest', 'renter'] },
         isRead: false
       },
       data: {

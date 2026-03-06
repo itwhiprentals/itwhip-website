@@ -418,10 +418,10 @@ export default function BookingDetailsPage() {
     }
   }, [bookingId])
 
-  // Load and poll messages only when booking is confirmed (not PENDING/CANCELLED)
+  // Load and poll messages (skip PENDING unless recruited booking has inline messages)
   // Pauses when tab hidden
   useEffect(() => {
-    if (!booking || booking.status === 'PENDING') return
+    if (!booking || (booking.status === 'PENDING' && !booking.isRecruitedBooking)) return
 
     loadMessages()
     let messageInterval: ReturnType<typeof setInterval> | null = null

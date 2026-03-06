@@ -3,17 +3,15 @@
 
 'use client'
 
-import { RefObject } from 'react'
+import React, { RefObject } from 'react'
 import { useTranslations } from 'next-intl'
 import {
   IoChatbubbleOutline,
   IoChevronUpOutline,
   IoChevronDownOutline,
-  IoTimeOutline,
-  IoCheckmarkDoneOutline,
-  IoAlertCircleOutline,
   IoSendOutline,
 } from 'react-icons/io5'
+import { MessageBubble, DateSeparator } from '@/app/components/messages'
 
 interface MessagesSectionProps {
   bookingMessages: any[]
@@ -81,57 +79,13 @@ export function MessagesSection({
                   const isHost = msg.senderType === 'host' || msg.senderType === 'admin_as_host'
                   const showDate = index === 0 ||
                     new Date(msg.createdAt).toDateString() !== new Date(bookingMessages[index - 1].createdAt).toDateString()
+                  const roleLabel = isHost ? t('bdHost') : t('bdGuest')
 
                   return (
-                    <div key={msg.id}>
-                      {showDate && (
-                        <div className="flex items-center justify-center my-2">
-                          <span className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs rounded-full">
-                            {new Date(msg.createdAt).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
-                          </span>
-                        </div>
-                      )}
-                      <div className={`flex ${isHost ? 'justify-end' : 'justify-start'}`}>
-                        <div className="max-w-[80%]">
-                          <div className={`px-4 py-2 rounded-2xl ${
-                            isHost
-                              ? 'bg-orange-500 text-white rounded-br-md'
-                              : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-bl-md shadow-sm'
-                          }`}>
-                            {msg.isUrgent && !isHost && (
-                              <div className="flex items-center gap-1 text-red-500 text-xs mb-1">
-                                <IoAlertCircleOutline className="w-3 h-3" />
-                                Urgent
-                              </div>
-                            )}
-                            <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
-                            {msg.hasAttachment && msg.attachmentUrl && (
-                              <a
-                                href={msg.attachmentUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={`mt-1 text-xs underline block ${isHost ? 'text-orange-100' : 'text-orange-600 dark:text-orange-400'}`}
-                              >
-                                {msg.attachmentName || 'View attachment'}
-                              </a>
-                            )}
-                          </div>
-                          <div className={`flex items-center gap-1 mt-0.5 text-[10px] text-gray-400 ${isHost ? 'justify-end' : 'justify-start'}`}>
-                            {msg.senderName && (
-                              <span className="font-medium">
-                                {msg.senderName.split(' ')[0]} ({isHost ? t('bdHost') : t('bdGuest')})
-                              </span>
-                            )}
-                            <span>·</span>
-                            <IoTimeOutline className="w-3 h-3" />
-                            {formatMessageTime(msg.createdAt)}
-                            {isHost && msg.isRead && (
-                              <IoCheckmarkDoneOutline className="w-3 h-3 text-blue-500" />
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <React.Fragment key={msg.id}>
+                      {showDate && <DateSeparator date={msg.createdAt} />}
+                      <MessageBubble message={msg} isSelf={isHost} roleLabel={roleLabel} theme="orange" />
+                    </React.Fragment>
                   )
                 })}
               </div>

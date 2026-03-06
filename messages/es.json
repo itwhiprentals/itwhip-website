@@ -4382,6 +4382,7 @@
     "depositRefundNote": "Reembolsable • Se libera 2-7 días después del viaje",
     "depositRefundInfo": "Retención reembolsable • Se libera 2-7 días después del viaje • Cubre daños hasta {amount}",
     "host": "Anfitrión",
+    "guest": "Huésped",
     "contactHost": "Contactar Anfitrión: {phone}",
     "callHost": "Llamar al Anfitrión",
     "callingHost": "Llamando...",
@@ -17464,6 +17465,8 @@
     "agreementNotSent": "El acuerdo se enviará después de que tu anfitrión confirme la reserva.",
     "statusSignAgreement": "Firma Tu Contrato de Alquiler",
     "statusSignAgreementDesc": "Firma tu contrato de alquiler para desbloquear las opciones de pago.",
+    "statusAgreementNotSentYet": "Tu anfitrión enviará el contrato de alquiler en breve.",
+    "agreementCheckInbox": "Revisa tu bandeja de entrada para revisar y firmar.",
     "paymentLocked": "Elegir Método de Pago",
     "paymentLockedDesc": "Firma tu contrato de alquiler primero para desbloquear la selección de pago."
   }

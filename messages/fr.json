@@ -4382,6 +4382,7 @@
     "depositRefundNote": "Remboursable • Libéré 2-7 jours après le voyage",
     "depositRefundInfo": "Retenue remboursable • Libérée 2-7 jours après le voyage • Couvre les dommages jusqu'à {amount}",
     "host": "Hôte",
+    "guest": "Client",
     "contactHost": "Contacter l'Hôte : {phone}",
     "callHost": "Appeler l'hôte",
     "callingHost": "Appel en cours...",
@@ -17464,6 +17465,8 @@
     "agreementNotSent": "Le contrat sera envoyé après la confirmation de votre réservation par l'hôte.",
     "statusSignAgreement": "Signez Votre Contrat de Location",
     "statusSignAgreementDesc": "Signez votre contrat de location pour débloquer les options de paiement.",
+    "statusAgreementNotSentYet": "Votre hôte vous enverra le contrat de location sous peu.",
+    "agreementCheckInbox": "Vérifiez votre boîte de réception pour consulter et signer.",
     "paymentLocked": "Choisir la Méthode de Paiement",
     "paymentLockedDesc": "Signez d'abord votre contrat de location pour débloquer la sélection de paiement."
   }

@@ -98,11 +98,11 @@ export async function POST(
       )
     }
 
-    // Mark all unread messages in this booking as read
+    // Mark all unread messages in this booking as read (guest + renter)
     const result = await prisma.rentalMessage.updateMany({
       where: {
         bookingId,
-        senderType: 'guest',
+        senderType: { in: ['guest', 'renter'] },
         isRead: false
       },
       data: {
