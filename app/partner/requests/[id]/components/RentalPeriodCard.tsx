@@ -27,6 +27,7 @@ interface RentalPeriodCardProps {
   hostEarnings: number
   counterOfferStatus?: string
   hasPendingCounterOffer: boolean
+  bookingStatus?: string
   isLate?: boolean
   isExpired: boolean
   hasDeclined: boolean
@@ -51,6 +52,7 @@ export default function RentalPeriodCard({
   hostEarnings,
   counterOfferStatus,
   hasPendingCounterOffer,
+  bookingStatus,
   isLate,
   isExpired,
   hasDeclined,
@@ -76,6 +78,11 @@ export default function RentalPeriodCard({
       <div className="flex items-center gap-2 mb-3">
         <IoCalendarOutline className="w-5 h-5 text-gray-400" />
         <h3 className="font-semibold text-gray-900 dark:text-white">{t('rentalPeriod')}</h3>
+        {bookingStatus === 'ACTIVE' && (
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-green-600 text-white">
+            ACTIVE
+          </span>
+        )}
         {isLate && (
           <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-amber-500 text-white">
             {t('late')}

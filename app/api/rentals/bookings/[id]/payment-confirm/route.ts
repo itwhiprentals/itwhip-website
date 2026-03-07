@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { stripe } from '@/app/lib/stripe/client'
+import { completeBookingConfirmation } from '@/app/lib/booking/complete-confirmation'
 
 export async function POST(
   request: NextRequest,
@@ -68,6 +69,19 @@ export async function POST(
     })
 
     console.log(`[Payment Confirm] Booking ${booking.bookingCode} payment authorized${booking.bookingType === 'MANUAL' ? ' + auto-confirmed' : ''} (PI: ${paymentIntentId})`)
+
+    // MANUAL bookings: run full confirmation side effects (capture, availability, emails, SMS, notifications)
+    if (booking.bookingType === 'MANUAL') {
+      completeBookingConfirmation(bookingId, { capturePayment: true })
+        .then(result => {
+          if (result.success) {
+            console.log(`[Payment Confirm] ✅ Full confirmation completed for ${booking.bookingCode}`)
+          } else {
+            console.error(`[Payment Confirm] ❌ Confirmation side effects failed for ${booking.bookingCode}:`, result.error)
+          }
+        })
+        .catch(e => console.error(`[Payment Confirm] ❌ Confirmation error for ${booking.bookingCode}:`, e))
+    }
 
     return NextResponse.json({
       success: true,

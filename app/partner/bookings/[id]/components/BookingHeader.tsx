@@ -14,6 +14,7 @@ import {
   IoCopyOutline,
   IoDocumentTextOutline,
   IoAlertCircleOutline,
+  IoCheckmarkCircleOutline,
 } from 'react-icons/io5'
 
 interface BookingHeaderProps {
@@ -175,12 +176,21 @@ export function BookingHeader({
 
         {/* Booking snapshot — manual cash bookings */}
         {isManualBooking && booking.paymentType === 'CASH' && booking.status !== 'PENDING' && booking.status !== 'NO_SHOW' && booking.status !== 'CANCELLED' && booking.status !== 'COMPLETED' && renter && (
-          <div className="mt-2 sm:mt-3 flex items-center gap-2 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
-            <IoWalletOutline className="w-4 h-4 flex-shrink-0" />
-            <span className="text-xs sm:text-sm font-medium">
-              {t('bdCashPickupMessage', { guest: renter.name, location: booking.pickupLocation || t('bdBusinessLocation') })}
-            </span>
-          </div>
+          booking.status === 'ACTIVE' ? (
+            <div className="mt-2 sm:mt-3 flex items-center gap-2 text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20 rounded-lg px-3 py-2">
+              <IoCheckmarkCircleOutline className="w-4 h-4 flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-medium">
+                {t('bdBookingNowLive')}
+              </span>
+            </div>
+          ) : (
+            <div className="mt-2 sm:mt-3 flex items-center gap-2 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
+              <IoWalletOutline className="w-4 h-4 flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-medium">
+                {t('bdCashPickupMessage', { guest: renter.name, location: booking.pickupLocation || t('bdBusinessLocation') })}
+              </span>
+            </div>
+          )
         )}
 
         {booking.status === 'NO_SHOW' && (
@@ -345,8 +355,8 @@ export function BookingHeader({
                 </div>
               </div>
             )}
-            {/* Waiting for guest to select payment */}
-            {booking.agreementStatus === 'signed' && !booking.paymentType && (
+            {/* Waiting for guest to complete payment (not selected, or CARD selected but not authorized) */}
+            {booking.agreementStatus === 'signed' && (!booking.paymentType || (booking.paymentType === 'CARD' && booking.paymentStatus === 'PENDING')) && (
               <div className="bg-gray-200/70 dark:bg-gray-700/50 border border-gray-200 dark:border-transparent rounded-lg px-3 py-2.5 flex items-center gap-3">
                 <IoWalletOutline className="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
                 <div className="flex-1">

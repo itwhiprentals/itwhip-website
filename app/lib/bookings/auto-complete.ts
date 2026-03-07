@@ -10,6 +10,7 @@ const ARIZONA_UTC_OFFSET = 7
 interface BookingRow {
   id: string
   status: string
+  bookingType?: string | null
   tripStartedAt: Date | null
   startDate: Date | string
   endDate: Date | string
@@ -50,7 +51,8 @@ export async function checkAndMarkNoShows(bookings: BookingRow[]): Promise<strin
   const noShowIds: string[] = []
 
   for (const booking of bookings) {
-    if (booking.status !== 'CONFIRMED' || booking.tripStartedAt) continue
+    // Skip non-CONFIRMED, already-started trips, and MANUAL bookings (host manages those)
+    if (booking.status !== 'CONFIRMED' || booking.tripStartedAt || booking.bookingType === 'MANUAL') continue
 
     // Use pre-calculated deadline if available, otherwise calculate from dates
     let deadline: Date

@@ -338,9 +338,10 @@ export default function RequestDetailPage() {
     fetchRequest()
   }
 
-  const handleRecruitmentComplete = () => {
+  const handleRecruitmentComplete = async () => {
+    // Fetch fresh data BEFORE closing the sheet to avoid flash of old state
+    await fetchRequest()
     setShowRecruitmentSheet(false)
-    fetchRequest()
   }
 
   // Direct Stripe Connect - bypasses the wizard

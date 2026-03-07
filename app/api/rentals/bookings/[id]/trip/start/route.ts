@@ -104,6 +104,7 @@ export async function POST(
      const updatedBooking = await tx.rentalBooking.update({
        where: { id: bookingId },
        data: {
+         status: 'ACTIVE',
          tripStatus: 'ACTIVE',
          tripStartedAt: new Date(),
          startMileage,

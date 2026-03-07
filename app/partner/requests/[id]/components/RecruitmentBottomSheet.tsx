@@ -5,7 +5,6 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import BottomSheet from '@/app/components/BottomSheet'
 import SecureAccountStep from './SecureAccountStep'
@@ -92,7 +91,6 @@ export default function RecruitmentBottomSheet({
   onboardingProgress,
 }: RecruitmentBottomSheetProps) {
   const t = useTranslations('PartnerRequestDetail')
-  const router = useRouter()
 
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('SECURE_ACCOUNT')
   const [completedSteps, setCompletedSteps] = useState<Set<OnboardingStep>>(new Set())
@@ -130,14 +128,17 @@ export default function RecruitmentBottomSheet({
   }, [t])
 
   // Auto-close bottomsheet 3 seconds after reaching CONGRATS
+  // Call onComplete (not onClose) so the parent re-fetches fresh data
+  // Use ref to avoid re-triggering effect when parent re-renders (timer tick creates new callback ref)
+  const onCompleteRef = useRef(onComplete)
+  onCompleteRef.current = onComplete
   useEffect(() => {
     if (currentStep !== 'CONGRATS') return
     const timer = setTimeout(() => {
-      onClose()
-      router.refresh()
+      onCompleteRef.current()
     }, 3000)
     return () => clearTimeout(timer)
-  }, [currentStep, onClose, router])
+  }, [currentStep])
 
   // Detect missing fields on mount only (runs once when bottomsheet opens)
   // NOT on every parent re-render — the parent's countdown timer re-renders every second,

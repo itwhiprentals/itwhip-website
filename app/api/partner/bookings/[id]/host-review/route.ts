@@ -6,7 +6,8 @@ import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
 import Stripe from 'stripe'
-import { sendBookingConfirmation, sendHostRejectedEmail } from '@/app/lib/email/booking-emails'
+import { sendHostRejectedEmail } from '@/app/lib/email/booking-emails'
+import { completeBookingConfirmation } from '@/app/lib/booking/complete-confirmation'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
@@ -142,150 +143,34 @@ export async function POST(
         }
       }
 
-      const updatedBooking = await prisma.$transaction(async (tx) => {
-        const updated = await tx.rentalBooking.update({
-          where: { id: bookingId },
-          data: {
-            hostStatus: 'APPROVED',
-            hostReviewedBy: partner.id,
-            hostReviewedAt: new Date(),
-            hostNotes: notes || null,
-            status: 'CONFIRMED',
-            paymentStatus: captureSuccess ? 'PAID' : 'AUTHORIZED',
-            paymentProcessedAt: captureSuccess ? new Date() : undefined,
-          },
-          select: {
-            id: true,
-            bookingCode: true,
-            status: true,
-            hostStatus: true,
-            paymentStatus: true,
-          }
-        })
-
-        // Update car statistics
-        await tx.rentalCar.update({
-          where: { id: booking.carId },
-          data: { totalTrips: { increment: 1 } }
-        })
-
-        // Block availability dates
-        const dates: Date[] = []
-        const currentDate = new Date(booking.startDate)
-        const endDate = new Date(booking.endDate)
-        while (currentDate <= endDate) {
-          dates.push(new Date(currentDate))
-          currentDate.setDate(currentDate.getDate() + 1)
+      // Update booking status
+      const updatedBooking = await prisma.rentalBooking.update({
+        where: { id: bookingId },
+        data: {
+          hostStatus: 'APPROVED',
+          hostReviewedBy: partner.id,
+          hostReviewedAt: new Date(),
+          hostNotes: notes || null,
+          status: 'CONFIRMED',
+          paymentStatus: captureSuccess ? 'PAID' : 'AUTHORIZED',
+          paymentProcessedAt: captureSuccess ? new Date() : undefined,
+        },
+        select: {
+          id: true,
+          bookingCode: true,
+          status: true,
+          hostStatus: true,
+          paymentStatus: true,
         }
-
-        await tx.rentalAvailability.createMany({
-          data: dates.map(date => ({
-            id: crypto.randomUUID(),
-            carId: booking.carId,
-            date,
-            isAvailable: false,
-            note: `Booked - ${booking.bookingCode}`
-          })),
-          skipDuplicates: true
-        })
-
-        // Log host approval
-        await tx.activityLog.create({
-          data: {
-            id: crypto.randomUUID(),
-            action: 'host_approved',
-            entityType: 'RentalBooking',
-            entityId: bookingId,
-            metadata: {
-              hostId: partner.id,
-              hostName: partner.name,
-              paymentCaptured: captureSuccess,
-              notes: notes || null,
-            },
-            ipAddress: '127.0.0.1'
-          }
-        })
-
-        return updated
       })
 
-      // Send confirmation email to guest
-      const fullBooking = await prisma.rentalBooking.findUnique({
-        where: { id: bookingId },
-        select: {
-          guestEmail: true,
-          guestName: true,
-          bookingCode: true,
-          startDate: true,
-          endDate: true,
-          startTime: true,
-          endTime: true,
-          pickupLocation: true,
-          totalAmount: true,
-          depositAmount: true,
-          subtotal: true,
-          serviceFee: true,
-          taxes: true,
-          insuranceFee: true,
-          deliveryFee: true,
-          car: {
-            select: {
-              make: true,
-              model: true,
-              year: true,
-              photos: { select: { url: true }, take: 1 }
-            }
-          }
-        }
-      }) as any
-
-      if (fullBooking) {
-        // Find guest access token for dashboard link
-        const guestToken = await prisma.guestAccessToken.findFirst({
-          where: { bookingId },
-          select: { token: true },
-          orderBy: { createdAt: 'desc' }
-        })
-
-        sendBookingConfirmation({
-          ...fullBooking,
-          accessToken: guestToken?.token || ''
-        }).catch(error => {
-          console.error('[Host Review] Error sending confirmation:', error)
-        })
-      }
-
-      // SMS notification to guest + host (fire-and-forget)
-      import('@/app/lib/twilio/sms-triggers').then(({ sendBookingConfirmedSms }) => {
-        sendBookingConfirmedSms({
-          bookingCode: booking.bookingCode,
-          guestPhone: booking.guestPhone,
-          guestName: booking.guestName,
-          guestId: booking.reviewerProfileId,
-          hostPhone: booking.host?.phone,
-          car: booking.car,
-          bookingId: booking.id,
-          hostId: booking.hostId,
-        }).catch(e => console.error('[Host Review] SMS failed:', e))
-      }).catch(e => console.error('[Host Review] sms-triggers import failed:', e))
-
-      // Bell notifications for guest + host (fire-and-forget)
-      import('@/app/lib/notifications/booking-bell').then(({ createBookingNotificationPair }) => {
-        createBookingNotificationPair({
-          bookingId: booking.id,
-          guestId: booking.reviewerProfileId,
-          userId: booking.renterId,
-          hostId: booking.hostId,
-          type: 'BOOKING_CONFIRMED',
-          guestTitle: 'Booking confirmed!',
-          guestMessage: `Your booking #${booking.bookingCode} for the ${carName} has been confirmed.`,
-          hostTitle: `Booking ${booking.bookingCode} confirmed`,
-          hostMessage: `You approved booking #${booking.bookingCode} for your ${carName}.`,
-          guestActionUrl: `/rentals/dashboard/bookings/${booking.id}`,
-          hostActionUrl: `/partner/bookings/${booking.id}`,
-          priority: 'HIGH',
-        }).catch(e => console.error('[Host Review] Bell notification failed:', e))
-      }).catch(e => console.error('[Host Review] booking-bell import failed:', e))
+      // Run all confirmation side effects (car stats, availability, emails, SMS, notifications)
+      // Payment already captured above, so capturePayment: false
+      await completeBookingConfirmation(bookingId, {
+        capturePayment: false,
+        approvedBy: partner.id,
+        notes: notes || undefined,
+      })
 
       return NextResponse.json({
         booking: updatedBooking,

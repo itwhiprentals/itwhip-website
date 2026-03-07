@@ -28,12 +28,14 @@ export async function GET(request: NextRequest) {
     const results: Array<{ bookingCode: string; status: string; error?: string }> = []
 
     // Find CONFIRMED bookings where trip hasn't started
+    // Exclude MANUAL bookings — host manages those directly
     const confirmedBookings = await prisma.rentalBooking.findMany({
       where: {
         status: 'CONFIRMED',
         tripStatus: 'NOT_STARTED',
         tripStartedAt: null,
-        noShowMarkedAt: null // Not already marked
+        noShowMarkedAt: null, // Not already marked
+        bookingType: { not: 'MANUAL' },
       },
       select: {
         id: true,

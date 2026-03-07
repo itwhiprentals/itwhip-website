@@ -279,12 +279,14 @@ export async function GET(
         recruitmentSource: booking.convertedFromProspect?.source || null,
 
         // Computed flags (no raw internal fields exposed)
-        // A booking is guest-driven if it has a renter AND a Stripe payment intent,
-        // OR if it's a MANUAL booking that's been confirmed (merged into standard flow)
-        isGuestDriven: !!(booking.renterId && booking.paymentIntentId)
-          || (booking.bookingType === 'MANUAL' && booking.status !== 'PENDING'),
-        // Manual confirm = host approval. Only standard bookings use the separate approve/reject flow.
-        hostApproval: (booking.bookingType === 'MANUAL' && booking.status !== 'PENDING')
+        // MANUAL bookings: guest-driven only after auto-confirm (not while PENDING)
+        // STANDARD bookings: guest-driven if has a renter AND a Stripe payment intent
+        isGuestDriven: booking.bookingType === 'MANUAL'
+          ? booking.status !== 'PENDING'
+          : !!(booking.renterId && booking.paymentIntentId),
+        // Manual bookings auto-confirm when guest pays — host never needs separate approve/reject.
+        // Only standard (guest-initiated) bookings use the separate host approve/reject flow.
+        hostApproval: booking.bookingType === 'MANUAL'
           ? 'APPROVED'
           : (booking.hostStatus || 'PENDING'),
         hostReviewedAt: booking.hostReviewedAt?.toISOString() || null,

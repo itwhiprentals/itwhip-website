@@ -6,6 +6,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
+import { SignJWT } from 'jose'
+
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret')
 
 export async function POST(req: NextRequest) {
   try {
@@ -201,10 +204,35 @@ ${emailConfig.companyName} | ${emailConfig.companyAddress} | itwhip.com
       // Don't fail the request if email fails
     }
 
-    return NextResponse.json({
+    // Create accessToken JWT so the guest is auto-logged-in after setting password
+    const accessToken = await new SignJWT({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      role: 'CLAIMED',
+      status: 'ACTIVE'
+    })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('7d')
+      .sign(JWT_SECRET)
+
+    const isProduction = process.env.NODE_ENV === 'production'
+    const response = NextResponse.json({
       success: true,
       message: 'Password set successfully'
     })
+
+    response.cookies.set('accessToken', accessToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60,
+      path: '/'
+    })
+
+    console.log(`[Set Password] Session created for: ${user.email}`)
+    return response
 
   } catch (error) {
     console.error('[Set Password API] Error:', error)

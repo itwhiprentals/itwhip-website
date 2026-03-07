@@ -86,15 +86,29 @@ export function QuickActions({
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
       <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('bdQuickActions')}</h3>
       <div className="space-y-2">
-        {/* Edit Booking — only for manual PENDING bookings */}
+        {/* Edit Booking — only for manual PENDING bookings, disabled while agreement is sent/viewed */}
         {booking.status === 'PENDING' && !isGuestDriven && (
-          <button
-            onClick={() => setShowEditModal(true)}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
-          >
-            <IoCreateOutline className="w-4 h-4" />
-            {t('bdEditBooking')}
-          </button>
+          (booking.agreementStatus === 'sent' || booking.agreementStatus === 'viewed') ? (
+            <div className="relative group">
+              <div className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-lg flex items-center gap-2 cursor-not-allowed">
+                <IoCreateOutline className="w-4 h-4" />
+                {t('bdEditBooking')}
+                <span className="ml-auto text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">{t('bdAgreementPending')}</span>
+              </div>
+              <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
+                {t('bdEditLockedAgreementSent')}
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+            >
+              <IoCreateOutline className="w-4 h-4" />
+              {t('bdEditBooking')}
+            </button>
+          )
         )}
 
         {/* Guest-driven: Edit locked */}

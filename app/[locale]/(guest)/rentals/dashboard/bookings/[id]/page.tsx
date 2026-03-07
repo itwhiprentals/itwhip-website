@@ -761,6 +761,7 @@ export default function BookingDetailsPage() {
           <ManualBookingProgress
             status={booking.status}
             paymentType={booking.paymentType || null}
+            paymentStatus={booking.paymentStatus || null}
             agreementStatus={booking.agreementStatus || null}
             tripStartedAt={booking.tripStartedAt}
             tripEndedAt={booking.tripEndedAt}

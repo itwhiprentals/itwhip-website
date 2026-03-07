@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { stripe } from '@/app/lib/stripe/client'
+import { completeBookingConfirmation } from '@/app/lib/booking/complete-confirmation'
 
 export async function POST(
   request: NextRequest,
@@ -56,6 +57,18 @@ export async function POST(
 
     // Step 3: Check booking state
     if (booking.paymentType) {
+      // CARD selected but payment not completed — return existing PI's clientSecret
+      // so the guest can finish entering card details
+      if (booking.paymentType === 'CARD' && booking.paymentStatus === 'PENDING' && booking.paymentIntentId && choice === 'CARD') {
+        const existingPi = await stripe.paymentIntents.retrieve(booking.paymentIntentId)
+        console.log(`[Payment Choice] Returning existing PI clientSecret for ${booking.bookingCode} (card form incomplete)`)
+        return NextResponse.json({
+          success: true,
+          paymentType: 'CARD',
+          clientSecret: existingPi.client_secret,
+        })
+      }
+
       return NextResponse.json(
         { error: 'Payment method already selected', paymentType: booking.paymentType },
         { status: 409 }
@@ -119,6 +132,19 @@ export async function POST(
       })
 
       console.log(`[Payment Choice] Guest ${user.email} selected CASH for booking ${booking.bookingCode}${isManualBooking ? ' (auto-confirmed)' : ''}`)
+
+      // MANUAL bookings: run full confirmation side effects (availability, emails, SMS, notifications)
+      if (isManualBooking) {
+        completeBookingConfirmation(bookingId, { capturePayment: false })
+          .then(result => {
+            if (result.success) {
+              console.log(`[Payment Choice] ✅ Full confirmation completed for ${booking.bookingCode}`)
+            } else {
+              console.error(`[Payment Choice] ❌ Confirmation side effects failed for ${booking.bookingCode}:`, result.error)
+            }
+          })
+          .catch(e => console.error(`[Payment Choice] ❌ Confirmation error for ${booking.bookingCode}:`, e))
+      }
 
       return NextResponse.json({
         success: true,

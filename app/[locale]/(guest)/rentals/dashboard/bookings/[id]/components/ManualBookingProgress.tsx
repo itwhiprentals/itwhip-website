@@ -19,6 +19,7 @@ import {
 interface ManualBookingProgressProps {
   status: string
   paymentType: string | null
+  paymentStatus?: string | null
   agreementStatus: string | null
   tripStartedAt?: string | Date | null
   tripEndedAt?: string | Date | null
@@ -28,6 +29,7 @@ interface ManualBookingProgressProps {
 export default function ManualBookingProgress({
   status,
   paymentType,
+  paymentStatus,
   agreementStatus,
   tripStartedAt,
   tripEndedAt,
@@ -37,7 +39,8 @@ export default function ManualBookingProgress({
 
   const isBooked = true
   const isSigned = agreementStatus === 'signed'
-  const hasPayment = !!paymentType
+  // paymentType is set when guest SELECTS method — only count as paid when actually authorized/paid
+  const hasPayment = !!paymentType && paymentStatus !== 'PENDING'
   const isNoShow = status === 'NO_SHOW'
   const isConfirmed = status === 'CONFIRMED' || isNoShow || !!tripStartedAt || !!tripEndedAt
   const isTripStarted = !!tripStartedAt

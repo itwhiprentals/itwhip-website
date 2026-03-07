@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
         renterId: true,
         guestPhone: true,
         host: { select: { phone: true } },
-        renter: { select: { phoneNumber: true } },
+        renter: { select: { phone: true } },
       },
     })
 
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
     }
 
     const callable = isBookingCallable(booking)
-    const hasGuestPhone = !!(booking.guestPhone || booking.renter?.phoneNumber)
+    const hasGuestPhone = !!(booking.guestPhone || booking.renter?.phone)
     const hasHostPhone = !!booking.host?.phone
 
     return NextResponse.json({
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
         renterId: true,
         guestPhone: true,
         host: { select: { id: true, phone: true, name: true } },
-        renter: { select: { id: true, phoneNumber: true } },
+        renter: { select: { id: true, phone: true } },
       },
     })
 
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get phone numbers
-    const guestPhone = booking.guestPhone || booking.renter?.phoneNumber
+    const guestPhone = booking.guestPhone || booking.renter?.phone
     const hostPhone = booking.host?.phone
 
     if (!guestPhone || !hostPhone) {

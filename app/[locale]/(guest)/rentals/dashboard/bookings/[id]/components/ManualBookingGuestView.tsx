@@ -55,7 +55,10 @@ export default function ManualBookingGuestView({
   const t = useTranslations('ManualBooking')
   const tBd = useTranslations('BookingDetail')
 
-  const hasPayment = !!booking.paymentType
+  // paymentType is set when guest SELECTS a method (before card form completion).
+  // hasPayment should only be true when payment is actually authorized/paid.
+  const hasPayment = !!booking.paymentType && booking.paymentStatus !== 'PENDING'
+  const needsCardForm = booking.paymentType === 'CARD' && booking.paymentStatus === 'PENDING'
   const agreementStatus = booking.agreementStatus || 'not_sent'
   const isSigned = agreementStatus === 'signed'
 
@@ -67,6 +70,7 @@ export default function ManualBookingGuestView({
       <ManualBookingProgress
         status={booking.status}
         paymentType={booking.paymentType || null}
+        paymentStatus={booking.paymentStatus || null}
         agreementStatus={booking.agreementStatus || null}
         tripStartedAt={booking.tripStartedAt}
         tripEndedAt={booking.tripEndedAt}
@@ -109,12 +113,12 @@ export default function ManualBookingGuestView({
       />
 
       {/* Payment — locked until agreement signed */}
-      {!hasPayment && !isSigned && (
+      {!hasPayment && !needsCardForm && !isSigned && (
         <LockedPaymentCard />
       )}
 
-      {/* Payment Choice — unlocked after agreement signed */}
-      {!hasPayment && isSigned && (
+      {/* Payment Choice — unlocked after agreement signed, OR card selected but not yet completed */}
+      {((!hasPayment && !needsCardForm && isSigned) || needsCardForm) && (
         <PaymentChoiceCard
           booking={{
             id: booking.id,
@@ -129,7 +133,7 @@ export default function ManualBookingGuestView({
         />
       )}
 
-      {/* Payment Info Card — after payment selected */}
+      {/* Payment Info Card — after payment actually authorized/paid */}
       {hasPayment && (
         <PaymentInfoCard
           paymentType={booking.paymentType!}

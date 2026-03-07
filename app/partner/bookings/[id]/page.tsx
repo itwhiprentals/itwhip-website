@@ -17,10 +17,13 @@ import {
   IoAlertCircleOutline,
   IoDocumentTextOutline,
   IoWalletOutline,
+  IoArrowForwardOutline,
 } from 'react-icons/io5'
 import { HandoffPanel } from './HandoffPanel'
 import { CashHandoffChecklist } from './components/CashHandoffChecklist'
 import EarningsSection from './components/EarningsSection'
+import RentalPeriodCard from '@/app/partner/requests/[id]/components/RentalPeriodCard'
+import { GuestInfoCard } from '@/app/partner/components/GuestInfoCard'
 import { CustomerSection } from './components/CustomerSection'
 import { QuickActions } from './components/QuickActions'
 import { WhatsNeeded } from './components/WhatsNeeded'
@@ -785,8 +788,8 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
           </div>
         )}
 
-        {/* Host Approved Banner */}
-        {booking.hostApproval === 'APPROVED' && booking.status !== 'NO_SHOW' && booking.status !== 'CANCELLED' && (
+        {/* Host Approved Banner — only for guest-driven bookings where host explicitly approved */}
+        {booking.hostApproval === 'APPROVED' && !isManualBooking && booking.status !== 'NO_SHOW' && booking.status !== 'CANCELLED' && (
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg px-4 py-3 flex items-center gap-2">
             <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
             <span className="text-sm text-green-800 dark:text-green-200 font-medium">{t('bdYouApprovedBooking')}</span>
@@ -842,6 +845,37 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
           </div>
         )}
       </div>
+
+      {/* Handoff Verification Panel — under header, visible for confirmed + active + completed, guest-driven bookings */}
+      {(booking.status === 'CONFIRMED' || booking.status === 'ACTIVE' || booking.status === 'COMPLETED') && isGuestDriven &&
+       (booking.onboardingCompletedAt || isManualBooking) && (
+        <HandoffPanel
+          bookingId={booking.id}
+          bookingStatus={booking.status}
+          handoffStatus={booking.handoffStatus}
+          guestDistance={booking.guestGpsDistance}
+          isInstantBook={vehicle?.instantBook ?? false}
+          savedKeyInstructions={vehicle?.keyInstructions ?? null}
+          autoFallbackAt={booking.handoffAutoFallbackAt}
+          hostHandoffVerifiedAt={booking.hostHandoffVerifiedAt}
+          guestGpsVerifiedAt={booking.guestGpsVerifiedAt}
+          keyInstructionsDeliveredAt={booking.keyInstructionsDeliveredAt}
+          hostHandoffDistance={booking.hostHandoffDistance}
+          licensePhotoUrl={booking.licensePhotoUrl}
+          licenseBackPhotoUrl={booking.licenseBackPhotoUrl}
+          guestLiveDistance={booking.guestLiveDistance}
+          guestLiveUpdatedAt={booking.guestLiveUpdatedAt}
+          guestEtaMessage={booking.guestEtaMessage}
+          guestArrivalSummary={booking.guestArrivalSummary}
+          guestLocationTrust={booking.guestLocationTrust}
+          pickupLocation={booking.pickupLocation}
+          hostFinalReviewStatus={booking.hostFinalReviewStatus}
+          hostFinalReviewDeadline={booking.hostFinalReviewDeadline}
+          depositAmount={booking.depositAmount}
+          inspectionPhotosStart={booking.inspectionPhotosStart || []}
+          inspectionPhotosEnd={booking.inspectionPhotosEnd || []}
+        />
+      )}
 
       {/* Main Content */}
       <div>
@@ -909,105 +943,125 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 </div>
               )}
 
-              {/* Customer Section */}
+              {/* Customer Section — manual bookings use the shared GuestInfoCard */}
               {renter && (
-                <CustomerSection
-                  renter={renter}
-                  booking={booking}
-                  isGuestDriven={isGuestDriven}
-                  isManualBooking={isManualBooking}
-                  guestInsurance={guestInsurance}
-                  guestHistory={guestHistory}
-                  vehicle={vehicle}
-                  activeTooltip={activeTooltip}
-                  setActiveTooltip={setActiveTooltip}
-                  setShowOnboardModal={modals.setShowOnboardModal}
-                  setConfirmAction={modals.setConfirmAction}
-                  verifyGuest={verifyGuest}
-                  verifyingGuest={verifyingGuest}
-                  formatCurrency={formatCurrency}
-                />
+                isManualBooking ? (
+                  <GuestInfoCard
+                    renter={renter}
+                    isVerified={!!(
+                      booking.guestStripeVerified
+                      || renter.verification?.identity?.status === 'verified'
+                      || renter.verification?.adminOverride?.isVerified
+                      || renter.verification?.adminOverride?.fullyVerified
+                      || renter.verification?.documents?.verified
+                      || renter.manuallyVerifiedByHost
+                    )}
+                    guestInsurance={guestInsurance}
+                    bookingId={booking.id}
+                    bookingStatus={booking.status}
+                    guestHistory={guestHistory}
+                    formatCurrency={formatCurrency}
+                  />
+                ) : (
+                  <CustomerSection
+                    renter={renter}
+                    booking={booking}
+                    isGuestDriven={isGuestDriven}
+                    isManualBooking={isManualBooking}
+                    guestInsurance={guestInsurance}
+                    guestHistory={guestHistory}
+                    vehicle={vehicle}
+                    activeTooltip={activeTooltip}
+                    setActiveTooltip={setActiveTooltip}
+                    setShowOnboardModal={modals.setShowOnboardModal}
+                    setConfirmAction={modals.setConfirmAction}
+                    verifyGuest={verifyGuest}
+                    verifyingGuest={verifyingGuest}
+                    formatCurrency={formatCurrency}
+                  />
+                )
               )}
             </div>
 
-            {/* #4 — Rental Period (moved from sidebar to left column) */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <IoCalendarOutline className="w-5 h-5 text-gray-400" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdRentalPeriod')}</h3>
-              </div>
+            {/* #4 — Rental Period — for manual bookings, RentalPeriodCard replaces this */}
+            {!isManualBooking && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <IoCalendarOutline className="w-5 h-5 text-gray-400" />
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('bdRentalPeriod')}</h3>
+                </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('bdPickup')}</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{formatDate(booking.startDate)}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('bdAt')} {formatTime12h(booking.startTime)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('bdReturn')}</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{formatDate(booking.endDate)}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('bdAt')} {formatTime12h(booking.endTime)}</p>
-                </div>
-              </div>
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <IoLocationOutline className="w-5 h-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Delivery/Pick Up</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{booking.pickupLocation || t('bdBusinessLocation')}</p>
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('bdPickup')}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{formatDate(booking.startDate)}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('bdAt')} {formatTime12h(booking.startTime)}</p>
+                  </div>
+                  <IoArrowForwardOutline className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('bdReturn')}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{formatDate(booking.endDate)}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('bdAt')} {formatTime12h(booking.endTime)}</p>
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <IoLocationOutline className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{t('bdPickupLocation')}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{booking.pickupLocation || t('bdBusinessLocation')}</p>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                        {t('bdDaysCount', { count: booking.numberOfDays })}
+                      </span>
+                      {(booking.status === 'CONFIRMED' || booking.status === 'ACTIVE') && new Date(booking.endDate) > new Date() ? (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                          {(() => {
+                            const daysLeft = Math.max(0, Math.ceil((new Date(booking.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+                            return t('bdDaysLeft', { count: daysLeft })
+                          })()}
+                        </p>
+                      ) : booking.status === 'COMPLETED' ? (
+                        <p className="text-sm text-green-600 dark:text-green-400 mt-0.5">{t('bdTripCompleted')}</p>
+                      ) : booking.status === 'CANCELLED' ? (
+                        <p className="text-sm text-red-600 dark:text-red-400 mt-0.5">{t('bdTripCancelled')}</p>
+                      ) : null}
                     </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                      {t('bdDaysCount', { count: booking.numberOfDays })}
-                    </span>
-                    {(booking.status === 'CONFIRMED' || booking.status === 'ACTIVE') && new Date(booking.endDate) > new Date() ? (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                        {(() => {
-                          const daysLeft = Math.max(0, Math.ceil((new Date(booking.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-                          return t('bdDaysLeft', { count: daysLeft })
-                        })()}
-                      </p>
-                    ) : booking.status === 'COMPLETED' ? (
-                      <p className="text-sm text-green-600 dark:text-green-400 mt-0.5">{t('bdTripCompleted')}</p>
-                    ) : booking.status === 'CANCELLED' ? (
-                      <p className="text-sm text-red-600 dark:text-red-400 mt-0.5">{t('bdTripCancelled')}</p>
-                    ) : null}
-                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Handoff Verification Panel — visible for confirmed + active + completed, guest-driven bookings */}
-            {(booking.status === 'CONFIRMED' || booking.status === 'ACTIVE' || booking.status === 'COMPLETED') && isGuestDriven &&
-             (booking.onboardingCompletedAt || isManualBooking) && (
-              <HandoffPanel
-                bookingId={booking.id}
-                bookingStatus={booking.status}
-                handoffStatus={booking.handoffStatus}
-                guestDistance={booking.guestGpsDistance}
-                isInstantBook={vehicle?.instantBook ?? false}
-                savedKeyInstructions={vehicle?.keyInstructions ?? null}
-                autoFallbackAt={booking.handoffAutoFallbackAt}
-                hostHandoffVerifiedAt={booking.hostHandoffVerifiedAt}
-                guestGpsVerifiedAt={booking.guestGpsVerifiedAt}
-                keyInstructionsDeliveredAt={booking.keyInstructionsDeliveredAt}
-                hostHandoffDistance={booking.hostHandoffDistance}
-                licensePhotoUrl={booking.licensePhotoUrl}
-                licenseBackPhotoUrl={booking.licenseBackPhotoUrl}
-                guestLiveDistance={booking.guestLiveDistance}
-                guestLiveUpdatedAt={booking.guestLiveUpdatedAt}
-                guestEtaMessage={booking.guestEtaMessage}
-                guestArrivalSummary={booking.guestArrivalSummary}
-                guestLocationTrust={booking.guestLocationTrust}
-                pickupLocation={booking.pickupLocation}
-                hostFinalReviewStatus={booking.hostFinalReviewStatus}
-                hostFinalReviewDeadline={booking.hostFinalReviewDeadline}
-                depositAmount={booking.depositAmount}
-                inspectionPhotosStart={booking.inspectionPhotosStart || []}
-                inspectionPhotosEnd={booking.inspectionPhotosEnd || []}
-              />
+
+            {/* RentalPeriodCard — manual bookings, left column all screens */}
+            {isManualBooking && (
+              <div>
+                <RentalPeriodCard
+                  startDate={booking.startDate}
+                  startTime={booking.startTime}
+                  endDate={booking.endDate}
+                  endTime={booking.endTime}
+                  pickupCity={undefined}
+                  pickupState={undefined}
+                  durationDays={booking.numberOfDays}
+                  dailyRate={booking.dailyRate}
+                  totalAmount={booking.subtotal}
+                  platformFee={booking.subtotal * commissionRate}
+                  hostEarnings={booking.subtotal - booking.subtotal * commissionRate}
+                  hasPendingCounterOffer={false}
+                  bookingStatus={booking.status}
+                  isExpired={false}
+                  hasDeclined={false}
+                  hasCompleted={true}
+                  onRequestDifferentRate={() => {}}
+                  onLearnHowItWorks={() => modals.setShowTaxInfo(true)}
+                  formatDate={formatDate}
+                  formatCurrency={formatCurrency}
+                />
+              </div>
             )}
 
             {/* Messages with Guest */}
@@ -1024,8 +1078,8 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               readOnly={booking.status === 'NO_SHOW' || booking.status === 'CANCELLED'}
             />
 
-            {/* Verification Status Section — only for manual bookings */}
-            {renter && !isGuestDriven && (
+            {/* Verification Status Section — left column for non-manual only */}
+            {!isManualBooking && renter && !isGuestDriven && (
               <VerificationSection
                 renter={renter}
                 booking={booking}
@@ -1039,7 +1093,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               />
             )}
 
-            {/* Rental Agreement Section — only for manual bookings */}
+            {/* Rental Agreement Section */}
             {!isGuestDriven && (
               isManualBooking && booking.status === 'PENDING' ? (
                 <BookingAgreementSection
@@ -1067,14 +1121,16 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               )
             )}
 
-            {/* Trip Charges Section */}
-            <TripChargesSection
-              tripCharges={booking.tripCharges}
-              expanded={expandedSections.charges}
-              onToggle={() => toggleSection('charges')}
-              onAddCharge={() => modals.setShowChargeModal(true)}
-              formatCurrency={formatCurrency}
-            />
+            {/* Trip Charges Section — left column for non-manual only */}
+            {!isManualBooking && (
+              <TripChargesSection
+                tripCharges={booking.tripCharges}
+                expanded={expandedSections.charges}
+                onToggle={() => toggleSection('charges')}
+                onAddCharge={() => modals.setShowChargeModal(true)}
+                formatCurrency={formatCurrency}
+              />
+            )}
           </div>
 
           {/* Right Column - Sidebar */}
@@ -1092,21 +1148,48 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               </div>
             )}
 
-            <EarningsSection
-              booking={booking}
-              isGuestDriven={isGuestDriven}
-              isManualBooking={isManualBooking}
-              expanded={expandedSections.pricing}
-              onToggle={() => toggleSection('pricing')}
-              commissionRate={commissionRate}
-              platformCommissionRate={PLATFORM_COMMISSION_RATE}
-              processingFee={PROCESSING_FEE}
-              formatCurrency={formatCurrency}
-              insurance={insurance}
-              onLearnMoreTax={() => modals.setShowTaxInfo(true)}
-            />
+            {!isManualBooking && (
+              <EarningsSection
+                booking={booking}
+                isGuestDriven={isGuestDriven}
+                isManualBooking={false}
+                expanded={expandedSections.pricing}
+                onToggle={() => toggleSection('pricing')}
+                commissionRate={commissionRate}
+                platformCommissionRate={PLATFORM_COMMISSION_RATE}
+                processingFee={PROCESSING_FEE}
+                formatCurrency={formatCurrency}
+                insurance={insurance}
+                onLearnMoreTax={() => modals.setShowTaxInfo(true)}
+              />
+            )}
 
-            {/* Quick Actions */}
+            {/* Manual bookings: Verification + Trip Charges in sidebar */}
+            {isManualBooking && renter && (
+              <VerificationSection
+                renter={renter}
+                booking={booking}
+                isManualBooking={isManualBooking}
+                expanded={expandedSections.verification}
+                onToggle={() => toggleSection('verification')}
+                sendVerificationRequest={sendVerificationRequest}
+                sendingVerification={sendingVerification}
+                getVerificationStatusColor={getVerificationStatusColor}
+                onLearnMoreVerification={() => modals.setShowVerificationInfo(true)}
+              />
+            )}
+
+            {isManualBooking && (
+              <TripChargesSection
+                tripCharges={booking.tripCharges}
+                expanded={expandedSections.charges}
+                onToggle={() => toggleSection('charges')}
+                onAddCharge={() => modals.setShowChargeModal(true)}
+                formatCurrency={formatCurrency}
+              />
+            )}
+
+            {/* Quick Actions — always last */}
             <QuickActions
               booking={booking}
               isGuestDriven={isGuestDriven}
