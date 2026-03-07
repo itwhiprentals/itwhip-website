@@ -52,6 +52,8 @@ interface RevenueData {
   monthlyData: MonthlyRevenue[]
   topVehicles: VehicleRevenue[]
   recentPayouts: Payout[]
+  welcomeDiscountBookings?: number
+  defaultCommissionRate?: number
 }
 
 interface MonthlyRevenue {
@@ -503,7 +505,7 @@ export default function PartnerRevenuePage() {
             {formatCurrency(revenueData.netRevenue)}
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            {t('afterCommission', { rate: Math.round(revenueData.commissionRate * 100) })}
+            {t('afterCommission', { rate: Math.round((revenueData.defaultCommissionRate ?? 0.25) * 100) })}
           </p>
         </div>
 
@@ -535,8 +537,19 @@ export default function PartnerRevenuePage() {
             {formatCurrency(revenueData.commission)}
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            {t('ofGross', { rate: Math.round(revenueData.commissionRate * 100) })}
+            {t('ofGross', { rate: Math.round((revenueData.defaultCommissionRate ?? 0.25) * 100) })}
           </p>
+          {(revenueData.welcomeDiscountBookings ?? 0) > 0 && (
+            <div className="relative group mt-1.5">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase bg-green-600 text-white cursor-pointer">
+                {t('welcomePartnerRate')}
+              </span>
+              <div className="invisible group-hover:visible absolute bottom-full left-0 mb-1.5 w-56 p-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50">
+                {t('welcomeDiscountTooltip', { standard: Math.round((revenueData.defaultCommissionRate ?? 0.25) * 100) })}
+                <div className="absolute bottom-0 left-4 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Avg Booking */}

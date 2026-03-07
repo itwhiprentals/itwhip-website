@@ -309,6 +309,8 @@ export async function GET(
         securityDeposit: Number(booking.securityDeposit),
         depositHeld: Number(booking.depositHeld),
         totalAmount: Number(booking.totalAmount),
+        platformFeeRate: booking.platformFeeRate ? Number(booking.platformFeeRate) : null,
+        isWelcomeDiscount: booking.isWelcomeDiscount || false,
 
         // Pickup
         pickupType: booking.pickupType,

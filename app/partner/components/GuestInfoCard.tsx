@@ -78,13 +78,13 @@ export function GuestInfoCard({ renter, isVerified, guestInsurance, bookingId, b
               </div>
             )}
             {renter.memberSince && (
-              <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                 <IoCalendarOutline className="w-3.5 h-3.5 flex-shrink-0" />
                 {t('bdMemberSince')} {new Date(renter.memberSince).toLocaleDateString()}
               </div>
             )}
             {guestHistory && (
-              <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                 <IoReceiptOutline className="w-3.5 h-3.5 flex-shrink-0" />
                 {guestHistory.totalBookings} {t('bdBookingsLabel', { count: guestHistory.totalBookings })} · {formatCurrency ? formatCurrency(guestHistory.totalSpent) : `$${guestHistory.totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} {t('bdSpentLabel')}
               </div>

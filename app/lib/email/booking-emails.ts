@@ -1280,7 +1280,7 @@ ${getEmailFooterText(emailReferenceId)}`
     await logEmail({
       recipientEmail: hostEmail,
       subject,
-      emailType: 'HOST',
+      emailType: 'SYSTEM',
       relatedType: 'booking',
       relatedId: bookingCode,
       messageId: result.messageId,

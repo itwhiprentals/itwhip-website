@@ -8966,6 +8966,7 @@
     "currentPathLabel": "Current: {pathName} — {payout} payout",
     "noRevenuePathSelected": "No revenue path selected yet",
     "welcomePartnerRate": "Welcome Partner Rate: 10%",
+    "welcomeDiscountTooltip": "Your first booking has a special 10% commission rate instead of {standard}%. Future bookings will follow your standard tier rate.",
     "welcomeRateNote": "First booking only — future bookings follow your tier rate",
     "saving": "Saving...",
     "saveSelection": "Save Selection",

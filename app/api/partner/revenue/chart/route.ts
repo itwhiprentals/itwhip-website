@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     const vehicleIds = partner.cars.map(c => c.id)
-    const commissionRate = partner.currentCommissionRate || 0.25
+    const defaultCommissionRate = partner.currentCommissionRate || 0.25
 
     // Get bookings for last N months
     const startDate = new Date()
@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
       },
       select: {
         totalAmount: true,
+        platformFeeRate: true,
         createdAt: true
       }
     })
@@ -69,7 +70,10 @@ export async function GET(request: NextRequest) {
       })
 
       const gross = monthBookings.reduce((sum, b) => sum + b.totalAmount, 0)
-      const commission = gross * commissionRate
+      const commission = monthBookings.reduce((sum, b) => {
+        const rate = b.platformFeeRate ? Number(b.platformFeeRate) : defaultCommissionRate
+        return sum + (b.totalAmount * rate)
+      }, 0)
       const net = gross - commission
 
       chartData.push({ month: monthKey, gross, net, commission })

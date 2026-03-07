@@ -225,8 +225,9 @@ export async function POST(request: NextRequest) {
     const totalTaxes = stateTax + countyTax + cityTax + rentalTax
     const totalAmount = rentalSubtotal + deliveryFee + serviceFee + totalTaxes
 
-    // Platform fee: host's current commission rate
-    const platformFeeRate = Number(partner.currentCommissionRate) || 0.25
+    // Platform fee: welcome discount (10%) for first booking of recruited hosts, otherwise tier rate
+    const isWelcomeDiscount = !partner.welcomeDiscountUsed && !!partner.recruitedVia
+    const platformFeeRate = isWelcomeDiscount ? 0.10 : (Number(partner.currentCommissionRate) || 0.25)
 
     // ─── Check Conflicts ──────────────────────────────────
 
@@ -329,6 +330,7 @@ export async function POST(request: NextRequest) {
         pickupType: pickupType || 'PARTNER_LOCATION',
         pickupLocation: pickupLocation || 'Partner Location',
         platformFeeRate,
+        isWelcomeDiscount,
         paymentDeadline: new Date(Date.now() + 48 * 60 * 60 * 1000),
         noShowDeadline: calculateNoShowDeadline(startDate, startTime, paymentMethod === 'cash' ? 'CASH' : 'CARD'),
         // Agreement

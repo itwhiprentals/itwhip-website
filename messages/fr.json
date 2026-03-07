@@ -8912,6 +8912,7 @@
     "commissionTiersDisplay": "Niveaux de commission",
     "notSelected": "Non sélectionné",
     "welcomePartnerRate": "Tarif de Bienvenue : 10%",
+    "welcomeDiscountTooltip": "Votre première réservation bénéficie d'un taux de commission spécial de 10 % au lieu de {standard} %. Les réservations futures suivront votre tarif de niveau standard.",
     "welcomeRateNote": "Première réservation uniquement — les futures réservations suivent votre tarif de niveau"
   },
   "PartnerAnalytics": {

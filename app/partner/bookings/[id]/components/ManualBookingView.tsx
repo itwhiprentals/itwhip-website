@@ -75,6 +75,8 @@ interface BookingDetails {
   securityDeposit: number
   depositHeld: number
   totalAmount: number
+  platformFeeRate: number | null
+  isWelcomeDiscount: boolean
   pickupType: string
   pickupLocation: string
   guestName: string
@@ -225,9 +227,9 @@ export default function ManualBookingView({
   // Toast notification
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
-  // Commission rate from host's actual tier
-  const STANDARD_COMMISSION_RATE = 0.25
-  const commissionRate = partner?.currentCommissionRate || 0.25
+  // Commission rate: use booking's stored platformFeeRate, fallback to partner tier
+  const STANDARD_COMMISSION_RATE = partner?.currentCommissionRate || 0.25
+  const commissionRate = booking.platformFeeRate ?? STANDARD_COMMISSION_RATE
   const PROCESSING_FEE = 1.50
 
   // ─── Helpers ──────────────────────────────────────────────────

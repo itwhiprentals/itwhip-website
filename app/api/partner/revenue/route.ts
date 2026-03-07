@@ -106,10 +106,18 @@ export async function GET(request: NextRequest) {
       orderBy: { endDate: 'desc' }
     })
 
-    const commissionRate = partner.currentCommissionRate || 0.25
+    const defaultCommissionRate = partner.currentCommissionRate || 0.25
     const grossRevenue = bookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
-    const commission = grossRevenue * commissionRate
+    // Calculate commission per-booking using actual platformFeeRate (welcome discount = 10%)
+    const commission = bookings.reduce((sum, b) => {
+      const rate = b.platformFeeRate ? Number(b.platformFeeRate) : defaultCommissionRate
+      return sum + ((b.totalAmount || 0) * rate)
+    }, 0)
     const netRevenue = grossRevenue - commission
+    // Effective blended rate across all bookings
+    const commissionRate = grossRevenue > 0 ? commission / grossRevenue : defaultCommissionRate
+    // Count welcome discount bookings
+    const welcomeDiscountBookings = bookings.filter(b => b.isWelcomeDiscount).length
 
     // Get upcoming/confirmed bookings (revenue that's expected but not yet earned)
     const upcomingBookings = await prisma.rentalBooking.findMany({
@@ -124,7 +132,10 @@ export async function GET(request: NextRequest) {
       }
     })
     const upcomingGrossRevenue = upcomingBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
-    const upcomingCommission = upcomingGrossRevenue * commissionRate
+    const upcomingCommission = upcomingBookings.reduce((sum, b) => {
+      const rate = b.platformFeeRate ? Number(b.platformFeeRate) : defaultCommissionRate
+      return sum + ((b.totalAmount || 0) * rate)
+    }, 0)
     const upcomingNetRevenue = upcomingGrossRevenue - upcomingCommission
 
     // Get pending bookings (awaiting confirmation)
@@ -161,7 +172,10 @@ export async function GET(request: NextRequest) {
       })
 
       const monthGross = monthBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
-      const monthCommission = monthGross * commissionRate
+      const monthCommission = monthBookings.reduce((sum, b) => {
+        const rate = b.platformFeeRate ? Number(b.platformFeeRate) : defaultCommissionRate
+        return sum + ((b.totalAmount || 0) * rate)
+      }, 0)
       const monthNet = monthGross - monthCommission
 
       monthlyData.push({
@@ -262,7 +276,9 @@ export async function GET(request: NextRequest) {
         topVehicles,
         recentPayouts,
         tierInfo,
-        period
+        period,
+        welcomeDiscountBookings,
+        defaultCommissionRate,
       }
     })
 

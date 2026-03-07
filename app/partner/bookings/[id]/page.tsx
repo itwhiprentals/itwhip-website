@@ -689,12 +689,10 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   const isGuestDriven = booking?.isGuestDriven ?? false
   const isManualBooking = (booking?.bookingType || 'STANDARD') === 'MANUAL'
 
-  // Commission rate: welcome discount (10%) for recruited hosts on first booking, else standard tier
-  const PLATFORM_COMMISSION_RATE = 0.25
+  // Commission rate: use booking's stored platformFeeRate (set at creation time), fallback to partner tier
+  const PLATFORM_COMMISSION_RATE = partner?.currentCommissionRate || 0.25
   const PROCESSING_FEE = 1.50
-  const commissionRate = (booking?.isRecruitedBooking && partner?.welcomeDiscountUsed === false)
-    ? 0.10
-    : (partner?.currentCommissionRate || 0.25)
+  const commissionRate = booking?.platformFeeRate ?? PLATFORM_COMMISSION_RATE
 
   // Strip system metadata prefixes from notes for display
   const cleanNotes = (notes: string | null): string | null => {

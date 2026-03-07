@@ -199,42 +199,42 @@ export default function UserInfoCard({ user, loading, activeBookingCount = 0, on
         {/* User Info */}
         <div className="flex-1 min-w-0">
           {/* Name + Status Badge on same row */}
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center justify-between gap-2">
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
               {displayName}
             </h2>
             <div className="flex-shrink-0">
               {isExternalRecruit ? (
                 !user.onboardingCompletedAt ? (
-                  <Link href={user.activeRequestId ? `/partner/requests/${user.activeRequestId}` : '/partner/requests'} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
+                  <Link href={user.activeRequestId ? `/partner/requests/${user.activeRequestId}` : '/partner/requests'} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
                     <IoRocketOutline className="w-3 h-3" />
                     {t('uiBookingInProgress')}
                   </Link>
                 ) : activeBookingCount > 0 ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                    <IoCheckmarkCircle className="w-3.5 h-3.5" />
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-green-600 text-white">
+                    <IoCheckmarkCircle className="w-3 h-3" />
                     {t('uiActiveReservation')}
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
-                    <IoRemoveCircleOutline className="w-3.5 h-3.5" />
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                    <IoRemoveCircleOutline className="w-3 h-3" />
                     {t('uiNoActiveReservation')}
                   </span>
                 )
               ) : (
                 needsSetup ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
-                    <IoRocketOutline className="w-3.5 h-3.5" />
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                    <IoRocketOutline className="w-3 h-3" />
                     {t('uiOnboarding')}
                   </span>
                 ) : isActive ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                    <IoCheckmarkCircle className="w-3.5 h-3.5" />
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-green-600 text-white">
+                    <IoCheckmarkCircle className="w-3 h-3" />
                     {t('uiActive')}
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
-                    <IoBanOutline className="w-3.5 h-3.5" />
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                    <IoBanOutline className="w-3 h-3" />
                     {t('uiSuspended')}
                   </span>
                 )

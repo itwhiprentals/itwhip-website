@@ -168,12 +168,12 @@ export function CustomerSection({
               </p>
             )}
             {renter.memberSince && (
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                 {t('bdMemberSince')} {new Date(renter.memberSince).toLocaleDateString()}
               </p>
             )}
             {guestHistory && (
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                 {guestHistory.totalBookings} {t('bdBookingsLabel', { count: guestHistory.totalBookings })} · {formatCurrency(guestHistory.totalSpent)} {t('bdSpentLabel')}
               </p>
             )}
