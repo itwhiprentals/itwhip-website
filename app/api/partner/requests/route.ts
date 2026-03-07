@@ -89,8 +89,13 @@ export async function GET(request: NextRequest) {
           AND: [visibilityFilter]
         }
       }),
-      prisma.requestClaim.count({
-        where: { hostId: host.id }
+      prisma.reservationRequest.count({
+        where: {
+          OR: [
+            { claims: { some: { hostId: host.id } } },
+            { invitedProspects: { some: { convertedHostId: host.id } } }
+          ]
+        }
       }),
       prisma.requestClaim.count({
         where: {
@@ -122,13 +127,14 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // If myClaims filter, get requests where host has claims
+    // If myClaims filter, get requests where host has claims OR is an invited prospect
     if (myClaims) {
       const claimedRequests = await prisma.reservationRequest.findMany({
         where: {
-          claims: {
-            some: { hostId: host.id }
-          }
+          OR: [
+            { claims: { some: { hostId: host.id } } },
+            { invitedProspects: { some: { convertedHostId: host.id } } }
+          ]
         },
         select: {
           id: true,
@@ -152,6 +158,7 @@ export async function GET(request: NextRequest) {
           guestNotes: true,
           viewCount: true,
           createdAt: true,
+          fulfilledBookingId: true,
           claims: {
             where: { hostId: host.id },
             select: {
@@ -169,6 +176,10 @@ export async function GET(request: NextRequest) {
                 }
               }
             }
+          },
+          invitedProspects: {
+            where: { convertedHostId: host.id },
+            select: { id: true, status: true, convertedBookingId: true }
           }
         },
         orderBy: { createdAt: 'desc' },
@@ -178,8 +189,10 @@ export async function GET(request: NextRequest) {
 
       const transformedClaimed = claimedRequests.map(r => ({
         ...r,
+        isTargeted: (r.invitedProspects?.length || 0) > 0,
         myClaim: r.claims[0] || null,
-        claims: undefined
+        claims: undefined,
+        invitedProspects: undefined
       }))
 
       return NextResponse.json({

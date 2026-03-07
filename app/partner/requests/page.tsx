@@ -89,7 +89,7 @@ export default function PartnerRequestsPage() {
   const [requests, setRequests] = useState<ReservationRequest[]>([])
   const [myCars, setMyCars] = useState<HostCar[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('open')
+  const [filter, setFilter] = useState('my_claims')
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedRequest, setExpandedRequest] = useState<string | null>(null)
   const [claimingRequest, setClaimingRequest] = useState<string | null>(null)
@@ -406,6 +406,15 @@ export default function PartnerRequestsPage() {
                 }`}
               >
                 {t('filterAvailable')}
+                {stats.openCount > 0 && (
+                  <span className={`ml-1.5 px-1.5 py-0.5 text-xs rounded-full font-bold ${
+                    filter === 'open'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                  }`}>
+                    {stats.openCount}
+                  </span>
+                )}
               </button>
               <button
                 onClick={() => setFilter('my_claims')}
@@ -416,6 +425,15 @@ export default function PartnerRequestsPage() {
                 }`}
               >
                 {t('filterMyClaims')}
+                {stats.myClaimsCount > 0 && (
+                  <span className={`ml-1.5 px-1.5 py-0.5 text-xs rounded-full font-bold ${
+                    filter === 'my_claims'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                  }`}>
+                    {stats.myClaimsCount}
+                  </span>
+                )}
               </button>
             </div>
           </div>

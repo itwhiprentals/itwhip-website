@@ -37,7 +37,8 @@ import {
   IoStarOutline,
   IoChatbubblesOutline,
   IoAddCircleOutline,
-  IoLocationOutline
+  IoLocationOutline,
+  IoMailOpenOutline
 } from 'react-icons/io5'
 
 // Role types matching the session API
@@ -88,6 +89,7 @@ const navigationItems: NavItem[] = [
   { nameKey: 'managedVehicles', href: '/partner/managed', icon: IoCarOutline, roles: ['fleet_manager', 'hybrid'] },
   { nameKey: 'bookings', href: '/partner/bookings', icon: IoCalendarOutline, roles: 'all' },
   { nameKey: 'newBooking', href: '/partner/bookings/new', icon: IoAddCircleOutline, indent: true, roles: ['individual', 'hybrid', 'fleet_partner', 'fleet_manager'] },
+  { nameKey: 'requests', href: '/partner/requests', icon: IoMailOpenOutline, roles: 'all' },
   { nameKey: 'customers', href: '/partner/customers', icon: IoPeopleOutline, roles: ['individual', 'hybrid', 'fleet_partner', 'fleet_manager'] },
   { nameKey: 'calendar', href: '/partner/calendar', icon: IoCalendarOutline, roles: ['individual', 'hybrid', 'fleet_partner', 'fleet_manager'] },
   { nameKey: 'reviews', href: '/partner/reviews', icon: IoStarOutline, roles: ['individual', 'hybrid', 'fleet_partner', 'fleet_manager'] },
