@@ -612,7 +612,6 @@ export default function RequestDetailPage() {
                 messagesContainerRef={messages.messagesContainerRef}
                 expanded={expandedSections.messages}
                 onToggle={() => toggleSection('messages')}
-                formatMessageTime={messages.formatMessageTime}
               />
             )}
 

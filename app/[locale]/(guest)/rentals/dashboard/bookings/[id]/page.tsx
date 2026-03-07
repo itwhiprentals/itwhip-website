@@ -952,26 +952,18 @@ export default function BookingDetailsPage() {
           /* Active trip: collapsible messages */
           <>
             {booking.status !== 'CANCELLED' && (
-              <details className="mt-3 group">
-                <summary className="flex items-center justify-between cursor-pointer bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2.5 select-none">
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Messages</span>
-                  <svg className="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </summary>
-                <div className="mt-2">
-                  <MessagesPanel
-                    bookingId={bookingId}
-                    messages={messages}
-                    loading={messagesLoading}
-                    sending={messageSending}
-                    error={messageError}
-                    onSendMessage={sendMessage}
-                    onFileUpload={handleMessageFileUpload}
-                    uploadingFile={messageUploading}
-                  />
-                </div>
-              </details>
+              <div className="mt-5">
+                <MessagesPanel
+                  bookingId={bookingId}
+                  messages={messages}
+                  loading={messagesLoading}
+                  sending={messageSending}
+                  error={messageError}
+                  onSendMessage={sendMessage}
+                  onFileUpload={handleMessageFileUpload}
+                  uploadingFile={messageUploading}
+                />
+              </div>
             )}
             <p className="text-center text-[10px] text-gray-400 dark:text-gray-500 mt-3">
               Need help? <a href="tel:+18557030806" className="font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">(855) 703-0806</a>

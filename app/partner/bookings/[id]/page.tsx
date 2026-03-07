@@ -881,7 +881,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       <div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left Column - Main Info */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 flex flex-col gap-4">
             {/* Vehicle & Customer Info */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
               {/* Vehicle Section */}
@@ -1038,30 +1038,28 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
 
             {/* RentalPeriodCard — manual bookings, left column all screens */}
             {isManualBooking && (
-              <div>
-                <RentalPeriodCard
-                  startDate={booking.startDate}
-                  startTime={booking.startTime}
-                  endDate={booking.endDate}
-                  endTime={booking.endTime}
-                  pickupCity={undefined}
-                  pickupState={undefined}
-                  durationDays={booking.numberOfDays}
-                  dailyRate={booking.dailyRate}
-                  totalAmount={booking.subtotal}
-                  platformFee={booking.subtotal * commissionRate}
-                  hostEarnings={booking.subtotal - booking.subtotal * commissionRate}
-                  hasPendingCounterOffer={false}
-                  bookingStatus={booking.status}
-                  isExpired={false}
-                  hasDeclined={false}
-                  hasCompleted={true}
-                  onRequestDifferentRate={() => {}}
-                  onLearnHowItWorks={() => modals.setShowTaxInfo(true)}
-                  formatDate={formatDate}
-                  formatCurrency={formatCurrency}
-                />
-              </div>
+              <RentalPeriodCard
+                startDate={booking.startDate}
+                startTime={booking.startTime}
+                endDate={booking.endDate}
+                endTime={booking.endTime}
+                pickupCity={undefined}
+                pickupState={undefined}
+                durationDays={booking.numberOfDays}
+                dailyRate={booking.dailyRate}
+                totalAmount={booking.subtotal}
+                platformFee={booking.subtotal * commissionRate}
+                hostEarnings={booking.subtotal - booking.subtotal * commissionRate}
+                hasPendingCounterOffer={false}
+                bookingStatus={booking.status}
+                isExpired={false}
+                hasDeclined={false}
+                hasCompleted={true}
+                onRequestDifferentRate={() => {}}
+                onLearnHowItWorks={() => modals.setShowTaxInfo(true)}
+                formatDate={formatDate}
+                formatCurrency={formatCurrency}
+              />
             )}
 
             {/* Messages with Guest */}
@@ -1074,7 +1072,6 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               messagesContainerRef={messages.messagesContainerRef}
               expanded={expandedSections.messages}
               onToggle={() => toggleSection('messages')}
-              formatMessageTime={messages.formatMessageTime}
               readOnly={booking.status === 'NO_SHOW' || booking.status === 'CANCELLED'}
             />
 

@@ -102,7 +102,7 @@ export const HostMessagesCard: React.FC<HostMessagesCardProps> = ({
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
         </summary>
-        <div className="border-t border-gray-200 dark:border-gray-700">
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4">
           <MessagesPanel
             bookingId={booking.id}
             messages={messages}
@@ -112,7 +112,6 @@ export const HostMessagesCard: React.FC<HostMessagesCardProps> = ({
             onSendMessage={onSendMessage}
             onFileUpload={onFileUpload}
             uploadingFile={messageUploading}
-            noWrapper
             readOnly={readOnly}
           />
         </div>

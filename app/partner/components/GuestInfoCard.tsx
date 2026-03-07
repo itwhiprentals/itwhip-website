@@ -95,32 +95,6 @@ export function GuestInfoCard({ renter, isVerified, guestInsurance, bookingId, b
           <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-green-600 text-white">
             ACTIVE MEMBER
           </span>
-          {bookingId && (bookingStatus === 'CONFIRMED' || bookingStatus === 'ACTIVE') && renter.phone && (
-            <button
-              onClick={async () => {
-                try {
-                  const res = await fetch('/api/twilio/masked-call', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ bookingId }),
-                  })
-                  if (res.ok) {
-                    alert(t('bdCallGuestSuccess'))
-                  } else {
-                    const data = await res.json().catch(() => ({}))
-                    alert(data.error || t('bdCallGuestFailed'))
-                  }
-                } catch {
-                  alert(t('bdCallGuestFailed'))
-                }
-              }}
-              className="mt-2 flex items-center gap-1.5 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-semibold uppercase rounded transition-colors"
-            >
-              <IoCallOutline className="w-3.5 h-3.5" />
-              {t('bdCallGuest')}
-            </button>
-          )}
         </div>
       </div>
 

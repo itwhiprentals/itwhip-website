@@ -15,7 +15,6 @@ interface MessagesPanelProps {
   onSendMessage: (message: string) => Promise<void>
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>
   uploadingFile: boolean
-  noWrapper?: boolean
   readOnly?: boolean
 }
 
@@ -28,7 +27,6 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
   onSendMessage,
   onFileUpload,
   uploadingFile,
-  noWrapper = false,
   readOnly = false
 }) => {
   const t = useTranslations('BookingDetail')
@@ -60,15 +58,16 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
   }
 
   return (
-    <div className={noWrapper ? 'p-4' : 'bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700 p-4 sm:p-6'}>
-      <div className="flex justify-between items-center mb-4">
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
+      {/* Title row — inside the card */}
+      <div className="flex justify-between items-center p-4">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('messages')}</h2>
         <span className="text-xs text-gray-500 dark:text-gray-400">
           {messages.length !== 1 ? t('messageCount', { count: messages.length }) : t('messageCountSingular', { count: messages.length })}
         </span>
       </div>
 
-      <div ref={messagesContainerRef} className="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 h-[400px] lg:h-[450px] overflow-y-auto">
+      <div ref={messagesContainerRef} className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 h-[320px] lg:h-[450px] overflow-y-auto">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 p-4">
             <svg className="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -96,27 +95,27 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
         )}
       </div>
 
-      {!readOnly && showQuickActions && messages.length === 0 && (
-        <div className="mt-2 px-1">
-          <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-1.5 uppercase tracking-wider">{t('quickMessages')}</p>
-          <div className="flex flex-wrap gap-1.5">
-            {[t('quickThankYou'), t('quickPickupTime'), t('quickDocsUploaded'), t('quickPickupLocation'), t('quickExtendRental')].map((action) => (
-              <button
-                key={action}
-                onClick={() => handleQuickAction(action)}
-                disabled={sending}
-                className="text-xs px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors text-gray-700 dark:text-gray-300 disabled:opacity-50"
-              >
-                {action}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {!readOnly && (
-        <>
-          <div className="flex items-end gap-2 mt-3">
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+          {showQuickActions && messages.length === 0 && (
+            <div className="mb-3">
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-1.5 uppercase tracking-wider">{t('quickMessages')}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {[t('quickThankYou'), t('quickPickupTime'), t('quickDocsUploaded'), t('quickPickupLocation'), t('quickExtendRental')].map((action) => (
+                  <button
+                    key={action}
+                    onClick={() => handleQuickAction(action)}
+                    disabled={sending}
+                    className="text-xs px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors text-gray-700 dark:text-gray-300 disabled:opacity-50"
+                  >
+                    {action}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-end gap-2">
             <div className="flex-1">
               <input
                 id="message-input"
@@ -172,7 +171,7 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
             accept="image/*,.pdf"
             disabled={uploadingFile}
           />
-        </>
+        </div>
       )}
     </div>
   )
