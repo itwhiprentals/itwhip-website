@@ -57,6 +57,7 @@ export function buildWhereClause(query: SearchQuery): Prisma.RentalCarWhereInput
   // Start with base conditions (active cars from approved hosts with complete listings)
   let where: Prisma.RentalCarWhereInput = {
     isActive: true,
+    isListed: true,
     host: {
       approvalStatus: 'APPROVED',
     },
@@ -131,6 +132,7 @@ export function buildSearchWhereClause(filters: SearchRouteFilters): Prisma.Rent
   // Start with base conditions (active cars from approved hosts with complete listings)
   let where: Prisma.RentalCarWhereInput = {
     isActive: true,
+    isListed: true,
     host: {
       approvalStatus: 'APPROVED',
     },

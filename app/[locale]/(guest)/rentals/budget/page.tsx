@@ -227,6 +227,7 @@ export default async function BudgetRentalsPage() {
   const budgetCars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
+      isListed: true,
       dailyRate: { lte: MAX_DAILY_RATE }
     },
     orderBy: { dailyRate: 'asc' },

@@ -84,6 +84,7 @@ export default async function AirportNearMePage() {
   const airportCars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
+      isListed: true,
       airportPickup: true
     },
     select: {

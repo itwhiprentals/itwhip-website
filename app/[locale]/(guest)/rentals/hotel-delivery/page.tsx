@@ -37,6 +37,7 @@ export default async function HotelDeliveryPage() {
   const cars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
+      isListed: true,
       hotelDelivery: true
     },
     select: {

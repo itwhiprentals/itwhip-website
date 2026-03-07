@@ -293,6 +293,7 @@ async function getPartners() {
         cars: {
           where: {
             isActive: true,
+            isListed: true,
             vehicleType: 'RIDESHARE'  // Only show rideshare vehicles
           },
           take: 10,
@@ -405,6 +406,7 @@ async function getPlatformVehicles() {
     const vehicles = await prisma.rentalCar.findMany({
       where: {
         isActive: true,
+        isListed: true,
         vehicleType: 'RIDESHARE',  // Only show rideshare vehicles
         host: {
           hostType: 'MANAGED',
@@ -437,6 +439,7 @@ async function getPlatformVehicles() {
     const totalCount = await prisma.rentalCar.count({
       where: {
         isActive: true,
+        isListed: true,
         vehicleType: 'RIDESHARE',  // Only count rideshare vehicles
         host: {
           hostType: 'MANAGED',

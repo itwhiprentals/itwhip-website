@@ -2053,6 +2053,7 @@ model RentalCar {
   deliveryInstructions       String?
   keyInstructions            String?                    @db.Text  // lockbox/key info, reusable across bookings
   isActive                   Boolean                    @default(true)
+  isListed                   Boolean                    @default(true)
   instantBook                Boolean                    @default(true)
   advanceNotice              Int                        @default(2)
   minTripDuration            Int                        @default(1)

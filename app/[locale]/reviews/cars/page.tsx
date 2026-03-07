@@ -111,6 +111,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const carCount = await prisma.rentalCar.count({
     where: {
       isActive: true,
+      isListed: true,
       rating: { gte: 4.5 },
       totalTrips: { gt: 0 }
     }
@@ -158,6 +159,7 @@ export default async function CarReviewsPage({ searchParams }: PageProps) {
   // Build where clause with optional type filter
   const whereClause = {
     isActive: true,
+    isListed: true,
     rating: { gte: 4.5 },
     totalTrips: { gt: 0 },
     ...(typeFilter ? { carType: typeFilter.toUpperCase() } : {})
@@ -216,7 +218,7 @@ export default async function CarReviewsPage({ searchParams }: PageProps) {
   // Get overall stats and rating distribution
   const [stats, ratingDistribution, reviewCount] = await Promise.all([
     prisma.rentalCar.aggregate({
-      where: { isActive: true, totalTrips: { gt: 0 } },
+      where: { isActive: true, isListed: true, totalTrips: { gt: 0 } },
       _avg: { rating: true },
       _sum: { totalTrips: true },
       _count: true
@@ -225,7 +227,7 @@ export default async function CarReviewsPage({ searchParams }: PageProps) {
       by: ['rating'],
       where: {
         isVisible: true,
-        car: { isActive: true }
+        car: { isActive: true, isListed: true }
       },
       _count: { rating: true },
       orderBy: { rating: 'desc' }
@@ -233,7 +235,7 @@ export default async function CarReviewsPage({ searchParams }: PageProps) {
     prisma.rentalReview.count({
       where: {
         isVisible: true,
-        car: { isActive: true }
+        car: { isActive: true, isListed: true }
       }
     })
   ])

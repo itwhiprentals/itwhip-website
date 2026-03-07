@@ -54,6 +54,7 @@ export async function getSimilarCars(
     const cars = await prisma.rentalCar.findMany({
       where: {
         isActive: true,
+        isListed: true,
         id: { not: currentCarId },
         ...(excludeHostId && { hostId: { not: excludeHostId } }),
         ...(city && { city: { equals: city, mode: 'insensitive' } }),
@@ -107,6 +108,7 @@ export async function getHostCars(
     const cars = await prisma.rentalCar.findMany({
       where: {
         isActive: true,
+        isListed: true,
         hostId: hostId,
         id: { not: excludeCarId }
       },

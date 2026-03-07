@@ -118,6 +118,7 @@ export async function GET(request: NextRequest) {
         monthlyRate: vehicle.monthlyRate,
         status,
         isActive: vehicle.isActive,
+        isListed: vehicle.isListed,
         vehicleType: vehicle.vehicleType || 'RENTAL',
         minTripDuration: vehicle.minTripDuration || 1,
         photo: vehicle.photos?.[0]?.url || null,
@@ -388,6 +389,7 @@ export async function POST(request: NextRequest) {
           return specs?.seats || 5
         })(),
         isActive: isPublicListing === false ? false : isAutoApproved,
+        isListed: isPublicListing === false ? false : true,
         instantBook: true,
         advanceNotice: 2,
         // Rideshare vehicles require minimum 3 day bookings

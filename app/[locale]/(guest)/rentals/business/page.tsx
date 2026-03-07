@@ -37,6 +37,7 @@ export default async function BusinessPage() {
   const cars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
+      isListed: true,
       carType: { in: useCaseData.filters.carTypes }
     },
     select: {

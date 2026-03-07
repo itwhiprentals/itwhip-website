@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     // Build where clause - CRITICAL: Only show active cars from APPROVED hosts
     const where: any = {
       isActive: true,
+      isListed: true,
       host: {
         approvalStatus: 'APPROVED'
       }

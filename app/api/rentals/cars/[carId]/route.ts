@@ -274,7 +274,8 @@ export async function GET(
           hostId: car.host.id,
           isVisible: true,
           car: {
-            isActive: true
+            isActive: true,
+            isListed: true
           }
         }
       })
@@ -289,7 +290,8 @@ export async function GET(
           hostId: car.host.id,
           isVisible: true,
           car: {
-            isActive: true
+            isActive: true,
+            isListed: true
           }
         },
         select: { rating: true }

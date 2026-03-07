@@ -101,6 +101,7 @@ export default async function TeslaNearMePage() {
   const teslaCars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
+      isListed: true,
       make: 'Tesla'
     },
     select: {

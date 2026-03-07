@@ -75,7 +75,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       active: true,
       rating: { gte: 4.5 },
       totalTrips: { gt: 0 },
-      cars: { some: { isActive: true } }
+      cars: { some: { isActive: true, isListed: true } }
     }
   })
 
@@ -124,7 +124,7 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
       totalTrips: { gt: 0 },
       // Must have at least one active car to be featured
       cars: {
-        some: { isActive: true }
+        some: { isActive: true, isListed: true }
       }
     },
     select: {
@@ -142,7 +142,7 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
       city: true,
       state: true,
       cars: {
-        where: { isActive: true },
+        where: { isActive: true, isListed: true },
         select: { id: true },
         take: 1
       }

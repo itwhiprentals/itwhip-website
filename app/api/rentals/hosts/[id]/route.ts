@@ -21,7 +21,7 @@ export async function GET(
       where: { id },
       include: {
         cars: {
-          where: { isActive: true },
+          where: { isActive: true, isListed: true },
           include: {
             photos: {
               where: { isHero: true },
@@ -37,7 +37,7 @@ export async function GET(
         },
         _count: {
           select: {
-            cars: { where: { isActive: true } }, // Only count active cars
+            cars: { where: { isActive: true, isListed: true } }, // Only count active listed cars
             bookings: true
           }
         }
@@ -57,7 +57,8 @@ export async function GET(
         hostId: id,
         isVisible: true,
         car: {
-          isActive: true
+          isActive: true,
+          isListed: true
         }
       },
       select: { rating: true }
@@ -75,7 +76,8 @@ export async function GET(
         hostId: id,
         isVisible: true,
         car: {
-          isActive: true
+          isActive: true,
+          isListed: true
         }
       },
       include: {

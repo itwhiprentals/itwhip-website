@@ -133,6 +133,7 @@ export async function GET(
 
       // Availability settings
       isActive: vehicle.isActive,
+      isListed: vehicle.isListed,
       instantBook: vehicle.instantBook,
       advanceNotice: vehicle.advanceNotice,
       minTripDuration: vehicle.minTripDuration,

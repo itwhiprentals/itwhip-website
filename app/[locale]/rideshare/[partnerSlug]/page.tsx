@@ -184,6 +184,7 @@ async function getPlatformRentalCars() {
     const cars = await prisma.rentalCar.findMany({
       where: {
         isActive: true,
+        isListed: true,
         vehicleType: 'RENTAL',
         host: {
           approvalStatus: 'APPROVED',
@@ -275,7 +276,8 @@ async function getPartner(slug: string, isFleetPreview: boolean = false) {
       include: {
         cars: {
           where: {
-            isActive: true
+            isActive: true,
+            isListed: true
           },
           orderBy: { createdAt: 'desc' },
           select: {

@@ -53,6 +53,7 @@ export async function generateMetadata({
   const carCount = await prisma.rentalCar.count({
     where: {
       isActive: true,
+      isListed: true,
       airportPickup: true
     }
   })
@@ -482,6 +483,7 @@ export default async function AirportPage({
   const cars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
+      isListed: true,
       airportPickup: true
     },
     select: {

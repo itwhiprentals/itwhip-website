@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
       where: {
         hostId: hostId,
         isActive: true,
+        isListed: true,
         host: {
           approvalStatus: 'APPROVED'
         },
@@ -185,6 +186,7 @@ export async function POST(request: NextRequest) {
           in: hostIds
         },
         isActive: true,
+        isListed: true,
         host: {
           approvalStatus: 'APPROVED'
         },

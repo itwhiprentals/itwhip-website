@@ -111,7 +111,8 @@ export async function getP2PCars(filters?: {
   sortOrder?: 'asc' | 'desc'
 }) {
   const where: any = {
-    isActive: true
+    isActive: true,
+    isListed: true
   }
 
   // Apply filters

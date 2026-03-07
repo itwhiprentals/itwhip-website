@@ -114,7 +114,7 @@ function transformCarForCompactCard(car: any) {
 export default async function NearMePage() {
   // Fetch all active cars
   const allCars = await prisma.rentalCar.findMany({
-    where: { isActive: true },
+    where: { isActive: true, isListed: true },
     select: {
       id: true,
       make: true,

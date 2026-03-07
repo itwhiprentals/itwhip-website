@@ -26,6 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const carsWithPhotos = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
+      isListed: true,
       photos: {
         some: {}
       }
@@ -143,8 +144,9 @@ export default async function CitiesPage() {
   // Fetch all active cars grouped by city
   const carsByCity = await prisma.rentalCar.groupBy({
     by: ['city'],
-    where: { 
+    where: {
       isActive: true,
+      isListed: true,
       city: {
         not: ''  // Changed from null to empty string
       }
@@ -158,9 +160,10 @@ export default async function CitiesPage() {
   const citiesWithCars = await Promise.all(
     carsByCity.map(async (cityGroup) => {
       const cars = await prisma.rentalCar.findMany({
-        where: { 
+        where: {
           city: cityGroup.city,
-          isActive: true
+          isActive: true,
+          isListed: true
         },
         take: 4, // Get 4 for horizontal display
         select: {
@@ -218,9 +221,10 @@ export default async function CitiesPage() {
   const cityPriceRanges = await Promise.all(
     carsByCity.map(async (cityGroup) => {
       const prices = await prisma.rentalCar.aggregate({
-        where: { 
+        where: {
           city: cityGroup.city,
-          isActive: true
+          isActive: true,
+          isListed: true
         },
         _min: { dailyRate: true },
         _max: { dailyRate: true },

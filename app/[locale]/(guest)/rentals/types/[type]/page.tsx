@@ -256,6 +256,7 @@ export default async function CarTypePage({
   const cars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
+      isListed: true,
       ...(type.toLowerCase() === 'electric' ? {
         OR: [
           { carType: { equals: 'ELECTRIC', mode: 'insensitive' } },

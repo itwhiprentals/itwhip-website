@@ -288,6 +288,7 @@ export default async function CarModelPage({ params }: PageProps) {
   const cars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
+      isListed: true,
       make: { contains: makeName.replace('-', ' '), mode: 'insensitive' },
       model: { contains: modelName.replace('-', ' '), mode: 'insensitive' }
     },
@@ -332,6 +333,7 @@ export default async function CarModelPage({ params }: PageProps) {
   const otherModelCars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
+      isListed: true,
       make: { contains: makeName.replace('-', ' '), mode: 'insensitive' },
       NOT: {
         model: { contains: modelName.replace('-', ' '), mode: 'insensitive' }

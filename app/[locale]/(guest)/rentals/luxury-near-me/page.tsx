@@ -87,6 +87,7 @@ export default async function LuxuryNearMePage() {
   const luxuryCars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
+      isListed: true,
       OR: [
         { carType: 'Luxury' },
         { make: { in: LUXURY_BRANDS } }

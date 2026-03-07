@@ -261,6 +261,96 @@ export default function PendingRequestCard() {
   if (onboardingData.host.onboardingCompletedAt) {
     const isFulfilled = onboardingData.request.status === 'FULFILLED'
 
+    if (isFulfilled) {
+      // Request fulfilled — show completion summary with request details
+      const startDate = formatDate(request?.startDate || null)
+      const endDate = formatDate(request?.endDate || null)
+      const priorityBadge = request?.expiresAt ? null : null // priority comes from request level
+      const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+      return (
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          {/* Green header */}
+          <div className="px-4 py-4 bg-green-50 dark:bg-green-900/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                  <IoCheckmarkCircle className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('prRequestFulfilled')}</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('prRequestFulfilledDesc')}</p>
+                </div>
+              </div>
+              <span className="px-2 py-1 rounded text-xs font-medium text-purple-700 bg-purple-100 dark:text-purple-400 dark:bg-purple-900/30 uppercase">
+                {t('prFulfilledBadge')}
+              </span>
+            </div>
+          </div>
+
+          {/* Request summary */}
+          <div className="px-4 py-4">
+            <div className="grid grid-cols-2 gap-3">
+              {request?.guestName && (
+                <div className="flex items-start gap-2">
+                  <IoPersonOutline className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('prGuestRequesting')}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{request.guestName}</p>
+                  </div>
+                </div>
+              )}
+              {request?.vehicleInfo && (
+                <div className="flex items-start gap-2">
+                  <IoCarOutline className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('prYourVehicle')}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{request.vehicleInfo}</p>
+                  </div>
+                </div>
+              )}
+              {startDate && endDate && (
+                <div className="flex items-start gap-2">
+                  <IoCalendarOutline className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('prRentalPeriod')}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{startDate} – {endDate}</p>
+                  </div>
+                </div>
+              )}
+              {potentialEarnings && (
+                <div className="flex items-start gap-2">
+                  <IoCashOutline className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('prYourPotentialPayout')}</p>
+                    <p className="text-sm font-bold text-green-700 dark:text-green-300">${fmt(potentialEarnings)}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="px-4 pb-4 flex gap-2">
+            <Link
+              href="/partner/requests"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors text-sm"
+            >
+              {t('prViewAllRequests')}
+              <IoArrowForwardOutline className="w-4 h-4" />
+            </Link>
+            <Link
+              href="/partner/bookings"
+              className="px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg font-medium transition-colors text-sm"
+            >
+              {t('prViewBookings')}
+            </Link>
+          </div>
+        </div>
+      )
+    }
+
+    // Car approved but request not yet fulfilled — show Confirm & Send CTA
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <div className="text-center py-8">
@@ -268,18 +358,16 @@ export default function PendingRequestCard() {
             <IoCheckmarkCircle className="w-8 h-8 text-green-600" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            {isFulfilled ? t('prOnboardingComplete') : t('prCarApproved')}
+            {t('prCarApproved')}
           </h3>
           <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
-            {isFulfilled ? t('prBookingProcessing') : t('prConfirmAndSendDesc', { guest: request?.guestName || 'the guest' })}
+            {t('prConfirmAndSendDesc', { guest: request?.guestName || 'the guest' })}
           </p>
           <Link
-            href={isFulfilled ? '/partner/bookings' : `/partner/requests/${request?.id || ''}`}
-            className={`mt-4 inline-flex items-center gap-2 px-4 py-2 text-white rounded-lg font-medium transition-colors ${
-              isFulfilled ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'
-            }`}
+            href={`/partner/requests/${request?.id || ''}`}
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
           >
-            {isFulfilled ? t('prViewBookings') : t('prConfirmAndSend')}
+            {t('prConfirmAndSend')}
             <IoArrowForwardOutline className="w-4 h-4" />
           </Link>
         </div>

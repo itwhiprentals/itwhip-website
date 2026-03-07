@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
     // Get all active cars grouped by make
     const cars = await prisma.rentalCar.findMany({
       where: {
-        isActive: true
+        isActive: true,
+        isListed: true
       },
       select: {
         id: true,

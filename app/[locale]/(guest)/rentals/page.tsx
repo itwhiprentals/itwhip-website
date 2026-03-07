@@ -111,6 +111,7 @@ export default async function RentalsPage({
   // Build Prisma where clause from filters
   const whereClause: any = {
     isActive: true,
+    isListed: true,
     // Only show cars from approved hosts (same filter as search page)
     host: {
       approvalStatus: 'APPROVED'
@@ -186,7 +187,7 @@ export default async function RentalsPage({
 
     // Get distinct makes for filter dropdown
     prisma.rentalCar.findMany({
-      where: { isActive: true },
+      where: { isActive: true, isListed: true },
       select: { make: true },
       distinct: ['make']
     })

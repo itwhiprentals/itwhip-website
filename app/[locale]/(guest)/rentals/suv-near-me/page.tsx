@@ -85,6 +85,7 @@ export default async function SUVNearMePage() {
   const suvCars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
+      isListed: true,
       carType: 'SUV'
     },
     select: {

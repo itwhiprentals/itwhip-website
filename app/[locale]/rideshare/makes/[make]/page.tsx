@@ -191,6 +191,7 @@ export default async function RideshareMakePage({
   const cars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
+      isListed: true,
       vehicleType: 'RIDESHARE',
       make: {
         equals: makeData.dbValue,

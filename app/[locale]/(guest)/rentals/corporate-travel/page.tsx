@@ -85,6 +85,7 @@ export default async function CorporateTravelPage() {
   const cars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
+      isListed: true,
       carType: { in: ['LUXURY', 'SEDAN', 'SUV'] }
     },
     select: {

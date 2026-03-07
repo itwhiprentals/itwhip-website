@@ -69,6 +69,7 @@ interface VehicleData {
   hotelDelivery: boolean
   homeDelivery: boolean
   isActive: boolean
+  isListed: boolean
   instantBook: boolean
   advanceNotice: number | null
   minTripDuration: number | null
@@ -142,6 +143,26 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
 
       if (data.success) {
         setVehicle(prev => prev ? { ...prev, isActive: data.isActive } : null)
+      } else {
+        setError(data.error || t('failedToToggleStatus'))
+      }
+    } catch (err) {
+      setError(t('failedToToggleStatus'))
+    }
+  }
+
+  const handleToggleListed = async () => {
+    if (!vehicle) return
+
+    try {
+      const res = await fetch(`/api/partner/fleet/${id}/toggle-listed`, {
+        method: 'POST'
+      })
+
+      const data = await res.json()
+
+      if (data.success) {
+        setVehicle(prev => prev ? { ...prev, isListed: data.isListed } : null)
       } else {
         setError(data.error || t('failedToToggleStatus'))
       }
@@ -244,8 +265,16 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              {/* Status Badge */}
-              <span className={`px-3 py-2 rounded-lg text-sm font-medium ${
+              {/* Listed Badge */}
+              <span className={`px-2 py-1.5 rounded-lg text-xs font-medium ${
+                vehicle.isListed
+                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                  : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+              }`}>
+                {vehicle.isListed ? t('listed') : t('notListed')}
+              </span>
+              {/* Active Badge */}
+              <span className={`px-2 py-1.5 rounded-lg text-xs font-medium ${
                 vehicle.isActive
                   ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                   : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
@@ -676,6 +705,34 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
             <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
               <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('vehicleStatus')}</h2>
               <div className="space-y-3">
+                {/* Listed / Not Listed Toggle */}
+                <button
+                  onClick={handleToggleListed}
+                  className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    vehicle.isListed
+                      ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  {vehicle.isListed ? (
+                    <>
+                      <IoToggle className="w-5 h-5" />
+                      {t('unlistVehicle')}
+                    </>
+                  ) : (
+                    <>
+                      <IoToggleOutline className="w-5 h-5" />
+                      {t('listVehicle')}
+                    </>
+                  )}
+                </button>
+                <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                  {vehicle.isListed ? t('listedDesc') : t('notListedDesc')}
+                </p>
+
+                <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
+
+                {/* Active / Inactive Toggle */}
                 <button
                   onClick={handleToggleActive}
                   disabled={vehicle.hasActiveBooking}
@@ -700,6 +757,10 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
                 {vehicle.hasActiveBooking && (
                   <p className="text-xs text-gray-500 text-center">{t('cannotDeactivate')}</p>
                 )}
+
+                <p className="text-xs text-gray-400 dark:text-gray-500 text-center mt-1">
+                  {t('listedExplanation')}
+                </p>
 
                 <button
                   onClick={() => setShowDeleteConfirm(true)}

@@ -88,6 +88,7 @@ export async function getESGCars(limit = 10, excludeIds: string[] = []): Promise
   const cars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
+      isListed: true,
       state: 'AZ',
       // CRITICAL: Only show cars from APPROVED hosts
       host: {
@@ -149,6 +150,7 @@ export async function getP2PCars(city?: string, limit = 10, excludeIds: string[]
   const cars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
+      isListed: true,
       // CRITICAL: Only show cars from APPROVED hosts
       host: {
         approvalStatus: 'APPROVED'

@@ -78,7 +78,8 @@ export async function generateMetadata({
   const carCount = await prisma.rentalCar.count({
     where: {
       city: { equals: cityName, mode: 'insensitive' },
-      isActive: true
+      isActive: true,
+      isListed: true
     }
   })
 
@@ -86,7 +87,8 @@ export async function generateMetadata({
   const minPriceCar = await prisma.rentalCar.findFirst({
     where: {
       city: { equals: cityName, mode: 'insensitive' },
-      isActive: true
+      isActive: true,
+      isListed: true
     },
     select: { dailyRate: true },
     orderBy: { dailyRate: 'asc' }
@@ -97,6 +99,7 @@ export async function generateMetadata({
     where: {
       city: { equals: cityName, mode: 'insensitive' },
       isActive: true,
+      isListed: true,
       photos: { some: {} }
     },
     select: {
@@ -519,7 +522,8 @@ export default async function CityPage({
   const allCars = await prisma.rentalCar.findMany({
     where: { 
       city: { equals: cityName, mode: 'insensitive' },
-      isActive: true 
+      isActive: true,
+      isListed: true
     },
     select: {
       id: true,

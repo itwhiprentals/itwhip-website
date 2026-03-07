@@ -111,6 +111,7 @@ async function getInitialCars(location: string, pickupDate: string, returnDate: 
   const cars = await prisma.rentalCar.findMany({
     where: {
       isActive: true,
+      isListed: true,
       // CRITICAL: Only show cars from APPROVED hosts
       host: {
         approvalStatus: 'APPROVED'
