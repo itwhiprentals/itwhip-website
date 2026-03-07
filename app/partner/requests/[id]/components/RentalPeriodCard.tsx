@@ -75,19 +75,23 @@ export default function RentalPeriodCard({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-3">
-        <IoCalendarOutline className="w-5 h-5 text-gray-400" />
-        <h3 className="font-semibold text-gray-900 dark:text-white">{t('rentalPeriod')}</h3>
-        {bookingStatus === 'ACTIVE' && (
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-green-600 text-white">
-            ACTIVE
-          </span>
-        )}
-        {isLate && (
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-amber-500 text-white">
-            {t('late')}
-          </span>
-        )}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <IoCalendarOutline className="w-5 h-5 text-gray-400" />
+          <h3 className="font-semibold text-gray-900 dark:text-white">{t('rentalPeriod')}</h3>
+        </div>
+        <div className="flex items-center gap-2">
+          {bookingStatus === 'ACTIVE' && (
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-green-600 text-white">
+              ACTIVE
+            </span>
+          )}
+          {isLate && (
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-amber-500 text-white">
+              {t('late')}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Dates — Pick Up → Return */}

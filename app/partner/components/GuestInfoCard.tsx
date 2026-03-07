@@ -54,17 +54,17 @@ export function GuestInfoCard({ renter, isVerified, guestInsurance, bookingId, b
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold text-gray-900 dark:text-white">{renter.name}</h3>
               {isVerified !== undefined && (
-                isVerified ? (
-                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-green-600 text-white">
-                    <IoShieldCheckmarkOutline className="w-3 h-3" />
-                    {t('bdVerified')}
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-red-600 text-white">
-                    <IoShieldOutline className="w-3 h-3" />
-                    {t('bdNotVerified')}
-                  </span>
-                )
+                <div className="relative group">
+                  {isVerified ? (
+                    <IoShieldCheckmarkOutline className="w-4 h-4 text-green-600 dark:text-green-400 cursor-pointer" />
+                  ) : (
+                    <IoShieldOutline className="w-4 h-4 text-red-500 dark:text-red-400 cursor-pointer" />
+                  )}
+                  <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
+                    {isVerified ? t('bdVerified') : t('bdNotVerified')}
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
+                  </div>
+                </div>
               )}
             </div>
             <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 mt-1">
@@ -86,7 +86,7 @@ export function GuestInfoCard({ renter, isVerified, guestInsurance, bookingId, b
             {guestHistory && (
               <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
                 <IoReceiptOutline className="w-3.5 h-3.5 flex-shrink-0" />
-                {guestHistory.totalBookings} {t('bdBookingsLabel')} · {formatCurrency ? formatCurrency(guestHistory.totalSpent) : `$${guestHistory.totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} {t('bdSpentLabel')}
+                {guestHistory.totalBookings} {t('bdBookingsLabel', { count: guestHistory.totalBookings })} · {formatCurrency ? formatCurrency(guestHistory.totalSpent) : `$${guestHistory.totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} {t('bdSpentLabel')}
               </div>
             )}
           </div>

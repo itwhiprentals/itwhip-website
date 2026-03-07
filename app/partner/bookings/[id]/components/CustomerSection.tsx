@@ -136,17 +136,17 @@ export function CustomerSection({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold text-gray-900 dark:text-white">{renter.name}</h3>
-              {/* #3 — Verification badge inline with name */}
-              {isVerified ? (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-green-600 text-white">
-                  <IoShieldCheckmarkOutline className="w-3 h-3" />
-                  {t('bdVerified')}
-                </span>
-              ) : (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium uppercase bg-red-500 text-white">
-                  {t('bdNotVerified')}
-                </span>
-              )}
+              <div className="relative group">
+                {isVerified ? (
+                  <IoShieldCheckmarkOutline className="w-4 h-4 text-green-600 dark:text-green-400 cursor-pointer" />
+                ) : (
+                  <IoShieldOutline className="w-4 h-4 text-red-500 dark:text-red-400 cursor-pointer" />
+                )}
+                <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] leading-snug rounded shadow-md z-50 whitespace-nowrap">
+                  {isVerified ? t('bdVerified') : t('bdNotVerified')}
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-gray-900 dark:bg-white" />
+                </div>
+              </div>
             </div>
             {/* Guest-driven: hide direct contact — host communicates via platform */}
             {!isGuestDriven ? (
@@ -174,7 +174,7 @@ export function CustomerSection({
             )}
             {guestHistory && (
               <p className="text-xs text-gray-400 mt-0.5">
-                {guestHistory.totalBookings} {t('bdBookingsLabel')} · {formatCurrency(guestHistory.totalSpent)} {t('bdSpentLabel')}
+                {guestHistory.totalBookings} {t('bdBookingsLabel', { count: guestHistory.totalBookings })} · {formatCurrency(guestHistory.totalSpent)} {t('bdSpentLabel')}
               </p>
             )}
           </div>

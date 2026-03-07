@@ -68,6 +68,7 @@ interface ReservationRequest {
   claimAttempts: number
   createdAt: string
   isTargeted?: boolean
+  fulfilledBookingId?: string
   myClaim?: MyClaim
 }
 
@@ -569,11 +570,13 @@ export default function PartnerRequestsPage() {
                       <div className="flex flex-col items-end gap-2 flex-shrink-0">
                         {request.isTargeted ? (
                           <Link
-                            href={`/partner/requests/${request.id}`}
+                            href={request.fulfilledBookingId
+                              ? `/partner/bookings/${request.fulfilledBookingId}`
+                              : `/partner/requests/${request.id}`}
                             onClick={(e) => e.stopPropagation()}
                             className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
                           >
-                            {t('viewRequest')}
+                            {request.fulfilledBookingId ? t('viewBooking') : t('viewRequest')}
                             <IoArrowForwardOutline className="w-4 h-4" />
                           </Link>
                         ) : !hasMyClaim && request.status === 'OPEN' ? (
@@ -734,10 +737,12 @@ export default function PartnerRequestsPage() {
                       )}
 
                       <Link
-                        href={`/partner/requests/${request.id}`}
+                        href={request.fulfilledBookingId
+                          ? `/partner/bookings/${request.fulfilledBookingId}`
+                          : `/partner/requests/${request.id}`}
                         className="w-full mt-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                       >
-                        {t('viewRequest')}
+                        {request.fulfilledBookingId ? t('viewBooking') : t('viewRequest')}
                         <IoArrowForwardOutline className="w-4 h-4" />
                       </Link>
                     </div>

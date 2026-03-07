@@ -210,8 +210,8 @@ export function BookingHeader({
               {booking.id.slice(0, 8).toUpperCase()}
             </span>
             <button
-              onClick={() => copyToClipboard(booking.id)}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              onClick={() => copyToClipboard(booking.id.slice(0, 8).toUpperCase())}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
             >
               <IoCopyOutline className="w-3.5 h-3.5" />
             </button>

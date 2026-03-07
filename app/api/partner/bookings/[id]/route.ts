@@ -641,9 +641,9 @@ export async function GET(
       ])
 
       const totalSpent = previousBookings
-        .filter(b => b.status === 'COMPLETED' || b.status === 'CONFIRMED')
+        .filter(b => b.status === 'COMPLETED' || b.status === 'CONFIRMED' || b.status === 'ACTIVE')
         .reduce((sum, b) => sum + Number(b.totalAmount), 0) +
-        (booking.status === 'COMPLETED' || booking.status === 'CONFIRMED' ? Number(booking.totalAmount) : 0)
+        (booking.status === 'COMPLETED' || booking.status === 'CONFIRMED' || booking.status === 'ACTIVE' ? Number(booking.totalAmount) : 0)
 
       response.guestHistory = {
         totalBookings: previousBookings.length + 1, // include current

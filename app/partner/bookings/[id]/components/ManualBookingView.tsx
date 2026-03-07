@@ -585,54 +585,56 @@ export default function ManualBookingView({
               {/* Vehicle Section */}
               {vehicle && (
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4">
-                      {vehicle.photo ? (
-                        <img
-                          src={vehicle.photo}
-                          alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''}`}
-                          className="w-32 h-24 object-cover rounded-lg"
-                        />
-                      ) : (
-                        <div className="w-32 h-24 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
-                          <IoCarOutline className="w-10 h-10 text-gray-400" />
+                  <div className="flex items-start gap-4">
+                    {vehicle.photo ? (
+                      <img
+                        src={vehicle.photo}
+                        alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''}`}
+                        className="w-32 h-24 object-cover rounded-lg flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-32 h-24 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <IoCarOutline className="w-10 h-10 text-gray-400" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {vehicle.year} {vehicle.make}
+                          </p>
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                            {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}{vehicle.color ? <span className="text-sm font-normal text-gray-500 dark:text-gray-400"> ({vehicle.color})</span> : ''}
+                          </h3>
                         </div>
-                      )}
-                      <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {vehicle.year} {vehicle.make}
-                        </p>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                          {vehicle.model}{vehicle.trim ? ` ${vehicle.trim}` : ''}{vehicle.color ? <span className="text-sm font-normal text-gray-500 dark:text-gray-400"> ({vehicle.color})</span> : ''}
-                        </h3>
-                        <p className="text-sm font-mono text-gray-600 dark:text-gray-400 mt-0.5">
-                          {vehicle.licensePlate || <span className="text-red-500 dark:text-red-400">MISSING PLATE</span>}
-                        </p>
-                        <span className="text-orange-600 dark:text-orange-400 font-semibold text-sm mt-1 inline-block">
+                        {!vehicle.isActive ? (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium uppercase border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 flex-shrink-0">
+                            INACTIVE
+                          </span>
+                        ) : (
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium uppercase flex-shrink-0 ${
+                            vehicle.vehicleType === 'RIDESHARE'
+                              ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
+                              : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                          }`}>
+                            {vehicle.vehicleType === 'RIDESHARE' ? 'RIDESHARE' : 'RENTAL'}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm font-mono text-gray-600 dark:text-gray-400 mt-0.5">
+                        {vehicle.licensePlate || <span className="text-red-500 dark:text-red-400">MISSING PLATE</span>}
+                      </p>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-orange-600 dark:text-orange-400 font-semibold text-sm">
                           {formatCurrency(vehicle.dailyRate)}/{t('bdDay')}
                         </span>
+                        <Link
+                          href={`/partner/fleet/${vehicle.id}`}
+                          className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                        >
+                          {t('bdViewVehicle')} →
+                        </Link>
                       </div>
-                    </div>
-                    <div className="flex flex-col items-end justify-between self-stretch flex-shrink-0">
-                      {!vehicle.isActive ? (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium uppercase border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400">
-                          INACTIVE
-                        </span>
-                      ) : (
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium uppercase ${
-                          vehicle.vehicleType === 'RIDESHARE'
-                            ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
-                            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                        }`}>
-                          {vehicle.vehicleType === 'RIDESHARE' ? 'RIDESHARE' : 'RENTAL'}
-                        </span>
-                      )}
-                      <Link
-                        href={`/partner/fleet/${vehicle.id}`}
-                        className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                      >
-                        {t('bdViewVehicle')} →
-                      </Link>
                     </div>
                   </div>
                 </div>
