@@ -153,14 +153,47 @@ export default function RentalSearchCard({
     setSearchParams(prev => ({ ...prev, location: location.name }))
   }
 
+  // Get next available time slot (rounds up to next 30-min slot + 1 hour buffer)
+  const getNextAvailableTime = (): string => {
+    const now = new Date()
+    const arizonaTime = now.toLocaleString('en-US', { timeZone: 'America/Phoenix', hour: 'numeric', minute: 'numeric', hour12: false })
+    const [h, m] = arizonaTime.split(':').map(Number)
+    // Add 1 hour buffer, round up to next 30-min slot
+    let totalMinutes = (h * 60 + m) + 60
+    totalMinutes = Math.ceil(totalMinutes / 30) * 30
+    if (totalMinutes >= 24 * 60) return '23:30'
+    const newH = Math.floor(totalMinutes / 60)
+    const newM = totalMinutes % 60
+    return `${newH.toString().padStart(2, '0')}:${newM.toString().padStart(2, '0')}`
+  }
+
   // Handle date selection
   const handleDateSelect = (date: string) => {
     if (calendarType === 'pickup') {
-      setSearchParams(prev => ({ 
-        ...prev, 
-        pickupDate: date,
-        returnDate: date > prev.returnDate ? date : prev.returnDate
-      }))
+      // Check if selected date is today — auto-bump time if it's in the past
+      const now = new Date()
+      const arizonaToday = now.toLocaleDateString('en-CA', { timeZone: 'America/Phoenix' })
+      const isToday = date === arizonaToday
+
+      setSearchParams(prev => {
+        let pickupTime = prev.pickupTime
+        if (isToday) {
+          const arizonaTime = now.toLocaleString('en-US', { timeZone: 'America/Phoenix', hour: 'numeric', minute: 'numeric', hour12: false })
+          const [h, m] = arizonaTime.split(':').map(Number)
+          const nowMinutes = h * 60 + m
+          const [pH, pM] = pickupTime.split(':').map(Number)
+          const selectedMinutes = pH * 60 + pM
+          if (selectedMinutes <= nowMinutes) {
+            pickupTime = getNextAvailableTime()
+          }
+        }
+        return {
+          ...prev,
+          pickupDate: date,
+          pickupTime,
+          returnDate: date > prev.returnDate ? date : prev.returnDate
+        }
+      })
     } else {
       setSearchParams(prev => ({ ...prev, returnDate: date }))
     }
@@ -373,14 +406,16 @@ export default function RentalSearchCard({
         onSelect={handlePickupTimeSelect}
         buttonRef={pickupTimeButtonRef}
         onClose={() => setShowTimeDropdown(null)}
+        selectedDate={searchParams.pickupDate}
       />
-      
+
       <TimeDropdown
         isOpen={showTimeDropdown === 'return'}
         currentTime={searchParams.returnTime}
         onSelect={handleReturnTimeSelect}
         buttonRef={returnTimeButtonRef}
         onClose={() => setShowTimeDropdown(null)}
+        selectedDate={searchParams.returnDate}
       />
     </>
   )

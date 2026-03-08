@@ -74,11 +74,32 @@ export interface DateValidationResult {
 }
 
 /**
+ * Check if a date+time combination is in the future (Arizona timezone)
+ * Returns false if the time has already passed today
+ */
+export function isFutureDateTime(dateStr: string, timeStr: string): boolean {
+  if (!isValidDate(dateStr)) return false;
+  if (!timeStr || !/^\d{2}:\d{2}$/.test(timeStr)) return true; // no time = skip check
+
+  const now = new Date();
+  const arizonaNow = new Date(
+    now.toLocaleString('en-US', { timeZone: 'America/Phoenix' })
+  );
+
+  const [h, m] = timeStr.split(':').map(Number);
+  const bookingDate = new Date(dateStr + 'T00:00:00-07:00');
+  bookingDate.setHours(h, m, 0, 0);
+
+  return bookingDate > arizonaNow;
+}
+
+/**
  * Validate complete booking date range
  */
 export function validateBookingDates(
   pickupDate: string,
-  returnDate: string
+  returnDate: string,
+  pickupTime?: string
 ): DateValidationResult {
   if (!pickupDate) {
     return { valid: false, error: 'Pickup date is required' };
@@ -98,6 +119,11 @@ export function validateBookingDates(
 
   if (!isFutureDate(pickupDate)) {
     return { valid: false, error: 'Pickup date must be today or in the future' };
+  }
+
+  // If pickup is today, check that the time hasn't already passed
+  if (pickupTime && isToday(pickupDate) && !isFutureDateTime(pickupDate, pickupTime)) {
+    return { valid: false, error: 'Pickup time has already passed. Please select a later time.' };
   }
 
   if (!isValidDateRange(pickupDate, returnDate)) {

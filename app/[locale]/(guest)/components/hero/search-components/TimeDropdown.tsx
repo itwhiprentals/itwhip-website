@@ -12,6 +12,8 @@ interface TimeDropdownProps {
   onSelect: (time: string) => void
   buttonRef: React.RefObject<HTMLButtonElement | null>
   onClose?: () => void
+  /** When provided and the date is today, times before now are disabled */
+  selectedDate?: string
 }
 
 export default function TimeDropdown({
@@ -19,7 +21,8 @@ export default function TimeDropdown({
   currentTime,
   onSelect,
   buttonRef,
-  onClose
+  onClose,
+  selectedDate
 }: TimeDropdownProps) {
   const [mounted, setMounted] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -71,6 +74,23 @@ export default function TimeDropdown({
   const left = buttonRect.left + window.scrollX
   const minWidth = buttonRect.width
 
+  // Check if selected date is today (Arizona time)
+  const isDateToday = (() => {
+    if (!selectedDate) return false
+    const now = new Date()
+    const arizonaToday = now.toLocaleDateString('en-CA', { timeZone: 'America/Phoenix' })
+    return selectedDate === arizonaToday
+  })()
+
+  // Get current Arizona hour/minute for filtering past times
+  const arizonaNowMinutes = (() => {
+    if (!isDateToday) return 0
+    const now = new Date()
+    const arizonaTime = now.toLocaleString('en-US', { timeZone: 'America/Phoenix', hour: 'numeric', minute: 'numeric', hour12: false })
+    const [h, m] = arizonaTime.split(':').map(Number)
+    return h * 60 + m
+  })()
+
   // Generate time options
   const timeOptions = []
   for (let i = 0; i < 48; i++) {
@@ -79,9 +99,12 @@ export default function TimeDropdown({
     const time = `${hour.toString().padStart(2, '0')}:${minute}`
     const period = hour < 12 ? 'AM' : 'PM'
     const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour
+    const slotMinutes = hour * 60 + parseInt(minute)
+    const isPast = isDateToday && slotMinutes <= arizonaNowMinutes
     timeOptions.push({
       value: time,
-      label: `${displayHour}:${minute} ${period}`
+      label: `${displayHour}:${minute} ${period}`,
+      isPast
     })
   }
 
@@ -100,18 +123,21 @@ export default function TimeDropdown({
       <div className="p-1">
         {timeOptions.map((option) => {
           const isSelected = currentTime === option.value
-          
+
           return (
             <button
               key={option.value}
               onClick={() => {
-                console.log('🕐 TIME CLICKED:', option.value)
+                if (option.isPast) return
                 onSelect(option.value)
               }}
+              disabled={option.isPast}
               className={`w-full h-8 px-2.5 py-1 text-left rounded-md text-[11px] transition-colors
-                ${isSelected
-                  ? 'bg-black dark:bg-white text-white dark:text-black font-semibold'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                ${option.isPast
+                  ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                  : isSelected
+                    ? 'bg-black dark:bg-white text-white dark:text-black font-semibold'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               type="button"
             >
