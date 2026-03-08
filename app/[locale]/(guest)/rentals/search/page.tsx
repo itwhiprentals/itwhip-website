@@ -137,6 +137,7 @@ async function getInitialCars(location: string, pickupDate: string, returnDate: 
       instantBook: true,
       fuelType: true,
       esgScore: true,
+      vehicleType: true,
       city: true,
       state: true,
       latitude: true,
@@ -213,6 +214,7 @@ async function getInitialCars(location: string, pickupDate: string, returnDate: 
         instantBook: car.instantBook,
         fuelType: car.fuelType,
         esgScore: car.esgScore,
+        vehicleType: car.vehicleType || null,
         location: {
           city: car.city,
           state: car.state,
