@@ -171,6 +171,7 @@ export async function GET(request: NextRequest) {
         rating: avgRating,
         totalTrips: car.reviews.length,
         instantBook: car.instantBook,
+        vehicleType: car.vehicleType || null,
         photos: car.photos.map(p => ({
           url: p.url,
           isHero: p.isHero

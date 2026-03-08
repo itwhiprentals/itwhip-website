@@ -34,6 +34,7 @@ interface SimilarCar {
   rating?: number
   totalTrips?: number
   instantBook?: boolean
+  vehicleType?: string | null
   photos?: any[]
   features?: string | string[]
   seats?: number
@@ -247,7 +248,7 @@ function CarCard({
         <div className="mb-1">
           <div className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors line-clamp-1 flex items-center justify-between">
             <span>{car.year} {capitalizeCarMake(car.make)}</span>
-            {(car as any).vehicleType?.toUpperCase() === 'RIDESHARE' ? (
+            {car.vehicleType?.toUpperCase() === 'RIDESHARE' ? (
               <span className="px-1.5 py-0.5 bg-orange-500 text-white text-[9px] font-bold rounded flex items-center gap-0.5">
                 <IoCarSportOutline className="w-2.5 h-2.5" />
                 {t('rideshare')}

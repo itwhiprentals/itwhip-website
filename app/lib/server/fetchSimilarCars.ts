@@ -17,6 +17,7 @@ export interface SimilarCarData {
   rating?: number | null
   totalTrips?: number
   instantBook?: boolean
+  vehicleType?: string | null
   photos?: { url: string }[]
   seats?: number
   transmission?: string
@@ -178,6 +179,7 @@ function transformCar(car: any): SimilarCarData {
     rating: car._count?.reviews > 0 ? Number(car.rating) : null,
     totalTrips: car.totalTrips || 0,
     instantBook: car.instantBook,
+    vehicleType: car.vehicleType || null,
     photos: car.photos || [],
     seats: car.seats,
     transmission: car.transmission,
