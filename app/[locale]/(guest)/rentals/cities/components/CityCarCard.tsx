@@ -7,7 +7,7 @@ import { generateCarUrl } from '@/app/lib/utils/urls'
 import { optimizeImageUrl } from '@/app/lib/utils/imageOptimization'
 import { formatRating, isNewListing } from '@/app/lib/utils/formatCarSpecs'
 import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
-import { IoFlashOutline, IoStarSharp } from 'react-icons/io5'
+import { IoFlashOutline, IoStarSharp, IoCarSportOutline } from 'react-icons/io5'
 
 interface CityCarCardProps {
   car: {
@@ -22,6 +22,7 @@ interface CityCarCardProps {
       caption?: string
     }>
     instantBook?: boolean
+    vehicleType?: string | null
     host?: {
       name: string
       isVerified?: boolean
@@ -74,7 +75,12 @@ export default function CityCarCard({ car }: CityCarCardProps) {
               {t('host')}
             </span>
           )}
-          {car.instantBook && (
+          {car.vehicleType?.toUpperCase() === 'RIDESHARE' ? (
+            <span className="px-2 py-0.5 bg-orange-500/90 backdrop-blur-sm text-white text-[10px] font-bold rounded-full shadow-sm flex items-center gap-0.5">
+              <IoCarSportOutline className="w-2.5 h-2.5" />
+              {t('rideshare')}
+            </span>
+          ) : car.instantBook && (
             <span className="px-2 py-0.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[10px] font-bold rounded-full shadow-sm flex items-center gap-0.5">
               <IoFlashOutline className="w-2.5 h-2.5" />
               {t('instant')}

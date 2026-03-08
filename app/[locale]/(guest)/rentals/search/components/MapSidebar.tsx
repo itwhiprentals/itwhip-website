@@ -154,7 +154,15 @@ export function MapSidebar({
                     {/* Features */}
                     <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 mt-1">
                       <span>{t('seatsCount', { count: car.seats })}</span>
-                      {car.instantBook && (
+                      {car.vehicleType?.toUpperCase() === 'RIDESHARE' ? (
+                        <>
+                          <span>•</span>
+                          <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
+                            <IoCarOutline className="w-3 h-3" />
+                            {t('rideshare')}
+                          </span>
+                        </>
+                      ) : car.instantBook && (
                         <>
                           <span>•</span>
                           <span className="flex items-center gap-1 text-green-600 dark:text-green-400">

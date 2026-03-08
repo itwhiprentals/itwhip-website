@@ -17,11 +17,11 @@ const LINK_TOKEN_SECRET = new TextEncoder().encode(
 )
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET!
+  process.env.GUEST_JWT_SECRET!
 )
 
 const JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.JWT_REFRESH_SECRET!
+  process.env.GUEST_JWT_REFRESH_SECRET!
 )
 
 async function verifyPassword(password: string, hash: string): Promise<boolean> {

@@ -41,6 +41,7 @@ interface Car {
   instantBook?: boolean
   carType?: string
   seats?: number
+  vehicleType?: string
 }
 
 interface CarMapViewProps {
@@ -288,7 +289,11 @@ function CarPopup({
 
             {/* Badges */}
             <div className="absolute top-2 left-2 flex flex-wrap gap-1.5">
-              {car.instantBook && (
+              {car.vehicleType?.toUpperCase() === 'RIDESHARE' ? (
+                <span className="px-1.5 py-0.5 bg-orange-500 text-white text-[10px] font-medium rounded flex items-center gap-0.5">
+                  <IoCarOutline className="w-2.5 h-2.5" /> {t('rideshare')}
+                </span>
+              ) : car.instantBook && (
                 <span className="px-1.5 py-0.5 bg-green-500 text-white text-[10px] font-medium rounded flex items-center gap-0.5">
                   <IoFlashOutline className="w-2.5 h-2.5" /> {t('instantBadge')}
                 </span>
@@ -442,7 +447,11 @@ function CarPopup({
 
           {/* Badges */}
           <div className="absolute top-2 left-2 flex flex-wrap gap-1.5">
-            {car.instantBook && (
+            {car.vehicleType?.toUpperCase() === 'RIDESHARE' ? (
+              <span className="px-1.5 py-0.5 bg-orange-500 text-white text-[10px] font-medium rounded flex items-center gap-0.5">
+                <IoCarOutline className="w-2.5 h-2.5" /> {t('rideshare')}
+              </span>
+            ) : car.instantBook && (
               <span className="px-1.5 py-0.5 bg-green-500 text-white text-[10px] font-medium rounded flex items-center gap-0.5">
                 <IoFlashOutline className="w-2.5 h-2.5" /> {t('instantBadge')}
               </span>

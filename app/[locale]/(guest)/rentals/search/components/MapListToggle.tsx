@@ -164,10 +164,15 @@ export function MapSidebar({
                             </div>
                           )}
                           <span>{car.seats} seats</span>
-                          {car.instantBook && (
+                          {car.vehicleType?.toUpperCase() === 'RIDESHARE' ? (
+                            <span className="flex items-center gap-0.5 text-orange-600">
+                              <IoCarOutline className="w-3 h-3" />
+                              {t('rideshare')}
+                            </span>
+                          ) : car.instantBook && (
                             <span className="flex items-center gap-0.5 text-green-600">
                               <IoFlashOutline className="w-3 h-3" />
-                              Instant
+                              {t('instantBadge')}
                             </span>
                           )}
                         </div>

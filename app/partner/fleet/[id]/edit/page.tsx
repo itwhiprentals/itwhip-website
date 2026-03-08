@@ -1584,18 +1584,20 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
               <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('availabilitySettings')}</h3>
 
               <div className="space-y-4">
-                <label className="flex items-center justify-between p-4 bg-gray-200/70 dark:bg-gray-700 rounded-lg">
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{t('instantBook')}</p>
-                    <p className="text-sm text-gray-500">{t('instantBookDescription')}</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={formData.instantBook || false}
-                    onChange={(e) => handleChange('instantBook', e.target.checked)}
-                    className="w-5 h-5 text-purple-600 rounded focus:ring-purple-600"
-                  />
-                </label>
+                {formData.vehicleType !== 'RIDESHARE' && (
+                  <label className="flex items-center justify-between p-4 bg-gray-200/70 dark:bg-gray-700 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">{t('instantBook')}</p>
+                      <p className="text-sm text-gray-500">{t('instantBookDescription')}</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={formData.instantBook || false}
+                      onChange={(e) => handleChange('instantBook', e.target.checked)}
+                      className="w-5 h-5 text-purple-600 rounded focus:ring-purple-600"
+                    />
+                  </label>
+                )}
 
                 <div className="grid md:grid-cols-3 gap-4">
                   <div>

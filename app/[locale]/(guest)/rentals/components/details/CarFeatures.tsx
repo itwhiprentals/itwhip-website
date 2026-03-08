@@ -429,7 +429,12 @@ export default function CarFeatures({ car }: CarFeaturesProps) {
             </div>
           )}
 
-          {car.instantBook && (
+          {car.vehicleType?.toUpperCase() === 'RIDESHARE' ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-lg text-sm font-medium">
+              <IoCarSportOutline className="w-4 h-4" />
+              <span>{t('rideshare')}</span>
+            </div>
+          ) : car.instantBook && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg text-sm font-medium">
               <IoFlashOutline className="w-4 h-4" />
               <span>{t('instantBook')}</span>

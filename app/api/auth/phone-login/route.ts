@@ -14,12 +14,12 @@ import { sendEmail } from '@/app/lib/email/sender'
 import { getNewDeviceAlertTemplate } from '@/app/lib/email/templates/new-device-alert'
 import { checkSuspendedIdentifiers } from '@/app/lib/services/identityResolution'
 
-// JWT secrets (must match check-dual-role verification)
+// JWT secrets — guest tokens must use guest-specific secrets
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET!
+  process.env.GUEST_JWT_SECRET!
 )
 const JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.JWT_REFRESH_SECRET!
+  process.env.GUEST_JWT_REFRESH_SECRET!
 )
 
 // Generate JWT tokens

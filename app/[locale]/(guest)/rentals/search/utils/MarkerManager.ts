@@ -13,6 +13,7 @@ interface Car {
   }
   instantBook?: boolean
   carType?: string
+  vehicleType?: string
 }
 
 interface MarkerData {
@@ -276,19 +277,21 @@ export class MarkerManager {
   }
   
   private updateMarkerElement(el: HTMLElement, car: Car, isSelected: boolean) {
-    // Update classes
-    el.className = `car-marker-base car-marker ${car.instantBook ? 'instant' : ''} ${car.carType === 'luxury' ? 'luxury' : ''} ${isSelected ? 'selected' : ''}`
-    
+    // Update classes — rideshare cars never get instant styling
+    const isRideshare = car.vehicleType?.toUpperCase() === 'RIDESHARE'
+    const showInstant = car.instantBook && !isRideshare
+    el.className = `car-marker-base car-marker ${showInstant ? 'instant' : ''} ${car.carType === 'luxury' ? 'luxury' : ''} ${isSelected ? 'selected' : ''}`
+
     // Update price
     const priceEl = el.querySelector('.marker-price') as HTMLElement
     if (priceEl) {
       priceEl.textContent = `$${Math.round(car.dailyRate)}`
     }
-    
-    // Update instant badge
+
+    // Update instant badge — never show for rideshare
     const badge = el.querySelector('.instant-badge') as HTMLElement
     if (badge) {
-      badge.style.display = car.instantBook ? 'flex' : 'none'
+      badge.style.display = showInstant ? 'flex' : 'none'
     }
   }
   

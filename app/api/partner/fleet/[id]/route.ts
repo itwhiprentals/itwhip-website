@@ -360,6 +360,12 @@ export async function PUT(
       updateData.vehicleType = vehicleType
     }
 
+    // Rideshare cars cannot have instantBook — force false
+    const effectiveVehicleType = updateData.vehicleType || existingVehicle.vehicleType
+    if (effectiveVehicleType === 'RIDESHARE') {
+      updateData.instantBook = false
+    }
+
     // Rules / Guidelines
     if (rules !== undefined) updateData.rules = rules
 

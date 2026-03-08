@@ -708,6 +708,7 @@ export default function SearchResultsClient({
                             rating: car.rating?.average ?? car.rating ?? null,
                             totalTrips: car.trips || car.totalTrips,
                             instantBook: car.instantBook,
+                            vehicleType: car.vehicleType || null,
                             photos: car.photos,
                             host: car.host ? {
                               name: car.host.name,
@@ -764,6 +765,7 @@ export default function SearchResultsClient({
                             rating: car.rating?.average ?? car.rating ?? null,
                             totalTrips: car.trips || car.totalTrips,
                             instantBook: car.instantBook,
+                            vehicleType: car.vehicleType || null,
                             photos: car.photos,
                             host: car.host ? {
                               name: car.host.name,
