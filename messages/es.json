@@ -3406,7 +3406,7 @@
     "save": "Ahorra ${amount}",
     "rideshareReady": "Listo para Rideshare",
     "rideshareMinDays": "Mínimo {days}+ días · Perfecto para conductores de Uber, Lyft y DoorDash",
-    "insuranceProtection": "Protección de Seguro",
+    "insuranceProtection": "Protección",
     "required": "*Requerido",
     "loadingInsuranceOptions": "Cargando opciones de seguro...",
     "protection": "Protección",

@@ -3406,7 +3406,7 @@
     "save": "Économisez ${amount}",
     "rideshareReady": "Prêt pour le VTC",
     "rideshareMinDays": "{days}+ jour(s) minimum · Idéal pour les chauffeurs Uber, Lyft et DoorDash",
-    "insuranceProtection": "Protection d'assurance",
+    "insuranceProtection": "Protection",
     "required": "*Requis",
     "loadingInsuranceOptions": "Chargement des options d'assurance...",
     "protection": "Protection",

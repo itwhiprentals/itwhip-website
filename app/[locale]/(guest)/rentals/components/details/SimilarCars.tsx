@@ -572,7 +572,7 @@ export default function SimilarCars({
       {/* Host's Other Cars Section */}
       {hostId && (hostCars.length > 0 || loadingHost) && (
         <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
-          <div className="mb-3 pl-4">
+          <div className="mb-3">
             <h2 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-1.5">
               {hostProfilePhoto ? (
                 <img
@@ -630,7 +630,7 @@ export default function SimilarCars({
       {/* Similar Cars Section */}
       {(similarCars.length > 0 || loading) && (
         <div className={`${hostCars.length > 0 ? 'pt-6' : 'pt-6 border-t border-gray-200 dark:border-gray-700'}`}>
-          <div className="pl-4">
+          <div>
             <h2 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-1.5 mb-1">
               <IoCarOutline className="w-4 h-4" />
               {t('similarCarsNearby')}

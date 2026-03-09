@@ -425,9 +425,9 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   // ============================================================================
   return (
     <>
-      <div ref={widgetRef} className="bg-gray-50 dark:bg-gray-900 lg:bg-white lg:dark:bg-gray-800 lg:rounded-lg lg:shadow-xl px-4 pt-6 lg:p-6 lg:sticky lg:top-20 border-t border-gray-200 dark:border-gray-700 lg:border-t-0">
+      <div ref={widgetRef} className="bg-gray-50 dark:bg-gray-900 lg:bg-white lg:dark:bg-gray-800 lg:rounded-lg lg:shadow-xl px-4 pt-3 pb-0 lg:p-6 lg:sticky lg:top-20 border-t border-gray-200 dark:border-gray-700 lg:border-t-0 space-y-3">
         {/* Price Header */}
-        <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+        <div>
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-baseline gap-2">
@@ -459,7 +459,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         </div>
         
         {/* Trip Dates */}
-        <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700 space-y-2">
+        <div className="pb-3 border-b border-gray-200 dark:border-gray-700 space-y-3">
           <h3 className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
             <IoCalendarOutline className="w-3.5 h-3.5 text-amber-600" />
             {t('tripDates')}
@@ -593,7 +593,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         </div>
 
         {/* Insurance Protection - Database Driven */}
-        <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+        <div>
           {loadingQuotes ? (
             <div className="text-center py-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-600 mx-auto"></div>
@@ -609,7 +609,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                 <IoShieldCheckmarkOutline className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                 <span className="text-sm font-medium text-gray-900 dark:text-white">{t('insuranceProtection')}</span>
                 <span className="text-xs text-amber-600 ml-1">
-                  • {getInsuranceTierName(insuranceTier)} {t('protection')}
+                  • {getInsuranceTierName(insuranceTier)}
                   {insuranceQuotes[insuranceTier]?.dailyPremium ? ` ($${insuranceQuotes[insuranceTier]!.dailyPremium.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/day)` : ''}
                 </span>
               </div>
@@ -648,7 +648,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                               className="w-4 h-4 text-amber-600 focus:ring-amber-500"
                             />
                             <div>
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">{getInsuranceTierName(tier)} {t('protection')}</span>
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">{getInsuranceTierName(tier)}</span>
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -704,7 +704,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         </div>
         
         {/* Delivery Method - COLLAPSIBLE */}
-        <div className="mb-4">
+        <div>
           <button
             onClick={() => setShowDelivery(!showDelivery)}
             className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -763,7 +763,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         </div>
         
         {/* Enhancements - COLLAPSIBLE */}
-        <div className="mb-4">
+        <div>
           <button
             onClick={() => setShowEnhancements(!showEnhancements)}
             className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -863,7 +863,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         </div>
         
         {/* Price Breakdown - Using shared pricing for consistency */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4 space-y-2">
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-2 space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600 dark:text-gray-300">
               ${formatPrice(dailyRate)} × {days > 1 ? t('daysSummaryPlural', { days }) : t('daysSummary', { days })}
@@ -902,7 +902,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
             <span className="text-gray-900 dark:text-white">${formatPrice(pricing.taxes)}</span>
           </div>
 
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-1">
             <div className="flex justify-between items-baseline">
               <span className="font-semibold text-gray-900 dark:text-white">{t('total')}</span>
               <div className="text-right">
@@ -955,7 +955,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         </button>
         
         {/* Trust Badges */}
-        <div className="mt-3">
+        <div className="mt-2">
           <div className="flex items-center justify-center gap-4 text-xs text-gray-500 dark:text-gray-300">
             <div className="flex items-center gap-1">
               <IoCheckmarkCircleOutline className="w-4 h-4" />

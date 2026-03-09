@@ -49,7 +49,7 @@ export default function PartnerProfile({ partner }: PartnerProfileProps) {
 
   if (!partner) {
     return (
-      <div className="py-6 border-b border-gray-200 dark:border-gray-700">
+      <div className="py-3 border-b border-gray-200 dark:border-gray-700">
         <p className="text-gray-600 dark:text-gray-400">{t('partnerInfoNotAvailable')}</p>
       </div>
     )
@@ -70,9 +70,9 @@ export default function PartnerProfile({ partner }: PartnerProfileProps) {
   const yearEstablished = partner.yearEstablished
 
   return (
-    <div className="py-6 border-b border-gray-200 dark:border-gray-700">
+    <div className="py-3 border-b border-gray-200 dark:border-gray-700">
       {/* Partner Header */}
-      <div className="flex items-start gap-4 mb-6">
+      <div className="flex items-start gap-4 mb-3">
         {/* Company Logo - Clickable */}
         {partnerSlug ? (
           <Link href={`/rideshare/${partnerSlug}`} className="relative flex-shrink-0 group">
@@ -217,8 +217,8 @@ export default function PartnerProfile({ partner }: PartnerProfileProps) {
       )}
 
       {/* Rideshare Ready Info */}
-      <div className="border-t border-gray-200 dark:border-gray-700 pt-5 mb-5">
-        <h4 className="text-base font-medium text-gray-900 dark:text-white mb-3">
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mb-3">
+        <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
           {t('rideshareReady')}
         </h4>
         <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
@@ -239,8 +239,8 @@ export default function PartnerProfile({ partner }: PartnerProfileProps) {
       </div>
 
       {/* Contact & Fleet Section */}
-      <div className="border-t border-gray-200 dark:border-gray-700 pt-5">
-        <h4 className="text-base font-medium text-gray-900 dark:text-white mb-3">
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+        <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
           {t('contactSupport')}
         </h4>
 

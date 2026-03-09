@@ -869,10 +869,10 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
       </div>
 
       {/* Main Content - Hidden when viewing all photos */}
-      <div className={`max-w-7xl mx-auto px-4 py-8 ${isViewingAllPhotos ? 'hidden' : ''}`}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className={`max-w-7xl mx-auto px-4 pt-8 pb-0 lg:py-8 ${isViewingAllPhotos ? 'hidden' : ''}`}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-8">
           {/* Left Column - Car Details */}
-          <div className="lg:col-span-2 space-y-3">
+          <div className="lg:col-span-2">
             {/* Title Section */}
             <div>
               <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -882,62 +882,24 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                 {vehicleClass && <VehicleBadge label={vehicleClass} />}
                 {fuelTypeBadge && <VehicleBadge label={fuelTypeBadge} />}
                 {isRideshare && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs font-semibold rounded">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-orange-300 dark:border-orange-600 rounded text-orange-700 dark:text-orange-300">
                     <IoCarSportOutline className="w-3 h-3" />
                     {t('rideshare')}
                   </span>
                 )}
                 {!isRideshare && car.instantBook && car.isBookable !== false && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold rounded">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-green-300 dark:border-green-600 rounded text-green-700 dark:text-green-300">
                     <IoFlashOutline className="w-3 h-3" />
                     {t('instantBook')}
                   </span>
                 )}
               </div>
-              <p className="text-lg sm:text-xl text-gray-700 dark:text-gray-300 mb-3">
+              <p className="text-lg sm:text-xl text-gray-700 dark:text-gray-300 pb-3 border-b border-gray-200 dark:border-gray-700">
                 {normalizeModelName(car.model, car.make)}
               </p>
-              
-              {/* Location and Meta Info */}
-              <div className="flex flex-wrap items-center gap-4 text-sm mb-4">
-                <div className="flex items-center gap-1.5">
-                  <IoLocationOutline className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-600 dark:text-gray-400">
-                    {car.city}, {car.state}
-                  </span>
-                </div>
-                
-                {/* Rating and Trips Display */}
-                {!car.totalTrips || car.totalTrips === 0 ? (
-                  <span className="text-green-600 dark:text-green-400 font-medium">{t('newListing')}</span>
-                ) : car.rating && car.rating > 0 ? (
-                  <div className="flex items-center gap-1.5">
-                    <div className="flex items-center">
-                      <IoStar className="w-4 h-4 text-amber-400 fill-current" />
-                      <span className="font-semibold ml-1">
-                        {formatRating(car.rating)}
-                      </span>
-                    </div>
-                    <span className="text-gray-500">({car.totalTrips} {car.totalTrips === 1 ? t('trip') : t('trips')})</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-gray-400 dark:text-gray-500 font-medium">{t('noReviewsYet')}</span>
-                    <span className="text-gray-500">({car.totalTrips} {car.totalTrips === 1 ? t('trip') : t('trips')})</span>
-                  </div>
-                )}
-
-                {/* Show suspension status if suspended */}
-                {car.hostStatus && car.hostStatus !== 'APPROVED' && (
-                  <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                    <IoWarningOutline className="w-4 h-4" />
-                    <span className="font-medium">{t('limitedAvailability')}</span>
-                  </div>
-                )}
-              </div>
 
               {/* Key Specs Bar */}
-              <div className="flex flex-wrap gap-3 sm:gap-4 py-3 border-y border-gray-200 dark:border-gray-700">
+              <div className="flex flex-wrap gap-3 sm:gap-4 py-3 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-1.5">
                   <IoPeopleOutline className="w-4 h-4 text-gray-400" />
                   <span className="text-xs text-gray-500 dark:text-gray-400">{t('seats')}</span>
@@ -953,7 +915,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                     {tTransmission(car.transmission)}
                   </span>
                 </div>
-                
+
                 <div className="flex items-center gap-1.5">
                   <IoWaterOutline className="w-4 h-4 text-gray-400" />
                   <span className="text-xs text-gray-500 dark:text-gray-400">{t('fuel')}</span>
@@ -989,6 +951,40 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                     </div>
                   )
                 })()}
+
+                {/* Separator */}
+                <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+
+                <div className="flex items-center gap-1.5">
+                  <IoLocationOutline className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">{car.city}, {car.state}</span>
+                </div>
+
+                {!car.totalTrips || car.totalTrips === 0 ? (
+                  <div className="flex items-center gap-1.5">
+                    <IoStar className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{t('newListing')}</span>
+                  </div>
+                ) : car.rating && car.rating > 0 ? (
+                  <div className="flex items-center gap-1.5">
+                    <IoStar className="w-4 h-4 text-amber-400 fill-current" />
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatRating(car.rating)}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">({car.totalTrips} {car.totalTrips === 1 ? t('trip') : t('trips')})</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <IoStar className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{t('noReviewsYet')}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">({car.totalTrips} {car.totalTrips === 1 ? t('trip') : t('trips')})</span>
+                  </div>
+                )}
+
+                {car.hostStatus && car.hostStatus !== 'APPROVED' && (
+                  <div className="flex items-center gap-1.5">
+                    <IoWarningOutline className="w-4 h-4 text-gray-400" />
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{t('limitedAvailability')}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1009,7 +1005,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
               </button>
               
               {showAboutCar ? (
-                <div className="pb-4 space-y-3">
+                <div className="pb-3 space-y-3">
                   {/* Description */}
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -1152,7 +1148,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
               </button>
               
               {showGuidelines && (
-                <div className="pb-4 space-y-3">
+                <div className="pb-3 space-y-3">
                   {/* Rules */}
                   <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
@@ -1238,7 +1234,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
         </div>
 
         {/* Similar Cars Section - with SSR initial data for SEO */}
-        <div className="mt-10">
+        <div className="mt-4 lg:mt-10">
         <SimilarCars
           currentCarId={car.id}
           carType={car.carType || car.type}

@@ -99,7 +99,7 @@ export default function HostProfile({ host }: HostProfileProps) {
 
   if (!host) {
     return (
-      <div className="py-6 border-b border-gray-200 dark:border-gray-700">
+      <div className="py-3 border-b border-gray-200 dark:border-gray-700">
         <p className="text-gray-600 dark:text-gray-400">{t('hostInfoNotAvailable')}</p>
       </div>
     )
@@ -248,16 +248,16 @@ export default function HostProfile({ host }: HostProfileProps) {
 
   if (!processedHost.name || processedHost.name === 'Host') {
     return (
-      <div className="py-6 border-b border-gray-200 dark:border-gray-700">
+      <div className="py-3 border-b border-gray-200 dark:border-gray-700">
         <p className="text-gray-600 dark:text-gray-400">{t('hostProfileUpdating')}</p>
       </div>
     )
   }
 
   return (
-    <div className="py-6 border-b border-gray-200 dark:border-gray-700">
+    <div className="py-3 border-b border-gray-200 dark:border-gray-700">
       {/* Host Header */}
-      <div className="flex items-start gap-4 mb-6">
+      <div className="flex items-start gap-4 mb-3">
         <div className="relative">
           {/* Profile photo - 68px circle with clickable functionality */}
           <button
@@ -410,8 +410,8 @@ export default function HostProfile({ host }: HostProfileProps) {
       </div>
       
       {/* Message Host - Locked until booking */}
-      <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-        <h4 className="text-base font-medium text-gray-900 dark:text-white mb-3">
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+        <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
           {t('contactHost', { name: processedHost.displayName })}
         </h4>
         

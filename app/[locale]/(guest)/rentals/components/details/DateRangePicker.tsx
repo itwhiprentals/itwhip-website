@@ -85,7 +85,7 @@ export default function DateRangePicker({
             <IoCalendarOutline className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
             <span>{formatDisplayDate(startDate)}</span>
           </button>
-          <span className="text-gray-300 dark:text-gray-600">|</span>
+          <span className="text-gray-300 dark:text-gray-600 ml-auto">|</span>
           <TimeSelect value={startTime} onChange={onStartTimeChange} format={format} />
         </div>
 
@@ -101,7 +101,7 @@ export default function DateRangePicker({
             <IoCalendarOutline className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
             <span>{formatDisplayDate(endDate)}</span>
           </button>
-          <span className="text-gray-300 dark:text-gray-600">|</span>
+          <span className="text-gray-300 dark:text-gray-600 ml-auto">|</span>
           <TimeSelect value={endTime} onChange={onEndTimeChange} format={format} />
         </div>
       </div>

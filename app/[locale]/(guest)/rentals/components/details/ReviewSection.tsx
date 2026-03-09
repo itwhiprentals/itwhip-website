@@ -274,11 +274,11 @@ export default function ReviewSection({ carId, reviews = [] }: ReviewSectionProp
 
   if (reviewData.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+      <div className="py-3">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
           {t('guestReviews')}
         </h2>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600 dark:text-gray-400 text-sm">
           {t('noReviewsYet')}
         </p>
       </div>
@@ -287,9 +287,9 @@ export default function ReviewSection({ carId, reviews = [] }: ReviewSectionProp
 
   return (
     <>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+      <div>
         {/* Reviews Header */}
-        <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="py-3 border-b border-gray-200 dark:border-gray-700">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2">
@@ -375,7 +375,7 @@ export default function ReviewSection({ carId, reviews = [] }: ReviewSectionProp
           </button>
 
           {/* Reviews Container */}
-          <div className="p-4 sm:p-6 overflow-x-auto">
+          <div className="py-3 overflow-x-auto">
             <div 
               id="reviews-container"
               className="flex gap-3 sm:gap-4 pb-4 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600"
@@ -636,7 +636,7 @@ export default function ReviewSection({ carId, reviews = [] }: ReviewSectionProp
 // Loading Skeleton Component
 function ReviewSkeleton() {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6">
+    <div className="py-3">
       <div className="animate-pulse">
         <div className="h-5 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-4"></div>
         <div className="flex gap-3 sm:gap-4 overflow-hidden">
