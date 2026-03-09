@@ -72,17 +72,17 @@ export default function DateRangePicker({
 
   return (
     <>
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
         {/* Pickup Row */}
         <div className="flex items-center gap-2 px-3 py-2.5">
           <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></div>
-          <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 w-12 flex-shrink-0">{t('pickup')}</span>
+          <span className="text-[11px] font-medium text-gray-700 dark:text-gray-400 w-12 flex-shrink-0">{t('pickup')}</span>
           <button
             type="button"
             onClick={() => setShowPickupCalendar(true)}
             className="flex items-center gap-1 text-sm font-medium text-gray-900 dark:text-white hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer"
           >
-            <IoCalendarOutline className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+            <IoCalendarOutline className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
             <span>{formatDisplayDate(startDate)}</span>
           </button>
           <span className="text-gray-300 dark:text-gray-600 ml-auto">|</span>
@@ -92,13 +92,13 @@ export default function DateRangePicker({
         {/* Return Row */}
         <div className="flex items-center gap-2 px-3 py-2.5">
           <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
-          <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 w-12 flex-shrink-0">{t('return')}</span>
+          <span className="text-[11px] font-medium text-gray-700 dark:text-gray-400 w-12 flex-shrink-0">{t('return')}</span>
           <button
             type="button"
             onClick={() => setShowReturnCalendar(true)}
             className="flex items-center gap-1 text-sm font-medium text-gray-900 dark:text-white hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer"
           >
-            <IoCalendarOutline className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+            <IoCalendarOutline className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
             <span>{formatDisplayDate(endDate)}</span>
           </button>
           <span className="text-gray-300 dark:text-gray-600 ml-auto">|</span>

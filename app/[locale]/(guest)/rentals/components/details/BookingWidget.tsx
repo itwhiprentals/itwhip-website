@@ -481,9 +481,9 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
 
           {/* Trip Summary */}
           {days > 0 && (
-            <div className="flex items-center justify-center gap-1.5 py-2 px-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-              <IoCalendarOutline className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-              <span className="text-xs font-medium text-amber-800 dark:text-amber-300">
+            <div className="flex items-center justify-center gap-1.5 py-2 px-3 bg-gray-900 dark:bg-white rounded-lg">
+              <IoCalendarOutline className="w-3.5 h-3.5 text-white dark:text-gray-900 flex-shrink-0" />
+              <span className="text-xs font-medium text-white dark:text-gray-900">
                 {days > 1 ? t('daysSummaryPlural', { days }) : t('daysSummary', { days })} · {format.dateTime(new Date(startDate + 'T00:00:00'), { month: 'short', day: 'numeric' })} – {format.dateTime(new Date(endDate + 'T00:00:00'), { month: 'short', day: 'numeric' })}
               </span>
             </div>
@@ -603,7 +603,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
             /* Collapsed: show selected tier as a clickable button */
             <button
               onClick={() => setShowInsuranceOptions(true)}
-              className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="w-full p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               <div className="flex items-center gap-2">
                 <IoShieldCheckmarkOutline className="w-4 h-4 text-gray-600 dark:text-gray-300" />
@@ -707,7 +707,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         <div>
           <button
             onClick={() => setShowDelivery(!showDelivery)}
-            className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="w-full p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <div className="flex items-center gap-2">
               <IoLocationOutline className="w-4 h-4 text-gray-600 dark:text-gray-300" />
@@ -766,7 +766,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         <div>
           <button
             onClick={() => setShowEnhancements(!showEnhancements)}
-            className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="w-full p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <div className="flex items-center gap-2">
               <IoSparklesOutline className="w-4 h-4 text-gray-600 dark:text-gray-300" />
@@ -956,7 +956,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         
         {/* Trust Badges */}
         <div className="mt-2">
-          <div className="flex items-center justify-center gap-4 text-xs text-gray-500 dark:text-gray-300">
+          <div className="flex items-center justify-center gap-4 text-xs text-gray-700 dark:text-gray-300">
             <div className="flex items-center gap-1">
               <IoCheckmarkCircleOutline className="w-4 h-4" />
               <span>{t('freeCancellation')}</span>
