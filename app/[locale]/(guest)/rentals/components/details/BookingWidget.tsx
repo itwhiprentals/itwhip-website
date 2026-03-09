@@ -425,7 +425,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   // ============================================================================
   return (
     <>
-      <div ref={widgetRef} className="bg-gray-50 dark:bg-gray-900 lg:bg-white lg:dark:bg-gray-800 lg:rounded-lg lg:shadow-xl px-4 pt-3 pb-0 lg:p-6 lg:sticky lg:top-20 border-t border-gray-200 dark:border-gray-700 lg:border-t-0 space-y-3">
+      <div ref={widgetRef} className="bg-gray-50 dark:bg-gray-900 lg:bg-white lg:dark:bg-gray-800 lg:rounded-lg lg:shadow-xl px-4 pt-3 pb-0 lg:p-6 lg:sticky lg:top-20 space-y-3">
         {/* Price Header */}
         <div>
           <div className="flex items-start justify-between">

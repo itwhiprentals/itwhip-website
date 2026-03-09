@@ -869,32 +869,34 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
       </div>
 
       {/* Main Content - Hidden when viewing all photos */}
-      <div className={`max-w-7xl mx-auto px-4 pt-8 pb-0 lg:py-8 ${isViewingAllPhotos ? 'hidden' : ''}`}>
+      <div className={`max-w-7xl mx-auto px-4 pt-3 pb-0 lg:pt-8 lg:pb-8 ${isViewingAllPhotos ? 'hidden' : ''}`}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-8">
           {/* Left Column - Car Details */}
           <div className="lg:col-span-2">
             {/* Title Section */}
             <div>
-              <div className="flex items-center gap-2 flex-wrap mb-1">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+              <div className="flex items-center justify-between mb-1">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {car.year} {capitalizeCarMake(car.make)}
                 </h1>
-                {vehicleClass && <VehicleBadge label={vehicleClass} />}
-                {fuelTypeBadge && <VehicleBadge label={fuelTypeBadge} />}
-                {isRideshare && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-orange-300 dark:border-orange-600 rounded text-orange-700 dark:text-orange-300">
-                    <IoCarSportOutline className="w-3 h-3" />
-                    {t('rideshare')}
-                  </span>
-                )}
-                {!isRideshare && car.instantBook && car.isBookable !== false && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-green-300 dark:border-green-600 rounded text-green-700 dark:text-green-300">
-                    <IoFlashOutline className="w-3 h-3" />
-                    {t('instantBook')}
-                  </span>
-                )}
+                <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                  {vehicleClass && <VehicleBadge label={vehicleClass} />}
+                  {fuelTypeBadge && <VehicleBadge label={fuelTypeBadge} />}
+                  {isRideshare && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium border border-orange-300 dark:border-orange-600 rounded text-orange-700 dark:text-orange-300">
+                      <IoCarSportOutline className="w-3 h-3" />
+                      {t('rideshare')}
+                    </span>
+                  )}
+                  {!isRideshare && car.instantBook && car.isBookable !== false && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium border border-green-300 dark:border-green-600 rounded text-green-700 dark:text-green-300">
+                      <IoFlashOutline className="w-3 h-3" />
+                      {t('instantBook')}
+                    </span>
+                  )}
+                </div>
               </div>
-              <p className="text-lg sm:text-xl text-gray-700 dark:text-gray-300 pb-3 border-b border-gray-200 dark:border-gray-700">
+              <p className="text-base sm:text-lg text-gray-700 dark:text-gray-300 pb-3 border-b border-gray-200 dark:border-gray-700">
                 {normalizeModelName(car.model, car.make)}
               </p>
 
@@ -954,11 +956,6 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
 
                 {/* Separator */}
                 <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
-
-                <div className="flex items-center gap-1.5">
-                  <IoLocationOutline className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">{car.city}, {car.state}</span>
-                </div>
 
                 {!car.totalTrips || car.totalTrips === 0 ? (
                   <div className="flex items-center gap-1.5">
@@ -1224,6 +1221,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
           </div>
 
           {/* Right Column - Booking Widget */}
+          <div className="border-t border-gray-200 dark:border-gray-700 lg:border-t-0"></div>
           <div className="-mx-4 lg:mx-0 lg:sticky lg:top-20 h-fit">
             <BookingWidget
               car={car}

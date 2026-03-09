@@ -16,8 +16,8 @@ export default function VehicleBadge({ label, className = '' }: VehicleBadgeProp
     <span
       className={`
         inline-flex items-center
-        px-2 py-1
-        text-xs font-medium
+        px-1.5 py-0.5
+        text-[10px] font-medium
         border border-gray-300 dark:border-gray-600
         rounded
         text-gray-700 dark:text-gray-300
