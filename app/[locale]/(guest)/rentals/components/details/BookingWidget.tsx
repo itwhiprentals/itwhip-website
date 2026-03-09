@@ -37,6 +37,7 @@ interface BookingWidgetProps {
   car: any
   isBookable?: boolean
   suspensionMessage?: string | null
+  milesPerDay?: number
 }
 
 interface InsuranceQuote {
@@ -87,7 +88,7 @@ function extractDateAndTime(isoString: string): { date: string; time: string } {
   return { date, time }
 }
 
-export default function BookingWidget({ car, isBookable = true, suspensionMessage }: BookingWidgetProps) {
+export default function BookingWidget({ car, isBookable = true, suspensionMessage, milesPerDay = 200 }: BookingWidgetProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const t = useTranslations('BookingWidget')
@@ -169,7 +170,34 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   }, [startDate, endDate, minDays, blockedDates, validateDateRange])
   const [startTime, setStartTime] = useState(pickupTimeFromUrl || '10:00')
   const [endTime, setEndTime] = useState(returnTimeFromUrl || '10:00')
-  
+
+  // Same-day guard: auto-bump pickup time to now + 2 hours when date is today
+  useEffect(() => {
+    const now = new Date()
+    const arizonaToday = now.toLocaleDateString('en-CA', { timeZone: 'America/Phoenix' })
+    if (startDate !== arizonaToday) return
+
+    const arizonaTime = now.toLocaleString('en-US', { timeZone: 'America/Phoenix', hour: 'numeric', minute: 'numeric', hour12: false })
+    const [h, m] = arizonaTime.split(':').map(Number)
+    const nowMinutes = h * 60 + m
+    const earliestMinutes = Math.ceil((nowMinutes + 120) / 30) * 30 // +2hrs, round up to next 30-min
+
+    const [sH, sM] = startTime.split(':').map(Number)
+    const selectedMinutes = sH * 60 + sM
+
+    if (selectedMinutes < earliestMinutes) {
+      if (earliestMinutes >= 24 * 60) {
+        // Too late today — bump to tomorrow
+        setStartDate(getArizonaDateString(1))
+        setStartTime('10:00')
+      } else {
+        const newH = Math.floor(earliestMinutes / 60)
+        const newM = earliestMinutes % 60
+        setStartTime(`${newH.toString().padStart(2, '0')}:${newM.toString().padStart(2, '0')}`)
+      }
+    }
+  }, [startDate])
+
   // Update state when URL params change
   useEffect(() => {
     if (pickupDateFromUrl) setStartDate(pickupDateFromUrl)
@@ -437,7 +465,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
             </div>
             <div className="text-right">
               <p className="text-xs text-gray-500 dark:text-gray-300">{minDays > 1 ? t('minDaysPlural', { days: minDays }) : t('minDays', { days: minDays })}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-300">{t('milesPerDayIncluded')}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-300">{t('milesPerDayIncluded', { miles: milesPerDay })}</p>
             </div>
           </div>
           {(carClass === 'exotic' || carClass === 'luxury') && (

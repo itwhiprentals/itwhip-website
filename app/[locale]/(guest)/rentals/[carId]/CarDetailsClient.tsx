@@ -640,7 +640,8 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
 
   // Parse rules
   let rules: string[] = []
-  
+  let milesPerDay = car.mileageDaily || 200
+
   try {
     if (car.rules) {
       if (typeof car.rules === 'string') {
@@ -707,17 +708,39 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
     
     if (rules.length === 0) {
       rules = [
-        t('defaultRule1'),
         t('defaultRule2'),
         t('defaultRule3'),
         t('defaultRule4'),
         t('defaultRule5')
       ]
     }
+
+    // Extract mileage from rules text if host set it there (source of truth)
+    // Falls back to DB mileageDaily field, then 200 default
+    let parsedMiles: number | null = null
+    let parsedRate: number | null = null
+    for (const rule of rules) {
+      const m = rule.match(/(\d+)\s*miles?\/day\s*included,?\s*\$(\d+(?:\.\d+)?)\/mile/i)
+      if (m) {
+        parsedMiles = parseInt(m[1])
+        parsedRate = parseFloat(m[2])
+        break
+      }
+    }
+
+    // Remove any mileage rules from the list — we'll prepend one canonical version
+    rules = rules.filter(rule => !rule.match(/\d+\s*miles?\/day\s*included/i))
+
+    // Use parsed values > DB fields > defaults
+    milesPerDay = parsedMiles || car.mileageDaily || 200
+    const overageRate = parsedRate ?? car.mileageOverageFee ?? 3
+    rules.unshift(t('ruleMilesIncluded', { miles: milesPerDay, rate: overageRate }))
   } catch (error) {
     console.error('Error parsing rules:', error)
+    const milesPerDay = car.mileageDaily || 200
+    const overageRate = car.mileageOverageFee ?? 3
     rules = [
-      t('defaultRule1'),
+      t('ruleMilesIncluded', { miles: milesPerDay, rate: overageRate }),
       t('defaultRule2'),
       t('defaultRule3'),
       t('defaultRule4'),
@@ -1227,6 +1250,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
               car={car}
               isBookable={car.isBookable}
               suspensionMessage={car.suspensionMessage}
+              milesPerDay={milesPerDay}
             />
           </div>
         </div>

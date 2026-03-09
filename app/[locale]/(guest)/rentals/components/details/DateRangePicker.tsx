@@ -22,7 +22,32 @@ interface DateRangePickerProps {
   onEndTimeChange: (time: string) => void
 }
 
-function TimeSelect({ value, onChange, format }: { value: string; onChange: (v: string) => void; format: ReturnType<typeof useFormatter> }) {
+// Get current Arizona time in minutes since midnight
+function getArizonaNowMinutes(): number {
+  const now = new Date()
+  const arizonaTime = now.toLocaleString('en-US', { timeZone: 'America/Phoenix', hour: 'numeric', minute: 'numeric', hour12: false })
+  const [h, m] = arizonaTime.split(':').map(Number)
+  return h * 60 + m
+}
+
+// Check if a date string is today in Arizona timezone
+function isArizonaToday(dateStr: string): boolean {
+  if (!dateStr) return false
+  const now = new Date()
+  const arizonaToday = now.toLocaleDateString('en-CA', { timeZone: 'America/Phoenix' })
+  return dateStr === arizonaToday
+}
+
+// 2-hour buffer: earliest bookable time is now + 2 hours, rounded up to next 30-min slot
+function getEarliestPickupMinutes(): number {
+  const nowMinutes = getArizonaNowMinutes()
+  const buffered = nowMinutes + 120 // +2 hours
+  return Math.ceil(buffered / 30) * 30 // round up to next 30-min
+}
+
+function TimeSelect({ value, onChange, format, isPickupToday }: { value: string; onChange: (v: string) => void; format: ReturnType<typeof useFormatter>; isPickupToday?: boolean }) {
+  const earliestMinutes = isPickupToday ? getEarliestPickupMinutes() : 0
+
   return (
     <select
       value={value}
@@ -34,9 +59,11 @@ function TimeSelect({ value, onChange, format }: { value: string; onChange: (v: 
         const hour = Math.floor(i / 2)
         const minute = i % 2 === 0 ? '00' : '30'
         const timeValue = `${hour.toString().padStart(2, '0')}:${minute}`
+        const slotMinutes = hour * 60 + parseInt(minute)
+        const disabled = isPickupToday && slotMinutes < earliestMinutes
         const display = format.dateTime(new Date(2000, 0, 1, hour, parseInt(minute)), { hour: 'numeric', minute: '2-digit' })
         return (
-          <option key={timeValue} value={timeValue}>
+          <option key={timeValue} value={timeValue} disabled={disabled}>
             {display}
           </option>
         )
@@ -86,7 +113,7 @@ export default function DateRangePicker({
             <span>{formatDisplayDate(startDate)}</span>
           </button>
           <span className="text-gray-300 dark:text-gray-600 ml-auto">|</span>
-          <TimeSelect value={startTime} onChange={onStartTimeChange} format={format} />
+          <TimeSelect value={startTime} onChange={onStartTimeChange} format={format} isPickupToday={isArizonaToday(startDate)} />
         </div>
 
         {/* Return Row */}

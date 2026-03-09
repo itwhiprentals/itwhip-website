@@ -3393,7 +3393,7 @@
     "instantBook": "Réservation instantanée",
     "minDays": "Min {days} jour",
     "minDaysPlural": "Min {days} jours",
-    "milesPerDayIncluded": "200 mi/jour inclus",
+    "milesPerDayIncluded": "{miles} mi/jour inclus",
     "tripDates": "Dates du trajet",
     "daysSummary": "{days} jour",
     "daysSummaryPlural": "{days} jours",

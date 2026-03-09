@@ -3375,7 +3375,7 @@
     "instantBook": "Instant Book",
     "minDays": "Min {days} day",
     "minDaysPlural": "Min {days} days",
-    "milesPerDayIncluded": "200 mi/day included",
+    "milesPerDayIncluded": "{miles} mi/day included",
     "tripDates": "Trip Dates",
     "daysSummary": "{days} day",
     "daysSummaryPlural": "{days} days",
