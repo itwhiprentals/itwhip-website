@@ -369,7 +369,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   // ============================================================================
   if (!isBookable) {
     return (
-      <div ref={widgetRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 sticky top-20">
+      <div ref={widgetRef} className="bg-white dark:bg-gray-800 lg:rounded-lg lg:shadow-xl px-4 py-6 lg:p-6 lg:sticky lg:top-20 border-t border-gray-200 dark:border-gray-700 lg:border-t-0">
         <div className="text-center mb-6">
           <IoLockClosedOutline className="w-12 h-12 text-gray-400 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -424,7 +424,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   // ============================================================================
   return (
     <>
-      <div ref={widgetRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 sticky top-20">
+      <div ref={widgetRef} className="bg-gray-50 dark:bg-gray-900 lg:bg-white lg:dark:bg-gray-800 lg:rounded-lg lg:shadow-xl px-4 py-6 lg:p-6 lg:sticky lg:top-20 border-t border-gray-200 dark:border-gray-700 lg:border-t-0">
         {/* Price Header */}
         <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-start justify-between">
@@ -469,7 +469,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         </div>
         
         {/* Trip Dates */}
-        <div className="mb-4 space-y-2">
+        <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700 space-y-2">
           <h3 className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
             <IoCalendarOutline className="w-3.5 h-3.5 text-amber-600" />
             {t('tripDates')}
@@ -512,9 +512,24 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
             <div className="pt-2">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{t('quickSelect')}</p>
               <div className="flex gap-2">
+                {isRideshare && (
+                  <button
+                    onClick={() => {
+                      const newEnd = getDatePlusDays(startDate, 3)
+                      setEndDate(newEnd)
+                    }}
+                    className={`flex-1 py-2 px-3 text-xs font-medium rounded-lg border transition-all ${
+                      days === 3
+                        ? 'bg-amber-100 border-amber-500 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
+                        : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-amber-500 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    {t('threeDays')}
+                  </button>
+                )}
                 <button
                   onClick={() => {
-                    const newEnd = getArizonaDateString(8) // 1 week from tomorrow
+                    const newEnd = getDatePlusDays(startDate, 7)
                     setEndDate(newEnd)
                   }}
                   className={`flex-1 py-2 px-3 text-xs font-medium rounded-lg border transition-all ${
@@ -532,7 +547,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                 </button>
                 <button
                   onClick={() => {
-                    const newEnd = getArizonaDateString(15) // 2 weeks from tomorrow
+                    const newEnd = getDatePlusDays(startDate, 14)
                     setEndDate(newEnd)
                   }}
                   className={`flex-1 py-2 px-3 text-xs font-medium rounded-lg border transition-all ${
@@ -550,7 +565,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                 </button>
                 <button
                   onClick={() => {
-                    const newEnd = getArizonaDateString(31) // 1 month from tomorrow
+                    const newEnd = getDatePlusDays(startDate, 30)
                     setEndDate(newEnd)
                   }}
                   className={`flex-1 py-2 px-3 text-xs font-medium rounded-lg border transition-all ${
@@ -584,10 +599,11 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
               </div>
             </div>
           )}
+
         </div>
-        
+
         {/* Insurance Protection - Database Driven */}
-        <div className="mb-6">
+        <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
           <label className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
             <IoShieldCheckmarkOutline className="w-4 h-4" />
             {t('insuranceProtection')}

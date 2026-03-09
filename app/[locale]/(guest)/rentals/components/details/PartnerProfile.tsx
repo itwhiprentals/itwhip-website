@@ -49,7 +49,7 @@ export default function PartnerProfile({ partner }: PartnerProfileProps) {
 
   if (!partner) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+      <div className="py-6 border-b border-gray-200 dark:border-gray-700">
         <p className="text-gray-600 dark:text-gray-400">{t('partnerInfoNotAvailable')}</p>
       </div>
     )
@@ -70,7 +70,7 @@ export default function PartnerProfile({ partner }: PartnerProfileProps) {
   const yearEstablished = partner.yearEstablished
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+    <div className="py-6 border-b border-gray-200 dark:border-gray-700">
       {/* Partner Header */}
       <div className="flex items-start gap-4 mb-6">
         {/* Company Logo - Clickable */}

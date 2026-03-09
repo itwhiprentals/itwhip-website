@@ -1,6 +1,5 @@
 // app/(guest)/rentals/components/details/DateRangePicker.tsx
-// Date range picker with blocked dates visual support
-// Replaces native <input type="date"> with CalendarModal that grays out unavailable dates
+// Compact date range picker — single card with pickup/return rows
 
 'use client'
 
@@ -28,13 +27,16 @@ function TimeSelect({ value, onChange, format }: { value: string; onChange: (v: 
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full px-2 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer"
+      className="px-1.5 py-1 bg-transparent text-xs text-gray-700 dark:text-gray-300 cursor-pointer focus:outline-none focus:ring-0 border-0 appearance-none"
+      style={{ backgroundImage: 'none' }}
     >
-      {Array.from({ length: 24 }, (_, i) => {
-        const hour = i.toString().padStart(2, '0')
-        const display = format.dateTime(new Date(2000, 0, 1, i, 0), { hour: 'numeric', minute: '2-digit' })
+      {Array.from({ length: 48 }, (_, i) => {
+        const hour = Math.floor(i / 2)
+        const minute = i % 2 === 0 ? '00' : '30'
+        const timeValue = `${hour.toString().padStart(2, '0')}:${minute}`
+        const display = format.dateTime(new Date(2000, 0, 1, hour, parseInt(minute)), { hour: 'numeric', minute: '2-digit' })
         return (
-          <option key={hour} value={`${hour}:00`}>
+          <option key={timeValue} value={timeValue}>
             {display}
           </option>
         )
@@ -70,40 +72,36 @@ export default function DateRangePicker({
 
   return (
     <>
-      {/* Pickup Card */}
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
-        <div className="flex items-center gap-1.5 mb-2">
-          <div className="w-2 h-2 rounded-full bg-green-500"></div>
-          <span className="text-xs font-medium text-gray-700 dark:text-gray-200">{t('pickup')}</span>
-        </div>
-        <div className="grid grid-cols-2 gap-6">
+      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
+        {/* Pickup Row */}
+        <div className="flex items-center gap-2 px-3 py-2.5">
+          <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></div>
+          <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 w-12 flex-shrink-0">{t('pickup')}</span>
           <button
             type="button"
             onClick={() => setShowPickupCalendar(true)}
-            className="w-full px-2 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer text-left flex items-center gap-1.5"
+            className="flex items-center gap-1 text-sm font-medium text-gray-900 dark:text-white hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer"
           >
             <IoCalendarOutline className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-            <span className="truncate">{formatDisplayDate(startDate)}</span>
+            <span>{formatDisplayDate(startDate)}</span>
           </button>
+          <span className="text-gray-300 dark:text-gray-600">|</span>
           <TimeSelect value={startTime} onChange={onStartTimeChange} format={format} />
         </div>
-      </div>
 
-      {/* Return Card */}
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
-        <div className="flex items-center gap-1.5 mb-2">
-          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-          <span className="text-xs font-medium text-gray-700 dark:text-gray-200">{t('return')}</span>
-        </div>
-        <div className="grid grid-cols-2 gap-6">
+        {/* Return Row */}
+        <div className="flex items-center gap-2 px-3 py-2.5">
+          <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
+          <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 w-12 flex-shrink-0">{t('return')}</span>
           <button
             type="button"
             onClick={() => setShowReturnCalendar(true)}
-            className="w-full px-2 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer text-left flex items-center gap-1.5"
+            className="flex items-center gap-1 text-sm font-medium text-gray-900 dark:text-white hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer"
           >
             <IoCalendarOutline className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-            <span className="truncate">{formatDisplayDate(endDate)}</span>
+            <span>{formatDisplayDate(endDate)}</span>
           </button>
+          <span className="text-gray-300 dark:text-gray-600">|</span>
           <TimeSelect value={endTime} onChange={onEndTimeChange} format={format} />
         </div>
       </div>

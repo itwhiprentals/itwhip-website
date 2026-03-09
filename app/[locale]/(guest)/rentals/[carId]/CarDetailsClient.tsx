@@ -475,16 +475,103 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Header />
         <div className="animate-pulse">
-          <div className="h-96 bg-gray-200 dark:bg-gray-700" />
+          {/* Photo Gallery Skeleton */}
+          <div className="pt-16">
+            <div className="hidden sm:block max-w-7xl mx-auto px-4 pt-4">
+              <div className="grid grid-cols-4 grid-rows-2 gap-2 h-[400px] rounded-xl overflow-hidden">
+                <div className="col-span-2 row-span-2 bg-gray-200 dark:bg-gray-700" />
+                <div className="bg-gray-200 dark:bg-gray-700" />
+                <div className="bg-gray-200 dark:bg-gray-700" />
+                <div className="bg-gray-200 dark:bg-gray-700" />
+                <div className="bg-gray-200 dark:bg-gray-700" />
+              </div>
+            </div>
+            <div className="sm:hidden h-72 bg-gray-200 dark:bg-gray-700" />
+          </div>
+
+          {/* Content Skeleton */}
           <div className="max-w-7xl mx-auto px-4 py-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Left Column */}
               <div className="lg:col-span-2 space-y-6">
-                <div className="h-32 bg-gray-200 dark:bg-gray-700" />
-                <div className="h-48 bg-gray-200 dark:bg-gray-700" />
-                <div className="h-64 bg-gray-200 dark:bg-gray-700" />
+                {/* Title + Specs */}
+                <div>
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-4" />
+                  <div className="flex gap-4 mb-4">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24" />
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20" />
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16" />
+                  </div>
+                  <div className="flex gap-6 py-4 border-y border-gray-200 dark:border-gray-700">
+                    {[1,2,3,4].map(i => (
+                      <div key={i} className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-20" />
+                    ))}
+                  </div>
+                </div>
+
+                {/* About This Car */}
+                <div className="border-b border-gray-200 dark:border-gray-700 pb-6">
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-40 mb-4" />
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/6" />
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4">
+                    {[1,2,3,4,5,6].map(i => (
+                      <div key={i} className="h-5 bg-gray-200 dark:bg-gray-700 rounded" />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Rental Guidelines */}
+                <div className="border-b border-gray-200 dark:border-gray-700 pb-6">
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-44 mb-4" />
+                  <div className="space-y-2">
+                    {[1,2,3,4].map(i => (
+                      <div key={i} className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Host Profile */}
+                <div className="border-b border-gray-200 dark:border-gray-700 pb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full" />
+                    <div className="flex-1">
+                      <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-2" />
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48" />
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="h-96 bg-gray-200 dark:bg-gray-700" />
+
+              {/* Right Column - Booking Widget */}
+              <div className="-mx-4 lg:mx-0">
+                <div className="bg-white dark:bg-gray-800 lg:rounded-lg lg:shadow-xl px-4 py-6 lg:p-6 border-t border-gray-200 dark:border-gray-700 lg:border-t-0">
+                  <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-2" />
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 mb-6" />
+                  <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded-lg mb-4" />
+                  <div className="flex gap-2 mb-6">
+                    {[1,2,3].map(i => (
+                      <div key={i} className="flex-1 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+                    ))}
+                  </div>
+                  <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-lg mb-6" />
+                  <div className="space-y-2 mb-6">
+                    {[1,2,3].map(i => (
+                      <div key={i} className="flex justify-between">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-28" />
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="h-12 bg-gray-300 dark:bg-gray-600 rounded-lg" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -906,11 +993,11 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
               </div>
             </div>
 
-            {/* About This Car - Expandable - FIXED ALL && TO TERNARY */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
+            {/* About This Car - Expandable */}
+            <div className="border-b border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => setShowAboutCar(!showAboutCar)}
-                className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="w-full py-4 flex items-center justify-between"
               >
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {t('aboutThisCar')}
@@ -923,7 +1010,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
               </button>
               
               {showAboutCar ? (
-                <div className="px-6 pb-6 space-y-4">
+                <div className="pb-6 space-y-4">
                   {/* Description */}
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -1050,10 +1137,10 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
             </div>
 
             {/* Rental Guidelines - Expandable */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
+            <div className="border-b border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => setShowGuidelines(!showGuidelines)}
-                className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="w-full py-4 flex items-center justify-between"
               >
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {t('rentalGuidelines')}
@@ -1066,7 +1153,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
               </button>
               
               {showGuidelines && (
-                <div className="px-6 pb-6 space-y-4">
+                <div className="pb-6 space-y-4">
                   {/* Rules */}
                   <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
@@ -1142,7 +1229,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
           </div>
 
           {/* Right Column - Booking Widget */}
-          <div className="lg:sticky lg:top-20 h-fit">
+          <div className="-mx-4 lg:mx-0 lg:sticky lg:top-20 h-fit">
             <BookingWidget
               car={car}
               isBookable={car.isBookable}
@@ -1152,6 +1239,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
         </div>
 
         {/* Similar Cars Section - with SSR initial data for SEO */}
+        <div className="mt-10">
         <SimilarCars
           currentCarId={car.id}
           carType={car.carType || car.type}
@@ -1167,6 +1255,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
           initialSimilarCars={initialSimilarCars as any}
           initialHostCars={initialHostCars as any}
         />
+        </div>
 
         {/* Important Information Footer */}
         <section className="pt-3 pb-16 bg-gray-50 dark:bg-gray-900">
