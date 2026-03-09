@@ -318,9 +318,10 @@ export default async function CarDetailsPage({
         }
       }
     }
-  } catch (error) {
+  } catch (error: any) {
+    // Re-throw Next.js notFound() errors (they use throw internally)
+    if (error?.digest?.startsWith('NEXT_')) throw error
     console.error('Error generating schema:', error)
-    // Also return 404 on fetch errors (network issues, etc)
     notFound()
   }
   
