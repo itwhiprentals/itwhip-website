@@ -428,34 +428,34 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
       <div ref={widgetRef} className="bg-gray-50 dark:bg-gray-900 lg:bg-white lg:dark:bg-gray-800 lg:rounded-lg lg:shadow-xl px-4 pt-3 pb-0 lg:p-6 lg:sticky lg:top-20 space-y-3">
         {/* Price Header */}
         <div>
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                  ${dailyRate.toLocaleString()}
-                </span>
-                <span className="text-gray-500 dark:text-gray-300">{t('perDay')}</span>
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                {carClass === 'exotic' && (
-                  <div className="flex items-center gap-1 px-2 py-1 bg-black text-white text-xs font-semibold rounded">
-                    <IoTrophyOutline className="w-3 h-3" />
-                    <span>{t('exotic')}</span>
-                  </div>
-                )}
-                {carClass === 'luxury' && (
-                  <div className="flex items-center gap-1 px-2 py-1 bg-purple-600 text-white text-xs font-semibold rounded">
-                    <IoSparklesOutline className="w-3 h-3" />
-                    <span>{t('luxury')}</span>
-                  </div>
-                )}
-              </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-gray-900 dark:text-white">
+                ${dailyRate.toLocaleString()}
+              </span>
+              <span className="text-gray-500 dark:text-gray-300">{t('perDay')}</span>
             </div>
             <div className="text-right">
               <p className="text-xs text-gray-500 dark:text-gray-300">{minDays > 1 ? t('minDaysPlural', { days: minDays }) : t('minDays', { days: minDays })}</p>
               <p className="text-xs text-gray-500 dark:text-gray-300">{t('milesPerDayIncluded')}</p>
             </div>
           </div>
+          {(carClass === 'exotic' || carClass === 'luxury') && (
+            <div className="flex items-center gap-2 mt-2">
+              {carClass === 'exotic' && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-black text-white text-xs font-semibold rounded">
+                  <IoTrophyOutline className="w-3 h-3" />
+                  <span>{t('exotic')}</span>
+                </div>
+              )}
+              {carClass === 'luxury' && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-purple-600 text-white text-xs font-semibold rounded">
+                  <IoSparklesOutline className="w-3 h-3" />
+                  <span>{t('luxury')}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         
         {/* Trip Dates */}
@@ -481,11 +481,20 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
 
           {/* Trip Summary */}
           {days > 0 && (
-            <div className="flex items-center justify-center gap-1.5 py-2 px-3 bg-gray-900 dark:bg-white rounded-lg">
-              <IoCalendarOutline className="w-3.5 h-3.5 text-white dark:text-gray-900 flex-shrink-0" />
-              <span className="text-xs font-medium text-white dark:text-gray-900">
-                {days > 1 ? t('daysSummaryPlural', { days }) : t('daysSummary', { days })} · {format.dateTime(new Date(startDate + 'T00:00:00'), { month: 'short', day: 'numeric' })} – {format.dateTime(new Date(endDate + 'T00:00:00'), { month: 'short', day: 'numeric' })}
-              </span>
+            <div className="py-2 px-3 bg-black dark:bg-white rounded-lg">
+              <div className="flex items-center justify-center gap-1.5">
+                <IoCalendarOutline className="w-3.5 h-3.5 text-white dark:text-gray-900 flex-shrink-0" />
+                <span className="text-xs font-medium text-white dark:text-gray-900">
+                  {days > 1 ? t('daysSummaryPlural', { days }) : t('daysSummary', { days })} · {format.dateTime(new Date(startDate + 'T00:00:00'), { month: 'short', day: 'numeric' })} – {format.dateTime(new Date(endDate + 'T00:00:00'), { month: 'short', day: 'numeric' })}
+                </span>
+              </div>
+              {isRideshare && (
+                <div className="flex items-center justify-center mt-1">
+                  <span className="text-xs text-gray-300 dark:text-gray-500">
+                    {t('rideshareMinDays', { days: minDays })}
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
@@ -575,20 +584,6 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
             </div>
           )}
 
-          {/* Rideshare Notice */}
-          {isRideshare && (
-            <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-              <div className="flex items-start gap-2">
-                <IoCarSportOutline className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <span className="text-xs font-semibold text-orange-800 dark:text-orange-300">{t('rideshareReady')}</span>
-                  <p className="text-xs text-orange-700 dark:text-orange-400 mt-0.5">
-                    {t('rideshareMinDays', { days: minDays })}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
 
         </div>
 

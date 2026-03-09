@@ -9,7 +9,7 @@
 //   npx tsx scripts/reset-pedro-test.ts --execute # actually run
 // ──────────────────────────────────────────────────────────────────────
 
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 
 const prisma = new PrismaClient()
 const DRY = !process.argv.includes('--execute')
@@ -218,7 +218,7 @@ async function main() {
       hostAgreementName: null,
       agreementValidationScore: null,
       agreementValidationSummary: null,
-      hostAgreementSections: null,
+      hostAgreementSections: Prisma.JsonNull,
     }
   })
   console.log(`Prospect ${PROSPECT_ID} → onboarding + preferences cleared, inviteTokenExp → ${newExpiry.toISOString()}`)
@@ -239,7 +239,7 @@ async function main() {
       hostAgreementName: null,
       agreementValidationScore: null,
       agreementValidationSummary: null,
-      hostAgreementSections: null,
+      hostAgreementSections: Prisma.JsonNull,
     }
   })
   console.log(`Host ${HOST_ID} → onboarding + preferences cleared, welcomeDiscount reset`)
