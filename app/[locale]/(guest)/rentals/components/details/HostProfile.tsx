@@ -410,7 +410,7 @@ export default function HostProfile({ host }: HostProfileProps) {
       </div>
       
       {/* Message Host - Locked until booking */}
-      <div className="border-t border-gray-200 dark:border-gray-700 pt-5 mb-5">
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
         <h4 className="text-base font-medium text-gray-900 dark:text-white mb-3">
           {t('contactHost', { name: processedHost.displayName })}
         </h4>

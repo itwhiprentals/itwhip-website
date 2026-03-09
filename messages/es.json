@@ -3467,6 +3467,7 @@
     "listingMayBecomeAvailable": "Este anuncio puede estar disponible de nuevo. Agrégalo a tus favoritos para recibir notificaciones de cambios de estado.",
     "unavailableDatePrefix": "No disponible:",
     "insuranceTierMinimum": "Mínimo",
+    "insuranceTierNoInsurance": "Sin Seguro",
     "insuranceTierBasic": "Básico",
     "insuranceTierPremium": "Premium",
     "insuranceTierLuxury": "Lujo"

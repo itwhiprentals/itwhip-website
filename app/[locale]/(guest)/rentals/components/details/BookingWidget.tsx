@@ -181,6 +181,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   // Collapsible sections
   const [showDelivery, setShowDelivery] = useState(false)
   const [showEnhancements, setShowEnhancements] = useState(false)
+  const [showInsuranceOptions, setShowInsuranceOptions] = useState(false)
   const [expandedInsurance, setExpandedInsurance] = useState<string | null>(null)
   
   // Insurance from database
@@ -356,7 +357,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
 
   const getInsuranceTierName = (tier: string) => {
     switch (tier) {
-      case 'MINIMUM': return t('insuranceTierMinimum')
+      case 'MINIMUM': return t('insuranceTierNoInsurance')
       case 'BASIC': return t('insuranceTierBasic')
       case 'PREMIUM': return t('insuranceTierPremium')
       case 'LUXURY': return t('insuranceTierLuxury')
@@ -424,9 +425,9 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   // ============================================================================
   return (
     <>
-      <div ref={widgetRef} className="bg-gray-50 dark:bg-gray-900 lg:bg-white lg:dark:bg-gray-800 lg:rounded-lg lg:shadow-xl px-4 py-6 lg:p-6 lg:sticky lg:top-20 border-t border-gray-200 dark:border-gray-700 lg:border-t-0">
+      <div ref={widgetRef} className="bg-gray-50 dark:bg-gray-900 lg:bg-white lg:dark:bg-gray-800 lg:rounded-lg lg:shadow-xl px-4 pt-6 lg:p-6 lg:sticky lg:top-20 border-t border-gray-200 dark:border-gray-700 lg:border-t-0">
         {/* Price Header */}
-        <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-baseline gap-2">
@@ -446,17 +447,6 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
                   <div className="flex items-center gap-1 px-2 py-1 bg-purple-600 text-white text-xs font-semibold rounded">
                     <IoSparklesOutline className="w-3 h-3" />
                     <span>{t('luxury')}</span>
-                  </div>
-                )}
-                {isRideshare ? (
-                  <div className="flex items-center gap-1 text-orange-600 text-sm">
-                    <IoCarOutline className="w-3.5 h-3.5" />
-                    <span className="font-medium">{t('rideshare')}</span>
-                  </div>
-                ) : car?.instantBook && (
-                  <div className="flex items-center gap-1 text-amber-600 text-sm">
-                    <IoFlashOutline className="w-3.5 h-3.5" />
-                    <span className="font-medium">{t('instantBook')}</span>
                   </div>
                 )}
               </div>
@@ -507,8 +497,8 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
             </div>
           )}
 
-          {/* Duration Presets - Show for rideshare or when weekly/monthly rates available */}
-          {(isRideshare || car?.weeklyRate || car?.monthlyRate) && (
+          {/* Duration Presets - Hidden for now, will bring back later */}
+          {false && (isRideshare || car?.weeklyRate || car?.monthlyRate) && (
             <div className="pt-2">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{t('quickSelect')}</p>
               <div className="flex gap-2">
@@ -603,89 +593,113 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         </div>
 
         {/* Insurance Protection - Database Driven */}
-        <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
-          <label className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-            <IoShieldCheckmarkOutline className="w-4 h-4" />
-            {t('insuranceProtection')}
-            <span className="text-xs font-normal text-red-500">{t('required')}</span>
-          </label>
-          
+        <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
           {loadingQuotes ? (
             <div className="text-center py-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-600 mx-auto"></div>
               <p className="text-xs text-gray-500 mt-2">{t('loadingInsuranceOptions')}</p>
             </div>
+          ) : !showInsuranceOptions ? (
+            /* Collapsed: show selected tier as a clickable button */
+            <button
+              onClick={() => setShowInsuranceOptions(true)}
+              className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <IoShieldCheckmarkOutline className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                <span className="text-sm font-medium text-gray-900 dark:text-white">{t('insuranceProtection')}</span>
+                <span className="text-xs text-amber-600 ml-1">
+                  • {getInsuranceTierName(insuranceTier)} {t('protection')}
+                  {insuranceQuotes[insuranceTier]?.dailyPremium ? ` ($${insuranceQuotes[insuranceTier]!.dailyPremium.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/day)` : ''}
+                </span>
+              </div>
+              <IoChevronDownOutline className="w-5 h-5 text-gray-400 dark:text-gray-300" />
+            </button>
           ) : (
-            <div className="space-y-2">
-              {(['LUXURY', 'PREMIUM', 'BASIC', 'MINIMUM'] as const).map((tier) => {
-                const quote = insuranceQuotes[tier]
-                if (!quote) return null
-                
-                return (
-                  <div key={tier} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                    <label className={`block p-3 cursor-pointer transition-all ${insuranceTier === tier ? 'bg-amber-50 dark:bg-amber-900/20 border-l-4 border-l-amber-600' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="radio"
-                            name="insurance"
-                            value={tier}
-                            checked={insuranceTier === tier}
-                            onChange={(e) => setInsuranceTier(e.target.value as any)}
-                            className="w-4 h-4 text-amber-600 focus:ring-amber-500"
-                          />
-                          <div>
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">{getInsuranceTierName(tier)} {t('protection')}</span>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                setExpandedInsurance(expandedInsurance === tier ? null : tier)
-                              }}
-                              className="ml-2 text-xs text-amber-600 hover:text-amber-700"
-                            >
-                              {expandedInsurance === tier ? t('hide') : t('details')}
-                            </button>
+            /* Expanded: show all options */
+            <>
+              <button
+                onClick={() => setShowInsuranceOptions(false)}
+                className="w-full flex items-center justify-between mb-3"
+              >
+                <label className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <IoShieldCheckmarkOutline className="w-4 h-4" />
+                  {t('insuranceProtection')}
+                  <span className="text-xs font-normal text-red-500">{t('required')}</span>
+                </label>
+                <IoChevronUpOutline className="w-5 h-5 text-gray-400 dark:text-gray-300" />
+              </button>
+              <div className="space-y-2">
+                {(['LUXURY', 'PREMIUM', 'BASIC', 'MINIMUM'] as const).map((tier) => {
+                  const quote = insuranceQuotes[tier]
+                  if (!quote) return null
+
+                  return (
+                    <div key={tier} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                      <label className={`block p-3 cursor-pointer transition-all ${insuranceTier === tier ? 'bg-amber-50 dark:bg-amber-900/20 border-l-4 border-l-amber-600' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="radio"
+                              name="insurance"
+                              value={tier}
+                              checked={insuranceTier === tier}
+                              onChange={(e) => setInsuranceTier(e.target.value as any)}
+                              className="w-4 h-4 text-amber-600 focus:ring-amber-500"
+                            />
+                            <div>
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">{getInsuranceTierName(tier)} {t('protection')}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  setExpandedInsurance(expandedInsurance === tier ? null : tier)
+                                }}
+                                className="ml-2 text-xs text-amber-600 hover:text-amber-700"
+                              >
+                                {expandedInsurance === tier ? t('hide') : t('details')}
+                              </button>
+                            </div>
+                          </div>
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                            {quote.dailyPremium === 0 ? t('included') : t('perDayPrice', { price: quote.dailyPremium.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}
+                          </span>
+                        </div>
+                      </label>
+                      {expandedInsurance === tier && (
+                        <div className="px-6 pb-3 text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800/50">
+                          {tier === 'LUXURY' && (
+                            <div className="mt-2 mb-2">
+                              <span className="text-green-600 dark:text-green-400 font-semibold">{t('recommendedOption')}</span>
+                            </div>
+                          )}
+                          {tier === 'MINIMUM' && quote.increasedDeposit && (
+                            <div className="mt-2 mb-2">
+                              <span className="text-orange-600 dark:text-orange-400 font-semibold flex items-center gap-1">
+                                <IoWarningOutline className="w-3 h-3" />
+                                {t('requiresDeposit', { amount: quote.increasedDeposit.toLocaleString() })}
+                              </span>
+                            </div>
+                          )}
+                          <ul className="space-y-1 mt-2">
+                            <li>• {t('liability')} ${quote.coverage.liability.toLocaleString()}</li>
+                            <li>• {t('collision')} {typeof quote.coverage.collision === 'number' ? `$${quote.coverage.collision.toLocaleString()}` : quote.coverage.collision}</li>
+                            <li>• {t('deductible')} {quote.coverage.deductible === 0 ? t('deductibleNone') : `$${quote.coverage.deductible.toLocaleString()}`}</li>
+                            <li className="text-gray-500 dark:text-gray-400 mt-1">• {quote.coverage.description}</li>
+                          </ul>
+                          <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {t('provider')} {quote.provider.name}
+                            </p>
                           </div>
                         </div>
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                          {quote.dailyPremium === 0 ? t('included') : t('perDayPrice', { price: quote.dailyPremium.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}
-                        </span>
-                      </div>
-                    </label>
-                    {expandedInsurance === tier && (
-                      <div className="px-6 pb-3 text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800/50">
-                        {tier === 'LUXURY' && (
-                          <div className="mt-2 mb-2">
-                            <span className="text-green-600 dark:text-green-400 font-semibold">{t('recommendedOption')}</span>
-                          </div>
-                        )}
-                        {tier === 'MINIMUM' && quote.increasedDeposit && (
-                          <div className="mt-2 mb-2">
-                            <span className="text-orange-600 dark:text-orange-400 font-semibold flex items-center gap-1">
-                              <IoWarningOutline className="w-3 h-3" />
-                              {t('requiresDeposit', { amount: quote.increasedDeposit.toLocaleString() })}
-                            </span>
-                          </div>
-                        )}
-                        <ul className="space-y-1 mt-2">
-                          <li>• {t('liability')} ${quote.coverage.liability.toLocaleString()}</li>
-                          <li>• {t('collision')} {typeof quote.coverage.collision === 'number' ? `$${quote.coverage.collision.toLocaleString()}` : quote.coverage.collision}</li>
-                          <li>• {t('deductible')} {quote.coverage.deductible === 0 ? t('deductibleNone') : `$${quote.coverage.deductible.toLocaleString()}`}</li>
-                          <li className="text-gray-500 dark:text-gray-400 mt-1">• {quote.coverage.description}</li>
-                        </ul>
-                        <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {t('provider')} {quote.provider.name}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </>
           )}
         </div>
         
@@ -749,7 +763,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         </div>
         
         {/* Enhancements - COLLAPSIBLE */}
-        <div className="mb-6">
+        <div className="mb-4">
           <button
             onClick={() => setShowEnhancements(!showEnhancements)}
             className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -941,7 +955,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         </button>
         
         {/* Trust Badges */}
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="mt-3">
           <div className="flex items-center justify-center gap-4 text-xs text-gray-500 dark:text-gray-300">
             <div className="flex items-center gap-1">
               <IoCheckmarkCircleOutline className="w-4 h-4" />

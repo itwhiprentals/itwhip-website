@@ -872,7 +872,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
       <div className={`max-w-7xl mx-auto px-4 py-8 ${isViewingAllPhotos ? 'hidden' : ''}`}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Car Details */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-3">
             {/* Title Section */}
             <div>
               <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -881,6 +881,18 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                 </h1>
                 {vehicleClass && <VehicleBadge label={vehicleClass} />}
                 {fuelTypeBadge && <VehicleBadge label={fuelTypeBadge} />}
+                {isRideshare && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs font-semibold rounded">
+                    <IoCarSportOutline className="w-3 h-3" />
+                    {t('rideshare')}
+                  </span>
+                )}
+                {!isRideshare && car.instantBook && car.isBookable !== false && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold rounded">
+                    <IoFlashOutline className="w-3 h-3" />
+                    {t('instantBook')}
+                  </span>
+                )}
               </div>
               <p className="text-lg sm:text-xl text-gray-700 dark:text-gray-300 mb-3">
                 {normalizeModelName(car.model, car.make)}
@@ -915,18 +927,6 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                   </div>
                 )}
 
-                {isRideshare ? (
-                  <div className="flex items-center gap-1.5 text-orange-600 dark:text-orange-400">
-                    <IoCarSportOutline className="w-4 h-4" />
-                    <span className="font-medium">{t('rideshare')}</span>
-                  </div>
-                ) : car.instantBook && car.isBookable !== false && (
-                  <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-                    <IoFlashOutline className="w-4 h-4" />
-                    <span className="font-medium">{t('instantBook')}</span>
-                  </div>
-                )}
-                
                 {/* Show suspension status if suspended */}
                 {car.hostStatus && car.hostStatus !== 'APPROVED' && (
                   <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
@@ -937,54 +937,53 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
               </div>
 
               {/* Key Specs Bar */}
-              <div className="flex flex-wrap gap-6 py-4 border-y border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-2">
-                  <IoPeopleOutline className="w-5 h-5 text-gray-400" />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">{t('seats')}</span>
-                  <span className="font-semibold text-gray-900 dark:text-white">
+              <div className="flex flex-wrap gap-3 sm:gap-4 py-3 border-y border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-1.5">
+                  <IoPeopleOutline className="w-4 h-4 text-gray-400" />
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{t('seats')}</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
                     {car.seats || 5}
                   </span>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <IoSpeedometerOutline className="w-5 h-5 text-gray-400" />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">{t('trans')}</span>
-                  <span className="font-semibold text-gray-900 dark:text-white">
+
+                <div className="flex items-center gap-1.5">
+                  <IoSpeedometerOutline className="w-4 h-4 text-gray-400" />
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{t('trans')}</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
                     {tTransmission(car.transmission)}
                   </span>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  <IoWaterOutline className="w-5 h-5 text-gray-400" />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">{t('fuel')}</span>
-                  <span className="font-semibold text-gray-900 dark:text-white">
+                <div className="flex items-center gap-1.5">
+                  <IoWaterOutline className="w-4 h-4 text-gray-400" />
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{t('fuel')}</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
                     {tFuelType(car.fuelType)}
                   </span>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <IoCarSportOutline className="w-5 h-5 text-gray-400" />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">{t('type')}</span>
-                  <span className="font-semibold text-gray-900 dark:text-white">
+
+                <div className="flex items-center gap-1.5">
+                  <IoCarSportOutline className="w-4 h-4 text-gray-400" />
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{t('type')}</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
                     {tCarType(car.carType || car.type)}
                   </span>
                 </div>
 
                 {/* Doors - use vehicle spec lookup for accurate count */}
                 {(() => {
-                  // Look up correct doors from vehicle specs database
                   const vehicleSpec = getVehicleSpecData(car.make, car.model, String(car.year))
                   const actualDoors = vehicleSpec.doors || car.doors
                   if (!actualDoors) return null
                   return (
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-1.5">
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4h7a2 2 0 012 2v12a2 2 0 01-2 2H4V4z" />
                         <circle cx="9" cy="12" r="1" fill="currentColor" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 4h3v16h-3" />
                       </svg>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">{t('doors')}</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{t('doors')}</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
                         {actualDoors}
                       </span>
                     </div>
@@ -997,7 +996,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
             <div className="border-b border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => setShowAboutCar(!showAboutCar)}
-                className="w-full py-4 flex items-center justify-between"
+                className="w-full py-3 flex items-center justify-between"
               >
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {t('aboutThisCar')}
@@ -1010,7 +1009,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
               </button>
               
               {showAboutCar ? (
-                <div className="pb-6 space-y-4">
+                <div className="pb-4 space-y-3">
                   {/* Description */}
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -1140,7 +1139,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
             <div className="border-b border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => setShowGuidelines(!showGuidelines)}
-                className="w-full py-4 flex items-center justify-between"
+                className="w-full py-3 flex items-center justify-between"
               >
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {t('rentalGuidelines')}
@@ -1153,7 +1152,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
               </button>
               
               {showGuidelines && (
-                <div className="pb-6 space-y-4">
+                <div className="pb-4 space-y-3">
                   {/* Rules */}
                   <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">

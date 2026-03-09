@@ -3449,6 +3449,7 @@
     "listingMayBecomeAvailable": "This listing may become available again. Add it to your favorites to be notified of status changes.",
     "unavailableDatePrefix": "Unavailable:",
     "insuranceTierMinimum": "Minimum",
+    "insuranceTierNoInsurance": "No Insurance",
     "insuranceTierBasic": "Basic",
     "insuranceTierPremium": "Premium",
     "insuranceTierLuxury": "Luxury"
