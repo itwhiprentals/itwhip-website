@@ -261,6 +261,12 @@ export default async function sitemap() {
       changeFrequency: 'monthly',
       priority: 0.6,
     },
+    {
+      url: `${baseUrl}/choe`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
   ]
 
   // ============================================
@@ -782,6 +788,24 @@ export default async function sitemap() {
   ]
 
   // ============================================
+  // RIDESHARE PAGES (HIGH PRIORITY FOR SEO)
+  // ============================================
+  const ridesharePages = [
+    {
+      url: `${baseUrl}/rideshare`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    ...['toyota', 'honda', 'nissan', 'hyundai', 'kia', 'chevrolet'].map(make => ({
+      url: `${baseUrl}/rideshare/makes/${make}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.85,
+    })),
+  ]
+
+  // ============================================
   // DYNAMIC PAGES - Car Listings (from database)
   // ============================================
   let carPages = []
@@ -835,6 +859,7 @@ export default async function sitemap() {
     ...otherPages,
     ...businessPages,  // Business / B2B pages
     ...driverPages,    // Driver/Guest acquisition pages
+    ...ridesharePages, // Rideshare hub + make pages
     ...carPages,
   ]
 

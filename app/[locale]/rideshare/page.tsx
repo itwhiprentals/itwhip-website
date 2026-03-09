@@ -7,8 +7,6 @@ import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import { getTranslations } from 'next-intl/server'
 import {
-  IoSearchOutline,
-  IoLocationOutline,
   IoCarOutline,
   IoFlashOutline,
   IoShieldCheckmarkOutline,
@@ -18,6 +16,7 @@ import {
   IoLeafOutline,
   IoSpeedometerOutline
 } from 'react-icons/io5'
+import RideshareHeroSearch from './components/RideshareHeroSearch'
 import PartnerSection from './components/PartnerSection'
 import VehicleCarousel from './components/VehicleCarousel'
 import QuickActionsBar from '@/app/rentals-sections/QuickActionsBar'
@@ -544,21 +543,8 @@ export default async function RidesharePage() {
               </p>
             </div>
 
-            {/* Search Bar - Compact Width */}
-            <div className="flex flex-col sm:flex-row gap-2 max-w-sm mx-auto mb-4">
-              <div className="flex-1 relative">
-                <IoLocationOutline className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder={t('searchPlaceholder')}
-                  className="w-full pl-10 pr-3 py-2.5 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-sm"
-                />
-              </div>
-              <button className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 rounded-lg font-medium text-white transition-colors flex items-center justify-center gap-1.5 shadow-lg text-sm">
-                <IoSearchOutline className="w-4 h-4" />
-                {t('searchButton')}
-              </button>
-            </div>
+            {/* Search Bar - Functional */}
+            <RideshareHeroSearch />
 
             {/* Trust Badges */}
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-300">
@@ -846,7 +832,7 @@ export default async function RidesharePage() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
-                href="/cars"
+                href="/rentals/search"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-white text-orange-600 rounded-lg font-semibold hover:bg-orange-50 transition-colors shadow-lg"
               >
                 {t('ctaBrowseVehicles')}
