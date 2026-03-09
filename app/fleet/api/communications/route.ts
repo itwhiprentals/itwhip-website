@@ -1,8 +1,10 @@
 // app/fleet/api/communications/route.ts
-// Fleet admin API for SMS and Call logs with pagination + filters
+// Fleet admin API for SMS and Call logs with pagination + filters + send SMS
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { sendSms } from '@/app/lib/twilio/sms'
+import { normalizePhone } from '@/app/lib/twilio/phone'
 
 const PHOENIX_KEY = 'phoenix-fleet-2847'
 const EXTERNAL_KEY = process.env.FLEET_API_KEY || ''
@@ -112,11 +114,29 @@ export async function GET(request: NextRequest) {
         prisma.callLog.aggregate({ _avg: { duration: true } }),
       ])
 
+      // Batch-lookup caller names
+      const guestIds = logs.filter(l => l.callerType === 'guest' && l.callerId).map(l => l.callerId!)
+      const hostIds = logs.filter(l => l.callerType === 'host' && l.callerId).map(l => l.callerId!)
+
+      const [guestProfiles, hostProfiles] = await Promise.all([
+        guestIds.length > 0
+          ? prisma.reviewerProfile.findMany({ where: { id: { in: guestIds } }, select: { id: true, name: true } })
+          : [],
+        hostIds.length > 0
+          ? prisma.rentalHost.findMany({ where: { id: { in: hostIds } }, select: { id: true, name: true } })
+          : [],
+      ])
+
+      const nameMap: Record<string, string> = {}
+      guestProfiles.forEach(p => { nameMap[p.id] = p.name })
+      hostProfiles.forEach(p => { nameMap[p.id] = p.name })
+
       return NextResponse.json({
         success: true,
         logs: logs.map(log => ({
           ...log,
           bookingCode: log.booking?.bookingCode || null,
+          callerName: log.callerId ? (nameMap[log.callerId] || null) : null,
           transcription: log.transcription
             ? (log.transcription.length > 200 ? log.transcription.substring(0, 200) + '...' : log.transcription)
             : null,
@@ -139,5 +159,43 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[Fleet Communications] Error:', error)
     return NextResponse.json({ error: 'Failed to fetch logs' }, { status: 500 })
+  }
+}
+
+// ─── POST: Send SMS ─────────────────────────────────────────────────
+
+export async function POST(request: NextRequest) {
+  if (!verifyFleetKey(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    const { to, body } = await request.json()
+
+    if (!to || typeof to !== 'string') {
+      return NextResponse.json({ success: false, error: 'Phone number is required' }, { status: 400 })
+    }
+    if (!body || typeof body !== 'string' || !body.trim()) {
+      return NextResponse.json({ success: false, error: 'Message body is required' }, { status: 400 })
+    }
+    if (body.length > 1600) {
+      return NextResponse.json({ success: false, error: 'Message too long (max 1600 chars)' }, { status: 400 })
+    }
+
+    const normalized = normalizePhone(to)
+    if (!normalized) {
+      return NextResponse.json({ success: false, error: 'Invalid US phone number' }, { status: 400 })
+    }
+
+    const result = await sendSms(normalized, body.trim(), { type: 'SYSTEM' })
+
+    if (!result.success) {
+      return NextResponse.json({ success: false, error: result.error || 'Failed to send' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, sid: result.sid, logId: result.logId })
+  } catch (error) {
+    console.error('[Fleet Communications] Send error:', error)
+    return NextResponse.json({ success: false, error: 'Failed to send SMS' }, { status: 500 })
   }
 }
