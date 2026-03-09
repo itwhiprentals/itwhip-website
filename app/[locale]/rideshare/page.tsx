@@ -759,25 +759,30 @@ export default async function RidesharePage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4 sm:gap-0">
               {howItWorksSteps.map((item, index) => (
-                <div key={item.step} className="relative text-center">
-                  {/* Connecting line (hidden on mobile, hidden after last item) */}
-                  {index < howItWorksSteps.length - 1 && (
-                    <div className="hidden md:block absolute top-8 left-1/2 w-full h-0.5 bg-orange-200 dark:bg-orange-800" />
-                  )}
-
-                  {/* Step number */}
-                  <div className="relative z-10 w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                    {item.step}
+                <div key={item.step} className="flex items-center">
+                  {/* Step */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-md">
+                      {item.step}
+                    </div>
+                    <div>
+                      <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">
+                        {t(item.titleKey)}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                        {t(item.descKey)}
+                      </p>
+                    </div>
                   </div>
 
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2">
-                    {t(item.titleKey)}
-                  </h3>
-                  <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                    {t(item.descKey)}
-                  </p>
+                  {/* Arrow connector */}
+                  {index < howItWorksSteps.length - 1 && (
+                    <svg className="hidden sm:block w-8 h-8 mx-3 text-orange-300 dark:text-orange-700 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  )}
                 </div>
               ))}
             </div>

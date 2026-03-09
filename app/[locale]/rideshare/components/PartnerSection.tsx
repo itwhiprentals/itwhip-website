@@ -126,16 +126,14 @@ export default function PartnerSection({ partner }: PartnerSectionProps) {
   const partnerUrl = partner.slug ? `/rideshare/${partner.slug}` : null
 
   return (
-    <div className="bg-white dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-      {/* Single Row Layout */}
-      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+    <div className="flex flex-col lg:flex-row lg:items-center gap-4">
 
         {/* Left: Partner Info (clickable) */}
         <div className="flex items-center justify-between lg:justify-start gap-3 lg:w-56 lg:flex-shrink-0">
           {partnerUrl ? (
             <Link href={partnerUrl} className="flex items-center gap-3 group min-w-0">
               {/* Logo - white bg ensures all logos visible in both modes */}
-              <div className="w-11 h-11 flex-shrink-0 bg-white rounded-full overflow-hidden shadow-sm">
+              <div className="w-11 h-11 flex-shrink-0 bg-white rounded-full overflow-hidden shadow-sm border-2 border-gray-200 dark:border-gray-600">
                 {partner.logo ? (
                   <Image
                     src={partner.logo}
@@ -162,9 +160,6 @@ export default function PartnerSection({ partner }: PartnerSectionProps) {
                   {partner.isStripeVerified && (
                     <IoCheckmarkCircle className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" title={t('partnerVerified')} />
                   )}
-                  {partner.hasActiveDiscount && (
-                    <DiscountBanner discounts={partner.discounts} variant="inline" />
-                  )}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                   {partner.avgRating > 0 && (
@@ -179,7 +174,7 @@ export default function PartnerSection({ partner }: PartnerSectionProps) {
           ) : (
             <div className="flex items-center gap-3">
               {/* Logo (not clickable) - white bg ensures all logos visible in both modes */}
-              <div className="w-11 h-11 flex-shrink-0 bg-white rounded-full overflow-hidden shadow-sm">
+              <div className="w-11 h-11 flex-shrink-0 bg-white rounded-full overflow-hidden shadow-sm border-2 border-gray-200 dark:border-gray-600">
                 {partner.logo ? (
                   <Image
                     src={partner.logo}
@@ -223,7 +218,7 @@ export default function PartnerSection({ partner }: PartnerSectionProps) {
         </div>
 
         {/* Middle: 5 Cars Horizontal */}
-        <div className="flex-1 overflow-x-auto scrollbar-hide -mx-4 px-4 lg:mx-0 lg:px-0">
+        <div className="flex-1 overflow-x-auto scrollbar-hide">
           <div className="flex gap-3">
             {displayVehicles.length > 0 ? (
               displayVehicles.map((vehicle) => (
@@ -250,7 +245,6 @@ export default function PartnerSection({ partner }: PartnerSectionProps) {
             <IoChevronForwardOutline className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         )}
-      </div>
     </div>
   )
 }
