@@ -82,6 +82,20 @@ export default function CommunicationsPage() {
     setComposeOpen(true)
   }
 
+  const quickSend = async (phone: string, message: string) => {
+    try {
+      const res = await fetch('/fleet/api/communications?key=phoenix-fleet-2847', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: phone, body: message }),
+      })
+      const data = await res.json()
+      return data.success
+    } catch {
+      return false
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6">
       {/* Header */}
@@ -189,6 +203,7 @@ export default function CommunicationsPage() {
             expandedRow={expandedRow}
             onToggleRow={(id) => setExpandedRow(expandedRow === id ? null : id)}
             onText={(phone) => openCompose(phone)}
+            onQuickSend={quickSend}
           />
         )}
       </div>

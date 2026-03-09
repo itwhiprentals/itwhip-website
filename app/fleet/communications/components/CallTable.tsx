@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useRef, useEffect } from 'react'
 import { formatPhone, formatDate, statusBadge } from './shared'
 
 export interface CallLog {
@@ -26,7 +27,62 @@ interface CallTableProps {
   expandedRow: string | null
   onToggleRow: (id: string) => void
   onText: (phone: string) => void
+  onQuickSend?: (phone: string, message: string) => Promise<boolean>
 }
+
+// ─── Quick reply messages ─────────────────────────────────────────
+
+interface QuickReply {
+  label: string
+  message: string
+}
+
+function getQuickReplies(log: CallLog): QuickReply[] {
+  const name = log.callerName ? log.callerName.split(' ')[0] : null
+  const hi = name ? `Hi ${name}` : 'Hi'
+
+  const replies: QuickReply[] = []
+
+  if (log.status === 'no-answer' || log.status === 'ringing') {
+    replies.push({
+      label: 'Missed call',
+      message: `${hi}, we saw your missed call. How can we help? - ItWhip`,
+    })
+  }
+
+  if (log.recordingUrl) {
+    replies.push({
+      label: 'Got voicemail',
+      message: `${hi}, we received your voicemail and will get back to you shortly. - ItWhip`,
+    })
+  }
+
+  if (log.bookingCode) {
+    replies.push({
+      label: 'Booking help',
+      message: `${hi}, regarding your booking ${log.bookingCode} — how can we help? - ItWhip`,
+    })
+  }
+
+  replies.push(
+    {
+      label: 'Following up',
+      message: `${hi}, this is ItWhip following up on your recent call. How can we assist you?`,
+    },
+    {
+      label: 'Call us back',
+      message: `${hi}, we tried reaching you. Please call us back at (602) 609-2577 when you get a chance. - ItWhip`,
+    },
+    {
+      label: 'Hours/availability',
+      message: `${hi}, thanks for reaching out! Our team is available Mon-Sun 8AM-8PM MST. We'll get back to you as soon as possible. - ItWhip`,
+    },
+  )
+
+  return replies
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────
 
 function proxyRecordingUrl(callId: string) {
   return `/fleet/api/communications/recording?key=phoenix-fleet-2847&id=${callId}`
@@ -44,7 +100,86 @@ function CallerBadge({ type }: { type: string }) {
   )
 }
 
-export function CallTable({ logs, expandedRow, onToggleRow, onText }: CallTableProps) {
+// ─── Quick Send Dropdown ─────────────────────────────────────────
+
+function QuickSendMenu({ log, onText, onQuickSend }: {
+  log: CallLog
+  onText: (phone: string) => void
+  onQuickSend?: (phone: string, message: string) => Promise<boolean>
+}) {
+  const [open, setOpen] = useState(false)
+  const [sending, setSending] = useState<string | null>(null)
+  const [sent, setSent] = useState<string | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [open])
+
+  const replies = getQuickReplies(log)
+
+  const handleQuickSend = async (reply: QuickReply) => {
+    if (!onQuickSend) return
+    setSending(reply.label)
+    const ok = await onQuickSend(log.from, reply.message)
+    setSending(null)
+    if (ok) {
+      setSent(reply.label)
+      setTimeout(() => { setSent(null); setOpen(false) }, 1200)
+    }
+  }
+
+  return (
+    <div ref={menuRef} className="relative" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center">
+        <button
+          onClick={() => onText(log.from)}
+          className="px-2 py-1 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-l hover:bg-blue-100 dark:hover:bg-blue-900/50"
+          title="Custom SMS"
+        >
+          Text
+        </button>
+        <button
+          onClick={() => setOpen(!open)}
+          className="px-1 py-1 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-r border-l border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50"
+          title="Quick replies"
+        >
+          <svg className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 py-1">
+          <p className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Quick Reply</p>
+          {replies.map(reply => (
+            <button
+              key={reply.label}
+              onClick={() => handleQuickSend(reply)}
+              disabled={sending !== null}
+              className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-750 disabled:opacity-50 transition-colors"
+            >
+              <span className="text-xs font-medium text-gray-900 dark:text-white">
+                {sent === reply.label ? 'Sent!' : sending === reply.label ? 'Sending...' : reply.label}
+              </span>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{reply.message}</p>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Main Component ─────────────────────────────────────────────
+
+export function CallTable({ logs, expandedRow, onToggleRow, onText, onQuickSend }: CallTableProps) {
   if (logs.length === 0) {
     return <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No call logs found</div>
   }
@@ -115,16 +250,7 @@ export function CallTable({ logs, expandedRow, onToggleRow, onText }: CallTableP
                 </td>
                 <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDate(log.createdAt)}</td>
                 <td className="px-4 py-3">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onText(log.from)
-                    }}
-                    className="px-2 py-1 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50"
-                    title="Send SMS to this caller"
-                  >
-                    Text
-                  </button>
+                  <QuickSendMenu log={log} onText={onText} onQuickSend={onQuickSend} />
                 </td>
               </tr>
             ))}
@@ -191,15 +317,7 @@ export function CallTable({ logs, expandedRow, onToggleRow, onText }: CallTableP
 
             {/* Action */}
             <div className="flex justify-end">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onText(log.from)
-                }}
-                className="px-2.5 py-1 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50"
-              >
-                Text
-              </button>
+              <QuickSendMenu log={log} onText={onText} onQuickSend={onQuickSend} />
             </div>
           </div>
         ))}
