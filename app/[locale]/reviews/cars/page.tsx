@@ -1,6 +1,5 @@
 // app/reviews/cars/page.tsx
 import { Metadata } from 'next'
-import Script from 'next/script'
 import { Link } from '@/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
 import Image from 'next/image'
@@ -325,8 +324,7 @@ export default async function CarReviewsPage({ searchParams }: PageProps) {
 
   return (
     <>
-      <Script
-        id="cars-jsonld"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />

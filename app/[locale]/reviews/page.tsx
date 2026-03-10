@@ -1,6 +1,5 @@
 // app/reviews/page.tsx
 import { Metadata } from 'next'
-import Script from 'next/script'
 import { Link } from '@/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
 import { prisma } from '@/app/lib/database/prisma'
@@ -319,13 +318,11 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
 
   return (
     <>
-      <Script
-        id="reviews-jsonld"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <Script
-        id="aggregate-rating-jsonld"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(aggregateRatingJsonLd) }}
       />

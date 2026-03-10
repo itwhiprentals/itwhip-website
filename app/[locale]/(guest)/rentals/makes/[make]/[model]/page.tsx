@@ -2,7 +2,7 @@
 // Dynamic model page - works for ANY make/model combination
 import { Metadata } from 'next'
 import { Link } from '@/i18n/navigation'
-import Script from 'next/script'
+
 import prisma from '@/app/lib/database/prisma'
 import { HOST_CARD_SELECT } from '@/app/lib/database/host-select'
 import Header from '@/app/components/Header'
@@ -453,8 +453,7 @@ export default async function CarModelPage({ params }: PageProps) {
 
   return (
     <>
-      <Script
-        id="car-model-schema"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />

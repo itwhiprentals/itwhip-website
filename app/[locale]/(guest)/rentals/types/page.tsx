@@ -1,7 +1,7 @@
 // app/[locale]/(guest)/rentals/types/page.tsx
 import { Metadata } from 'next'
 import { Link } from '@/i18n/navigation'
-import Script from 'next/script'
+
 import { getTranslations } from 'next-intl/server'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
@@ -136,8 +136,7 @@ export default async function VehicleTypesPage({
 
   return (
     <>
-      <Script
-        id="breadcrumb-schema"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />

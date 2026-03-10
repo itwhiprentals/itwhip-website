@@ -2,7 +2,6 @@
 import { Metadata } from 'next'
 import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
-import Script from 'next/script'
 import { getTranslations } from 'next-intl/server'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
@@ -396,8 +395,7 @@ export default async function BudgetRentalsPage() {
   return (
     <>
       {/* JSON-LD Structured Data */}
-      <Script
-        id="json-ld"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />

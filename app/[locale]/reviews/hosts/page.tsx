@@ -1,6 +1,5 @@
 // app/reviews/hosts/page.tsx
 import { Metadata } from 'next'
-import Script from 'next/script'
 import { Link } from '@/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
 import { prisma } from '@/app/lib/database/prisma'
@@ -211,8 +210,7 @@ export default async function HostReviewsPage({ searchParams }: PageProps) {
 
   return (
     <>
-      <Script
-        id="hosts-jsonld"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />

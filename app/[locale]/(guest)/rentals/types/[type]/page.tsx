@@ -2,7 +2,7 @@
 import { Metadata } from 'next'
 import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
-import Script from 'next/script'
+
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import Header from '@/app/components/Header'
@@ -467,18 +467,15 @@ export default async function CarTypePage({
 
   return (
     <>
-      <Script
-        id="autorental-schema"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(autoRentalSchema) }}
       />
-      <Script
-        id="breadcrumb-schema"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
-      <Script
-        id="itemlist-schema"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
       />

@@ -7,7 +7,6 @@ import { NextIntlClientProvider, hasLocale } from 'next-intl'
 import { setRequestLocale, getMessages, getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
-import Script from 'next/script'
 import PageTracker from '@/app/components/PageTracker'
 import { Providers } from '@/app/providers'
 import SetHtmlLang from '@/app/components/SetHtmlLang'
@@ -283,18 +282,15 @@ export default async function LocaleLayout({
   return (
     <>
       <SetHtmlLang locale={locale} />
-      <Script
-        id="org-schema"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
       />
-      <Script
-        id="auto-rental-schema"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(autoRentalSchema) }}
       />
-      <Script
-        id="website-schema"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteSchema) }}
       />

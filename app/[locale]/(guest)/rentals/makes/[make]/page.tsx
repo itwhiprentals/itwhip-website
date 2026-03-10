@@ -1,7 +1,6 @@
 // app/(guest)/rentals/makes/[make]/page.tsx
 import { Metadata } from 'next'
 import { Link } from '@/i18n/navigation'
-import Script from 'next/script'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import Header from '@/app/components/Header'
@@ -624,23 +623,19 @@ export default async function CarMakePage({
 
   return (
     <>
-      <Script
-        id="autorental-schema"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(autoRentalSchema) }}
       />
-      <Script
-        id="breadcrumb-schema"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
-      <Script
-        id="brand-schema"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(brandSchema) }}
       />
-      <Script
-        id="itemlist-schema"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
       />

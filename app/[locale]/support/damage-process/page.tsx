@@ -1,7 +1,6 @@
 // app/support/damage-process/page.tsx
 import { Metadata } from 'next'
 import { Link } from '@/i18n/navigation'
-import Script from 'next/script'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import { getTranslations } from 'next-intl/server'
@@ -109,13 +108,11 @@ export default async function DamageProcessPage() {
 
   return (
     <>
-      <Script
-        id="howto-schema"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
-      <Script
-        id="faq-schema"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />

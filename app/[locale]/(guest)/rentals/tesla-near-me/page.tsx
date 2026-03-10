@@ -2,7 +2,6 @@
 import { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
-import Script from 'next/script'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import CompactCarCard from '@/app/components/cards/CompactCarCard'
@@ -259,8 +258,7 @@ export default async function TeslaNearMePage() {
 
   return (
     <>
-      <Script
-        id="tesla-near-me-schema"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />

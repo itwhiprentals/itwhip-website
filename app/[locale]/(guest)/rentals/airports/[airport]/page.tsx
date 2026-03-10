@@ -1,7 +1,6 @@
 // app/(guest)/rentals/airports/[airport]/page.tsx
 import { Metadata } from 'next'
 import { Link } from '@/i18n/navigation'
-import Script from 'next/script'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import Header from '@/app/components/Header'
@@ -693,8 +692,7 @@ export default async function AirportPage({
   return (
     <>
       {/* JSON-LD Structured Data */}
-      <Script
-        id="json-ld"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />

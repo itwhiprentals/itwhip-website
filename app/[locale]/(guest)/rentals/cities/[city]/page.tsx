@@ -1,7 +1,7 @@
 // app/(guest)/rentals/cities/[city]/page.tsx
 import { Metadata } from 'next'
 import { Link } from '@/i18n/navigation'
-import Script from 'next/script'
+
 import { notFound } from 'next/navigation'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
@@ -798,8 +798,7 @@ export default async function CityPage({
   return (
     <>
       {/* JSON-LD Structured Data */}
-      <Script
-        id="json-ld"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />

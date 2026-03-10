@@ -1,7 +1,7 @@
 // app/(guest)/rentals/corporate-travel/page.tsx
 import { Metadata } from 'next'
 import { Link } from '@/i18n/navigation'
-import Script from 'next/script'
+
 import { getTranslations } from 'next-intl/server'
 import prisma from '@/app/lib/database/prisma'
 import { HOST_CARD_SELECT } from '@/app/lib/database/host-select'
@@ -293,8 +293,7 @@ export default async function CorporateTravelPage() {
 
   return (
     <>
-      <Script
-        id="json-ld"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />

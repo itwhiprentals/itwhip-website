@@ -1,7 +1,6 @@
 // app/(guest)/rentals/[carId]/page.tsx
 import { Metadata, Viewport } from 'next'
 import { redirect, permanentRedirect, notFound } from 'next/navigation'
-import Script from 'next/script'
 
 // Helper to detect Next.js redirect errors (works across Next.js versions)
 function isNextRedirectError(error: unknown): boolean {
@@ -342,8 +341,7 @@ export default async function CarDetailsPage({
     <>
       {/* Add JSON-LD structured data */}
       {schemaData && (
-        <Script
-          id="car-schema"
+        <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(schemaData)
@@ -351,8 +349,7 @@ export default async function CarDetailsPage({
         />
       )}
       {breadcrumbData && (
-        <Script
-          id="breadcrumb-schema"
+        <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(breadcrumbData)

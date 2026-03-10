@@ -1,7 +1,6 @@
 // app/support/insurance/page.tsx
 import { Metadata } from 'next'
 import { Link } from '@/i18n/navigation'
-import Script from 'next/script'
 import Header from '@/app/components/Header'
 import Footer from '@/app/components/Footer'
 import { getTranslations } from 'next-intl/server'
@@ -104,8 +103,7 @@ export default async function InsuranceSupportPage() {
 
   return (
     <>
-      <Script
-        id="insurance-faq-schema"
+      <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
