@@ -26,25 +26,38 @@ const hostSignupRateLimit = new Ratelimit({
 function mapBodyClassToCarType(bodyClass: string | null): string | null {
   if (!bodyClass) return null
   const bc = bodyClass.toLowerCase()
-  if (bc.includes('sedan')) return 'sedan'
-  if (bc.includes('coupe')) return 'coupe'
-  if (bc.includes('convertible')) return 'convertible'
-  if (bc.includes('hatchback')) return 'hatchback'
-  if (bc.includes('wagon') || bc.includes('sport utility')) return 'suv'
-  if (bc.includes('pickup') || bc.includes('truck')) return 'truck'
-  if (bc.includes('van') || bc.includes('minivan')) return 'minivan'
-  if (bc.includes('crossover')) return 'crossover'
+  if (bc.includes('sedan')) return 'SEDAN'
+  if (bc.includes('coupe')) return 'COUPE'
+  if (bc.includes('convertible')) return 'CONVERTIBLE'
+  if (bc.includes('hatchback')) return 'HATCHBACK'
+  if (bc.includes('wagon') || bc.includes('sport utility')) return 'SUV'
+  if (bc.includes('pickup') || bc.includes('truck')) return 'TRUCK'
+  if (bc.includes('van') || bc.includes('minivan')) return 'MINIVAN'
+  if (bc.includes('crossover')) return 'CROSSOVER'
   return null
+}
+
+// Helper to normalize fuel type to standard UPPERCASE values
+function normalizeFuelType(fuelType: string | null | undefined): string {
+  if (!fuelType) return 'REGULAR'
+  const f = fuelType.toLowerCase()
+  if (f.includes('electric')) return 'ELECTRIC'
+  if (f.includes('hybrid') && f.includes('plug')) return 'PLUGIN_HYBRID'
+  if (f.includes('hybrid')) return 'HYBRID'
+  if (f.includes('diesel')) return 'DIESEL'
+  if (f.includes('premium')) return 'PREMIUM'
+  if (f.includes('regular') || f === 'gas' || f === 'gasoline') return 'REGULAR'
+  return 'REGULAR'
 }
 
 // Helper to normalize NHTSA transmission values
 function normalizeTransmission(transmission: string | null): string | null {
   if (!transmission) return null
   const t = transmission.toLowerCase()
-  if (t.includes('automatic') || t.includes('auto')) return 'automatic'
-  if (t.includes('manual')) return 'manual'
-  if (t.includes('cvt')) return 'cvt'
-  return 'automatic'  // Default to automatic if unclear
+  if (t.includes('automatic') || t.includes('auto')) return 'AUTOMATIC'
+  if (t.includes('manual')) return 'MANUAL'
+  if (t.includes('cvt')) return 'CVT'
+  return 'AUTOMATIC'  // Default to automatic if unclear
 }
 
 export async function POST(request: NextRequest) {
@@ -389,11 +402,11 @@ export async function POST(request: NextRequest) {
             ...(() => {
               const specs = getVehicleSpecData(vehicleMake, vehicleModel, vehicleYear)
               return {
-                carType: mapBodyClassToCarType(vehicleBodyClass) || specs?.carType || 'midsize',
+                carType: mapBodyClassToCarType(vehicleBodyClass) || specs?.carType || 'SEDAN',
                 seats: specs?.seats || 5,
                 doors: (() => { const d = vehicleDoors ? parseInt(vehicleDoors) : (specs?.doors || 4); return d === 5 ? 4 : d === 3 ? 2 : d })(),
-                transmission: normalizeTransmission(vehicleTransmission) || 'automatic',
-                fuelType: vehicleFuelType || specs?.fuelType || 'gas',
+                transmission: normalizeTransmission(vehicleTransmission) || 'AUTOMATIC',
+                fuelType: normalizeFuelType(vehicleFuelType || specs?.fuelType),
               }
             })(),
             driveType: vehicleDriveType || null,
