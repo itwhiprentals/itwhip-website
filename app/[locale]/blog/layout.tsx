@@ -25,7 +25,7 @@ export async function generateMetadata({
       type: 'website',
       images: [
         {
-          url: 'https://itwhip.com/og/blog.png',
+          url: 'https://itwhip.com/og-image.jpg',
           width: 1200,
           height: 630,
           alt: 'ItWhip Blog - P2P Car Rental Insights'

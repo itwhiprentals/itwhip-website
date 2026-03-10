@@ -21,7 +21,7 @@ export async function generateMetadata({
       type: 'website',
       images: [
       {
-        url: 'https://itwhip.com/og/host-earnings.png',
+        url: 'https://itwhip.com/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'ItWhip Host Earnings Calculator - Earn Up to 90%'

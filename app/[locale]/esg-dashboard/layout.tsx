@@ -18,7 +18,7 @@ export async function generateMetadata({
       url: 'https://itwhip.com/esg-dashboard',
       siteName: 'ItWhip',
       type: 'website',
-      images: [{ url: 'https://itwhip.com/og/esg-dashboard.png', width: 1200, height: 630, alt: 'ItWhip ESG Car Rental Dashboard' }],
+      images: [{ url: 'https://itwhip.com/og-image.jpg', width: 1200, height: 630, alt: 'ItWhip ESG Car Rental Dashboard' }],
     },
     twitter: {
       card: 'summary_large_image',

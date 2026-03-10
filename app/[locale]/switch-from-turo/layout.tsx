@@ -21,7 +21,7 @@ export async function generateMetadata({
       type: 'website',
       images: [
       {
-        url: 'https://itwhip.com/og/switch-from-turo.png',
+        url: 'https://itwhip.com/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'Switch from Turo to ItWhip - Earn Up to 90%'

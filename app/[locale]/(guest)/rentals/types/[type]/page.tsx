@@ -190,7 +190,7 @@ export async function generateMetadata({
 
   const heroImage = TYPE_HERO_IMAGES[type.toLowerCase()]
     ? `https://itwhip.com${TYPE_HERO_IMAGES[type.toLowerCase()]}`
-    : 'https://itwhip.com/og-default-car.jpg'
+    : 'https://itwhip.com/og-image.jpg'
   const altText = t('heroImageAlt', { type: displayName })
 
   return {

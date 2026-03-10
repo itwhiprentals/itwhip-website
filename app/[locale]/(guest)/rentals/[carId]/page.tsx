@@ -45,7 +45,7 @@ export async function generateMetadata({
     }
 
     // Get the hero image
-    const imageUrl = car.photos?.[0]?.url || 'https://itwhip.com/og-default-car.jpg'
+    const imageUrl = car.photos?.[0]?.url || 'https://itwhip.com/og-image.jpg'
 
     // Build rating/trips info for title
     const ratingText = car.rating ? `★${car.rating.toFixed(1)}` : ''

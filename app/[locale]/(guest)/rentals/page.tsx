@@ -77,7 +77,7 @@ export async function generateMetadata({
       locale: getOgLocale(locale),
       images: [
         {
-          url: 'https://itwhip.com/og-rentals.jpg',
+          url: 'https://itwhip.com/og-image.jpg',
           width: 1200,
           height: 630,
           alt: 'ItWhip Car Rentals'

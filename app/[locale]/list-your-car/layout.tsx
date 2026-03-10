@@ -21,7 +21,7 @@ export async function generateMetadata({
       siteName: 'ItWhip',
       images: [
         {
-          url: 'https://itwhip.com/og-list-your-car.jpg',
+          url: 'https://itwhip.com/og-image.jpg',
           width: 1200,
           height: 630,
           alt: t('listYourCarOgImageAlt'),
@@ -33,7 +33,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: t('listYourCarTwitterTitle'),
       description: t('listYourCarTwitterDescription'),
-      images: ['https://itwhip.com/og-list-your-car.jpg'],
+      images: ['https://itwhip.com/og-image.jpg'],
       creator: '@itwhip',
       site: '@itwhip',
     },

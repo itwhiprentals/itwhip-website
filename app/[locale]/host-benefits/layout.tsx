@@ -22,7 +22,7 @@ export async function generateMetadata({
       type: 'website',
       images: [
       {
-        url: 'https://itwhip.com/og-host-benefits.jpg',
+        url: 'https://itwhip.com/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'ItWhip Host Benefits - Earn Up to 90%',

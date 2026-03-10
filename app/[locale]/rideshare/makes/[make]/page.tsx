@@ -141,7 +141,7 @@ export async function generateMetadata({
       locale: getOgLocale(locale),
       type: 'website',
       images: [{
-        url: 'https://itwhip.com/og-rideshare.jpg',
+        url: 'https://itwhip.com/og-image.jpg',
         width: 1200,
         height: 630,
         alt: t('metaImageAlt', { make: makeData.displayName })
@@ -151,7 +151,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title,
       description,
-      images: ['https://itwhip.com/og-rideshare.jpg']
+      images: ['https://itwhip.com/og-image.jpg']
     },
     alternates: {
       canonical: getCanonicalUrl(`/rideshare/makes/${make}`, locale),

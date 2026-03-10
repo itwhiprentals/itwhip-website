@@ -78,7 +78,7 @@ export async function generateMetadata({
       url: getCanonicalUrl(`/rentals/airports/${airport}`, locale),
       locale: getOgLocale(locale),
       images: [{
-        url: 'https://itwhip.com/og/airports/arizona-airport.png',
+        url: 'https://itwhip.com/og-image.jpg',
         width: 1200,
         height: 630,
         alt: t('metaOgImageAlt', { fullName: airportData.fullName })
@@ -89,7 +89,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: t('metaTwitterTitle', { name: airportData.name }),
       description: airportData.metaDescription,
-      images: ['https://itwhip.com/og/airports/arizona-airport.png']
+      images: ['https://itwhip.com/og-image.jpg']
     },
     alternates: {
       canonical: getCanonicalUrl(`/rentals/airports/${airport}`, locale),

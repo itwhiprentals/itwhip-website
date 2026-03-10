@@ -60,7 +60,7 @@ export async function generateMetadata({
       description: t('rentalsNearMeDescription'),
       url: 'https://itwhip.com/rentals/near-me',
       images: [{
-        url: 'https://itwhip.com/og/near-me.png',
+        url: 'https://itwhip.com/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'Car rentals near me in Arizona'
@@ -71,7 +71,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: t('rentalsNearMeTitle'),
       description: t('rentalsNearMeDescription'),
-      images: ['https://itwhip.com/og/near-me.png']
+      images: ['https://itwhip.com/og-image.jpg']
     },
     alternates: {
       canonical: 'https://itwhip.com/rentals/near-me',
