@@ -97,6 +97,30 @@ export const choeOtpVerifyRateLimit = new Ratelimit({
   prefix: 'ratelimit:choe-otp-verify',
 })
 
+// Booking rate limit: 10 per minute per IP
+export const bookingRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(10, '1 m'),
+  analytics: true,
+  prefix: 'ratelimit:booking',
+})
+
+// Insurance quote rate limit: 20 per minute per IP
+export const insuranceQuoteRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(20, '1 m'),
+  analytics: true,
+  prefix: 'ratelimit:insurance-quote',
+})
+
+// AI booking rate limit: 15 per minute per IP (protects Claude API costs)
+export const aiBookingRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(15, '1 m'),
+  analytics: true,
+  prefix: 'ratelimit:ai-booking',
+})
+
 // Helper function to get client IP
 export function getClientIp(request: Request): string {
   // Check common headers for real IP (when behind proxy/CDN)

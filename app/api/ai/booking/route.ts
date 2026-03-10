@@ -49,6 +49,7 @@ import {
   extractCityName,
 } from '@/app/lib/ai-booking/filters'
 import prisma from '@/app/lib/database/prisma'
+import { aiBookingRateLimit, getClientIp, createRateLimitResponse } from '@/app/lib/rate-limit'
 import {
   getChoeSettings,
   getModelConfig,
@@ -427,6 +428,13 @@ async function trackAuthPrompt(conversationId: string): Promise<void> {
 // =============================================================================
 
 export async function POST(request: NextRequest) {
+  // Rate limit check (protects Claude API costs)
+  const rateLimitIp = getClientIp(request)
+  const { success: rlSuccess, reset: rlReset, remaining: rlRemaining } = await aiBookingRateLimit.limit(rateLimitIp)
+  if (!rlSuccess) {
+    return createRateLimitResponse(rlReset, rlRemaining)
+  }
+
   const startTime = Date.now()
   let conversationId: string | null = null
   let totalTokensUsed = 0

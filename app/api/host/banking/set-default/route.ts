@@ -7,9 +7,8 @@ import { stripe } from '@/app/lib/stripe'
 export async function PATCH(request: NextRequest) {
   try {
     const hostId = request.headers.get('x-host-id')
-    const hostEmail = request.headers.get('x-host-email')
-    
-    if (!hostId || !hostEmail) {
+
+    if (!hostId) {
       return NextResponse.json(
         { error: 'Unauthorized - No host session found' },
         { status: 401 }

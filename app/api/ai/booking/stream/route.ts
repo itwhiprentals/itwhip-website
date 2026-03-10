@@ -3,6 +3,7 @@
 // Uses Server-Sent Events (SSE) for real-time response streaming
 
 import { NextRequest } from 'next/server'
+import { aiBookingRateLimit, getClientIp, createRateLimitResponse } from '@/app/lib/rate-limit'
 import Anthropic from '@anthropic-ai/sdk'
 import {
   BookingState,
@@ -542,6 +543,13 @@ function createSSEWriter(writer: WritableStreamDefaultWriter<Uint8Array>): SSEWr
 // =============================================================================
 
 export async function POST(request: NextRequest) {
+  // Rate limit check (protects Claude API costs)
+  const rateLimitIp = getClientIp(request)
+  const { success: rlSuccess, reset: rlReset, remaining: rlRemaining } = await aiBookingRateLimit.limit(rateLimitIp)
+  if (!rlSuccess) {
+    return createRateLimitResponse(rlReset, rlRemaining)
+  }
+
   const stream = new TransformStream()
   const writer = stream.writable.getWriter()
   const sse = createSSEWriter(writer)

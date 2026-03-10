@@ -25,7 +25,7 @@ export async function POST(
   try {
     // TODO: Add proper admin authentication
     const adminId = request.headers.get('x-admin-id') || 'admin'
-    const adminEmail = request.headers.get('x-admin-email') || 'admin@itwhip.com'
+    const adminEmail = 'admin@itwhip.com'
 
     const body = await request.json()
     const { 

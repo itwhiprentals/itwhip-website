@@ -30,11 +30,12 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
 
   // Content Security Policy (allows Next.js, Firebase, Stripe, Google Maps)
+  const isProd = process.env.NODE_ENV === 'production'
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://js.stripe.com https://www.gstatic.com https://www.google.com https://apis.google.com https://*.firebaseapp.com https://api.mapbox.com https://cdn.jsdelivr.net blob:",
+    `script-src 'self' 'unsafe-inline'${isProd ? '' : " 'unsafe-eval'"} https://maps.googleapis.com https://js.stripe.com https://www.gstatic.com https://www.google.com https://apis.google.com https://*.firebaseapp.com https://api.mapbox.com https://cdn.jsdelivr.net blob:`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.mapbox.com",
-    "img-src 'self' data: https: blob:",
+    "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com https://images.unsplash.com https://itwhip.com https://*.stripe.com https://via.placeholder.com",
     "font-src 'self' data: https://fonts.gstatic.com",
     "connect-src 'self' https://www.google.com https://*.googleapis.com https://api.stripe.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://cloudflareinsights.com https://api.mapbox.com https://*.tiles.mapbox.com https://events.mapbox.com https://res.cloudinary.com https://api.cloudinary.com https://api.smartcar.com https://lh3.googleusercontent.com https://images.unsplash.com",
     "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.google.com https://*.firebaseapp.com",
@@ -44,13 +45,13 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
     "child-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
-    ...(process.env.NODE_ENV === 'production' ? ["upgrade-insecure-requests"] : [])
+    ...(isProd ? ["upgrade-insecure-requests"] : [])
   ].join('; ')
   response.headers.set('Content-Security-Policy', csp)
 
-  // HSTS (production only)
-  if (process.env.NODE_ENV === 'production') {
-    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+  // HSTS with preload (production only)
+  if (isProd) {
+    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
   }
 
   // Remove server identification
@@ -303,7 +304,9 @@ export async function middleware(request: NextRequest) {
   // Scanners probe .env, .git/config, .DS_Store etc. — return hard 404
   // ========================================================================
   if (
-    pathname.startsWith('/.env') ||
+    pathname.includes('/.env') ||
+    pathname.includes('.env.') ||
+    pathname.endsWith('.env') ||
     pathname.startsWith('/.git') ||
     pathname.startsWith('/.vscode') ||
     pathname.startsWith('/.DS_Store') ||
@@ -325,7 +328,38 @@ export async function middleware(request: NextRequest) {
     pathname === '/nodesync' ||
     pathname === '/v2/_catalog'
   ) {
-    return new NextResponse(null, { status: 404 })
+    return addSecurityHeaders(new NextResponse(null, { status: 404 }))
+  }
+
+  // ========================================================================
+  // CSRF: Validate origin on state-changing requests
+  // ========================================================================
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)) {
+    const origin = request.headers.get('origin')
+    const referer = request.headers.get('referer')
+
+    // Skip CSRF for webhook/cron endpoints, Bearer token auth, and fleet API (key-based auth)
+    const isWebhook = pathname.startsWith('/api/webhooks/')
+    const isCron = pathname.startsWith('/api/cron/')
+    const hasBearerToken = request.headers.get('authorization')?.startsWith('Bearer ')
+    const isFleetApi = pathname.startsWith('/api/fleet/') || pathname.startsWith('/fleet/api/')
+
+    if (!isWebhook && !isCron && !hasBearerToken && !isFleetApi) {
+      const allowedOrigins = [
+        'https://itwhip.com',
+        'https://www.itwhip.com',
+        ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:3000', 'http://localhost:3001'] : [])
+      ]
+
+      const requestOrigin = origin || (referer ? new URL(referer).origin : null)
+
+      if (requestOrigin && !allowedOrigins.includes(requestOrigin)) {
+        return addSecurityHeaders(new NextResponse(
+          JSON.stringify({ error: 'CSRF validation failed' }),
+          { status: 403, headers: { 'Content-Type': 'application/json' } }
+        ))
+      }
+    }
   }
 
   // ========================================================================
@@ -348,7 +382,7 @@ export async function middleware(request: NextRequest) {
     authPathname = pathname
   } else if (localeMatch && isNonI18nRoute(strippedPathname)) {
     // Locale prefix on a non-i18n route (e.g., /es/admin/) — strip and redirect
-    return NextResponse.redirect(new URL(strippedPathname + request.nextUrl.search, request.url))
+    return addSecurityHeaders(NextResponse.redirect(new URL(strippedPathname + request.nextUrl.search, request.url)))
   } else if (hasExtension) {
     // Static file (robots.txt, sitemap.xml, etc.) — skip i18n
     skipI18n = true
@@ -365,7 +399,7 @@ export async function middleware(request: NextRequest) {
     intlResponse = handleI18nRouting(request)
     // If next-intl returns a redirect (e.g., /en/about → /about with as-needed), return immediately
     if (intlResponse.status >= 300 && intlResponse.status < 400) {
-      return intlResponse
+      return addSecurityHeaders(intlResponse)
     }
   }
 
@@ -426,40 +460,40 @@ export async function middleware(request: NextRequest) {
 
     if (urlKey === phoenixKey || headerKey === phoenixKey) {
       console.log(`[FLEET API] ✅ ALLOWED with phoenix key`)
-      return NextResponse.next()
+      return addSecurityHeaders(NextResponse.next())
     }
 
     if (headerKey && headerKey === externalKey) {
       console.log(`[FLEET API] ✅ ALLOWED with external key`)
-      return NextResponse.next()
+      return addSecurityHeaders(NextResponse.next())
     }
 
     if (hasValidSession) {
       console.log(`[FLEET API] ✅ ALLOWED with fleet session cookie`)
-      return NextResponse.next()
+      return addSecurityHeaders(NextResponse.next())
     }
 
     console.warn(`[FLEET] 🚫 BLOCKED unauthorized access to ${pathname}`)
 
     // For UI routes, redirect to login; for API routes, return 403
     if ((pathname === '/fleet' || pathname.startsWith('/fleet/')) && !pathname.startsWith('/fleet/api/')) {
-      return NextResponse.redirect(new URL('/fleet/login', request.url))
+      return addSecurityHeaders(NextResponse.redirect(new URL('/fleet/login', request.url)))
     }
 
-    return NextResponse.json(
+    return addSecurityHeaders(NextResponse.json(
       {
         error: 'Unauthorized',
         message: 'Valid authentication required',
         timestamp: new Date().toISOString()
       },
       { status: 403 }
-    )
+    ))
   }
 
   // FIRST: Check if it's an explicitly public route
   if (publicRoutes.some(route => authPathname.startsWith(route))) {
-    if (intlResponse) return intlResponse
-    return NextResponse.next()
+    if (intlResponse) return addSecurityHeaders(intlResponse)
+    return addSecurityHeaders(NextResponse.next())
   }
 
   // HANDLE HOST LOGIN ROUTE
@@ -473,13 +507,13 @@ export async function middleware(request: NextRequest) {
       try {
         const { payload } = await verifyPlatformToken(platformToken)
         if (payload.role === 'HOST') {
-          return NextResponse.redirect(new URL('/host/dashboard', request.url))
+          return addSecurityHeaders(NextResponse.redirect(new URL('/host/dashboard', request.url)))
         }
       } catch {
         // Invalid token, let them access login
       }
     }
-    return NextResponse.next()
+    return addSecurityHeaders(NextResponse.next())
   }
 
   // UNIFIED PORTAL: Redirect all /host/* routes to /partner/* equivalent
@@ -506,7 +540,7 @@ export async function middleware(request: NextRequest) {
       // Map the returnUrl to partner equivalent
       const partnerPath = HOST_TO_PARTNER_REDIRECTS[authPathname] || '/partner/dashboard'
       loginUrl.searchParams.set('returnUrl', partnerPath)
-      return NextResponse.redirect(loginUrl)
+      return addSecurityHeaders(NextResponse.redirect(loginUrl))
     }
 
     try {
@@ -522,13 +556,13 @@ export async function middleware(request: NextRequest) {
         const role = payload.role as string
         switch (role) {
           case 'DRIVER':
-            return NextResponse.redirect(new URL('/driver/dashboard', request.url))
+            return addSecurityHeaders(NextResponse.redirect(new URL('/driver/dashboard', request.url)))
           case 'HOTEL':
-            return NextResponse.redirect(new URL('/hotel/dashboard', request.url))
+            return addSecurityHeaders(NextResponse.redirect(new URL('/hotel/dashboard', request.url)))
           case 'BUSINESS':
-            return NextResponse.redirect(new URL('/dashboard', request.url))
+            return addSecurityHeaders(NextResponse.redirect(new URL('/dashboard', request.url)))
           default:
-            return NextResponse.redirect(new URL('/dashboard', request.url))
+            return addSecurityHeaders(NextResponse.redirect(new URL('/dashboard', request.url)))
         }
       }
 
@@ -558,7 +592,7 @@ export async function middleware(request: NextRequest) {
         hostId: payload.hostId
       })
 
-      return NextResponse.redirect(new URL(partnerPath, request.url))
+      return addSecurityHeaders(NextResponse.redirect(new URL(partnerPath, request.url)))
 
     } catch (error) {
       console.error('Host JWT verification failed:', error)
@@ -578,7 +612,7 @@ export async function middleware(request: NextRequest) {
         maxAge: 0,
         path: '/'
       })
-      return response
+      return addSecurityHeaders(response)
     }
   }
 
@@ -597,10 +631,10 @@ export async function middleware(request: NextRequest) {
                      request.cookies.get('accessToken')?.value
 
     if (!hostToken) {
-      return NextResponse.json(
+      return addSecurityHeaders(NextResponse.json(
         { error: 'Unauthorized - Host access required' },
         { status: 401 }
-      )
+      ))
     }
 
     try {
@@ -621,7 +655,7 @@ export async function middleware(request: NextRequest) {
       const method = request.method
 
       if (!isApproved && requiresApproval(pathname, method)) {
-        return NextResponse.json(
+        return addSecurityHeaders(NextResponse.json(
           {
             error: 'Account approval required',
             message: 'Only approved hosts can perform this action. Contact support if you need assistance.',
@@ -629,22 +663,21 @@ export async function middleware(request: NextRequest) {
             action: 'requires_approval'
           },
           { status: 403 }
-        )
+        ))
       }
 
       const response = NextResponse.next()
       response.headers.set('x-host-id', payload.hostId as string || '')
       response.headers.set('x-user-id', payload.userId as string || '')
-      response.headers.set('x-host-email', payload.email as string)
       response.headers.set('x-host-approved', isApproved ? 'true' : 'false')
       response.headers.set('x-approval-status', approvalStatus)
-      return response
+      return addSecurityHeaders(response)
 
     } catch (error) {
-      return NextResponse.json(
+      return addSecurityHeaders(NextResponse.json(
         { error: 'Invalid host token' },
         { status: 401 }
-      )
+      ))
     }
   }
 
@@ -655,24 +688,24 @@ export async function middleware(request: NextRequest) {
       const cronSecret = process.env.CRON_SECRET
       if (!cronSecret) {
         console.warn('[Security] CRON_SECRET not set - cron access denied')
-        return NextResponse.json({ error: 'Cron access not configured' }, { status: 403 })
+        return addSecurityHeaders(NextResponse.json({ error: 'Cron access not configured' }, { status: 403 }))
       }
 
       if (authHeader === `Bearer ${cronSecret}`) {
         const response = NextResponse.next()
         response.headers.set('x-cron-access', 'true')
         response.headers.set('x-auth-type', 'cron')
-        return response
+        return addSecurityHeaders(response)
       }
     }
 
     const adminToken = request.cookies.get('adminAccessToken')?.value
 
     if (!adminToken) {
-      return NextResponse.json(
+      return addSecurityHeaders(NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 401 }
-      )
+      ))
     }
 
     try {
@@ -684,14 +717,13 @@ export async function middleware(request: NextRequest) {
 
       const response = NextResponse.next()
       response.headers.set('x-admin-id', payload.userId as string)
-      response.headers.set('x-admin-email', payload.email as string)
-      return response
+      return addSecurityHeaders(response)
 
     } catch (error) {
-      return NextResponse.json(
+      return addSecurityHeaders(NextResponse.json(
         { error: 'Invalid admin token' },
         { status: 401 }
-      )
+      ))
     }
   }
 
@@ -702,7 +734,7 @@ export async function middleware(request: NextRequest) {
     if (!adminToken) {
       const loginUrl = new URL('/admin/auth/login', request.url)
       loginUrl.searchParams.set('returnUrl', pathname)
-      return NextResponse.redirect(loginUrl)
+      return addSecurityHeaders(NextResponse.redirect(loginUrl))
     }
 
     try {
@@ -715,15 +747,11 @@ export async function middleware(request: NextRequest) {
 
       const response = NextResponse.next()
       response.headers.set('x-admin-id', payload.userId as string)
-      response.headers.set('x-admin-email', payload.email as string)
       response.headers.set('x-admin-role', 'ADMIN')
       response.headers.set('x-auth-type', 'admin')
-
-      response.headers.set('X-Frame-Options', 'DENY')
-      response.headers.set('X-Content-Type-Options', 'nosniff')
       response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
 
-      return response
+      return addSecurityHeaders(response)
 
     } catch (error) {
       console.error('Admin JWT verification failed:', error)
@@ -732,18 +760,18 @@ export async function middleware(request: NextRequest) {
       response.cookies.set('adminAccessToken', '', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: 'strict',
         maxAge: 0,
         path: '/'
       })
       response.cookies.set('adminRefreshToken', '', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: 'strict',
         maxAge: 0,
         path: '/'
       })
-      return response
+      return addSecurityHeaders(response)
     }
   }
 
@@ -753,7 +781,7 @@ export async function middleware(request: NextRequest) {
                         request.cookies.get('hostAccessToken')?.value
 
     if (!partnerToken) {
-      return NextResponse.redirect(new URL('/partner/login', request.url))
+      return addSecurityHeaders(NextResponse.redirect(new URL('/partner/login', request.url)))
     }
 
     try {
@@ -768,13 +796,12 @@ export async function middleware(request: NextRequest) {
       const response = NextResponse.next()
       response.headers.set('x-host-id', payload.hostId as string || '')
       response.headers.set('x-user-id', payload.userId as string || '')
-      response.headers.set('x-host-email', payload.email as string)
-      return response
+      return addSecurityHeaders(response)
     } catch (error) {
       const response = NextResponse.redirect(new URL('/partner/login', request.url))
       response.cookies.set('partner_token', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 0, path: '/' })
       response.cookies.set('hostAccessToken', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 0, path: '/' })
-      return response
+      return addSecurityHeaders(response)
     }
   }
 
@@ -795,26 +822,26 @@ export async function middleware(request: NextRequest) {
 
         switch (userRole) {
           case 'DRIVER':
-            return NextResponse.redirect(new URL(localizeUrl('/driver/dashboard'), request.url))
+            return addSecurityHeaders(NextResponse.redirect(new URL(localizeUrl('/driver/dashboard'), request.url)))
           case 'HOTEL':
-            return NextResponse.redirect(new URL(localizeUrl('/hotel/dashboard'), request.url))
+            return addSecurityHeaders(NextResponse.redirect(new URL(localizeUrl('/hotel/dashboard'), request.url)))
           case 'HOST':
-            return NextResponse.redirect(new URL('/host/dashboard', request.url))
+            return addSecurityHeaders(NextResponse.redirect(new URL('/host/dashboard', request.url)))
           case 'ADMIN':
-            return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+            return addSecurityHeaders(NextResponse.redirect(new URL('/admin/dashboard', request.url)))
           case 'CLAIMED':
           case 'STARTER':
           case 'BUSINESS':
           case 'ENTERPRISE':
           default:
-            return NextResponse.redirect(new URL(localizeUrl('/dashboard'), request.url))
+            return addSecurityHeaders(NextResponse.redirect(new URL(localizeUrl('/dashboard'), request.url)))
         }
       } catch {
         // Token is invalid, let them access login/signup
       }
     }
-    if (intlResponse) return intlResponse
-    return NextResponse.next()
+    if (intlResponse) return addSecurityHeaders(intlResponse)
+    return addSecurityHeaders(NextResponse.next())
   }
 
   if (adminAuthRoutes.some(route => authPathname.startsWith(route))) {
@@ -822,7 +849,7 @@ export async function middleware(request: NextRequest) {
     if (adminToken) {
       try {
         await verifyAdminToken(adminToken)
-        return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+        return addSecurityHeaders(NextResponse.redirect(new URL('/admin/dashboard', request.url)))
       } catch {
         // Invalid token, let them access admin login
       }
@@ -842,7 +869,7 @@ export async function middleware(request: NextRequest) {
   if (!guestToken) {
     const loginUrl = new URL(localizeUrl('/auth/login'), request.url)
     loginUrl.searchParams.set('from', pathname)
-    return NextResponse.redirect(loginUrl)
+    return addSecurityHeaders(NextResponse.redirect(loginUrl))
   }
 
   try {
@@ -888,7 +915,7 @@ export async function middleware(request: NextRequest) {
         // Fall through to allow access
       } else {
         console.log(`[Middleware] Role ${userRole} not in allowed list for ${authPathname}, redirecting to ${targetDashboard}`)
-        return NextResponse.redirect(new URL(targetDashboard, request.url))
+        return addSecurityHeaders(NextResponse.redirect(new URL(targetDashboard, request.url)))
       }
     }
 
@@ -899,7 +926,6 @@ export async function middleware(request: NextRequest) {
 
     const response = intlResponse || NextResponse.next()
     response.headers.set('x-user-id', payload.userId as string)
-    response.headers.set('x-user-email', payload.email as string)
     response.headers.set('x-user-role', userRole)
     response.headers.set('x-user-name', payload.name as string || '')
     response.headers.set('x-token-type', secretType)
@@ -925,7 +951,7 @@ export async function middleware(request: NextRequest) {
       path: '/'
     })
 
-    return response
+    return addSecurityHeaders(response)
   }
 }
 

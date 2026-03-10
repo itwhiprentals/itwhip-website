@@ -5,12 +5,12 @@ import { stripe } from '@/app/lib/stripe'
 
 export async function POST(request: NextRequest) {
   try {
-    // Get host from session/auth - update this to match your auth system
-    const hostEmail = request.headers.get('x-host-email')
-    
-    if (!hostEmail) {
+    // Get host from session/auth
+    const hostId = request.headers.get('x-host-id')
+
+    if (!hostId) {
       return NextResponse.json(
-        { error: 'Unauthorized - No host email found' },
+        { error: 'Unauthorized - No host session found' },
         { status: 401 }
       )
     }
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     // Get host from database
     const host = await prisma.rentalHost.findUnique({
-      where: { email: hostEmail },
+      where: { id: hostId },
       select: {
         id: true,
         email: true,

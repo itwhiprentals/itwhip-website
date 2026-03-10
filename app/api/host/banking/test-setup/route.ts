@@ -12,13 +12,10 @@ export async function GET(request: NextRequest) {
   try {
     // Test 1: Get host from headers
     const hostId = request.headers.get('x-host-id')
-    const hostEmail = request.headers.get('x-host-email')
-    
+
     diagnostics.tests.auth = {
       hasHostId: !!hostId,
-      hasHostEmail: !!hostEmail,
-      hostId,
-      hostEmail
+      hostId
     }
 
     if (!hostId) {

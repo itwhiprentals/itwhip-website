@@ -31,7 +31,7 @@ export async function POST(
   try {
     // Get admin info from headers
     const adminId = request.headers.get('x-admin-id') || 'admin'
-    const adminEmail = request.headers.get('x-admin-email') || 'admin@itwhip.com'
+    const adminEmail = 'admin@itwhip.com'
     
     const { id: chargeId } = await params
     const body: AdjustmentRequest = await request.json()

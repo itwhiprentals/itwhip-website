@@ -8,11 +8,10 @@ export async function POST(request: NextRequest) {
     console.log('📍 SESSION API: Request received')
     
     const hostId = request.headers.get('x-host-id')
-    const hostEmail = request.headers.get('x-host-email')
-    
-    console.log('📍 SESSION API: Headers', { hostId: hostId?.substring(0, 10), hostEmail })
-    
-    if (!hostId || !hostEmail) {
+
+    console.log('📍 SESSION API: Headers', { hostId: hostId?.substring(0, 10) })
+
+    if (!hostId) {
       console.log('❌ SESSION API: Missing headers')
       return NextResponse.json(
         { error: 'Unauthorized - No host session found' },

@@ -7,6 +7,7 @@ import { RentalBookingStatus } from '@/app/lib/dal/types'
 import { calculateBookingPricing, getActualDeposit } from '@/app/[locale]/(guest)/rentals/lib/booking-pricing'
 import { addHours } from 'date-fns'
 import { extractIpAddress } from '@/app/utils/ip-lookup'
+import { bookingRateLimit, getClientIp, createRateLimitResponse } from '@/app/lib/rate-limit'
 import { verifyAdminRequest } from '@/app/lib/admin/middleware'
 import { verifyRecaptchaToken } from '@/app/lib/recaptcha'
 import { sendBookingConfirmation, sendPendingReviewEmail, sendFraudAlertEmail, sendHostReviewEmail } from '@/app/lib/email/booking-emails'
@@ -120,6 +121,13 @@ const bookingSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  // Rate limit check
+  const ip = getClientIp(request)
+  const { success, reset, remaining } = await bookingRateLimit.limit(ip)
+  if (!success) {
+    return createRateLimitResponse(reset, remaining)
+  }
+
   let stripePaymentIntentId: string | null = null
   let bookingData: any = null
   try {

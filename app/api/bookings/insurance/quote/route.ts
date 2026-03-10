@@ -1,9 +1,17 @@
 // app/api/bookings/insurance/quote/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/app/lib/database/prisma';
+import { insuranceQuoteRateLimit, getClientIp, createRateLimitResponse } from '@/app/lib/rate-limit';
 
 // POST /api/bookings/insurance/quote - Calculate insurance quote
 export async function POST(request: NextRequest) {
+  // Rate limit check
+  const ip = getClientIp(request);
+  const { success, reset, remaining } = await insuranceQuoteRateLimit.limit(ip);
+  if (!success) {
+    return createRateLimitResponse(reset, remaining);
+  }
+
   try {
     const body = await request.json();
     const {

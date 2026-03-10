@@ -30,9 +30,8 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
 export async function POST(request: NextRequest) {
   try {
     const hostId = request.headers.get('x-host-id')
-    const hostEmail = request.headers.get('x-host-email')
 
-    if (!hostId || !hostEmail) {
+    if (!hostId) {
       return NextResponse.json(
         { error: 'Unauthorized - No host session found' },
         { status: 401 }
@@ -86,7 +85,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!passwordVerified) {
-      console.log(`[Banking] Re-auth failed for host ${hostId} (${hostEmail})`)
+      console.log(`[Banking] Re-auth failed for host ${hostId}`)
       return NextResponse.json(
         { error: 'Password verification failed. Please enter your current password.' },
         { status: 403 }

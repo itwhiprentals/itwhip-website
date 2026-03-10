@@ -234,8 +234,7 @@ export async function POST(
 
     // Verify admin authentication
     const adminId = request.headers.get('x-admin-id')
-    const adminEmail = request.headers.get('x-admin-email')
-    
+
     if (!adminId) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
@@ -288,7 +287,7 @@ export async function POST(
             actionLabel: actionLabel || null,
             metadata: {
               sentBy: adminId,
-              sentByEmail: adminEmail,
+              sentByEmail: 'admin@itwhip.com',
               sentAt: new Date().toISOString()
             } as any,
             updatedAt: new Date()

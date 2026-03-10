@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set('fleet_session', sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict',
       path: '/',
       maxAge: 60 * 60 * 24 // 24 hours
     })
@@ -125,7 +125,7 @@ export async function DELETE() {
     response.cookies.set('fleet_session', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict',
       path: '/',
       maxAge: 0 // Expire immediately
     })

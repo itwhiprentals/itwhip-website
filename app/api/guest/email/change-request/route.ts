@@ -9,8 +9,15 @@ async function getUserFromToken(req: NextRequest): Promise<{ userId: string; ema
   try {
     // Check for user ID in headers (set by middleware)
     const userId = req.headers.get('x-user-id')
-    const email = req.headers.get('x-user-email')
-    if (userId && email) return { userId, email }
+    if (userId) {
+      // Look up email from database instead of trusting header
+      const { prisma } = await import('@/app/lib/database/prisma')
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true }
+      })
+      if (user?.email) return { userId, email: user.email }
+    }
 
     // Fallback: decode JWT from cookie
     const token = req.cookies.get('accessToken')?.value

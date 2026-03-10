@@ -59,9 +59,8 @@ export async function POST(request: NextRequest) {
   try {
     // Get host info from middleware headers (set by JWT verification)
     const hostId = request.headers.get('x-host-id')
-    const hostEmail = request.headers.get('x-host-email')
-    
-    if (!hostId || !hostEmail) {
+
+    if (!hostId) {
       return NextResponse.json(
         { error: 'Unauthorized - No host session found' },
         { status: 401 }
@@ -280,9 +279,8 @@ export async function GET(request: NextRequest) {
   try {
     // Get host info from middleware headers (set by JWT verification)
     const hostId = request.headers.get('x-host-id')
-    const hostEmail = request.headers.get('x-host-email')
-    
-    if (!hostId || !hostEmail) {
+
+    if (!hostId) {
       return NextResponse.json(
         { error: 'Unauthorized - No host session found' },
         { status: 401 }
