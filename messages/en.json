@@ -3434,7 +3434,7 @@
     "depositWaived": "Deposit waived",
     "processing": "Processing...",
     "loadingInsurance": "Loading Insurance...",
-    "selectAtLeastDays": "Select at least {days} days",
+    "selectAtLeastDays": "Select at least {days} {days, plural, one {day} other {days}}",
     "insuranceRequired": "Insurance Required",
     "continueToCheckout": "Continue to Checkout",
     "freeCancellation": "Free cancellation",

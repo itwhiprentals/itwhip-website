@@ -3452,7 +3452,7 @@
     "depositWaived": "Dépôt dispensé",
     "processing": "Traitement...",
     "loadingInsurance": "Chargement de l'assurance...",
-    "selectAtLeastDays": "Sélectionnez au moins {days} jours",
+    "selectAtLeastDays": "Sélectionnez au moins {days} {days, plural, one {jour} other {jours}}",
     "insuranceRequired": "Assurance requise",
     "continueToCheckout": "Passer au paiement",
     "freeCancellation": "Annulation gratuite",

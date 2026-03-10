@@ -3452,7 +3452,7 @@
     "depositWaived": "Depósito exonerado",
     "processing": "Procesando...",
     "loadingInsurance": "Cargando Seguro...",
-    "selectAtLeastDays": "Selecciona al menos {days} días",
+    "selectAtLeastDays": "Selecciona al menos {days} {days, plural, one {día} other {días}}",
     "insuranceRequired": "Seguro Requerido",
     "continueToCheckout": "Continuar al Pago",
     "freeCancellation": "Cancelación gratuita",
