@@ -14,6 +14,7 @@ export async function generateMetadata({
   return {
     title: t('ridesLayoutTitle'),
     description: t('ridesLayoutDescription'),
+    robots: { index: false, follow: false },
   }
 }
 

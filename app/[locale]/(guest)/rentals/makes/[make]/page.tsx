@@ -367,7 +367,8 @@ export async function generateMetadata({
 
   const t = await getTranslations({ locale, namespace: 'RentalMake' })
   const description = t(`${tKey}Description`)
-  const title = t('metaTitle', { make: makeData.displayName })
+  const makeSpecificTitleKey = `${tKey}MetaTitle`
+  const title = t.has(makeSpecificTitleKey) ? t(makeSpecificTitleKey) : t('metaTitle', { make: makeData.displayName })
 
   return {
     title,

@@ -74,6 +74,21 @@ const nextConfig = {
       { source: '/rentals/cars/:id', destination: '/rentals/:id', permanent: true },
 
       // ============================================
+      // DEAD PAGES — Redirect to most relevant existing page
+      // ============================================
+      { source: '/host-agreement', destination: '/platform-agreement', permanent: true },
+      { source: '/day', destination: '/rentals/daily', permanent: true },
+      { source: '/week', destination: '/rentals/long-term', permanent: true },
+      { source: '/hosts/:id', destination: '/reviews/hosts', permanent: true },
+
+      // ============================================
+      // OLD AIRPORT URL PATTERNS — Redirect to current city pages
+      // ============================================
+      { source: '/rentals/airports/phoenix-sky-harbor-phx', destination: '/rentals/cities/sky-harbor-airport', permanent: true },
+      { source: '/rentals/airports/scottsdale-sdl', destination: '/rentals/cities/scottsdale-airport', permanent: true },
+      { source: '/rentals/airports', destination: '/rentals/airport-delivery', permanent: true },
+
+      // ============================================
       // LEGACY B2B PAGES - Redirect to P2P equivalents
       // ============================================
       { source: '/hotel-solutions', destination: '/rentals', permanent: true },

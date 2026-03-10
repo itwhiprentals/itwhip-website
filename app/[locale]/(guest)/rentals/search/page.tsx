@@ -27,6 +27,7 @@ export async function generateMetadata({ params: localeParams, searchParams }: {
   return {
     title: t('searchTitle', { city: cityName }),
     description: t('searchDescription', { city: cityName }),
+    robots: { index: false, follow: true },
     keywords: `${cityName} car rental, rent a car ${cityName}, peer to peer car rental, local car rental ${cityName}, cheap car rental Arizona, airport car rental ${cityName}`,
     openGraph: {
       title: t('searchOgTitle', { city: cityName }),

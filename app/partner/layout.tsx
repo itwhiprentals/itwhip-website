@@ -1,7 +1,12 @@
 // app/partner/layout.tsx
 // Partner portal layout — providers only (html/body in root layout)
 
+import { Metadata } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 import { cookies } from 'next/headers'
 import PartnerLayoutClient from './PartnerLayoutClient'
 import enMessages from '@/messages/en.json'

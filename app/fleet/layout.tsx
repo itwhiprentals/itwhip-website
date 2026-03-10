@@ -1,7 +1,12 @@
 // app/fleet/layout.tsx
 // Fleet portal layout — providers only (html/body in root layout)
 
+import { Metadata } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 import FleetLayoutClient from './FleetLayoutClient'
 import enMessages from '@/messages/en.json'
 

@@ -186,7 +186,8 @@ export async function generateMetadata({
   const displayName = t(`${tKey}DisplayName`)
   const description = t(`${tKey}Description`)
 
-  const title = t('metaTitle', { type: displayName })
+  const typeSpecificTitleKey = `${tKey}MetaTitle`
+  const title = t.has(typeSpecificTitleKey) ? t(typeSpecificTitleKey) : t('metaTitle', { type: displayName })
 
   const heroImage = TYPE_HERO_IMAGES[type.toLowerCase()]
     ? `https://itwhip.com${TYPE_HERO_IMAGES[type.toLowerCase()]}`

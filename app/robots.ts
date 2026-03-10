@@ -48,7 +48,6 @@ export default function robots(): MetadataRoute.Robots {
           // B2B hotel features (keep logic, hide from Google)
           '/hotel-portal/',
           '/hotels/',
-          '/corporate/',
         ],
       },
     ],

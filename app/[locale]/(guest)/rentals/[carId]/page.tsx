@@ -1,6 +1,6 @@
 // app/(guest)/rentals/[carId]/page.tsx
 import { Metadata, Viewport } from 'next'
-import { redirect, notFound } from 'next/navigation'
+import { redirect, permanentRedirect, notFound } from 'next/navigation'
 import Script from 'next/script'
 
 // Helper to detect Next.js redirect errors (works across Next.js versions)
@@ -145,8 +145,8 @@ export default async function CarDetailsPage({
           year: redirectCar.year,
           city: redirectCar.city
         })
-        // 308 permanent redirect to SEO-friendly URL
-        redirect(seoUrl)
+        // 301 permanent redirect to SEO-friendly URL
+        permanentRedirect(seoUrl)
       }
     } catch (error) {
       // Re-throw redirect errors - they're not real errors, just Next.js redirect mechanism

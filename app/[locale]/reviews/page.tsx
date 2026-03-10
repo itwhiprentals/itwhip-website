@@ -66,8 +66,10 @@ function RatingBreakdown({
 export const revalidate = 3600
 
 // Generate SEO metadata
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams: sp }: { params: Promise<{ locale: string }>; searchParams: Promise<{ page?: string; rating?: string; sort?: string }> }): Promise<Metadata> {
   const { locale } = await params
+  const searchParams = await sp
+  const hasParams = searchParams.page || searchParams.rating || searchParams.sort
   const t = await getTranslations('SeoMeta')
   const totalReviews = await prisma.rentalReview.count({
     where: { isVisible: true }
@@ -76,6 +78,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return {
     title: t('reviewsTitle', { count: totalReviews }),
     description: t('reviewsDescription', { count: totalReviews }),
+    robots: hasParams ? { index: false, follow: true } : { index: true, follow: true },
     openGraph: {
       title: t('reviewsOgTitle', { count: totalReviews }),
       description: t('reviewsOgDescription', { count: totalReviews }),

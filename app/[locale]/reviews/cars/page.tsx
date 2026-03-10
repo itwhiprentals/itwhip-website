@@ -105,8 +105,10 @@ function getTimeAgo(date: Date | string, t: (key: string, values?: Record<string
 
 export const revalidate = 3600
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams: sp }: { params: Promise<{ locale: string }>; searchParams: Promise<{ sort?: string; type?: string }> }): Promise<Metadata> {
   const { locale } = await params
+  const searchParams = await sp
+  const hasParams = searchParams.sort || searchParams.type
   const t = await getTranslations('SeoMeta')
   const carCount = await prisma.rentalCar.count({
     where: {
@@ -120,6 +122,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return {
     title: t('reviewsCarsTitle', { count: carCount }),
     description: t('reviewsCarsDescription'),
+    robots: hasParams ? { index: false, follow: true } : { index: true, follow: true },
     keywords: ['car rental reviews phoenix', 'best rental cars scottsdale', 'top rated cars turo', 'phoenix car reviews', 'rental vehicle ratings'],
     openGraph: {
       title: t('reviewsCarsOgTitle', { count: carCount }),

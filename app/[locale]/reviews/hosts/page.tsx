@@ -67,8 +67,10 @@ function RatingBreakdown({
 
 export const revalidate = 3600
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams: sp }: { params: Promise<{ locale: string }>; searchParams: Promise<{ sort?: string }> }): Promise<Metadata> {
   const { locale } = await params
+  const searchParams = await sp
+  const hasParams = searchParams.sort
   const t = await getTranslations('SeoMeta')
   const hostCount = await prisma.rentalHost.count({
     where: {
@@ -82,6 +84,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return {
     title: t('reviewsHostsTitle', { count: hostCount }),
     description: t('reviewsHostsDescription'),
+    robots: hasParams ? { index: false, follow: true } : { index: true, follow: true },
     keywords: ['car sharing hosts phoenix', 'verified car owners', 'top rated hosts', 'trusted car rental hosts', 'best turo hosts phoenix'],
     openGraph: {
       title: t('reviewsHostsOgTitle', { count: hostCount }),
