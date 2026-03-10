@@ -773,8 +773,28 @@ export default async function CarMakePage({
           </div>
         </section>
 
+        {/* Available In Cities */}
+        <section className="py-6 md:py-8 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">
+              {t('availableInTitle', { make: makeData.displayName })}
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {['phoenix', 'scottsdale', 'tempe', 'mesa', 'chandler', 'gilbert', 'glendale', 'peoria'].map(city => (
+                <Link
+                  key={city}
+                  href={`/rentals/cities/${city}`}
+                  className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 hover:underline"
+                >
+                  {city.charAt(0).toUpperCase() + city.slice(1)}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* Other Makes */}
-        <section className="py-8 md:py-12 bg-white dark:bg-gray-900">
+        <section className="py-8 md:py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               {t('browseOtherMakes')}

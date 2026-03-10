@@ -17,7 +17,9 @@ import {
   IoCarOutline,
   IoCarSportOutline,
   IoChevronForwardOutline,
-  IoHomeOutline
+  IoChevronDownOutline,
+  IoHomeOutline,
+  IoHelpCircleOutline
 } from 'react-icons/io5'
 
 // ISR - Revalidate every 60 seconds
@@ -461,6 +463,25 @@ export default async function CarTypePage({
     }))
   }
 
+  // Generate FAQ data from translations
+  const faqs = Array.from({ length: 4 }, (_, i) => ({
+    question: t(`${tKey}Faq${i}Q`),
+    answer: t(`${tKey}Faq${i}A`)
+  }))
+
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(faq => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer
+      }
+    }))
+  }
+
   // Get related types (exclude current)
   const relatedTypes = Object.entries(CAR_TYPE_DATA)
     .filter(([key]) => key !== type.toLowerCase())
@@ -479,6 +500,10 @@ export default async function CarTypePage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
@@ -634,6 +659,54 @@ export default async function CarTypePage({
                   <span className="text-gray-900 dark:text-white font-medium group-hover:text-purple-600">
                     {make}
                   </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section className="py-8 md:py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-2 mb-6">
+              <IoHelpCircleOutline className="w-6 h-6 text-purple-600" />
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {t('faqSectionTitle')}
+              </h2>
+            </div>
+            <div className="space-y-3">
+              {faqs.map((faq, i) => (
+                <details
+                  key={i}
+                  className="group bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
+                >
+                  <summary className="flex items-center justify-between cursor-pointer px-5 py-4 text-gray-900 dark:text-white font-medium hover:bg-gray-50 dark:hover:bg-gray-750 rounded-lg">
+                    {faq.question}
+                    <IoChevronDownOutline className="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180 flex-shrink-0 ml-2" />
+                  </summary>
+                  <p className="px-5 pb-4 text-gray-600 dark:text-gray-300 leading-relaxed">
+                    {faq.answer}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Available In Cities */}
+        <section className="py-6 md:py-8 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">
+              {t('availableInTitle', { type: displayName })}
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {['phoenix', 'scottsdale', 'tempe', 'mesa', 'chandler', 'gilbert', 'glendale', 'peoria'].map(city => (
+                <Link
+                  key={city}
+                  href={`/rentals/cities/${city}`}
+                  className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 hover:underline"
+                >
+                  {city.charAt(0).toUpperCase() + city.slice(1)}
                 </Link>
               ))}
             </div>

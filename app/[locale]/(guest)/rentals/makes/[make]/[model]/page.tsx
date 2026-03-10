@@ -447,7 +447,18 @@ export default async function CarModelPage({ params }: PageProps) {
           { '@type': 'ListItem', position: 3, name: t('schemaMakeRentals', { make: makeName }), item: `https://itwhip.com/rentals/makes/${make}` },
           { '@type': 'ListItem', position: 4, name: modelName, item: `https://itwhip.com/rentals/makes/${make}/${model}` }
         ]
-      }
+      },
+      ...(faqs && faqs.length > 0 ? [{
+        '@type': 'FAQPage',
+        mainEntity: faqs.map(faq => ({
+          '@type': 'Question',
+          name: faq.question,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: faq.answer
+          }
+        }))
+      }] : [])
     ]
   }
 

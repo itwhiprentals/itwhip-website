@@ -176,11 +176,24 @@ export default async function SupportPage() {
     }))
   }
 
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://itwhip.com' },
+      { '@type': 'ListItem', position: 2, name: t('heroTitle'), item: 'https://itwhip.com/support' }
+    ]
+  }
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

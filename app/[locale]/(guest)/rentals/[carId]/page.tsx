@@ -192,7 +192,7 @@ export default async function CarDetailsPage({
       // Build schema.org JSON-LD
       schemaData = {
         "@context": "https://schema.org",
-        "@type": "Product",
+        "@type": ["Product", "Car"],
         "name": `${car.year} ${car.make} ${car.model}`,
         "sku": carId,
         "image": car.photos?.length > 0

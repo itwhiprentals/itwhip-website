@@ -29,7 +29,8 @@ import {
   IoTimeOutline,
   IoCalendarOutline,
   IoWarningOutline,
-  IoLockClosedOutline
+  IoLockClosedOutline,
+  IoChevronForwardOutline
 } from 'react-icons/io5'
 import PhotoGallery from '../components/details/PhotoGallery'
 import BookingWidget from '../components/details/BookingWidget'
@@ -1254,6 +1255,44 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
             />
           </div>
         </div>
+
+        {/* Browse More — internal links to city/make/type pages */}
+        {car && (
+          <div className="mt-6 lg:mt-8 px-1">
+            <div className="flex flex-wrap gap-2">
+              {car.city && (
+                <Link
+                  href={`/rentals/cities/${car.city.toLowerCase().replace(/\s+/g, '-')}`}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-sm text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-600 hover:text-purple-700 dark:hover:text-purple-300 transition shadow-sm"
+                >
+                  <IoLocationOutline className="w-4 h-4" />
+                  {t('browseMoreInCity', { city: car.city })}
+                  <IoChevronForwardOutline className="w-3.5 h-3.5" />
+                </Link>
+              )}
+              {car.make && (
+                <Link
+                  href={`/rentals/makes/${car.make.toLowerCase().replace(/\s+/g, '-')}`}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-sm text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-600 hover:text-purple-700 dark:hover:text-purple-300 transition shadow-sm"
+                >
+                  <IoCarSportOutline className="w-4 h-4" />
+                  {t('browseMoreMake', { make: car.make })}
+                  <IoChevronForwardOutline className="w-3.5 h-3.5" />
+                </Link>
+              )}
+              {car.carType && (
+                <Link
+                  href={`/rentals/types/${car.carType.toLowerCase()}`}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-sm text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-600 hover:text-purple-700 dark:hover:text-purple-300 transition shadow-sm"
+                >
+                  <IoCarOutline className="w-4 h-4" />
+                  {t('browseMoreType', { type: tCarType(car.carType) })}
+                  <IoChevronForwardOutline className="w-3.5 h-3.5" />
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Similar Cars Section - with SSR initial data for SEO */}
         <div className="mt-4 lg:mt-10">
