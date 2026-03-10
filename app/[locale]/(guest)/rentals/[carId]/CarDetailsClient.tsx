@@ -920,7 +920,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                 </div>
               </div>
               <p className="text-base sm:text-lg text-gray-700 dark:text-gray-300 pb-3 border-b border-gray-200 dark:border-gray-700">
-                {normalizeModelName(car.model, car.make)}{car.trim ? ` ${car.trim}` : ''}
+                {normalizeModelName(car.model, car.make)}{car.trim ? ` ${car.trim.startsWith(car.model) ? car.trim.slice(car.model.length).trim() : car.trim}` : ''}
               </p>
 
               {/* Key Specs Bar */}
