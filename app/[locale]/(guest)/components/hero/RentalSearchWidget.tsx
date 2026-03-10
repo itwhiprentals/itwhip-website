@@ -49,6 +49,7 @@ export default function RentalSearchCard({
   
   const pickupTimeButtonRef = useRef<HTMLButtonElement>(null)
   const returnTimeButtonRef = useRef<HTMLButtonElement>(null)
+  const returnTimeManuallySet = useRef(false)
   
   // Calculate default dates - only on client to avoid hydration mismatch
   const getDefaultDates = () => {
@@ -153,13 +154,13 @@ export default function RentalSearchCard({
     setSearchParams(prev => ({ ...prev, location: location.name }))
   }
 
-  // Get next available time slot (rounds up to next 30-min slot + 1 hour buffer)
+  // Get next available time slot (rounds up to next 30-min slot + 2 hour buffer)
   const getNextAvailableTime = (): string => {
     const now = new Date()
     const arizonaTime = now.toLocaleString('en-US', { timeZone: 'America/Phoenix', hour: 'numeric', minute: 'numeric', hour12: false })
     const [h, m] = arizonaTime.split(':').map(Number)
-    // Add 1 hour buffer, round up to next 30-min slot
-    let totalMinutes = (h * 60 + m) + 60
+    // Add 2 hour buffer, round up to next 30-min slot
+    let totalMinutes = (h * 60 + m) + 120
     totalMinutes = Math.ceil(totalMinutes / 30) * 30
     if (totalMinutes >= 24 * 60) return '23:30'
     const newH = Math.floor(totalMinutes / 60)
@@ -170,28 +171,46 @@ export default function RentalSearchCard({
   // Handle date selection
   const handleDateSelect = (date: string) => {
     if (calendarType === 'pickup') {
-      // Check if selected date is today — auto-bump time if it's in the past
+      // Check if selected date is today — auto-bump time with 2hr buffer
       const now = new Date()
       const arizonaToday = now.toLocaleDateString('en-CA', { timeZone: 'America/Phoenix' })
       const isToday = date === arizonaToday
 
       setSearchParams(prev => {
         let pickupTime = prev.pickupTime
+        let pickupDate = date
+        let returnTime = prev.returnTime
         if (isToday) {
           const arizonaTime = now.toLocaleString('en-US', { timeZone: 'America/Phoenix', hour: 'numeric', minute: 'numeric', hour12: false })
           const [h, m] = arizonaTime.split(':').map(Number)
           const nowMinutes = h * 60 + m
-          const [pH, pM] = pickupTime.split(':').map(Number)
-          const selectedMinutes = pH * 60 + pM
-          if (selectedMinutes <= nowMinutes) {
-            pickupTime = getNextAvailableTime()
+          const earliestMinutes = Math.ceil((nowMinutes + 120) / 30) * 30
+
+          if (earliestMinutes >= 20 * 60) {
+            // Past 8pm cutoff — bump to tomorrow
+            const tomorrow = new Date()
+            tomorrow.setDate(tomorrow.getDate() + 1)
+            const y = tomorrow.getFullYear()
+            const mo = (tomorrow.getMonth() + 1).toString().padStart(2, '0')
+            const d = tomorrow.getDate().toString().padStart(2, '0')
+            pickupDate = `${y}-${mo}-${d}`
+            pickupTime = '10:00'
+            if (!returnTimeManuallySet.current) returnTime = '10:00'
+          } else {
+            const [pH, pM] = pickupTime.split(':').map(Number)
+            const selectedMinutes = pH * 60 + pM
+            if (selectedMinutes < earliestMinutes) {
+              pickupTime = getNextAvailableTime()
+              if (!returnTimeManuallySet.current) returnTime = pickupTime
+            }
           }
         }
         return {
           ...prev,
-          pickupDate: date,
+          pickupDate,
           pickupTime,
-          returnDate: date > prev.returnDate ? date : prev.returnDate
+          returnDate: pickupDate > prev.returnDate ? pickupDate : prev.returnDate,
+          ...(returnTimeManuallySet.current ? {} : { returnTime })
         }
       })
     } else {
@@ -200,15 +219,20 @@ export default function RentalSearchCard({
     setShowCalendar(false)
   }
 
-  // Handle time selection
+  // Handle time selection — sync return time unless manually set
   const handlePickupTimeSelect = (time: string) => {
-    setSearchParams(prev => ({ ...prev, pickupTime: time }))
+    setSearchParams(prev => ({
+      ...prev,
+      pickupTime: time,
+      ...(returnTimeManuallySet.current ? {} : { returnTime: time })
+    }))
     setTimeout(() => {
       setShowTimeDropdown(null)
     }, 50)
   }
 
   const handleReturnTimeSelect = (time: string) => {
+    returnTimeManuallySet.current = true
     setSearchParams(prev => ({ ...prev, returnTime: time }))
     setTimeout(() => {
       setShowTimeDropdown(null)

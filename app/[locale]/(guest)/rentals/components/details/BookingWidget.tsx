@@ -169,7 +169,20 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
     setDateError(null)
   }, [startDate, endDate, minDays, blockedDates, validateDateRange])
   const [startTime, setStartTime] = useState(pickupTimeFromUrl || '10:00')
-  const [endTime, setEndTime] = useState(returnTimeFromUrl || '10:00')
+  const [endTime, setEndTime] = useState(returnTimeFromUrl || pickupTimeFromUrl || '10:00')
+  const returnTimeManuallySet = useRef(false)
+
+  // Handlers that sync return time with pickup time
+  const handleStartTimeChange = (time: string) => {
+    setStartTime(time)
+    if (!returnTimeManuallySet.current) {
+      setEndTime(time)
+    }
+  }
+  const handleEndTimeChange = (time: string) => {
+    setEndTime(time)
+    returnTimeManuallySet.current = true
+  }
 
   // Same-day guard: auto-bump pickup time to now + 2 hours when date is today
   useEffect(() => {
@@ -186,14 +199,17 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
     const selectedMinutes = sH * 60 + sM
 
     if (selectedMinutes < earliestMinutes) {
-      if (earliestMinutes >= 24 * 60) {
-        // Too late today — bump to tomorrow
+      if (earliestMinutes >= 20 * 60) {
+        // Past 8pm cutoff — bump to tomorrow
         setStartDate(getArizonaDateString(1))
         setStartTime('10:00')
+        if (!returnTimeManuallySet.current) setEndTime('10:00')
       } else {
         const newH = Math.floor(earliestMinutes / 60)
         const newM = earliestMinutes % 60
-        setStartTime(`${newH.toString().padStart(2, '0')}:${newM.toString().padStart(2, '0')}`)
+        const newTime = `${newH.toString().padStart(2, '0')}:${newM.toString().padStart(2, '0')}`
+        setStartTime(newTime)
+        if (!returnTimeManuallySet.current) setEndTime(newTime)
       }
     }
   }, [startDate])
@@ -503,8 +519,8 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
             blockedDates={blockedDates}
             onStartDateChange={setStartDate}
             onEndDateChange={setEndDate}
-            onStartTimeChange={setStartTime}
-            onEndTimeChange={setEndTime}
+            onStartTimeChange={handleStartTimeChange}
+            onEndTimeChange={handleEndTimeChange}
           />
 
           {/* Trip Summary */}

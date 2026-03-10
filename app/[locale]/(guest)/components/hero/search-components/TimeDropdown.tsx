@@ -100,7 +100,7 @@ export default function TimeDropdown({
     const period = hour < 12 ? 'AM' : 'PM'
     const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour
     const slotMinutes = hour * 60 + parseInt(minute)
-    const isPast = isDateToday && slotMinutes <= arizonaNowMinutes
+    const isPast = isDateToday && slotMinutes < arizonaNowMinutes + 120 // 2-hour buffer
     timeOptions.push({
       value: time,
       label: `${displayHour}:${minute} ${period}`,
