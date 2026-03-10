@@ -151,6 +151,7 @@ export default async function ExoticNearMePage() {
             url: `https://itwhip.com/rentals/${car.id}`,
             description: `Exotic ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} supercar rental in ${car.city}`,
             image: car.photos?.[0]?.url || 'https://itwhip.com/Luxury-car.png',
+            brand: { '@type': 'Brand', name: capitalizeCarMake(car.make) },
             ...(car.rating && car.totalTrips > 0 ? {
               aggregateRating: {
                 '@type': 'AggregateRating',

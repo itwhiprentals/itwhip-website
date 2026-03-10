@@ -724,6 +724,7 @@ export default async function CityPage({
             url: `https://itwhip.com/rentals/${car.id}`,
             description: t('schemaCarDescription', { year: car.year, make: capitalizeCarMake(car.make), model: normalizeModelName(car.model, car.make), city: cityName }),
             image: car.photos?.[0]?.url,
+            brand: { '@type': 'Brand', name: capitalizeCarMake(car.make) },
             offers: {
               '@type': 'Offer',
               price: car.dailyRate,

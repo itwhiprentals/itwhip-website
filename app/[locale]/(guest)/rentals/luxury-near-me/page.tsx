@@ -151,6 +151,7 @@ export default async function LuxuryNearMePage() {
             url: `https://itwhip.com/rentals/${car.id}`,
             description: `Luxury ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} rental in ${car.city}`,
             image: car.photos?.[0]?.url || 'https://itwhip.com/Luxury-car.png',
+            brand: { '@type': 'Brand', name: capitalizeCarMake(car.make) },
             ...(car.rating && car.totalTrips > 0 ? {
               aggregateRating: {
                 '@type': 'AggregateRating',

@@ -575,6 +575,7 @@ export default async function AirportPage({
             url: `https://itwhip.com/rentals/${car.id}`,
             description: `Rent this ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} at ${airportData.code}`,
             image: car.photos?.[0]?.url,
+            brand: { '@type': 'Brand', name: capitalizeCarMake(car.make) },
             offers: {
               '@type': 'Offer',
               price: car.dailyRate,

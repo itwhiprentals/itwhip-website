@@ -286,6 +286,10 @@ export default async function RentalsPage({
         url: `https://itwhip.com/rentals/${car.id}`,
         image: car.photos[0]?.url || 'https://itwhip.com/images/placeholder-car.jpg',
         description: t('schemaCarDescription', { year: car.year, make: capitalizeCarMake(car.make), model: normalizeModelName(car.model, car.make), city: car.city || 'Phoenix' }),
+        brand: {
+          '@type': 'Brand',
+          name: capitalizeCarMake(car.make)
+        },
         offers: {
           '@type': 'Offer',
           priceCurrency: 'USD',

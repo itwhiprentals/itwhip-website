@@ -138,6 +138,7 @@ export default async function AirportNearMePage() {
             url: `https://itwhip.com/rentals/${car.id}`,
             description: `Airport pickup available - ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} in ${car.city}`,
             image: car.photos?.[0]?.url || 'https://itwhip.com/images/placeholder-car.jpg',
+            brand: { '@type': 'Brand', name: capitalizeCarMake(car.make) },
             ...(car.rating && car.totalTrips > 0 ? {
               aggregateRating: {
                 '@type': 'AggregateRating',

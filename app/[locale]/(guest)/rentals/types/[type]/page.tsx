@@ -403,6 +403,7 @@ export default async function CarTypePage({
         name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
         description: t('schemaRentDescription', { year: car.year, make: capitalizeCarMake(car.make), model: normalizeModelName(car.model, car.make), city: car.city }),
         image: car.photos?.[0]?.url || '',
+        brand: { '@type': 'Brand', name: capitalizeCarMake(car.make) },
         url: `https://itwhip.com${generateCarUrl({ id: car.id, make: car.make, model: car.model, year: car.year, city: car.city })}`,
         offers: {
           '@type': 'Offer',
