@@ -47,14 +47,7 @@ export async function generateMetadata({
     // Get the hero image
     const imageUrl = car.photos?.[0]?.url || 'https://itwhip.com/og-image.jpg'
 
-    // Build rating/trips info for title
-    const ratingText = car.rating ? `★${car.rating.toFixed(1)}` : ''
-    const tripsText = car.totalTrips ? `${car.totalTrips} trips` : ''
-    const statsText = [ratingText, tripsText].filter(Boolean).join(' · ')
-
-    const title = statsText
-      ? `Rent ${car.year} ${car.make} ${car.model} · ${statsText} · $${car.dailyRate}/day | ItWhip`
-      : `Rent ${car.year} ${car.make} ${car.model} - $${car.dailyRate}/day | ItWhip`
+    const title = `Rent ${car.year} ${car.make} ${car.model} in ${car.city} | From $${car.dailyRate}/day | ItWhip`
     const description = `Rent this ${car.year} ${car.make} ${car.model} in ${car.city}, ${car.state}. ${car.seats} seats, ${car.transmission || 'automatic'} transmission. ${car.instantBook ? 'Book instantly!' : 'Contact host to book.'}`
     
     // Generate the SEO-friendly URL for OpenGraph
@@ -167,6 +160,7 @@ export default async function CarDetailsPage({
 
   // Fetch car data for schema markup and 404 check
   let schemaData = null
+  let breadcrumbData = null
   let car = null
   let relatedCars: { similarCars: any[]; hostCars: any[] } = { similarCars: [], hostCars: [] }
 
@@ -201,6 +195,7 @@ export default async function CarDetailsPage({
         "@context": "https://schema.org",
         "@type": "Product",
         "name": `${car.year} ${car.make} ${car.model}`,
+        "sku": carId,
         "image": car.photos?.length > 0
           ? car.photos.map((photo: any) => photo.url || photo)
           : ["https://itwhip.com/placeholder-car.jpg"],
@@ -216,12 +211,18 @@ export default async function CarDetailsPage({
         "vehicleSeatingCapacity": car.seats || 5,
         "fuelType": car.fuelType || "gasoline",
         "offers": {
-          "@type": "Offer",
+          "@type": "AggregateOffer",
+          "offerCount": 1,
           "url": `https://itwhip.com${seoUrl}`,
           "priceCurrency": "USD",
-          "price": car.dailyRate,
+          "lowPrice": car.dailyRate,
+          "highPrice": car.dailyRate,
           "priceValidUntil": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
-          "availability": "https://schema.org/InStock",
+          "availability": car.isActive === false
+            ? "https://schema.org/Discontinued"
+            : car.isBookable
+              ? "https://schema.org/InStock"
+              : "https://schema.org/LimitedAvailability",
           "validFrom": new Date().toISOString(),
           "seller": {
             "@type": "Organization",
@@ -270,11 +271,11 @@ export default async function CarDetailsPage({
           }
         },
         // Add aggregate rating only if car has real trips (avoids 5.0 default)
-        ...(car.rating > 0 && car.totalTrips > 0 ? {
+        ...(car.rating > 0 && car.reviewCount > 0 ? {
           "aggregateRating": {
             "@type": "AggregateRating",
             "ratingValue": car.rating,
-            "reviewCount": car.totalTrips,
+            "reviewCount": car.reviewCount,
             "bestRating": "5",
             "worstRating": "1"
           }
@@ -317,6 +318,18 @@ export default async function CarDetailsPage({
           } : {})
         }
       }
+
+      // BreadcrumbList schema: Home > Rentals > {City} Rentals > {Year} {Make} {Model}
+      breadcrumbData = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://itwhip.com" },
+          { "@type": "ListItem", "position": 2, "name": "Rentals", "item": "https://itwhip.com/rentals" },
+          { "@type": "ListItem", "position": 3, "name": `${car.city} Rentals`, "item": `https://itwhip.com/rentals/cities/${car.city.toLowerCase().replace(/\s+/g, '-')}` },
+          { "@type": "ListItem", "position": 4, "name": `${car.year} ${car.make} ${car.model}` }
+        ]
+      }
     }
   } catch (error: any) {
     // Re-throw Next.js notFound() errors (they use throw internally)
@@ -337,7 +350,16 @@ export default async function CarDetailsPage({
           }}
         />
       )}
-      
+      {breadcrumbData && (
+        <Script
+          id="breadcrumb-schema"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(breadcrumbData)
+          }}
+        />
+      )}
+
       {/* CarDetailsClient expects params as a prop and will fetch its own data */}
       {/* Pass SSR-fetched related cars for SEO (Google can see these links) */}
       <CarDetailsClient

@@ -35,7 +35,9 @@ export async function getCarForSSR(carId: string) {
       reviews: [],
       location: null,
       hostId: '',
+      isActive: true,
       isBookable: true,
+      reviewCount: 0,
     }
   }
 
@@ -91,6 +93,9 @@ export async function getCarForSSR(carId: string) {
         orderBy: { createdAt: 'desc' as const },
         take: 5,
       },
+      _count: {
+        select: { reviews: { where: { isVisible: true } } }
+      },
     }
   })
 
@@ -141,6 +146,8 @@ export async function getCarForSSR(carId: string) {
     hostId: car.hostId,
     reviews: car.reviews,
     location: car.latitude && car.longitude ? { lat: car.latitude, lng: car.longitude } : null,
+    isActive: car.isActive ?? true,
     isBookable,
+    reviewCount: car._count.reviews,
   }
 }

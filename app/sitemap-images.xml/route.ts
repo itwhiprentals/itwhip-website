@@ -178,7 +178,7 @@ export async function GET() {
   // FETCH DYNAMIC CAR LISTINGS
   // ============================================
   try {
-    const response = await fetch(`${baseUrl}/api/rentals/search?limit=500`, {
+    const response = await fetch(`${baseUrl}/api/rentals/search?limit=2000`, {
       next: { revalidate: 3600 }
     })
 

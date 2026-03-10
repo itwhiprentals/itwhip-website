@@ -143,7 +143,7 @@ export async function generateMetadata({
 // Schema definitions
 const organizationSchema = {
   '@context': 'https://schema.org',
-  '@type': 'Organization',
+  '@type': ['Organization', 'LocalBusiness'],
   name: 'ItWhip',
   alternateName: 'ItWhip Peer-to-Peer Car Rental Arizona',
   url: 'https://itwhip.com',
@@ -156,6 +156,18 @@ const organizationSchema = {
   },
   description: 'Arizona\'s #1 peer-to-peer car rental platform. Rent unique vehicles directly from local owners or list your car and earn up to 90%.',
   foundingDate: '2024',
+  priceRange: '$$',
+  geo: {
+    '@type': 'GeoCoordinates',
+    latitude: 33.4484,
+    longitude: -112.0740
+  },
+  openingHoursSpecification: {
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    opens: '00:00',
+    closes: '23:59'
+  },
   address: {
     '@type': 'PostalAddress',
     streetAddress: '1 N 1st St',

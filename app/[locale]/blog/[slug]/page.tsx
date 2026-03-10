@@ -132,11 +132,25 @@ export default async function BlogPostPage({ params }: { params: Promise<{ local
     inLanguage: getInLanguage(locale)
   }
 
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': 'https://itwhip.com' },
+      { '@type': 'ListItem', 'position': 2, 'name': 'Blog', 'item': 'https://itwhip.com/blog' },
+      { '@type': 'ListItem', 'position': 3, 'name': post.title }
+    ]
+  }
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       <BlogPostClient post={post} prevPost={prev} nextPost={next} />
     </>
