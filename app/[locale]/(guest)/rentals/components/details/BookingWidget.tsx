@@ -204,7 +204,8 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
     returnTimeManuallySet.current = true
   }
 
-  // Same-day guard: auto-bump pickup time to now + 2 hours when date is today
+  // Same-day guard: always set pickup time to now + 2 hours when date is today
+  // Matches search widget behavior: same-day default = now+2hrs, not a stale session/URL time
   useEffect(() => {
     const now = new Date()
     const arizonaToday = now.toLocaleDateString('en-CA', { timeZone: 'America/Phoenix' })
@@ -215,22 +216,17 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
     const nowMinutes = h * 60 + m
     const earliestMinutes = Math.ceil((nowMinutes + 120) / 30) * 30 // +2hrs, round up to next 30-min
 
-    const [sH, sM] = startTime.split(':').map(Number)
-    const selectedMinutes = sH * 60 + sM
-
-    if (selectedMinutes < earliestMinutes) {
-      if (earliestMinutes >= 20 * 60) {
-        // Past 8pm cutoff — bump to tomorrow
-        setStartDate(getArizonaDateString(1))
-        setStartTime('10:00')
-        if (!returnTimeManuallySet.current) setEndTime('10:00')
-      } else {
-        const newH = Math.floor(earliestMinutes / 60)
-        const newM = earliestMinutes % 60
-        const newTime = `${newH.toString().padStart(2, '0')}:${newM.toString().padStart(2, '0')}`
-        setStartTime(newTime)
-        if (!returnTimeManuallySet.current) setEndTime(newTime)
-      }
+    if (earliestMinutes >= 20 * 60) {
+      // Past 8pm cutoff — bump to tomorrow
+      setStartDate(getArizonaDateString(1))
+      setStartTime('10:00')
+      if (!returnTimeManuallySet.current) setEndTime('10:00')
+    } else {
+      const newH = Math.floor(earliestMinutes / 60)
+      const newM = earliestMinutes % 60
+      const newTime = `${newH.toString().padStart(2, '0')}:${newM.toString().padStart(2, '0')}`
+      setStartTime(newTime)
+      if (!returnTimeManuallySet.current) setEndTime(newTime)
     }
   }, [startDate])
 
