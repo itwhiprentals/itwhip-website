@@ -9,6 +9,7 @@ import { extractCarId } from '@/app/lib/utils/urls'
 import { 
   IoArrowBackOutline,
   IoLocationOutline,
+  IoLocation,
   IoStarOutline,
   IoStar,
   IoShieldCheckmarkOutline,
@@ -344,6 +345,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
       'dash cam recording for safety': t('ruleDashCam'),
       'return with same fuel level': t('defaultRule3'),
       "valid driver's license and insurance required": t('defaultRule4'),
+      'unlimited mileage': t('unlimitedMileage'),
     }
     if (exact[lower]) return exact[lower]
 
@@ -641,7 +643,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
 
   // Parse rules
   let rules: string[] = []
-  let milesPerDay = car.mileageDaily || 200
+  let milesPerDay: number | null = (car as any).mileageDaily || 200
 
   try {
     if (car.rules) {
@@ -732,10 +734,16 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
     // Remove any mileage rules from the list — we'll prepend one canonical version
     rules = rules.filter(rule => !rule.match(/\d+\s*miles?\/day\s*included/i))
 
-    // Use parsed values > DB fields > defaults
-    milesPerDay = parsedMiles || car.mileageDaily || 200
-    const overageRate = parsedRate ?? car.mileageOverageFee ?? 3
-    rules.unshift(t('ruleMilesIncluded', { miles: milesPerDay, rate: overageRate }))
+    // If host set unlimited mileage, keep it and skip per-day mileage rule
+    const hasUnlimited = rules.some(rule => /unlimited mileage/i.test(rule))
+    if (hasUnlimited) {
+      milesPerDay = null
+    } else {
+      // Use parsed values > DB fields > defaults
+      milesPerDay = parsedMiles || (car as any).mileageDaily || 200
+      const overageRate = parsedRate ?? (car as any).mileageOverageFee ?? 3
+      rules.unshift(t('ruleMilesIncluded', { miles: milesPerDay, rate: overageRate }))
+    }
   } catch (error) {
     console.error('Error parsing rules:', error)
     const milesPerDay = car.mileageDaily || 200
@@ -1083,11 +1091,11 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                           </div>
                         ) : null}
                         {car.currentMileage ? (
-                          <div className="flex items-center gap-2 text-sm">
+                          <div className="col-span-2 flex items-center gap-2 text-sm">
+                            <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                             <span className="text-gray-600 dark:text-gray-400">{t('mileage')}</span>
-                            <span className="text-gray-900 dark:text-white">
-                              {car.currentMileage.toLocaleString()} {t('milesUnit')}
-                            </span>
+                            <span className="text-gray-900 dark:text-white">{car.currentMileage.toLocaleString()} {t('milesUnit')}</span>
+                            <span className="text-[10px] leading-none translate-y-px text-gray-400 dark:text-gray-500">{t('currentOdometerReading')}</span>
                           </div>
                         ) : null}
                       </div>
@@ -1177,9 +1185,12 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                     </h3>
                     <div className="space-y-2">
                       {rules.map((rule: string, index: number) => (
-                        <div key={index} className="flex items-start gap-2">
-                          <IoCheckmarkCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <div key={index} className="flex items-center gap-2">
+                          <IoCheckmarkCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                           <span className="text-sm text-gray-600 dark:text-gray-400">{tRule(rule)}</span>
+                          {index === 0 && (
+                            <span className="text-[10px] leading-none translate-y-px text-gray-400 dark:text-gray-500">{t('mileageAllowedPerTrip')}</span>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -1192,7 +1203,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                     </h3>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <IoLocationOutline className="w-4 h-4 text-gray-400" />
+                        <IoLocation className="w-4 h-4 text-red-500" />
                         <span className="text-sm text-gray-600 dark:text-gray-400">
                           {car.city}, {car.state} {car.zipCode ? `(${car.zipCode.substring(0,3)}xx)` : ''}
                         </span>
@@ -1258,36 +1269,33 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
 
         {/* Browse More — internal links to city/make/type pages */}
         {car && (
-          <div className="mt-6 lg:mt-8 px-1">
-            <div className="flex flex-wrap gap-2">
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 px-1">
+            <div className="flex flex-row gap-1.5 overflow-x-auto scrollbar-hide">
               {car.city && (
                 <Link
                   href={`/rentals/cities/${car.city.toLowerCase().replace(/\s+/g, '-')}`}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-sm text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-600 hover:text-purple-700 dark:hover:text-purple-300 transition shadow-sm"
+                  className="inline-flex shrink-0 items-center gap-1 px-2.5 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full text-xs text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-400 dark:hover:border-purple-500 hover:text-purple-700 dark:hover:text-purple-300 transition"
                 >
-                  <IoLocationOutline className="w-4 h-4" />
+                  <IoLocationOutline className="w-3 h-3" />
                   {t('browseMoreInCity', { city: car.city })}
-                  <IoChevronForwardOutline className="w-3.5 h-3.5" />
                 </Link>
               )}
               {car.make && (
                 <Link
                   href={`/rentals/makes/${car.make.toLowerCase().replace(/\s+/g, '-')}`}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-sm text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-600 hover:text-purple-700 dark:hover:text-purple-300 transition shadow-sm"
+                  className="inline-flex shrink-0 items-center gap-1 px-2.5 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full text-xs text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-400 dark:hover:border-purple-500 hover:text-purple-700 dark:hover:text-purple-300 transition"
                 >
-                  <IoCarSportOutline className="w-4 h-4" />
+                  <IoCarSportOutline className="w-3 h-3" />
                   {t('browseMoreMake', { make: car.make })}
-                  <IoChevronForwardOutline className="w-3.5 h-3.5" />
                 </Link>
               )}
               {car.carType && (
                 <Link
                   href={`/rentals/types/${car.carType.toLowerCase()}`}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-sm text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-600 hover:text-purple-700 dark:hover:text-purple-300 transition shadow-sm"
+                  className="inline-flex shrink-0 items-center gap-1 px-2.5 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full text-xs text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-400 dark:hover:border-purple-500 hover:text-purple-700 dark:hover:text-purple-300 transition"
                 >
-                  <IoCarOutline className="w-4 h-4" />
+                  <IoCarOutline className="w-3 h-3" />
                   {t('browseMoreType', { type: tCarType(car.carType) })}
-                  <IoChevronForwardOutline className="w-3.5 h-3.5" />
                 </Link>
               )}
             </div>

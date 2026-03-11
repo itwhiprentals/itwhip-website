@@ -37,7 +37,7 @@ interface BookingWidgetProps {
   car: any
   isBookable?: boolean
   suspensionMessage?: string | null
-  milesPerDay?: number
+  milesPerDay?: number | null
 }
 
 interface InsuranceQuote {
@@ -88,7 +88,7 @@ function extractDateAndTime(isoString: string): { date: string; time: string } {
   return { date, time }
 }
 
-export default function BookingWidget({ car, isBookable = true, suspensionMessage, milesPerDay = 200 }: BookingWidgetProps) {
+export default function BookingWidget({ car, isBookable = true, suspensionMessage, milesPerDay }: BookingWidgetProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const t = useTranslations('BookingWidget')
@@ -481,7 +481,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
             </div>
             <div className="text-right">
               <p className="text-xs text-gray-500 dark:text-gray-300">{minDays > 1 ? t('minDaysPlural', { days: minDays }) : t('minDays', { days: minDays })}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-300">{t('milesPerDayIncluded', { miles: milesPerDay })}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-300">{milesPerDay == null ? t('unlimitedMileage') : t('milesPerDayIncluded', { miles: milesPerDay })}</p>
             </div>
           </div>
           {(carClass === 'exotic' || carClass === 'luxury') && (
@@ -902,43 +902,30 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         </div>
         
         {/* Price Breakdown - Using shared pricing for consistency */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-2 space-y-3">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-300">
-              ${formatPrice(dailyRate)} × {days > 1 ? t('daysSummaryPlural', { days }) : t('daysSummary', { days })}
-            </span>
-            <span className="text-gray-900 dark:text-white">${formatPrice(pricing.basePrice)}</span>
-          </div>
-
-          {pricing.insurancePrice > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-300">{t('insurance')} ({getInsuranceTierName(insuranceTier)})</span>
-              <span className="text-gray-900 dark:text-white">${formatPrice(pricing.insurancePrice)}</span>
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
+          <div className="grid text-sm" style={{ gridTemplateColumns: '1fr 2rem 1fr' }}>
+            {/* Labels column */}
+            <div className="flex flex-col gap-3 text-gray-600 dark:text-gray-300">
+              <span>${formatPrice(dailyRate)} × {days > 1 ? t('daysSummaryPlural', { days }) : t('daysSummary', { days })}</span>
+              {pricing.insurancePrice > 0 && <span>{t('insurance')} ({getInsuranceTierName(insuranceTier)})</span>}
+              {pricing.enhancementsTotal > 0 && <span>{t('enhancements')}</span>}
+              {pricing.deliveryFee > 0 && <span>{t('delivery')}</span>}
+              <span>{t('serviceFee')}</span>
+              <span>{t('taxes', { rate: pricing.taxRateDisplay })}</span>
             </div>
-          )}
 
-          {pricing.enhancementsTotal > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-300">{t('enhancements')}</span>
-              <span className="text-gray-900 dark:text-white">${formatPrice(pricing.enhancementsTotal)}</span>
+            {/* Single centered arrow */}
+            <div className="flex items-center justify-center text-gray-900 dark:text-white select-none">→</div>
+
+            {/* Prices column */}
+            <div className="flex flex-col gap-3 text-right text-gray-900 dark:text-white">
+              <span>${formatPrice(pricing.basePrice)}</span>
+              {pricing.insurancePrice > 0 && <span>${formatPrice(pricing.insurancePrice)}</span>}
+              {pricing.enhancementsTotal > 0 && <span>${formatPrice(pricing.enhancementsTotal)}</span>}
+              {pricing.deliveryFee > 0 && <span>${formatPrice(pricing.deliveryFee)}</span>}
+              <span>${formatPrice(pricing.serviceFee)}</span>
+              <span>${formatPrice(pricing.taxes)}</span>
             </div>
-          )}
-
-          {pricing.deliveryFee > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-300">{t('delivery')}</span>
-              <span className="text-gray-900 dark:text-white">${formatPrice(pricing.deliveryFee)}</span>
-            </div>
-          )}
-
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-300">{t('serviceFee')}</span>
-            <span className="text-gray-900 dark:text-white">${formatPrice(pricing.serviceFee)}</span>
-          </div>
-
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-300">{t('taxes', { rate: pricing.taxRateDisplay })}</span>
-            <span className="text-gray-900 dark:text-white">${formatPrice(pricing.taxes)}</span>
           </div>
 
           <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-1">
