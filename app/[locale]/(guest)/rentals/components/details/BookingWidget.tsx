@@ -112,7 +112,6 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   // Use defaults if no URL params (respect minimum trip duration)
   const today = getArizonaTodayString()
   const tomorrow = addDays(today, 1)
-  const defaultEndDate = addDays(today, minDays + 1) // +1 because start is tomorrow
 
   // Read last search dates from sessionStorage — saved by RentalSearchWidget on search
   let sessionPickupDate = '', sessionReturnDate = '', sessionPickupTime = '10:00', sessionReturnTime = '10:00'
@@ -138,7 +137,8 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   // These functions only use Date — no window/browser APIs — so they work on SSR too.
   // RULE: Never display a past time. If today + past time, default to tomorrow at 10:00.
   const _initDate = pickupDateFromUrl || sessionPickupDate || tomorrow
-  const _initTime = pickupTimeFromUrl || sessionPickupTime || '10:00'
+  // Session time is only valid for same-day bookings (buffer-aware). Future dates always default to 10:00.
+  const _initTime = pickupTimeFromUrl || (isArizonaToday(_initDate) ? sessionPickupTime : null) || '10:00'
   let _startDate = _initDate
   let _startTime = _initTime
 
@@ -160,8 +160,11 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
     }
   }
 
+  // Return date: URL param → session return date → startDate + minDays (24hrs for default 1-day rental)
+  const _defaultReturnDate = returnDateFromUrl || sessionReturnDate || addDays(_startDate, minDays)
+
   const [startDate, setStartDate] = useState(_startDate)
-  const [endDate, setEndDate] = useState(returnDateFromUrl || sessionReturnDate || defaultEndDate)
+  const [endDate, setEndDate] = useState(_defaultReturnDate)
 
   // Helper to get date string N days from a given date
   const getDatePlusDays = (dateStr: string, daysToAdd: number): string => {
@@ -209,9 +212,8 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
     setDateError(null)
   }, [startDate, endDate, minDays, maxDays, blockedDates, validateDateRange])
   const [startTime, setStartTime] = useState(_startTime)
-  // If the init block corrected the start date/time, session return time is stale — use corrected start time instead
-  const _startWasCorrected = _startDate !== _initDate || _startTime !== _initTime
-  const [endTime, setEndTime] = useState(returnTimeFromUrl || (_startWasCorrected ? _startTime : sessionReturnTime) || _startTime || '10:00')
+  // Return time ALWAYS = pickup time (spec: same time, different date). URL param overrides.
+  const [endTime, setEndTime] = useState(returnTimeFromUrl || _startTime)
   const returnTimeManuallySet = useRef(false)
 
   // Handlers that sync return time with pickup time
@@ -227,16 +229,18 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   }
 
   // Same-day guard: fires when user picks today from calendar
-  // Bumps time to now+2hrs. Only jumps to tomorrow if past 8 PM AZ.
+  // If advance notice makes today unavailable, show error (don't auto-correct).
+  // If time just needs bumping (same-day, valid), auto-correct time silently.
   useEffect(() => {
     if (!isArizonaToday(startDate)) return
 
-    const { date: eDate, time: eTime } = calculateEarliestPickup(car?.advanceNotice ?? 2)
+    const advanceHours = car?.advanceNotice ?? 2
+    const { date: eDate, time: eTime } = calculateEarliestPickup(advanceHours)
     if (eDate !== startDate) {
-      // Past evening cutoff — bump to tomorrow
-      setStartDate(eDate)
-      setStartTime(eTime)
-      if (!returnTimeManuallySet.current) setEndTime(eTime)
+      // Advance notice pushes past today — show error, keep today selected so user sees why
+      const dateLabel = format.dateTime(new Date(eDate + 'T00:00:00'), { weekday: 'short', month: 'short', day: 'numeric' })
+      const timeLabel = format.dateTime(new Date(`${eDate}T${eTime}`), { hour: 'numeric', minute: '2-digit' })
+      setDateError(t('advanceNoticeBlocked', { hours: advanceHours, date: dateLabel, time: timeLabel }))
     } else {
       const [sh, sm] = startTime.split(':').map(Number)
       const [eh, em] = eTime.split(':').map(Number)

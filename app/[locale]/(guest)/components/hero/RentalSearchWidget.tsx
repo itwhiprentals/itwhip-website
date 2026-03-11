@@ -168,6 +168,10 @@ export default function RentalSearchCard({
               if (!returnTimeManuallySet.current) returnTime = pickupTime
             }
           }
+        } else {
+          // Switching to a future date — reset to 10:00 so stale same-day buffer times don't carry over
+          pickupTime = '10:00'
+          if (!returnTimeManuallySet.current) returnTime = '10:00'
         }
         return {
           ...prev,

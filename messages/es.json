@@ -3461,6 +3461,7 @@
     "loadingInsurance": "Cargando Seguro...",
     "selectAtLeastDays": "Selecciona al menos {days} {days, plural, one {día} other {días}}",
     "maxTripExceeded": "El viaje máximo es de {days} días",
+    "advanceNoticeBlocked": "El anfitrión requiere {hours}h de aviso previo — recogida más temprana: {date} a las {time}",
     "insuranceRequired": "Seguro Requerido",
     "continueToCheckout": "Continuar al Pago",
     "freeCancellation": "Cancelación gratuita",
