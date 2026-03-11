@@ -180,6 +180,9 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
         .article-body pre { background: #1f2937; color: #e5e7eb; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin: 1.5rem 0; font-size: 0.875rem; }
         .article-body code { background: #f3f4f6; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.875rem; }
         .article-body pre code { background: transparent; padding: 0; }
+        .article-body img { width: 100%; height: auto; border-radius: 0.75rem; margin: 1.75rem 0; }
+        .article-body .img-caption { text-align: center; font-size: 0.8125rem; color: #6b7280; margin-top: -1.25rem; margin-bottom: 1.75rem; }
+        .dark .article-body .img-caption { color: #9ca3af; }
         .dark .article-body { color: #d1d5db; }
         .dark .article-body h2 { color: #f9fafb; }
         .dark .article-body h3 { color: #f3f4f6; }

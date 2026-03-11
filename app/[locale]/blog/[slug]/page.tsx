@@ -13,14 +13,19 @@ export async function generateStaticParams() {
   return blogPosts.map((post) => ({ slug: post.slug }))
 }
 
-// Posts that have custom OG images
-const postsWithOgImages = [
+// Posts that have custom OG images (static PNGs in /public/og/blog/)
+const postsWithStaticOgImages = [
   'turo-vs-itwhip-arizona-2025',
-  'renting-out-car-worth-it',
-  'p2p-insurance-tiers',
-  'esg-car-sharing',
-  'phoenix-airport-alternatives'
 ]
+
+// Posts with Cloudinary-hosted OG images (1200x630 auto-cropped)
+const cloudinaryOgImages: Record<string, string> = {
+  'renting-out-car-worth-it': 'https://res.cloudinary.com/du1hjyrgm/image/upload/c_fill,w_1200,h_630,g_auto,f_auto,q_auto/blog/arizona-car-rental-income-driveway-suv.jpg',
+  'p2p-insurance-tiers': 'https://res.cloudinary.com/du1hjyrgm/image/upload/c_fill,w_1200,h_630,g_auto,f_auto,q_auto/blog/p2p-car-rental-insurance-fender-bender-damage.jpg',
+  'esg-car-sharing': 'https://res.cloudinary.com/du1hjyrgm/image/upload/c_fill,w_1200,h_630,g_auto,f_auto,q_auto/blog/esg-car-sharing-fleet-aerial-view.jpg',
+  'phoenix-airport-alternatives': 'https://res.cloudinary.com/du1hjyrgm/image/upload/c_fill,w_1200,h_630,g_auto,f_auto,q_auto/blog/phoenix-sky-harbor-airport-plane-takeoff.jpg',
+  'best-cars-sedona-road-trip-2025': 'https://res.cloudinary.com/du1hjyrgm/image/upload/c_fill,w_1200,h_630,g_auto,f_auto,q_auto/blog/sedona-scenic-drive-red-rock-formations.jpg',
+}
 
 // Generate metadata
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
@@ -29,9 +34,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   if (!post) return { title: 'Post Not Found | ItWhip Blog' }
 
   // Use custom OG image if exists, otherwise fall back to default
-  const ogImage = postsWithOgImages.includes(post.slug)
-    ? `https://itwhip.com/og/blog/${post.slug}.png`
-    : 'https://itwhip.com/og-image.jpg'
+  const ogImage = cloudinaryOgImages[post.slug]
+    ?? (postsWithStaticOgImages.includes(post.slug) ? `https://itwhip.com/og/blog/${post.slug}.png` : 'https://itwhip.com/og-image.jpg')
 
   return {
     title: `${post.title} | ItWhip Blog`,
@@ -94,9 +98,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ local
   const { prev, next } = getAdjacentPosts(slug, locale)
 
   // Use custom OG image if exists, otherwise fall back to default
-  const postOgImage = postsWithOgImages.includes(post.slug)
-    ? `https://itwhip.com/og/blog/${post.slug}.png`
-    : 'https://itwhip.com/og-image.jpg'
+  const postOgImage = cloudinaryOgImages[post.slug]
+    ?? (postsWithStaticOgImages.includes(post.slug) ? `https://itwhip.com/og/blog/${post.slug}.png` : 'https://itwhip.com/og-image.jpg')
 
   const canonicalUrl = getCanonicalUrl(`/blog/${post.slug}`, locale)
 

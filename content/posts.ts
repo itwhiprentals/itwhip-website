@@ -167,10 +167,12 @@ export interface BlogPost {
         'passive income car rental',
         'how much can i make renting my car'
       ],
-      featuredImage: '/blog/car-rental-worth-it.jpg',
+      featuredImage: 'https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_800/blog/arizona-car-rental-income-driveway-suv.jpg',
       content: `
         <p class="lead">You've seen the ads: "Make $1,000/month renting your car!" But is peer-to-peer car rental actually worth it? As an Arizona-based platform, we're going to give you the real numbers—the good, the bad, and everything in between.</p>
-  
+
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/arizona-car-rental-income-driveway-suv.jpg" alt="Luxury SUV parked in Arizona driveway at golden hour earning passive income through P2P car rental" loading="eager" />
+
         <h2>The Short Answer</h2>
         <p>Yes, renting out your car can be worth it in Arizona—but it depends on your vehicle, location, time commitment, and which platform you use. Hosts in the Phoenix metro area typically earn between $400-$1,500 per month, with some luxury and specialty vehicles earning significantly more.</p>
   
@@ -224,6 +226,8 @@ export interface BlogPost {
         </ul>
         <p>Most hosts spend 3-5 hours per week managing a single vehicle.</p>
   
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/peer-to-peer-car-rental-fleet-arizona-carport.jpg" alt="Arizona carport with multiple vehicles available for peer-to-peer car rental" loading="lazy" />
+
         <h2>Arizona-Specific Advantages</h2>
         <p>Arizona is actually one of the best states for P2P car rental. Here's why.</p>
         
@@ -242,6 +246,8 @@ export interface BlogPost {
         <h3>No State Income Tax</h3>
         <p>Arizona doesn't tax personal income, so your car rental earnings aren't diminished by state taxes (federal taxes still apply).</p>
   
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/rent-out-car-arizona-road-trip-monument-valley.jpg" alt="Car with roof rack at Monument Valley campsite — rental car being used for an Arizona road trip" loading="lazy" />
+
         <h2>Real Host Scenarios</h2>
         <p>Let's look at three realistic Arizona host profiles.</p>
         
@@ -335,10 +341,12 @@ export interface BlogPost {
         'car sharing coverage',
         'rent my car insurance'
       ],
-      featuredImage: '/blog/insurance-tiers.jpg',
+      featuredImage: 'https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_800/blog/p2p-car-rental-insurance-fender-bender-damage.jpg',
       content: `
         <p class="lead">Insurance is the most confusing part of peer-to-peer car rental. What happens if there's an accident? Whose policy pays? What are you actually covered for? This guide breaks down everything you need to know about P2P car rental insurance, with specific focus on how ItWhip's transparent tier system works.</p>
-  
+
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/p2p-car-rental-insurance-fender-bender-damage.jpg" alt="Two cars with fender bender damage illustrating why P2P car rental insurance matters" loading="eager" />
+
         <h2>Why P2P Insurance Is Different</h2>
         <p>When you rent from Hertz or Enterprise, insurance is straightforward: the rental company's policy covers the vehicle. But peer-to-peer rental involves your personal vehicle, which creates complexity.</p>
         <p>Your standard auto insurance policy probably doesn't cover commercial rental use. If you rent your car to someone and they crash it, your insurance might deny the claim entirely—leaving you holding the bill.</p>
@@ -383,6 +391,8 @@ export interface BlogPost {
         <p><strong>Best for:</strong> High-volume hosts, multi-vehicle operators, and those treating car rental as a real business</p>
         <p><strong>How to qualify:</strong> Submit proof of commercial auto policy that explicitly covers rental/livery use</p>
   
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/car-rental-insurance-coverage-accident-scene.jpg" alt="Major car accident scene showing the importance of comprehensive rental car insurance coverage" loading="lazy" />
+
         <h2>The Insurance Hierarchy Explained</h2>
         <p>Every ItWhip rental has a clear coverage order:</p>
         <ol>
@@ -392,6 +402,8 @@ export interface BlogPost {
         </ol>
         <p>This hierarchy is displayed before every trip—both host and guest see exactly what's covered and in what order. No surprises.</p>
   
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/car-rental-safety-traffic-cone-wet-road.jpg" alt="Traffic safety cone on wet road representing rental car safety and insurance protection" loading="lazy" />
+
         <h2>What's Actually Covered?</h2>
         <p>All tiers include:</p>
         <ul>
@@ -490,6 +502,8 @@ export interface BlogPost {
           <li><strong>Luxury:</strong> Enhanced coverage for high-value vehicles</li>
         </ul>
   
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/car-insurance-claim-storm-tree-damage.jpg" alt="Tree fallen on car after storm illustrating comprehensive insurance claim scenarios" loading="lazy" />
+
         <h2>What Happens When There's a Claim</h2>
         <p>Here's the process if damage occurs:</p>
         <ol>
@@ -556,10 +570,12 @@ export interface BlogPost {
         'green car rental phoenix',
         'environmental car sharing'
       ],
-      featuredImage: '/blog/esg-car-sharing.jpg',
+      featuredImage: 'https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_800/blog/esg-car-sharing-fleet-aerial-view.jpg',
       content: `
         <p class="lead">ESG—Environmental, Social, and Governance—has transformed how businesses operate. Now it's coming to car rental. ItWhip is the first peer-to-peer car sharing platform to integrate comprehensive ESG tracking, giving hosts and guests visibility into the real impact of every rental.</p>
-  
+
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/esg-car-sharing-fleet-aerial-view.jpg" alt="Aerial view of shared car fleet representing sustainable ESG car sharing" loading="eager" />
+
         <h2>What Is ESG in Car Sharing?</h2>
         <p>ESG scoring in car sharing measures three dimensions:</p>
         <ul>
@@ -725,10 +741,12 @@ export interface BlogPost {
         'rent car phoenix airport',
         'phx car rental options'
       ],
-      featuredImage: '/blog/phoenix-airport.jpg',
+      featuredImage: 'https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_800/blog/phoenix-sky-harbor-airport-plane-takeoff.jpg',
       content: `
         <p class="lead">You just landed at Phoenix Sky Harbor. Your flight was delayed, you're tired, and now you're facing a 45-minute shuttle ride to the rental car center, plus another wait in line at the counter. There's a better way. Peer-to-peer car rental lets you skip all of that—and often save money too.</p>
-  
+
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/phoenix-sky-harbor-airport-plane-takeoff.jpg" alt="American Airlines plane taking off at Phoenix Sky Harbor Airport" loading="eager" />
+
         <h2>The Traditional Sky Harbor Rental Experience</h2>
         <p>Let's be honest about what airport car rental usually involves:</p>
         <ol>
@@ -743,6 +761,8 @@ export interface BlogPost {
         </ol>
         <p>Total time from plane to road: Often 60-90 minutes. And that's when things go smoothly.</p>
   
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/downtown-phoenix-airport-car-rental-alternative.jpg" alt="Downtown Phoenix street with plane flying overhead — skip the airport counter with P2P car rental" loading="lazy" />
+
         <h2>The P2P Alternative at Phoenix Airport</h2>
         <p>Peer-to-peer car rental flips this experience:</p>
         <ol>
@@ -754,6 +774,8 @@ export interface BlogPost {
         </ol>
         <p>No shuttle. No counter. No "we don't have the car you reserved, here's a Nissan Versa instead."</p>
   
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/sky-harbor-terminal-window-mountain-view.jpg" alt="Phoenix Sky Harbor airport terminal window view with mountains and planes on the tarmac" loading="lazy" />
+
         <h2>Phoenix Airport Pickup Options</h2>
         <p>ItWhip hosts offer several pickup methods at Sky Harbor:</p>
   
@@ -845,6 +867,8 @@ export interface BlogPost {
           <li><strong>Very long rentals:</strong> Monthly rates from agencies can beat P2P for 30+ days</li>
         </ul>
   
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/phoenix-airport-gates-american-airlines.jpg" alt="American Airlines planes at Phoenix Sky Harbor gates — Arizona's busiest airport" loading="lazy" />
+
         <h2>Why Phoenix is Perfect for P2P</h2>
         <p>Phoenix is one of the best P2P car rental markets in the country:</p>
         <ul>
@@ -889,13 +913,17 @@ export interface BlogPost {
         'phoenix to sedona rental',
         'jeep rental sedona arizona'
       ],
-      featuredImage: '/blog/sedona-road-trip.jpg',
+      featuredImage: 'https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_800/blog/sedona-scenic-drive-red-rock-formations.jpg',
       content: `
         <p class="lead">Sedona is calling. The red rocks, the vortexes, the stunning desert landscapes—all just two hours north of Phoenix. But what's the best car to get you there and make the most of Arizona's most photogenic destination? This guide breaks down your options, from rugged Jeeps to open-air convertibles.</p>
+
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/entering-sedona-arizona-highway-sign.jpg" alt="Entering Sedona Arizona highway road sign with green desert landscape" loading="eager" />
 
         <h2>The Phoenix to Sedona Drive</h2>
         <p>Before picking your vehicle, understand the journey. The drive from Phoenix to Sedona covers about 115 miles and takes roughly 2 hours via I-17 North to Highway 179. The route is paved and well-maintained—you don't need a 4x4 just to get there.</p>
         <p>However, what you do <em>in</em> Sedona determines what you should drive. Are you sticking to paved scenic routes? Hitting the famous off-road trails? Cruising with the top down? Each adventure calls for different wheels.</p>
+
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/sedona-scenic-drive-red-rock-formations.jpg" alt="Driving toward Sedona red rock formations on a scenic Arizona highway" loading="lazy" />
 
         <h2>Best Cars by Sedona Activity</h2>
 
@@ -911,6 +939,8 @@ export interface BlogPost {
         </ul>
         <p><strong>Rental cost:</strong> $120-$180/day on ItWhip</p>
         <p><strong>Pro tip:</strong> Book a 4-door Wrangler Unlimited if traveling with more than 2 people—the 2-door backseat is tight for adults.</p>
+
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/sedona-cathedral-rock-aerial-panorama.jpg" alt="Aerial panorama of Sedona Cathedral Rock and red rock landscape" loading="lazy" />
 
         <h3>For Scenic Drives: Convertible</h3>
         <p>Sedona's beauty is best experienced with the wind in your hair. If you're planning to cruise Highway 89A through Oak Creek Canyon, loop the Red Rock Scenic Byway, or just want Instagram-worthy moments, a convertible transforms the experience.</p>
@@ -933,6 +963,8 @@ export interface BlogPost {
           <li><strong>Subaru Outback:</strong> AWD standard, great visibility, rugged capability ($75-$100/day)</li>
         </ul>
         <p>These vehicles handle the paved roads easily and can navigate moderate unpaved roads like Dry Creek Road to access popular trailheads.</p>
+
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/sedona-red-rocks-architecture-cliff.jpg" alt="Modern architecture perched on Sedona red rock cliffs" loading="lazy" />
 
         <h3>For Luxury Experiences: Premium SUV or Sedan</h3>
         <p>Sedona attracts luxury travelers—world-class spas, fine dining, boutique resorts. If that's your trip, arrive in style.</p>
@@ -1003,6 +1035,8 @@ export interface BlogPost {
         <h3>Book Early for Peak Season</h3>
         <p>Sedona is busiest October through April. Popular vehicles (Jeeps, convertibles) book up fast during these months. Reserve 1-2 weeks ahead.</p>
 
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/sedona-road-trip-campfire-stars-suv.jpg" alt="SUV parked next to campfire under starry desert sky on a Sedona road trip" loading="lazy" />
+
         <h2>Sample Road Trip Itineraries</h2>
 
         <h3>The Day Tripper (Any Vehicle)</h3>
@@ -1039,6 +1073,8 @@ export interface BlogPost {
 
         <h3>What's the best month to visit Sedona?</h3>
         <p>October and November offer ideal weather—warm days, cool nights, minimal crowds compared to spring. March and April are busiest but beautiful.</p>
+
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/sedona-starry-sky-red-rock-cave.jpg" alt="Starry night sky viewed through Sedona red rock cave opening" loading="lazy" />
 
         <h2>Book Your Sedona Road Trip Car</h2>
         <p>Ready to hit the road? Browse <a href="/rentals/types/suv">SUVs</a>, <a href="/rentals/types/convertible">convertibles</a>, and adventure-ready vehicles on ItWhip. Every rental includes insurance, and you'll get the exact car shown in photos—no airport counter surprises.</p>
