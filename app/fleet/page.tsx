@@ -126,7 +126,8 @@ export default function FleetDashboard() {
     : cars.filter(c => c.status === filter)
 
   // Helper function to get the main photo
-  const getCarPhoto = (car: Car) => {
+  const getCarPhoto = (car: Car & { heroPhoto?: string }) => {
+    if (car.heroPhoto) return car.heroPhoto
     if (car.photos && car.photos.length > 0) {
       const heroPhoto = car.photos.find(p => p.isHero)
       return heroPhoto?.url || car.photos[0].url
@@ -527,12 +528,12 @@ export default function FleetDashboard() {
                       )}
                       
                       {/* Photo count badge */}
-                      {car.photos && car.photos.length > 0 && (
+                      {((car as any).photoCount > 0 || (car.photos && car.photos.length > 0)) && (
                         <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
                           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
                           </svg>
-                          {car.photos.length}
+                          {(car as any).photoCount || car.photos?.length}
                         </div>
                       )}
                       
