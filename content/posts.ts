@@ -226,7 +226,7 @@ export interface BlogPost {
         </ul>
         <p>Most hosts spend 3-5 hours per week managing a single vehicle.</p>
   
-        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/peer-to-peer-car-rental-fleet-arizona-carport.jpg" alt="Arizona carport with multiple vehicles available for peer-to-peer car rental" loading="lazy" />
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/peer-to-peer-car-rental-fleet-arizona-carport.jpg" alt="Arizona carport with multiple vehicles available for peer-to-peer car rental" loading="eager" />
 
         <h2>Arizona-Specific Advantages</h2>
         <p>Arizona is actually one of the best states for P2P car rental. Here's why.</p>
@@ -246,7 +246,7 @@ export interface BlogPost {
         <h3>No State Income Tax</h3>
         <p>Arizona doesn't tax personal income, so your car rental earnings aren't diminished by state taxes (federal taxes still apply).</p>
   
-        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/rent-out-car-arizona-road-trip-monument-valley.jpg" alt="Car with roof rack at Monument Valley campsite — rental car being used for an Arizona road trip" loading="lazy" />
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/rent-out-car-arizona-road-trip-monument-valley.jpg" alt="Car with roof rack at Monument Valley campsite — rental car being used for an Arizona road trip" loading="eager" />
 
         <h2>Real Host Scenarios</h2>
         <p>Let's look at three realistic Arizona host profiles.</p>
@@ -391,7 +391,7 @@ export interface BlogPost {
         <p><strong>Best for:</strong> High-volume hosts, multi-vehicle operators, and those treating car rental as a real business</p>
         <p><strong>How to qualify:</strong> Submit proof of commercial auto policy that explicitly covers rental/livery use</p>
   
-        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/car-rental-insurance-coverage-accident-scene.jpg" alt="Major car accident scene showing the importance of comprehensive rental car insurance coverage" loading="lazy" />
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/car-rental-insurance-coverage-accident-scene.jpg" alt="Major car accident scene showing the importance of comprehensive rental car insurance coverage" loading="eager" />
 
         <h2>The Insurance Hierarchy Explained</h2>
         <p>Every ItWhip rental has a clear coverage order:</p>
@@ -402,7 +402,7 @@ export interface BlogPost {
         </ol>
         <p>This hierarchy is displayed before every trip—both host and guest see exactly what's covered and in what order. No surprises.</p>
   
-        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/car-rental-safety-traffic-cone-wet-road.jpg" alt="Traffic safety cone on wet road representing rental car safety and insurance protection" loading="lazy" />
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/car-rental-safety-traffic-cone-wet-road.jpg" alt="Traffic safety cone on wet road representing rental car safety and insurance protection" loading="eager" />
 
         <h2>What's Actually Covered?</h2>
         <p>All tiers include:</p>
@@ -502,7 +502,7 @@ export interface BlogPost {
           <li><strong>Luxury:</strong> Enhanced coverage for high-value vehicles</li>
         </ul>
   
-        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/car-insurance-claim-storm-tree-damage.jpg" alt="Tree fallen on car after storm illustrating comprehensive insurance claim scenarios" loading="lazy" />
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/car-insurance-claim-storm-tree-damage.jpg" alt="Tree fallen on car after storm illustrating comprehensive insurance claim scenarios" loading="eager" />
 
         <h2>What Happens When There's a Claim</h2>
         <p>Here's the process if damage occurs:</p>
@@ -761,7 +761,7 @@ export interface BlogPost {
         </ol>
         <p>Total time from plane to road: Often 60-90 minutes. And that's when things go smoothly.</p>
   
-        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/downtown-phoenix-airport-car-rental-alternative.jpg" alt="Downtown Phoenix street with plane flying overhead — skip the airport counter with P2P car rental" loading="lazy" />
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/downtown-phoenix-airport-car-rental-alternative.jpg" alt="Downtown Phoenix street with plane flying overhead — skip the airport counter with P2P car rental" loading="eager" />
 
         <h2>The P2P Alternative at Phoenix Airport</h2>
         <p>Peer-to-peer car rental flips this experience:</p>
@@ -774,7 +774,7 @@ export interface BlogPost {
         </ol>
         <p>No shuttle. No counter. No "we don't have the car you reserved, here's a Nissan Versa instead."</p>
   
-        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/sky-harbor-terminal-window-mountain-view.jpg" alt="Phoenix Sky Harbor airport terminal window view with mountains and planes on the tarmac" loading="lazy" />
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/sky-harbor-terminal-window-mountain-view.jpg" alt="Phoenix Sky Harbor airport terminal window view with mountains and planes on the tarmac" loading="eager" />
 
         <h2>Phoenix Airport Pickup Options</h2>
         <p>ItWhip hosts offer several pickup methods at Sky Harbor:</p>
@@ -867,7 +867,7 @@ export interface BlogPost {
           <li><strong>Very long rentals:</strong> Monthly rates from agencies can beat P2P for 30+ days</li>
         </ul>
   
-        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/phoenix-airport-gates-american-airlines.jpg" alt="American Airlines planes at Phoenix Sky Harbor gates — Arizona's busiest airport" loading="lazy" />
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/phoenix-airport-gates-american-airlines.jpg" alt="American Airlines planes at Phoenix Sky Harbor gates — Arizona's busiest airport" loading="eager" />
 
         <h2>Why Phoenix is Perfect for P2P</h2>
         <p>Phoenix is one of the best P2P car rental markets in the country:</p>
@@ -923,7 +923,7 @@ export interface BlogPost {
         <p>Before picking your vehicle, understand the journey. The drive from Phoenix to Sedona covers about 115 miles and takes roughly 2 hours via I-17 North to Highway 179. The route is paved and well-maintained—you don't need a 4x4 just to get there.</p>
         <p>However, what you do <em>in</em> Sedona determines what you should drive. Are you sticking to paved scenic routes? Hitting the famous off-road trails? Cruising with the top down? Each adventure calls for different wheels.</p>
 
-        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/sedona-scenic-drive-red-rock-formations.jpg" alt="Driving toward Sedona red rock formations on a scenic Arizona highway" loading="lazy" />
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/sedona-scenic-drive-red-rock-formations.jpg" alt="Driving toward Sedona red rock formations on a scenic Arizona highway" loading="eager" />
 
         <h2>Best Cars by Sedona Activity</h2>
 
@@ -940,7 +940,7 @@ export interface BlogPost {
         <p><strong>Rental cost:</strong> $120-$180/day on ItWhip</p>
         <p><strong>Pro tip:</strong> Book a 4-door Wrangler Unlimited if traveling with more than 2 people—the 2-door backseat is tight for adults.</p>
 
-        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/sedona-cathedral-rock-aerial-panorama.jpg" alt="Aerial panorama of Sedona Cathedral Rock and red rock landscape" loading="lazy" />
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/sedona-cathedral-rock-aerial-panorama.jpg" alt="Aerial panorama of Sedona Cathedral Rock and red rock landscape" loading="eager" />
 
         <h3>For Scenic Drives: Convertible</h3>
         <p>Sedona's beauty is best experienced with the wind in your hair. If you're planning to cruise Highway 89A through Oak Creek Canyon, loop the Red Rock Scenic Byway, or just want Instagram-worthy moments, a convertible transforms the experience.</p>
@@ -964,7 +964,7 @@ export interface BlogPost {
         </ul>
         <p>These vehicles handle the paved roads easily and can navigate moderate unpaved roads like Dry Creek Road to access popular trailheads.</p>
 
-        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/sedona-red-rocks-architecture-cliff.jpg" alt="Modern architecture perched on Sedona red rock cliffs" loading="lazy" />
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/sedona-red-rocks-architecture-cliff.jpg" alt="Modern architecture perched on Sedona red rock cliffs" loading="eager" />
 
         <h3>For Luxury Experiences: Premium SUV or Sedan</h3>
         <p>Sedona attracts luxury travelers—world-class spas, fine dining, boutique resorts. If that's your trip, arrive in style.</p>
@@ -1035,7 +1035,7 @@ export interface BlogPost {
         <h3>Book Early for Peak Season</h3>
         <p>Sedona is busiest October through April. Popular vehicles (Jeeps, convertibles) book up fast during these months. Reserve 1-2 weeks ahead.</p>
 
-        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/sedona-road-trip-campfire-stars-suv.jpg" alt="SUV parked next to campfire under starry desert sky on a Sedona road trip" loading="lazy" />
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/sedona-road-trip-campfire-stars-suv.jpg" alt="SUV parked next to campfire under starry desert sky on a Sedona road trip" loading="eager" />
 
         <h2>Sample Road Trip Itineraries</h2>
 
@@ -1074,7 +1074,7 @@ export interface BlogPost {
         <h3>What's the best month to visit Sedona?</h3>
         <p>October and November offer ideal weather—warm days, cool nights, minimal crowds compared to spring. March and April are busiest but beautiful.</p>
 
-        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/sedona-starry-sky-red-rock-cave.jpg" alt="Starry night sky viewed through Sedona red rock cave opening" loading="lazy" />
+        <img src="https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_680/blog/sedona-starry-sky-red-rock-cave.jpg" alt="Starry night sky viewed through Sedona red rock cave opening" loading="eager" />
 
         <h2>Book Your Sedona Road Trip Car</h2>
         <p>Ready to hit the road? Browse <a href="/rentals/types/suv">SUVs</a>, <a href="/rentals/types/convertible">convertibles</a>, and adventure-ready vehicles on ItWhip. Every rental includes insurance, and you'll get the exact car shown in photos—no airport counter surprises.</p>

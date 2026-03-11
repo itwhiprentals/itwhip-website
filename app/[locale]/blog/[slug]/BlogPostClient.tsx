@@ -1,7 +1,7 @@
 // app/blog/[slug]/BlogPostClient.tsx
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Link } from '@/i18n/navigation'
 import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale, useFormatter } from 'next-intl'
@@ -102,8 +102,8 @@ export default function BlogPostClient({ post, prevPost, nextPost }: Props) {
   }
 
   const config = categoryConfig[post.category]
-  const headings = extractHeadings(post.content)
-  const contentWithIds = addHeadingIds(post.content)
+  const headings = useMemo(() => extractHeadings(post.content), [post.content])
+  const contentWithIds = useMemo(() => addHeadingIds(post.content), [post.content])
   const canonicalBase = 'https://itwhip.com'
   const localePath = locale === 'en' ? '' : `/${locale}`
   const shareUrl = `${canonicalBase}${localePath}/blog/${post.slug}`
