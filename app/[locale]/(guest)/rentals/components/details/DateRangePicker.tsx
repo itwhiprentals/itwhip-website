@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslations, useFormatter } from 'next-intl'
 import { IoCalendarOutline } from 'react-icons/io5'
 import CalendarModal from '@/app/[locale]/(guest)/components/hero/search-components/CalendarModal'
@@ -22,8 +22,10 @@ interface DateRangePickerProps {
   onEndTimeChange: (time: string) => void
 }
 
+// ─── Shared Arizona time utilities (exported so BookingWidget uses the same logic) ──────────────
+
 // Get current Arizona time in minutes since midnight
-function getArizonaNowMinutes(): number {
+export function getArizonaNowMinutes(): number {
   const now = new Date()
   const arizonaTime = now.toLocaleString('en-US', { timeZone: 'America/Phoenix', hour: 'numeric', minute: 'numeric', hour12: false })
   const [h, m] = arizonaTime.split(':').map(Number)
@@ -31,22 +33,47 @@ function getArizonaNowMinutes(): number {
 }
 
 // Check if a date string is today in Arizona timezone
-function isArizonaToday(dateStr: string): boolean {
+export function isArizonaToday(dateStr: string): boolean {
   if (!dateStr) return false
   const now = new Date()
   const arizonaToday = now.toLocaleDateString('en-CA', { timeZone: 'America/Phoenix' })
   return dateStr === arizonaToday
 }
 
+// Get Arizona today as YYYY-MM-DD
+export function getArizonaTodayString(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Phoenix' })
+}
+
 // 2-hour buffer: earliest bookable time is now + 2 hours, rounded up to next 30-min slot
-function getEarliestPickupMinutes(): number {
+export function getEarliestPickupMinutes(): number {
   const nowMinutes = getArizonaNowMinutes()
   const buffered = nowMinutes + 120 // +2 hours
   return Math.ceil(buffered / 30) * 30 // round up to next 30-min
 }
 
+// Convert earliestMinutes to HH:MM string
+export function earliestMinutesToTime(earliestMinutes: number): string {
+  const h = Math.floor(earliestMinutes / 60)
+  const m = earliestMinutes % 60
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function TimeSelect({ value, onChange, format, isPickupToday }: { value: string; onChange: (v: string) => void; format: ReturnType<typeof useFormatter>; isPickupToday?: boolean }) {
   const earliestMinutes = isPickupToday ? getEarliestPickupMinutes() : 0
+
+  // Auto-correct: when today is selected, if the current value is a past time, bump to now+2hrs
+  // This fires when isPickupToday changes (date switches to/from today) and on initial mount
+  useEffect(() => {
+    if (!isPickupToday) return
+    const [h, m] = value.split(':').map(Number)
+    if (h * 60 + m < earliestMinutes) {
+      onChange(earliestMinutesToTime(earliestMinutes))
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPickupToday])
 
   return (
     <select

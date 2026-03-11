@@ -31,7 +31,7 @@ import { calculateFromWidgetState, formatPrice, getActualDeposit, getCarClassAnd
 
 // Import availability hook and date picker component
 import { useCarAvailability } from '@/app/hooks/useCarAvailability'
-import DateRangePicker from './DateRangePicker'
+import DateRangePicker, { isArizonaToday, getEarliestPickupMinutes, earliestMinutesToTime } from './DateRangePicker'
 
 interface BookingWidgetProps {
   car: any
@@ -144,8 +144,32 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
     } catch {}
   }
 
-  // Initialize with URL params → session dates → defaults
-  const [startDate, setStartDate] = useState(pickupDateFromUrl || sessionPickupDate || tomorrow)
+  // ── Compute correct initial start date/time using shared DateRangePicker utilities ──
+  // These functions only use Date — no window/browser APIs — so they work on SSR too.
+  // RULE: Never display a past time. If today + past time, default to tomorrow at 10:00.
+  const _initDate = pickupDateFromUrl || sessionPickupDate || tomorrow
+  const _initTime = pickupTimeFromUrl || sessionPickupTime || '10:00'
+  let _startDate = _initDate
+  let _startTime = _initTime
+
+  if (isArizonaToday(_initDate)) {
+    const earliest = getEarliestPickupMinutes()
+    if (earliest >= 20 * 60) {
+      // Past 8 PM AZ — default to tomorrow
+      _startDate = tomorrow
+      _startTime = '10:00'
+    } else {
+      const [bh, bm] = _initTime.split(':').map(Number)
+      if (bh * 60 + bm < earliest) {
+        // Time is in the past — default to tomorrow (avoids friction)
+        _startDate = tomorrow
+        _startTime = '10:00'
+      }
+      // else: valid same-day time — keep it
+    }
+  }
+
+  const [startDate, setStartDate] = useState(_startDate)
   const [endDate, setEndDate] = useState(returnDateFromUrl || sessionReturnDate || defaultEndDate)
 
   // Helper to get date string N days from a given date
@@ -188,8 +212,8 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
 
     setDateError(null)
   }, [startDate, endDate, minDays, blockedDates, validateDateRange])
-  const [startTime, setStartTime] = useState(pickupTimeFromUrl || sessionPickupTime || '10:00')
-  const [endTime, setEndTime] = useState(returnTimeFromUrl || sessionReturnTime || sessionPickupTime || '10:00')
+  const [startTime, setStartTime] = useState(_startTime)
+  const [endTime, setEndTime] = useState(returnTimeFromUrl || sessionReturnTime || _startTime || '10:00')
   const returnTimeManuallySet = useRef(false)
 
   // Handlers that sync return time with pickup time
@@ -204,37 +228,46 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
     returnTimeManuallySet.current = true
   }
 
-  // Same-day guard: always set pickup time to now + 2 hours when date is today
-  // Matches search widget behavior: same-day default = now+2hrs, not a stale session/URL time
+  // Same-day guard: fires when user picks today from calendar
+  // Bumps time to now+2hrs. Only jumps to tomorrow if past 8 PM AZ.
   useEffect(() => {
-    const now = new Date()
-    const arizonaToday = now.toLocaleDateString('en-CA', { timeZone: 'America/Phoenix' })
-    if (startDate !== arizonaToday) return
+    if (!isArizonaToday(startDate)) return
 
-    const arizonaTime = now.toLocaleString('en-US', { timeZone: 'America/Phoenix', hour: 'numeric', minute: 'numeric', hour12: false })
-    const [h, m] = arizonaTime.split(':').map(Number)
-    const nowMinutes = h * 60 + m
-    const earliestMinutes = Math.ceil((nowMinutes + 120) / 30) * 30 // +2hrs, round up to next 30-min
-
-    if (earliestMinutes >= 20 * 60) {
-      // Past 8pm cutoff — bump to tomorrow
-      setStartDate(getArizonaDateString(1))
+    const earliest = getEarliestPickupMinutes()
+    if (earliest >= 20 * 60) {
+      setStartDate(tomorrow)
       setStartTime('10:00')
       if (!returnTimeManuallySet.current) setEndTime('10:00')
     } else {
-      const newH = Math.floor(earliestMinutes / 60)
-      const newM = earliestMinutes % 60
-      const newTime = `${newH.toString().padStart(2, '0')}:${newM.toString().padStart(2, '0')}`
-      setStartTime(newTime)
-      if (!returnTimeManuallySet.current) setEndTime(newTime)
+      const [sh, sm] = startTime.split(':').map(Number)
+      if (sh * 60 + sm < earliest) {
+        const newTime = earliestMinutesToTime(earliest)
+        setStartTime(newTime)
+        if (!returnTimeManuallySet.current) setEndTime(newTime)
+      }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startDate])
 
   // Update state when URL params change
+  // If URL date is today with a past time, keep tomorrow (don't override the guard)
   useEffect(() => {
-    if (pickupDateFromUrl) setStartDate(pickupDateFromUrl)
+    if (pickupDateFromUrl) {
+      if (isArizonaToday(pickupDateFromUrl) && pickupTimeFromUrl) {
+        const earliest = getEarliestPickupMinutes()
+        const [h, m] = pickupTimeFromUrl.split(':').map(Number)
+        if (h * 60 + m >= earliest && earliest < 20 * 60) {
+          // Valid same-day time — use it
+          setStartDate(pickupDateFromUrl)
+          setStartTime(pickupTimeFromUrl)
+        }
+        // else: past time or after 8 PM — keep tomorrow (already set by init)
+      } else if (!isArizonaToday(pickupDateFromUrl)) {
+        setStartDate(pickupDateFromUrl)
+        if (pickupTimeFromUrl) setStartTime(pickupTimeFromUrl)
+      }
+    }
     if (returnDateFromUrl) setEndDate(returnDateFromUrl)
-    if (pickupTimeFromUrl) setStartTime(pickupTimeFromUrl)
     if (returnTimeFromUrl) setEndTime(returnTimeFromUrl)
   }, [pickupDateFromUrl, returnDateFromUrl, pickupTimeFromUrl, returnTimeFromUrl])
   
@@ -539,30 +572,28 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
             onEndTimeChange={handleEndTimeChange}
           />
 
-          {/* Trip Summary */}
+          {/* Trip Summary + Date Error — single consolidated card */}
           {days > 0 && (
-            <div className="py-2 px-3 bg-black dark:bg-white rounded-lg">
+            <div className={`py-2 px-3 rounded-lg ${dateError ? 'bg-red-600' : 'bg-black dark:bg-white'}`}>
               <div className="flex items-center justify-center gap-1.5">
-                <IoCalendarOutline className="w-3.5 h-3.5 text-white dark:text-gray-900 flex-shrink-0" />
-                <span className="text-xs font-medium text-white dark:text-gray-900">
+                <IoCalendarOutline className={`w-3.5 h-3.5 flex-shrink-0 ${dateError ? 'text-white' : 'text-white dark:text-gray-900'}`} />
+                <span className={`text-xs font-medium ${dateError ? 'text-white' : 'text-white dark:text-gray-900'}`}>
                   {days > 1 ? t('daysSummaryPlural', { days }) : t('daysSummary', { days })} · {format.dateTime(new Date(startDate + 'T00:00:00'), { month: 'short', day: 'numeric' })} – {format.dateTime(new Date(endDate + 'T00:00:00'), { month: 'short', day: 'numeric' })}
                 </span>
               </div>
-              {isRideshare && (
+              {dateError && (
+                <div className="flex items-center justify-center gap-1 mt-1">
+                  <IoWarningOutline className="w-3 h-3 text-white flex-shrink-0" />
+                  <span className="text-xs text-white">{dateError}</span>
+                </div>
+              )}
+              {isRideshare && !dateError && (
                 <div className="flex items-center justify-center mt-1">
                   <span className="text-xs text-gray-300 dark:text-gray-500">
                     {t('rideshareMinDays', { days: minDays })}
                   </span>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Date Error */}
-          {dateError && (
-            <div className="flex items-center gap-1.5 py-2 px-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-              <IoWarningOutline className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
-              <span className="text-xs font-medium text-red-700 dark:text-red-300">{dateError}</span>
             </div>
           )}
 
