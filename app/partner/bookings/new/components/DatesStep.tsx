@@ -3,6 +3,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
+import { getAvailableTimeSlots } from '@/app/lib/booking/booking-time-rules'
 import {
   IoCarOutline,
   IoCheckmarkCircleOutline,
@@ -25,23 +26,19 @@ import {
   DELIVERY_FEES,
 } from '../types'
 
-// Generate time options (30-min intervals, 6:00 AM – 10:00 PM)
-function generateTimeOptions() {
-  const options: { value: string; label: string }[] = []
-  for (let h = 6; h <= 22; h++) {
-    for (const m of [0, 30]) {
-      if (h === 22 && m === 30) break // Stop at 10:00 PM
-      const value = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
-      const hour12 = h > 12 ? h - 12 : h === 0 ? 12 : h
-      const ampm = h >= 12 ? 'PM' : 'AM'
-      const label = `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`
-      options.push({ value, label })
-    }
-  }
-  return options
+// Generate time options for partner manual booking (no guest buffer — full 6AM–10PM)
+// advanceNoticeHours=0 means no slots are disabled based on current time
+function getPartnerTimeOptions(dateStr: string) {
+  return getAvailableTimeSlots(dateStr, 0)
+    .filter(s => {
+      const [h] = s.value.split(':').map(Number)
+      return h >= 6 && h <= 22 && !(h === 22 && s.value.endsWith(':30'))
+    })
+    .map(s => ({ value: s.value, label: s.label }))
 }
 
-const TIME_OPTIONS = generateTimeOptions()
+// Static list for initial render (no date context yet)
+const TIME_OPTIONS = getPartnerTimeOptions('')
 
 interface DatesStepProps {
   selectedVehicle: Vehicle | null

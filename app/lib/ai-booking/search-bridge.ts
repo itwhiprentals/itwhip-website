@@ -3,6 +3,7 @@
 // Calls the search endpoint internally via HTTP
 
 import { SearchQuery, VehicleSummary } from './types';
+import { calculateEarliestPickup, addDays } from '@/app/lib/booking/booking-time-rules';
 
 // =============================================================================
 // TYPES
@@ -130,18 +131,15 @@ function buildSearchParams(query: SearchQuery): URLSearchParams {
 
   if (query.carType) params.set('carType', query.carType);
 
-  // Default dates to tomorrow + 3 days if not provided (required by search API)
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const threeDaysLater = new Date(tomorrow);
-  threeDaysLater.setDate(threeDaysLater.getDate() + 3);
-  const defaultPickup = tomorrow.toISOString().split('T')[0];
-  const defaultReturn = threeDaysLater.toISOString().split('T')[0];
+  // Default dates using shared booking rules (tomorrow at earliest valid time)
+  const { date: earliestDate, time: earliestTime } = calculateEarliestPickup();
+  const defaultPickup = earliestDate;
+  const defaultReturn = addDays(earliestDate, 3);
 
   params.set('pickupDate', query.pickupDate || defaultPickup);
   params.set('returnDate', query.returnDate || defaultReturn);
-  params.set('pickupTime', query.pickupTime || '10:00');
-  params.set('returnTime', query.returnTime || '10:00');
+  params.set('pickupTime', query.pickupTime || earliestTime);
+  params.set('returnTime', query.returnTime || earliestTime);
 
   if (query.make) params.set('make', query.make);
   if (query.priceMin) params.set('priceMin', String(query.priceMin));

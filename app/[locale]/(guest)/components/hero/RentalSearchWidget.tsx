@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { IoCalendarOutline, IoChevronDownOutline } from 'react-icons/io5'
 import type { Location } from '@/lib/data/arizona-locations'
+import { calculateEarliestPickup, getArizonaTodayString, addDays } from '@/app/lib/booking/booking-time-rules'
 
 // Import our new components
 import LocationInput from './search-components/LocationInput'
@@ -53,22 +54,10 @@ export default function RentalSearchCard({
   
   // Calculate default dates - only on client to avoid hydration mismatch
   const getDefaultDates = () => {
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    const returnDay = new Date(tomorrow)
-    returnDay.setDate(returnDay.getDate() + 2)
-
-    // Format in local timezone
-    const formatLocalDate = (date: Date) => {
-      const year = date.getFullYear()
-      const month = (date.getMonth() + 1).toString().padStart(2, '0')
-      const day = date.getDate().toString().padStart(2, '0')
-      return `${year}-${month}-${day}`
-    }
-
+    const today = getArizonaTodayString()
     return {
-      pickup: formatLocalDate(tomorrow),
-      return: formatLocalDate(returnDay)
+      pickup: addDays(today, 1),
+      return: addDays(today, 3),
     }
   }
 
@@ -154,53 +143,28 @@ export default function RentalSearchCard({
     setSearchParams(prev => ({ ...prev, location: location.name }))
   }
 
-  // Get next available time slot (rounds up to next 30-min slot + 2 hour buffer)
-  const getNextAvailableTime = (): string => {
-    const now = new Date()
-    const arizonaTime = now.toLocaleString('en-US', { timeZone: 'America/Phoenix', hour: 'numeric', minute: 'numeric', hour12: false })
-    const [h, m] = arizonaTime.split(':').map(Number)
-    // Add 2 hour buffer, round up to next 30-min slot
-    let totalMinutes = (h * 60 + m) + 120
-    totalMinutes = Math.ceil(totalMinutes / 30) * 30
-    if (totalMinutes >= 24 * 60) return '23:30'
-    const newH = Math.floor(totalMinutes / 60)
-    const newM = totalMinutes % 60
-    return `${newH.toString().padStart(2, '0')}:${newM.toString().padStart(2, '0')}`
-  }
-
   // Handle date selection
   const handleDateSelect = (date: string) => {
     if (calendarType === 'pickup') {
-      // Check if selected date is today — auto-bump time with 2hr buffer
-      const now = new Date()
-      const arizonaToday = now.toLocaleDateString('en-CA', { timeZone: 'America/Phoenix' })
-      const isToday = date === arizonaToday
+      const today = getArizonaTodayString()
+      const isToday = date === today
 
       setSearchParams(prev => {
         let pickupTime = prev.pickupTime
         let pickupDate = date
         let returnTime = prev.returnTime
         if (isToday) {
-          const arizonaTime = now.toLocaleString('en-US', { timeZone: 'America/Phoenix', hour: 'numeric', minute: 'numeric', hour12: false })
-          const [h, m] = arizonaTime.split(':').map(Number)
-          const nowMinutes = h * 60 + m
-          const earliestMinutes = Math.ceil((nowMinutes + 120) / 30) * 30
-
-          if (earliestMinutes >= 20 * 60) {
-            // Past 8pm cutoff — bump to tomorrow
-            const tomorrow = new Date()
-            tomorrow.setDate(tomorrow.getDate() + 1)
-            const y = tomorrow.getFullYear()
-            const mo = (tomorrow.getMonth() + 1).toString().padStart(2, '0')
-            const d = tomorrow.getDate().toString().padStart(2, '0')
-            pickupDate = `${y}-${mo}-${d}`
+          const { date: eDate, time: eTime } = calculateEarliestPickup()
+          if (eDate !== today) {
+            // Past 8 PM cutoff — bump to tomorrow
+            pickupDate = addDays(today, 1)
             pickupTime = '10:00'
             if (!returnTimeManuallySet.current) returnTime = '10:00'
           } else {
             const [pH, pM] = pickupTime.split(':').map(Number)
-            const selectedMinutes = pH * 60 + pM
-            if (selectedMinutes < earliestMinutes) {
-              pickupTime = getNextAvailableTime()
+            const [eh, em] = eTime.split(':').map(Number)
+            if (pH * 60 + pM < eh * 60 + em) {
+              pickupTime = eTime
               if (!returnTimeManuallySet.current) returnTime = pickupTime
             }
           }

@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { getAvailableTimeSlots } from '@/app/lib/booking/booking-time-rules'
 
 interface TimeDropdownProps {
   isOpen: boolean
@@ -74,39 +75,12 @@ export default function TimeDropdown({
   const left = buttonRect.left + window.scrollX
   const minWidth = buttonRect.width
 
-  // Check if selected date is today (Arizona time)
-  const isDateToday = (() => {
-    if (!selectedDate) return false
-    const now = new Date()
-    const arizonaToday = now.toLocaleDateString('en-CA', { timeZone: 'America/Phoenix' })
-    return selectedDate === arizonaToday
-  })()
-
-  // Get current Arizona hour/minute for filtering past times
-  const arizonaNowMinutes = (() => {
-    if (!isDateToday) return 0
-    const now = new Date()
-    const arizonaTime = now.toLocaleString('en-US', { timeZone: 'America/Phoenix', hour: 'numeric', minute: 'numeric', hour12: false })
-    const [h, m] = arizonaTime.split(':').map(Number)
-    return h * 60 + m
-  })()
-
-  // Generate time options
-  const timeOptions = []
-  for (let i = 0; i < 48; i++) {
-    const hour = Math.floor(i / 2)
-    const minute = i % 2 === 0 ? '00' : '30'
-    const time = `${hour.toString().padStart(2, '0')}:${minute}`
-    const period = hour < 12 ? 'AM' : 'PM'
-    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour
-    const slotMinutes = hour * 60 + parseInt(minute)
-    const isPast = isDateToday && slotMinutes < arizonaNowMinutes + 120 // 2-hour buffer
-    timeOptions.push({
-      value: time,
-      label: `${displayHour}:${minute} ${period}`,
-      isPast
-    })
-  }
+  // Generate time options using shared booking rules (2-hr buffer, 30-min slots)
+  const timeOptions = getAvailableTimeSlots(selectedDate || '').map(slot => ({
+    value: slot.value,
+    label: slot.label,
+    isPast: slot.disabled,
+  }))
 
   const dropdownContent = (
     <div 

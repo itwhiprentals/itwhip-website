@@ -3460,6 +3460,7 @@
     "processing": "Procesando...",
     "loadingInsurance": "Cargando Seguro...",
     "selectAtLeastDays": "Selecciona al menos {days} {days, plural, one {día} other {días}}",
+    "maxTripExceeded": "El viaje máximo es de {days} días",
     "insuranceRequired": "Seguro Requerido",
     "continueToCheckout": "Continuar al Pago",
     "freeCancellation": "Cancelación gratuita",

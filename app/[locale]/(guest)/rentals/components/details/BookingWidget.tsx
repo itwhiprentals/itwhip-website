@@ -31,7 +31,8 @@ import { calculateFromWidgetState, formatPrice, getActualDeposit, getCarClassAnd
 
 // Import availability hook and date picker component
 import { useCarAvailability } from '@/app/hooks/useCarAvailability'
-import DateRangePicker, { isArizonaToday, getEarliestPickupMinutes, earliestMinutesToTime } from './DateRangePicker'
+import DateRangePicker, { isArizonaToday } from './DateRangePicker'
+import { calculateEarliestPickup } from '@/app/lib/booking/booking-time-rules'
 
 interface BookingWidgetProps {
   car: any
@@ -110,6 +111,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   // RIDESHARE = ALWAYS 3+ DAYS, NO EXCEPTIONS (ignores DB value if it's wrong)
   // For rentals only, use minTripDuration from DB or default to 1
   const minDays = isRideshare ? 3 : (car?.minTripDuration || 1)
+  const maxDays = car?.maxTripDuration || 30
   
   // Read search params from URL
   const pickupDateParam = searchParams.get('pickupDate') || ''
@@ -153,14 +155,15 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   let _startTime = _initTime
 
   if (isArizonaToday(_initDate)) {
-    const earliest = getEarliestPickupMinutes()
-    if (earliest >= 20 * 60) {
-      // Past 8 PM AZ — default to tomorrow
-      _startDate = tomorrow
-      _startTime = '10:00'
+    const { date: eDate, time: eTime } = calculateEarliestPickup(car?.advanceNotice ?? 2)
+    if (eDate !== _initDate) {
+      // Past evening cutoff — earliest is already tomorrow
+      _startDate = eDate
+      _startTime = eTime
     } else {
       const [bh, bm] = _initTime.split(':').map(Number)
-      if (bh * 60 + bm < earliest) {
+      const [eh, em] = eTime.split(':').map(Number)
+      if (bh * 60 + bm < eh * 60 + em) {
         // Time is in the past — default to tomorrow (avoids friction)
         _startDate = tomorrow
         _startTime = '10:00'
@@ -196,6 +199,11 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
       return
     }
 
+    if (tripDays > maxDays) {
+      setDateError(t('maxTripExceeded', { days: maxDays }))
+      return
+    }
+
     // Check if selected range overlaps with blocked dates
     if (blockedDates.length > 0) {
       const { available, conflictDates } = validateDateRange(startDate, endDate)
@@ -211,7 +219,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
     }
 
     setDateError(null)
-  }, [startDate, endDate, minDays, blockedDates, validateDateRange])
+  }, [startDate, endDate, minDays, maxDays, blockedDates, validateDateRange])
   const [startTime, setStartTime] = useState(_startTime)
   const [endTime, setEndTime] = useState(returnTimeFromUrl || sessionReturnTime || _startTime || '10:00')
   const returnTimeManuallySet = useRef(false)
@@ -233,17 +241,18 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   useEffect(() => {
     if (!isArizonaToday(startDate)) return
 
-    const earliest = getEarliestPickupMinutes()
-    if (earliest >= 20 * 60) {
-      setStartDate(tomorrow)
-      setStartTime('10:00')
-      if (!returnTimeManuallySet.current) setEndTime('10:00')
+    const { date: eDate, time: eTime } = calculateEarliestPickup(car?.advanceNotice ?? 2)
+    if (eDate !== startDate) {
+      // Past evening cutoff — bump to tomorrow
+      setStartDate(eDate)
+      setStartTime(eTime)
+      if (!returnTimeManuallySet.current) setEndTime(eTime)
     } else {
       const [sh, sm] = startTime.split(':').map(Number)
-      if (sh * 60 + sm < earliest) {
-        const newTime = earliestMinutesToTime(earliest)
-        setStartTime(newTime)
-        if (!returnTimeManuallySet.current) setEndTime(newTime)
+      const [eh, em] = eTime.split(':').map(Number)
+      if (sh * 60 + sm < eh * 60 + em) {
+        setStartTime(eTime)
+        if (!returnTimeManuallySet.current) setEndTime(eTime)
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -254,9 +263,10 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   useEffect(() => {
     if (pickupDateFromUrl) {
       if (isArizonaToday(pickupDateFromUrl) && pickupTimeFromUrl) {
-        const earliest = getEarliestPickupMinutes()
+        const { date: eDate, time: eTime } = calculateEarliestPickup(car?.advanceNotice ?? 2)
         const [h, m] = pickupTimeFromUrl.split(':').map(Number)
-        if (h * 60 + m >= earliest && earliest < 20 * 60) {
+        const [eh, em] = eTime.split(':').map(Number)
+        if (eDate === pickupDateFromUrl && h * 60 + m >= eh * 60 + em) {
           // Valid same-day time — use it
           setStartDate(pickupDateFromUrl)
           setStartTime(pickupTimeFromUrl)
