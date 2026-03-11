@@ -1067,7 +1067,7 @@ export interface BlogPost {
         'phoenix car rental host',
         'passive income car rental phoenix'
       ],
-      featuredImage: '/blog/phoenix-host-earnings.jpg',
+      featuredImage: '/og-image.jpg',
       content: `
         <p class="lead">Can you really make $2,000 or more per month renting out your car in Phoenix? Yes—but it takes the right vehicle, smart pricing, and platform knowledge. This guide shares proven strategies from hosts who consistently hit that number.</p>
 
@@ -2189,7 +2189,7 @@ export interface BlogPost {
         'budget rental phoenix az',
         'low cost car rental phoenix'
       ],
-      featuredImage: '/images/blog/budget-car-rental-phoenix.jpg',
+      featuredImage: '/og-image.jpg',
       content: `
     <p class="lead">Looking for a cheap car rental in Phoenix? You're not alone. With rental prices skyrocketing since 2021, finding a budget-friendly option feels impossible. But here's the truth: <strong>you can still rent a car in Phoenix for under $40/day</strong> — if you know where to look.</p>
 
@@ -2458,7 +2458,7 @@ export interface BlogPost {
       updatedAt: '2025-01-05',
       readTime: 6,
       keywords: ['ASU car rental', 'Tempe car rental', 'Arizona State University', 'student car rental', 'campus pickup', 'college car rental'],
-      featuredImage: '/images/blog/asu-tempe-car-rental.jpg',
+      featuredImage: '/og-image.jpg',
       content: `
     <p class="lead">Whether you're an ASU student needing wheels for spring break, or a parent flying in for Family Weekend, finding affordable car rentals near campus doesn't have to be complicated. Here's your complete guide to renting in Tempe.</p>
 
@@ -2749,7 +2749,7 @@ export interface BlogPost {
         'grand canyon rental car',
         'sedona grand canyon road trip'
       ],
-      featuredImage: '/images/blog/grand-canyon-road-trip.jpg',
+      featuredImage: '/og-image.jpg',
       content: `
     <p class="lead">The Grand Canyon is just 3.5 hours from Phoenix — one of the most epic day trips or weekend getaways in America. But which route should you take? What car do you need? And what stops are worth your time?</p>
 
@@ -3067,7 +3067,7 @@ export interface BlogPost {
         'surprise stadium car rental',
         'spring training stadium parking'
       ],
-      featuredImage: '/images/blog/spring-training-arizona.jpg',
+      featuredImage: '/og-image.jpg',
       content: `
     <p class="lead">Every February and March, 15 MLB teams descend on Arizona for Cactus League Spring Training — and over 2 million fans follow. The stadiums are spread across the entire Phoenix metro area, which means <strong>you absolutely need a car</strong>.</p>
 
@@ -3390,7 +3390,7 @@ export interface BlogPost {
       updatedAt: '2025-01-05',
       readTime: 8,
       keywords: ['convertible rental Arizona', 'Mustang rental Phoenix', 'scenic drives Arizona', 'top-down driving routes', 'desert convertible trip'],
-      featuredImage: '/images/blog/arizona-convertible-drive.jpg',
+      featuredImage: '/og-image.jpg',
       content: `
     <p class="lead">There's something magical about dropping the top and feeling the warm Arizona desert air as you cruise past towering saguaros and red rock formations. With 299 sunny days per year and some of America's most scenic drives, Arizona isn't just a good convertible destination — it's <em>the</em> convertible destination.</p>
 

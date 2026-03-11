@@ -55,6 +55,10 @@ const SLUG_TO_KEY: Record<string, string> = {
   'chrysler': 'chrysler',
   'ram': 'ram',
   'gmc': 'gmc',
+  'maserati': 'maserati',
+  'aston-martin': 'astonMartin',
+  'rivian': 'rivian',
+  'infiniti': 'infiniti',
 }
 
 // ============================================
@@ -338,6 +342,42 @@ const CAR_MAKE_DATA: Record<string, {
     keywords: ['gmc rental phoenix', 'sierra rental arizona', 'yukon rental phoenix', 'denali rental scottsdale', 'truck rental arizona'],
     popularModels: ['Sierra', 'Yukon', 'Acadia', 'Terrain', 'Hummer EV'],
     priceRange: '$80-350/day'
+  },
+  'maserati': {
+    displayName: 'Maserati',
+    dbValue: 'Maserati',
+    country: 'Italy',
+    founded: '1914',
+    keywords: ['maserati rental phoenix', 'ghibli rental arizona', 'levante rental phoenix', 'italian luxury car rental scottsdale', 'exotic car rental arizona'],
+    popularModels: ['Ghibli', 'Levante', 'Quattroporte', 'MC20', 'GranTurismo'],
+    priceRange: '$200-600/day'
+  },
+  'aston-martin': {
+    displayName: 'Aston Martin',
+    dbValue: 'Aston Martin',
+    country: 'UK',
+    founded: '1913',
+    keywords: ['aston martin rental phoenix', 'db11 rental arizona', 'vantage rental phoenix', 'exotic car rental scottsdale', 'british luxury car rental arizona'],
+    popularModels: ['DB11', 'Vantage', 'DBX', 'DBS Superleggera'],
+    priceRange: '$500-2000/day'
+  },
+  'rivian': {
+    displayName: 'Rivian',
+    dbValue: 'Rivian',
+    country: 'USA',
+    founded: '2009',
+    keywords: ['rivian rental phoenix', 'r1t rental arizona', 'r1s rental phoenix', 'electric truck rental scottsdale', 'electric suv rental arizona'],
+    popularModels: ['R1T', 'R1S'],
+    priceRange: '$120-250/day'
+  },
+  'infiniti': {
+    displayName: 'Infiniti',
+    dbValue: 'Infiniti',
+    country: 'Japan',
+    founded: '1989',
+    keywords: ['infiniti rental phoenix', 'q50 rental arizona', 'qx60 rental phoenix', 'luxury car rental scottsdale', 'infiniti suv rental arizona'],
+    popularModels: ['Q50', 'Q60', 'QX50', 'QX60', 'QX80'],
+    priceRange: '$70-180/day'
   }
 }
 

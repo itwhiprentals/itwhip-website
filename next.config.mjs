@@ -77,8 +77,26 @@ const nextConfig = {
       // DEAD PAGES — Redirect to most relevant existing page
       // ============================================
       { source: '/host-agreement', destination: '/platform-agreement', permanent: true },
+      { source: '/become-a-host.html', destination: '/list-your-car', permanent: true },
+      { source: '/tickets.html', destination: '/support', permanent: true },
       { source: '/day', destination: '/rentals/daily', permanent: true },
       { source: '/week', destination: '/rentals/long-term', permanent: true },
+      { source: '/month', destination: '/rentals/long-term', permanent: true },
+      { source: '/mo', destination: '/rentals/long-term', permanent: true },
+      { source: '/night', destination: '/rentals/daily', permanent: true },
+      { source: '/noche', destination: '/rentals/daily', permanent: true },
+      { source: '/nuit', destination: '/rentals/daily', permanent: true },
+      { source: '/jour', destination: '/rentals/daily', permanent: true },
+      { source: '/semana', destination: '/rentals/long-term', permanent: true },
+      { source: '/semaine', destination: '/rentals/long-term', permanent: true },
+      { source: '/mois', destination: '/rentals/long-term', permanent: true },
+      { source: '/mes', destination: '/rentals/long-term', permanent: true },
+      { source: '/search', destination: '/rentals', permanent: true },
+      { source: '/membership', destination: '/rentals', permanent: true },
+      { source: '/insurance-details', destination: '/insurance-guide', permanent: true },
+      { source: '/rentals/types', destination: '/rentals', permanent: true },
+      { source: '/rentals/weekly', destination: '/rentals/long-term', permanent: true },
+      { source: '/downloads/:path*', destination: '/rentals', permanent: true },
       { source: '/hosts/:id', destination: '/reviews/hosts', permanent: true },
 
       // ============================================
