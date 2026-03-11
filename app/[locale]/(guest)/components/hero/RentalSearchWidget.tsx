@@ -275,7 +275,18 @@ export default function RentalSearchCard({
       pickupDate: `${searchParams.pickupDate}T${searchParams.pickupTime}`,
       returnDate: `${searchParams.returnDate}T${searchParams.returnTime}`
     }
-    
+
+    // Persist search dates so BookingWidget can pre-fill them on car detail pages
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('itwhip_search_dates', JSON.stringify({
+          pickupDate: query.pickupDate,
+          returnDate: query.returnDate,
+          savedAt: Date.now()
+        }))
+      } catch {}
+    }
+
     if (onSearch) {
       onSearch(query)
       setIsLoading(false)

@@ -124,9 +124,29 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   const tomorrow = getArizonaDateString(1)
   const defaultEndDate = getArizonaDateString(minDays + 1) // +1 because start is tomorrow
 
-  // Initialize with URL params or defaults
-  const [startDate, setStartDate] = useState(pickupDateFromUrl || tomorrow)
-  const [endDate, setEndDate] = useState(returnDateFromUrl || defaultEndDate)
+  // Read last search dates from sessionStorage — saved by RentalSearchWidget on search
+  let sessionPickupDate = '', sessionReturnDate = '', sessionPickupTime = '10:00', sessionReturnTime = '10:00'
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = sessionStorage.getItem('itwhip_search_dates')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        // Only use if saved within last 2 hours (fresh search session)
+        if (parsed.savedAt && Date.now() - parsed.savedAt < 2 * 60 * 60 * 1000) {
+          const { date: sd, time: st } = extractDateAndTime(parsed.pickupDate || '')
+          const { date: ed, time: et } = extractDateAndTime(parsed.returnDate || '')
+          sessionPickupDate = sd
+          sessionPickupTime = st
+          sessionReturnDate = ed
+          sessionReturnTime = et
+        }
+      }
+    } catch {}
+  }
+
+  // Initialize with URL params → session dates → defaults
+  const [startDate, setStartDate] = useState(pickupDateFromUrl || sessionPickupDate || tomorrow)
+  const [endDate, setEndDate] = useState(returnDateFromUrl || sessionReturnDate || defaultEndDate)
 
   // Helper to get date string N days from a given date
   const getDatePlusDays = (dateStr: string, daysToAdd: number): string => {
@@ -168,8 +188,8 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
 
     setDateError(null)
   }, [startDate, endDate, minDays, blockedDates, validateDateRange])
-  const [startTime, setStartTime] = useState(pickupTimeFromUrl || '10:00')
-  const [endTime, setEndTime] = useState(returnTimeFromUrl || pickupTimeFromUrl || '10:00')
+  const [startTime, setStartTime] = useState(pickupTimeFromUrl || sessionPickupTime || '10:00')
+  const [endTime, setEndTime] = useState(returnTimeFromUrl || sessionReturnTime || sessionPickupTime || '10:00')
   const returnTimeManuallySet = useRef(false)
 
   // Handlers that sync return time with pickup time

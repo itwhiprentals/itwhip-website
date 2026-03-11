@@ -122,6 +122,14 @@ export default function SearchResultsClient({
   const pickupTime = searchParams.get('pickupTime') || initialPickupTime
   const returnTime = searchParams.get('returnTime') || initialReturnTime
 
+  // Build full ISO datetime strings for car card links → BookingWidget pre-fill
+  const pickupDateFull = pickupDate
+    ? (pickupDate.includes('T') ? pickupDate : (pickupTime ? `${pickupDate}T${pickupTime}` : pickupDate))
+    : undefined
+  const returnDateFull = returnDate
+    ? (returnDate.includes('T') ? returnDate : (returnTime ? `${returnDate}T${returnTime}` : returnDate))
+    : undefined
+
   // Calculate rental days
   const rentalDays = Math.ceil(
     (new Date(returnDate).getTime() - new Date(pickupDate).getTime())
@@ -720,6 +728,8 @@ export default function SearchResultsClient({
                               hostType: car.host.hostType
                             } : null
                           }}
+                          pickupDate={pickupDateFull}
+                          returnDate={returnDateFull}
                         />
                       ))}
                     </div>
@@ -777,6 +787,8 @@ export default function SearchResultsClient({
                               hostType: car.host.hostType
                             } : null
                           }}
+                          pickupDate={pickupDateFull}
+                          returnDate={returnDateFull}
                         />
                       ))}
                     </div>

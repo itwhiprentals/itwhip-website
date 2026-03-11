@@ -44,6 +44,9 @@ export interface CompactCarCardProps {
   accentColor?: 'amber' | 'emerald' | 'blue' | 'purple'
   /** Additional CSS classes to apply to the card container */
   className?: string
+  /** ISO datetime strings to pass through to the car detail booking widget */
+  pickupDate?: string
+  returnDate?: string
 }
 
 const accentColors = {
@@ -97,7 +100,7 @@ const getHostDisplayName = (host: { name?: string | null; isBusinessHost?: boole
   return name.split(' ')[0]
 }
 
-export default function CompactCarCard({ car, accentColor = 'amber', className = '' }: CompactCarCardProps) {
+export default function CompactCarCard({ car, accentColor = 'amber', className = '', pickupDate, returnDate }: CompactCarCardProps) {
   const t = useTranslations('VehicleCard')
   const [hostAvatarError, setHostAvatarError] = useState(false)
 
@@ -113,13 +116,16 @@ export default function CompactCarCard({ car, accentColor = 'amber', className =
     gravity: 'auto'
   })
 
-  const carUrl = generateCarUrl({
+  const baseUrl = generateCarUrl({
     id: car.id,
     make: car.make,
     model: car.model,
     year: car.year,
     city: car.city || 'Phoenix'
   })
+  const carUrl = pickupDate
+    ? `${baseUrl}?pickupDate=${encodeURIComponent(pickupDate)}${returnDate ? `&returnDate=${encodeURIComponent(returnDate)}` : ''}`
+    : baseUrl
 
   const colors = accentColors[accentColor]
 
