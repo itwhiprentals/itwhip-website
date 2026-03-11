@@ -32,7 +32,7 @@ import { calculateFromWidgetState, formatPrice, getActualDeposit, getCarClassAnd
 // Import availability hook and date picker component
 import { useCarAvailability } from '@/app/hooks/useCarAvailability'
 import DateRangePicker, { isArizonaToday } from './DateRangePicker'
-import { calculateEarliestPickup } from '@/app/lib/booking/booking-time-rules'
+import { calculateEarliestPickup, getArizonaTodayString, addDays } from '@/app/lib/booking/booking-time-rules'
 
 interface BookingWidgetProps {
   car: any
@@ -62,18 +62,6 @@ interface InsuranceQuote {
   }
 }
 
-// Helper function to get Arizona date string (no timezone conversion)
-function getArizonaDateString(daysToAdd: number = 0): string {
-  const date = new Date()
-  date.setDate(date.getDate() + daysToAdd)
-  
-  // Format as YYYY-MM-DD in local time (not UTC)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  
-  return `${year}-${month}-${day}`
-}
 
 // Helper to extract date and time from ISO datetime string
 function extractDateAndTime(isoString: string): { date: string; time: string } {
@@ -122,9 +110,9 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   const { date: returnDateFromUrl, time: returnTimeFromUrl } = extractDateAndTime(returnDateParam)
   
   // Use defaults if no URL params (respect minimum trip duration)
-  const today = getArizonaDateString(0)
-  const tomorrow = getArizonaDateString(1)
-  const defaultEndDate = getArizonaDateString(minDays + 1) // +1 because start is tomorrow
+  const today = getArizonaTodayString()
+  const tomorrow = addDays(today, 1)
+  const defaultEndDate = addDays(today, minDays + 1) // +1 because start is tomorrow
 
   // Read last search dates from sessionStorage — saved by RentalSearchWidget on search
   let sessionPickupDate = '', sessionReturnDate = '', sessionPickupTime = '10:00', sessionReturnTime = '10:00'
@@ -164,9 +152,9 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
       const [bh, bm] = _initTime.split(':').map(Number)
       const [eh, em] = eTime.split(':').map(Number)
       if (bh * 60 + bm < eh * 60 + em) {
-        // Time is in the past — default to tomorrow (avoids friction)
-        _startDate = tomorrow
-        _startTime = '10:00'
+        // Stale time — bump to earliest valid (stays today unless eDate is already tomorrow)
+        _startDate = eDate
+        _startTime = eTime
       }
       // else: valid same-day time — keep it
     }
@@ -221,7 +209,9 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
     setDateError(null)
   }, [startDate, endDate, minDays, maxDays, blockedDates, validateDateRange])
   const [startTime, setStartTime] = useState(_startTime)
-  const [endTime, setEndTime] = useState(returnTimeFromUrl || sessionReturnTime || _startTime || '10:00')
+  // If the init block corrected the start date/time, session return time is stale — use corrected start time instead
+  const _startWasCorrected = _startDate !== _initDate || _startTime !== _initTime
+  const [endTime, setEndTime] = useState(returnTimeFromUrl || (_startWasCorrected ? _startTime : sessionReturnTime) || _startTime || '10:00')
   const returnTimeManuallySet = useRef(false)
 
   // Handlers that sync return time with pickup time
