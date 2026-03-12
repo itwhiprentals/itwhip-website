@@ -72,6 +72,10 @@ interface VehicleData {
   isListed: boolean
   instantBook: boolean
   advanceNotice: number | null
+  tripBuffer: number | null
+  allow24HourPickup: boolean
+  checkInTime: string | null
+  checkOutTime: string | null
   minTripDuration: number | null
   maxTripDuration: number | null
   vehicleType: string | null
@@ -625,6 +629,55 @@ export default function PartnerFleetDetailPage({ params }: { params: Promise<{ i
               maxTripDuration={vehicle.maxTripDuration || 30}
               instantBook={vehicle.instantBook || false}
             />
+
+            {/* Availability Rules */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="flex items-center gap-2">
+                  <IoCalendarOutline className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+                  <h2 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white">Availability Rules</h2>
+                </div>
+                <Link
+                  href={`/partner/fleet/${id}/edit?section=availability`}
+                  className="text-xs text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                >
+                  <IoCreateOutline className="w-3.5 h-3.5" />
+                  Edit
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Instant Book</p>
+                  <p className={`text-sm font-medium ${vehicle.instantBook ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                    {vehicle.instantBook ? 'Enabled' : 'Disabled'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Advance Notice</p>
+                  <p className="text-sm text-gray-900 dark:text-white">
+                    {vehicle.advanceNotice != null ? (vehicle.advanceNotice >= 24 ? `${vehicle.advanceNotice / 24} day${vehicle.advanceNotice / 24 !== 1 ? 's' : ''}` : `${vehicle.advanceNotice} hr`) : '2 hr'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Trip Buffer</p>
+                  <p className="text-sm text-gray-900 dark:text-white">{vehicle.tripBuffer ?? 3} hr</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Pickup Hours</p>
+                  <p className="text-sm text-gray-900 dark:text-white">
+                    {vehicle.allow24HourPickup ? '24 hours' : '5:00 AM – 10:00 PM'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Default Pickup</p>
+                  <p className="text-sm text-gray-900 dark:text-white">{vehicle.checkInTime || '10:00 AM'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Default Return</p>
+                  <p className="text-sm text-gray-900 dark:text-white">{vehicle.checkOutTime || '10:00 AM'}</p>
+                </div>
+              </div>
+            </div>
 
             {/* Host Assignment Section */}
             <HostAssignmentSection

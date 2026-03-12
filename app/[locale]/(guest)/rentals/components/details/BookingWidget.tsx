@@ -100,7 +100,13 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   // For rentals only, use minTripDuration from DB or default to 1
   const minDays = isRideshare ? 3 : (car?.minTripDuration || 1)
   const maxDays = car?.maxTripDuration || 30
-  
+
+  // Per-car availability settings
+  const advanceHours = car?.advanceNotice ?? 2
+  const is24Hour = car?.allow24HourPickup ?? false
+  const defaultCheckIn = car?.checkInTime || '10:00'
+  const defaultCheckOut = car?.checkOutTime || '10:00'
+
   // Read search params from URL
   const pickupDateParam = searchParams.get('pickupDate') || ''
   const returnDateParam = searchParams.get('returnDate') || ''
@@ -137,7 +143,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   const _rawInitDate = pickupDateFromUrl || sessionPickupDate || tomorrow
   const _initDate = isArizonaToday(_rawInitDate) ? tomorrow : _rawInitDate
   let _startDate = _initDate
-  let _startTime = '10:00'
+  let _startTime = defaultCheckIn
 
   // Return date: URL param → session return date → startDate + minDays (24hrs for default 1-day rental)
   const _defaultReturnDate = returnDateFromUrl || sessionReturnDate || addDays(_startDate, minDays)
@@ -190,7 +196,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
 
     // Don't clear if today is still blocked by advance notice — that error takes priority
     if (isArizonaToday(startDate)) {
-      const { date: eDate } = calculateEarliestPickup(car?.advanceNotice ?? 2)
+      const { date: eDate } = calculateEarliestPickup(advanceHours, { allow24HourPickup: is24Hour })
       if (eDate !== startDate) return
     }
 
@@ -205,7 +211,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   const handleStartTimeChange = (time: string) => {
     let enforced = time
     if (isArizonaToday(startDate)) {
-      const { date: eDate, time: eTime } = calculateEarliestPickup(car?.advanceNotice ?? 2)
+      const { date: eDate, time: eTime } = calculateEarliestPickup(advanceHours, { allow24HourPickup: is24Hour })
       if (eDate === startDate) {
         const [h, m] = time.split(':').map(Number)
         const [eh, em] = eTime.split(':').map(Number)
@@ -227,8 +233,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   useEffect(() => {
     if (!isArizonaToday(startDate)) return
 
-    const advanceHours = car?.advanceNotice ?? 2
-    const { date: eDate, time: eTime } = calculateEarliestPickup(advanceHours)
+    const { date: eDate, time: eTime } = calculateEarliestPickup(advanceHours, { allow24HourPickup: is24Hour })
     if (eDate !== startDate) {
       // Advance notice pushes past today — show error so user knows to pick a later date
       const dateLabel = format.dateTime(new Date(eDate + 'T00:00:00'), { weekday: 'short', month: 'short', day: 'numeric' })
@@ -250,7 +255,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   useEffect(() => {
     if (pickupDateFromUrl) {
       if (isArizonaToday(pickupDateFromUrl) && pickupTimeFromUrl) {
-        const { date: eDate, time: eTime } = calculateEarliestPickup(car?.advanceNotice ?? 2)
+        const { date: eDate, time: eTime } = calculateEarliestPickup(advanceHours, { allow24HourPickup: is24Hour })
         const [h, m] = pickupTimeFromUrl.split(':').map(Number)
         const [eh, em] = eTime.split(':').map(Number)
         if (eDate === pickupDateFromUrl && h * 60 + m >= eh * 60 + em) {
@@ -261,12 +266,12 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         // else: past time or after 8 PM — keep tomorrow (already set by init)
       } else if (!isArizonaToday(pickupDateFromUrl)) {
         setStartDate(pickupDateFromUrl)
-        setStartTime('10:00')
+        setStartTime(defaultCheckIn)
       }
     }
     if (returnDateFromUrl) {
       setEndDate(returnDateFromUrl)
-      if (!isArizonaToday(returnDateFromUrl)) setEndTime('10:00')
+      if (!isArizonaToday(returnDateFromUrl)) setEndTime(defaultCheckOut)
     }
   }, [pickupDateFromUrl, returnDateFromUrl, pickupTimeFromUrl, returnTimeFromUrl])
   
@@ -565,7 +570,8 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
             minDate={today}
             minEndDate={minEndDate}
             blockedDates={blockedDates}
-            advanceNotice={car?.advanceNotice ?? 2}
+            advanceNotice={advanceHours}
+            allow24HourPickup={is24Hour}
             onStartDateChange={setStartDate}
             onEndDateChange={setEndDate}
             onStartTimeChange={handleStartTimeChange}

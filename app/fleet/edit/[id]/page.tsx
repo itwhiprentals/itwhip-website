@@ -103,7 +103,10 @@ export default function EditCarPage() {
           zipCode: carData.zipCode || '',
           latitude: carData.latitude || null,
           longitude: carData.longitude || null,
-          pickupInstructions: carData.pickupInstructions || ''
+          pickupInstructions: carData.pickupInstructions || '',
+          // Map DB field names to form field names
+          bufferTime: carData.tripBuffer ?? carData.bufferTime ?? 3,
+          allow24HourPickup: carData.allow24HourPickup ?? false,
         })
         
         // Extract photo URLs
@@ -544,6 +547,7 @@ export default function EditCarPage() {
               maxTripDuration={formData.maxTripDuration}
               advanceNotice={formData.advanceNotice}
               instantBook={formData.instantBook}
+              allow24HourPickup={formData.allow24HourPickup}
               mileageDaily={formData.mileageDaily}
               mileageWeekly={formData.mileageWeekly}
               mileageMonthly={formData.mileageMonthly}

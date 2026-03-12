@@ -1,6 +1,6 @@
 // app/api/cron/noshow-detection/route.ts
 // Detects no-shows: CONFIRMED bookings where trip never started past deadline
-// Cash: pickup + 12h, Card: pickup + 24h
+// All booking types: pickup + 2h (matches Turo US standard)
 // Runs every 10 minutes via Vercel Cron
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -56,14 +56,12 @@ export async function GET(request: NextRequest) {
       const [h, m] = (booking.startTime || '10:00').split(':').map(Number)
       pickup.setHours(h, m, 0, 0)
 
-      // Use noShowDeadline if set, otherwise calculate
+      // Use noShowDeadline if set, otherwise calculate: 2h after pickup (all payment types)
       let deadline: Date
       if (booking.noShowDeadline) {
         deadline = new Date(booking.noShowDeadline)
       } else {
-        const isCash = booking.paymentType === 'CASH'
-        const hoursAfter = isCash ? 12 : 24
-        deadline = new Date(pickup.getTime() + hoursAfter * 60 * 60 * 1000)
+        deadline = new Date(pickup.getTime() + 2 * 60 * 60 * 1000)
       }
 
       // Only process if past deadline

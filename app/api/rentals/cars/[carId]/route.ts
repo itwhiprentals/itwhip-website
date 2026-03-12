@@ -103,6 +103,8 @@ export async function GET(
         // Availability
         instantBook: true,
         advanceNotice: true,
+        tripBuffer: true,
+        allow24HourPickup: true,
         minTripDuration: true,
         maxTripDuration: true,
         

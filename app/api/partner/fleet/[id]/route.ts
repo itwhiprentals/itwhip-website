@@ -136,6 +136,10 @@ export async function GET(
       isListed: vehicle.isListed,
       instantBook: vehicle.instantBook,
       advanceNotice: vehicle.advanceNotice,
+      tripBuffer: vehicle.tripBuffer,
+      allow24HourPickup: vehicle.allow24HourPickup,
+      checkInTime: vehicle.checkInTime,
+      checkOutTime: vehicle.checkOutTime,
       minTripDuration: vehicle.minTripDuration,
       maxTripDuration: vehicle.maxTripDuration,
 
@@ -278,6 +282,10 @@ export async function PUT(
       isActive,
       instantBook,
       advanceNotice,
+      tripBuffer,
+      allow24HourPickup,
+      checkInTime,
+      checkOutTime,
       minTripDuration,
       maxTripDuration,
 
@@ -347,6 +355,10 @@ export async function PUT(
     if (isActive !== undefined) updateData.isActive = !!isActive
     if (instantBook !== undefined) updateData.instantBook = !!instantBook
     if (advanceNotice !== undefined) updateData.advanceNotice = parseInt(advanceNotice) || 2
+    if (tripBuffer !== undefined) updateData.tripBuffer = Math.max(2, parseInt(tripBuffer) || 3)
+    if (allow24HourPickup !== undefined) updateData.allow24HourPickup = !!allow24HourPickup
+    if (checkInTime !== undefined) updateData.checkInTime = checkInTime || null
+    if (checkOutTime !== undefined) updateData.checkOutTime = checkOutTime || null
     if (minTripDuration !== undefined) updateData.minTripDuration = parseInt(minTripDuration) || 1
     if (maxTripDuration !== undefined) updateData.maxTripDuration = parseInt(maxTripDuration) || 30
 

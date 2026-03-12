@@ -17,6 +17,7 @@ interface DateRangePickerProps {
   minEndDate: string         // YYYY-MM-DD (startDate + minDays)
   blockedDates: string[]     // YYYY-MM-DD strings to gray out
   advanceNotice?: number     // car.advanceNotice hours (default 2)
+  allow24HourPickup?: boolean // removes overnight restrictions
   onStartDateChange: (date: string) => void
   onEndDateChange: (date: string) => void
   onStartTimeChange: (time: string) => void
@@ -41,8 +42,8 @@ export function getEarliestPickupMinutes(): number {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-function TimeSelect({ value, onChange, format, isPickupToday, advanceNotice }: { value: string; onChange: (v: string) => void; format: ReturnType<typeof useFormatter>; isPickupToday?: boolean; advanceNotice?: number }) {
-  const { time: earliestTime } = isPickupToday ? calculateEarliestPickup(advanceNotice) : { time: '00:00' }
+function TimeSelect({ value, onChange, format, isPickupToday, advanceNotice, allow24HourPickup }: { value: string; onChange: (v: string) => void; format: ReturnType<typeof useFormatter>; isPickupToday?: boolean; advanceNotice?: number; allow24HourPickup?: boolean }) {
+  const { time: earliestTime } = isPickupToday ? calculateEarliestPickup(advanceNotice, { allow24HourPickup }) : { time: '00:00' }
   const [eh, em] = earliestTime.split(':').map(Number)
   const earliestMinutes = eh * 60 + em
 
@@ -68,6 +69,12 @@ function TimeSelect({ value, onChange, format, isPickupToday, advanceNotice }: {
         const minute = i % 2 === 0 ? '00' : '30'
         const timeValue = `${hour.toString().padStart(2, '0')}:${minute}`
         const slotMinutes = hour * 60 + parseInt(minute)
+        // Standard cars: hide overnight slots (1AM–5AM) and after 10PM
+        if (!allow24HourPickup) {
+          const inBlackout = slotMinutes >= 60 && slotMinutes < 300 // 1AM–5AM
+          const afterCutoff = slotMinutes > 22 * 60 // after 10PM
+          if (inBlackout || afterCutoff) return null
+        }
         const disabled = isPickupToday && slotMinutes < earliestMinutes
         const h12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour
         const ampm = hour < 12 ? 'AM' : 'PM'
@@ -91,6 +98,7 @@ export default function DateRangePicker({
   minEndDate,
   blockedDates,
   advanceNotice,
+  allow24HourPickup = false,
   onStartDateChange,
   onEndDateChange,
   onStartTimeChange,
@@ -124,7 +132,7 @@ export default function DateRangePicker({
             <span>{formatDisplayDate(startDate)}</span>
           </button>
           <span className="text-gray-300 dark:text-gray-600 ml-auto">|</span>
-          <TimeSelect value={startTime} onChange={onStartTimeChange} format={format} isPickupToday={isArizonaToday(startDate)} advanceNotice={advanceNotice} />
+          <TimeSelect value={startTime} onChange={onStartTimeChange} format={format} isPickupToday={isArizonaToday(startDate)} advanceNotice={advanceNotice} allow24HourPickup={allow24HourPickup} />
         </div>
 
         {/* Return Row */}
@@ -140,7 +148,7 @@ export default function DateRangePicker({
             <span>{formatDisplayDate(endDate)}</span>
           </button>
           <span className="text-gray-300 dark:text-gray-600 ml-auto">|</span>
-          <TimeSelect value={endTime} onChange={onEndTimeChange} format={format} />
+          <TimeSelect value={endTime} onChange={onEndTimeChange} format={format} allow24HourPickup={allow24HourPickup} />
         </div>
       </div>
 

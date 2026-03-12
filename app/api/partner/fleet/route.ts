@@ -8,6 +8,7 @@ import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
 import { updatePartnerCommissionRate } from '@/app/lib/commission/calculate-tier'
 import { getVehicleSpecData } from '@/app/lib/utils/vehicleSpec'
+import { getPlatformBookingRules } from '@/app/lib/booking/booking-time-rules'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
@@ -307,6 +308,9 @@ export async function POST(request: NextRequest) {
     const isAutoApproved = partner.autoApproveListings === false ? false : true
     console.log(`[Partner Fleet] Auto-approve status: ${isAutoApproved} (autoApproveListings: ${partner.autoApproveListings})`)
 
+    // Platform-level defaults for booking rules (fallback when host has no custom defaults)
+    const platformRules = await getPlatformBookingRules()
+
     // Create vehicle with all fields
     const vehicle = await prisma.rentalCar.create({
       data: {
@@ -390,8 +394,10 @@ export async function POST(request: NextRequest) {
         })(),
         isActive: isPublicListing === false ? false : isAutoApproved,
         isListed: isPublicListing === false ? false : true,
-        instantBook: true,
-        advanceNotice: 2,
+        instantBook: partner.defaultInstantBook ?? true,
+        advanceNotice: partner.defaultAdvanceNotice ?? platformRules.defaultAdvanceNotice,
+        tripBuffer: partner.defaultTripBuffer ?? platformRules.defaultTripBuffer,
+        allow24HourPickup: partner.defaultAllow24HourPickup ?? false,
         // Rideshare vehicles require minimum 3 day bookings
         minTripDuration: vehicleType === 'RIDESHARE' ? 3 : 1,
         maxTripDuration: 30,

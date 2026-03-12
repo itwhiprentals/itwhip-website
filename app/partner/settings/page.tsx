@@ -13,6 +13,7 @@ import {
   IoShieldCheckmarkOutline,
   IoNotificationsOutline,
   IoDocumentTextOutline,
+  IoCalendarOutline,
 } from 'react-icons/io5'
 
 import {
@@ -23,7 +24,8 @@ import {
   NotificationsTab,
   PrivacyTab,
   AgreementTab,
-  DeleteAccountModal
+  DeleteAccountModal,
+  AvailabilityTab
 } from './components'
 
 interface PartnerSettings {
@@ -64,9 +66,14 @@ interface PartnerSettings {
   // GDPR
   userStatus?: 'ACTIVE' | 'PENDING_DELETION' | 'DELETED' | 'SUSPENDED'
   deletionScheduledFor?: string | null
+  // Fleet-wide availability defaults
+  defaultInstantBook: boolean
+  defaultAdvanceNotice: number
+  defaultTripBuffer: number
+  defaultAllow24HourPickup: boolean
 }
 
-type SectionId = 'account' | 'company' | 'banking' | 'security' | 'notifications' | 'agreement' | 'privacy'
+type SectionId = 'account' | 'company' | 'banking' | 'security' | 'notifications' | 'agreement' | 'privacy' | 'availability'
 
 export default function PartnerSettingsPage() {
   const t = useTranslations('PartnerSettings')
@@ -95,7 +102,11 @@ export default function PartnerSettingsPage() {
     isBusinessHost: false,
     businessApprovalStatus: 'NONE',
     userStatus: 'ACTIVE',
-    deletionScheduledFor: null
+    deletionScheduledFor: null,
+    defaultInstantBook: true,
+    defaultAdvanceNotice: 2,
+    defaultTripBuffer: 3,
+    defaultAllow24HourPickup: false
   })
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -112,7 +123,7 @@ export default function PartnerSettingsPage() {
     fetchSettings()
     // Check for tab query param
     const tab = searchParams.get('tab')
-    if (tab && ['account', 'company', 'banking', 'security', 'notifications', 'agreement', 'privacy'].includes(tab)) {
+    if (tab && ['account', 'company', 'banking', 'security', 'notifications', 'agreement', 'privacy', 'availability'].includes(tab)) {
       setActiveSection(tab as SectionId)
     }
   }, [searchParams])
@@ -281,7 +292,8 @@ export default function PartnerSettingsPage() {
     { id: 'security' as SectionId, label: t('security'), icon: IoShieldCheckmarkOutline },
     { id: 'notifications' as SectionId, label: t('notifications'), icon: IoNotificationsOutline },
     { id: 'agreement' as SectionId, label: t('rentalAgreement'), icon: IoDocumentTextOutline },
-    { id: 'privacy' as SectionId, label: t('dataAndPrivacy'), icon: IoShieldCheckmarkOutline }
+    { id: 'privacy' as SectionId, label: t('dataAndPrivacy'), icon: IoShieldCheckmarkOutline },
+    { id: 'availability' as SectionId, label: 'Availability', icon: IoCalendarOutline }
   ]
 
   if (isLoading) {
@@ -386,6 +398,20 @@ export default function PartnerSettingsPage() {
 
             {activeSection === 'agreement' && (
               <AgreementTab />
+            )}
+
+            {activeSection === 'availability' && (
+              <AvailabilityTab
+                settings={{
+                  defaultInstantBook: settings.defaultInstantBook,
+                  defaultAdvanceNotice: settings.defaultAdvanceNotice,
+                  defaultTripBuffer: settings.defaultTripBuffer,
+                  defaultAllow24HourPickup: settings.defaultAllow24HourPickup
+                }}
+                setSettings={setSettings}
+                onSave={handleSave}
+                isSaving={isSaving}
+              />
             )}
 
             {activeSection === 'privacy' && (

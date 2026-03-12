@@ -127,6 +127,9 @@ interface RentalCarWithDetails {
   hostStatus?: string
   suspensionMessage?: string | null
   isActive?: boolean
+  // AVAILABILITY FIELDS
+  allow24HourPickup?: boolean
+  tripBuffer?: number
   // RIDESHARE FIELDS
   vehicleType?: 'RENTAL' | 'RIDESHARE' | string
 }
@@ -1218,6 +1221,12 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                         <IoTimeOutline className="w-4 h-4 text-gray-400" />
                         <span className="text-sm text-gray-600 dark:text-gray-400">
                           {t('advanceNoticeRequired', { hours: car.advanceNotice || 2 })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <IoTimeOutline className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                          Pickup hours: {car.allow24HourPickup ? '24 hours' : '5:00 AM – 10:00 PM'}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">

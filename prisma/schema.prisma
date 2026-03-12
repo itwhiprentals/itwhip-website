@@ -1931,6 +1931,10 @@ model RentalBooking {
   returnReminder24hSent      Boolean               @default(false)
   returnReminder3hSent       Boolean               @default(false)
 
+  // ===== HOST MARK READY =====
+  markedReadyAt              DateTime?             // Host marked car ready early after return
+  markedReadyBy              String?               // hostId who marked it ready
+
   // ===== BELL NOTIFICATIONS =====
   bookingNotifications       BookingNotification[]
 }
@@ -2059,6 +2063,8 @@ model RentalCar {
   minTripDuration            Int                        @default(1)
   maxTripDuration            Int                        @default(30)
   bufferTime                 Int                        @default(2)
+  tripBuffer                 Int                        @default(3)
+  allow24HourPickup          Boolean                    @default(false)
   cancellationPolicy         String                     @default("moderate")
   checkInTime                String                     @default("10:00")
   checkOutTime               String                     @default("10:00")
@@ -2538,6 +2544,15 @@ model RentalHost {
   onboardingCompletedAt      DateTime? // When all required steps done
   declinedRequestAt          DateTime? // If they declined the request
   declineReason              String? // Optional reason
+
+  // ═══════════════════════════════════════════════════════════════
+  // FLEET-WIDE AVAILABILITY DEFAULTS (apply to new cars)
+  // ═══════════════════════════════════════════════════════════════
+  defaultInstantBook         Boolean                @default(true)
+  defaultAdvanceNotice       Int                    @default(2)   // hours
+  defaultTripBuffer          Int                    @default(3)   // hours
+  defaultAllow24HourPickup   Boolean                @default(false)
+
   BackgroundCheck            BackgroundCheck[]
   Claim                      Claim[]
   HostDocumentStatus         HostDocumentStatus[]
@@ -3913,6 +3928,12 @@ model PlatformSettings {
   // Deposit Auto-Release
   depositAutoReleaseDays   Int      @default(3)      // Days after trip end to auto-release deposit
   depositAutoReleaseEnabled Boolean @default(true)   // Whether auto-release is enabled
+
+  // Booking Time Rules
+  platformMinAdvanceNotice  Int  @default(1)   // platform floor: min hours guest must book ahead
+  platformMinTripBuffer     Int  @default(2)   // platform floor: min gap between trips (hours)
+  defaultAdvanceNotice      Int  @default(2)   // new-car default advance notice (hours)
+  defaultTripBuffer         Int  @default(3)   // new-car default trip buffer (hours)
 
   @@map("platform_settings")
 }

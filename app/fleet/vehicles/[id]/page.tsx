@@ -27,6 +27,7 @@ import {
   IoCloseOutline,
   IoPhonePortraitOutline,
 } from 'react-icons/io5'
+import AvailabilityRulesCard from '../components/AvailabilityRulesCard'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -98,6 +99,11 @@ interface VehicleDetail {
   fuelType: string
   currentMileage: number | null
   instantBook: boolean
+  advanceNotice: number
+  tripBuffer: number
+  allow24HourPickup: boolean
+  checkInTime: string | null
+  checkOutTime: string | null
   primaryPhoto: string | null
   photos: string[]
   photoCount: number
@@ -1392,6 +1398,16 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
         {vehicle.host && <HostCard host={vehicle.host} />}
         <LocationDelivery vehicle={vehicle} />
         <StatsGrid stats={vehicle.stats} />
+        <div className="mb-4">
+          <AvailabilityRulesCard
+            instantBook={vehicle.instantBook}
+            advanceNotice={vehicle.advanceNotice}
+            tripBuffer={vehicle.tripBuffer}
+            allow24HourPickup={vehicle.allow24HourPickup}
+            checkInTime={vehicle.checkInTime ?? undefined}
+            checkOutTime={vehicle.checkOutTime ?? undefined}
+          />
+        </div>
         <RecentBookings bookings={vehicle.recentBookings} />
         <ActionsPanel vehicle={vehicle} />
 

@@ -97,6 +97,7 @@ export enum CarCategory {
     mileageMonthly?: number
     mileageOverageFee?: number
     bufferTime?: number
+    allow24HourPickup?: boolean
     cancellationPolicy?: string
     checkInTime?: string
     checkOutTime?: string

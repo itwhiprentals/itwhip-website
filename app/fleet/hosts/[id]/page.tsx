@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ViewPolicyModal from '@/app/fleet/components/ViewPolicyModal'
+import HostAvailabilityDefaults from '../components/HostAvailabilityDefaults'
 import {
   IoArrowBackOutline,
   IoPersonOutline,
@@ -376,6 +377,12 @@ export default function HostDetailPage({ params }: { params: Promise<{ id: strin
                   <p className="text-sm text-gray-600 dark:text-gray-400">{host.bio}</p>
                 </div>
               )}
+              <HostAvailabilityDefaults
+                defaultInstantBook={host.defaultInstantBook}
+                defaultAdvanceNotice={host.defaultAdvanceNotice}
+                defaultTripBuffer={host.defaultTripBuffer}
+                defaultAllow24HourPickup={host.defaultAllow24HourPickup}
+              />
               <div>
                 <h3 className="font-semibold mb-2">Account Details</h3>
                 <div className="space-y-2 text-sm">

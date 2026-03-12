@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import BookingRulesTab from './components/BookingRulesTab'
 
 interface AlertSettings {
   // Email Settings
@@ -150,7 +151,7 @@ interface PlatformSettings {
   }
 }
 
-type TabKey = 'global' | 'commissionTiers' | 'processingFees' | 'taxes' | 'host' | 'partner' | 'guest' | 'insurance' | 'deposits' | 'tripCharges' | 'alerts'
+type TabKey = 'global' | 'commissionTiers' | 'processingFees' | 'taxes' | 'host' | 'partner' | 'guest' | 'insurance' | 'deposits' | 'tripCharges' | 'booking' | 'alerts'
 
 const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: 'global', label: 'Global', icon: 'G' },
@@ -163,6 +164,7 @@ const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: 'insurance', label: 'Insurance', icon: 'I' },
   { key: 'deposits', label: 'Deposits', icon: 'D' },
   { key: 'tripCharges', label: 'Trip Charges', icon: '$' },
+  { key: 'booking', label: 'Booking', icon: '⏱' },
   { key: 'alerts', label: 'Alerts', icon: '🔔' }
 ]
 
@@ -1485,6 +1487,11 @@ export default function FleetSettingsPage() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Booking Tab */}
+          {activeTab === 'booking' && (
+            <BookingRulesTab settings={settings} handleChange={handleChange} />
           )}
 
           {/* Alerts Tab */}

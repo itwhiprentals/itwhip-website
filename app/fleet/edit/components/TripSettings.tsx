@@ -8,6 +8,7 @@ interface TripSettingsProps {
   maxTripDuration?: number
   advanceNotice?: number
   instantBook?: boolean
+  allow24HourPickup?: boolean
   mileageDaily?: number
   mileageWeekly?: number
   mileageMonthly?: number
@@ -46,6 +47,7 @@ export function TripSettings({
   maxTripDuration = 30,
   advanceNotice = 2,
   instantBook = true,
+  allow24HourPickup = false,
   mileageDaily = 200,
   mileageWeekly = 1000,
   mileageMonthly = 3000,
@@ -182,6 +184,22 @@ export function TripSettings({
               </label>
               <span className="text-xs text-gray-500 dark:text-gray-400">
                 (Guests can book without host approval)
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="allow24HourPickup"
+                checked={allow24HourPickup}
+                onChange={(e) => onChange('allow24HourPickup', e.target.checked)}
+                className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="allow24HourPickup" className="text-sm text-gray-700 dark:text-gray-300">
+                Allow 24-Hour Pickup
+              </label>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                (Enables overnight pickup — default: 5 AM–10 PM only)
               </span>
             </div>
           </div>

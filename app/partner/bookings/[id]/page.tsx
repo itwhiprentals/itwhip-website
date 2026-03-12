@@ -119,6 +119,8 @@ interface BookingDetails {
   noShowMarkedAt: string | null
   noShowFeeCharged: number | null
   noShowFeeStatus: string | null
+  markedReadyAt: string | null
+  markedReadyBy: string | null
   // Reassignment / booking bridge fields
   originalBookingId: string | null
   replacedByBookingId: string | null
@@ -243,6 +245,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   const [confirming, setConfirming] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [markingNoShow, setMarkingNoShow] = useState(false)
+  const [isMarkingReady, setIsMarkingReady] = useState(false)
   const [sendingVerification, setSendingVerification] = useState(false)
   const [sendingAgreement, setSendingAgreement] = useState(false)
 
@@ -416,6 +419,31 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       showToast('error', t('bdFailedMarkNoShow'))
     } finally {
       setMarkingNoShow(false)
+    }
+  }
+
+  const handleMarkReady = async () => {
+    if (!booking) return
+    setIsMarkingReady(true)
+    try {
+      const response = await fetch(`/api/partner/bookings/${booking.id}/mark-ready`, {
+        method: 'POST'
+      })
+      const data = await response.json()
+      if (data.success) {
+        setBooking(prev => prev ? {
+          ...prev,
+          markedReadyAt: new Date().toISOString(),
+          markedReadyBy: 'HOST',
+        } : null)
+        showToast('success', 'Car marked as ready — next pickup available within 2 hours')
+      } else {
+        showToast('error', data.error || 'Failed to mark car ready')
+      }
+    } catch {
+      showToast('error', 'Failed to mark car ready')
+    } finally {
+      setIsMarkingReady(false)
     }
   }
 
@@ -1159,6 +1187,38 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 insurance={insurance}
                 onLearnMoreTax={() => modals.setShowTaxInfo(true)}
               />
+            )}
+
+            {/* Mark Ready — shown after trip COMPLETED */}
+            {booking.status === 'COMPLETED' && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Car Readiness</h3>
+                {booking.markedReadyAt ? (
+                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                    <IoCheckmarkCircleOutline className="w-5 h-5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium">Car marked ready</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Available within 2 hours of marking
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                      Car cleaned and prepped early? Mark it ready to unlock the next booking sooner (2hr min vs full buffer).
+                    </p>
+                    <button
+                      onClick={handleMarkReady}
+                      disabled={isMarkingReady}
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors"
+                    >
+                      <IoCheckmarkCircleOutline className="w-4 h-4" />
+                      {isMarkingReady ? 'Marking…' : 'Mark Car Ready'}
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Manual bookings: Verification + Trip Charges in sidebar */}

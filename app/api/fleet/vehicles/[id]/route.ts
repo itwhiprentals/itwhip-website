@@ -187,6 +187,11 @@ export async function GET(
         fuelType: vehicle.fuelType,
         currentMileage: vehicle.currentMileage,
         instantBook: vehicle.instantBook,
+        advanceNotice: vehicle.advanceNotice,
+        tripBuffer: vehicle.tripBuffer,
+        allow24HourPickup: vehicle.allow24HourPickup,
+        checkInTime: vehicle.checkInTime,
+        checkOutTime: vehicle.checkOutTime,
         // Photos
         primaryPhoto: vehicle.photos.find((p: any) => p.isHero)?.url || vehicle.photos[0]?.url || null,
         photos: vehicle.photos.map((p: any) => p.url),

@@ -412,6 +412,8 @@ export async function GET(
         noShowMarkedAt: booking.noShowMarkedAt?.toISOString() || null,
         noShowFeeCharged: booking.noShowFeeCharged ? Number(booking.noShowFeeCharged) : null,
         noShowFeeStatus: booking.noShowFeeStatus || null,
+        markedReadyAt: booking.markedReadyAt?.toISOString() || null,
+        markedReadyBy: booking.markedReadyBy || null,
 
         // Reservation request link (for redirect when request stage is active)
         reservationRequestId: (booking as any).reservationRequest?.id || null,

@@ -95,7 +95,12 @@ export async function GET(request: NextRequest) {
         businessApprovalStatus: partner.businessApprovalStatus,
         // GDPR fields
         userStatus: partner.user?.status || 'ACTIVE',
-        deletionScheduledFor: partner.user?.deletionScheduledFor || null
+        deletionScheduledFor: partner.user?.deletionScheduledFor || null,
+        // Fleet-wide availability defaults
+        defaultInstantBook: partner.defaultInstantBook ?? true,
+        defaultAdvanceNotice: partner.defaultAdvanceNotice ?? 2,
+        defaultTripBuffer: partner.defaultTripBuffer ?? 3,
+        defaultAllow24HourPickup: partner.defaultAllow24HourPickup ?? false
       }
     })
   } catch (error) {
@@ -156,6 +161,12 @@ export async function PUT(request: NextRequest) {
     if (body.requireDeposit !== undefined) updateData.requireDeposit = body.requireDeposit
     if (body.depositAmount !== undefined) updateData.depositAmount = body.depositAmount
     if (body.globalDiscountPercent !== undefined) updateData.globalDiscountPercent = body.globalDiscountPercent
+
+    // Fleet-wide availability defaults
+    if (body.defaultInstantBook !== undefined) updateData.defaultInstantBook = !!body.defaultInstantBook
+    if (body.defaultAdvanceNotice !== undefined) updateData.defaultAdvanceNotice = Math.max(1, parseInt(body.defaultAdvanceNotice) || 2)
+    if (body.defaultTripBuffer !== undefined) updateData.defaultTripBuffer = Math.max(2, parseInt(body.defaultTripBuffer) || 3)
+    if (body.defaultAllow24HourPickup !== undefined) updateData.defaultAllow24HourPickup = !!body.defaultAllow24HourPickup
 
     // Only update if there's something to update
     if (Object.keys(updateData).length > 0) {

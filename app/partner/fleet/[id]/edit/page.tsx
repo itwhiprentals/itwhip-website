@@ -34,6 +34,7 @@ import { useTranslations } from 'next-intl'
 import { AddressAutocomplete, AddressResult } from '@/app/components/shared/AddressAutocomplete'
 import { CAR_COLORS } from '@/app/host/cars/[id]/edit/types'
 import { getVehicleFeatures, groupFeaturesByCategory } from '@/app/lib/data/vehicle-features'
+import AvailabilitySection from './components/AvailabilitySection'
 
 interface PhotoItem {
   id: string
@@ -75,6 +76,10 @@ interface VehicleData {
   isActive: boolean
   instantBook: boolean
   advanceNotice: number
+  tripBuffer: number
+  allow24HourPickup: boolean
+  checkInTime: string | null
+  checkOutTime: string | null
   minTripDuration: number
   maxTripDuration: number
   features: string[]
@@ -1580,67 +1585,42 @@ export default function PartnerFleetEditPage({ params }: { params: Promise<{ id:
         {/* Availability Tab */}
         {activeTab === 'availability' && (
           <div className="space-y-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('availabilitySettings')}</h3>
+            <AvailabilitySection
+              vehicleType={formData.vehicleType || 'RENTAL'}
+              instantBook={formData.instantBook || false}
+              advanceNotice={formData.advanceNotice ?? 2}
+              tripBuffer={formData.tripBuffer ?? 3}
+              allow24HourPickup={formData.allow24HourPickup ?? false}
+              checkInTime={formData.checkInTime ?? null}
+              checkOutTime={formData.checkOutTime ?? null}
+              onChange={(field, value) => handleChange(field as keyof VehicleData, value)}
+            />
 
-              <div className="space-y-4">
-                {formData.vehicleType !== 'RIDESHARE' && (
-                  <label className="flex items-center justify-between p-4 bg-gray-200/70 dark:bg-gray-700 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">{t('instantBook')}</p>
-                      <p className="text-sm text-gray-500">{t('instantBookDescription')}</p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={formData.instantBook || false}
-                      onChange={(e) => handleChange('instantBook', e.target.checked)}
-                      className="w-5 h-5 text-purple-600 rounded focus:ring-purple-600"
-                    />
-                  </label>
-                )}
-
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {t('advanceNotice')}
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.advanceNotice || 2}
-                      onChange={(e) => handleChange('advanceNotice', parseInt(e.target.value) || 2)}
-                      min="0"
-                      max="72"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {t('minTripDuration')}
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.minTripDuration || 1}
-                      onChange={(e) => handleChange('minTripDuration', parseInt(e.target.value) || 1)}
-                      min="1"
-                      max="30"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {t('maxTripDuration')}
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.maxTripDuration || 30}
-                      onChange={(e) => handleChange('maxTripDuration', parseInt(e.target.value) || 30)}
-                      min="1"
-                      max="90"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
+            {/* Trip Duration */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700">
+              <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Trip Duration</h4>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('minTripDuration')}</label>
+                  <input
+                    type="number"
+                    value={formData.minTripDuration || 1}
+                    onChange={(e) => handleChange('minTripDuration', parseInt(e.target.value) || 1)}
+                    min="1"
+                    max="30"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('maxTripDuration')}</label>
+                  <input
+                    type="number"
+                    value={formData.maxTripDuration || 30}
+                    onChange={(e) => handleChange('maxTripDuration', parseInt(e.target.value) || 30)}
+                    min="1"
+                    max="90"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white"
+                  />
                 </div>
               </div>
             </div>

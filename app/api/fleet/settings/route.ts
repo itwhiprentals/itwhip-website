@@ -230,6 +230,12 @@ export async function GET(request: NextRequest) {
         petHairFee: settings.petHairFee,
         lostKeyFee: settings.lostKeyFee
       },
+      booking: {
+        platformMinAdvanceNotice: settings.platformMinAdvanceNotice,
+        platformMinTripBuffer: settings.platformMinTripBuffer,
+        defaultAdvanceNotice: settings.defaultAdvanceNotice,
+        defaultTripBuffer: settings.defaultTripBuffer
+      },
       referrals: {
         hostSignupBonus: settings.hostSignupBonus,
         hostReferralBonus: (settings as any).hostReferralBonus ?? 0,
@@ -302,7 +308,9 @@ export async function PATCH(request: NextRequest) {
       'defaultCommissionRate', 'tier1VehicleThreshold', 'tier1CommissionRate',
       'tier2VehicleThreshold', 'tier2CommissionRate', 'tier3VehicleThreshold', 'tier3CommissionRate',
       // Processing fees
-      'processingFeePercent', 'processingFeeFixed', 'insurancePlatformShare'
+      'processingFeePercent', 'processingFeeFixed', 'insurancePlatformShare',
+      // Booking time rules
+      'platformMinAdvanceNotice', 'platformMinTripBuffer', 'defaultAdvanceNotice', 'defaultTripBuffer'
     ]
 
     for (const field of numericFields) {
