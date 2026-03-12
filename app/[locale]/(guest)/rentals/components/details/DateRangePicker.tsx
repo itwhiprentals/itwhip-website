@@ -68,7 +68,9 @@ function TimeSelect({ value, onChange, format, isPickupToday }: { value: string;
         const timeValue = `${hour.toString().padStart(2, '0')}:${minute}`
         const slotMinutes = hour * 60 + parseInt(minute)
         const disabled = isPickupToday && slotMinutes < earliestMinutes
-        const display = format.dateTime(new Date(2000, 0, 1, hour, parseInt(minute)), { hour: 'numeric', minute: '2-digit' })
+        const h12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour
+        const ampm = hour < 12 ? 'AM' : 'PM'
+        const display = `${h12}:${minute} ${ampm}`
         return (
           <option key={timeValue} value={timeValue} disabled={disabled}>
             {display}

@@ -114,7 +114,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   const tomorrow = addDays(today, 1)
 
   // Read last search dates from sessionStorage — saved by RentalSearchWidget on search
-  let sessionPickupDate = '', sessionReturnDate = '', sessionPickupTime = '10:00', sessionReturnTime = '10:00'
+  let sessionPickupDate = '', sessionReturnDate = ''
   if (typeof window !== 'undefined') {
     try {
       const saved = sessionStorage.getItem('itwhip_search_dates')
@@ -122,12 +122,10 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
         const parsed = JSON.parse(saved)
         // Only use if saved within last 2 hours (fresh search session)
         if (parsed.savedAt && Date.now() - parsed.savedAt < 2 * 60 * 60 * 1000) {
-          const { date: sd, time: st } = extractDateAndTime(parsed.pickupDate || '')
-          const { date: ed, time: et } = extractDateAndTime(parsed.returnDate || '')
+          const { date: sd } = extractDateAndTime(parsed.pickupDate || '')
+          const { date: ed } = extractDateAndTime(parsed.returnDate || '')
           sessionPickupDate = sd
-          sessionPickupTime = st
           sessionReturnDate = ed
-          sessionReturnTime = et
         }
       }
     } catch {}

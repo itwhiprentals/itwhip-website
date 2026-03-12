@@ -57,7 +57,7 @@ export default function RentalSearchCard({
     const today = getArizonaTodayString()
     return {
       pickup: addDays(today, 1),
-      return: addDays(today, 3),
+      return: addDays(today, 2),
     }
   }
 
@@ -71,20 +71,8 @@ export default function RentalSearchCard({
     return dateString.split('T')[0]
   }
   
-  // Helper to extract time from ISO string (handles "2025-10-22T10:00" format)
-  // Future dates always default to 10:00 AM — never carry over stale buffer times
-  const extractTime = (dateString?: string, defaultTime: string = '10:00') => {
-    if (!dateString) return defaultTime
-    const dateOnly = dateString.split('T')[0]
-    // If the date is in the future (not today), always use morning default
-    if (dateOnly && dateOnly !== getArizonaTodayString()) return '10:00'
-    // Today: extract embedded time if present
-    const parts = dateString.split('T')
-    if (parts.length > 1) {
-      return parts[1].substring(0, 5) // Get HH:MM
-    }
-    return defaultTime
-  }
+  // Time is always 10:00 AM — guard logic (advance notice, same-day buffer) is BookingWidget's job
+  const extractTime = () => '10:00'
   
   // Initialize with empty dates to avoid hydration mismatch (server/client time diff)
   const [searchParams, setSearchParams] = useState({
