@@ -122,8 +122,8 @@ export function calculateEarliestPickup(advanceNoticeHours: number = BOOKING_RUL
     }
   }
 
-  // Same day — use exact buffered time, but check evening cutoff
-  if (earliest >= BOOKING_RULES.eveningCutoffHour * 60) {
+  // Same day — use exact buffered time, but check evening cutoff (strictly after, so 10:00 PM itself is valid)
+  if (earliest > BOOKING_RULES.eveningCutoffHour * 60) {
     // Past evening cutoff — bump to tomorrow morning
     return {
       date: addDays(today, 1),

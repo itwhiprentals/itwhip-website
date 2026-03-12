@@ -16,6 +16,7 @@ interface DateRangePickerProps {
   minDate: string            // YYYY-MM-DD (today)
   minEndDate: string         // YYYY-MM-DD (startDate + minDays)
   blockedDates: string[]     // YYYY-MM-DD strings to gray out
+  advanceNotice?: number     // car.advanceNotice hours (default 2)
   onStartDateChange: (date: string) => void
   onEndDateChange: (date: string) => void
   onStartTimeChange: (time: string) => void
@@ -40,12 +41,12 @@ export function getEarliestPickupMinutes(): number {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-function TimeSelect({ value, onChange, format, isPickupToday }: { value: string; onChange: (v: string) => void; format: ReturnType<typeof useFormatter>; isPickupToday?: boolean }) {
-  const { time: earliestTime } = isPickupToday ? calculateEarliestPickup() : { time: '00:00' }
+function TimeSelect({ value, onChange, format, isPickupToday, advanceNotice }: { value: string; onChange: (v: string) => void; format: ReturnType<typeof useFormatter>; isPickupToday?: boolean; advanceNotice?: number }) {
+  const { time: earliestTime } = isPickupToday ? calculateEarliestPickup(advanceNotice) : { time: '00:00' }
   const [eh, em] = earliestTime.split(':').map(Number)
   const earliestMinutes = eh * 60 + em
 
-  // Auto-correct: when today is selected, if the current value is a past time, bump to now+2hrs
+  // Auto-correct: when date changes to today, bump if current value is before earliest allowed
   useEffect(() => {
     if (!isPickupToday) return
     const [h, m] = value.split(':').map(Number)
@@ -89,6 +90,7 @@ export default function DateRangePicker({
   minDate,
   minEndDate,
   blockedDates,
+  advanceNotice,
   onStartDateChange,
   onEndDateChange,
   onStartTimeChange,
@@ -122,7 +124,7 @@ export default function DateRangePicker({
             <span>{formatDisplayDate(startDate)}</span>
           </button>
           <span className="text-gray-300 dark:text-gray-600 ml-auto">|</span>
-          <TimeSelect value={startTime} onChange={onStartTimeChange} format={format} isPickupToday={isArizonaToday(startDate)} />
+          <TimeSelect value={startTime} onChange={onStartTimeChange} format={format} isPickupToday={isArizonaToday(startDate)} advanceNotice={advanceNotice} />
         </div>
 
         {/* Return Row */}

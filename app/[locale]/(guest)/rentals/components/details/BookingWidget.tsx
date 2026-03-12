@@ -201,11 +201,20 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   const returnTimeManuallySet = useRef(false)
 
   // Handlers that sync return time with pickup time
+  // For today: enforce earliest allowed time — prevents user from bypassing the same-day guard
   const handleStartTimeChange = (time: string) => {
-    setStartTime(time)
-    if (!returnTimeManuallySet.current) {
-      setEndTime(time)
+    let enforced = time
+    if (isArizonaToday(startDate)) {
+      const { date: eDate, time: eTime } = calculateEarliestPickup(car?.advanceNotice ?? 2)
+      if (eDate === startDate) {
+        const [h, m] = time.split(':').map(Number)
+        const [eh, em] = eTime.split(':').map(Number)
+        if (h * 60 + m < eh * 60 + em) enforced = eTime
+      }
+      // eDate !== startDate means today is blocked by advance notice — time change is irrelevant
     }
+    setStartTime(enforced)
+    if (!returnTimeManuallySet.current) setEndTime(enforced)
   }
   const handleEndTimeChange = (time: string) => {
     setEndTime(time)
@@ -229,12 +238,9 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
       const timeLabel = `${th12}:${String(tm).padStart(2, '0')} ${ampm}`
       setDateError(t('advanceNoticeBlocked', { hours: advanceHours, date: dateLabel, time: timeLabel }))
     } else {
-      const [sh, sm] = startTime.split(':').map(Number)
-      const [eh, em] = eTime.split(':').map(Number)
-      if (sh * 60 + sm < eh * 60 + em) {
-        setStartTime(eTime)
-        if (!returnTimeManuallySet.current) setEndTime(eTime)
-      }
+      // Always apply earliest time when user picks today — no stale-closure comparison needed
+      setStartTime(eTime)
+      if (!returnTimeManuallySet.current) setEndTime(eTime)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startDate, car?.advanceNotice])
@@ -559,6 +565,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
             minDate={today}
             minEndDate={minEndDate}
             blockedDates={blockedDates}
+            advanceNotice={car?.advanceNotice ?? 2}
             onStartDateChange={setStartDate}
             onEndDateChange={setEndDate}
             onStartTimeChange={handleStartTimeChange}
