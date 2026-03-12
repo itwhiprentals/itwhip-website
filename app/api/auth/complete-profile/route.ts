@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
 
       const yearNum = parseInt(year)
       const currentYear = new Date().getFullYear()
-      if (yearNum < 1990 || yearNum > currentYear + 1) {
+      if (isNaN(yearNum) || yearNum < 1990 || yearNum > currentYear + 1) {
         return NextResponse.json(
           { error: `Invalid vehicle year. Must be between 1990 and ${currentYear + 1}.` },
           { status: 400 }
@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
     // PENDING OAUTH USER - Create new user with phone
     // ========================================================================
     if (pendingOAuth && !isProfileComplete) {
-      console.log(`[Complete Profile] Creating new user from pending OAuth: ${pendingOAuth.email}`)
+      console.log(`[Complete Profile] Creating new user from pending OAuth: ${pendingOAuth.email}, roleHint=${roleHint}, hostRole=${hostRole}, hasCarData=${!!carData}, hasPhotos=${!!(vehiclePhotoUrls?.length)}`)
 
       // Check if user already exists with this email (edge case - might have been created elsewhere)
       const existingUser = await prisma.user.findUnique({
@@ -517,6 +517,9 @@ export async function POST(request: NextRequest) {
         }
 
         return user
+      }, {
+        maxWait: 10000, // Wait up to 10s for a connection (default 2s)
+        timeout: 20000  // Allow up to 20s for transaction (default 5s)
       })
 
       console.log(`[Complete Profile] Transaction complete - new user created: ${newUser.id}`)
@@ -566,6 +569,8 @@ export async function POST(request: NextRequest) {
             requiresAccountLinking: true
           }, { status: 409 })
         }
+        // Log transaction/post-transaction error details at info level for Vercel visibility
+        console.log(`[Complete Profile] ❌ Transaction/signup error: code=${error?.code || 'UNKNOWN'} message=${error?.message || String(error)} meta=${error?.meta ? JSON.stringify(error.meta) : 'none'}`)
         // Re-throw other errors
         throw error
       }
@@ -1011,10 +1016,15 @@ export async function POST(request: NextRequest) {
       message: 'Phone number saved successfully'
     })
 
-  } catch (error) {
-    console.error('[Complete Profile] Error:', error)
+  } catch (error: any) {
+    // Log at info level too — Vercel log exports often only capture info
+    const errMsg = error?.message || String(error)
+    const errCode = error?.code || 'UNKNOWN'
+    const errMeta = error?.meta ? JSON.stringify(error.meta) : 'none'
+    console.log(`[Complete Profile] ❌ ERROR: code=${errCode} message=${errMsg} meta=${errMeta}`)
+    console.error('[Complete Profile] Full error:', error)
     return NextResponse.json(
-      { error: 'Failed to complete profile' },
+      { error: 'Failed to complete profile', details: errMsg },
       { status: 500 }
     )
   }
