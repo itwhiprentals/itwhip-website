@@ -61,31 +61,23 @@ export default function RentalSearchCard({
     }
   }
 
-  // Track if component has mounted (for hydration-safe date initialization)
-  const [hasMounted, setHasMounted] = useState(false)
-  
   // Helper to extract date from ISO string (handles "2025-10-22T10:00" format)
   const extractDate = (dateString?: string) => {
     if (!dateString) return ''
-    // If it has time component (T), extract just the date part
     return dateString.split('T')[0]
   }
-  
-  // Time is always 10:00 AM — guard logic (advance notice, same-day buffer) is BookingWidget's job
-  const extractTime = () => '10:00'
   
   // Initialize with empty dates to avoid hydration mismatch (server/client time diff)
   const [searchParams, setSearchParams] = useState({
     location: initialLocation || '',
     pickupDate: extractDate(initialPickupDate) || '',
-    pickupTime: extractTime(initialPickupDate, initialPickupTime || '10:00'),
+    pickupTime: '10:00',
     returnDate: extractDate(initialReturnDate) || '',
-    returnTime: extractTime(initialReturnDate, initialReturnTime || '10:00')
+    returnTime: '10:00'
   })
 
   // Set default dates on client only (after hydration) to avoid mismatch
   useEffect(() => {
-    setHasMounted(true)
     if (!initialPickupDate && !initialReturnDate) {
       const defaults = getDefaultDates()
       setSearchParams(prev => ({
@@ -104,9 +96,9 @@ export default function RentalSearchCard({
         ...prev,
         location: initialLocation,
         pickupDate: extractDate(initialPickupDate) || prev.pickupDate,
-        pickupTime: extractTime(initialPickupDate, initialPickupTime || '10:00'),
+        pickupTime: '10:00',
         returnDate: extractDate(initialReturnDate) || prev.returnDate,
-        returnTime: extractTime(initialReturnDate, initialReturnTime || '10:00')
+        returnTime: '10:00'
       }))
     }
   }, [initialLocation, initialPickupDate, initialReturnDate, initialPickupTime, initialReturnTime])
@@ -135,44 +127,24 @@ export default function RentalSearchCard({
     setSearchParams(prev => ({ ...prev, location: location.name }))
   }
 
-  // Handle date selection
+  // Handle date selection — show bumped time if today selected, so UX is consistent
   const handleDateSelect = (date: string) => {
     if (calendarType === 'pickup') {
       const today = getArizonaTodayString()
-      const isToday = date === today
-
-      setSearchParams(prev => {
-        let pickupTime = prev.pickupTime
-        let pickupDate = date
-        let returnTime = prev.returnTime
-        if (isToday) {
-          const { date: eDate, time: eTime } = calculateEarliestPickup()
-          if (eDate !== today) {
-            // Past 8 PM cutoff — bump to tomorrow
-            pickupDate = addDays(today, 1)
-            pickupTime = '10:00'
-            if (!returnTimeManuallySet.current) returnTime = '10:00'
-          } else {
-            const [pH, pM] = pickupTime.split(':').map(Number)
-            const [eh, em] = eTime.split(':').map(Number)
-            if (pH * 60 + pM < eh * 60 + em) {
-              pickupTime = eTime
-              if (!returnTimeManuallySet.current) returnTime = pickupTime
-            }
-          }
-        } else {
-          // Switching to a future date — reset to 10:00 so stale same-day buffer times don't carry over
-          pickupTime = '10:00'
-          if (!returnTimeManuallySet.current) returnTime = '10:00'
-        }
-        return {
-          ...prev,
-          pickupDate,
-          pickupTime,
-          returnDate: pickupDate > prev.returnDate ? pickupDate : prev.returnDate,
-          ...(returnTimeManuallySet.current ? {} : { returnTime })
-        }
-      })
+      let pickupDate = date
+      let pickupTime = '10:00'
+      if (date === today) {
+        const { date: eDate, time: eTime } = calculateEarliestPickup(2)
+        pickupDate = eDate  // may bump to tomorrow if past 10PM cutoff
+        pickupTime = eTime
+      }
+      setSearchParams(prev => ({
+        ...prev,
+        pickupDate,
+        pickupTime,
+        returnDate: pickupDate > prev.returnDate ? pickupDate : prev.returnDate,
+        returnTime: pickupTime
+      }))
     } else {
       setSearchParams(prev => ({ ...prev, returnDate: date }))
     }
@@ -389,7 +361,7 @@ export default function RentalSearchCard({
         isOpen={showCalendar}
         onClose={() => setShowCalendar(false)}
         currentDate={calendarType === 'pickup' ? searchParams.pickupDate : searchParams.returnDate}
-        minDate={calendarType === 'pickup' ? new Date().toISOString().split('T')[0] : searchParams.pickupDate}
+        minDate={calendarType === 'pickup' ? getArizonaTodayString() : searchParams.pickupDate}
         onDateSelect={handleDateSelect}
         title={calendarType === 'pickup' ? t('pickupDate') : t('returnDate')}
       />

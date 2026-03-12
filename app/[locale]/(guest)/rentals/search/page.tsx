@@ -682,9 +682,13 @@ export default async function SearchResultsPage({
   const params = await searchParams
 
   // Parse search params with defaults
+  // Arizona is UTC-7 (no DST). Compute today server-side by subtracting 7h from UTC.
+  const utcNow = new Date()
+  const arizonaNow = new Date(utcNow.getTime() - 7 * 60 * 60 * 1000)
+  const arizonaToday = format(arizonaNow, 'yyyy-MM-dd')
   const location = params.location || 'Phoenix, AZ'
-  const pickupDate = params.pickupDate || format(new Date(), 'yyyy-MM-dd')
-  const returnDate = params.returnDate || format(addDays(new Date(), 3), 'yyyy-MM-dd')
+  const pickupDate = params.pickupDate || format(addDays(new Date(arizonaToday + 'T00:00:00'), 1), 'yyyy-MM-dd')
+  const returnDate = params.returnDate || format(addDays(new Date(arizonaToday + 'T00:00:00'), 2), 'yyyy-MM-dd')
   const pickupTime = params.pickupTime || '10:00'
   const returnTime = params.returnTime || '10:00'
   const carType = params.carType || null
