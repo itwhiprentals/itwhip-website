@@ -12,7 +12,7 @@ export const BOOKING_RULES = {
   /** Round time slots to this interval (minutes) */
   slotInterval: 30,
   /** If earliest pickup is at or after this hour (0-23), bump to next day */
-  eveningCutoffHour: 20,
+  eveningCutoffHour: 22,
   /** Default start time for next-day (or post-cutoff) pickup */
   morningOpenHour: 10,
   /** No pickups allowed between these hours (0-23) */
@@ -98,10 +98,19 @@ export function calculateEarliestPickup(advanceNoticeHours: number = BOOKING_RUL
   const daysToAdd = Math.floor(earliest / (24 * 60))
 
   if (daysToAdd > 0) {
-    // Future day — always open at morning hour (10:00 AM)
+    // Advance notice spans into a future day — use actual buffered time, but floor to morning open
+    const minutesIntoFutureDay = earliest % (24 * 60)
+    const futureMinutes = Math.max(minutesIntoFutureDay, BOOKING_RULES.morningOpenHour * 60)
+    // If the result is still past evening cutoff, push to the day after
+    if (futureMinutes >= BOOKING_RULES.eveningCutoffHour * 60) {
+      return {
+        date: addDays(today, daysToAdd + 1),
+        time: `${String(BOOKING_RULES.morningOpenHour).padStart(2, '0')}:00`,
+      }
+    }
     return {
       date: addDays(today, daysToAdd),
-      time: `${String(BOOKING_RULES.morningOpenHour).padStart(2, '0')}:00`,
+      time: minutesToTimeString(futureMinutes),
     }
   }
 
