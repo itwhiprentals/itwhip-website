@@ -95,8 +95,19 @@ export function calculateEarliestPickup(advanceNoticeHours: number = BOOKING_RUL
   const bufferedMinutes = nowMinutes + advanceNoticeHours * 60
   const earliest = Math.ceil(bufferedMinutes / BOOKING_RULES.slotInterval) * BOOKING_RULES.slotInterval
 
+  const daysToAdd = Math.floor(earliest / (24 * 60))
+
+  if (daysToAdd > 0) {
+    // Future day — always open at morning hour (10:00 AM)
+    return {
+      date: addDays(today, daysToAdd),
+      time: `${String(BOOKING_RULES.morningOpenHour).padStart(2, '0')}:00`,
+    }
+  }
+
+  // Same day — use exact buffered time, but check evening cutoff
   if (earliest >= BOOKING_RULES.eveningCutoffHour * 60) {
-    // Past evening cutoff — earliest pickup is tomorrow morning
+    // Past evening cutoff — bump to tomorrow morning
     return {
       date: addDays(today, 1),
       time: `${String(BOOKING_RULES.morningOpenHour).padStart(2, '0')}:00`,

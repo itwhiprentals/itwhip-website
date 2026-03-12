@@ -137,27 +137,25 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   // These functions only use Date — no window/browser APIs — so they work on SSR too.
   // RULE: Never display a past time. If today + past time, default to tomorrow at 10:00.
   const _initDate = pickupDateFromUrl || sessionPickupDate || tomorrow
-  // Session time is only valid for same-day bookings (buffer-aware). Future dates always default to 10:00.
-  const _initTime = pickupTimeFromUrl || (isArizonaToday(_initDate) ? sessionPickupTime : null) || '10:00'
   let _startDate = _initDate
-  let _startTime = _initTime
+  let _startTime = '10:00'
 
   if (isArizonaToday(_initDate)) {
+    // For today: always compute the advance-notice-aware earliest time. Never trust session time.
     const { date: eDate, time: eTime } = calculateEarliestPickup(car?.advanceNotice ?? 2)
-    if (eDate !== _initDate) {
-      // Past evening cutoff — earliest is already tomorrow
-      _startDate = eDate
-      _startTime = eTime
-    } else {
-      const [bh, bm] = _initTime.split(':').map(Number)
+    _startDate = eDate
+    // Only trust URL param time if it's valid (>= earliest allowed AND date wasn't bumped to tomorrow)
+    if (pickupTimeFromUrl && eDate === _initDate) {
+      const [ph, pm] = pickupTimeFromUrl.split(':').map(Number)
       const [eh, em] = eTime.split(':').map(Number)
-      if (bh * 60 + bm < eh * 60 + em) {
-        // Stale time — bump to earliest valid (stays today unless eDate is already tomorrow)
-        _startDate = eDate
-        _startTime = eTime
-      }
-      // else: valid same-day time — keep it
+      _startTime = (ph * 60 + pm >= eh * 60 + em) ? pickupTimeFromUrl : eTime
+    } else {
+      // Advance notice pushed past today, or no URL time — use earliest or 10:00
+      _startTime = eDate === _initDate ? eTime : '10:00'
     }
+  } else {
+    // Future date: URL param time or 10:00 AM
+    _startTime = pickupTimeFromUrl || '10:00'
   }
 
   // Return date: URL param → session return date → startDate + minDays (24hrs for default 1-day rental)
@@ -209,11 +207,21 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
       }
     }
 
+    // Don't clear if today is still blocked by advance notice — that error takes priority
+    if (isArizonaToday(startDate)) {
+      const { date: eDate } = calculateEarliestPickup(car?.advanceNotice ?? 2)
+      if (eDate !== startDate) return
+    }
+
     setDateError(null)
   }, [startDate, endDate, minDays, maxDays, blockedDates, validateDateRange])
   const [startTime, setStartTime] = useState(_startTime)
-  // Return time ALWAYS = pickup time (spec: same time, different date). URL param overrides.
-  const [endTime, setEndTime] = useState(returnTimeFromUrl || _startTime)
+  // Return time: use URL param if it's a reasonable hour (>=07:00), else match pickup time.
+  // Times before 7 AM are almost certainly stale auto-generated values, not user-selected.
+  const _returnTimeIsReasonable = returnTimeFromUrl
+    ? parseInt(returnTimeFromUrl.split(':')[0], 10) >= 7
+    : false
+  const [endTime, setEndTime] = useState(_returnTimeIsReasonable ? returnTimeFromUrl : _startTime)
   const returnTimeManuallySet = useRef(false)
 
   // Handlers that sync return time with pickup time
@@ -228,16 +236,16 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
     returnTimeManuallySet.current = true
   }
 
-  // Same-day guard: fires when user picks today from calendar
-  // If advance notice makes today unavailable, show error (don't auto-correct).
-  // If time just needs bumping (same-day, valid), auto-correct time silently.
+  // Same-day guard: fires when startDate is today OR when car.advanceNotice loads/changes.
+  // If advance notice makes today unavailable, show error so user knows the earliest available date.
+  // If today is valid but time needs bumping, auto-correct time silently.
   useEffect(() => {
     if (!isArizonaToday(startDate)) return
 
     const advanceHours = car?.advanceNotice ?? 2
     const { date: eDate, time: eTime } = calculateEarliestPickup(advanceHours)
     if (eDate !== startDate) {
-      // Advance notice pushes past today — show error, keep today selected so user sees why
+      // Advance notice pushes past today — show error so user knows to pick a later date
       const dateLabel = format.dateTime(new Date(eDate + 'T00:00:00'), { weekday: 'short', month: 'short', day: 'numeric' })
       const timeLabel = format.dateTime(new Date(`${eDate}T${eTime}`), { hour: 'numeric', minute: '2-digit' })
       setDateError(t('advanceNoticeBlocked', { hours: advanceHours, date: dateLabel, time: timeLabel }))
@@ -250,7 +258,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate])
+  }, [startDate, car?.advanceNotice])
 
   // Update state when URL params change
   // If URL date is today with a past time, keep tomorrow (don't override the guard)
@@ -272,7 +280,23 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
       }
     }
     if (returnDateFromUrl) setEndDate(returnDateFromUrl)
-    if (returnTimeFromUrl) setEndTime(returnTimeFromUrl)
+    if (returnTimeFromUrl) {
+      // For same-day returns, validate the time — don't blindly apply a past/stale time
+      const retDate = returnDateFromUrl || startDate
+      if (isArizonaToday(retDate)) {
+        const { time: eTime } = calculateEarliestPickup(car?.advanceNotice ?? 2)
+        const [h, m] = returnTimeFromUrl.split(':').map(Number)
+        const [eh, em] = eTime.split(':').map(Number)
+        if (h * 60 + m >= eh * 60 + em) setEndTime(returnTimeFromUrl)
+        // else: ignore stale time, keep computed default
+      } else {
+        // Future return date: only trust the time if it's a reasonable hour (not stale midnight)
+        if (parseInt(returnTimeFromUrl.split(':')[0], 10) >= 7) {
+          setEndTime(returnTimeFromUrl)
+        }
+        // else: stale auto-generated time — keep computed default
+      }
+    }
   }, [pickupDateFromUrl, returnDateFromUrl, pickupTimeFromUrl, returnTimeFromUrl])
   
   // Collapsible sections
@@ -580,16 +604,16 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
           {days > 0 && (
             <div className={`py-2 px-3 rounded-lg ${dateError ? 'bg-red-600' : 'bg-black dark:bg-white'}`}>
               <div className="flex items-center justify-center gap-1.5">
-                <IoCalendarOutline className={`w-3.5 h-3.5 flex-shrink-0 ${dateError ? 'text-white' : 'text-white dark:text-gray-900'}`} />
+                {dateError
+                  ? <IoWarningOutline className="w-3.5 h-3.5 flex-shrink-0 text-white" />
+                  : <IoCalendarOutline className="w-3.5 h-3.5 flex-shrink-0 text-white dark:text-gray-900" />
+                }
                 <span className={`text-xs font-medium ${dateError ? 'text-white' : 'text-white dark:text-gray-900'}`}>
                   {days > 1 ? t('daysSummaryPlural', { days }) : t('daysSummary', { days })} · {format.dateTime(new Date(startDate + 'T00:00:00'), { month: 'short', day: 'numeric' })} – {format.dateTime(new Date(endDate + 'T00:00:00'), { month: 'short', day: 'numeric' })}
                 </span>
               </div>
               {dateError && (
-                <div className="flex items-center justify-center gap-1 mt-1">
-                  <IoWarningOutline className="w-3 h-3 text-white flex-shrink-0" />
-                  <span className="text-xs text-white">{dateError}</span>
-                </div>
+                <p className="text-xs text-white text-center mt-1 leading-snug">{dateError}</p>
               )}
               {isRideshare && !dateError && (
                 <div className="flex items-center justify-center mt-1">
