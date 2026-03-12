@@ -72,9 +72,13 @@ export default function RentalSearchCard({
   }
   
   // Helper to extract time from ISO string (handles "2025-10-22T10:00" format)
+  // Future dates always default to 10:00 AM — never carry over stale buffer times
   const extractTime = (dateString?: string, defaultTime: string = '10:00') => {
     if (!dateString) return defaultTime
-    // If it has time component (T), extract just the time part
+    const dateOnly = dateString.split('T')[0]
+    // If the date is in the future (not today), always use morning default
+    if (dateOnly && dateOnly !== getArizonaTodayString()) return '10:00'
+    // Today: extract embedded time if present
     const parts = dateString.split('T')
     if (parts.length > 1) {
       return parts[1].substring(0, 5) // Get HH:MM

@@ -105,6 +105,14 @@ export function calculateEarliestPickup(advanceNoticeHours: number = BOOKING_RUL
     }
   }
 
+  // Same day — night blackout: if earliest is before 5 AM, push to tomorrow morning
+  if (earliest < BOOKING_RULES.nightBlackoutEnd * 60) {
+    return {
+      date: addDays(today, 1),
+      time: `${String(BOOKING_RULES.morningOpenHour).padStart(2, '0')}:00`,
+    }
+  }
+
   // Same day — use exact buffered time, but check evening cutoff
   if (earliest >= BOOKING_RULES.eveningCutoffHour * 60) {
     // Past evening cutoff — bump to tomorrow morning
