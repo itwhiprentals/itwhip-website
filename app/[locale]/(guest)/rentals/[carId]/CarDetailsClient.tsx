@@ -34,6 +34,7 @@ import {
   IoChevronForwardOutline
 } from 'react-icons/io5'
 import PhotoGallery from '../components/details/PhotoGallery'
+import InstantBookSheet from '../components/modals/InstantBookSheet'
 import BookingWidget from '../components/details/BookingWidget'
 import HostProfile from '../components/details/HostProfile'
 import PartnerProfile from '../components/details/PartnerProfile'
@@ -399,6 +400,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
   const [showAllAboutFeatures, setShowAllAboutFeatures] = useState(false)
   const [hasBookingHistory, setHasBookingHistory] = useState(false)
   const [isViewingAllPhotos, setIsViewingAllPhotos] = useState(false)
+  const [showInstantBookSheet, setShowInstantBookSheet] = useState(false)
 
   useEffect(() => {
     if (carId) {
@@ -924,10 +926,13 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
                     </span>
                   )}
                   {!isRideshare && car.instantBook && car.isBookable !== false && (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium border border-green-300 dark:border-green-600 rounded text-green-700 dark:text-green-300">
+                    <button
+                      onClick={() => setShowInstantBookSheet(true)}
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium border border-green-300 dark:border-green-600 rounded text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                    >
                       <IoFlashOutline className="w-3 h-3" />
                       {t('instantBook')}
-                    </span>
+                    </button>
                   )}
                 </div>
               </div>
@@ -1351,6 +1356,11 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
           </div>
         </section>
       </div>
+
+      <InstantBookSheet
+        isOpen={showInstantBookSheet}
+        onClose={() => setShowInstantBookSheet(false)}
+      />
     </div>
   )
 }
