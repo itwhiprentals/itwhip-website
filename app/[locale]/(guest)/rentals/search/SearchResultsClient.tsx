@@ -123,12 +123,11 @@ export default function SearchResultsClient({
   const returnTime = searchParams.get('returnTime') || initialReturnTime
 
   // Build full ISO datetime strings for car card links → BookingWidget pre-fill
-  const pickupDateFull = pickupDate
-    ? (pickupDate.includes('T') ? pickupDate : (pickupTime ? `${pickupDate}T${pickupTime}` : pickupDate))
-    : undefined
-  const returnDateFull = returnDate
-    ? (returnDate.includes('T') ? returnDate : (returnTime ? `${returnDate}T${returnTime}` : returnDate))
-    : undefined
+  // Always use 10:00 — BookingWidget defaults to tomorrow 10AM; same-day guard handles today logic
+  const pickupDateOnly = pickupDate ? pickupDate.split('T')[0] : undefined
+  const returnDateOnly = returnDate ? returnDate.split('T')[0] : undefined
+  const pickupDateFull = pickupDateOnly ? `${pickupDateOnly}T10:00` : undefined
+  const returnDateFull = returnDateOnly ? `${returnDateOnly}T10:00` : undefined
 
   // Calculate rental days
   const rentalDays = Math.ceil(

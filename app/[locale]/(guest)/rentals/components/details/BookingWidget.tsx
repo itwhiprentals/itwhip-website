@@ -66,7 +66,7 @@ interface InsuranceQuote {
 // Helper to extract date and time from ISO datetime string
 function extractDateAndTime(isoString: string): { date: string; time: string } {
   if (!isoString) {
-    return { date: '', time: '10:00' }
+    return { date: '', time: '' }
   }
   
   // Handle both "YYYY-MM-DDTHH:MM" and "YYYY-MM-DD" formats
@@ -133,30 +133,13 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
     } catch {}
   }
 
-  // ── Compute correct initial start date/time using shared DateRangePicker utilities ──
-  // These functions only use Date — no window/browser APIs — so they work on SSR too.
-  // RULE: Never display a past time. If today + past time, default to tomorrow at 10:00.
-  const _initDate = pickupDateFromUrl || sessionPickupDate || tomorrow
+  // ── Compute correct initial start date/time ──
+  // Default is always tomorrow 10AM. User must explicitly pick today in the date picker
+  // to trigger the same-day guard (advance notice, evening cutoff, night blackout).
+  const _rawInitDate = pickupDateFromUrl || sessionPickupDate || tomorrow
+  const _initDate = isArizonaToday(_rawInitDate) ? tomorrow : _rawInitDate
   let _startDate = _initDate
-  let _startTime = '10:00'
-
-  if (isArizonaToday(_initDate)) {
-    // For today: always compute the advance-notice-aware earliest time. Never trust session time.
-    const { date: eDate, time: eTime } = calculateEarliestPickup(car?.advanceNotice ?? 2)
-    _startDate = eDate
-    // Only trust URL param time if it's valid (>= earliest allowed AND date wasn't bumped to tomorrow)
-    if (pickupTimeFromUrl && eDate === _initDate) {
-      const [ph, pm] = pickupTimeFromUrl.split(':').map(Number)
-      const [eh, em] = eTime.split(':').map(Number)
-      _startTime = (ph * 60 + pm >= eh * 60 + em) ? pickupTimeFromUrl : eTime
-    } else {
-      // Advance notice pushed past today, or no URL time — use earliest or 10:00
-      _startTime = eDate === _initDate ? eTime : '10:00'
-    }
-  } else {
-    // Future date: URL param time or 10:00 AM
-    _startTime = pickupTimeFromUrl || '10:00'
-  }
+  let _startTime = pickupTimeFromUrl || '10:00'
 
   // Return date: URL param → session return date → startDate + minDays (24hrs for default 1-day rental)
   const _defaultReturnDate = returnDateFromUrl || sessionReturnDate || addDays(_startDate, minDays)
