@@ -41,20 +41,21 @@ export default function BrowseByTypeSection() {
   const [makesData, setMakesData] = useState<MakeData[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
-  const CLD = 'https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_auto,w_210,h_158,c_fill,g_auto'
+  const CLD = 'https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_90,w_800,h_600,c_fill,g_auto'
 
   const carTypes = [
     {
       type: 'sedan',
       label: t('typeSedanLabel'),
       price: t('typeSedanPrice'),
-      image: `${CLD}/vehicle-types/sedan-car-rental.jpg`
+      image: 'https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_90,w_1000,h_600,c_fill,g_center/vehicle-types/sedan-car-rental.jpg',
+      position: '85%'
     },
     {
       type: 'suv',
       label: t('typeSuvLabel'),
       price: t('typeSuvPrice'),
-      image: `${CLD}/vehicle-types/suv-car-rental.jpg`
+      image: 'https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_90,w_800,h_600,c_fill,g_auto,y_-30/vehicle-types/suv-car-rental.jpg'
     },
     {
       type: 'luxury',
@@ -72,13 +73,13 @@ export default function BrowseByTypeSection() {
       type: 'electric',
       label: t('typeElectricLabel'),
       price: t('typeElectricPrice'),
-      image: `${CLD}/vehicle-types/electric-car-rental.jpg`
+      image: 'https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_90,w_800,h_600,c_fill,g_center,x_-100/vehicle-types/electric-car-rental.jpg'
     },
     {
       type: 'truck',
       label: t('typeTruckLabel'),
       price: t('typeTruckPrice'),
-      image: `${CLD}/vehicle-types/truck-car-rental.jpg`
+      image: 'https://res.cloudinary.com/du1hjyrgm/image/upload/f_auto,q_90,w_800,h_600,c_fill,g_center,x_100/vehicle-types/truck-car-rental.jpg'
     }
   ]
 
@@ -146,6 +147,7 @@ export default function BrowseByTypeSection() {
                       src={carType.image}
                       alt={carType.label}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      style={carType.position ? { objectPosition: carType.position } : undefined}
                     />
                   </div>
                   <div className="p-2 sm:p-3 bg-white dark:bg-gray-700">

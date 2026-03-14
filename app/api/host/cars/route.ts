@@ -490,6 +490,7 @@ export async function POST(request: NextRequest) {
     // Add photos if provided
     if (body.photos && Array.isArray(body.photos)) {
       const photoData = body.photos.map((url: string, index: number) => ({
+        id: crypto.randomUUID(),
         carId: newCar.id,
         url: url,
         isHero: index === 0,

@@ -224,6 +224,7 @@ export async function PUT(
       // Add new photos
       if (body.photos.length > 0) {
         const photoData = body.photos.map((url: string, index: number) => ({
+          id: crypto.randomUUID(),
           carId: id,
           url,
           order: index,

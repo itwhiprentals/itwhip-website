@@ -142,6 +142,7 @@ export async function POST(request: NextRequest) {
     if (body.photos && body.photos.length > 0) {
       await prisma.rentalCarPhoto.createMany({
         data: body.photos.map((url: string, index: number) => ({
+          id: crypto.randomUUID(),
           carId: car.id,
           url,
           order: index,

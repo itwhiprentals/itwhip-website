@@ -249,6 +249,7 @@ export async function GET(request: NextRequest) {
         (SELECT json_build_object(
           'stripeIdentityStatus', rp."stripeIdentityStatus",
           'documentsVerified', rp."documentsVerified",
+          'manuallyVerifiedByHost', rp."manuallyVerifiedByHost",
           'insuranceVerified', rp."insuranceVerified",
           'insuranceCardFrontUrl', rp."insuranceCardFrontUrl"
         )
@@ -333,6 +334,9 @@ export async function GET(request: NextRequest) {
         onboardingCompletedAt: booking.onboardingCompletedAt,
         guestStripeVerified: booking.guestProfile?.stripeIdentityStatus === 'verified',
         guestInsuranceOnFile: booking.guestProfile?.insuranceVerified === true,
+        documentsVerified: booking.guestProfile?.documentsVerified === true,
+        manuallyVerifiedByHost: booking.guestProfile?.manuallyVerifiedByHost === true,
+        isManualBooking: booking.bookingType === 'MANUAL',
         car: {
           id: booking.car.id,
           make: booking.car.make,
