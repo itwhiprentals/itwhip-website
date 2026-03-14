@@ -402,6 +402,14 @@ export async function POST(request: NextRequest) {
         minTripDuration: vehicleType === 'RIDESHARE' ? 3 : 1,
         maxTripDuration: 30,
 
+        // Rideshare = unlimited mileage
+        ...(vehicleType === 'RIDESHARE' ? {
+          mileageDaily: 99999,
+          mileageWeekly: 99999,
+          mileageMonthly: 99999,
+          rules: JSON.stringify(['Unlimited mileage']),
+        } : {}),
+
         // Vehicle type - RENTAL or RIDESHARE (default to RENTAL if not specified)
         vehicleType: vehicleType === 'RIDESHARE' ? 'RIDESHARE' : 'RENTAL'
       } as any

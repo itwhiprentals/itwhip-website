@@ -381,6 +381,16 @@ export async function PUT(
     // Rules / Guidelines
     if (rules !== undefined) updateData.rules = rules
 
+    // Unlimited mileage: if rideshare OR rules contain "Unlimited mileage", set mileage fields high
+    const effectiveRules = rules ?? existingVehicle.rules ?? '[]'
+    const hasUnlimitedMileage = effectiveVehicleType === 'RIDESHARE' ||
+      (typeof effectiveRules === 'string' && effectiveRules.includes('Unlimited mileage'))
+    if (hasUnlimitedMileage) {
+      updateData.mileageDaily = 99999
+      updateData.mileageWeekly = 99999
+      updateData.mileageMonthly = 99999
+    }
+
     // Insurance updates
     if (hasOwnInsurance !== undefined) {
       updateData.insuranceEligible = hasOwnInsurance && (useForRentals ?? false)
