@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
         
         // Availability settings
         instantBook: false,
-        advanceNotice: 24,
+        advanceNotice: 2,
         minTripDuration: 1,
         maxTripDuration: 30,
         

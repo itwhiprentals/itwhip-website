@@ -381,7 +381,7 @@ export async function POST(request: NextRequest) {
 
                 // Availability
                 instantBook: false,
-                advanceNotice: 24,
+                advanceNotice: 2,
                 minTripDuration: 1,
                 maxTripDuration: 30,
 
@@ -741,7 +741,7 @@ export async function POST(request: NextRequest) {
 
             // Availability
             instantBook: false,
-            advanceNotice: 24,
+            advanceNotice: 2,
             minTripDuration: 1,
             maxTripDuration: 30,
 

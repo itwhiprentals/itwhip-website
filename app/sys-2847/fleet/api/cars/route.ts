@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
         insuranceDaily: body.insuranceDaily || 99,
         minTripDuration: body.minTripDuration || 1,
         maxTripDuration: body.maxTripDuration || 30,
-        advanceNotice: body.advanceNotice || 24,
+        advanceNotice: body.advanceNotice || 2,
         airportPickup: body.airportPickup || true,
         hotelDelivery: body.hotelDelivery || true,
         homeDelivery: body.homeDelivery || true,

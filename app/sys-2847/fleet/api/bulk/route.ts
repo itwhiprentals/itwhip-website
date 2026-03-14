@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
             insuranceDaily: 99,
             minTripDuration: 1,
             maxTripDuration: 30,
-            advanceNotice: 24,
+            advanceNotice: 2,
             airportPickup: true,
             hotelDelivery: true,
             homeDelivery: true,

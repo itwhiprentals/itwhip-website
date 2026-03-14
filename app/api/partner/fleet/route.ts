@@ -397,7 +397,7 @@ export async function POST(request: NextRequest) {
         instantBook: partner.defaultInstantBook ?? true,
         advanceNotice: partner.defaultAdvanceNotice ?? platformRules.defaultAdvanceNotice,
         tripBuffer: partner.defaultTripBuffer ?? platformRules.defaultTripBuffer,
-        allow24HourPickup: partner.defaultAllow24HourPickup ?? false,
+        allow24HourPickup: partner.defaultAllow24HourPickup ?? true,
         // Rideshare vehicles require minimum 3 day bookings
         minTripDuration: vehicleType === 'RIDESHARE' ? 3 : 1,
         maxTripDuration: 30,
