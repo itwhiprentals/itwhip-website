@@ -960,6 +960,7 @@
     "browseAvailableVehicles": "Explora vehículos disponibles cerca de ti",
     "myBookings": "Mis Reservaciones",
     "viewAndManageReservations": "Ver y administrar reservaciones",
+    "myFavorites": "Mis Favoritos",
     "fileAClaim": "Presentar un Reclamo",
     "reportDamagesOrIssues": "Reportar daños o problemas",
     "updatePayment": "Actualizar Pago",
@@ -17644,5 +17645,12 @@
     "agreementCheckInbox": "Revisa tu bandeja de entrada para revisar y firmar.",
     "paymentLocked": "Elegir Método de Pago",
     "paymentLockedDesc": "Firma tu contrato de alquiler primero para desbloquear la selección de pago."
+  },
+  "Favorites": {
+    "title": "Favoritos",
+    "noFavoritesYet": "Sin favoritos aún",
+    "noFavoritesMessage": "Busca autos y toca el corazón para guardarlos aquí.",
+    "browseCars": "Buscar Autos",
+    "removeFromFavorites": "Quitar de favoritos"
   }
 }

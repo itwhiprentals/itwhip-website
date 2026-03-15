@@ -2158,6 +2158,7 @@ model RentalCar {
   host                       RentalHost                 @relation(fields: [hostId], references: [id])
   photos                     RentalCarPhoto[]
   reviews                    RentalReview[]
+  UserFavorite               UserFavorite[]
   VehicleCoverageOverride    VehicleCoverageOverride[]
   VehicleInsuranceOverride   VehicleInsuranceOverride[]
   VehicleServiceRecord       VehicleServiceRecord[]
@@ -2938,6 +2939,7 @@ model ReviewerProfile {
   GuestProfileStatus       GuestProfileStatus?
   RentalBooking            RentalBooking[]
   RentalReview             RentalReview[]
+  UserFavorite             UserFavorite[]
   user                     User?                    @relation(fields: [userId], references: [id])
   insuranceHistory         InsuranceHistory[]
 
@@ -5708,4 +5710,19 @@ model CronLog {
   @@index([jobName, startedAt])
   @@index([status])
   @@map("cron_logs")
+}
+
+model UserFavorite {
+  id        String          @id @default(uuid())
+  userId    String
+  carId     String
+  createdAt DateTime        @default(now())
+
+  user      ReviewerProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  car       RentalCar       @relation(fields: [carId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, carId])
+  @@index([userId])
+  @@index([carId])
+  @@map("user_favorites")
 }

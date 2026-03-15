@@ -2,9 +2,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
-  IoGridOutline, 
-  IoListOutline, 
+import {
+  IoGridOutline,
+  IoListOutline,
   IoMapOutline,
   IoCarOutline,
   IoInformationCircleOutline,
@@ -12,6 +12,7 @@ import {
 } from 'react-icons/io5'
 import CarCard from './CarCard'
 import { RentalCarWithDetails } from '@/types/rental'
+import { useFavorites } from '@/app/hooks/useFavorites'
 
 interface CarGridProps {
   cars: RentalCarWithDetails[]
@@ -36,31 +37,10 @@ export default function CarGrid({
   showResultCount = true,
   className = ''
 }: CarGridProps) {
-  const [favorites, setFavorites] = useState<Set<string>>(new Set())
+  const { isFavorite, toggleFavorite } = useFavorites()
   const [mounted, setMounted] = useState(false)
 
-  useEffect(() => {
-    setMounted(true)
-    // Load favorites from localStorage
-    const savedFavorites = localStorage.getItem('rental_favorites')
-    if (savedFavorites) {
-      setFavorites(new Set(JSON.parse(savedFavorites)))
-    }
-  }, [])
-
-  const handleFavorite = (carId: string) => {
-    setFavorites(prev => {
-      const newFavorites = new Set(prev)
-      if (newFavorites.has(carId)) {
-        newFavorites.delete(carId)
-      } else {
-        newFavorites.add(carId)
-      }
-      // Save to localStorage
-      localStorage.setItem('rental_favorites', JSON.stringify(Array.from(newFavorites)))
-      return newFavorites
-    })
-  }
+  useEffect(() => { setMounted(true) }, [])
 
   if (!mounted) {
     return null
@@ -214,8 +194,8 @@ export default function CarGrid({
               key={car.id}
               car={car}
               view={view}
-              onFavorite={handleFavorite}
-              isFavorited={favorites.has(car.id)}
+              onFavorite={toggleFavorite}
+              isFavorited={isFavorite(car.id)}
             />
           ))}
         </div>

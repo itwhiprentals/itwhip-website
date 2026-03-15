@@ -960,6 +960,7 @@
     "browseAvailableVehicles": "Browse available vehicles near you",
     "myBookings": "My Bookings",
     "viewAndManageReservations": "View and manage reservations",
+    "myFavorites": "My Favorites",
     "fileAClaim": "File a Claim",
     "reportDamagesOrIssues": "Report damages or issues",
     "updatePayment": "Update Payment",
@@ -17644,5 +17645,12 @@
     "agreementCheckInbox": "Check your inbox to review and sign.",
     "paymentLocked": "Choose Payment Method",
     "paymentLockedDesc": "Sign your rental agreement first to unlock payment selection."
+  },
+  "Favorites": {
+    "title": "Favorites",
+    "noFavoritesYet": "No favorites yet",
+    "noFavoritesMessage": "Browse cars and tap the heart to save them here.",
+    "browseCars": "Browse Cars",
+    "removeFromFavorites": "Remove from favorites"
   }
 }

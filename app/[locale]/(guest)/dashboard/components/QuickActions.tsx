@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { Calendar, FileText, CreditCard } from './DashboardIcons'
+import { Calendar, Heart, FileText, CreditCard } from './DashboardIcons'
 
 interface QuickActionsProps {
   onServiceClick: (path: string) => void
@@ -17,6 +17,13 @@ export default function QuickActions({ onServiceClick }: QuickActionsProps) {
       icon: Calendar,
       iconColorClass: 'text-blue-600 dark:text-blue-400',
       path: '/rentals/dashboard/bookings',
+    },
+    {
+      id: 'favorites',
+      name: t('myFavorites'),
+      icon: Heart,
+      iconColorClass: 'text-red-500 dark:text-red-400',
+      path: '/dashboard/favorites',
     },
     {
       id: 'claim',

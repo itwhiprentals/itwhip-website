@@ -960,6 +960,7 @@
     "browseAvailableVehicles": "Parcourir les véhicules disponibles près de chez vous",
     "myBookings": "Mes réservations",
     "viewAndManageReservations": "Afficher et gérer les réservations",
+    "myFavorites": "Mes Favoris",
     "fileAClaim": "Déposer une réclamation",
     "reportDamagesOrIssues": "Signaler des dommages ou des problèmes",
     "updatePayment": "Mettre à jour le paiement",
@@ -17644,5 +17645,12 @@
     "agreementCheckInbox": "Vérifiez votre boîte de réception pour consulter et signer.",
     "paymentLocked": "Choisir la Méthode de Paiement",
     "paymentLockedDesc": "Signez d'abord votre contrat de location pour débloquer la sélection de paiement."
+  },
+  "Favorites": {
+    "title": "Favoris",
+    "noFavoritesYet": "Pas encore de favoris",
+    "noFavoritesMessage": "Parcourez les voitures et appuyez sur le cœur pour les sauvegarder ici.",
+    "browseCars": "Parcourir les voitures",
+    "removeFromFavorites": "Retirer des favoris"
   }
 }

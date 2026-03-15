@@ -47,6 +47,7 @@ import { getVehicleClass, formatFuelTypeBadge } from '@/app/lib/utils/vehicleCla
 import { getVehicleSpecData } from '@/app/lib/utils/vehicleSpec'
 import { formatRating } from '@/app/lib/utils/formatCarSpecs'
 import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatters'
+import { useFavorites } from '@/app/hooks/useFavorites'
 
 // Updated type definition with suspension fields
 interface RentalCarWithDetails {
@@ -394,7 +395,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
   
   const [car, setCar] = useState<RentalCarWithDetails | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isFavorited, setIsFavorited] = useState(false)
+  const { isFavorite, toggleFavorite: toggleFav } = useFavorites()
   const [showAboutCar, setShowAboutCar] = useState(true)
   const [showGuidelines, setShowGuidelines] = useState(true)
   const [showAllAboutFeatures, setShowAllAboutFeatures] = useState(false)
@@ -405,7 +406,6 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
   useEffect(() => {
     if (carId) {
       loadCarDetails(carId)
-      checkIfFavorited(carId)
       checkBookingHistory(carId)
     }
   }, [carId])
@@ -441,29 +441,13 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
     }
   }
 
-  const checkIfFavorited = (id: string) => {
-    const favorites = JSON.parse(localStorage.getItem('rental_favorites') || '[]')
-    setIsFavorited(favorites.includes(id))
-  }
+  const isFavorited = isFavorite(carId)
+  const toggleFavorite = () => toggleFav(carId)
 
   const checkBookingHistory = (carId: string) => {
     // Check if user has booking history with this car
     const bookingHistory = JSON.parse(localStorage.getItem('rental_booking_history') || '[]')
     setHasBookingHistory(bookingHistory.includes(carId))
-  }
-
-  const toggleFavorite = () => {
-    const favorites = JSON.parse(localStorage.getItem('rental_favorites') || '[]')
-    let newFavorites
-    
-    if (favorites.includes(carId)) {
-      newFavorites = favorites.filter((id: string) => id !== carId)
-    } else {
-      newFavorites = [...favorites, carId]
-    }
-    
-    localStorage.setItem('rental_favorites', JSON.stringify(newFavorites))
-    setIsFavorited(!isFavorited)
   }
 
   const handleShare = async () => {
