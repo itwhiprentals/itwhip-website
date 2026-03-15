@@ -27,6 +27,30 @@ Fleet photo save fix:
 
 ---
 
+### Choé AI Assistant Fixes & Account Data Lookups (Mar 15)
+**Deployed to production**
+
+Guardrail fixes (based on real guest conversation where Choé fabricated capabilities):
+- Added EXHAUSTED CHANNELS protocol — when guest has tried all support channels with no response, Choé is honest about limitations and focuses on what she CAN do
+- Added guardrails #14-17: no fake escalation/tickets, no time promises, no legal coaching, no cross-conversation memory claims
+- Tightened chargeback guardrail: neutral stance — don't suggest OR discourage, just redirect to booking data
+- Added escalation honesty rule to CRITICAL_GUARDRAILS (reinforced every turn)
+
+New account data lookups (visible after email verification):
+- Account status: active, on hold, suspended, or banned
+- Account balances: credits, bonus, deposit wallet
+- Guest insurance: verified, uploaded but pending, or none on file
+- Fixed Prisma error: replaced invalid fields with available alternatives (accountOnHold, bannedBy, suspendedBy, insuranceCardFrontUrl, insuranceVerifiedBy, coverageType)
+- Updated CARD DISPLAY RULES: Choé includes account data in text reply alongside BookingStatusCard
+
+New FAQ sections:
+- P2P insurance upload process (accepted formats, what qualifies, 50% deposit reduction)
+- Account balances explanation (credits vs bonus vs deposit wallet)
+- Account status FAQ
+- Guest insurance status FAQ
+
+---
+
 ## In Progress (March 2026)
 
 ### RULE: Mobile App Must Mirror Website Logic (Mar 14)
