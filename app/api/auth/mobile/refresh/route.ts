@@ -74,6 +74,12 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Get guest profile photo
+    const guestProfile = user ? await prisma.reviewerProfile.findFirst({
+      where: { OR: [{ userId: user.id }, { email: (user.email || '').toLowerCase() }] },
+      select: { profilePhotoUrl: true },
+    }) : null
+
     if (!user || !user.isActive) {
       return NextResponse.json(
         { error: 'Account not found or deactivated' },
@@ -129,6 +135,7 @@ export async function POST(request: NextRequest) {
         email: user.email,
         name: user.name,
         role: user.role,
+        avatar: guestProfile?.profilePhotoUrl || null,
       },
     })
   } catch (error) {

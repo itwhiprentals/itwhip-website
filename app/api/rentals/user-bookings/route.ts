@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/app/lib/database/prisma'
 import type { RentalBookingStatus } from '@/app/lib/dal/types'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
-import { checkAndMarkNoShows } from '@/app/lib/bookings/auto-complete'
+import { checkAndMarkNoShows, expireOverdueBookings } from '@/app/lib/bookings/auto-complete'
 import { enrichBookingWithStripe } from '@/app/lib/bookings/stripe-enrichment'
 
 // Whitelist of allowed sort columns to prevent SQL injection via column names
@@ -202,6 +202,9 @@ export async function GET(request: NextRequest) {
           'state', c.state,
           'zipCode', c."zipCode",
           'estimatedValue', c."estimatedValue",
+          'color', c.color,
+          'instantBook', c."instantBook",
+          'vehicleType', c."vehicleType",
           'latitude', c.latitude,
           'longitude', c.longitude,
           'photos', COALESCE(
@@ -270,7 +273,9 @@ export async function GET(request: NextRequest) {
 
     const now = new Date()
 
-    // Auto-complete expired no-show bookings
+    // Auto-expire all overdue bookings (PENDING→CANCELLED, ON_HOLD→NO_SHOW, etc.)
+    await expireOverdueBookings(bookingsRaw)
+    // Also check confirmed no-shows (uses stricter pickup+grace deadline)
     await checkAndMarkNoShows(bookingsRaw)
 
     // Stripe enrichment for single-booking detail view
@@ -352,6 +357,9 @@ export async function GET(request: NextRequest) {
           state: booking.car.state,
           zipCode: booking.car.zipCode,
           estimatedValue: booking.car.estimatedValue ? parseFloat(booking.car.estimatedValue) : null,
+          color: booking.car.color || null,
+          instantBook: booking.car.instantBook ?? true,
+          vehicleType: booking.car.vehicleType || 'RENTAL',
           latitude: booking.car.latitude ? parseFloat(booking.car.latitude) : null,
           longitude: booking.car.longitude ? parseFloat(booking.car.longitude) : null
         },

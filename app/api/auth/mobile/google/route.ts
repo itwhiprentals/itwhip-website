@@ -167,9 +167,14 @@ export async function POST(request: NextRequest) {
         await db.updateLastLogin(existingUser.id)
         await logSuccessfulLogin({ userId: existingUser.id, email: existingUser.email || '', source: 'guest', ip: clientIp, userAgent })
 
+        const guestProfile = await prisma.reviewerProfile.findFirst({
+          where: { OR: [{ userId: existingUser.id }, { email: (existingUser.email || '').toLowerCase() }] },
+          select: { profilePhotoUrl: true },
+        })
+
         return NextResponse.json({
           success: true,
-          user: { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role },
+          user: { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role, avatar: guestProfile?.profilePhotoUrl || null },
           accessToken,
           refreshToken,
           expiresIn: 15 * 60,
@@ -269,7 +274,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        user: { id: newUser.id, email: newUser.email || '', name: newUser.name || '', role: newUser.role },
+        user: { id: newUser.id, email: newUser.email || '', name: newUser.name || '', role: newUser.role, avatar: null },
         accessToken,
         refreshToken,
         expiresIn: 15 * 60,

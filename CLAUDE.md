@@ -62,6 +62,18 @@ The app uses a dual-role authentication system:
 - Search API returns photos as `[{url, alt}]` objects — search-bridge normalizes to string URLs
 - Model: `claude-haiku-4-5-20251001` (stored in ChoeAISettings table)
 
+## Mobile App Card & Color Standards
+
+All mobile app cards/pages/screens MUST follow these rules:
+
+- **Cards**: `backgroundColor: colors.surface`, `borderWidth: 1`, `borderColor: colors.border`, `borderRadius: RADIUS.lg`, `SHADOW.sm`
+- **Edge-to-edge**: Cards stretch full width within `paddingHorizontal: SPACING.md`
+- **Stat tiles**: Tinted `#F3F4F6` (light) / `rgba(55,65,81,0.5)` (dark) — not plain white
+- **Dark mode**: Clean Tailwind grays (`#111827` bg, `#1F2937` surface, `#374151` border) — NO purple tints
+- **Light mode**: White surface + visible borders (never borderless white-on-white)
+- **Theme file**: `ItWhipApp/src/theme/index.ts`
+- Any screen touched that has old faded/borderless styles gets updated to match
+
 ## Git Commits
 
 - Use author: Chris H <info@itwhip.com>

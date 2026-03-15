@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
     })
     const guestProfile = await prisma.reviewerProfile.findFirst({
       where: { OR: [{ userId: user.id }, { email: (user.email || '').toLowerCase() }] },
-      select: { id: true }
+      select: { id: true, profilePhotoUrl: true }
     })
 
     if (hostProfile && !guestProfile) {
@@ -310,6 +310,7 @@ export async function POST(request: NextRequest) {
         email: user.email || '',
         name: user.name || '',
         role: user.role,
+        avatar: guestProfile?.profilePhotoUrl || null,
       },
       accessToken,
       refreshToken,

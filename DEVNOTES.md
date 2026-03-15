@@ -1,5 +1,76 @@
 # ItWhip Development Notes
 
+## Recent Deployments (March 2026)
+
+### Platform Defaults & Photo Fixes (Mar 14)
+**Deployed to production**
+
+Car availability defaults (all 52 cars updated + routes):
+- `advanceNotice`: 24 hours → 2 hours (lets guests book short-notice)
+- `allow24HourPickup`: false → true (cars available for pickup any time)
+- Hosts can still change to more restrictive settings
+
+Rideshare unlimited mileage (8 cars updated + routes):
+- All RIDESHARE cars now default to unlimited mileage (99999 daily/weekly/monthly)
+- `"Unlimited mileage"` added to rules array (drives display on listing page)
+- API PUT auto-sets mileage to 99999 when rules contain "Unlimited mileage" or vehicleType is RIDESHARE
+- New rideshare car creation includes unlimited mileage baked in
+
+Homepage car type photos:
+- Bumped quality from `q_auto` → `q_90`, resolution to `w_800,h_600` (website)
+- Custom crop positions per car type (sedan `g_east` + `85%` CSS position, SUV `y_-30`, electric `x_-100`, truck `x_100`)
+- Mobile app: sedan `g_east`, SUV `g_north` at `800x500`, matching Cloudinary URLs
+
+Fleet photo save fix:
+- Fixed `rentalCarPhoto.createMany()` missing `id` field across 5 routes
+- Added `id: crypto.randomUUID()` to all fleet/host car photo creation routes
+
+---
+
+## In Progress (March 2026)
+
+### RULE: Mobile App Must Mirror Website Logic (Mar 14)
+**CRITICAL: The mobile app must NEVER create independent business logic. All status rendering, progress bars, step calculations, and booking flow logic must be copied from the equivalent website component.**
+- Progress bar: mirrors `StatusProgression.tsx` (standard) and `ManualBookingProgress.tsx` (cash/manual)
+- Status cards: mirrors website card components (NoShowCard, CompletedCard, etc.)
+- Before writing mobile business logic, ALWAYS read the website's equivalent file first
+
+### Mobile App — Messages & Booking Status Fixes (Mar 14)
+- Messages: replaced car icon with actual car photo, edge-to-edge photo layout, unread badge overlay on photo
+- Messages: added mark-as-read API (`/api/guest/messages/read`) + optimistic badge clearing
+- Messages: added GuestHeader to thread view, Year+Make/Model split in all views
+- BookingProgressBar: rewrote to mirror website `StatusProgression.tsx` exactly — added `error` state (red circles with X) for NO_SHOW steps
+- NoShowStage: rewrote to mirror website `NoShowCard.tsx` — red banner, status grid, dates, NO REFUND
+- Auto-expire: added cron GET handler + inline expiration in dashboard/user-bookings APIs
+- Dashboard: removed duplicate Quick Actions, refined Recent Trips layout
+
+---
+
+### Mobile App — Global Card & Color Overhaul (Mar 12)
+**Standardized all mobile app cards to match website host dashboard**
+
+Theme overhaul (`ItWhipApp/src/theme/index.ts`):
+- Dark mode: replaced purple-tinted `#1A1A2E`/`#2D2D44` with clean Tailwind grays (`#111827`/`#1F2937`/`#374151`)
+- Light mode: white surface cards with visible `borderWidth: 1, borderColor: #E5E7EB` (no more invisible white-on-white)
+- Stat tile backgrounds: tinted `#F3F4F6` (light) / `rgba(55,65,81,0.5)` (dark)
+- Updated 22+ files with hardcoded old hex colors
+
+Guest dashboard redesign:
+- Added GuestHeader + "Welcome back, {name}" greeting
+- Profile card: circle border on avatar, pencil edit icon, removed refresh button
+- Stats grid: separated Credits/Bonus into own tiles, removed Messages (has own tab), flex-based full-width layout
+- Featured cards: "Find a Car" full-width horizontal bar, trip card full-width underneath with 160px photo + full booking details
+- Recent trips: sharp car photos (240x180 Cloudinary optimization)
+- Removed excess whitespace: `SafeAreaView edges={['top']}`, reduced bottom padding, removed "Dashboard" title
+
+API changes:
+- Login/refresh/Google OAuth endpoints now return `avatar` field (from `ReviewerProfile.profilePhotoUrl`)
+- Guest profile photo now appears in GuestHeader
+
+**Standard going forward:** Every card/screen must use `colors.surface` + `borderWidth: 1` + `colors.border` + `RADIUS.lg` + `SHADOW.sm`. See CLAUDE.md for full spec.
+
+---
+
 ## In Progress (February 2026)
 
 ### Twilio SMS + IVR Phone System - Complete ✅ (Feb 18)

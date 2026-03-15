@@ -8,7 +8,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { startCronLog } from '@/app/lib/cron/logger'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+// GET handler for Vercel Cron (crons only trigger GET)
+export async function GET(request: NextRequest) {
+  return handleAutoComplete(request)
+}
+
+// POST handler for manual/fleet triggers (supports preview + bookingCodes filter)
 export async function POST(request: NextRequest) {
+  return handleAutoComplete(request)
+}
+
+async function handleAutoComplete(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET || 'itwhip-cron-secret-2024'
 

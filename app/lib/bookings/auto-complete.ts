@@ -91,3 +91,99 @@ export async function checkAndMarkNoShows(bookings: BookingRow[]): Promise<strin
 
   return noShowIds
 }
+
+/**
+ * Inline expiration for all overdue bookings (endDate passed).
+ * Handles: PENDING → CANCELLED, ON_HOLD → NO_SHOW, CONFIRMED → NO_SHOW, ACTIVE → COMPLETED.
+ * Mutates booking objects in-place so the response reflects correct status.
+ * Called from dashboard/initial-data and user-bookings APIs.
+ */
+export async function expireOverdueBookings(bookings: Array<{ id: string; status: string; endDate: Date | string; startDate: Date | string; startTime?: string | null; tripStartedAt?: Date | null; bookingType?: string | null; paymentType?: string | null; noShowDeadline?: Date | null }>): Promise<string[]> {
+  const now = new Date()
+  const toCancelIds: string[] = []
+  const toNoShowIds: string[] = []
+  const toCompleteIds: string[] = []
+
+  for (const booking of bookings) {
+    const endDate = new Date(booking.endDate)
+    if (endDate >= now) continue // not overdue
+    if (['CANCELLED', 'COMPLETED', 'NO_SHOW'].includes(booking.status)) continue // already terminal
+
+    switch (booking.status) {
+      case 'PENDING':
+        toCancelIds.push(booking.id)
+        booking.status = 'CANCELLED'
+        break
+      case 'ON_HOLD':
+        toNoShowIds.push(booking.id)
+        booking.status = 'NO_SHOW'
+        break
+      case 'CONFIRMED':
+        // If trip never started, it's a no-show
+        if (!booking.tripStartedAt) {
+          toNoShowIds.push(booking.id)
+          booking.status = 'NO_SHOW'
+        } else {
+          toCompleteIds.push(booking.id)
+          booking.status = 'COMPLETED'
+        }
+        break
+      case 'ACTIVE':
+        toCompleteIds.push(booking.id)
+        booking.status = 'COMPLETED'
+        break
+    }
+  }
+
+  const allIds = [...toCancelIds, ...toNoShowIds, ...toCompleteIds]
+  if (allIds.length === 0) return []
+
+  console.log(`[Auto-expire] Expiring ${allIds.length} overdue booking(s):`, {
+    cancelled: toCancelIds.length,
+    noShow: toNoShowIds.length,
+    completed: toCompleteIds.length,
+  })
+
+  try {
+    const updates: Promise<unknown>[] = []
+
+    if (toCancelIds.length > 0) {
+      updates.push(prisma.rentalBooking.updateMany({
+        where: { id: { in: toCancelIds } },
+        data: {
+          status: 'CANCELLED',
+          cancelledBy: 'SYSTEM',
+          cancelledAt: now,
+          cancellationReason: 'Trip period passed without approval. Auto-cancelled by system.',
+        },
+      }))
+    }
+
+    if (toNoShowIds.length > 0) {
+      updates.push(prisma.rentalBooking.updateMany({
+        where: { id: { in: toNoShowIds } },
+        data: {
+          status: 'NO_SHOW',
+          noShowMarkedBy: 'SYSTEM',
+          noShowMarkedAt: now,
+        },
+      }))
+    }
+
+    if (toCompleteIds.length > 0) {
+      updates.push(prisma.rentalBooking.updateMany({
+        where: { id: { in: toCompleteIds } },
+        data: {
+          status: 'COMPLETED',
+          tripStatus: 'COMPLETED',
+        },
+      }))
+    }
+
+    await Promise.all(updates)
+  } catch (err) {
+    console.error('[Auto-expire] Database update error:', err)
+  }
+
+  return allIds
+}

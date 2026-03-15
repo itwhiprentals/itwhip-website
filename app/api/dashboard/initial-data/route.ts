@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { prisma } from '@/app/lib/database/prisma'
 import { checkAccountHold } from '@/app/lib/claims/account-hold'
+import { expireOverdueBookings } from '@/app/lib/bookings/auto-complete'
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -373,6 +374,11 @@ export async function GET(request: NextRequest) {
         // Don't fail the whole request, just skip payment info
       }
     }
+
+    // ========== AUTO-EXPIRE OVERDUE BOOKINGS ==========
+    // Inline check: if any booking has endDate in the past and is still non-terminal,
+    // expire it now (same logic as auto-complete cron). Mutates bookingsRaw in-place.
+    await expireOverdueBookings(bookingsRaw as any[])
 
     // ========== PROCESS & CALCULATE STATS ==========
 

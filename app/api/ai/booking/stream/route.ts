@@ -53,6 +53,70 @@ interface BookingLookupResult {
   stripeIdentityStatus: string | null;
 }
 
+/** Build account status, balances, and insurance context from guest profile */
+function buildAccountContext(profile: {
+  accountOnHold?: boolean
+  accountHoldReason?: string | null
+  bannedBy?: string | null
+  suspendedBy?: string | null
+  suspensionLevel?: string | null
+  bonusBalance?: unknown
+  creditBalance?: unknown
+  depositWalletBalance?: unknown
+  insuranceCardFrontUrl?: string | null
+  insuranceVerifiedBy?: string | null
+  coverageType?: string | null
+}): string {
+  let ctx = ''
+
+  // Account status — derive from available flags
+  const isBanned = !!profile.bannedBy
+  const isSuspended = !!profile.suspendedBy
+  const isOnHold = !!profile.accountOnHold
+
+  if (isBanned) {
+    ctx += `\nACCOUNT STATUS: BANNED — this account has been banned from the platform.`
+  } else if (isSuspended) {
+    ctx += `\nACCOUNT STATUS: SUSPENDED`
+    if (profile.suspensionLevel) ctx += ` (level: ${profile.suspensionLevel})`
+    ctx += `. Account is temporarily suspended.`
+  } else if (isOnHold) {
+    ctx += `\nACCOUNT STATUS: ON HOLD`
+    if (profile.accountHoldReason) ctx += ` — reason: ${profile.accountHoldReason}`
+  } else {
+    ctx += `\nACCOUNT STATUS: Active — account in good standing.`
+  }
+
+  // Balances
+  const bonus = Number(profile.bonusBalance) || 0
+  const credit = Number(profile.creditBalance) || 0
+  const depositWallet = Number(profile.depositWalletBalance) || 0
+  if (bonus > 0 || credit > 0 || depositWallet > 0) {
+    ctx += `\nACCOUNT BALANCES:`
+    if (credit > 0) ctx += ` Credits: $${credit.toFixed(2)}`
+    if (bonus > 0) ctx += ` Bonus: $${bonus.toFixed(2)}`
+    if (depositWallet > 0) ctx += ` Deposit Wallet: $${depositWallet.toFixed(2)}`
+  } else {
+    ctx += `\nACCOUNT BALANCES: No credits, bonuses, or deposit wallet balance on file.`
+  }
+
+  // Insurance — derive from available fields
+  const hasInsuranceUploaded = !!profile.insuranceCardFrontUrl
+  const isInsuranceVerified = !!profile.insuranceVerifiedBy
+
+  if (isInsuranceVerified) {
+    ctx += `\nGUEST INSURANCE: Verified`
+    if (profile.coverageType) ctx += ` — coverage: ${profile.coverageType}`
+    ctx += `. This guest has P2P insurance on file and qualifies for the 50% deposit reduction.`
+  } else if (hasInsuranceUploaded) {
+    ctx += `\nGUEST INSURANCE: Insurance card uploaded but NOT YET VERIFIED. Guest should check their profile for verification status.`
+  } else {
+    ctx += `\nGUEST INSURANCE: No insurance on file. Guest can upload P2P insurance at checkout for a 50% deposit reduction.`
+  }
+
+  return ctx
+}
+
 async function fetchBookingContextByEmail(email: string): Promise<BookingLookupResult> {
   try {
     // Fetch bookings with verification details
@@ -86,14 +150,29 @@ async function fetchBookingContextByEmail(email: string): Promise<BookingLookupR
         stripeIdentityStatus: true,
         stripeIdentityVerifiedAt: true,
         documentsVerified: true,
+        bonusBalance: true,
+        creditBalance: true,
+        depositWalletBalance: true,
+        accountOnHold: true,
+        accountHoldReason: true,
+        bannedBy: true,
+        suspendedBy: true,
+        suspensionLevel: true,
+        insuranceCardFrontUrl: true,
+        insuranceVerifiedBy: true,
+        coverageType: true,
       },
     })
 
     const identityStatus = (guestProfile?.stripeIdentityStatus as string) || null
 
     if (bookings.length === 0) {
+      let noBookingContext = 'BOOKING LOOKUP: No active bookings found for this email.'
+      if (guestProfile) {
+        noBookingContext += buildAccountContext(guestProfile)
+      }
       return {
-        contextString: 'BOOKING LOOKUP: No active bookings found for this email.',
+        contextString: noBookingContext,
         bookings: [],
         stripeIdentityStatus: identityStatus,
       }
@@ -157,6 +236,7 @@ async function fetchBookingContextByEmail(email: string): Promise<BookingLookupR
         identityContext += ' (not yet started — guest needs to complete identity verification)'
       }
       identityContext += `\nDocuments verified: ${guestProfile.documentsVerified ? 'yes' : 'no'}`
+      identityContext += buildAccountContext(guestProfile)
     }
 
     return {
