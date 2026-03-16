@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { sendBonusNotifications } from '@/app/lib/notifications/bonus-notifications'
 
 // GET - Fetch bonus analytics and recent transactions
 export async function GET(request: NextRequest) {
@@ -325,6 +326,16 @@ export async function POST(request: NextRequest) {
 
       return { applied, failed }
     })
+
+    // Fire notifications asynchronously (don't block response)
+    for (const guestId of results.applied) {
+      sendBonusNotifications({
+        guestId,
+        amount,
+        bonusType: bonusType as 'credit' | 'bonus' | 'deposit',
+        description: description || undefined,
+      }).catch(err => console.error(`[Fleet Bonuses] Notification failed for ${guestId}:`, err))
+    }
 
     return NextResponse.json({
       success: true,

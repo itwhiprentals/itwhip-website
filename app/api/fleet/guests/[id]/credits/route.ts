@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { sendBonusNotifications } from '@/app/lib/notifications/bonus-notifications'
 
 // POST /api/fleet/guests/[id]/credits - Add or remove credits
 export async function POST(
@@ -197,6 +198,16 @@ export async function POST(
       reason: reason || note,
       adminUser
     })
+
+    // Notify guest when credits/bonus are ADDED (not removed)
+    if (action === 'add') {
+      sendBonusNotifications({
+        guestId: id,
+        amount,
+        bonusType: type as 'credit' | 'bonus' | 'deposit',
+        description: reason || note || undefined,
+      }).catch(err => console.error(`[Guest Credits] Notification failed for ${id}:`, err))
+    }
 
     return NextResponse.json({
       success: true,
