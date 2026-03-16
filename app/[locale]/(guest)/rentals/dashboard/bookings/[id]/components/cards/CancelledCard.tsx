@@ -149,7 +149,7 @@ export const CancelledCard: React.FC<CancelledCardProps> = ({
       </div>
 
       {/* Refund Summary Card */}
-      <RefundSummaryCard booking={booking} refund={refund} />
+      <RefundSummaryCard booking={booking} refund={refund} isHostCancel={isHostCancel || isSystemCancel} />
 
       {/* Host + Messages — read-only / locked */}
       <HostMessagesCard
@@ -253,9 +253,80 @@ function CancelledInfoGrid({
 
 // ─── Refund Summary Card ────────────────────────────────────────────────────
 
-function RefundSummaryCard({ booking, refund }: { booking: Booking; refund: ReturnType<typeof calculateRefund> }) {
+function RefundSummaryCard({ booking, refund, isHostCancel = false }: { booking: Booking; refund: ReturnType<typeof calculateRefund>; isHostCancel?: boolean }) {
   const t = useTranslations('BookingDetail')
 
+  // Host/system cancelled — full refund, no penalties
+  if (isHostCancel) {
+    const creditsApplied = booking.creditsApplied || 0
+    const bonusApplied = booking.bonusApplied || 0
+    const chargeAmount = booking.chargeAmount || 0
+
+    return (
+      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg shadow-sm p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h4 className="text-sm font-semibold text-green-900 dark:text-green-100">Full Refund — No Charges Applied</h4>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-xs text-green-800 dark:text-green-300">
+            The host cancelled this booking. All holds and charges have been reversed.
+          </p>
+
+          <div className="border-t border-green-200 dark:border-green-700 pt-2 mt-2" />
+
+          {chargeAmount > 0 && (
+            <div className="flex justify-between text-xs sm:text-sm">
+              <span className="text-green-700 dark:text-green-300">
+                {booking.cardBrand && booking.cardLast4
+                  ? `Hold released on ${booking.cardBrand} ···${booking.cardLast4}`
+                  : 'Card hold released'}
+              </span>
+              <span className="font-medium text-green-700 dark:text-green-200">
+                {formatCurrency(chargeAmount)}
+              </span>
+            </div>
+          )}
+
+          {creditsApplied > 0 && (
+            <div className="flex justify-between text-xs sm:text-sm">
+              <span className="text-green-700 dark:text-green-300">Credits restored</span>
+              <span className="font-medium text-green-700 dark:text-green-200">
+                {formatCurrency(creditsApplied)}
+              </span>
+            </div>
+          )}
+
+          {bonusApplied > 0 && (
+            <div className="flex justify-between text-xs sm:text-sm">
+              <span className="text-green-700 dark:text-green-300">Bonus restored</span>
+              <span className="font-medium text-green-700 dark:text-green-200">
+                {formatCurrency(bonusApplied)}
+              </span>
+            </div>
+          )}
+
+          {booking.depositAmount > 0 && (
+            <div className="flex justify-between text-xs sm:text-sm">
+              <span className="text-green-700 dark:text-green-300">Security deposit released</span>
+              <span className="font-medium text-green-700 dark:text-green-200">
+                {formatCurrency(booking.depositAmount)}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <p className="text-[10px] text-green-600 dark:text-green-400 mt-3">
+          Card holds are typically released within 1–3 business days. Credits and bonus are restored instantly.
+        </p>
+      </div>
+    )
+  }
+
+  // Guest-cancelled — standard refund with penalties
   const hasCredits = refund.creditsRestored > 0
   const hasBonus = refund.bonusRestored > 0
   const hasCardRefund = refund.totalCardRefund > 0
@@ -267,7 +338,6 @@ function RefundSummaryCard({ booking, refund }: { booking: Booking; refund: Retu
       </h4>
 
       <div className="space-y-2">
-        {/* Refund amount (what guest gets back from subtotal) */}
         {refund.refundAmount > 0 && (
           <div className="flex justify-between text-xs sm:text-sm">
             <span className="text-gray-600 dark:text-gray-400">{t('refundedAmount')}</span>
@@ -277,7 +347,6 @@ function RefundSummaryCard({ booking, refund }: { booking: Booking; refund: Retu
           </div>
         )}
 
-        {/* Penalty amount — red */}
         {refund.penaltyAmount > 0 && (
           <div className="flex justify-between text-xs sm:text-sm">
             <span className="text-red-600 dark:text-red-400">{t('cancellationPenalty')}</span>
@@ -287,7 +356,6 @@ function RefundSummaryCard({ booking, refund }: { booking: Booking; refund: Retu
           </div>
         )}
 
-        {/* Non-refundable fees */}
         {refund.nonRefundableFees > 0 && (
           <div className="flex justify-between text-xs sm:text-sm">
             <span className="text-gray-600 dark:text-gray-400">{t('nonRefundableFees')}</span>
@@ -299,10 +367,8 @@ function RefundSummaryCard({ booking, refund }: { booking: Booking; refund: Retu
 
         <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2" />
 
-        {/* How refund is distributed */}
         <p className="text-[10px] uppercase tracking-wider text-gray-500 mt-1">{t('refundBreakdownLabel')}</p>
 
-        {/* Card refund */}
         {hasCardRefund && (
           <div className="flex justify-between text-xs sm:text-sm">
             <span className="text-gray-600 dark:text-gray-400">
@@ -316,7 +382,6 @@ function RefundSummaryCard({ booking, refund }: { booking: Booking; refund: Retu
           </div>
         )}
 
-        {/* Credits restored */}
         {hasCredits && (
           <div className="flex justify-between text-xs sm:text-sm">
             <span className="text-gray-600 dark:text-gray-400">{t('creditsRestoredLabel')}</span>
@@ -326,7 +391,6 @@ function RefundSummaryCard({ booking, refund }: { booking: Booking; refund: Retu
           </div>
         )}
 
-        {/* Bonus restored */}
         {hasBonus && (
           <div className="flex justify-between text-xs sm:text-sm">
             <span className="text-gray-600 dark:text-gray-400">{t('bonusRestoredLabel')}</span>
@@ -336,7 +400,6 @@ function RefundSummaryCard({ booking, refund }: { booking: Booking; refund: Retu
           </div>
         )}
 
-        {/* Security deposit */}
         <div className="flex justify-between text-xs sm:text-sm">
           <span className="text-gray-600 dark:text-gray-400">{t('depositReleasedLabel')}</span>
           <span className="font-medium text-gray-900 dark:text-gray-100">
@@ -344,7 +407,6 @@ function RefundSummaryCard({ booking, refund }: { booking: Booking; refund: Retu
           </span>
         </div>
 
-        {/* Deposit source details */}
         {(booking.depositFromWallet ?? 0) > 0 && (
           <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 pl-3">
             <span>{t('depositFromWalletLabel')}</span>
@@ -359,7 +421,6 @@ function RefundSummaryCard({ booking, refund }: { booking: Booking; refund: Retu
         )}
       </div>
 
-      {/* Processing note */}
       <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-3">
         {t('refundProcessingNote')}
       </p>
