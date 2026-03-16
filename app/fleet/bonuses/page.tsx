@@ -72,6 +72,11 @@ export default function FleetBonusesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [guestFilter, setGuestFilter] = useState('all')
 
+  // Single-guest booking picker (enables bell notification)
+  const [guestBookings, setGuestBookings] = useState<{ id: string; bookingCode: string; status: string; startDate: string; carName: string }[]>([])
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null)
+  const [loadingBookings, setLoadingBookings] = useState(false)
+
   // Messages
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
@@ -115,6 +120,34 @@ export default function FleetBonusesPage() {
     loadData()
   }, [fetchAnalytics, fetchGuests])
 
+  // Fetch bookings when exactly 1 guest is selected
+  useEffect(() => {
+    if (selectedGuests.length === 1) {
+      setLoadingBookings(true)
+      setSelectedBookingId(null)
+      fetch(`/api/fleet/guests/${selectedGuests[0]}/bookings?limit=10`, { credentials: 'include' })
+        .then(r => r.json())
+        .then(data => {
+          if (data.bookings) {
+            setGuestBookings(data.bookings.map((b: any) => ({
+              id: b.id,
+              bookingCode: b.bookingCode,
+              status: b.status,
+              startDate: b.startDate,
+              carName: `${b.car?.year || ''} ${b.car?.make || ''} ${b.car?.model || ''}`.trim(),
+            })))
+          } else {
+            setGuestBookings([])
+          }
+        })
+        .catch(() => setGuestBookings([]))
+        .finally(() => setLoadingBookings(false))
+    } else {
+      setGuestBookings([])
+      setSelectedBookingId(null)
+    }
+  }, [selectedGuests])
+
   const handleApplyBonus = async () => {
     if (!amount || parseFloat(amount) <= 0) {
       setMessage({ type: 'error', text: 'Please enter a valid amount' })
@@ -138,7 +171,8 @@ export default function FleetBonusesPage() {
           userIds: targetType === 'specific' ? selectedGuests : targetType,
           bonusType,
           amount: parseFloat(amount),
-          description: description || undefined
+          description: description || undefined,
+          bookingId: selectedBookingId || undefined,
         })
       })
 
@@ -411,6 +445,58 @@ export default function FleetBonusesPage() {
                 {amount && selectedGuests.length > 0 && (
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     Total: ${(parseFloat(amount) * selectedGuests.length).toFixed(2)}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Booking picker — only when exactly 1 guest selected */}
+            {targetType === 'specific' && selectedGuests.length === 1 && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Link to Booking <span className="text-xs text-gray-400">(optional — enables bell notification)</span>
+                </label>
+                {loadingBookings ? (
+                  <div className="text-xs text-gray-500 py-2">Loading bookings...</div>
+                ) : guestBookings.length === 0 ? (
+                  <div className="text-xs text-gray-500 py-2">No bookings found</div>
+                ) : (
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    <button
+                      onClick={() => setSelectedBookingId(null)}
+                      className={`w-full text-left px-3 py-2 rounded text-xs transition-colors ${
+                        !selectedBookingId
+                          ? 'bg-gray-200 dark:bg-gray-600 font-medium'
+                          : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      No booking (account-level bonus)
+                    </button>
+                    {guestBookings.map(b => (
+                      <button
+                        key={b.id}
+                        onClick={() => setSelectedBookingId(selectedBookingId === b.id ? null : b.id)}
+                        className={`w-full text-left px-3 py-2 rounded text-xs transition-colors ${
+                          selectedBookingId === b.id
+                            ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 font-medium'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        <span className="font-mono">{b.bookingCode}</span>
+                        <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] ${
+                          b.status === 'CONFIRMED' ? 'bg-green-100 text-green-700' :
+                          b.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
+                          b.status === 'COMPLETED' ? 'bg-gray-100 text-gray-700' :
+                          'bg-yellow-100 text-yellow-700'
+                        }`}>{b.status}</span>
+                        <span className="ml-2 text-gray-500">{b.carName}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {selectedBookingId && (
+                  <p className="text-[10px] text-blue-600 dark:text-blue-400 mt-1">
+                    Bell notification will be sent for this booking
                   </p>
                 )}
               </div>

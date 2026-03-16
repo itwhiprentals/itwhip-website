@@ -17,6 +17,7 @@ interface BonusNotificationData {
   amount: number
   bonusType: BonusType
   description?: string
+  bookingId?: string  // If provided, creates bell notification linked to this booking
 }
 
 const TYPE_LABELS: Record<BonusType, string> = {
@@ -147,12 +148,7 @@ export async function sendBonusNotifications(data: BonusNotificationData): Promi
         description: data.description,
         dashboardUrl,
       })
-      await sendEmail({
-        to: guest.email,
-        subject: email.subject,
-        html: email.html,
-        text: email.text,
-      })
+      await sendEmail(guest.email, email.subject, email.html, email.text)
       console.log(`[Bonus Notify] Email sent to ${guest.email}: ${fmt(data.amount)} ${data.bonusType}`)
     } catch (emailErr) {
       console.error(`[Bonus Notify] Email failed for ${guest.email}:`, emailErr)
@@ -165,33 +161,37 @@ export async function sendBonusNotifications(data: BonusNotificationData): Promi
       const phone = guest.phoneNumber || null
       if (canSend && phone) {
         const smsText = bonusSmsText({ amount: data.amount, bonusType: data.bonusType }, locale)
-        await sendSms(phone, smsText)
+        await sendSms(phone, smsText, { type: 'SYSTEM', guestId: data.guestId })
         console.log(`[Bonus Notify] SMS sent to ${phone}: ${fmt(data.amount)} ${data.bonusType}`)
       }
     } catch (smsErr) {
       console.error(`[Bonus Notify] SMS failed for ${data.guestId}:`, smsErr)
     }
 
-    // 3) Bell notification
-    try {
-      const label = TYPE_LABELS[data.bonusType]
-      await prisma.bookingNotification.create({
-        data: {
-          id: crypto.randomUUID(),
-          recipientType: 'GUEST',
-          recipientId: data.guestId,
-          userId: guest.userId,
-          type: 'DEPOSIT_RELEASED', // reuse existing type for wallet-related notifications
-          title: `${fmt(data.amount)} added to ${label}`,
-          message: data.description || `You've received ${fmt(data.amount)} in ${label}. Use it on your next booking!`,
-          actionUrl: '/rentals/dashboard',
-          priority: 'MEDIUM',
-          read: false,
-        }
-      })
-      console.log(`[Bonus Notify] Bell notification created for ${data.guestId}`)
-    } catch (bellErr) {
-      console.error(`[Bonus Notify] Bell notification failed for ${data.guestId}:`, bellErr)
+    // 3) Bell notification — requires a bookingId (FK constraint)
+    if (data.bookingId) {
+      try {
+        const label = TYPE_LABELS[data.bonusType]
+        await prisma.bookingNotification.create({
+          data: {
+            id: crypto.randomUUID(),
+            bookingId: data.bookingId,
+            recipientType: 'GUEST',
+            recipientId: data.guestId,
+            userId: guest.userId,
+            type: 'DEPOSIT_RELEASED',
+            title: `${fmt(data.amount)} added to ${label}`,
+            message: data.description || `You've received ${fmt(data.amount)} in ${label}. Use it on your next booking!`,
+            actionUrl: `/rentals/dashboard/bookings/${data.bookingId}`,
+            priority: 'MEDIUM',
+          }
+        })
+        console.log(`[Bonus Notify] Bell notification created for ${data.guestId} (booking: ${data.bookingId})`)
+      } catch (bellErr) {
+        console.error(`[Bonus Notify] Bell notification failed for ${data.guestId}:`, bellErr)
+      }
+    } else {
+      console.log(`[Bonus Notify] Bell skipped (no booking linked) for ${data.guestId}`)
     }
   } catch (err) {
     console.error(`[Bonus Notify] Unexpected error:`, err)

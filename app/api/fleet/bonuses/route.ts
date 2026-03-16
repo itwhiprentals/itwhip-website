@@ -189,7 +189,8 @@ export async function POST(request: NextRequest) {
       bonusType,        // 'deposit' | 'credit' | 'bonus'
       amount,           // Dollar amount
       description,      // Custom description
-      expirationDays    // Optional: override default expiration
+      expirationDays,   // Optional: override default expiration
+      bookingId,        // Optional: link to specific booking (enables bell notification)
     } = body
 
     if (!bonusType || !amount || amount <= 0) {
@@ -334,6 +335,7 @@ export async function POST(request: NextRequest) {
         amount,
         bonusType: bonusType as 'credit' | 'bonus' | 'deposit',
         description: description || undefined,
+        bookingId: bookingId || undefined,
       }).catch(err => console.error(`[Fleet Bonuses] Notification failed for ${guestId}:`, err))
     }
 

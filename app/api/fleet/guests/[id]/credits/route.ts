@@ -206,6 +206,7 @@ export async function POST(
         amount,
         bonusType: type as 'credit' | 'bonus' | 'deposit',
         description: reason || note || undefined,
+        bookingId: body.bookingId || undefined,
       }).catch(err => console.error(`[Guest Credits] Notification failed for ${id}:`, err))
     }
 

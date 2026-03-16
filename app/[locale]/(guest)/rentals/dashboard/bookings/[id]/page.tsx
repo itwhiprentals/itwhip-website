@@ -641,7 +641,7 @@ export default function BookingDetailsPage() {
   }
 
   return (
-    <div className={`bg-gray-50 dark:bg-gray-950 ${isTripActive ? 'pb-4' : 'min-h-screen'}`}>
+    <div className={`bg-gray-50 dark:bg-gray-950 overflow-x-hidden ${isTripActive ? 'pb-4' : 'min-h-screen'}`}>
       {/* Toast Notification */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg animate-in slide-in-from-top-2 ${
