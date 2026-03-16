@@ -909,13 +909,13 @@ export async function POST(request: NextRequest) {
           licenseVerified: (needsVerification || requiresManualReview) ? false : true,
           licenseNumber: bookingData.driverInfo.licenseNumber,
           licenseState: bookingData.driverInfo.licenseState,
-          licenseExpiry: bookingData.driverInfo.licenseExpiry ? parseArizonaDate(bookingData.driverInfo.licenseExpiry) : null,
+          licenseExpiry: bookingData.driverInfo.licenseExpiry && bookingData.driverInfo.licenseExpiry.match(/^\d{4}-\d{2}-\d{2}$/) ? parseArizonaDate(bookingData.driverInfo.licenseExpiry) : null,
           licensePhotoUrl: bookingData.driverInfo.licensePhotoUrl,
           licenseBackPhotoUrl: bookingData.driverInfo.licenseBackPhotoUrl || null,
           insurancePhotoUrl: bookingData.driverInfo.insurancePhotoUrl,
           selfieVerified: (needsVerification || requiresManualReview) ? false : true,
           selfiePhotoUrl: bookingData.driverInfo.selfiePhotoUrl,
-          dateOfBirth: parseArizonaDate(bookingData.driverInfo.dateOfBirth),
+          dateOfBirth: bookingData.driverInfo.dateOfBirth && bookingData.driverInfo.dateOfBirth.match(/^\d{4}-\d{2}-\d{2}$/) ? parseArizonaDate(bookingData.driverInfo.dateOfBirth) : parseArizonaDate('1990-01-01'),
           
           // AI DL verification — pulled from server-side DLVerificationLog (never trust client)
           ...(serverSideAIVerified && {
