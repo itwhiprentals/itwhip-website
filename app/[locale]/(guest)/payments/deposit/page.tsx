@@ -235,7 +235,7 @@ export default function DepositWalletPage() {
           </div>
           <IoShieldCheckmarkOutline className="w-5 h-5 opacity-75" />
         </div>
-        <p className="text-4xl font-bold mb-2">${balance.toFixed(2)}</p>
+        <p className="text-4xl font-bold mb-2">${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
         <p className="text-sm opacity-75">{t('forDepositsOnly')}</p>
       </div>
 
@@ -369,10 +369,10 @@ export default function DepositWalletPage() {
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className={`text-sm font-semibold ${getTransactionColor(tx.type)}`}>
-                    {tx.amount >= 0 ? '+' : ''}{tx.amount.toFixed(2)}
+                    {tx.amount >= 0 ? '+' : ''}${tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {t('balance', { amount: tx.balanceAfter.toFixed(2) })}
+                    {t('balance', { amount: tx.balanceAfter.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}
                   </p>
                 </div>
               </div>
