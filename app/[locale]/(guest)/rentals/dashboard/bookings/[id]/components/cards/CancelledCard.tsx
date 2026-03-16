@@ -166,8 +166,10 @@ export const CancelledCard: React.FC<CancelledCardProps> = ({
         readOnlyVariant="red"
       />
 
-      {/* Original Payment Summary — collapsible */}
-      <CollapsiblePaymentSummary booking={booking} />
+      {/* Original Payment Summary — hidden for host cancellations (refund card covers it) */}
+      {!isHostCancel && !isSystemCancel && (
+        <CollapsiblePaymentSummary booking={booking} />
+      )}
 
       {/* Rental Agreement */}
       {onViewAgreement && (
