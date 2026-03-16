@@ -82,20 +82,18 @@ export const CancelledCard: React.FC<CancelledCardProps> = ({
 
           {/* Cancellation banner — differentiate by who cancelled */}
           {booking.cancelledBy?.toUpperCase() === 'HOST' ? (
-            <div className="flex items-center gap-2 mb-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-              <div className="bg-amber-100 dark:bg-amber-900/30 rounded-full p-1 flex-shrink-0">
-                <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.962-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-                  Cancelled by Host
-                </p>
-                <p className="text-xs text-amber-700 dark:text-amber-400">
-                  The host was unable to fulfill this booking. You have not been charged and any hold on your card will be released.
-                </p>
-              </div>
+            <div className="mb-4 p-4 text-center">
+              <svg className="w-8 h-8 text-gray-400 dark:text-gray-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Looking for another ride?</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Browse similar vehicles in your area</p>
+              <Link
+                href="/rentals/search?filter=impact"
+                className="inline-flex items-center gap-1.5 mt-3 px-5 py-2 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 text-xs font-medium rounded-lg transition-colors"
+              >
+                Search Available Cars
+              </Link>
             </div>
           ) : booking.cancelledBy?.toUpperCase() === 'SYSTEM' || booking.cancelledBy?.toUpperCase() === 'FLEET' ? (
             <div className="flex items-center gap-2 mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
