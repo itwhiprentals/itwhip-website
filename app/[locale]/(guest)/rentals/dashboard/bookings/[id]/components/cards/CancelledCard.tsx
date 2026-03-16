@@ -42,9 +42,19 @@ export const CancelledCard: React.FC<CancelledCardProps> = ({
     setTimeout(() => setCopiedCode(false), 2000)
   }
 
-  // Calculate refund using cancelledAt time (so tier matches original cancellation)
+  // Host cancellations = full refund (no penalty to guest)
+  // Guest cancellations = time-based tier
+  const isHostCancel = booking.cancelledBy?.toUpperCase() === 'HOST'
+  const isSystemCancel = booking.cancelledBy?.toUpperCase() === 'SYSTEM' || booking.cancelledBy?.toUpperCase() === 'FLEET'
   const cancelledAt = booking.cancelledAt ? new Date(booking.cancelledAt) : undefined
   const refund = calculateRefund(booking, cancelledAt)
+  // Override tier for host/system cancellations — guest is never penalized
+  if (isHostCancel || isSystemCancel) {
+    refund.tier = 'free'
+    refund.penaltyAmount = 0
+    refund.refundPercentage = 1
+    refund.label = 'Full refund — cancelled by host'
+  }
 
   return (
     <div className="max-w-3xl mx-auto mt-3 space-y-3">
@@ -70,25 +80,57 @@ export const CancelledCard: React.FC<CancelledCardProps> = ({
             </div>
           )}
 
-          {/* Cancelled badge */}
-          <div className="flex items-center gap-2 mb-4">
-            <div className="bg-red-100 dark:bg-red-900/30 rounded-full p-1">
-              <XCircle className="w-5 h-5 text-red-600" />
+          {/* Cancellation banner — differentiate by who cancelled */}
+          {booking.cancelledBy?.toUpperCase() === 'HOST' ? (
+            <div className="flex items-center gap-2 mb-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+              <div className="bg-amber-100 dark:bg-amber-900/30 rounded-full p-1 flex-shrink-0">
+                <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.962-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                  Cancelled by Host
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-400">
+                  The host was unable to fulfill this booking. You have not been charged and any hold on your card will be released.
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-red-900 dark:text-red-200">
-                {t('cancelledBadge')}
-              </p>
-              <p className="text-xs text-red-600 dark:text-red-400">
-                {booking.cancelledAt
-                  ? t('cancelledOnDate', { date: formatDate(booking.cancelledAt) })
-                  : t('cancelledBadgeDesc')}
-              </p>
+          ) : booking.cancelledBy?.toUpperCase() === 'SYSTEM' || booking.cancelledBy?.toUpperCase() === 'FLEET' ? (
+            <div className="flex items-center gap-2 mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+              <div className="bg-red-100 dark:bg-red-900/30 rounded-full p-1 flex-shrink-0">
+                <XCircle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-red-900 dark:text-red-200">
+                  Booking Not Approved
+                </p>
+                <p className="text-xs text-red-600 dark:text-red-400">
+                  This booking could not be verified or was not approved in time. Any hold on your card will be released.
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center gap-2 mb-4">
+              <div className="bg-red-100 dark:bg-red-900/30 rounded-full p-1">
+                <XCircle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-red-900 dark:text-red-200">
+                  {t('cancelledBadge')}
+                </p>
+                <p className="text-xs text-red-600 dark:text-red-400">
+                  {booking.cancelledAt
+                    ? t('cancelledOnDate', { date: formatDate(booking.cancelledAt) })
+                    : t('cancelledBadgeDesc')}
+                </p>
+              </div>
+            </div>
+          )}
 
-          {/* Cancellation reason (if provided) */}
-          {booking.cancellationReason && (
+          {/* Cancellation reason (if provided and not host-cancel) */}
+          {booking.cancellationReason && booking.cancelledBy?.toUpperCase() !== 'HOST' && booking.cancellationReason !== 'REASSIGNED' && (
             <div className="mb-4 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
               <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{t('cancelledReasonLabel')}</p>
               <p className="text-xs text-gray-700 dark:text-gray-300">{booking.cancellationReason}</p>

@@ -798,7 +798,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       {/* Host Review / Approved / Rejected Banners — scrollable, not sticky */}
       <div>
         {/* Host Review Banner — when fleet approved and host needs to act */}
-        {isGuestDriven && booking.hostApproval === 'PENDING' && (
+        {isGuestDriven && booking.hostApproval === 'PENDING' && booking.status !== 'CANCELLED' && booking.status !== 'NO_SHOW' && booking.status !== 'COMPLETED' && (
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
             <div className="flex items-start gap-3">
               <IoAlertCircleOutline className="w-5 h-5 text-orange-500 dark:text-orange-400 flex-shrink-0 mt-0.5" />

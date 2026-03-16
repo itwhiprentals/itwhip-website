@@ -25,6 +25,7 @@ interface StatusProgressionProps {
   handoffStatus?: string | null
   documentsVerified?: boolean
   manuallyVerifiedByHost?: boolean
+  cancelledBy?: string | null
   onCancel?: () => void
   onModify?: () => void
   onViewAgreement?: () => void
@@ -44,6 +45,7 @@ export default function StatusProgression({
   handoffStatus,
   documentsVerified,
   manuallyVerifiedByHost,
+  cancelledBy,
   onCancel,
   onModify,
   onViewAgreement,
@@ -130,12 +132,43 @@ export default function StatusProgression({
     if (nextIdx >= 0) steps[nextIdx].active = true
   }
   
-  // Handle cancelled state
+  // Handle cancelled state — differentiate by who cancelled
   if (isCancelled) {
+    const isHostCancel = cancelledBy?.toUpperCase() === 'HOST'
+    const isSystemCancel = cancelledBy?.toUpperCase() === 'SYSTEM' || cancelledBy?.toUpperCase() === 'FLEET'
+
+    if (isHostCancel) {
+      return (
+        <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-6">
+          <div className="flex items-center">
+            <IoAlertCircle className="w-8 h-8 text-amber-500 mr-3 flex-shrink-0" />
+            <div>
+              <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-200">Cancelled by Host</h3>
+              <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">The host was unable to fulfill this booking. You have not been charged and any hold on your card will be released.</p>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    if (isSystemCancel) {
+      return (
+        <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-6">
+          <div className="flex items-center">
+            <IoCloseCircle className="w-8 h-8 text-red-500 mr-3 flex-shrink-0" />
+            <div>
+              <h3 className="text-lg font-semibold text-red-900 dark:text-red-200">Booking Not Approved</h3>
+              <p className="text-sm text-red-700 dark:text-red-400 mt-1">This booking could not be verified or was not approved in time. Any hold on your card will be released.</p>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-6">
         <div className="flex items-center">
-          <IoCloseCircle className="w-8 h-8 text-red-500 mr-3" />
+          <IoCloseCircle className="w-8 h-8 text-red-500 mr-3 flex-shrink-0" />
           <div>
             <h3 className="text-lg font-semibold text-red-900 dark:text-red-200">{t('bookingCancelled')}</h3>
             <p className="text-sm text-red-700 dark:text-red-400 mt-1">{t('bookingCancelledDesc')}</p>

@@ -106,7 +106,7 @@ export function BookingHeader({
 
             {/* Quick Actions - Hidden on mobile, shown inline on desktop */}
             <div className="hidden sm:flex items-center gap-2">
-            {isGuestDriven && booking.hostApproval === 'PENDING' ? (
+            {isGuestDriven && booking.hostApproval === 'PENDING' && booking.status !== 'CANCELLED' && booking.status !== 'NO_SHOW' && booking.status !== 'COMPLETED' ? (
               <>
                 <button
                   onClick={hostApproveBooking}
@@ -276,7 +276,7 @@ export function BookingHeader({
 
         {/* Mobile Quick Actions - Full width buttons on mobile */}
         <div className="sm:hidden mt-3 flex gap-2">
-          {isGuestDriven && booking.hostApproval === 'PENDING' ? (
+          {isGuestDriven && booking.hostApproval === 'PENDING' && booking.status !== 'CANCELLED' && booking.status !== 'NO_SHOW' && booking.status !== 'COMPLETED' ? (
             <>
               <button
                 onClick={hostApproveBooking}

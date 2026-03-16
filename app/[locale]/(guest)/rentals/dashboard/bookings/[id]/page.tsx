@@ -781,6 +781,7 @@ export default function BookingDetailsPage() {
             handoffStatus={booking.handoffStatus}
             documentsVerified={booking.documentsVerified}
             manuallyVerifiedByHost={booking.manuallyVerifiedByHost}
+            cancelledBy={booking.cancelledBy}
             hideStatusMessage={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ON_HOLD' || booking.status === 'CANCELLED' || booking.status === 'NO_SHOW'}
             hideTitle={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ON_HOLD' || booking.status === 'NO_SHOW'}
           />

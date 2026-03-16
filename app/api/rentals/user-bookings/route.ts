@@ -474,6 +474,10 @@ export async function GET(request: NextRequest) {
         agreementSignedAt: booking.agreementSignedAt || null,
         agreementSignedPdfUrl: booking.agreementSignedPdfUrl || null,
         bookingType: booking.bookingType || 'STANDARD',
+        // Cancellation fields
+        cancelledAt: booking.cancelledAt || null,
+        cancelledBy: booking.cancelledBy || null,
+        cancellationReason: booking.cancellationReason || null,
         // No-show fields
         noShowDeadline: booking.noShowDeadline || null,
         noShowMarkedBy: booking.noShowMarkedBy || null,

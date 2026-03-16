@@ -861,10 +861,24 @@ export async function DELETE(
       }
     }
 
-    // Send cancellation email ONLY if booking was CONFIRMED (not PENDING/Reserved)
-    // PENDING bookings will naturally expire - no notification needed
+    // Void Stripe authorization for PENDING bookings (payment was only held, not captured)
+    if (booking.paymentStatus === 'AUTHORIZED' && booking.paymentIntentId) {
+      try {
+        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+        await stripe.paymentIntents.cancel(booking.paymentIntentId)
+        await prisma.rentalBooking.update({
+          where: { id: bookingId },
+          data: { paymentStatus: 'REFUNDED' }
+        })
+        console.log(`[Cancel Booking] Stripe auth voided for ${bookingId}`)
+      } catch (stripeError: any) {
+        console.error('[Cancel Booking] Failed to void Stripe auth:', stripeError?.message)
+      }
+    }
+
+    // Send cancellation email to guest for ALL statuses (PENDING, CONFIRMED, etc.)
     let emailSent = false
-    if (wasConfirmed && booking.guestEmail) {
+    if (booking.guestEmail) {
       try {
         const formatDate = (date: Date) => {
           return date.toLocaleDateString('en-US', {
@@ -875,6 +889,7 @@ export async function DELETE(
           })
         }
 
+        const isPending = !wasConfirmed
         const emailData = {
           to: booking.guestEmail,
           guestName: booking.guestName || 'Valued Customer',
@@ -882,10 +897,12 @@ export async function DELETE(
           carMake: booking.car?.make || 'Vehicle',
           carModel: booking.car?.model || '',
           startDate: formatDate(booking.startDate),
-          cancellationReason: 'Cancelled by rental provider',
-          // If payment was processed, show refund info
+          cancellationReason: isPending
+            ? 'The host was unable to fulfill this reservation. No charges have been applied to your card.'
+            : 'Cancelled by rental provider',
           refundAmount: booking.paymentStatus === 'PAID' ? booking.totalAmount.toFixed(2) : undefined,
-          refundTimeframe: booking.paymentStatus === 'PAID' ? '5-7 business days' : undefined
+          refundTimeframe: booking.paymentStatus === 'PAID' ? '5-7 business days'
+            : isPending ? 'The hold on your card will be released within 1-3 business days' : undefined
         }
 
         const template = getBookingCancelledTemplate(emailData)
@@ -899,7 +916,6 @@ export async function DELETE(
         console.log(`[Cancel Booking] Cancellation email sent to ${booking.guestEmail}`)
       } catch (emailError) {
         console.error('[Cancel Booking] Failed to send cancellation email:', emailError)
-        // Don't fail the request if email fails
       }
     }
 
