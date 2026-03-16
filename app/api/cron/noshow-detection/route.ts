@@ -56,12 +56,12 @@ export async function GET(request: NextRequest) {
       const [h, m] = (booking.startTime || '10:00').split(':').map(Number)
       pickup.setHours(h, m, 0, 0)
 
-      // Use noShowDeadline if set, otherwise calculate: 2h after pickup (all payment types)
+      // Use noShowDeadline if set, otherwise calculate: 24h after pickup (all payment types)
       let deadline: Date
       if (booking.noShowDeadline) {
         deadline = new Date(booking.noShowDeadline)
       } else {
-        deadline = new Date(pickup.getTime() + 2 * 60 * 60 * 1000)
+        deadline = new Date(pickup.getTime() + 24 * 60 * 60 * 1000)
       }
 
       // Only process if past deadline
