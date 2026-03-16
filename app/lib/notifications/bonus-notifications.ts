@@ -182,7 +182,7 @@ export async function sendBonusNotifications(data: BonusNotificationData): Promi
             type: 'DEPOSIT_RELEASED',
             title: `${fmt(data.amount)} added to ${label}`,
             message: data.description || `You've received ${fmt(data.amount)} in ${label}. Use it on your next booking!`,
-            actionUrl: `/rentals/dashboard/bookings/${data.bookingId}`,
+            actionUrl: data.bonusType === 'deposit' ? '/payments/deposit' : '/payments/credits',
             priority: 'MEDIUM',
           }
         })

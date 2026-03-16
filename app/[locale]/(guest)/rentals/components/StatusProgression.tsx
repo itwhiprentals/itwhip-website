@@ -201,7 +201,7 @@ export default function StatusProgression({
       </div>
       
       {/* Progress Bar with Arrow */}
-      <div className="relative -mx-4 sm:-mx-5">
+      <div className="relative -mx-4 sm:-mx-5 overflow-hidden">
         {/* Track line — gray base with gradient green fill + arrow tip */}
         <div className="absolute top-[15px] sm:top-[20px] left-[10%] right-[10%] h-1.5 sm:h-2 bg-gray-200/80 dark:bg-gray-700 rounded-full shadow-inner">
           {/* Green gradient filled portion */}
