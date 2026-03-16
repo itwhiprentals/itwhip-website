@@ -919,6 +919,30 @@ export async function DELETE(
       }
     }
 
+    // Bell notification for guest
+    try {
+      const recipientId = booking.reviewerProfileId || booking.renterId
+      if (recipientId) {
+        await prisma.bookingNotification.create({
+          data: {
+            id: crypto.randomUUID(),
+            bookingId,
+            recipientType: 'GUEST',
+            recipientId,
+            userId: booking.renterId,
+            type: 'BOOKING_CANCELLED',
+            title: 'Booking Cancelled by Host',
+            message: `Your booking ${booking.bookingCode} for the ${booking.car?.make || ''} ${booking.car?.model || ''} has been cancelled by the host. No charges applied.`,
+            actionUrl: `/rentals/dashboard/bookings/${bookingId}`,
+            priority: 'HIGH',
+          }
+        })
+        console.log(`[Cancel Booking] Bell notification created for ${recipientId}`)
+      }
+    } catch (bellErr) {
+      console.error('[Cancel Booking] Bell notification failed:', bellErr)
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Booking cancelled successfully',
