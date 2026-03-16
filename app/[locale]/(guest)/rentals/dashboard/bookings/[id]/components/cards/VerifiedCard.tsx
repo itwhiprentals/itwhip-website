@@ -7,7 +7,7 @@ import { Booking, Message } from '../../types'
 import { CarPhotoOverlay } from './CarPhotoOverlay'
 import { HostMessagesCard, CollapsiblePaymentSummary, RentalAgreementButton } from './SharedCardSections'
 import { Copy, CheckCircle } from '../Icons'
-import { formatDate } from '../../utils/helpers'
+import { formatDate, formatTimeDisplay } from '../../utils/helpers'
 import { BookingOnboarding } from '../BookingOnboarding'
 
 interface VerifiedCardProps {
@@ -164,14 +164,14 @@ function BookingInfoGrid({ booking, bookingCode, onCopyCode, copiedCode }: { boo
         <div>
           <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">{t('pickup')}</p>
           <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{formatDate(booking.startDate)}</p>
-          <p className="text-[11px] text-gray-500">{booking.startTime}</p>
+          <p className="text-[11px] text-gray-500">{formatTimeDisplay(booking.startTime)}</p>
           <p className="text-[10px] uppercase tracking-wider text-gray-500 mt-1.5 mb-0.5">{t('location')}</p>
           <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{t('locationRevealedAfterConfirmation')}</p>
         </div>
         <div className="text-right">
           <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">{t('dropoff')}</p>
           <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{formatDate(booking.endDate)}</p>
-          <p className="text-[11px] text-gray-500">{booking.endTime}</p>
+          <p className="text-[11px] text-gray-500">{formatTimeDisplay(booking.endTime)}</p>
           <p className="text-[10px] uppercase tracking-wider text-gray-500 mt-1.5 mb-0.5">{t('location')}</p>
           <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{t('locationRevealedAfterConfirmation')}</p>
         </div>

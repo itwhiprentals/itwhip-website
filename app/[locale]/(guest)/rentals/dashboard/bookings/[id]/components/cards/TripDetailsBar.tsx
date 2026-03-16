@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useTranslations } from 'next-intl'
-import { formatDate } from '../../utils/helpers'
+import { formatDate, formatTimeDisplay } from '../../utils/helpers'
 
 interface TripDetailsBarProps {
   bookingCode: string
@@ -18,13 +18,6 @@ interface TripDetailsBarProps {
   latePickup?: boolean
 }
 
-// Convert 24h time "HH:MM" to 12h with AM/PM
-function formatTime12h(time: string): string {
-  const [h, m] = time.split(':').map(Number)
-  const suffix = h >= 12 ? 'PM' : 'AM'
-  const h12 = h % 12 || 12
-  return `${h12}:${m.toString().padStart(2, '0')} ${suffix}`
-}
 
 export const TripDetailsBar: React.FC<TripDetailsBarProps> = ({
   bookingCode,
@@ -62,7 +55,7 @@ export const TripDetailsBar: React.FC<TripDetailsBarProps> = ({
             )}
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {formatDate(startDate)} at {formatTime12h(startTime)}
+            {formatDate(startDate)} at {formatTimeDisplay(startTime)}
           </p>
           {pickupAddress && (
             <>
@@ -106,7 +99,7 @@ export const TripDetailsBar: React.FC<TripDetailsBarProps> = ({
             {t('dropoff')}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {formatDate(endDate)} at {formatTime12h(endTime)}
+            {formatDate(endDate)} at {formatTimeDisplay(endTime)}
           </p>
           {dropoffAddress && (
             <>

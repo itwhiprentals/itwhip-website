@@ -23,6 +23,8 @@ interface StatusProgressionProps {
   documentsSubmittedAt?: string
   reviewedAt?: string
   handoffStatus?: string | null
+  documentsVerified?: boolean
+  manuallyVerifiedByHost?: boolean
   onCancel?: () => void
   onModify?: () => void
   onViewAgreement?: () => void
@@ -40,6 +42,8 @@ export default function StatusProgression({
   documentsSubmittedAt,
   reviewedAt,
   handoffStatus,
+  documentsVerified,
+  manuallyVerifiedByHost,
   onCancel,
   onModify,
   onViewAgreement,
@@ -48,10 +52,11 @@ export default function StatusProgression({
 }: StatusProgressionProps) {
   const t = useTranslations('StatusProgression')
 
-  // Determine which steps are complete - FIXED case sensitivity
+  // Determine which steps are complete - mirrors app BookingProgressBar.tsx
   const isBooked = true // Always true if viewing
   const vsLower = verificationStatus?.toLowerCase()
-  const isVerified = vsLower === 'approved' ||
+  const isVerified = documentsVerified === true || manuallyVerifiedByHost === true ||
+                    vsLower === 'approved' ||
                     vsLower === 'verified' ||
                     vsLower === 'completed' ||
                     vsLower === 'pending_charges' ||

@@ -8,8 +8,8 @@ import {
   InfoCircle, LocationPin, Key 
 } from './Icons'
 import { 
-  getDaysUntilPickup, getHoursUntilPickup, 
-  formatDate, getProgressiveInfoLevel
+  getDaysUntilPickup, getHoursUntilPickup,
+  formatDate, getProgressiveInfoLevel, formatTimeDisplay
 } from '../utils/helpers'
 import { TIME_THRESHOLDS } from '../constants'
 import { IoNavigateOutline, IoChevronDownOutline, IoMailOutline, IoBusinessOutline, IoTimeOutline, IoCheckmarkCircle, IoCarOutline } from 'react-icons/io5'
@@ -125,7 +125,7 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
                 <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mt-0.5 mr-2 sm:mr-3 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-sm sm:text-base font-medium text-blue-900">
-                    {t('pickupLabel', { date: formatDate(booking.startDate), time: booking.startTime })}
+                    {t('pickupLabel', { date: formatDate(booking.startDate), time: formatTimeDisplay(booking.startTime) })}
                   </p>
                   <p className="text-xs sm:text-sm text-blue-700 mt-1">
                     <span className="inline-flex items-center">
@@ -367,8 +367,8 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({
             <Clock className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('time')}</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">{t('pickupTime', { time: booking.startTime })}</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">{t('returnTime', { time: booking.endTime })}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">{t('pickupTime', { time: formatTimeDisplay(booking.startTime) })}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">{t('returnTime', { time: formatTimeDisplay(booking.endTime) })}</p>
             </div>
           </div>
 

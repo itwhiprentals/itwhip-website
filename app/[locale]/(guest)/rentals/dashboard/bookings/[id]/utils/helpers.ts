@@ -194,6 +194,33 @@ export const formatTime = (date: string | Date): string => {
   })
 }
 
+/** Format a time-only string to "H:MM AM/PM" — handles both "23:00" (24h) and "11:00 PM" (12h) */
+export function formatTimeDisplay(time: string | undefined | null): string {
+  if (!time) return ''
+  // Already has AM/PM — pass through
+  if (/\d{1,2}:\d{2}\s*(AM|PM)/i.test(time)) return time.trim()
+  // 24h format "HH:MM" → convert
+  const [h, m] = time.split(':').map(Number)
+  if (isNaN(h) || isNaN(m)) return time
+  const period = h >= 12 ? 'PM' : 'AM'
+  const hour12 = h % 12 || 12
+  return `${hour12}:${String(m).padStart(2, '0')} ${period}`
+}
+
+/** Parse a time string ("11:00 PM" or "23:00") to 24h { hours, minutes } */
+export function parseTo24h(time: string): { hours: number; minutes: number } {
+  const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i)
+  if (match) {
+    let h = parseInt(match[1], 10)
+    const isPM = match[3].toUpperCase() === 'PM'
+    if (isPM && h !== 12) h += 12
+    if (!isPM && h === 12) h = 0
+    return { hours: h, minutes: parseInt(match[2], 10) }
+  }
+  const [h, m] = time.split(':').map(Number)
+  return { hours: isNaN(h) ? 10 : h, minutes: isNaN(m) ? 0 : m }
+}
+
 export const calculateTripDays = (startDate: string, endDate: string): number => {
   return Math.ceil(
     (new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)

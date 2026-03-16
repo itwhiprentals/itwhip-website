@@ -495,7 +495,8 @@ export default function BookingDetailsPage() {
   // State detection for Booked / Verified / Issues cards
   const vsLower = booking.verificationStatus?.toLowerCase()
   const isVerifiedPending = booking.status === 'PENDING' && (
-    vsLower === 'approved' || vsLower === 'verified' || vsLower === 'completed'
+    vsLower === 'approved' || vsLower === 'verified' || vsLower === 'completed' ||
+    booking.documentsVerified === true || booking.manuallyVerifiedByHost === true
   )
   const hasIssues = (
     booking.paymentStatus?.toLowerCase() === 'failed' ||
@@ -778,6 +779,8 @@ export default function BookingDetailsPage() {
             documentsSubmittedAt={typeof booking.documentsSubmittedAt === 'string' ? booking.documentsSubmittedAt : undefined}
             reviewedAt={typeof booking.reviewedAt === 'string' ? booking.reviewedAt : undefined}
             handoffStatus={booking.handoffStatus}
+            documentsVerified={booking.documentsVerified}
+            manuallyVerifiedByHost={booking.manuallyVerifiedByHost}
             hideStatusMessage={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ON_HOLD' || booking.status === 'CANCELLED' || booking.status === 'NO_SHOW'}
             hideTitle={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ON_HOLD' || booking.status === 'NO_SHOW'}
           />

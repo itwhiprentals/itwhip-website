@@ -8,7 +8,7 @@ import { Booking, Message } from '../../types'
 import { CarPhotoOverlay } from './CarPhotoOverlay'
 import { HostMessagesCard, CollapsiblePaymentSummary, RentalAgreementButton } from './SharedCardSections'
 import { Copy, CheckCircle, XCircle } from '../Icons'
-import { formatDate, formatCurrency, calculateRefund } from '../../utils/helpers'
+import { formatDate, formatCurrency, calculateRefund, formatTimeDisplay } from '../../utils/helpers'
 
 interface CancelledCardProps {
   booking: Booking
@@ -135,16 +135,6 @@ export const CancelledCard: React.FC<CancelledCardProps> = ({
   )
 }
 
-// Format "HH:MM" or "H:MM AM/PM" → always "H:MM AM/PM"
-function formatTime12(time: string): string {
-  if (!time) return ''
-  // Already has AM/PM
-  if (/[ap]m/i.test(time)) return time
-  const [h, m] = time.split(':').map(Number)
-  const period = h >= 12 ? 'PM' : 'AM'
-  const hour12 = h % 12 || 12
-  return `${hour12}:${String(m).padStart(2, '0')} ${period}`
-}
 
 // ─── Cancelled Info Grid ────────────────────────────────────────────────────
 
@@ -191,12 +181,12 @@ function CancelledInfoGrid({
         <div>
           <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">{t('pickup')}</p>
           <p className="text-xs font-medium text-gray-900 dark:text-gray-100 uppercase">{formatDate(booking.startDate)}</p>
-          <p className="text-[11px] text-gray-500">{formatTime12(booking.startTime)}</p>
+          <p className="text-[11px] text-gray-500">{formatTimeDisplay(booking.startTime)}</p>
         </div>
         <div className="text-right">
           <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">{t('dropoff')}</p>
           <p className="text-xs font-medium text-gray-900 dark:text-gray-100 uppercase">{formatDate(booking.endDate)}</p>
-          <p className="text-[11px] text-gray-500">{formatTime12(booking.endTime)}</p>
+          <p className="text-[11px] text-gray-500">{formatTimeDisplay(booking.endTime)}</p>
         </div>
       </div>
 

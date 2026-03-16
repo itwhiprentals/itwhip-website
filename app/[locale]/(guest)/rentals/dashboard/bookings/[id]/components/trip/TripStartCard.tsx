@@ -9,15 +9,7 @@ import { useTranslations } from 'next-intl'
 import { CarPhotoOverlay } from '../cards/CarPhotoOverlay'
 import { HostMessagesCard, CollapsiblePaymentSummary, RentalAgreementButton } from '../cards/SharedCardSections'
 import { Copy, CheckCircle } from '../Icons'
-import { formatDate } from '../../utils/helpers'
-
-function formatTime12h(time: string | undefined): string {
-  if (!time) return ''
-  const [h, m] = time.split(':').map(Number)
-  const period = h >= 12 ? 'PM' : 'AM'
-  const hour12 = h % 12 || 12
-  return `${hour12}:${String(m).padStart(2, '0')} ${period}`
-}
+import { formatDate, formatTimeDisplay } from '../../utils/helpers'
 
 interface TripStartCardProps {
   booking: any
@@ -402,14 +394,14 @@ function BookingInfoGrid({ booking, bookingCode, onCopyCode, copiedCode, pickupA
         <div>
           <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">{t('pickup')}</p>
           <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{formatDate(booking.startDate)}</p>
-          <p className="text-[11px] text-gray-500">{formatTime12h(booking.startTime)}</p>
+          <p className="text-[11px] text-gray-500">{formatTimeDisplay(booking.startTime)}</p>
           <p className="text-[10px] uppercase tracking-wider text-gray-500 mt-1.5 mb-0.5">{t('location')}</p>
           <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{pickupAddress}</p>
         </div>
         <div className="text-right">
           <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">{t('dropoff')}</p>
           <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{formatDate(booking.endDate)}</p>
-          <p className="text-[11px] text-gray-500">{formatTime12h(booking.endTime)}</p>
+          <p className="text-[11px] text-gray-500">{formatTimeDisplay(booking.endTime)}</p>
           <p className="text-[10px] uppercase tracking-wider text-gray-500 mt-1.5 mb-0.5">{t('location')}</p>
           <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{dropoffAddress}</p>
         </div>
