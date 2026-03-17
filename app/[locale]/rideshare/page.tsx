@@ -243,41 +243,11 @@ const lifestyleImages = [
 
 // Rideshare platform partners with official logos
 const ridesharePartners = [
-  {
-    name: 'Uber',
-    logo: 'https://logos-world.net/wp-content/uploads/2020/05/Uber-Logo.png',
-    bgColor: 'bg-white',
-    logoHeight: 'h-8',
-    extraClass: 'grayscale'
-  },
-  {
-    name: 'DoorDash',
-    logo: 'https://logos-world.net/wp-content/uploads/2020/11/DoorDash-Logo.png',
-    bgColor: 'bg-white',
-    logoHeight: 'h-14',
-    extraClass: ''
-  },
-  {
-    name: 'Lyft',
-    logo: 'https://logos-world.net/wp-content/uploads/2020/11/Lyft-Logo.png',
-    bgColor: 'bg-white',
-    logoHeight: 'h-8',
-    extraClass: ''
-  },
-  {
-    name: 'Instacart',
-    logo: 'https://logos-world.net/wp-content/uploads/2022/01/Instacart-Logo.png',
-    bgColor: 'bg-white',
-    logoHeight: 'h-14',
-    extraClass: ''
-  },
-  {
-    name: 'Amazon Flex',
-    logo: 'https://logos-world.net/wp-content/uploads/2020/04/Amazon-Logo.png',
-    bgColor: 'bg-white',
-    logoHeight: 'h-12',
-    extraClass: ''
-  }
+  { name: 'Uber', color: '#000000' },
+  { name: 'DoorDash', color: '#FF3008' },
+  { name: 'Lyft', color: '#FF00BF' },
+  { name: 'Instacart', color: '#43B02A' },
+  { name: 'Amazon Flex', color: '#FF9900' },
 ]
 
 async function getPartners() {
@@ -804,18 +774,15 @@ export default async function RidesharePage() {
               {t('partnersApprovedSubtitle')}
             </p>
 
-            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+            <div className="flex items-center justify-center gap-5 sm:gap-8">
               {ridesharePartners.map((partner) => (
-                <div
+                <span
                   key={partner.name}
-                  className={`${partner.bgColor} px-4 py-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 flex items-center justify-center min-w-[100px] h-16`}
+                  className="text-sm sm:text-base font-bold transition-opacity hover:opacity-70"
+                  style={{ color: partner.color }}
                 >
-                  <img
-                    src={partner.logo}
-                    alt={partner.name}
-                    className={`${partner.logoHeight} w-auto object-contain ${partner.extraClass}`}
-                  />
-                </div>
+                  {partner.name}
+                </span>
               ))}
             </div>
           </div>

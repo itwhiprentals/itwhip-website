@@ -82,10 +82,6 @@ export default function BrowseByMakeSection() {
               className="group"
             >
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-lg hover:border-orange-300 dark:hover:border-orange-500 transition-all duration-200 text-center p-2 sm:p-3">
-                {/* Badge */}
-                <span className="inline-block text-[8px] sm:text-[9px] px-1.5 py-0.5 bg-orange-500 text-white rounded font-medium mb-2">
-                  {t(make.badgeKey)}
-                </span>
                 {/* Logo */}
                 <div className="h-14 sm:h-16 flex items-center justify-center mb-1 mx-1">
                   <img
