@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       }
 
       const isFakeEmail = (user.email || '').includes('@itwhip.temp')
-      if (isFakeEmail || !user.emailVerified) {
+      if (isFakeEmail) {
         return NextResponse.json({
           requiresEmail: true,
           userId: user.id,
