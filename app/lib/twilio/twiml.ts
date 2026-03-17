@@ -688,9 +688,9 @@ export function generateSpeakWithSomeone(roomName: string, lang: Lang = 'en'): s
   // Always attempt to connect — 24/7 availability
   // If no answer, conference ends → action URL → voicemail
   say(twiml, t(lang,
-    'Connecting you to our team now. Just so you know, our A.I. assistant Coyi can book everything for you in just a few chats on our website. Please hold.',
-    'Conectandote con nuestro equipo. Solo para que sepas, nuestro asistente de inteligencia artificial Coyi puede reservar todo por ti en solo unos chats en nuestro sitio web. Por favor espera.',
-    'Nous vous connectons à notre équipe. Sachez que notre assistant I.A. Coyi peut tout réserver pour vous en quelques messages sur notre site web. Veuillez patienter.'
+    'Thank you for calling ItWhip. We are currently experiencing higher than normal call volume. For immediate assistance, chat with Choé, our A.I. assistant, at itwhip.com. Please hold and your call will be answered in the order it was received.',
+    'Gracias por llamar a ItWhip. Actualmente estamos experimentando un volumen de llamadas más alto de lo normal. Para asistencia inmediata, chatea con Choé, nuestra asistente de inteligencia artificial, en itwhip.com. Por favor espere, su llamada será atendida en el orden en que fue recibida.',
+    'Merci d\'avoir appelé ItWhip. Nous connaissons actuellement un volume d\'appels plus élevé que la normale. Pour une assistance immédiate, chattez avec Choé, notre assistante I.A., sur itwhip.com. Veuillez patienter, votre appel sera pris dans l\'ordre de réception.'
   ), lang)
 
   // Caller enters conference with hold music + promo messages
