@@ -6,15 +6,27 @@ export interface VINDecodeResult {
   make: string
   model: string
   year: string
+  trim: string
   bodyClass: string
+  vehicleType: string
   doors: string
+  seats: string
   driveType: string
   fuelType: string
+  electrificationLevel: string
   engineCylinders: string
   engineHP: string
+  engineDisplacement: string
   transmission: string
-  vehicleType: string
-  trim: string
+  transmissionSpeeds: string
+  plantCity: string
+  plantState: string
+  plantCountry: string
+  manufacturer: string
+  gvwr: string
+  wheelBase: string
+  steeringLocation: string
+  note: string
   errorCode: string
   errorText: string
 }
@@ -36,15 +48,27 @@ export async function decodeVIN(vin: string): Promise<VINDecodeResult | null> {
       make: result.Make || '',
       model: result.Model || '',
       year: result.ModelYear || '',
+      trim: result.Trim || '',
       bodyClass: result.BodyClass || '',
+      vehicleType: result.VehicleType || '',
       doors: result.Doors || '',
+      seats: result.Seats || '',
       driveType: result.DriveType || '',
       fuelType: result.FuelTypePrimary || '',
+      electrificationLevel: result.ElectrificationLevel || '',
       engineCylinders: result.EngineCylinders || '',
       engineHP: result.EngineHP || '',
+      engineDisplacement: result.DisplacementL || '',
       transmission: result.TransmissionStyle || '',
-      vehicleType: result.VehicleType || '',
-      trim: result.Trim || '',
+      transmissionSpeeds: result.TransmissionSpeeds || '',
+      plantCity: result.PlantCity || '',
+      plantState: result.PlantState || '',
+      plantCountry: result.PlantCountry || '',
+      manufacturer: result.Manufacturer || '',
+      gvwr: result.GVWR || '',
+      wheelBase: result.WheelBaseShort || '',
+      steeringLocation: result.SteeringLocation || '',
+      note: result.Note || '',
       errorCode: result.ErrorCode || '',
       errorText: result.ErrorText || '',
     }

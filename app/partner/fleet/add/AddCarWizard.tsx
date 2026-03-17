@@ -313,6 +313,12 @@ export default function AddCarWizard({
           decodedFields.push('driveType')
         }
 
+        // Add seats if available
+        if (result.seats) {
+          updates.seats = parseInt(result.seats) || 5
+          decodedFields.push('seats')
+        }
+
         // Update vehicle data
         setVehicleData(prev => ({ ...prev, ...updates }))
         setVinDecodedFields(decodedFields)
@@ -765,6 +771,18 @@ export default function AddCarWizard({
                     <div>
                       <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide">{t('addDoors')}</p>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{vehicleData.doors}</p>
+                    </div>
+                  )}
+                  {vinDecodedFields.includes('seats') && (
+                    <div>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide">Seats</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{vehicleData.seats}</p>
+                    </div>
+                  )}
+                  {vinDecodedFields.includes('carType') && (
+                    <div>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide">Body Type</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white capitalize">{vehicleData.carType}</p>
                     </div>
                   )}
                 </div>
