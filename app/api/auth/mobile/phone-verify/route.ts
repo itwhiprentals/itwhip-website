@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import db from '@/app/lib/db'
 import { SignJWT } from 'jose'
 import { nanoid } from 'nanoid'
 import twilio from 'twilio'
@@ -131,13 +132,11 @@ export async function POST(request: NextRequest) {
       user.id, user.email!, user.name, 'guest', user.status as string
     )
 
-    await prisma.refreshToken.create({
-      data: {
-        id: nanoid(),
-        token: refreshToken,
-        userId: user.id,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      }
+    await db.saveRefreshToken({
+      userId: user.id,
+      token: refreshToken,
+      family: nanoid(),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     })
 
     console.log(`[Mobile Phone Verify] Login success: ${user.email} via phone`)
