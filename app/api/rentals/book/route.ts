@@ -814,10 +814,31 @@ export async function POST(request: NextRequest) {
     // Generate booking code
     const bookingCode = generateBookingCode()
 
+    // ── MILITARY GRADE: Pre-transaction availability check (buffer + time validation) ──
+    const { canBookCar } = await import('@/app/lib/availability/canBookCar')
+    const pickupDateStr = bookingData.startDate.toISOString().split('T')[0]
+    const returnDateStr = bookingData.endDate.toISOString().split('T')[0]
+    const validation = await canBookCar(
+      bookingData.carId,
+      pickupDateStr,
+      bookingData.startTime,
+      returnDateStr,
+      bookingData.endTime,
+    )
+    if (!validation.allowed) {
+      console.log(`[BOOKING_CREATE] DENIED by canBookCar: ${validation.reason}`, { carId: bookingData.carId, conflicts: validation.conflicts })
+      return NextResponse.json({
+        success: false,
+        error: 'AVAILABILITY_CONFLICT',
+        message: validation.reason || 'This vehicle is not available for the selected dates.',
+        suggestedPickup: validation.suggestedPickup,
+      }, { status: 409 })
+    }
+
     // Create the booking in a serializable transaction to prevent double-booking
     const booking = await prisma.$transaction(async (tx) => {
-      // Re-verify availability INSIDE transaction to prevent race condition
-      // (The check at line ~310 is a fast-path reject; this is the authoritative check)
+      // Re-verify overlap INSIDE transaction to prevent race condition
+      // (canBookCar above checks buffer/times; this catches last-millisecond overlaps)
       const conflict = await tx.rentalBooking.findFirst({
         where: {
           carId: bookingData.carId,
@@ -1394,6 +1415,8 @@ export async function POST(request: NextRequest) {
 
       return { booking: newBooking, token: accessToken.token }
     }, { isolationLevel: 'Serializable', timeout: 15000 }) as any
+
+    console.log(`[BOOKING_CREATE] SUCCESS carId=${bookingData.carId} code=${booking.booking.bookingCode} pickup=${pickupDateStr} ${bookingData.startTime} return=${returnDateStr} ${bookingData.endTime} guest=${bookingData.guestEmail}`)
 
     // ALL bookings are now pending review (three-tier approval: fleet → host → confirmed)
     // Send pending review email to guest — never instant confirmation

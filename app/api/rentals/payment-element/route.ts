@@ -63,6 +63,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // ── MILITARY GRADE: Pre-payment availability check ──
+    // Prevents holding money for impossible bookings
+    const { getCarAvailability } = await import('@/app/lib/availability/getCarAvailability')
+    const windowStart = new Date(startDate + 'T00:00:00')
+    const windowEnd = new Date(endDate + 'T23:59:59')
+    const { days: availDays } = await getCarAvailability(carId, windowStart, windowEnd)
+    const conflictDays = availDays.filter(d => !d.available && d.date >= startDate && d.date <= endDate)
+    if (conflictDays.length > 0) {
+      console.log(`[PAYMENT_ELEMENT] DENIED: ${conflictDays.length} unavailable days for car ${carId} (${startDate}→${endDate})`)
+      return NextResponse.json({
+        error: 'Vehicle not available for selected dates',
+        conflictDates: conflictDays.map(d => d.date),
+        reasons: conflictDays.map(d => d.reason),
+      }, { status: 409 })
+    }
+
     // Fetch car details for server-side price calculation
     const car = await prisma.rentalCar.findUnique({
       where: { id: carId },

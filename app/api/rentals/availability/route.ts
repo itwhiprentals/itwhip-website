@@ -1,12 +1,11 @@
 // app/api/rentals/availability/route.ts
-// Public endpoint — returns blocked/booked dates for a car
+// MILITARY GRADE: Public availability endpoint — uses core engine.
 // Two modes:
-//   ?carId=X&startDate=Y&endDate=Z  → range check (available: true/false + blockedDates)
-//   ?carId=X&month=2026-03          → calendar mode (all blocked dates in that month)
+//   ?carId=X&startDate=Y&endDate=Z  → range check (available: true/false + blockedDates + days)
+//   ?carId=X&month=2026-03          → calendar mode (all blocked dates in that month + days)
 
 import { NextRequest, NextResponse } from 'next/server'
-import prisma from '@/app/lib/database/prisma'
-import { format, addDays } from 'date-fns'
+import { getCarAvailability } from '@/app/lib/availability/getCarAvailability'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -25,8 +24,7 @@ export async function GET(request: NextRequest) {
     let windowEnd: Date
 
     if (month) {
-      // Calendar mode: return all blocked dates for the given month(s)
-      // Accept comma-separated months: "2026-03,2026-04,2026-05"
+      // Calendar mode: accept comma-separated months: "2026-03,2026-04,2026-05"
       const months = month.split(',').map(m => m.trim())
       const firstMonth = months[0]
       const lastMonth = months[months.length - 1]
@@ -45,77 +43,28 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch active bookings that overlap the window
-    const bookings = await prisma.rentalBooking.findMany({
-      where: {
-        carId,
-        status: { in: ['PENDING', 'CONFIRMED', 'ACTIVE'] },
-        startDate: { lte: windowEnd },
-        endDate: { gte: windowStart },
-      },
-      select: {
-        startDate: true,
-        endDate: true,
-      },
-      orderBy: { startDate: 'asc' },
-    })
-
-    // Fetch host-blocked dates in the window
-    const hostBlocked = await prisma.rentalAvailability.findMany({
-      where: {
-        carId,
-        isAvailable: false,
-        date: { gte: windowStart, lte: windowEnd },
-      },
-      select: { date: true },
-      orderBy: { date: 'asc' },
-    })
-
-    // Build set of all blocked YYYY-MM-DD strings
-    const blockedSet = new Set<string>()
-
-    // Expand booking ranges into individual dates
-    for (const booking of bookings) {
-      let current = new Date(booking.startDate)
-      const end = new Date(booking.endDate)
-      while (current <= end) {
-        blockedSet.add(format(current, 'yyyy-MM-dd'))
-        current = addDays(current, 1)
-      }
-    }
-
-    // Add host-blocked dates
-    for (const blocked of hostBlocked) {
-      blockedSet.add(format(new Date(blocked.date), 'yyyy-MM-dd'))
-    }
-
-    const blockedDates = Array.from(blockedSet).sort()
+    // ── Use the core availability engine ──
+    const { days, blockedDates } = await getCarAvailability(carId, windowStart, windowEnd)
 
     // For range check mode, determine if the requested range is available
     if (startDate && endDate) {
-      let current = new Date(startDate + 'T00:00:00')
-      const end = new Date(endDate + 'T00:00:00')
-      const conflictDates: string[] = []
-
-      while (current <= end) {
-        const dateStr = format(current, 'yyyy-MM-dd')
-        if (blockedSet.has(dateStr)) {
-          conflictDates.push(dateStr)
-        }
-        current = addDays(current, 1)
-      }
+      const conflictDates = days
+        .filter(d => !d.available && d.date >= startDate && d.date <= endDate)
+        .map(d => d.date)
 
       return NextResponse.json({
         available: conflictDates.length === 0,
         blockedDates,
         conflictDates,
+        days, // full per-day breakdown
         carId,
       })
     }
 
-    // Calendar mode — just return blocked dates
+    // Calendar mode — return blocked dates + per-day breakdown
     return NextResponse.json({
       blockedDates,
+      days,
       carId,
     })
   } catch (error) {
