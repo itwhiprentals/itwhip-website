@@ -211,24 +211,9 @@ export async function POST(request: NextRequest) {
     const renterId = guestProfile?.userId || null
 
     // ========== EMAIL VERIFICATION CHECK ==========
-    // Block bookings from users who haven't verified their email
-    if (renterId) {
-      const userRecord = await prisma.user.findUnique({
-        where: { id: renterId },
-        select: { emailVerified: true },
-      })
-      if (userRecord && userRecord.emailVerified === false) {
-        console.warn(`[book] Unverified email attempted booking: ${bookingData.guestEmail}`)
-        return NextResponse.json(
-          {
-            error: 'Please verify your email address before booking.',
-            code: 'EMAIL_NOT_VERIFIED',
-            verifyUrl: '/verify-email'
-          },
-          { status: 403 }
-        )
-      }
-    }
+    // REMOVED: emailVerified is a NextAuth field that stays false for OAuth/phone users.
+    // It blocked legitimate customers (Google sign-in, Apple sign-in, phone login).
+    // Fraud prevention handled by Stripe Radar + document verification + risk scoring.
     // ========== END EMAIL VERIFICATION CHECK ==========
     // ========== END LINK ==========
 

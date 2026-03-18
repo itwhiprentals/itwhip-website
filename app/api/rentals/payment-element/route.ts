@@ -126,30 +126,40 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch guest balances to compute expected adjusted amount (credits, bonus, deposit wallet)
+    // Look up by userId (from auth token) first, then fall back to email
     let serverAdjustedCents = serverRawTotalCents
-    if (email) {
-      try {
-        const guestProfile = await prisma.reviewerProfile.findFirst({
+    try {
+      let guestProfile = null
+      // Prefer userId lookup (reliable for authenticated users)
+      if (user?.userId) {
+        guestProfile = await prisma.reviewerProfile.findFirst({
+          where: { userId: user.userId },
+          select: { creditBalance: true, bonusBalance: true, depositWalletBalance: true }
+        })
+      }
+      // Fall back to email lookup
+      if (!guestProfile && email) {
+        guestProfile = await prisma.reviewerProfile.findFirst({
           where: { email },
           select: { creditBalance: true, bonusBalance: true, depositWalletBalance: true }
         })
-        if (guestProfile) {
-          const applied = calculateAppliedBalances(
-            pricing,
-            depositAmount,
-            {
-              creditBalance: guestProfile.creditBalance || 0,
-              bonusBalance: guestProfile.bonusBalance || 0,
-              depositWalletBalance: guestProfile.depositWalletBalance || 0
-            },
-            0.25
-          )
-          serverAdjustedCents = Math.round((applied.amountToPay + applied.depositFromCard) * 100)
-        }
-      } catch (e) {
-        // If balance fetch fails, fall back to raw total for validation
-        console.warn('[Payment Element] Could not fetch guest balances, using raw total for validation')
       }
+      if (guestProfile) {
+        const applied = calculateAppliedBalances(
+          pricing,
+          depositAmount,
+          {
+            creditBalance: guestProfile.creditBalance || 0,
+            bonusBalance: guestProfile.bonusBalance || 0,
+            depositWalletBalance: guestProfile.depositWalletBalance || 0
+          },
+          0.25
+        )
+        serverAdjustedCents = Math.round((applied.amountToPay + applied.depositFromCard) * 100)
+      }
+    } catch (e) {
+      // If balance fetch fails, fall back to raw total for validation
+      console.warn('[Payment Element] Could not fetch guest balances, using raw total for validation')
     }
 
     // Lower bound: client amount must be at least 80% of server-adjusted amount
