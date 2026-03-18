@@ -19,10 +19,18 @@ const GUEST_JWT_SECRET = new TextEncoder().encode(
   process.env.GUEST_JWT_SECRET!
 )
 
-// Helper to get current user - tries both JWT secrets
-async function getCurrentUser() {
+// Helper to get current user - tries cookies first, then Authorization header (mobile)
+async function getCurrentUser(request?: NextRequest) {
   const cookieStore = await cookies()
-  const token = cookieStore.get('accessToken')?.value
+  let token = cookieStore.get('accessToken')?.value
+
+  // Fallback: check Authorization header (mobile app sends Bearer token)
+  if (!token && request) {
+    const authHeader = request.headers.get('authorization')
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.slice(7)
+    }
+  }
 
   if (!token) return null
 
@@ -52,9 +60,9 @@ async function getCurrentUser() {
 }
 
 // GET - Check verification status (polls Stripe directly if session is pending)
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentUser(request)
     if (!user || !user.reviewerProfile) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -202,7 +210,7 @@ export async function GET(_request: NextRequest) {
 // POST - Create new verification session
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentUser(request)
     if (!user || !user.reviewerProfile) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
