@@ -41,7 +41,7 @@ const jsonLd = {
         name: 'What is ItWhip\'s cancellation policy?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'ItWhip offers a day-based cancellation policy: Cancel 24+ hours before pickup for a full refund. Late cancellations (under 24 hours) incur a penalty of 1 day\'s average cost for trips 3+ days, or half a day for shorter trips. Security deposits are always released in full.'
+          text: 'ItWhip uses a 4-tier cancellation policy: 72+ hours before pickup = full refund, 24-72 hours = 75% refund (25% penalty), 12-24 hours = 50% refund (50% penalty), less than 12 hours = no refund. Security deposits are always released in full regardless of timing.'
         }
       },
       {
@@ -118,22 +118,32 @@ export default function CancellationPolicyContent() {
             <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 sm:p-6 border border-amber-200 dark:border-amber-800">
               <h2 className="text-base sm:text-lg font-bold text-amber-900 dark:text-amber-300 mb-4 flex items-center">
                 <IoTimeOutline className="w-5 h-5 mr-2" />
-                {t('quickSummaryTitle')}
+                Quick Summary: 4-Tier Cancellation Policy
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-5 text-center border-2 border-green-200 dark:border-green-800">
-                  <div className="text-2xl sm:text-3xl font-bold text-green-600">{t('fullRefund')}</div>
-                  <div className="text-sm sm:text-base text-gray-700 dark:text-gray-300 font-medium mt-1">{t('twentyFourPlusHours')}</div>
-                  <div className="text-xs text-gray-500 mt-1">{t('noPenaltyDepositReleased')}</div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 text-center border-2 border-green-200 dark:border-green-800">
+                  <div className="text-xl sm:text-2xl font-bold text-green-600">100%</div>
+                  <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-medium mt-1">72+ hours</div>
+                  <div className="text-xs text-gray-500 mt-1">Full refund</div>
                 </div>
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-5 text-center border-2 border-amber-200 dark:border-amber-800">
-                  <div className="text-2xl sm:text-3xl font-bold text-amber-600">{t('oneDayPenaltyShort')}</div>
-                  <div className="text-sm sm:text-base text-gray-700 dark:text-gray-300 font-medium mt-1">{t('lessThan24Hours')}</div>
-                  <div className="text-xs text-gray-500 mt-1">{t('penaltyBreakdown')}</div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 text-center border-2 border-blue-200 dark:border-blue-800">
+                  <div className="text-xl sm:text-2xl font-bold text-blue-600">75%</div>
+                  <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-medium mt-1">24–72 hours</div>
+                  <div className="text-xs text-gray-500 mt-1">25% penalty</div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 text-center border-2 border-amber-200 dark:border-amber-800">
+                  <div className="text-xl sm:text-2xl font-bold text-amber-600">50%</div>
+                  <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-medium mt-1">12–24 hours</div>
+                  <div className="text-xs text-gray-500 mt-1">50% penalty</div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 text-center border-2 border-red-200 dark:border-red-800">
+                  <div className="text-xl sm:text-2xl font-bold text-red-600">0%</div>
+                  <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-medium mt-1">&lt;12 hours</div>
+                  <div className="text-xs text-gray-500 mt-1">No refund</div>
                 </div>
               </div>
               <p className="text-xs text-center text-gray-500 dark:text-gray-500 mt-3">
-                {t('quickSummaryFootnote')}
+                Security deposit is always released regardless of cancellation timing. Penalties apply to subtotal only.
               </p>
             </div>
           </div>
@@ -149,43 +159,66 @@ export default function CancellationPolicyContent() {
               </h2>
 
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                {t('guestPolicyIntro')}
+                Cancellation penalties are calculated based on time remaining before your scheduled pickup, using Arizona time (MST). Penalties apply to the rental subtotal only — service fees, insurance, and delivery fees are non-refundable.
               </p>
 
-              {/* 24+ Hours -- Free Cancellation */}
+              {/* 72+ Hours -- Free Cancellation */}
               <div className="border-l-4 border-green-500 pl-4 mb-6">
                 <h3 className="font-semibold text-gray-900 dark:text-white flex items-center">
                   <IoCheckmarkCircleOutline className="w-5 h-5 text-green-500 mr-2" />
-                  {t('freeCancellationTitle')}
+                  72+ Hours Before Pickup — Free Cancellation (100% Refund)
                 </h3>
                 <ul className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                  <li>{t('freeCancelItem1')}</li>
-                  <li>{t('freeCancelItem2')}</li>
-                  <li>{t('freeCancelItem3')}</li>
-                  <li>{t('freeCancelItem4')}</li>
-                  <li>{t('freeCancelItem5')}</li>
-                  <li>{t('freeCancelItem6')}</li>
+                  <li>Full refund of the rental subtotal</li>
+                  <li>Security deposit released immediately</li>
+                  <li>Credits and bonus balance restored instantly</li>
+                  <li>Card refunds processed within 5–10 business days</li>
                 </ul>
               </div>
 
-              {/* Less than 24 Hours -- Late Cancellation */}
+              {/* 24–72 Hours -- Moderate */}
+              <div className="border-l-4 border-blue-500 pl-4 mb-6">
+                <h3 className="font-semibold text-gray-900 dark:text-white flex items-center">
+                  <IoAlertCircleOutline className="w-5 h-5 text-blue-500 mr-2" />
+                  24–72 Hours Before Pickup — Moderate (75% Refund)
+                </h3>
+                <ul className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                  <li>75% of rental subtotal refunded</li>
+                  <li>25% cancellation penalty retained</li>
+                  <li>Security deposit released in full</li>
+                  <li>Penalty split proportionally across payment sources (card, credits, bonus)</li>
+                </ul>
+              </div>
+
+              {/* 12–24 Hours -- Late */}
               <div className="border-l-4 border-amber-500 pl-4 mb-6">
                 <h3 className="font-semibold text-gray-900 dark:text-white flex items-center">
                   <IoAlertCircleOutline className="w-5 h-5 text-amber-500 mr-2" />
-                  {t('lateCancellationTitle')}
+                  12–24 Hours Before Pickup — Late Cancellation (50% Refund)
                 </h3>
                 <ul className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                  <li>{t('lateCancelItem1')}</li>
-                  <li>{t('lateCancelItem2')}</li>
-                  <li>{t('lateCancelItem3')}</li>
-                  <li>{t('lateCancelItem4')}</li>
-                  <li>{t('lateCancelItem5')}</li>
-                  <li>{t('lateCancelItem6')}</li>
-                  <li>{t('lateCancelItem7')}</li>
+                  <li>50% of rental subtotal refunded</li>
+                  <li>50% cancellation penalty retained</li>
+                  <li>Security deposit released in full</li>
+                  <li>Host has already prepared the vehicle for your trip</li>
                 </ul>
                 <div className="mt-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 text-xs text-amber-800 dark:text-amber-300">
-                  {t('lateCancelExample')}
+                  Example: $200 rental subtotal cancelled 18 hours before pickup → $100 refunded, $100 penalty
                 </div>
+              </div>
+
+              {/* <12 Hours -- No Refund */}
+              <div className="border-l-4 border-red-500 pl-4 mb-6">
+                <h3 className="font-semibold text-gray-900 dark:text-white flex items-center">
+                  <IoCloseCircleOutline className="w-5 h-5 text-red-500 mr-2" />
+                  Less Than 12 Hours Before Pickup — No Refund (0%)
+                </h3>
+                <ul className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                  <li>No refund of rental subtotal</li>
+                  <li>Full cancellation penalty (100% of subtotal)</li>
+                  <li>Security deposit still released in full</li>
+                  <li>Consider modifying your trip dates instead of cancelling</li>
+                </ul>
               </div>
 
               {/* No-Show */}
