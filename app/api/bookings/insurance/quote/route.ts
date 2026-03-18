@@ -22,8 +22,18 @@ export async function POST(request: NextRequest) {
       tier
     } = body;
 
+    // Default vehicleValue from car's daily rate if not provided
+    let finalVehicleValue = vehicleValue
+    if (!finalVehicleValue && carId) {
+      try {
+        const car = await prisma.rentalCar.findUnique({ where: { id: carId }, select: { dailyRate: true } })
+        finalVehicleValue = car ? car.dailyRate * 365 : 50000
+      } catch { finalVehicleValue = 50000 }
+    }
+
     // Validation
-    if (!vehicleValue || !startDate || !endDate || !tier) {
+    if (!finalVehicleValue || !startDate || !endDate || !tier) {
+      console.warn(`[Insurance Quote] Missing fields: vehicleValue=${finalVehicleValue}, startDate=${startDate}, endDate=${endDate}, tier=${tier}, carId=${carId}`)
       return NextResponse.json(
         { error: 'vehicleValue, startDate, endDate, and tier are required' },
         { status: 400 }
@@ -68,11 +78,11 @@ export async function POST(request: NextRequest) {
     const pricingRules = provider.pricingRules as any;
     let pricingBracket: any;
 
-    if (vehicleValue < 25000) {
+    if (finalVehicleValue < 25000) {
       pricingBracket = pricingRules.under25k;
-    } else if (vehicleValue < 50000) {
+    } else if (finalVehicleValue < 50000) {
       pricingBracket = pricingRules['25to50k'];
-    } else if (vehicleValue < 100000) {
+    } else if (finalVehicleValue < 100000) {
       pricingBracket = pricingRules['50to100k'];
     } else {
       pricingBracket = pricingRules.over100k;
@@ -93,21 +103,21 @@ export async function POST(request: NextRequest) {
     let increasedDeposit = null;
     if (tier === 'MINIMUM') {
       // Deposit ranges from $2,500 to $1M based on vehicle value
-      if (vehicleValue < 25000) {
+      if (finalVehicleValue < 25000) {
         increasedDeposit = 2500;
-      } else if (vehicleValue < 50000) {
+      } else if (finalVehicleValue < 50000) {
         increasedDeposit = 5000;
-      } else if (vehicleValue < 100000) {
+      } else if (finalVehicleValue < 100000) {
         increasedDeposit = 10000;
       } else {
-        increasedDeposit = Math.min(vehicleValue * 0.2, 1000000); // 20% of value, max $1M
+        increasedDeposit = Math.min(finalVehicleValue * 0.2, 1000000); // 20% of value, max $1M
       }
     }
 
     // Build quote response
     const quote = {
       tier,
-      vehicleValue,
+      vehicleValue: finalVehicleValue,
       days,
       dailyPremium,
       totalPremium,
@@ -115,8 +125,8 @@ export async function POST(request: NextRequest) {
       increasedDeposit,
       coverage: {
         liability: coverageDetails.liability,
-        collision: coverageDetails.collision === 'vehicle_value' 
-          ? vehicleValue 
+        collision: coverageDetails.collision === 'vehicle_value'
+          ? finalVehicleValue
           : coverageDetails.collision,
         deductible: coverageDetails.deductible,
         description: coverageDetails.description

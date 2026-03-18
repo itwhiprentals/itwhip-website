@@ -7,6 +7,7 @@ import { authOptions } from '@/app/lib/auth/next-auth-config'
 import { prisma } from '@/app/lib/database/prisma'
 import { sign } from 'jsonwebtoken'
 import { nanoid } from 'nanoid'
+import { existingAccountGuard } from '@/app/lib/services/identityResolution'
 
 // JWT secrets (same as login route)
 const JWT_SECRET = process.env.JWT_SECRET!
@@ -156,6 +157,32 @@ export async function GET(request: NextRequest) {
     const isProfileComplete = (session.user as any).isProfileComplete
 
     console.log(`[OAuth Redirect] User authenticated: ${email}, roleHint: ${roleHint}, mode: ${mode}, pending: ${!!pendingOAuth}`)
+
+    // ========================================================================
+    // IDENTITY GUARD — Block ALL OAuth logins from duplicate accounts
+    // Runs BEFORE role routing to catch both guest and host flows
+    // ========================================================================
+    if (email && userId) {
+      const guard = await existingAccountGuard({ email: email.toLowerCase() })
+      if (guard?.found && guard.existingUserId && guard.existingUserId !== userId) {
+        console.log(`[OAuth Redirect] ⛔ Identity guard: ${email} → primary ${guard.existingUserId} (confidence: ${guard.confidence}, matched: ${guard.matchedOn?.join(', ')})`)
+
+        // Clear ALL auth cookies — don't let them stay logged into the duplicate
+        const response = NextResponse.redirect(
+          new URL(`/auth/login?existingAccount=${encodeURIComponent(guard.maskedEmail || '')}&blocked=true`, request.url)
+        )
+        response.cookies.delete('accessToken')
+        response.cookies.delete('refreshToken')
+        response.cookies.delete('hostAccessToken')
+        response.cookies.delete('partner_token')
+        response.cookies.delete('oauth_role_hint')
+        response.cookies.delete('oauth_mode')
+        response.cookies.delete('oauth_return_to')
+        response.cookies.delete('next-auth.session-token')
+        response.cookies.delete('__Secure-next-auth.session-token')
+        return response
+      }
+    }
 
     // ========================================================================
     // PENDING OAUTH USER (New user - not yet in database)

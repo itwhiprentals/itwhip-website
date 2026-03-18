@@ -251,23 +251,12 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   }, [startDate, car?.advanceNotice])
 
   // Update state when URL params change
-  // If URL date is today with a past time, keep tomorrow (don't override the guard)
+  // NEVER override with today's date from URL — default is always tomorrow.
+  // User must manually select today from the date picker to trigger same-day guards.
   useEffect(() => {
-    if (pickupDateFromUrl) {
-      if (isArizonaToday(pickupDateFromUrl) && pickupTimeFromUrl) {
-        const { date: eDate, time: eTime } = calculateEarliestPickup(advanceHours, { allow24HourPickup: is24Hour })
-        const [h, m] = pickupTimeFromUrl.split(':').map(Number)
-        const [eh, em] = eTime.split(':').map(Number)
-        if (eDate === pickupDateFromUrl && h * 60 + m >= eh * 60 + em) {
-          // Valid same-day time — use it
-          setStartDate(pickupDateFromUrl)
-          setStartTime(pickupTimeFromUrl)
-        }
-        // else: past time or after 8 PM — keep tomorrow (already set by init)
-      } else if (!isArizonaToday(pickupDateFromUrl)) {
-        setStartDate(pickupDateFromUrl)
-        setStartTime(defaultCheckIn)
-      }
+    if (pickupDateFromUrl && !isArizonaToday(pickupDateFromUrl)) {
+      setStartDate(pickupDateFromUrl)
+      setStartTime(pickupTimeFromUrl || defaultCheckIn)
     }
     if (returnDateFromUrl) {
       setEndDate(returnDateFromUrl)
@@ -344,12 +333,13 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   // Extract values from shared calculation
   const { serviceFee, taxes, taxRate, taxRateDisplay, total } = pricing
   
-  // Fetch insurance quotes when dates change
+  // Fetch insurance quotes when dates or car change
   useEffect(() => {
-    if (days > 0) {
+    if (days > 0 && vehicleValue > 0 && startDate && endDate && car?.id) {
       fetchInsuranceQuotes()
     }
-  }, [days, vehicleValue])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [days, vehicleValue, car?.id, startDate, endDate])
   
   const fetchInsuranceQuotes = async () => {
     setLoadingQuotes(true)

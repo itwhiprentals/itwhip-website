@@ -841,8 +841,9 @@ export default function BookingPageClient({ carId }: { carId: string }) {
               console.log('✅ Email auto-filled:', profileData.email)
             }
             if (profileData.phone) {
-              // Format phone to (###)-###-#### format
-              const digits = profileData.phone.replace(/\D/g, '').slice(0, 10)
+              // Format phone to (###)-###-#### format — strip US country code if present
+              const rawDigits = profileData.phone.replace(/\D/g, '')
+              const digits = (rawDigits.length === 11 && rawDigits.startsWith('1')) ? rawDigits.slice(1) : rawDigits.slice(0, 10)
               let formattedPhone = profileData.phone
               if (digits.length === 10) {
                 formattedPhone = `(${digits.slice(0, 3)})-${digits.slice(3, 6)}-${digits.slice(6)}`

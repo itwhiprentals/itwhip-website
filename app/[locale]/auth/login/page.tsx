@@ -32,7 +32,11 @@ function LoginContent() {
   // Handle OAuth error params
   useEffect(() => {
     const errorParam = searchParams.get('error')
-    if (errorParam === 'no_account') {
+    const existingAccount = searchParams.get('existingAccount')
+    const blocked = searchParams.get('blocked')
+    if (blocked === 'true' && existingAccount) {
+      setError(`Existing account found. Please sign in with your main account ${existingAccount}`)
+    } else if (errorParam === 'no_account') {
       setError(t('noAccountFound'))
     } else if (errorParam === 'hidden-email') {
       setError(t('appleShareEmail'))
