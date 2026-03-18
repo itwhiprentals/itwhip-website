@@ -81,17 +81,45 @@ export function maskEmail(email: string): string {
 }
 
 /**
- * Check if identifiers match an existing account. Returns the existing user's
- * masked email if found, or null if no match. Use this in login/signup flows
- * to redirect users to their primary account.
+ * Confidence levels for identity matching
+ * HIGH: phone, driver_license, vin, card_fingerprint — verified possession factors
+ * MEDIUM: email verified by OAuth provider on both sides
+ * LOW: email only (unverified or single-side verified) — potential account takeover vector
  */
-export async function existingAccountGuard(identifiers: IdentityCheckInput): Promise<{
+export type MatchConfidence = 'HIGH' | 'MEDIUM' | 'LOW'
+
+const HIGH_CONFIDENCE_TYPES = ['phone', 'driver_license', 'vin', 'card_fingerprint']
+
+/**
+ * Determine confidence level from matched identifier types
+ */
+function getMatchConfidence(matchedOn: string[]): MatchConfidence {
+  // If ANY high-confidence identifier matched, it's HIGH
+  if (matchedOn.some(m => HIGH_CONFIDENCE_TYPES.includes(m))) {
+    return 'HIGH'
+  }
+  return 'LOW'
+}
+
+export interface IdentityGuardResult {
   found: boolean
   existingUserId?: string
   existingEmail?: string
   maskedEmail?: string
   matchedOn?: string[]
-} | null> {
+  confidence: MatchConfidence
+}
+
+/**
+ * Check if identifiers match an existing account. Returns the existing user's
+ * masked email if found, or null if no match. Use this in login/signup flows
+ * to redirect users to their primary account.
+ *
+ * Confidence tiers (industry standard — Auth0/Supabase/OWASP):
+ * - HIGH (phone, DL, card): Safe for silent redirect — possession-verified
+ * - LOW (email only): Block + show "use primary account" — prevents account takeover
+ */
+export async function existingAccountGuard(identifiers: IdentityCheckInput): Promise<IdentityGuardResult | null> {
   try {
     const resolution = await resolveIdentity(identifiers)
     if (resolution.action === 'LINK_TO_EXISTING' && resolution.existingUserId) {
@@ -99,12 +127,14 @@ export async function existingAccountGuard(identifiers: IdentityCheckInput): Pro
         where: { id: resolution.existingUserId },
         select: { email: true }
       })
+      const matchedOn = resolution.matchedIdentifiers
       return {
         found: true,
         existingUserId: resolution.existingUserId,
         existingEmail: existingUser?.email || undefined,
         maskedEmail: existingUser?.email ? maskEmail(existingUser.email) : undefined,
-        matchedOn: resolution.matchedIdentifiers,
+        matchedOn,
+        confidence: getMatchConfidence(matchedOn),
       }
     }
     return null

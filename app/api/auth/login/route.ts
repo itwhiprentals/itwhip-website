@@ -9,7 +9,7 @@ import db from '@/app/lib/db'
 import { prisma } from '@/app/lib/database/prisma'
 import { loginRateLimit, getClientIp, createRateLimitResponse } from '@/app/lib/rate-limit'
 import { logFailedLogin, logSuccessfulLogin } from '@/app/lib/security/loginMonitor'
-import { checkSuspendedIdentifiers } from '@/app/lib/services/identityResolution'
+import { checkSuspendedIdentifiers, existingAccountGuard } from '@/app/lib/services/identityResolution'
 import { checkNewDeviceAndNotify } from '@/app/lib/security/loginNotification'
 
 // Lockout thresholds
@@ -346,6 +346,70 @@ export async function POST(request: NextRequest) {
           lockedUntil: null
         }
       })
+    }
+
+    // ✅ STEP 4.7: IDENTITY GUARD — Check if this account is a duplicate
+    // Uses confidence tiers (Auth0/OWASP standard):
+    //   HIGH (phone, DL, card): Silent redirect to primary account
+    //   LOW (email only): Block + show "use your primary account"
+    const identityGuard = await existingAccountGuard({ email: email.toLowerCase() })
+    if (identityGuard?.found && identityGuard.existingUserId && identityGuard.existingUserId !== user.id) {
+      if (identityGuard.confidence === 'HIGH') {
+        // HIGH confidence: phone/DL/card matched — same person, redirect silently
+        // Generate tokens for the PRIMARY account instead
+        console.log(`[Login] Identity guard (HIGH): ${email} → primary ${identityGuard.existingUserId} (matched: ${identityGuard.matchedOn?.join(', ')})`)
+
+        const primaryUser = await db.getUserByEmail(identityGuard.existingEmail || '')
+        if (primaryUser && primaryUser.is_active) {
+          // Generate tokens for PRIMARY account
+          const tokenId = nanoid()
+          const refreshTokenId = nanoid()
+          const refreshFamily = nanoid()
+          const { accessSecret, refreshSecret, userType } = getJWTSecrets(primaryUser.role)
+
+          const accessToken = await new SignJWT({
+            userId: primaryUser.id, email: primaryUser.email, name: primaryUser.name,
+            role: primaryUser.role, status: primaryUser.status || 'ACTIVE', userType,
+          }).setProtectedHeader({ alg: 'HS256' }).setJti(tokenId)
+            .setIssuedAt().setExpirationTime('15m').setIssuer('itwhip').sign(accessSecret)
+
+          const refreshToken = await new SignJWT({
+            userId: primaryUser.id, type: 'refresh', family: refreshFamily,
+          }).setProtectedHeader({ alg: 'HS256' }).setJti(refreshTokenId)
+            .setIssuedAt().setExpirationTime('7d').setIssuer('itwhip').sign(refreshSecret)
+
+          await db.saveRefreshToken({
+            userId: primaryUser.id, token: refreshToken, family: refreshFamily,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          })
+
+          await db.updateLastLogin(primaryUser.id)
+          const userAgent = request.headers.get('user-agent') || 'unknown'
+          await logSuccessfulLogin({ userId: primaryUser.id, email: primaryUser.email || '', source: 'guest', ip: clientIp, userAgent })
+
+          return NextResponse.json({
+            success: true,
+            accessToken, refreshToken,
+            user: { id: primaryUser.id, email: primaryUser.email, name: primaryUser.name, role: primaryUser.role },
+            redirectedFrom: email.toLowerCase(),
+            linkedAccount: {
+              message: `This login has been linked to your primary account.`,
+              primaryEmail: identityGuard.maskedEmail,
+              matchedOn: identityGuard.matchedOn,
+              notMyAccount: '/support/account-dispute',
+            },
+          })
+        }
+      } else {
+        // LOW confidence: email-only match — potential account takeover, block
+        console.log(`[Login] Identity guard (LOW): ${email} blocked — email-only match to ${identityGuard.existingUserId}`)
+        return NextResponse.json({
+          error: 'EXISTING_ACCOUNT',
+          message: 'You already have an account with us.',
+          existingEmail: identityGuard.maskedEmail,
+          notMyAccount: '/support/account-dispute',
+        }, { status: 409 })
+      }
     }
 
     // ✅ STEP 5: Check if user is active

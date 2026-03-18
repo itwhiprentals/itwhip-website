@@ -91,7 +91,20 @@ export default function EmailLoginExpand({ mode, hostMode = false, onSuccess, on
           onGuard(data.guard, formData.email)
           return
         }
+        // Identity guard: existing account detected
+        if (data.error === 'EXISTING_ACCOUNT') {
+          setError(`Existing account found. Please sign in with your main account ${data.existingEmail || ''}`)
+          return
+        }
         setError(data.error || t('somethingWentWrong'))
+        return
+      }
+
+      // Silent redirect from identity guard (HIGH confidence)
+      if (data.linkedAccount) {
+        // Show brief notification then redirect
+        setError('')
+        window.location.href = data.redirect || '/dashboard'
         return
       }
 
