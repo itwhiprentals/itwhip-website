@@ -134,6 +134,21 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Account is deactivated. Please contact support.' }, { status: 403 })
         }
 
+        // Identity guard for returning users
+        try {
+          const guard = await existingAccountGuard({ email: (existingUser.email || '').toLowerCase() })
+          if (guard?.found && guard.existingUserId !== existingUser.id) {
+            console.log(`[Mobile Apple] Identity guard: returning user ${email} blocked — redirecting to ${guard.existingUserId}`)
+            return NextResponse.json({
+              error: 'EXISTING_ACCOUNT',
+              message: 'You already have an account with us.',
+              existingEmail: guard.maskedEmail,
+            }, { status: 409 })
+          }
+        } catch (e) {
+          console.error('[Mobile Apple] Identity guard error (non-blocking):', e)
+        }
+
         const { accessToken, refreshToken } = await generateTokens({
           id: existingUser.id, email: existingUser.email || '',
           name: existingUser.name || name || '', role: existingUser.role,

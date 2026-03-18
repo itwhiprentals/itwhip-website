@@ -249,6 +249,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Identity guard: check if this is a duplicate account
+    try {
+      const { existingAccountGuard } = await import('@/lib/services/identityResolution')
+      const guard = await existingAccountGuard({ email: (user.email || '').toLowerCase() })
+      if (guard?.found && guard.existingUserId !== user.id) {
+        console.log(`[Mobile Login] Identity guard (LOW): ${user.email} blocked — email-only match to ${guard.existingUserId}`)
+        return NextResponse.json({
+          error: 'EXISTING_ACCOUNT',
+          message: 'You already have an account with us.',
+          existingEmail: guard.maskedEmail,
+        }, { status: 409 })
+      }
+    } catch (e) {
+      console.error('[Mobile Login] Identity guard error (non-blocking):', e)
+    }
+
     // Upgrade password hash if needed
     if (needsRehash) {
       upgradePasswordHash(user.id, password).catch(() => {})

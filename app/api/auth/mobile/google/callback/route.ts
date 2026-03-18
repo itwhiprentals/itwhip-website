@@ -9,6 +9,7 @@ import crypto from 'crypto'
 import db from '@/app/lib/db'
 import { prisma } from '@/app/lib/database/prisma'
 import { logSuccessfulLogin } from '@/app/lib/security/loginMonitor'
+import { existingAccountGuard } from '@/app/lib/services/identityResolution'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!
@@ -206,6 +207,17 @@ export async function GET(request: NextRequest) {
           return deepLinkError('Account is deactivated. Please contact support.')
         }
 
+        // Identity guard for returning users
+        try {
+          const guard = await existingAccountGuard({ email: (existingUser.email || '').toLowerCase() })
+          if (guard?.found && guard.existingUserId !== existingUser.id) {
+            console.log(`[Google Callback] Identity guard: ${email} blocked — redirecting to ${guard.existingUserId}`)
+            return deepLinkError(`Existing account found. Please sign in with your main account ${guard.maskedEmail}`)
+          }
+        } catch (e) {
+          console.error('[Google Callback] Identity guard error (non-blocking):', e)
+        }
+
         const { accessToken, refreshToken } = await generateTokens({
           id: existingUser.id,
           email: existingUser.email ?? email,
@@ -224,6 +236,17 @@ export async function GET(request: NextRequest) {
           expiresIn: 15 * 60,
           isNewUser: false,
         })
+      }
+
+      // Identity guard for new users
+      try {
+        const guard = await existingAccountGuard({ email: email.toLowerCase() })
+        if (guard?.found) {
+          console.log(`[Google Callback] Identity guard: new user ${email} blocked — matches ${guard.existingUserId}`)
+          return deepLinkError(`Existing account found. Please sign in with your main account ${guard.maskedEmail}`)
+        }
+      } catch (e) {
+        console.error('[Google Callback] Identity guard error (non-blocking):', e)
       }
 
       // New guest user
