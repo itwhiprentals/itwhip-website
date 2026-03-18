@@ -8,8 +8,8 @@ import { SignJWT } from 'jose'
 import { nanoid } from 'nanoid'
 import db from '@/app/lib/db'
 import { prisma } from '@/app/lib/database/prisma'
-import { logSuccessfulLogin } from '@/app/lib/security/loginMonitor'
-import { existingAccountGuard } from '@/app/lib/services/identityResolution'
+import { logSuccessfulLogin, logFailedLogin } from '@/app/lib/security/loginMonitor'
+import { existingAccountGuard, checkSuspendedIdentifiers } from '@/app/lib/services/identityResolution'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!
@@ -158,19 +158,44 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Account is deactivated. Please contact support.' }, { status: 403 })
         }
 
-        // Identity guard for returning users
-        try {
-          const guard = await existingAccountGuard({ email: (existingUser.email || '').toLowerCase() })
-          if (guard?.found && guard.existingUserId !== existingUser.id) {
-            console.log(`[Mobile Google] Identity guard: returning user ${email} blocked — redirecting to ${guard.existingUserId}`)
-            return NextResponse.json({
-              error: 'EXISTING_ACCOUNT',
-              message: 'You already have an account with us.',
-              existingEmail: guard.maskedEmail,
-            }, { status: 409 })
+        // Suspended identifiers check (mirrors website login)
+        const suspensionCheck = await checkSuspendedIdentifiers({ email: email.toLowerCase() })
+        if (suspensionCheck.blocked) {
+          console.warn(`[Mobile Google] BLOCKED: Suspended email detected: ${email}`)
+          await logFailedLogin({ email: email.toLowerCase(), source: 'guest', reason: 'ACCOUNT_SUSPENDED', ip: clientIp, userAgent, metadata: { suspendedIdentifier: true } })
+          return NextResponse.json({ error: 'Unable to log in at this time. Please contact support.' }, { status: 403 })
+        }
+
+        // Identity guard for returning users (mirrors website login HIGH/LOW handling)
+        const identityGuard = await existingAccountGuard({ email: (existingUser.email || '').toLowerCase() })
+        if (identityGuard?.found && identityGuard.existingUserId && identityGuard.existingUserId !== existingUser.id) {
+          if (identityGuard.confidence === 'HIGH') {
+            // HIGH confidence: redirect to primary account
+            console.log(`[Mobile Google] Identity guard (HIGH): ${email} → primary ${identityGuard.existingUserId} (matched: ${identityGuard.matchedOn?.join(', ')})`)
+            const primaryUser = await db.getUserByEmail(identityGuard.existingEmail || '')
+            if (primaryUser && primaryUser.is_active) {
+              const { accessToken: pAccess, refreshToken: pRefresh } = await generateTokens({
+                id: primaryUser.id, email: primaryUser.email || '', name: primaryUser.name || '', role: primaryUser.role,
+              })
+              await db.updateLastLogin(primaryUser.id)
+              await logSuccessfulLogin({ userId: primaryUser.id, email: primaryUser.email || '', source: 'guest', ip: clientIp, userAgent })
+              const primaryProfile = await prisma.reviewerProfile.findFirst({
+                where: { OR: [{ userId: primaryUser.id }, { email: (primaryUser.email || '').toLowerCase() }] },
+                select: { profilePhotoUrl: true },
+              })
+              return NextResponse.json({
+                success: true,
+                user: { id: primaryUser.id, email: primaryUser.email || '', name: primaryUser.name || '', role: primaryUser.role, avatar: primaryProfile?.profilePhotoUrl || null },
+                accessToken: pAccess, refreshToken: pRefresh, expiresIn: 15 * 60, isNewUser: false,
+                redirectedFrom: email.toLowerCase(),
+                linkedAccount: { message: 'This login has been linked to your primary account.', primaryEmail: identityGuard.maskedEmail, matchedOn: identityGuard.matchedOn },
+              })
+            }
+          } else {
+            // LOW confidence: block
+            console.log(`[Mobile Google] Identity guard (LOW): ${email} blocked — email-only match to ${identityGuard.existingUserId}`)
+            return NextResponse.json({ error: 'EXISTING_ACCOUNT', message: 'You already have an account with us.', existingEmail: identityGuard.maskedEmail }, { status: 409 })
           }
-        } catch (e) {
-          console.error('[Mobile Google] Identity guard error (non-blocking):', e)
         }
 
         const { accessToken, refreshToken } = await generateTokens({

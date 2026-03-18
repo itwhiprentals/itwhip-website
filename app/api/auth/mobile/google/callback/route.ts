@@ -8,8 +8,8 @@ import { nanoid } from 'nanoid'
 import crypto from 'crypto'
 import db from '@/app/lib/db'
 import { prisma } from '@/app/lib/database/prisma'
-import { logSuccessfulLogin } from '@/app/lib/security/loginMonitor'
-import { existingAccountGuard } from '@/app/lib/services/identityResolution'
+import { logSuccessfulLogin, logFailedLogin } from '@/app/lib/security/loginMonitor'
+import { existingAccountGuard, checkSuspendedIdentifiers } from '@/app/lib/services/identityResolution'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!
@@ -207,15 +207,40 @@ export async function GET(request: NextRequest) {
           return deepLinkError('Account is deactivated. Please contact support.')
         }
 
-        // Identity guard for returning users
-        try {
-          const guard = await existingAccountGuard({ email: (existingUser.email || '').toLowerCase() })
-          if (guard?.found && guard.existingUserId !== existingUser.id) {
-            console.log(`[Google Callback] Identity guard: ${email} blocked — redirecting to ${guard.existingUserId}`)
-            return deepLinkError(`Existing account found. Please sign in with your main account ${guard.maskedEmail}`)
+        // Suspended identifiers check (mirrors website login)
+        const suspensionCheck = await checkSuspendedIdentifiers({ email: email.toLowerCase() })
+        if (suspensionCheck.blocked) {
+          console.warn(`[Google Callback] BLOCKED: Suspended email detected: ${email}`)
+          await logFailedLogin({ email: email.toLowerCase(), source: 'guest', reason: 'ACCOUNT_SUSPENDED', ip: clientIp, userAgent, metadata: { suspendedIdentifier: true } })
+          return deepLinkError('Unable to log in at this time. Please contact support.')
+        }
+
+        // Identity guard for returning users (mirrors website HIGH/LOW handling)
+        const identityGuard = await existingAccountGuard({ email: (existingUser.email || '').toLowerCase() })
+        if (identityGuard?.found && identityGuard.existingUserId && identityGuard.existingUserId !== existingUser.id) {
+          if (identityGuard.confidence === 'HIGH') {
+            // HIGH confidence: redirect to primary account
+            console.log(`[Google Callback] Identity guard (HIGH): ${email} → primary ${identityGuard.existingUserId} (matched: ${identityGuard.matchedOn?.join(', ')})`)
+            const primaryUser = await db.getUserByEmail(identityGuard.existingEmail || '')
+            if (primaryUser && primaryUser.is_active) {
+              const { accessToken: pAccess, refreshToken: pRefresh } = await generateTokens({
+                id: primaryUser.id, email: primaryUser.email ?? email, name: primaryUser.name ?? name ?? null, role: primaryUser.role,
+              })
+              await db.updateLastLogin(primaryUser.id)
+              await logSuccessfulLogin({ userId: primaryUser.id, email: primaryUser.email ?? email, source: 'guest', ip: clientIp, userAgent })
+              return deepLinkRedirect({
+                success: true,
+                user: { id: primaryUser.id, email: primaryUser.email, name: primaryUser.name, role: primaryUser.role },
+                accessToken: pAccess, refreshToken: pRefresh, expiresIn: 15 * 60, isNewUser: false,
+                redirectedFrom: email.toLowerCase(),
+                linkedAccount: { message: 'This login has been linked to your primary account.', primaryEmail: identityGuard.maskedEmail, matchedOn: identityGuard.matchedOn },
+              })
+            }
+          } else {
+            // LOW confidence: block
+            console.log(`[Google Callback] Identity guard (LOW): ${email} blocked — email-only match to ${identityGuard.existingUserId}`)
+            return deepLinkError(`Existing account found. Please sign in with your main account ${identityGuard.maskedEmail}`)
           }
-        } catch (e) {
-          console.error('[Google Callback] Identity guard error (non-blocking):', e)
         }
 
         const { accessToken, refreshToken } = await generateTokens({
