@@ -62,9 +62,20 @@ export async function canBookCar(
   // Arizona "now"
   const nowAZ = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Phoenix' }))
 
-  // Parse pickup/return into Date objects
-  const [ph, pm] = pickupTime.split(':').map(Number)
-  const [rh, rm] = returnTime.split(':').map(Number)
+  // Parse pickup/return into Date objects (handles both "10:00" and "10:00 AM" formats)
+  const parse12or24 = (t: string): [number, number] => {
+    const clean = t.trim()
+    const match = clean.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i)
+    if (!match) return [10, 0] // fallback
+    let h = parseInt(match[1], 10)
+    const m = parseInt(match[2], 10)
+    const ampm = match[3]?.toUpperCase()
+    if (ampm === 'PM' && h < 12) h += 12
+    if (ampm === 'AM' && h === 12) h = 0
+    return [h, m]
+  }
+  const [ph, pm] = parse12or24(pickupTime)
+  const [rh, rm] = parse12or24(returnTime)
   const pickupDT = new Date(`${pickupDate}T00:00:00`)
   pickupDT.setHours(ph, pm, 0, 0)
   const returnDT = new Date(`${returnDate}T00:00:00`)
