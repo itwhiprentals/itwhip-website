@@ -70,6 +70,50 @@ export function normalizeVin(vin: string): string {
   return vin.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, '')
 }
 
+/**
+ * Mask email for display: "chrishaguma@yahoo.com" → "ch***@yahoo.com"
+ */
+export function maskEmail(email: string): string {
+  if (!email || !email.includes('@')) return '***'
+  const [local, domain] = email.split('@')
+  const visible = local.slice(0, Math.min(2, local.length))
+  return `${visible}***@${domain}`
+}
+
+/**
+ * Check if identifiers match an existing account. Returns the existing user's
+ * masked email if found, or null if no match. Use this in login/signup flows
+ * to redirect users to their primary account.
+ */
+export async function existingAccountGuard(identifiers: IdentityCheckInput): Promise<{
+  found: boolean
+  existingUserId?: string
+  existingEmail?: string
+  maskedEmail?: string
+  matchedOn?: string[]
+} | null> {
+  try {
+    const resolution = await resolveIdentity(identifiers)
+    if (resolution.action === 'LINK_TO_EXISTING' && resolution.existingUserId) {
+      const existingUser = await prisma.user.findUnique({
+        where: { id: resolution.existingUserId },
+        select: { email: true }
+      })
+      return {
+        found: true,
+        existingUserId: resolution.existingUserId,
+        existingEmail: existingUser?.email || undefined,
+        maskedEmail: existingUser?.email ? maskEmail(existingUser.email) : undefined,
+        matchedOn: resolution.matchedIdentifiers,
+      }
+    }
+    return null
+  } catch {
+    // Don't block login if identity check fails
+    return null
+  }
+}
+
 // ============================================================================
 // SUSPENSION CHECK
 // ============================================================================

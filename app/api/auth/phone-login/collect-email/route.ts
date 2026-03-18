@@ -9,6 +9,7 @@ import { getEmailVerificationTemplate, generateVerificationCode } from '@/app/li
 import { getClientIp } from '@/app/lib/rate-limit'
 import { getEnhancedLocation } from '@/app/lib/security/geolocation'
 import { detectBot } from '@/app/lib/security/botDetection'
+import { existingAccountGuard } from '@/app/lib/services/identityResolution'
 
 // JWT secrets
 const GUEST_JWT_SECRET = new TextEncoder().encode(
@@ -69,16 +70,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if email already exists
-    const existingEmail = await prisma.user.findUnique({
-      where: { email }
-    })
+    // Identity guard: check if this email (or phone) already belongs to an existing account
+    const guard = await existingAccountGuard({ email: email.toLowerCase(), phone })
+    if (guard?.found) {
+      console.log(`[Collect Email] Identity guard: ${email} matches existing account ${guard.existingUserId}`)
+      return NextResponse.json({
+        error: 'EXISTING_ACCOUNT',
+        message: 'You already have an account with us.',
+        existingEmail: guard.maskedEmail,
+      }, { status: 409 })
+    }
 
+    // Also check direct email uniqueness (in case IdentityLink doesn't have it yet)
+    const existingEmail = await prisma.user.findUnique({ where: { email } })
     if (existingEmail) {
-      return NextResponse.json(
-        { error: 'This email is already registered. Please use a different email or sign in.' },
-        { status: 400 }
-      )
+      return NextResponse.json({
+        error: 'EXISTING_ACCOUNT',
+        message: 'You already have an account with us.',
+        existingEmail: email.includes('@') ? `${email.slice(0, 2)}***@${email.split('@')[1]}` : undefined,
+      }, { status: 409 })
     }
 
     // Generate verification code

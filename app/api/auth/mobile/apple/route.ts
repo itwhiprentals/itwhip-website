@@ -8,6 +8,7 @@ import { nanoid } from 'nanoid'
 import db from '@/app/lib/db'
 import { prisma } from '@/app/lib/database/prisma'
 import { logSuccessfulLogin } from '@/app/lib/security/loginMonitor'
+import { existingAccountGuard } from '@/app/lib/services/identityResolution'
 
 const APPLE_JWKS = createRemoteJWKSet(new URL('https://appleid.apple.com/auth/keys'))
 const APPLE_ISSUER = 'https://appleid.apple.com'
@@ -146,6 +147,17 @@ export async function POST(request: NextRequest) {
           user: { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role },
           accessToken, refreshToken, expiresIn: 15 * 60, isNewUser: false,
         })
+      }
+
+      // Identity guard: check if this email belongs to an existing account
+      const guard = await existingAccountGuard({ email: email.toLowerCase() })
+      if (guard?.found) {
+        console.log(`[Mobile Apple] Identity guard: ${email} matches existing account ${guard.existingUserId}`)
+        return NextResponse.json({
+          error: 'EXISTING_ACCOUNT',
+          message: 'You already have an account with us.',
+          existingEmail: guard.maskedEmail,
+        }, { status: 409 })
       }
 
       // New guest via Apple

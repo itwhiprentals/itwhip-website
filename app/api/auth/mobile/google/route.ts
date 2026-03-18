@@ -9,6 +9,7 @@ import { nanoid } from 'nanoid'
 import db from '@/app/lib/db'
 import { prisma } from '@/app/lib/database/prisma'
 import { logSuccessfulLogin } from '@/app/lib/security/loginMonitor'
+import { existingAccountGuard } from '@/app/lib/services/identityResolution'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!
@@ -180,6 +181,17 @@ export async function POST(request: NextRequest) {
           expiresIn: 15 * 60,
           isNewUser: false,
         })
+      }
+
+      // Identity guard: check if this email belongs to an existing account
+      const guard = await existingAccountGuard({ email: email.toLowerCase() })
+      if (guard?.found) {
+        console.log(`[Mobile Google] Identity guard: ${email} matches existing account ${guard.existingUserId}`)
+        return NextResponse.json({
+          error: 'EXISTING_ACCOUNT',
+          message: 'You already have an account with us.',
+          existingEmail: guard.maskedEmail,
+        }, { status: 409 })
       }
 
       // New guest user via Google
