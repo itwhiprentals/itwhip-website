@@ -54,9 +54,15 @@ export async function GET(request: NextRequest) {
       const req = claim.request
       if (!req.startDate) continue
 
-      // Calculate pickup datetime
+      // Calculate pickup datetime (handles both "10:00" and "10:00 AM" formats)
       const pickup = new Date(req.startDate)
-      const [h, m] = (req.startTime || '10:00').split(':').map(Number)
+      const timeStr = (req.startTime || '10:00').trim()
+      const tMatch = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i)
+      let h = tMatch ? parseInt(tMatch[1], 10) : 10
+      let m = tMatch ? parseInt(tMatch[2], 10) : 0
+      const ap = tMatch?.[3]?.toUpperCase()
+      if (ap === 'PM' && h < 12) h += 12
+      if (ap === 'AM' && h === 12) h = 0
       pickup.setHours(h, m, 0, 0)
 
       // Only expire if pickup + 12h has passed

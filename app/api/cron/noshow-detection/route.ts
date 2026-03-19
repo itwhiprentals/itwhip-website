@@ -51,10 +51,19 @@ export async function GET(request: NextRequest) {
     for (const booking of confirmedBookings) {
       if (!booking.startDate) continue
 
-      // Calculate pickup datetime
+      // Calculate pickup datetime (handles both "10:00" and "10:00 AM" formats)
       const pickup = new Date(booking.startDate)
-      const [h, m] = (booking.startTime || '10:00').split(':').map(Number)
+      const timeStr = (booking.startTime || '10:00').trim()
+      const timeMatch = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i)
+      let h = timeMatch ? parseInt(timeMatch[1], 10) : 10
+      let m = timeMatch ? parseInt(timeMatch[2], 10) : 0
+      const ampm = timeMatch?.[3]?.toUpperCase()
+      if (ampm === 'PM' && h < 12) h += 12
+      if (ampm === 'AM' && h === 12) h = 0
       pickup.setHours(h, m, 0, 0)
+
+      console.log(`[No-Show Detection] Evaluating ${booking.bookingCode}: pickup=${pickup.toISOString()} now=${now.toISOString()} startTime="${booking.startTime}"`)
+
 
       // Use noShowDeadline if set, otherwise calculate: 24h after pickup (all payment types)
       let deadline: Date
