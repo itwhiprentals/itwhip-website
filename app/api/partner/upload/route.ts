@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('📁 Files received:', files.length)
+    console.log('📁 Files received:', files.length, 'type:', type, 'carId:', carId)
 
     if (files.length === 0) {
       return NextResponse.json(
@@ -129,13 +129,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate all files
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp']
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/heic', 'image/heif']
     const maxSize = 10 * 1024 * 1024 // 10MB
 
     for (const file of files) {
       if (!allowedTypes.includes(file.type)) {
+        console.warn(`📁 Rejected file: ${file.name} type=${file.type} size=${file.size}`)
         return NextResponse.json(
-          { error: `Invalid file type: ${file.name}. Only images are allowed.` },
+          { error: `Invalid file type: ${file.name} (${file.type}). Only images are allowed.` },
           { status: 400 }
         )
       }
