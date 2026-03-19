@@ -1254,7 +1254,7 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
           </div>
 
           {/* Right Column - Booking Widget */}
-          <div className="border-t border-gray-200 dark:border-gray-700 lg:border-t-0"></div>
+          <div className="border-t border-gray-200 dark:border-gray-700 lg:border-t-0 lg:hidden"></div>
           <div className="-mx-4 lg:mx-0 lg:sticky lg:top-20 h-fit">
             <BookingWidget
               car={car}

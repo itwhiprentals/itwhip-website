@@ -9,7 +9,9 @@ import {
   IoChevronForwardOutline,
   IoCloseOutline,
   IoCameraOutline,
-  IoChevronUpOutline
+  IoChevronUpOutline,
+  IoImageOutline,
+  IoImagesOutline
 } from 'react-icons/io5'
 
 interface PhotoGalleryProps {
@@ -124,7 +126,7 @@ export default function PhotoGallery({ photos, carName, onViewModeChange }: Phot
   // Handle empty state
   if (!sortedPhotos.length) {
     return (
-      <div className="aspect-[4/3] lg:aspect-[2.35/1] bg-gray-100 dark:bg-gray-800 sm:rounded-lg flex items-center justify-center">
+      <div className="aspect-[4/3] lg:aspect-[16/9] bg-gray-100 dark:bg-gray-800 sm:rounded-lg flex items-center justify-center">
         <div className="text-center">
           <IoCameraOutline className="w-16 h-16 text-gray-400 mx-auto mb-2" />
           <p className="text-gray-500">{t('noPhotosAvailable')}</p>
@@ -141,9 +143,68 @@ export default function PhotoGallery({ photos, carName, onViewModeChange }: Phot
       {/* Main Gallery - Only show when not in "all photos" view */}
       {!showAllPhotos && (
         <div className="relative">
-          {/* Main Image - 4:3 on mobile/tablet, 2.35:1 cinematic on desktop */}
+          {/* Desktop: Grid layout — main photo left + 4 thumbnails right */}
+          <div className="hidden lg:grid lg:grid-cols-4 lg:grid-rows-2 gap-2 h-[420px] rounded-xl overflow-hidden">
+            {/* Main large photo */}
+            <div
+              className="col-span-2 row-span-2 relative bg-gray-100 dark:bg-gray-800 cursor-pointer"
+              onClick={() => setShowAllPhotos(true)}
+            >
+              {sortedPhotos[0] && (
+                <Image
+                  src={sortedPhotos[0].url || '/images/placeholder-car.jpg'}
+                  alt={`${carName} - Photo 1`}
+                  fill
+                  className="object-cover"
+                  priority
+                  onLoad={() => handleImageLoad(sortedPhotos[0].uniqueId)}
+                />
+              )}
+            </div>
+            {/* 4 smaller photos */}
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={`grid-${i}`}
+                className="relative bg-gray-100 dark:bg-gray-800 cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => { if (sortedPhotos[i]) { setLightboxIndex(i) } else { setShowAllPhotos(true) } }}
+              >
+                {sortedPhotos[i] ? (
+                  <Image
+                    src={sortedPhotos[i].url || '/images/placeholder-car.jpg'}
+                    alt={`${carName} - Photo ${i + 1}`}
+                    fill
+                    className="object-cover"
+                    onLoad={() => handleImageLoad(sortedPhotos[i].uniqueId)}
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                    <IoImageOutline className="w-8 h-8" />
+                  </div>
+                )}
+                {/* "View all" overlay on last thumbnail */}
+                {i === 4 && sortedPhotos.length > 5 && (
+                  <div
+                    className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer"
+                    onClick={(e) => { e.stopPropagation(); setShowAllPhotos(true) }}
+                  >
+                    <span className="text-white font-semibold text-sm">+{sortedPhotos.length - 5} more</span>
+                  </div>
+                )}
+              </div>
+            ))}
+            {/* View all photos button */}
+            <button
+              onClick={() => setShowAllPhotos(true)}
+              className="absolute bottom-4 right-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 z-10"
+            >
+              <IoImagesOutline className="w-4 h-4" />
+              View all {sortedPhotos.length} photos
+            </button>
+          </div>
+
+          {/* Mobile/Tablet: Swipeable single photo */}
           <div
-            className="aspect-[4/3] lg:aspect-[2.35/1] relative bg-gray-100 dark:bg-gray-800 sm:rounded-lg overflow-hidden cursor-pointer"
+            className="lg:hidden aspect-[4/3] relative bg-gray-100 dark:bg-gray-800 sm:rounded-lg overflow-hidden cursor-pointer"
             onClick={() => setShowAllPhotos(true)}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
@@ -170,32 +231,21 @@ export default function PhotoGallery({ photos, carName, onViewModeChange }: Phot
                   onLoad={() => handleImageLoad(photo.uniqueId)}
                   onError={() => handleImageError(photo.uniqueId)}
                 />
-                {photo.caption && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                    <p className="text-white text-sm">{photo.caption}</p>
-                  </div>
-                )}
               </div>
             ))}
 
-            {/* Navigation Buttons - dark on mobile, light on desktop */}
+            {/* Navigation Buttons */}
             {sortedPhotos.length > 1 && (
               <>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    navigatePrev()
-                  }}
+                  onClick={(e) => { e.stopPropagation(); navigatePrev() }}
                   className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 sm:bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full p-2 transition-all shadow-lg text-white sm:text-black dark:text-white"
                   aria-label="Previous photo"
                 >
                   <IoChevronBackOutline className="w-6 h-6" />
                 </button>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    navigateNext()
-                  }}
+                  onClick={(e) => { e.stopPropagation(); navigateNext() }}
                   className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 sm:bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full p-2 transition-all shadow-lg text-white sm:text-black dark:text-white"
                   aria-label="Next photo"
                 >
@@ -204,12 +254,12 @@ export default function PhotoGallery({ photos, carName, onViewModeChange }: Phot
               </>
             )}
 
-            {/* Photo Counter - bottom right on mobile, bottom left on desktop */}
-            <div className="absolute bottom-4 right-4 sm:right-auto sm:left-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-medium">
+            {/* Photo Counter */}
+            <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-medium">
               {safeCurrentIndex + 1} / {sortedPhotos.length}
             </div>
 
-            {/* Tap to view all indicator - subtle hint */}
+            {/* Tap hint - mobile only */}
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 sm:hidden bg-black/40 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs whitespace-nowrap">
               {t('tapToViewAllPhotos')}
             </div>
