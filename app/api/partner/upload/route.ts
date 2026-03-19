@@ -71,6 +71,7 @@ async function uploadToCloudinary(
     folder: folder,
     public_id: publicId,
     resource_type: 'auto',
+    format: 'jpg',           // Auto-convert HEIC/HEIF/WebP to JPEG for browser compatibility
     exif: true,
     colors: true,
     image_metadata: true
