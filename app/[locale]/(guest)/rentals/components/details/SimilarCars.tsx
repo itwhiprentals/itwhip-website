@@ -188,11 +188,11 @@ function CarCard({
       className="flex-shrink-0 w-64 sm:w-72 group bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
     >
       {/* Image Container - Compact rectangular */}
-      <div className="relative h-24 sm:h-28 bg-gray-200 dark:bg-gray-700 overflow-hidden">
+      <div className="relative h-36 sm:h-40 bg-gray-200 dark:bg-gray-700 overflow-hidden">
         <img
           src={imageUrl}
           alt={`${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-cover object-[center_60%] group-hover:scale-105 transition-transform duration-500"
         />
         
         {/* Gradient overlay */}

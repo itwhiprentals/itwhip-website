@@ -155,7 +155,7 @@ export default function PhotoGallery({ photos, carName, onViewModeChange }: Phot
                   src={sortedPhotos[0].url || '/images/placeholder-car.jpg'}
                   alt={`${carName} - Photo 1`}
                   fill
-                  className="object-cover"
+                  className="object-cover object-[center_70%]"
                   priority
                   onLoad={() => handleImageLoad(sortedPhotos[0].uniqueId)}
                 />
@@ -173,7 +173,7 @@ export default function PhotoGallery({ photos, carName, onViewModeChange }: Phot
                     src={sortedPhotos[i].url || '/images/placeholder-car.jpg'}
                     alt={`${carName} - Photo ${i + 1}`}
                     fill
-                    className="object-cover"
+                    className="object-cover object-[center_70%]"
                     onLoad={() => handleImageLoad(sortedPhotos[i].uniqueId)}
                   />
                 ) : (
@@ -226,7 +226,7 @@ export default function PhotoGallery({ photos, carName, onViewModeChange }: Phot
                   src={photo.url || '/images/placeholder-car.jpg'}
                   alt={`${carName} - Photo ${index + 1}`}
                   fill
-                  className="object-cover"
+                  className="object-cover object-[center_70%]"
                   priority={index === 0}
                   onLoad={() => handleImageLoad(photo.uniqueId)}
                   onError={() => handleImageError(photo.uniqueId)}
@@ -298,7 +298,7 @@ export default function PhotoGallery({ photos, carName, onViewModeChange }: Phot
                   src={photo.url || '/images/placeholder-car.jpg'}
                   alt={`${carName} - Photo ${index + 1}`}
                   fill
-                  className="object-cover"
+                  className="object-cover object-[center_70%]"
                   sizes="(max-width: 768px) 100vw, 896px"
                 />
                 {/* Photo number badge */}
@@ -420,7 +420,7 @@ export default function PhotoGallery({ photos, carName, onViewModeChange }: Phot
                       src={photo.url || '/images/placeholder-car.jpg'}
                       alt={`Thumbnail ${index + 1}`}
                       fill
-                      className="object-cover"
+                      className="object-cover object-[center_70%]"
                       sizes="56px"
                     />
                   </button>
