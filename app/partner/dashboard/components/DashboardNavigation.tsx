@@ -66,10 +66,10 @@ const NAV_BADGES: NavBadge[] = [
 // Badges to hide for external recruits (they don't need dev-focused tabs)
 const EXTERNAL_HIDDEN_BADGES: DashboardSection[] = ['api', 'audit']
 
-// Badge order for external recruits (Requests first)
+// Badge order for external recruits (Tracking first — Requests moves down once fulfilled)
 const EXTERNAL_BADGE_ORDER: DashboardSection[] = [
-  'requests',
   'tracking',
+  'requests',
   'booking',
   'fleet',
   'session',

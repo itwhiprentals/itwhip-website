@@ -277,14 +277,16 @@ export default function PendingRequestCard() {
                 <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
                   <IoCheckmarkCircle className="w-5 h-5 text-green-600" />
                 </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('prRequestFulfilled')}</h2>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('prRequestFulfilled')}</h2>
+                    <span className="px-2 py-0.5 rounded text-xs font-medium text-purple-700 bg-purple-100 dark:text-purple-400 dark:bg-purple-900/30 uppercase">
+                      {t('prFulfilledBadge')}
+                    </span>
+                  </div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">{t('prRequestFulfilledDesc')}</p>
                 </div>
               </div>
-              <span className="px-2 py-1 rounded text-xs font-medium text-purple-700 bg-purple-100 dark:text-purple-400 dark:bg-purple-900/30 uppercase">
-                {t('prFulfilledBadge')}
-              </span>
             </div>
           </div>
 
