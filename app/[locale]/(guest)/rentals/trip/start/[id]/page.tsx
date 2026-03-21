@@ -283,8 +283,8 @@ export default function TripStartPage() {
           </div>
         )}
 
-        {/* Current Step Component */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-6 mb-6">
+        {/* Current Step Component — no container for Handoff (map needs to breathe) */}
+        <div className={currentStep === 0 ? 'mb-6 -mx-2' : 'bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-6 mb-6'}>
           <CurrentStepComponent
             booking={booking}
             data={tripData}

@@ -1052,10 +1052,8 @@ export default function BookingDetailsPage() {
           <PolicyFooter booking={booking} compact={booking.status === 'PENDING' || isCompletedTrip || booking.status === 'CANCELLED' || booking.status === 'NO_SHOW'} />
         )}
 
-        {/* Minimal legal footer for ON_HOLD */}
-        {booking.status === 'ON_HOLD' && (
-          <MinimalLegalFooter />
-        )}
+        {/* Legal footer — always visible (matches mobile app) */}
+        <MinimalLegalFooter />
 
         {/* Cancellation Policy & Trust Safety Modals (for inspection phase) */}
         <CancellationPolicyModal

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
+import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer } from '@react-google-maps/api'
 import { TRIP_CONSTANTS, HANDOFF_STATUS } from '@/app/lib/trip/constants'
 import { TESTING_MODE } from '@/app/lib/trip/validation'
 
@@ -373,6 +374,16 @@ export function HandoffVerify({ booking, data, onLocationVerified }: HandoffVeri
         .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
       `}</style>
 
+      {/* ── MAP — shows during LOCATING, TRACKING, NEARBY ── */}
+      <HandoffMap
+        guestLocation={gpsLocationRef.current}
+        carLocation={booking.pickupLatitude && booking.pickupLongitude ? { lat: booking.pickupLatitude, lng: booking.pickupLongitude } : null}
+        pickupAddress={booking.pickupLocation || booking.exactAddress || booking.car?.address || ''}
+        carLabel={booking.car ? `${booking.car.year} ${booking.car.make} ${booking.car.model}` : undefined}
+        visible={['LOCATING', 'TRACKING', 'NEARBY'].includes(state)}
+        distance={distance}
+      />
+
       {/* LOADING — checking server state */}
       {state === 'LOADING' && (
         <div className="text-center py-10">
@@ -646,6 +657,267 @@ export function HandoffVerify({ booking, data, onLocationVerified }: HandoffVeri
           >
             [Test] Bypass Handoff
           </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Premium Handoff Map ─────────────────────────────────────────────────────
+const MAP_CONTAINER_STYLE = { width: '100%', height: '380px', borderRadius: '0px' }
+
+// Dark navigation-style map theme
+const NAV_MAP_STYLES: google.maps.MapTypeStyle[] = [
+  { elementType: 'geometry', stylers: [{ color: '#1d2c4d' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#8ec3b9' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#1a3646' }] },
+  { featureType: 'administrative.country', elementType: 'geometry.stroke', stylers: [{ color: '#4b6878' }] },
+  { featureType: 'administrative.land_parcel', stylers: [{ visibility: 'off' }] },
+  { featureType: 'administrative.province', elementType: 'geometry.stroke', stylers: [{ color: '#4b6878' }] },
+  { featureType: 'landscape.man_made', elementType: 'geometry.stroke', stylers: [{ color: '#334e87' }] },
+  { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#023e58' }] },
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.park', elementType: 'geometry.fill', stylers: [{ color: '#0a4d4d' }, { visibility: 'on' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#304a7d' }] },
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#98a5be' }] },
+  { featureType: 'road', elementType: 'labels.text.stroke', stylers: [{ color: '#1d2c4d' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#2c6675' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#255763' }] },
+  { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#b0d5ce' }] },
+  { featureType: 'road.highway', elementType: 'labels.text.stroke', stylers: [{ color: '#023e58' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry.fill', stylers: [{ color: '#132f47' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#4e6d70' }] },
+]
+
+const MAP_OPTIONS: google.maps.MapOptions = {
+  disableDefaultUI: true,
+  zoomControl: false,
+  mapTypeControl: false,
+  streetViewControl: false,
+  fullscreenControl: false,
+  styles: NAV_MAP_STYLES,
+  gestureHandling: 'greedy',
+}
+
+// Pulsing blue dot for guest location
+const GUEST_MARKER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44">
+  <circle cx="22" cy="22" r="20" fill="rgba(59,130,246,0.12)" stroke="none">
+    <animate attributeName="r" values="14;20;14" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.5;0.1;0.5" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="22" cy="22" r="10" fill="rgba(59,130,246,0.25)" stroke="none">
+    <animate attributeName="r" values="8;12;8" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.6;0.2;0.6" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="22" cy="22" r="7" fill="#3B82F6" stroke="white" stroke-width="3"/>
+  <circle cx="22" cy="22" r="3" fill="white" opacity="0.9"/>
+</svg>`
+
+// Car destination pin
+const CAR_MARKER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="56" viewBox="0 0 44 56">
+  <defs>
+    <filter id="s" x="-20%" y="-10%" width="140%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+  <path d="M22 2C13.16 2 6 9.16 6 18c0 14 16 36 16 36s16-22 16-36C38 9.16 30.84 2 22 2z" fill="#EF4444" filter="url(#s)"/>
+  <path d="M22 2C13.16 2 6 9.16 6 18c0 14 16 36 16 36s16-22 16-36C38 9.16 30.84 2 22 2z" fill="url(#g)"/>
+  <defs><linearGradient id="g" x1="6" y1="2" x2="38" y2="40" gradientUnits="userSpaceOnUse">
+    <stop offset="0%" stop-color="#F87171"/><stop offset="100%" stop-color="#DC2626"/>
+  </linearGradient></defs>
+  <circle cx="22" cy="17" r="9" fill="white"/>
+  <path d="M16 19.5v-1h.8l1.2-3.5h8l1.2 3.5h.8v1c0 .28-.22.5-.5.5h-.5v-.5h-10v.5h-.5c-.28 0-.5-.22-.5-.5zm2.5-.8a.8.8 0 100-1.6.8.8 0 000 1.6zm7 0a.8.8 0 100-1.6.8.8 0 000 1.6zm-5.5-3h4l-.8-2.4h-2.4l-.8 2.4z" fill="#DC2626"/>
+</svg>`
+
+function HandoffMap({ guestLocation, carLocation, pickupAddress, carLabel, visible, distance }: {
+  guestLocation: { lat: number; lng: number } | null
+  carLocation: { lat: number; lng: number } | null
+  pickupAddress?: string
+  carLabel?: string
+  visible: boolean
+  distance: number | null
+}) {
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || '',
+  })
+  const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null)
+  const [eta, setEta] = useState<{ duration: string; distance: string } | null>(null)
+  const mapInstanceRef = useRef<google.maps.Map | null>(null)
+  const lastKeyRef = useRef<string>('')
+
+  // Fetch directions + ETA when both locations available
+  useEffect(() => {
+    if (!isLoaded || !guestLocation || !carLocation) return
+
+    // Throttle: only re-request if guest moved significantly (~200m)
+    const key = `${Math.round(guestLocation.lat * 1000)},${Math.round(guestLocation.lng * 1000)}`
+    if (key === lastKeyRef.current) return
+    lastKeyRef.current = key
+
+    const service = new google.maps.DirectionsService()
+    service.route({
+      origin: guestLocation,
+      destination: carLocation,
+      travelMode: google.maps.TravelMode.DRIVING,
+    }, (result, status) => {
+      if (status === 'OK' && result) {
+        setDirections(result)
+        const leg = result.routes[0]?.legs[0]
+        if (leg) {
+          setEta({
+            duration: leg.duration?.text || '',
+            distance: leg.distance?.text || '',
+          })
+        }
+      }
+    })
+  }, [isLoaded, guestLocation?.lat, guestLocation?.lng, carLocation?.lat, carLocation?.lng])
+
+  // Auto-zoom to fit both markers with padding
+  useEffect(() => {
+    if (!mapInstanceRef.current || !guestLocation || !carLocation) return
+    const bounds = new google.maps.LatLngBounds()
+    bounds.extend(guestLocation)
+    bounds.extend(carLocation)
+    mapInstanceRef.current.fitBounds(bounds, { top: 70, right: 60, bottom: 70, left: 60 })
+  }, [guestLocation?.lat, guestLocation?.lng, carLocation?.lat, carLocation?.lng])
+
+  if (!visible || !isLoaded) return null
+
+  const center = carLocation || guestLocation || { lat: 33.4484, lng: -112.074 }
+
+  return (
+    <div className="space-y-0">
+      {/* ── Navigation Header ── */}
+      <div className="bg-gray-900 dark:bg-gray-950 rounded-t-2xl px-4 py-3">
+        <div className="flex items-start gap-3">
+          {/* Route indicator dots */}
+          <div className="flex flex-col items-center gap-0.5 mt-1">
+            <div className="w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-blue-500/30" />
+            <div className="w-px h-3 bg-gray-600" />
+            <div className="w-px h-3 bg-gray-600" />
+            <div className="w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-red-500/30" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Your location</p>
+            <p className="text-xs text-gray-500 mt-0.5 mb-2">Current GPS position</p>
+            <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Destination</p>
+            {/* Address: street on line 1, city/state/zip on line 2 */}
+            {(() => {
+              const addr = pickupAddress || 'Pickup Location'
+              const parts = addr.split(',').map((s: string) => s.trim())
+              const street = parts[0] || addr
+              const cityLine = parts.slice(1).join(', ')
+              return (
+                <>
+                  <p className="text-sm text-white font-semibold mt-0.5">{street}</p>
+                  {cityLine && <p className="text-xs text-gray-400">{cityLine}</p>}
+                </>
+              )
+            })()}
+            {carLabel && <p className="text-xs text-gray-500 mt-0.5">{carLabel}</p>}
+          </div>
+          {/* ETA + Live */}
+          <div className="text-right flex-shrink-0">
+            {eta && eta.duration && (
+              <>
+                <p className="text-lg font-bold text-white tabular-nums">{eta.duration}</p>
+                <p className="text-xs text-gray-400">{eta.distance}</p>
+              </>
+            )}
+            <div className="flex items-center gap-1.5 justify-end mt-1">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
+              </span>
+              <span className="text-[9px] font-bold text-green-400 uppercase tracking-widest">Live</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Map ── */}
+      <div className="relative">
+        <GoogleMap
+          mapContainerStyle={MAP_CONTAINER_STYLE}
+          center={center}
+          zoom={14}
+          options={MAP_OPTIONS}
+          onLoad={(map) => { mapInstanceRef.current = map }}
+        >
+          {/* Car destination marker */}
+          {carLocation && (
+            <Marker
+              position={carLocation}
+              icon={{
+                url: 'data:image/svg+xml,' + encodeURIComponent(CAR_MARKER_SVG),
+                scaledSize: new google.maps.Size(44, 56),
+                anchor: new google.maps.Point(22, 56),
+              }}
+              title={carLabel || 'Vehicle pickup'}
+            />
+          )}
+
+          {/* Guest location — blue pulsing dot */}
+          {guestLocation && (
+            <Marker
+              position={guestLocation}
+              icon={{
+                url: 'data:image/svg+xml,' + encodeURIComponent(GUEST_MARKER_SVG),
+                scaledSize: new google.maps.Size(44, 44),
+                anchor: new google.maps.Point(22, 22),
+              }}
+              title="Your location"
+            />
+          )}
+
+          {/* Route polyline */}
+          {directions && (
+            <DirectionsRenderer
+              directions={directions}
+              options={{
+                suppressMarkers: true,
+                polylineOptions: {
+                  strokeColor: '#3B82F6',
+                  strokeWeight: 6,
+                  strokeOpacity: 0.9,
+                },
+              }}
+            />
+          )}
+        </GoogleMap>
+
+        {/* Distance overlay — bottom-right of map */}
+        {distance !== null && (
+          <div className="absolute bottom-3 right-3 bg-gray-900/80 backdrop-blur-sm rounded-full px-3 py-1.5">
+            <span className="text-xs font-bold text-white tabular-nums">
+              {distance < 1000 ? `${distance}m` : `${(distance / 1609.34).toFixed(1)} mi`}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* ── ETA Bar ── */}
+      {eta && eta.duration && (
+        <div className="bg-gray-900 dark:bg-gray-950 rounded-b-2xl px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-blue-600/20 flex items-center justify-center">
+              <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400">Estimated arrival</p>
+              <p className="text-sm font-bold text-white">{eta.duration} · {eta.distance}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5 text-green-400" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+            <span className="text-xs font-semibold text-green-400">GPS Active</span>
+          </div>
         </div>
       )}
     </div>

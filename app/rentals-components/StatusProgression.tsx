@@ -36,20 +36,20 @@ export default function StatusProgression({
   hideTitle,
 }: StatusProgressionProps) {
   
-  // Determine which steps are complete - FIXED case sensitivity
+  // Determine which steps are complete — status is the SINGLE source of truth
   const isBooked = true // Always true if viewing
-  const isVerified = verificationStatus?.toLowerCase() === 'approved' || 
-                    verificationStatus?.toLowerCase() === 'verified' || 
-                    verificationStatus === 'APPROVED' || 
+  const isVerified = verificationStatus?.toLowerCase() === 'approved' ||
+                    verificationStatus?.toLowerCase() === 'verified' ||
+                    verificationStatus === 'APPROVED' ||
                     verificationStatus === 'VERIFIED'
-  const isConfirmed = status === 'CONFIRMED' && 
-                     (paymentStatus?.toLowerCase() === 'paid' || 
-                      paymentStatus?.toLowerCase() === 'captured' ||
-                      paymentStatus === 'PAID' ||
-                      paymentStatus === 'CAPTURED')
-  // Check trip status for Active state
-  const isActive = status === 'ACTIVE' || tripStatus === 'ACTIVE' || !!tripStartedAt
-  const isCompleted = status === 'COMPLETED' || tripStatus === 'COMPLETED' || !!tripEndedAt
+  const isPaid = paymentStatus?.toLowerCase() === 'paid' ||
+                 paymentStatus?.toLowerCase() === 'captured' ||
+                 paymentStatus === 'PAID' ||
+                 paymentStatus === 'CAPTURED'
+  // Status-driven: only check the actual booking status, not stale fields
+  const isConfirmed = (status === 'CONFIRMED' || status === 'ACTIVE' || status === 'COMPLETED') && isPaid
+  const isActive = status === 'ACTIVE'
+  const isCompleted = status === 'COMPLETED'
   
   // Check for special states - FIXED case sensitivity
   const isCancelled = status === 'CANCELLED'
@@ -57,7 +57,7 @@ export default function StatusProgression({
   
   // NEW: Check for post-trip pending charges
   const hasPendingCharges = isCompleted && status === 'PENDING'
-  const wasConfirmed = isConfirmed || isActive || isCompleted // Was ever confirmed
+  const wasConfirmed = isConfirmed // Was ever confirmed (isConfirmed already includes ACTIVE/COMPLETED)
   
   // For cancelled bookings, determine how far they got before cancellation
   // Status is 'CANCELLED' so we check payment/verification/trip data instead
@@ -94,10 +94,10 @@ export default function StatusProgression({
       cancelled: isCancelled && cancelledAfterStep === 2,
     },
     {
-      name: 'Active',
-      complete: isActive || (isCancelled && cancelledAfterStep >= 3),
-      active: isActive && !isCompleted && !isCancelled,
-      description: isActive ? 'Trip in progress' : 'Ready for pickup',
+      name: 'Start Trip',
+      complete: isActive || isCompleted || (isCancelled && cancelledAfterStep >= 3),
+      active: isConfirmed && !isActive && !isCompleted && !isCancelled,
+      description: isActive ? 'Trip in progress' : isCompleted ? 'Trip completed' : 'Ready for pickup',
       cancelled: isCancelled && cancelledAfterStep === 3,
     },
     {
