@@ -281,6 +281,7 @@ export async function POST(
     // Create the review
     const newReview = await prisma.rentalReview.create({
       data: {
+        id: crypto.randomUUID(),
         bookingId: bookingId,
         carId: booking.carId,
         hostId: booking.hostId,
