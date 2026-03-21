@@ -365,7 +365,9 @@ export async function GET(request: NextRequest) {
           instantBook: booking.car.instantBook ?? true,
           vehicleType: booking.car.vehicleType || 'RENTAL',
           latitude: booking.car.latitude ? parseFloat(booking.car.latitude) : null,
-          longitude: booking.car.longitude ? parseFloat(booking.car.longitude) : null
+          longitude: booking.car.longitude ? parseFloat(booking.car.longitude) : null,
+          currentMileage: booking.car.currentMileage ? parseInt(booking.car.currentMileage) : null,
+          lastRentalEndMileage: booking.car.lastRentalEndMileage ? parseInt(booking.car.lastRentalEndMileage) : null
         },
         host: booking.host,
         guestName: booking.guestName,
