@@ -380,7 +380,7 @@ export function HandoffVerify({ booking, data, onLocationVerified }: HandoffVeri
         carLocation={booking.pickupLatitude && booking.pickupLongitude ? { lat: booking.pickupLatitude, lng: booking.pickupLongitude } : null}
         pickupAddress={booking.pickupLocation || booking.exactAddress || booking.car?.address || ''}
         carLabel={booking.car ? `${booking.car.year} ${booking.car.make} ${booking.car.model}` : undefined}
-        visible={['LOCATING', 'TRACKING', 'NEARBY'].includes(state)}
+        visible={['LOADING', 'LOCATING', 'TRACKING', 'NEARBY'].includes(state)}
         distance={distance}
       />
 
