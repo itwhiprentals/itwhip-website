@@ -24,7 +24,8 @@ export function OdometerInput({ booking, data, onOdometerChange }: OdometerInput
 
   useEffect(() => {
     if (odometerValue) {
-      const validation = validateOdometer(odometerValue)
+      const previousReading = booking.car?.lastRentalEndMileage || booking.car?.currentMileage
+      const validation = validateOdometer(odometerValue, previousReading)
       setIsValid(validation.valid)
       setError(validation.valid ? null : validation.error || null)
     } else {

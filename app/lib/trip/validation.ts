@@ -35,7 +35,7 @@ export function validateOdometer(
   }
   
   if (previousReading && reading < previousReading) {
-    return { valid: false, error: 'Odometer cannot be less than starting value' }
+    return { valid: false, error: `Cannot be less than ${previousReading.toLocaleString()} miles (last recorded reading)` }
   }
   
   return { valid: true }

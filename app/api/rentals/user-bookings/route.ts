@@ -208,6 +208,8 @@ export async function GET(request: NextRequest) {
           'vehicleType', c."vehicleType",
           'latitude', c.latitude,
           'longitude', c.longitude,
+          'currentMileage', c."currentMileage",
+          'lastRentalEndMileage', c."lastRentalEndMileage",
           'photos', COALESCE(
             (SELECT json_agg(json_build_object(
               'id', cp.id,
