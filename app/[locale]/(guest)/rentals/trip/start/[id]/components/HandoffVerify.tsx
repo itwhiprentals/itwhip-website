@@ -377,8 +377,8 @@ export function HandoffVerify({ booking, data, onLocationVerified }: HandoffVeri
       {/* ── MAP — shows during LOCATING, TRACKING, NEARBY ── */}
       <HandoffMap
         guestLocation={gpsLocationRef.current}
-        carLocation={booking.pickupLatitude && booking.pickupLongitude ? { lat: booking.pickupLatitude, lng: booking.pickupLongitude } : null}
-        pickupAddress={booking.pickupLocation || booking.exactAddress || booking.car?.address || ''}
+        carLocation={booking.car?.latitude && booking.car?.longitude ? { lat: booking.car.latitude, lng: booking.car.longitude } : booking.pickupLatitude && booking.pickupLongitude ? { lat: booking.pickupLatitude, lng: booking.pickupLongitude } : null}
+        pickupAddress={booking.car?.address ? [booking.car.address, booking.car.city, booking.car.state, booking.car.zipCode].filter(Boolean).join(', ') : booking.pickupLocation || ''}
         carLabel={booking.car ? `${booking.car.year} ${booking.car.make} ${booking.car.model}` : undefined}
         visible={['LOADING', 'LOCATING', 'TRACKING', 'NEARBY'].includes(state)}
         distance={distance}
