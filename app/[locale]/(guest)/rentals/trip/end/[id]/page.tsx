@@ -13,6 +13,7 @@ import { ChargeCalculator } from './components/ChargeCalculator'
 import { DisputeSelector } from './components/DisputeSelector'
 import { PaymentConfirm } from './components/PaymentConfirm'
 import { TRIP_CONSTANTS } from '@/app/lib/trip/constants'
+import { useTripSync } from '@/app/lib/trip/useTripSync'
 import { validateOdometer, validateFuelLevel, validateInspectionPhotos } from '@/app/lib/trip/validation'
 import { calculateTripCharges } from '@/app/lib/trip/calculations'
 import TripStepProgress from '@/app/components/TripStepProgress'
@@ -65,6 +66,21 @@ export default function TripEndPage() {
     { title: 'Disputes', component: DisputeSelector },
     { title: 'Complete', component: PaymentConfirm }
   ]
+
+  // ── Quantum sync: poll every 3s, auto-advance if server is ahead ──
+  const sync = useTripSync(bookingId, 'end')
+
+  useEffect(() => {
+    if (sync.loading) return
+    if (sync.step > currentStep) {
+      console.log('[EndTripSync] Server ahead:', sync.step, '> local:', currentStep)
+      if (sync.photos) setTripData(prev => ({ ...prev, photos: sync.photos! }))
+      if (sync.odometer) setTripData(prev => ({ ...prev, odometer: sync.odometer! }))
+      if (sync.fuel) setTripData(prev => ({ ...prev, fuelLevel: sync.fuel! }))
+      setCurrentStep(sync.step)
+    }
+    if (sync.booking && !booking) setBooking(sync.booking)
+  }, [sync.step, sync.loading])
 
   useEffect(() => {
     loadBooking()
@@ -221,6 +237,29 @@ export default function TripEndPage() {
 
   const handleNext = () => {
     if (validateCurrentStep()) {
+      // Per-step server save for cross-platform sync
+      if (currentStep === 0 && Object.keys(tripData.photos).length > 0) {
+        fetch(`/api/rentals/bookings/${bookingId}/trip/progress`, {
+          method: 'PATCH', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inspectionPhotosEnd: tripData.photos }),
+        }).catch(() => {})
+      }
+      if (currentStep === 1 && tripData.odometer) {
+        fetch(`/api/rentals/bookings/${bookingId}/trip/progress`, {
+          method: 'PATCH', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endMileage: tripData.odometer }),
+        }).catch(() => {})
+      }
+      if (currentStep === 2 && tripData.fuelLevel) {
+        fetch(`/api/rentals/bookings/${bookingId}/trip/progress`, {
+          method: 'PATCH', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fuelLevelEnd: tripData.fuelLevel }),
+        }).catch(() => {})
+      }
+
       if (currentStep < steps.length - 1) {
         setCurrentStep(currentStep + 1)
       } else {
