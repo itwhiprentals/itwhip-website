@@ -147,7 +147,10 @@ export async function GET(request: NextRequest) {
                 id: true,
                 name: true,
                 email: true,
-                image: true
+                image: true,
+                reviewerProfile: {
+                  select: { profilePhotoUrl: true }
+                }
               }
             }
           }
@@ -187,7 +190,7 @@ export async function GET(request: NextRequest) {
           vehiclePhoto: booking.car?.photos?.[0]?.url || null,
           guestName: booking.renter?.name || booking.guestName || 'Guest',
           guestEmail: booking.renter?.email || booking.guestEmail || null,
-          guestPhoto: booking.renter?.image || null,
+          guestPhoto: booking.renter?.reviewerProfile?.profilePhotoUrl || booking.renter?.image || null,
           messages: [],
           unreadCount: 0,
           hasUrgent: false,
