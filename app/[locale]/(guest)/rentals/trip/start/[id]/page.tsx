@@ -13,6 +13,7 @@ import { HandoffVerify } from './components/HandoffVerify'
 import { InspectionChecklist } from './components/InspectionChecklist'
 import TripStepProgress from '@/app/components/TripStepProgress'
 import { TRIP_CONSTANTS } from '@/app/lib/trip/constants'
+import { useTripSync } from '@/app/lib/trip/useTripSync'
 import { validateInspectionPhotos, validateOdometer, validateFuelLevel, canStartTrip } from '@/app/lib/trip/validation'
 
 interface TripStartData {
@@ -52,6 +53,22 @@ export default function TripStartPage() {
     },
     notes: ''
   })
+
+  // ── Quantum sync: poll server every 3s, auto-advance if server is ahead ──
+  const sync = useTripSync(bookingId, 'start')
+
+  useEffect(() => {
+    if (sync.loading) return
+    if (sync.step > currentStep) {
+      console.log('[TripSync] Server ahead:', sync.step, '> local:', currentStep)
+      if (sync.photos) setTripData(prev => ({ ...prev, photos: sync.photos! }))
+      if (sync.odometer) setTripData(prev => ({ ...prev, odometer: sync.odometer! }))
+      if (sync.fuel) setTripData(prev => ({ ...prev, fuelLevel: sync.fuel! }))
+      if (sync.step >= 1) setHandoffSkipped(true)
+      setCurrentStep(sync.step)
+    }
+    if (sync.booking && !booking) setBooking(sync.booking)
+  }, [sync.step, sync.loading])
 
   // Load booking data
   useEffect(() => {
