@@ -11,11 +11,19 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
 )
 
-async function getPartnerFromToken() {
-  const cookieStore = await cookies()
-  // SECURITY FIX: Check both cookie names for consistent auth
-  const token = cookieStore.get('partner_token')?.value ||
-                cookieStore.get('hostAccessToken')?.value
+async function getPartnerFromToken(request?: NextRequest) {
+  // Check Authorization header first (mobile app)
+  let token: string | undefined
+  const authHeader = request?.headers.get('authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.substring(7)
+  }
+  // Fall back to cookies (web)
+  if (!token) {
+    const cookieStore = await cookies()
+    token = cookieStore.get('partner_token')?.value ||
+            cookieStore.get('hostAccessToken')?.value
+  }
 
   if (!token) return null
 
@@ -35,13 +43,40 @@ async function getPartnerFromToken() {
   }
 }
 
+// GET - Fetch all photos for a vehicle
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const partner = await getPartnerFromToken(request)
+    if (!partner) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id } = await params
+    const vehicle = await prisma.rentalCar.findFirst({
+      where: { id, hostId: partner.id },
+      select: { id: true }
+    })
+    if (!vehicle) return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 })
+
+    const photos = await prisma.rentalCarPhoto.findMany({
+      where: { carId: id },
+      orderBy: [{ isHero: 'desc' }, { order: 'asc' }]
+    })
+
+    return NextResponse.json({ success: true, photos })
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to fetch photos' }, { status: 500 })
+  }
+}
+
 // POST - Add photos to vehicle
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const partner = await getPartnerFromToken()
+    const partner = await getPartnerFromToken(request)
 
     if (!partner) {
       return NextResponse.json(
@@ -151,7 +186,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const partner = await getPartnerFromToken()
+    const partner = await getPartnerFromToken(request)
 
     if (!partner) {
       return NextResponse.json(
@@ -267,7 +302,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const partner = await getPartnerFromToken()
+    const partner = await getPartnerFromToken(request)
 
     if (!partner) {
       return NextResponse.json(
