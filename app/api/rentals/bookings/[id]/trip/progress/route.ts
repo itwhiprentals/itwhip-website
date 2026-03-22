@@ -20,7 +20,9 @@ export async function PATCH(
 
     const booking = await prisma.rentalBooking.findUnique({
       where: { id: bookingId },
-      select: { id: true, renterId: true, guestEmail: true, status: true }
+      select: { id: true, renterId: true, guestEmail: true, status: true, startMileage: true, carId: true,
+        car: { select: { currentMileage: true, lastRentalEndMileage: true } }
+      }
     })
 
     if (!booking) {
@@ -36,6 +38,28 @@ export async function PATCH(
 
     const body = await request.json()
     const updateData: Record<string, any> = {}
+
+    // Server-side mileage floor guard
+    // Start trip: cannot be less than car's last known mileage
+    if (body.startMileage !== undefined && typeof body.startMileage === 'number') {
+      const carFloor = (booking as any).car?.lastRentalEndMileage || (booking as any).car?.currentMileage || 0
+      if (body.startMileage < carFloor) {
+        return NextResponse.json(
+          { error: `Start mileage cannot be less than ${carFloor.toLocaleString()} (last recorded reading)` },
+          { status: 400 }
+        )
+      }
+    }
+    // End trip: cannot be less than trip start mileage
+    if (body.endMileage !== undefined && typeof body.endMileage === 'number') {
+      const startFloor = (booking as any).startMileage || 0
+      if (startFloor > 0 && body.endMileage < startFloor) {
+        return NextResponse.json(
+          { error: `End mileage cannot be less than ${startFloor.toLocaleString()} (trip start reading)` },
+          { status: 400 }
+        )
+      }
+    }
 
     // Start trip fields
     if (body.inspectionPhotosStart !== undefined) {

@@ -82,6 +82,25 @@ export default function TripEndPage() {
     if (sync.booking && !booking) setBooking(sync.booking)
   }, [sync.step, sync.loading])
 
+  // Recalculate charges whenever odometer + fuel are both available
+  // (covers sync from app, page resume, and manual entry)
+  useEffect(() => {
+    if (booking && tripData.odometer && tripData.fuelLevel) {
+      const calculatedCharges = calculateTripCharges(
+        booking.startMileage,
+        tripData.odometer,
+        booking.fuelLevelStart,
+        tripData.fuelLevel,
+        new Date(booking.startDate),
+        new Date(booking.endDate),
+        new Date(),
+        booking.numberOfDays,
+        tripData.damagePhotos as any || []
+      )
+      setCharges(calculatedCharges)
+    }
+  }, [booking, tripData.odometer, tripData.fuelLevel])
+
   useEffect(() => {
     loadBooking()
   }, [bookingId])
@@ -391,7 +410,7 @@ export default function TripEndPage() {
         <TripStepProgress
           steps={steps.map(s => ({ name: s.title }))}
           currentStep={currentStep}
-          className="mb-8"
+          className="mb-4"
         />
 
         {/* Error Display */}

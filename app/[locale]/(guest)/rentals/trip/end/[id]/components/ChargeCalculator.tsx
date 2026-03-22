@@ -1,231 +1,230 @@
 // app/(guest)/rentals/trip/end/[id]/components/ChargeCalculator.tsx
+// Matches app: TripSummaryCard (photos, odometer, fuel) + charges breakdown
 
 'use client'
 
-import { useState, useEffect } from 'react'
-import { formatCharge } from '@/app/lib/trip/calculations'
-import { TRIP_CONSTANTS } from '@/app/lib/trip/constants'
+import Image from 'next/image'
+import { IoCamera, IoSpeedometer, IoWater, IoReceipt, IoCheckmarkCircle, IoAlertCircle, IoShieldCheckmark, IoArrowForward, IoClipboardOutline } from 'react-icons/io5'
 
 interface ChargeCalculatorProps {
- booking: any
- data: any
- charges: any
- onDamageReport?: (damage: { reported: boolean; description: string; photos: string[] }) => void
+  booking: any
+  data: any
+  charges: any
+  depositAmount?: number
+  onDamageReport?: (damage: { reported: boolean; description: string; photos: string[] }) => void
 }
 
-export function ChargeCalculator({ booking, data, charges, onDamageReport }: ChargeCalculatorProps) {
- const [showDamageForm, setShowDamageForm] = useState(false)
- const [damageDescription, setDamageDescription] = useState('')
- const [selectedDamages, setSelectedDamages] = useState<string[]>([])
- const [customDamageAmount, setCustomDamageAmount] = useState(0)
+const FUEL_LABELS: Record<string, string> = { Empty: 'Empty', '1/4': '1/4', '1/2': '1/2', '3/4': '3/4', Full: 'Full', empty: 'Empty', quarter: '1/4', half: '1/2', three_quarter: '3/4', full: 'Full' }
+const FUEL_PCT: Record<string, number> = { Empty: 0, '1/4': 25, '1/2': 50, '3/4': 75, Full: 100, empty: 0, quarter: 25, half: 50, three_quarter: 75, full: 100 }
 
- useEffect(() => {
-   if (onDamageReport && (damageDescription || selectedDamages.length > 0)) {
-     onDamageReport({
-       reported: true,
-       description: damageDescription,
-       photos: [] // Would be handled by photo capture in real implementation
-     })
-   }
- }, [damageDescription, selectedDamages])
+function fmt(n: number | undefined | null) {
+  if (n == null || isNaN(n)) return '$0.00'
+  return '$' + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
 
- const toggleDamage = (damageId: string) => {
-   setSelectedDamages(prev => 
-     prev.includes(damageId) 
-       ? prev.filter(id => id !== damageId)
-       : [...prev, damageId]
-   )
- }
+export function ChargeCalculator({ booking, data, charges, depositAmount: depositAmountProp }: ChargeCalculatorProps) {
+  const startMileage = booking?.startMileage ?? 0
+  const endMileage = data?.odometer ?? 0
+  const startFuel = booking?.fuelLevelStart ?? 'Full'
+  const endFuel = data?.fuelLevel ?? startFuel
+  const bookingDays = booking?.numberOfDays ?? 1
+  const photos = data?.photos ?? {}
+  const depositAmount = depositAmountProp ?? booking?.depositAmount ?? 500
 
- const calculateDamageCost = () => {
-   let total = 0
-   selectedDamages.forEach(damageId => {
-     const damage = TRIP_CONSTANTS.DAMAGE_PRESETS[damageId as keyof typeof TRIP_CONSTANTS.DAMAGE_PRESETS]
-     if (damage) {
-       total += damage.cost
-     }
-   })
-   return total + customDamageAmount
- }
+  const milesDriven = endMileage - startMileage
+  const includedMiles = bookingDays * 200
+  const overageMiles = Math.max(0, milesDriven - includedMiles)
+  const mileageCharge = overageMiles * 0.45
 
- const totalDamageCost = calculateDamageCost()
- const grandTotal = (charges?.total || 0) + totalDamageCost
+  const startFuelPct = FUEL_PCT[startFuel] ?? 100
+  const endFuelPct = FUEL_PCT[endFuel] ?? 100
+  const fuelLower = endFuelPct < startFuelPct
+  const quartersDown = Math.ceil((startFuelPct - endFuelPct) / 25)
+  const fuelCharge = fuelLower ? quartersDown * 75 : 0
 
- if (!charges) {
-   return (
-     <div className="text-center py-8">
-       <p className="text-gray-600">Please complete odometer and fuel readings first</p>
-     </div>
-   )
- }
+  const totalCharges = mileageCharge + fuelCharge
+  const hasCharges = totalCharges > 0
+  const depositReturn = Math.max(0, depositAmount - totalCharges)
 
- return (
-   <div className="space-y-6">
-     {/* Trip Summary */}
-     <div className="bg-gray-50 rounded-lg p-4">
-       <h3 className="text-sm font-medium text-gray-900 mb-3">Trip Summary</h3>
-       <div className="space-y-2 text-sm">
-         <div className="flex justify-between">
-           <span className="text-gray-600">Miles Driven</span>
-           <span className="font-medium">{charges.mileage.used} miles</span>
-         </div>
-         <div className="flex justify-between">
-           <span className="text-gray-600">Miles Included</span>
-           <span className="font-medium">{charges.mileage.included} miles</span>
-         </div>
-         {charges.mileage.overage > 0 && (
-           <div className="flex justify-between text-amber-600">
-             <span>Overage Miles</span>
-             <span className="font-medium">{charges.mileage.overage} miles</span>
-           </div>
-         )}
-       </div>
-     </div>
+  const photoEntries = Object.entries(photos).filter(([, url]) => url)
+  const photoCount = photoEntries.length
 
-     {/* Charges Breakdown */}
-     <div className="border border-gray-200 rounded-lg p-4">
-       <h3 className="text-sm font-medium text-gray-900 mb-3">Additional Charges</h3>
-       
-       {charges.breakdown.length > 0 ? (
-         <div className="space-y-2">
-           {charges.breakdown.map((item: any, index: number) => (
-             <div key={index} className="flex justify-between text-sm">
-               <span className="text-gray-600">{item.label}</span>
-               <span className="font-medium text-gray-900">{formatCharge(item.amount)}</span>
-             </div>
-           ))}
-         </div>
-       ) : (
-         <p className="text-sm text-green-600">No additional charges</p>
-       )}
+  const startFuelLabel = FUEL_LABELS[startFuel] || startFuel
+  const endFuelLabel = FUEL_LABELS[endFuel] || endFuel
 
-       {/* Subtotal */}
-       {charges.total > 0 && (
-         <div className="mt-3 pt-3 border-t border-gray-200">
-           <div className="flex justify-between">
-             <span className="font-medium">Subtotal</span>
-             <span className="font-semibold">{formatCharge(charges.total)}</span>
-           </div>
-         </div>
-       )}
-     </div>
+  if (!endMileage && !data?.fuelLevel) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-600 dark:text-gray-400">Please complete odometer and fuel readings first</p>
+      </div>
+    )
+  }
 
-     {/* Damage Report Section */}
-     <div className="border border-gray-200 rounded-lg p-4">
-       <div className="flex items-center justify-between mb-3">
-         <h3 className="text-sm font-medium text-gray-900">Damage Report</h3>
-         <button
-           onClick={() => setShowDamageForm(!showDamageForm)}
-           className="text-sm text-blue-600 hover:text-blue-700"
-         >
-           {showDamageForm ? 'Cancel' : 'Report Damage'}
-         </button>
-       </div>
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0">
+          <IoClipboardOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Trip Summary</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Review your trip data before completing</p>
+        </div>
+      </div>
 
-       {showDamageForm ? (
-         <div className="space-y-4">
-           {/* Preset Damage Options */}
-           <div>
-             <p className="text-sm text-gray-600 mb-2">Select any damage types:</p>
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-               {Object.entries(TRIP_CONSTANTS.DAMAGE_PRESETS).map(([id, damage]) => (
-                 <label
-                   key={id}
-                   className={`flex items-center p-2 border rounded-lg cursor-pointer transition-colors ${
-                     selectedDamages.includes(id)
-                       ? 'border-red-500 bg-red-50'
-                       : 'border-gray-300 hover:border-gray-400'
-                   }`}
-                 >
-                   <input
-                     type="checkbox"
-                     checked={selectedDamages.includes(id)}
-                     onChange={() => toggleDamage(id)}
-                     className="mr-2"
-                   />
-                   <div className="flex-1">
-                     <span className="text-sm">{damage.name}</span>
-                     {damage.cost > 0 && (
-                       <span className="ml-2 text-xs text-gray-500">
-                         ({formatCharge(damage.cost)})
-                       </span>
-                     )}
-                   </div>
-                 </label>
-               ))}
-             </div>
-           </div>
+      {/* Photos Card */}
+      <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-3.5 space-y-2.5">
+        <div className="flex items-center gap-2">
+          <IoCamera className="w-4 h-4 text-green-500" />
+          <span className="text-[13px] font-semibold text-gray-900 dark:text-white flex-1">Inspection Photos</span>
+          <span className="text-[10px] font-semibold text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full">{photoCount} captured</span>
+        </div>
+        {photoCount > 0 && (
+          <div className="flex gap-1.5 overflow-x-auto pb-1">
+            {photoEntries.slice(0, 7).map(([key, url]) => (
+              <div key={key} className="w-[52px] h-[52px] rounded-md overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-gray-700">
+                <Image src={url as string} alt={key} width={52} height={52} className="w-full h-full object-cover" />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-           {/* Description */}
-           <div>
-             <label className="block text-sm font-medium text-gray-700 mb-1">
-               Damage Description
-             </label>
-             <textarea
-               value={damageDescription}
-               onChange={(e) => setDamageDescription(e.target.value)}
-               placeholder="Describe the damage in detail..."
-               rows={3}
-               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-             />
-           </div>
+      {/* Odometer Card */}
+      <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-3.5 space-y-2.5">
+        <div className="flex items-center gap-2">
+          <IoSpeedometer className="w-4 h-4 text-amber-500" />
+          <span className="text-[13px] font-semibold text-gray-900 dark:text-white">Odometer</span>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <div className="text-center">
+            <p className="text-[9px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Start</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-white mt-0.5">{startMileage.toLocaleString()}</p>
+          </div>
+          <IoArrowForward className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <div className="text-center">
+            <p className="text-[9px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">End</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-white mt-0.5">{endMileage.toLocaleString()}</p>
+          </div>
+          <div className={`ml-auto px-2 py-1 rounded-lg ${overageMiles > 0 ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-green-100 dark:bg-green-900/30'}`}>
+            <span className={`text-xs font-bold ${overageMiles > 0 ? 'text-amber-800 dark:text-amber-300' : 'text-green-800 dark:text-green-300'}`}>
+              {milesDriven.toLocaleString()} mi
+            </span>
+          </div>
+        </div>
+        <div className={`flex items-center gap-1.5 border-t pt-2 ${overageMiles > 0 ? 'border-amber-200 dark:border-amber-800' : 'border-gray-200 dark:border-gray-700'}`}>
+          {overageMiles > 0 ? (
+            <>
+              <IoAlertCircle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+              <span className="text-[11px] text-amber-800 dark:text-amber-300">{overageMiles.toLocaleString()} overage miles × $0.45/mi = {fmt(overageMiles * 0.45)}</span>
+            </>
+          ) : (
+            <>
+              <IoCheckmarkCircle className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+              <span className="text-[11px] text-green-800 dark:text-green-300">Within {includedMiles.toLocaleString()} included miles — no overage</span>
+            </>
+          )}
+        </div>
+      </div>
 
-           {/* Custom Amount (if "other" is selected) */}
-           {selectedDamages.includes('other') && (
-             <div>
-               <label className="block text-sm font-medium text-gray-700 mb-1">
-                 Estimated Cost
-               </label>
-               <input
-                 type="number"
-                 value={customDamageAmount}
-                 onChange={(e) => setCustomDamageAmount(Number(e.target.value))}
-                 placeholder="0.00"
-                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-               />
-             </div>
-           )}
+      {/* Fuel Card */}
+      <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-3.5 space-y-2.5">
+        <div className="flex items-center gap-2">
+          <IoWater className="w-4 h-4 text-blue-500" />
+          <span className="text-[13px] font-semibold text-gray-900 dark:text-white">Fuel Level</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="text-center">
+            <p className="text-[9px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pickup</p>
+            <p className="text-base font-bold text-gray-900 dark:text-white mt-0.5">{startFuelLabel}</p>
+          </div>
+          <IoArrowForward className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <div className="text-center">
+            <p className="text-[9px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Return</p>
+            <p className="text-base font-bold text-gray-900 dark:text-white mt-0.5">{endFuelLabel}</p>
+          </div>
+          <div className={`ml-auto flex items-center gap-1 px-2 py-1 rounded-lg ${fuelLower ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-green-100 dark:bg-green-900/30'}`}>
+            {fuelLower
+              ? <IoAlertCircle className="w-3 h-3 text-amber-800 dark:text-amber-300" />
+              : <IoCheckmarkCircle className="w-3 h-3 text-green-800 dark:text-green-300" />
+            }
+            <span className={`text-xs font-bold ${fuelLower ? 'text-amber-800 dark:text-amber-300' : 'text-green-800 dark:text-green-300'}`}>
+              {fuelLower ? `-${quartersDown}Q` : 'OK'}
+            </span>
+          </div>
+        </div>
+        <div className={`flex items-center gap-1.5 border-t pt-2 ${fuelLower ? 'border-amber-200 dark:border-amber-800' : 'border-gray-200 dark:border-gray-700'}`}>
+          {fuelLower ? (
+            <>
+              <IoAlertCircle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+              <span className="text-[11px] text-amber-800 dark:text-amber-300">{quartersDown} quarter{quartersDown > 1 ? 's' : ''} below pickup × $75 = {fmt(fuelCharge)}</span>
+            </>
+          ) : (
+            <>
+              <IoCheckmarkCircle className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+              <span className="text-[11px] text-green-800 dark:text-green-300">Same or higher than pickup — no fuel charge</span>
+            </>
+          )}
+        </div>
+      </div>
 
-           {/* Damage Total */}
-           {totalDamageCost > 0 && (
-             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-               <div className="flex justify-between">
-                 <span className="text-sm font-medium text-red-900">Damage Charges</span>
-                 <span className="font-semibold text-red-900">{formatCharge(totalDamageCost)}</span>
-               </div>
-             </div>
-           )}
-         </div>
-       ) : (
-         <p className="text-sm text-gray-600">No damage reported</p>
-       )}
-     </div>
+      {/* Charges Breakdown */}
+      <div className="flex items-center gap-2.5 mt-2">
+        <div className="w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
+          <IoReceipt className="w-[18px] h-[18px] text-amber-600 dark:text-amber-400" />
+        </div>
+        <span className="text-sm font-semibold text-gray-900 dark:text-white">Charges Breakdown</span>
+      </div>
 
-     {/* Grand Total */}
-     <div className="bg-gray-900 text-white rounded-lg p-4">
-       <div className="flex justify-between items-center">
-         <div>
-           <p className="text-sm text-gray-300">Total Additional Charges</p>
-           <p className="text-xs text-gray-400 mt-1">Will be charged to your payment method</p>
-         </div>
-         <div className="text-right">
-           <p className="text-2xl font-bold">{formatCharge(grandTotal)}</p>
-           {grandTotal === 0 && (
-             <p className="text-xs text-green-400 mt-1">No charges</p>
-           )}
-         </div>
-       </div>
-     </div>
-
-     {/* Info Box */}
-     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-       <h4 className="text-sm font-medium text-blue-900 mb-2">Important Information</h4>
-       <ul className="text-sm text-blue-800 space-y-1">
-         <li>• Additional charges will be processed within 24-48 hours</li>
-         <li>• You'll receive an email receipt once processed</li>
-         <li>• You can dispute charges within 48 hours of trip completion</li>
-       </ul>
-     </div>
-   </div>
- )
+      <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+        {hasCharges ? (
+          <>
+            {overageMiles > 0 && (
+              <div className="flex items-center justify-between px-3.5 py-2.5">
+                <div className="flex items-center gap-1.5">
+                  <IoSpeedometer className="w-3.5 h-3.5 text-amber-500" />
+                  <span className="text-xs text-gray-600 dark:text-gray-400">Mileage overage ({overageMiles} mi × $0.45)</span>
+                </div>
+                <span className="text-[13px] font-semibold text-red-500">{fmt(mileageCharge)}</span>
+              </div>
+            )}
+            {fuelCharge > 0 && (
+              <div className={`flex items-center justify-between px-3.5 py-2.5 ${overageMiles > 0 ? 'border-t border-gray-200 dark:border-gray-700' : ''}`}>
+                <div className="flex items-center gap-1.5">
+                  <IoWater className="w-3.5 h-3.5 text-amber-500" />
+                  <span className="text-xs text-gray-600 dark:text-gray-400">Fuel refill ({quartersDown}Q × $75)</span>
+                </div>
+                <span className="text-[13px] font-semibold text-red-500">{fmt(fuelCharge)}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between px-3.5 py-3 border-t border-gray-200 dark:border-gray-700 bg-blue-50/50 dark:bg-blue-950/20">
+              <span className="text-sm font-bold text-gray-900 dark:text-white">Total Charges</span>
+              <span className="text-xl font-extrabold text-red-500">{fmt(totalCharges)}</span>
+            </div>
+            <div className="flex items-center gap-2 px-3.5 py-2.5 border-t border-gray-200 dark:border-gray-700">
+              <IoShieldCheckmark className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">Security deposit: {fmt(depositAmount)}</p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">Charges deducted: -{fmt(totalCharges)}</p>
+                <p className="text-xs font-bold text-green-600 dark:text-green-400 mt-0.5">Deposit return: {fmt(depositReturn)}</p>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center py-5 gap-1.5">
+            <IoCheckmarkCircle className="w-6 h-6 text-green-500" />
+            <span className="text-sm font-semibold text-green-600 dark:text-green-400">No Additional Charges</span>
+            <span className="text-[11px] text-gray-500 dark:text-gray-400 text-center">Within mileage and fuel limits. Full deposit returned.</span>
+            <div className="flex items-center gap-2 border-t border-gray-200 dark:border-gray-700 w-full px-3.5 pt-2.5 mt-2">
+              <IoShieldCheckmark className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+              <span className="text-xs font-semibold text-green-600 dark:text-green-400">
+                {fmt(depositAmount)} deposit will be returned in 3–5 days
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
