@@ -64,6 +64,18 @@ export function OdometerInput({ booking, data, onOdometerChange }: OdometerInput
         </div>
       </div>
 
+      {/* Trip start mileage reference — shown during end trip */}
+      {booking?.startMileage && (
+        <div className="flex items-center gap-2 px-3.5 py-2.5 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M3 6a3 3 0 013-3h10a1 1 0 01.8 1.6L14.25 8l2.55 3.4A1 1 0 0116 13H6a1 1 0 00-1 1v3a1 1 0 11-2 0V6z" />
+          </svg>
+          <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+            Trip start: {booking.startMileage.toLocaleString()} miles
+          </span>
+        </div>
+      )}
+
       {/* Digital odometer display */}
       <div className="bg-gray-900 dark:bg-black rounded-xl p-6 shadow-inner">
         <div className="flex justify-center gap-1.5">
