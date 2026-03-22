@@ -75,11 +75,33 @@ export default function TripStartPage() {
           
           setBooking(booking)
 
-          // If handoff already complete, skip to Photos (step 1)
+          // Resume from last saved step — cross-platform sync
           if (booking.handoffStatus === 'HANDOFF_COMPLETE' || booking.handoffStatus === 'BYPASSED') {
-            setCurrentStep(1)
             setHandoffSkipped(true)
             setTripData(prev => ({ ...prev, location: { lat: 0, lng: 0 } }))
+
+            let resumeStep = 1 // past handoff
+            if (booking.inspectionPhotosStart) {
+              try {
+                const saved = typeof booking.inspectionPhotosStart === 'string'
+                  ? JSON.parse(booking.inspectionPhotosStart) : booking.inspectionPhotosStart
+                if (saved && typeof saved === 'object') {
+                  setTripData(prev => ({ ...prev, photos: saved }))
+                }
+              } catch {}
+              resumeStep = 2
+            }
+            if (booking.startMileage) {
+              setTripData(prev => ({ ...prev, odometer: booking.startMileage }))
+              resumeStep = 3
+            }
+            if (booking.fuelLevelStart) {
+              setTripData(prev => ({ ...prev, fuelLevel: booking.fuelLevelStart }))
+              resumeStep = 4
+            }
+
+            console.log('[TripWizard] Resuming at step', resumeStep)
+            setCurrentStep(resumeStep)
           }
 
           // Location will be verified by the LocationVerify component via GPS
@@ -171,6 +193,29 @@ export default function TripStartPage() {
 
   const handleNext = () => {
     if (validateCurrentStep()) {
+      // Per-step server save — fire and forget for cross-platform resume
+      if (currentStep === 1 && Object.keys(tripData.photos).length > 0) {
+        fetch(`/api/rentals/bookings/${bookingId}/trip/progress`, {
+          method: 'PATCH', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inspectionPhotosStart: tripData.photos }),
+        }).catch(() => {})
+      }
+      if (currentStep === 2 && tripData.odometer) {
+        fetch(`/api/rentals/bookings/${bookingId}/trip/progress`, {
+          method: 'PATCH', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ startMileage: tripData.odometer }),
+        }).catch(() => {})
+      }
+      if (currentStep === 3 && tripData.fuelLevel) {
+        fetch(`/api/rentals/bookings/${bookingId}/trip/progress`, {
+          method: 'PATCH', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fuelLevelStart: tripData.fuelLevel }),
+        }).catch(() => {})
+      }
+
       if (currentStep < steps.length - 1) {
         setCurrentStep(currentStep + 1)
       } else {
