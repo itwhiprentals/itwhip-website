@@ -975,6 +975,8 @@
     "claimsAwaitingResponse": "You have claims awaiting your response. Please respond within 48 hours to avoid account restrictions.",
     "viewPendingClaims": "View Pending Claims",
     "activeNow": "Active Now",
+    "activeTripBanner": "Active Trip",
+    "returnBy": "Return by",
     "upcoming": "Upcoming",
     "noUpcomingTrips": "No upcoming trips",
     "bookFirstCarRentalToday": "Book your first car rental today",
@@ -16461,6 +16463,8 @@
     "questionsEmail": "Questions? Email us at"
   },
   "GuestBookingsList": {
+    "activeTripBanner": "Active Trip",
+    "returnBy": "Return by",
     "loadingBookings": "Loading your bookings...",
     "myRentalBookings": "My Rental Bookings",
     "viewAndManage": "View and manage all your car rental reservations",

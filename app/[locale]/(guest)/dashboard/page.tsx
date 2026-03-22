@@ -186,6 +186,7 @@ interface RentalBooking {
   endDate: string
   startTime?: string
   status: string
+  tripStartedAt?: string | null
   verificationStatus?: string
   totalAmount: number
   paymentType?: string | null
@@ -364,6 +365,15 @@ export default function GuestDashboard() {
   // Unified data hook
   const { data: dashboardData, loading: dashboardLoading, error: dashboardError, refetch: refetchDashboard } = useDashboard()
 
+  // Dismissed trip banners
+  const [dismissedTripIds, setDismissedTripIds] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set()
+    try {
+      const keys = Object.keys(localStorage).filter(k => k.startsWith('dismissed_trip_') && localStorage.getItem(k) === 'true')
+      return new Set(keys.map(k => k.replace('dismissed_trip_', '')))
+    } catch { return new Set() }
+  })
+
   // Secure account banner state
   const [hasPassword, setHasPassword] = useState<boolean | null>(null)
 
@@ -541,6 +551,7 @@ export default function GuestDashboard() {
           endDate: b.endDate,
           startTime: b.startTime || '10:00',
           status: b.status,
+          tripStartedAt: b.tripStartedAt || null,
           verificationStatus: b.verificationStatus,
           totalAmount: b.totalAmount,
           paymentType: b.paymentType || null,
@@ -814,6 +825,34 @@ export default function GuestDashboard() {
             return `${t('goodEvening')}, ${userName.split(' ')[0]}!`
           })()}
         </h1>
+
+        {/* Active Trip Banner — one-time, dismissed on click or X */}
+        {state.rentalBookings?.filter((b: any) => b.status === 'ACTIVE' && !dismissedTripIds.has(b.id)).map((b: any) => (
+          <div key={`trip-banner-${b.id}`} className="-mx-2 sm:mx-0 mb-3">
+            <div className="bg-green-600 text-white rounded-lg px-4 py-3 flex items-center gap-3">
+              <button
+                onClick={() => { localStorage.setItem(`dismissed_trip_${b.id}`, 'true'); setDismissedTripIds(prev => new Set(prev).add(b.id)); router.push(`/rentals/dashboard/bookings/${b.id}`); }}
+                className="flex items-center gap-3 flex-1 min-w-0 text-left"
+              >
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white">{t('activeTripBanner')}</p>
+                  <p className="text-xs text-white/80 truncate">
+                    {b.car?.year} {b.car?.make} {b.car?.model} — {t('returnBy')} {new Date(b.endDate.split('T')[0] + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </p>
+                </div>
+              </button>
+              <button
+                onClick={() => { localStorage.setItem(`dismissed_trip_${b.id}`, 'true'); setDismissedTripIds(prev => new Set(prev).add(b.id)); }}
+                className="text-white/70 hover:text-white p-1 flex-shrink-0"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+          </div>
+        ))}
 
         {/* Profile Card */}
         <ProfileCard

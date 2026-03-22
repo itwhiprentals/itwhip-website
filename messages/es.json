@@ -975,6 +975,8 @@
     "claimsAwaitingResponse": "Tienes reclamos esperando tu respuesta. Por favor responde dentro de 48 horas para evitar restricciones en la cuenta.",
     "viewPendingClaims": "Ver Reclamos Pendientes",
     "activeNow": "Activo Ahora",
+    "activeTripBanner": "Viaje Activo",
+    "returnBy": "Devolver antes del",
     "upcoming": "Próximos",
     "noUpcomingTrips": "No hay viajes próximos",
     "bookFirstCarRentalToday": "Reserva tu primera renta de auto hoy",
@@ -16490,6 +16492,8 @@
     "questionsEmail": "¿Preguntas? Escríbenos a"
   },
   "GuestBookingsList": {
+    "activeTripBanner": "Viaje Activo",
+    "returnBy": "Devolver antes del",
     "loadingBookings": "Cargando tus reservas...",
     "myRentalBookings": "Mis Reservas de Alquiler",
     "viewAndManage": "Ve y administra todas tus reservas de alquiler de autos",

@@ -72,6 +72,14 @@ export default function TripEndPage() {
 
   useEffect(() => {
     if (sync.loading) return
+
+    // Trip ended on another platform → navigate to booking detail
+    if (sync.booking?.tripEndedAt || sync.booking?.status === 'COMPLETED') {
+      console.log('[EndTripSync] Trip ended on another platform → redirecting to booking detail')
+      router.replace(`/rentals/dashboard/bookings/${bookingId}?tripEnded=true`)
+      return
+    }
+
     if (sync.step > currentStep) {
       console.log('[EndTripSync] Server ahead:', sync.step, '> local:', currentStep)
       if (sync.photos) setTripData(prev => ({ ...prev, photos: sync.photos! }))
@@ -81,6 +89,7 @@ export default function TripEndPage() {
     }
     if (sync.booking && !booking) setBooking(sync.booking)
   }, [sync.step, sync.loading])
+
 
   // Recalculate charges whenever odometer + fuel are both available
   // (covers sync from app, page resume, and manual entry)
@@ -276,6 +285,13 @@ export default function TripEndPage() {
           method: 'PATCH', credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fuelLevelEnd: tripData.fuelLevel }),
+        }).catch(() => {})
+      }
+      if (currentStep >= 3) {
+        fetch(`/api/rentals/bookings/${bookingId}/trip/wizard-step`, {
+          method: 'PATCH', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ step: currentStep + 1 }),
         }).catch(() => {})
       }
 

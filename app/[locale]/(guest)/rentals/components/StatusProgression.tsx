@@ -102,12 +102,12 @@ export default function StatusProgression({
     },
     {
       name: isOnHold ? t('stepOnHold') : hasPendingCharges ? t('stepCharges') : t('stepConfirmed'),
-      complete: isConfirmed && !hasPendingCharges && !isOnHold && !isNoShow,
+      complete: (isConfirmed || isActive) && !hasPendingCharges && !isOnHold && !isNoShow,
       active: false,
       description: isOnHold ? t('awaitingDocs') :
                    hasPendingCharges ? t('processingFinalCharges') :
-                   (isConfirmed && isHandoffDone) ? t('handoffComplete') :
-                   isConfirmed ? t('paymentSuccessful') :
+                   (isActive && isHandoffDone) ? t('handoffComplete') :
+                   (isConfirmed || isActive) ? t('paymentSuccessful') :
                    paymentFailed ? t('paymentFailed') : t('processingPayment'),
       error: isOnHold || paymentFailed || isNoShow
     },

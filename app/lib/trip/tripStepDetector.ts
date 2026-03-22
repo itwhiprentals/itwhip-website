@@ -45,5 +45,9 @@ export function detectTripStep(booking: any, type: 'start' | 'end'): TripStepSta
     return { step: 1, photos, odometer: null, fuel }
   if (fuel === null)
     return { step: 2, photos, odometer, fuel: null }
+  // Steps 3+ (Charges, Disputes, Confirm) tracked via endTripWizardStep
+  const wizardStep = Number(booking.endTripWizardStep)
+  if (wizardStep > 3 && !isNaN(wizardStep))
+    return { step: wizardStep, photos, odometer, fuel }
   return { step: 3, photos, odometer, fuel }
 }

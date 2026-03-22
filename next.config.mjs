@@ -6,6 +6,9 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts')
 const nextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
+  experimental: {
+    turbopackFileSystemCacheForDev: false,
+  },
   // Allow phones on local network to access dev server (for VIN scanning)
   // Allow phones on local network — use .local hostname + common IP ranges
   allowedDevOrigins: [
@@ -14,6 +17,7 @@ const nextConfig = {
     '10.166.1.72',
     '10.166.1.73',
     '10.166.1.74',
+    '10.168.0.91',
     '192.168.1.1',
     '192.168.0.1',
   ],

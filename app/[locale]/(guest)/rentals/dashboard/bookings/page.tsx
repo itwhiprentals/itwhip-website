@@ -14,7 +14,9 @@ import {
  IoFilterOutline,
  IoCalendarOutline,
  IoSearchOutline,
- IoArrowBackOutline
+ IoArrowBackOutline,
+ IoFlashOutline,
+ IoCloseCircleOutline
 } from 'react-icons/io5'
 
 interface RentalBooking {
@@ -34,6 +36,8 @@ interface RentalBooking {
  endDate: string
  numberOfDays: number
  status: string
+ tripStatus?: string
+ tripStartedAt?: string
  verificationStatus?: string
  totalAmount: number
  createdAt: string
@@ -188,6 +192,26 @@ export default function BookingsListPage() {
      </div>
 
      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+       {/* Active Trip Banner */}
+       {bookings.filter(b => b.status === 'ACTIVE' && b.tripStartedAt).map(b => (
+         <button
+           key={`trip-${b.id}`}
+           onClick={() => router.push(`/rentals/dashboard/bookings/${b.id}`)}
+           className="w-full mb-4 bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-3 flex items-center gap-3 transition-colors text-left"
+         >
+           <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+             <IoFlashOutline className="w-4 h-4" />
+           </div>
+           <div className="flex-1 min-w-0">
+             <p className="text-sm font-semibold">{t('activeTripBanner')}</p>
+             <p className="text-xs text-white/80 truncate">
+               {b.car.year} {b.car.make} {b.car.model} — {t('returnBy')} {new Date(b.endDate.split('T')[0] + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+             </p>
+           </div>
+           <IoCarSportOutline className="w-5 h-5 text-white/70 flex-shrink-0" />
+         </button>
+       ))}
+
        {/* Search and Filters */}
        <div className="space-y-4 mb-6">
          {/* Search Bar */}

@@ -42,6 +42,17 @@ export function useTripSync(
         if (type === 'start' && b.tripStartedAt) { stoppedRef.current = true; return }
         if (type === 'end' && b.tripEndedAt) { stoppedRef.current = true; return }
 
+        // For end trip: fetch wizard step from dedicated endpoint (bypasses user-bookings cache)
+        if (type === 'end') {
+          try {
+            const wsRes = await fetch(`/api/rentals/bookings/${bookingId}/trip/wizard-step`, { credentials: 'include' })
+            if (wsRes.ok) {
+              const wsData = await wsRes.json()
+              if (wsData.step != null) b.endTripWizardStep = Number(wsData.step)
+            }
+          } catch {}
+        }
+
         const detected = detectTripStep(b, type)
         setState(detected)
       } catch {

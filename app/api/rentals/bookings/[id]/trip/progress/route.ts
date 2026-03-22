@@ -87,6 +87,12 @@ export async function PATCH(
       updateData.fuelLevelEnd = body.fuelLevelEnd
     }
 
+    // Wizard step — quantum sync (Charges/Disputes/Confirm)
+    if (body.endTripWizardStep != null) {
+      const ws = Number(body.endTripWizardStep)
+      if (!isNaN(ws)) updateData.endTripWizardStep = ws
+    }
+
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
     }

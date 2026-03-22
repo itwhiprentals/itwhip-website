@@ -1698,6 +1698,7 @@ model RentalBooking {
   fuelLevelEnd               String?
   inspectionPhotosStart      String?
   inspectionPhotosEnd        String?
+  endTripWizardStep          Int?
   damageReported             Boolean               @default(false)
   damageDescription          String?
   damagePhotos               String?

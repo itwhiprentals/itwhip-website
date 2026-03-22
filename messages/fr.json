@@ -975,6 +975,8 @@
     "claimsAwaitingResponse": "Vous avez des réclamations en attente de votre réponse. Veuillez répondre dans les 48 heures pour éviter les restrictions de compte.",
     "viewPendingClaims": "Voir les réclamations en attente",
     "activeNow": "Actif maintenant",
+    "activeTripBanner": "Trajet en cours",
+    "returnBy": "Retour avant le",
     "upcoming": "À venir",
     "noUpcomingTrips": "Aucun trajet à venir",
     "bookFirstCarRentalToday": "Réservez votre première location de voiture aujourd'hui",
@@ -16490,6 +16492,8 @@
     "questionsEmail": "Des questions ? Écrivez-nous à"
   },
   "GuestBookingsList": {
+    "activeTripBanner": "Trajet en cours",
+    "returnBy": "Retour avant le",
     "loadingBookings": "Chargement de vos réservations...",
     "myRentalBookings": "Mes Réservations de Location",
     "viewAndManage": "Consultez et gérez toutes vos réservations de location de voitures",

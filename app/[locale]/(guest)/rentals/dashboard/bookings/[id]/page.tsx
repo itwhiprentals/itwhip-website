@@ -56,7 +56,7 @@ export default function BookingDetailsPage() {
   const [hasPassword, setHasPassword] = useState<boolean | null>(null)
   const [previousStatus, setPreviousStatus] = useState<string | null>(null)
   const [endTripRedirectChecked, setEndTripRedirectChecked] = useState(false)
-  const [activeTripBannerDismissed, setActiveTripBannerDismissed] = useState(false)
+  // Active trip banner moved to main dashboard — no longer shown here
 
   // Messages state
   const [messages, setMessages] = useState<Message[]>([])
@@ -69,6 +69,7 @@ export default function BookingDetailsPage() {
   const [toast, setToast] = useState<{message: string, type: 'success' | 'info'} | null>(null)
 
   // ✅ FIXED: Load booking data - removed booking from dependencies
+  const endTripRedirectingRef = useRef(false)
   const loadBooking = useCallback(async () => {
     try {
       const response = await fetch(`/api/rentals/user-bookings?bookingId=${bookingId}`)
@@ -76,7 +77,7 @@ export default function BookingDetailsPage() {
         const data = await response.json()
         if (data.bookings && data.bookings.length > 0) {
           const newBooking = data.bookings[0]
-          
+
           // ✅ FIXED: Use functional update to avoid dependency on booking
           setBooking(prevBooking => {
             // Check for status change
@@ -88,6 +89,21 @@ export default function BookingDetailsPage() {
             }
             return newBooking
           })
+
+          // Quantum sync: if trip is active, check for drop-off notification
+          // (auto-redirect to end trip wizard if started on another platform)
+          if (newBooking.tripStartedAt && !newBooking.tripEndedAt && !endTripRedirectingRef.current) {
+            try {
+              const hsRes = await fetch(`/api/rentals/bookings/${bookingId}/handoff/status`, { credentials: 'include' })
+              if (hsRes.ok) {
+                const hsData = await hsRes.json()
+                if (hsData.dropoffNotification) {
+                  endTripRedirectingRef.current = true
+                  router.replace(`/rentals/trip/end/${bookingId}`)
+                }
+              }
+            } catch { /* non-blocking */ }
+          }
         }
       }
     } catch (error) {
@@ -96,7 +112,7 @@ export default function BookingDetailsPage() {
     } finally {
       setLoading(false)
     }
-  }, [bookingId]) // ✅ Only bookingId in dependencies
+  }, [bookingId, router]) // ✅ Only bookingId + router in dependencies
 
   // Load messages for this booking
   const loadMessages = useCallback(async () => {
@@ -348,7 +364,7 @@ export default function BookingDetailsPage() {
 
     const startPolling = () => {
       if (!bookingInterval) {
-        bookingInterval = setInterval(loadBooking, 30000) // 30s
+        bookingInterval = setInterval(loadBooking, 5000) // 5s for quantum sync
       }
     }
     const stopPolling = () => {
@@ -378,45 +394,13 @@ export default function BookingDetailsPage() {
     }
   }, [bookingId]) // ✅ Only bookingId, loadBooking is stable now
 
-  // Auto-redirect to end trip page if guest already notified host
+  // Mark end-trip redirect as checked once booking loads
+  // (actual redirect logic is in loadBooking poll)
   useEffect(() => {
-    // Don't mark checked until booking is loaded — prevents premature render
-    if (!booking) return
-    if (!booking.tripStartedAt || booking.tripEndedAt) {
-      setEndTripRedirectChecked(true)
-      return
-    }
-
-    let cancelled = false
-    ;(async () => {
-      try {
-        const res = await fetch(`/api/rentals/bookings/${bookingId}/handoff/status`, {
-          credentials: 'include',
-        })
-        if (!res.ok || cancelled) {
-          if (!cancelled) setEndTripRedirectChecked(true)
-          return
-        }
-        const data = await res.json()
-        if (data.dropoffNotification && !cancelled) {
-          router.replace(`/rentals/trip/end/${bookingId}`)
-          return // Don't set checked — we're redirecting
-        }
-      } catch {
-        // Silently fail — show normal booking detail
-      }
-      if (!cancelled) setEndTripRedirectChecked(true)
-    })()
-    return () => { cancelled = true }
+    if (booking) setEndTripRedirectChecked(true)
   }, [booking?.tripStartedAt, booking?.tripEndedAt, bookingId, router])
 
-  // #7 — Check if active trip banner was dismissed
-  useEffect(() => {
-    if (bookingId && typeof window !== 'undefined') {
-      const dismissed = localStorage.getItem(`dismissed_active_trip_${bookingId}`)
-      if (dismissed === 'true') setActiveTripBannerDismissed(true)
-    }
-  }, [bookingId])
+  // Active trip banner moved to main dashboard
 
   // Load and poll messages (skip PENDING unless recruited booking has inline messages)
   // Pauses when tab hidden
@@ -731,31 +715,7 @@ export default function BookingDetailsPage() {
         {/* Secure Account Banner — hidden during active trip */}
         {!isTripActive && <SecureAccountBanner hasPassword={hasPassword} />}
 
-        {/* #7 — Active Trip Banner */}
-        {isTripActive && !activeTripBannerDismissed && (
-          <div className="mb-3 bg-green-600 text-white rounded-lg px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-              </div>
-              <div>
-                <p className="text-sm font-semibold">{t('activeTripBanner')}</p>
-                <p className="text-xs text-white/80">
-                  {booking.car.year} {booking.car.make} {booking.car.model} — {t('returnBy')} {new Date(booking.endDate.split('T')[0] + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                setActiveTripBannerDismissed(true)
-                localStorage.setItem(`dismissed_active_trip_${bookingId}`, 'true')
-              }}
-              className="text-white/70 hover:text-white p-1 flex-shrink-0"
-            >
-              <XCircle className="w-5 h-5" />
-            </button>
-          </div>
-        )}
+        {/* Active trip banner moved to main dashboard */}
 
         {/* Status Progression — ManualBookingProgress for recruited bookings, standard for others */}
         {booking.isRecruitedBooking ? (
