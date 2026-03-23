@@ -73,6 +73,9 @@ export async function GET(request: NextRequest) {
             endDate: true,
             totalAmount: true,
             guestName: true,
+            bookingType: true,
+            fleetStatus: true,
+            hostStatus: true,
             reviewerProfile: {
               select: {
                 id: true,
@@ -438,6 +441,9 @@ export async function GET(request: NextRequest) {
             || b.renter?.image
             || b.renter?.avatar
             || null,
+          hostApproval: b.bookingType === 'MANUAL'
+            ? 'APPROVED'
+            : (b.hostStatus || null),
         })),
         recentReviews: h.reviews.map((r: any) => ({
           id: r.id,

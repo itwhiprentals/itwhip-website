@@ -7,6 +7,7 @@ import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
 import { sendEmail } from '@/app/lib/email/send-email'
 import { getBookingCancelledTemplate } from '@/app/lib/email/templates/booking-cancelled'
+import { logEmail, generateEmailReference } from '@/app/lib/email/config'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
@@ -30,11 +31,19 @@ function getChargeType(charge: {
   return 'OTHER'
 }
 
-async function getPartnerFromToken() {
-  const cookieStore = await cookies()
-  // Accept both partner_token AND hostAccessToken for unified portal
-  const token = cookieStore.get('partner_token')?.value ||
-                cookieStore.get('hostAccessToken')?.value
+async function getPartnerFromToken(request?: NextRequest) {
+  // Check Authorization header first (mobile app)
+  const authHeader = request?.headers.get('authorization')
+  let token: string | undefined
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.substring(7)
+  }
+  // Fall back to cookies (web)
+  if (!token) {
+    const cookieStore = await cookies()
+    token = cookieStore.get('partner_token')?.value ||
+                  cookieStore.get('hostAccessToken')?.value
+  }
 
   if (!token) return null
 
@@ -63,7 +72,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const partner = await getPartnerFromToken()
+    const partner = await getPartnerFromToken(request)
 
     if (!partner) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -289,6 +298,7 @@ export async function GET(
         hostApproval: booking.bookingType === 'MANUAL'
           ? 'APPROVED'
           : (booking.hostStatus || 'PENDING'),
+        fleetStatus: booking.fleetStatus || 'PENDING',
         hostReviewedAt: booking.hostReviewedAt?.toISOString() || null,
         hostNotes: booking.hostNotes || null,
 
@@ -695,7 +705,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const partner = await getPartnerFromToken()
+    const partner = await getPartnerFromToken(request)
 
     if (!partner) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -788,7 +798,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const partner = await getPartnerFromToken()
+    const partner = await getPartnerFromToken(request)
 
     if (!partner) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -890,6 +900,7 @@ export async function DELETE(
         }
 
         const isPending = !wasConfirmed
+        const cancelRefId = generateEmailReference('CA')
         const emailData = {
           to: booking.guestEmail,
           guestName: booking.guestName || 'Valued Customer',
@@ -902,7 +913,8 @@ export async function DELETE(
             : 'Cancelled by rental provider',
           refundAmount: booking.paymentStatus === 'PAID' ? booking.totalAmount.toFixed(2) : undefined,
           refundTimeframe: booking.paymentStatus === 'PAID' ? '5-7 business days'
-            : isPending ? 'The hold on your card will be released within 1-3 business days' : undefined
+            : isPending ? 'The hold on your card will be released within 1-3 business days' : undefined,
+          referenceId: cancelRefId,
         }
 
         const template = getBookingCancelledTemplate(emailData)
@@ -912,8 +924,18 @@ export async function DELETE(
           html: template.html,
           text: template.text
         })
+        // Log email
+        await logEmail({
+          recipientEmail: booking.guestEmail,
+          recipientName: booking.guestName || 'Guest',
+          subject: template.subject,
+          emailType: 'SYSTEM',
+          relatedType: 'BOOKING',
+          relatedId: bookingId,
+          referenceId: cancelRefId,
+        }).catch(() => {})
         emailSent = true
-        console.log(`[Cancel Booking] Cancellation email sent to ${booking.guestEmail}`)
+        console.log(`[Cancel Booking] Cancellation email sent to ${booking.guestEmail} (${cancelRefId})`)
       } catch (emailError) {
         console.error('[Cancel Booking] Failed to send cancellation email:', emailError)
       }

@@ -17,10 +17,19 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2025-08-27.basil' as Stripe.LatestApiVersion,
 })
 
-async function getPartnerFromToken() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('partner_token')?.value ||
-                cookieStore.get('hostAccessToken')?.value
+async function getPartnerFromToken(request?: NextRequest) {
+  // Check Authorization header first (mobile app)
+  const authHeader = request?.headers.get('authorization')
+  let token: string | undefined
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.substring(7)
+  }
+  // Fall back to cookies (web)
+  if (!token) {
+    const cookieStore = await cookies()
+    token = cookieStore.get('partner_token')?.value ||
+                  cookieStore.get('hostAccessToken')?.value
+  }
 
   if (!token) return null
 
@@ -44,7 +53,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const partner = await getPartnerFromToken()
+    const partner = await getPartnerFromToken(request)
     if (!partner) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
