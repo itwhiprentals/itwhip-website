@@ -138,6 +138,10 @@ export async function GET(request: NextRequest) {
       where: { hostId: host.id }
     })
 
+    const reviewCount = await prisma.rentalReview.count({
+      where: { hostId: host.id }
+    })
+
     const profile = {
       id: host.id,
       email: host.email,
@@ -156,7 +160,8 @@ export async function GET(request: NextRequest) {
       acceptanceRate: host.acceptanceRate,
       totalTrips: host.totalTrips || totalBookings,
       partnerFleetSize: vehicleCount,
-      rating: host.rating,
+      rating: reviewCount > 0 ? host.rating : null,
+      reviewCount,
       governmentIdUrl: host.governmentIdUrl,
       driversLicenseUrl: host.driversLicenseUrl,
       insuranceDocUrl: host.insuranceDocUrl,

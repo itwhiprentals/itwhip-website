@@ -305,7 +305,7 @@ export async function GET(request: NextRequest) {
       totalCars: h.cars.length,
       activeCars,
       totalTrips: host.totalTrips || completedBookingsCount,
-      rating: host.rating || 0,
+      rating: (h._count?.reviews || 0) > 0 ? (host.rating || 0) : null,
       responseRate: host.responseRate || 0,
       acceptanceRate: host.acceptanceRate || 0,
       totalBookings: h._count?.bookings || allBookingStats.length,
