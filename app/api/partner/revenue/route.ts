@@ -293,6 +293,11 @@ export async function GET(request: NextRequest) {
         period,
         welcomeDiscountBookings,
         defaultCommissionRate,
+        // Host balance fields for payout summary
+        currentBalance: partner.currentBalance || 0,
+        pendingBalance: partner.pendingBalance || 0,
+        holdBalance: partner.holdBalance || 0,
+        totalEarnings: partner.totalEarnings || 0,
       }
     })
 
