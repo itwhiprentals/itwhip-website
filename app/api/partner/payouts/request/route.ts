@@ -185,15 +185,35 @@ export async function GET(request: NextRequest) {
     const available = balance.available.find(b => b.currency === 'usd')?.amount || 0
     const pending = balance.pending.find(b => b.currency === 'usd')?.amount || 0
 
-    // Check for debit card (instant payout eligibility)
-    let hasDebitCard = false
+    // Get external accounts from Stripe (bank accounts + debit cards)
+    let bankAccount: any = null
+    let debitCard: any = null
     try {
       const externalAccounts = await stripe.accounts.listExternalAccounts(
         partner.stripeConnectAccountId,
-        { object: 'card', limit: 1 }
+        { limit: 10 }
       )
-      hasDebitCard = externalAccounts.data.length > 0
+      for (const acct of externalAccounts.data) {
+        if (acct.object === 'bank_account' && !bankAccount) {
+          bankAccount = {
+            last4: (acct as any).last4,
+            bankName: (acct as any).bank_name,
+            type: (acct as any).account_holder_type || 'checking',
+          }
+        }
+        if (acct.object === 'card' && !debitCard) {
+          debitCard = {
+            last4: (acct as any).last4,
+            brand: (acct as any).brand,
+            expMonth: (acct as any).exp_month,
+            expYear: (acct as any).exp_year,
+          }
+        }
+      }
     } catch {}
+
+    const hasDebitCard = !!debitCard
+    const hasBankAccount = !!bankAccount
 
     return NextResponse.json({
       eligible: available >= MIN_PAYOUT * 100,
@@ -202,8 +222,11 @@ export async function GET(request: NextRequest) {
         pending: pending / 100,
       },
       instantEligible: hasDebitCard && available >= MIN_PAYOUT * 100,
-      standardEligible: available >= MIN_PAYOUT * 100,
+      standardEligible: hasBankAccount && available >= MIN_PAYOUT * 100,
       hasDebitCard,
+      hasBankAccount,
+      bankAccount,
+      debitCard,
       instantFeeRate: INSTANT_FEE_RATE,
       minPayout: MIN_PAYOUT,
     })
