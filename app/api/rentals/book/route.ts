@@ -258,6 +258,9 @@ export async function POST(request: NextRequest) {
             depositAmount: true,
             requireDeposit: true,
             makeDeposits: true,
+            currentCommissionRate: true,
+            welcomeDiscountUsed: true,
+            hostType: true,
           }
         },
         
@@ -905,6 +908,12 @@ export async function POST(request: NextRequest) {
           paymentStatus: 'AUTHORIZED' as any,
           fleetStatus: 'PENDING',
           paymentIntentId: stripePaymentIntentId || bookingData.paymentIntentId,
+
+          // Commission — lock rate at booking time so tier changes don't retroactively affect
+          platformFeeRate: (car.host.hostType === 'EXTERNAL' && !car.host.welcomeDiscountUsed)
+            ? 0.10  // Welcome partner discount (first booking = 10%)
+            : (car.host.currentCommissionRate || 0.25),
+          isWelcomeDiscount: car.host.hostType === 'EXTERNAL' && !car.host.welcomeDiscountUsed,
           
           // ========== STRIPE FIELDS ==========
           stripeCustomerId: stripeCustomerId,
