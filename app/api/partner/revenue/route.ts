@@ -234,15 +234,27 @@ export async function GET(request: NextRequest) {
       take: 10
     })
 
-    const recentPayouts = payouts.map(p => ({
-      id: p.id,
-      period: p.period,
-      amount: p.netAmount,
-      grossRevenue: p.grossRevenue,
-      commission: p.commission,
-      status: p.status.toLowerCase(),
-      paidAt: p.paidAt?.toISOString() || null,
-      stripePayoutId: p.stripePayoutId
+    // Resolve booking IDs for each payout
+    const recentPayouts = await Promise.all(payouts.map(async (p) => {
+      let bookingId: string | null = null
+      if (p.period) {
+        const booking = await prisma.rentalBooking.findFirst({
+          where: { OR: [{ bookingCode: p.period }, { id: { startsWith: p.period.replace('Booking ', '') } }] },
+          select: { id: true }
+        })
+        bookingId = booking?.id || null
+      }
+      return {
+        id: p.id,
+        period: p.period,
+        bookingId,
+        amount: p.netAmount,
+        grossRevenue: p.grossRevenue,
+        commission: p.commission,
+        status: p.status.toLowerCase(),
+        paidAt: p.paidAt?.toISOString() || null,
+        stripePayoutId: p.stripePayoutId
+      }
     }))
 
     // Get tier info
