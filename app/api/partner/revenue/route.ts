@@ -273,10 +273,22 @@ export async function GET(request: NextRequest) {
           isWelcomeDiscount = booking.isWelcomeDiscount || false
         }
       }
+      // Compute display status from RentalPayout eligibleAt
+      let displayStatus = p.status.toLowerCase()
+      let eligibleAt: string | null = null
+      if (bookingId) {
+        const rentalPayout = await prisma.rentalPayout.findFirst({ where: { bookingId }, select: { eligibleAt: true } })
+        eligibleAt = rentalPayout?.eligibleAt?.toISOString() || null
+        if (displayStatus === 'pending' && rentalPayout?.eligibleAt && rentalPayout.eligibleAt <= new Date()) {
+          displayStatus = 'available'
+        }
+      }
+
       return {
         id: p.id, period: p.period, bookingId,
         amount: p.netAmount, grossRevenue: p.grossRevenue, commission: p.commission,
-        status: p.status.toLowerCase(), paidAt: p.paidAt?.toISOString() || null, stripePayoutId: p.stripePayoutId,
+        status: displayStatus, paidAt: p.paidAt?.toISOString() || null, stripePayoutId: p.stripePayoutId,
+        eligibleAt,
         car, guestName, startDate, endDate, numberOfDays, dailyRate, subtotal, deliveryFee, platformFeeRate, paymentType, isWelcomeDiscount
       }
     }))
