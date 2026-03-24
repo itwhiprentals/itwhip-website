@@ -241,32 +241,53 @@ export async function POST(request: NextRequest) {
  * Returns status without processing
  */
 export async function GET(request: NextRequest) {
-  // Check for admin authorization (optional - implement your auth)
+  // Vercel crons call GET — run the same payout processing as POST
   const authHeader = request.headers.get('authorization')
   const expectedAuth = `Bearer ${process.env.CRON_SECRET}`
-  
-  if (authHeader !== expectedAuth) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    )
+  const cronSecret = process.env.CRON_SECRET || 'itwhip-cron-secret-2024'
+
+  // Vercel crons don't send Bearer — check multiple auth methods
+  const isVercelCron = request.headers.get('x-vercel-cron') === '1'
+  const hasSecret = authHeader === expectedAuth || authHeader === `Bearer ${cronSecret}`
+
+  if (!isVercelCron && !hasSecret) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Get count of pending payouts
+  console.log('[Cron GET] Starting payout processing (triggered by Vercel cron)...')
+
+  try {
+    const result = await processEligiblePayouts()
+    console.log('[Cron GET] Payout processing complete:', result)
+
+    // Log activity
+    try {
+      await prisma.activityLog.create({
+        data: {
+          id: crypto.randomUUID(),
+          action: 'CRON_PAYOUT_PROCESSED',
+          entityType: 'SYSTEM',
+          entityId: 'cron-payout',
+          category: 'FINANCIAL',
+          adminId: 'system',
+          newValue: JSON.stringify({ ...result, trigger: 'vercel-cron-GET' })
+        }
+      })
+    } catch {}
+
+    return NextResponse.json({ success: true, ...result })
+  } catch (error: any) {
+    console.error('[Cron GET] Payout processing failed:', error)
+    return NextResponse.json({ error: 'Payout processing failed', details: error.message }, { status: 500 })
+  }
+
+  // Fallback: status check (unreachable but kept for reference)
   const pendingCount = await prisma.rentalPayout.count({
-    where: {
-      status: 'PENDING',
-      eligibleAt: { lte: new Date() }
-    }
+    where: { status: 'PENDING', eligibleAt: { lte: new Date() } }
   })
-
   const upcomingCount = await prisma.rentalPayout.count({
-    where: {
-      status: 'PENDING',
-      eligibleAt: { gt: new Date() }
-    }
+    where: { status: 'PENDING', eligibleAt: { gt: new Date() } }
   })
-
   return NextResponse.json({
     status: 'Payout cron endpoint is active',
     pendingEligible: pendingCount,
