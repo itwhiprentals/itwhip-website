@@ -5,23 +5,27 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 import { nanoid } from 'nanoid'
-import Stripe from 'stripe'
 import { prisma } from '@/app/lib/database/prisma'
 import { sendEmail } from '@/app/lib/email/send-email'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil'
-})
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
 )
 
 // Get partner from token
-async function getPartner() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('partner_token')?.value ||
-                cookieStore.get('hostAccessToken')?.value
+async function getPartner(request?: NextRequest) {
+  // Check Authorization header first (mobile app)
+  const authHeader = request?.headers.get('authorization')
+  let token: string | undefined
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.substring(7)
+  }
+  // Fall back to cookies (web)
+  if (!token) {
+    const cookieStore = await cookies()
+    token = cookieStore.get('partner_token')?.value ||
+                  cookieStore.get('hostAccessToken')?.value
+  }
 
   if (!token) return null
 
@@ -50,7 +54,7 @@ async function getPartner() {
 // POST - Send verification link to customer/driver
 export async function POST(request: NextRequest) {
   try {
-    const partner = await getPartner()
+    const partner = await getPartner(request)
     if (!partner) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -128,67 +132,40 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Create return URL based on purpose
+    // Create verification request (Stripe session deferred to guest click)
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'
-    const returnUrl = bookingId
-      ? `${baseUrl}/booking/${bookingId}?verified=true`
-      : `${baseUrl}/verification-complete?partner=${partner.id}`
+    const requestId = crypto.randomUUID()
+    const verifyPageUrl = `${baseUrl}/verify/${requestId}`
 
-    // Create verification session
-    const verificationSession = await stripe.identity.verificationSessions.create({
-      type: 'document',
-      provided_details: {
-        email
-      },
-      options: {
-        document: {
-          require_matching_selfie: true,
-          allowed_types: ['driving_license']
+    // Track the verification request — Stripe session created when guest clicks
+    try {
+      await prisma.partnerVerificationRequest.create({
+        data: {
+          id: requestId,
+          partnerId: partner.id,
+          guestId: guestProfile.id,
+          email,
+          name,
+          phone: phone || null,
+          purpose,
+          bookingId: bookingId || null,
+          stripeSessionId: '', // Will be set when guest clicks verify
+          verificationUrl: verifyPageUrl,
+          status: 'not_started',
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 day expiry
         }
-      },
-      return_url: returnUrl,
-      metadata: {
-        profileId: guestProfile.id,
-        partnerId: partner.id,
-        partnerName: partner.partnerCompanyName || partner.name || '',
-        purpose,
-        bookingId: bookingId || '',
-        email,
-        sentBy: 'partner'
-      }
-    })
+      })
+    } catch (err) {
+      console.error('[Partner Verify] Failed to create verification request:', err)
+    }
 
-    // Update guest profile with session
+    // Update guest profile status
     await prisma.reviewerProfile.update({
       where: { id: guestProfile.id },
       data: {
-        stripeIdentitySessionId: verificationSession.id,
-        stripeIdentityStatus: 'pending'
+        stripeIdentityStatus: 'not_started'
       }
     })
-
-    // Track the verification request
-    try {
-      if (prisma.partnerVerificationRequest) {
-        await prisma.partnerVerificationRequest.create({
-          data: {
-            id: crypto.randomUUID(),
-            partnerId: partner.id,
-            guestId: guestProfile.id,
-            email,
-            name,
-            purpose,
-            bookingId: bookingId || null,
-            stripeSessionId: verificationSession.id,
-            status: 'pending',
-            verificationUrl: verificationSession.url!
-          }
-        })
-      }
-    } catch {
-      // Table may not exist yet - that's okay
-      console.log('[Partner Verify] PartnerVerificationRequest table not found, skipping tracking')
-    }
 
     // Log activity
     try {
@@ -237,7 +214,7 @@ export async function POST(request: NextRequest) {
               </p>
 
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${verificationSession.url}"
+                <a href="${verifyPageUrl}"
                    style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
                   Complete Verification
                 </a>
@@ -268,7 +245,7 @@ export async function POST(request: NextRequest) {
             </div>
           </div>
         `,
-        text: `Hi ${name},\n\n${partnerName} has requested identity verification for your ${purposeText}.\n\nPlease complete your verification by visiting this link:\n${verificationSession.url}\n\nYou'll need your driver's license and about 2 minutes to complete this process.\n\nIf you didn't request this verification, please ignore this email.\n\nPowered by ItWhip`
+        text: `Hi ${name},\n\n${partnerName} has requested identity verification for your ${purposeText}.\n\nPlease complete your verification by visiting this link:\n${verifyPageUrl}\n\nYou'll need your driver's license and about 2 minutes to complete this process.\n\nIf you didn't request this verification, please ignore this email.\n\nPowered by ItWhip`
       })
       emailSent = true
       console.log(`[Partner Verify] Email sent to ${email}`)
@@ -278,8 +255,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      sessionId: verificationSession.id,
-      verificationUrl: verificationSession.url,
+      requestId,
+      verificationUrl: verifyPageUrl,
       guestId: guestProfile.id,
       emailSent,
       message: emailSent
@@ -297,9 +274,9 @@ export async function POST(request: NextRequest) {
 }
 
 // GET - Get verification requests for partner
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const partner = await getPartner()
+    const partner = await getPartner(request)
     if (!partner) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
