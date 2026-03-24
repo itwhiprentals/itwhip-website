@@ -234,26 +234,50 @@ export async function GET(request: NextRequest) {
       take: 10
     })
 
-    // Resolve booking IDs for each payout
+    // Resolve booking details for each payout (car photo, guest, dates)
     const recentPayouts = await Promise.all(payouts.map(async (p) => {
       let bookingId: string | null = null
+      let car: any = null
+      let guestName: string | null = null
+      let startDate: string | null = null
+      let endDate: string | null = null
+      let numberOfDays: number | null = null
+      let dailyRate: number | null = null
+      let subtotal: number | null = null
+      let deliveryFee: number | null = null
+      let platformFeeRate: number | null = null
+      let paymentType: string | null = null
+      let isWelcomeDiscount = false
+
       if (p.period) {
         const booking = await prisma.rentalBooking.findFirst({
           where: { OR: [{ bookingCode: p.period }, { id: { startsWith: p.period.replace('Booking ', '') } }] },
-          select: { id: true }
+          select: {
+            id: true, bookingCode: true, guestName: true, startDate: true, endDate: true, numberOfDays: true,
+            dailyRate: true, subtotal: true, deliveryFee: true, platformFeeRate: true, paymentType: true, isWelcomeDiscount: true,
+            car: { select: { make: true, model: true, year: true, photos: { select: { url: true }, orderBy: { order: 'asc' }, take: 1 } } }
+          }
         })
-        bookingId = booking?.id || null
+        if (booking) {
+          bookingId = booking.id
+          car = booking.car ? { year: booking.car.year, make: booking.car.make, model: booking.car.model, photo: booking.car.photos?.[0]?.url || null } : null
+          guestName = booking.guestName
+          startDate = booking.startDate?.toISOString() || null
+          endDate = booking.endDate?.toISOString() || null
+          numberOfDays = booking.numberOfDays
+          dailyRate = Number(booking.dailyRate) || null
+          subtotal = Number(booking.subtotal) || null
+          deliveryFee = Number(booking.deliveryFee) || null
+          platformFeeRate = booking.platformFeeRate ? Number(booking.platformFeeRate) : null
+          paymentType = booking.paymentType
+          isWelcomeDiscount = booking.isWelcomeDiscount || false
+        }
       }
       return {
-        id: p.id,
-        period: p.period,
-        bookingId,
-        amount: p.netAmount,
-        grossRevenue: p.grossRevenue,
-        commission: p.commission,
-        status: p.status.toLowerCase(),
-        paidAt: p.paidAt?.toISOString() || null,
-        stripePayoutId: p.stripePayoutId
+        id: p.id, period: p.period, bookingId,
+        amount: p.netAmount, grossRevenue: p.grossRevenue, commission: p.commission,
+        status: p.status.toLowerCase(), paidAt: p.paidAt?.toISOString() || null, stripePayoutId: p.stripePayoutId,
+        car, guestName, startDate, endDate, numberOfDays, dailyRate, subtotal, deliveryFee, platformFeeRate, paymentType, isWelcomeDiscount
       }
     }))
 
