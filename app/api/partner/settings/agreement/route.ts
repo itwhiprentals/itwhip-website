@@ -17,11 +17,20 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 })
 
-async function getCurrentHost() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('partner_token')?.value
-    || cookieStore.get('hostAccessToken')?.value
-    || cookieStore.get('accessToken')?.value
+async function getCurrentHost(request?: NextRequest) {
+  // Check Authorization header first (mobile app)
+  const authHeader = request?.headers.get('authorization')
+  let token: string | undefined
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.substring(7)
+  }
+  // Fall back to cookies (web)
+  if (!token) {
+    const cookieStore = await cookies()
+    token = cookieStore.get('partner_token')?.value
+      || cookieStore.get('hostAccessToken')?.value
+      || cookieStore.get('accessToken')?.value
+  }
 
   if (!token) return null
 
@@ -38,9 +47,9 @@ async function getCurrentHost() {
 }
 
 // GET — Return current agreement preference + uploaded agreement info
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const host = await getCurrentHost()
+    const host = await getCurrentHost(request)
     if (!host) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -65,7 +74,7 @@ export async function GET() {
 // PUT — Update agreement preference
 export async function PUT(request: NextRequest) {
   try {
-    const host = await getCurrentHost()
+    const host = await getCurrentHost(request)
     if (!host) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -94,7 +103,7 @@ export async function PUT(request: NextRequest) {
 // POST — Upload agreement PDF with AI validation
 export async function POST(request: NextRequest) {
   try {
-    const host = await getCurrentHost()
+    const host = await getCurrentHost(request)
     if (!host) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -216,7 +225,7 @@ export async function POST(request: NextRequest) {
 // DELETE — Remove uploaded agreement
 export async function DELETE() {
   try {
-    const host = await getCurrentHost()
+    const host = await getCurrentHost(request)
     if (!host) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
