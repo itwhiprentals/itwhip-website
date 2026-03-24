@@ -211,14 +211,16 @@ export async function GET(request: NextRequest) {
       vehicleRevenue.map(async (v) => {
         const car = await prisma.rentalCar.findUnique({
           where: { id: v.carId },
-          select: { make: true, model: true, year: true }
+          select: { make: true, model: true, year: true, photos: { select: { url: true, isHero: true }, orderBy: { order: 'asc' }, take: 1 } }
         })
+        const photo = car?.photos?.[0]?.url || null
         return {
           id: v.carId,
           name: car ? `${car.year} ${car.make} ${car.model}` : 'Unknown Vehicle',
           year: car?.year || null,
           make: car?.make || null,
           model: car?.model || null,
+          photo,
           revenue: v._sum.totalAmount || 0,
           bookings: v._count
         }
