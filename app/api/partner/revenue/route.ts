@@ -146,13 +146,28 @@ export async function GET(request: NextRequest) {
       }
     })
     const pendingGrossRevenue = pendingBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
+    const pendingNetRevenue = pendingBookings.reduce((sum, b) => {
+      const gross = (b.subtotal || 0) + (b.deliveryFee || 0)
+      const rate = b.platformFeeRate ? Number(b.platformFeeRate) : defaultCommissionRate
+      const fee = gross * rate
+      const proc = gross * 0.029 + 0.30
+      return sum + Math.max(0, gross - fee - proc)
+    }, 0)
 
-    // Calculate cash vs Stripe breakdown
+    // Calculate cash vs Stripe breakdown (host earnings, not guest totals)
     const stripeBookings = bookings.filter(b => b.stripeChargeId || b.paymentIntentId)
     const cashBookings = bookings.filter(b => !b.stripeChargeId && !b.paymentIntentId)
 
-    const stripeRevenue = stripeBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
-    const cashRevenue = cashBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
+    const calcHostEarnings = (b: any) => {
+      const gross = (b.subtotal || 0) + (b.deliveryFee || 0)
+      const rate = b.platformFeeRate ? Number(b.platformFeeRate) : defaultCommissionRate
+      const fee = gross * rate
+      const proc = gross * 0.029 + 0.30
+      return Math.max(0, gross - fee - proc)
+    }
+
+    const stripeRevenue = stripeBookings.reduce((sum, b) => sum + calcHostEarnings(b), 0)
+    const cashRevenue = cashBookings.reduce((sum, b) => sum + calcHostEarnings(b), 0)
 
     // Get last 6 months of data
     const monthlyData = []
@@ -290,6 +305,7 @@ export async function GET(request: NextRequest) {
         upcomingBookingsCount: upcomingBookings.length,
         // Pending revenue (awaiting confirmation)
         pendingGrossRevenue,
+        pendingNetRevenue,
         pendingBookingsCount: pendingBookings.length,
         // Cash vs Stripe breakdown
         stripeRevenue,
