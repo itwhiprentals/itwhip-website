@@ -428,7 +428,7 @@ export async function PATCH(request: NextRequest) {
         updateData.fleetStatus = 'REJECTED'
         updateData.verificationStatus = 'REJECTED'
         updateData.status = 'CANCELLED'
-        updateData.paymentStatus = 'CANCELLED'
+        updateData.paymentStatus = 'REFUNDED'
         updateData.cancelledAt = new Date()
         updateData.cancelledBy = 'ADMIN'
         updateData.cancellationReason = reason || notes || 'Rejected by fleet admin'

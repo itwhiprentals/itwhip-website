@@ -261,7 +261,7 @@ export async function POST(
           where: { id: bookingId },
           data: {
             status: 'CANCELLED',
-            paymentStatus: 'CANCELLED' as any,
+            paymentStatus: 'REFUNDED',
             vehicleChangeToken: null,
             vehicleChangeExpiresAt: null,
             cancelledAt: new Date(),

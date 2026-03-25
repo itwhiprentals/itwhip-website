@@ -229,7 +229,7 @@ export async function POST(
           })
           await prisma.rentalBooking.update({
             where: { id: bookingId },
-            data: { paymentStatus: 'CANCELLED' as any }
+            data: { paymentStatus: 'REFUNDED' }
           })
           console.log(`[Cancel Booking] Cancelled PI in ${pi.status} state`)
 

@@ -304,7 +304,7 @@ export async function handleOldBooking(
         cancelledAt: new Date(),
         replacedByBookingId: newBookingId,
         paymentIntentId: null,
-        paymentStatus: 'CANCELLED' as any,
+        paymentStatus: 'REFUNDED',
       }
     })
     console.log(`[CreateFromRequest] Scenario A: Old booking ${ctx.existingBooking.bookingCode} cancelled (payment transferred → ${bookingCode})`)
