@@ -4,15 +4,82 @@ import { prisma } from '@/app/lib/database/prisma'
 import { stripe } from '@/app/lib/stripe/client'
 
 /**
+ * Reconcile pendingBalance for all hosts with PENDING payouts.
+ * Runs at the start of every cron cycle to self-heal balance drift.
+ */
+export async function reconcileHostBalances(): Promise<number> {
+  let fixed = 0
+
+  // Find all hosts that have PENDING payouts OR non-zero pendingBalance
+  const hostsWithPayouts = await prisma.rentalHost.findMany({
+    where: {
+      OR: [
+        { pendingBalance: { gt: 0 } },
+        { rentalPayouts: { some: { status: 'PENDING' } } }
+      ]
+    },
+    select: {
+      id: true,
+      name: true,
+      pendingBalance: true,
+      rentalPayouts: {
+        where: { status: 'PENDING' },
+        select: { amount: true }
+      }
+    }
+  })
+
+  for (const host of hostsWithPayouts) {
+    const actualPending = host.rentalPayouts.reduce((sum, p) => sum + p.amount, 0)
+    const drift = Math.abs(host.pendingBalance - actualPending)
+
+    if (drift > 0.01) {
+      console.log(`[RECONCILE] Balance drift for ${host.name} (${host.id}): recorded=$${host.pendingBalance.toFixed(2)}, actual=$${actualPending.toFixed(2)}, drift=$${drift.toFixed(2)}`)
+
+      await prisma.rentalHost.update({
+        where: { id: host.id },
+        data: { pendingBalance: actualPending }
+      })
+
+      // Log the correction
+      await prisma.activityLog.create({
+        data: {
+          id: crypto.randomUUID(),
+          action: 'BALANCE_RECONCILED',
+          entityType: 'RentalHost',
+          entityId: host.id,
+          metadata: {
+            previousBalance: host.pendingBalance,
+            correctedBalance: actualPending,
+            drift,
+            hostName: host.name,
+            timestamp: new Date()
+          },
+          ipAddress: 'cron-reconcile'
+        }
+      })
+
+      fixed++
+    }
+  }
+
+  if (fixed > 0) {
+    console.log(`[RECONCILE] Fixed ${fixed} host balance(s)`)
+  }
+
+  return fixed
+}
+
+/**
  * Process all eligible payouts
- * 
+ *
  * Finds RentalPayout records that are:
  * - status = 'PENDING'
  * - eligibleAt <= NOW()
  * - Associated booking has tripEndedAt (trip completed)
  * - No active disputes
  * - Host has payoutsEnabled = true
- * 
+ *
  * For each eligible payout, transfers funds via Stripe and updates status
  */
 export async function processEligiblePayouts(): Promise<{
@@ -22,6 +89,13 @@ export async function processEligiblePayouts(): Promise<{
 }> {
   const startTime = Date.now()
   console.log('[Payout Processor] Starting eligible payout processing...')
+
+  // Step 0: Reconcile all host balances before processing
+  try {
+    await reconcileHostBalances()
+  } catch (err) {
+    console.error('[Payout Processor] Balance reconciliation failed (continuing):', err)
+  }
 
   let processed = 0
   let totalAmount = 0
@@ -45,6 +119,7 @@ export async function processEligiblePayouts(): Promise<{
             stripeConnectAccountId: true,
             payoutsEnabled: true,
             stripePayoutsEnabled: true,
+            payoutMode: true,
             pendingBalance: true
           }
         },
@@ -174,6 +249,11 @@ async function isPayoutEligible(
     return { eligible: false, reason: `${disputes} active dispute(s) - extended hold by 7 days`, permanent: false }
   }
 
+  // Check if host uses manual payout mode (they withdraw from Revenue page)
+  if (payout.host.payoutMode === 'manual') {
+    return { eligible: false, reason: 'Manual payout mode — host will request manually', permanent: false }
+  }
+
   // Check if host has payouts enabled
   if (!payout.host.payoutsEnabled) {
     return { eligible: false, reason: 'Host payouts disabled', permanent: true }
@@ -191,11 +271,53 @@ async function isPayoutEligible(
 
   // Verify amount matches host's pending balance
   if (payout.host.pendingBalance < payout.amount) {
-    return { 
-      eligible: false, 
-      reason: `Insufficient pending balance: $${payout.host.pendingBalance.toFixed(2)} < $${payout.amount.toFixed(2)}`,
-      permanent: true 
+    // Self-heal: recalculate from actual PENDING payout records
+    const actualPending = await prisma.rentalPayout.aggregate({
+      where: { hostId: payout.hostId, status: 'PENDING' },
+      _sum: { amount: true }
+    })
+    const correctBalance = actualPending._sum.amount || 0
+
+    // Fix the balance
+    if (Math.abs(correctBalance - payout.host.pendingBalance) > 0.01) {
+      console.log(`[Payout Processor] Self-healing balance for host ${payout.hostId}: $${payout.host.pendingBalance.toFixed(2)} → $${correctBalance.toFixed(2)}`)
+      await prisma.rentalHost.update({
+        where: { id: payout.hostId },
+        data: { pendingBalance: correctBalance }
+      })
     }
+
+    // Retry check with corrected balance
+    if (correctBalance < payout.amount) {
+      // Create admin notification for persistent mismatch
+      try {
+        await prisma.adminNotification.create({
+          data: {
+            type: 'SYSTEM_ALERT',
+            title: `Balance Mismatch - ${payout.host.name || payout.hostId}`,
+            message: `Payout of $${payout.amount.toFixed(2)} skipped: pending balance is $${correctBalance.toFixed(2)} after recalculation. This may indicate a data issue.`,
+            priority: 'HIGH',
+            status: 'UNREAD',
+            actionRequired: true,
+            relatedId: payout.id,
+            relatedType: 'RentalPayout',
+            metadata: {
+              hostId: payout.hostId,
+              payoutAmount: payout.amount,
+              recordedBalance: payout.host.pendingBalance,
+              recalculatedBalance: correctBalance
+            }
+          } as any
+        })
+      } catch {}
+
+      return {
+        eligible: false,
+        reason: `Balance mismatch after recalc: $${correctBalance.toFixed(2)} < $${payout.amount.toFixed(2)}`,
+        permanent: false // NEVER permanently fail on balance issues — retry next cycle
+      }
+    }
+    // Balance was stale but corrected — continue processing
   }
 
   // All checks passed

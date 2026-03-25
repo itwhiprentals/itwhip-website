@@ -2343,6 +2343,7 @@ model RentalHost {
   instantPayoutFeeRate          Float                  @default(0.015)
   minimumPayoutAmount           Float                  @default(50.00)
   payoutMethods                 Json?
+  payoutMode                    String                 @default("automatic") // 'automatic' | 'manual'
   payoutSchedule                String                 @default("weekly")
   payoutsDisabledReason         String?
   payoutsEnabled                Boolean                @default(false)

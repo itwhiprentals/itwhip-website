@@ -96,6 +96,8 @@ export async function GET(request: NextRequest) {
         // GDPR fields
         userStatus: partner.user?.status || 'ACTIVE',
         deletionScheduledFor: partner.user?.deletionScheduledFor || null,
+        // Payout mode
+        payoutMode: partner.payoutMode || 'automatic',
         // Fleet-wide availability defaults
         defaultInstantBook: partner.defaultInstantBook ?? true,
         defaultAdvanceNotice: partner.defaultAdvanceNotice ?? 2,
@@ -161,6 +163,11 @@ export async function PUT(request: NextRequest) {
     if (body.requireDeposit !== undefined) updateData.requireDeposit = body.requireDeposit
     if (body.depositAmount !== undefined) updateData.depositAmount = body.depositAmount
     if (body.globalDiscountPercent !== undefined) updateData.globalDiscountPercent = body.globalDiscountPercent
+
+    // Payout mode
+    if (body.payoutMode !== undefined && ['automatic', 'manual'].includes(body.payoutMode)) {
+      updateData.payoutMode = body.payoutMode
+    }
 
     // Fleet-wide availability defaults
     if (body.defaultInstantBook !== undefined) updateData.defaultInstantBook = !!body.defaultInstantBook

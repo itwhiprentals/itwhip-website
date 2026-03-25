@@ -53,6 +53,18 @@ export async function POST(request: NextRequest) {
         }
         break
 
+      case 'payout.paid':
+        await handlePayoutPaid(event.data.object as Stripe.Payout, event.account)
+        break
+
+      case 'payout.failed':
+        await handlePayoutFailed(event.data.object as Stripe.Payout, event.account)
+        break
+
+      case 'transfer.created':
+        await handleTransferCreated(event.data.object as Stripe.Transfer)
+        break
+
       default:
         console.log(`Unhandled event type: ${event.type}`)
     }
@@ -110,6 +122,8 @@ async function handleAccountUpdated(account: Stripe.Account) {
     stripePayoutsEnabled: account.payouts_enabled || false,
     stripeChargesEnabled: account.charges_enabled || false,
     stripeAccountStatus: account.charges_enabled ? 'complete' : 'pending',
+    // ALWAYS sync payoutsEnabled with stripePayoutsEnabled — they must never diverge
+    payoutsEnabled: account.payouts_enabled || false,
     // Store pending requirements so we can show user what's needed
     stripeRequirements: requirements.length > 0 ? requirements : null,
     stripeDisabledReason: disabledReason,
@@ -200,4 +214,173 @@ async function handleAccountDeauthorized(accountId: string) {
   })
 
   console.log(`⚠️ Stripe account deauthorized for host ${host.email}`)
+}
+
+/**
+ * Handle payout.paid — money arrived in host's bank account
+ */
+async function handlePayoutPaid(payout: Stripe.Payout, connectAccountId?: string | null) {
+  console.log(`📥 payout.paid: ${payout.id} on account ${connectAccountId}, $${(payout.amount / 100).toFixed(2)}`)
+
+  if (!connectAccountId) return
+
+  const host = await prisma.rentalHost.findFirst({
+    where: { stripeConnectAccountId: connectAccountId },
+    select: { id: true, name: true, email: true }
+  })
+
+  if (!host) {
+    console.log(`⚠️ No host found for payout.paid on account ${connectAccountId}`)
+    return
+  }
+
+  // Log the successful delivery
+  await prisma.activityLog.create({
+    data: {
+      id: crypto.randomUUID(),
+      action: 'PAYOUT_DELIVERED',
+      entityType: 'RentalHost',
+      entityId: host.id,
+      metadata: {
+        stripePayoutId: payout.id,
+        amount: payout.amount / 100,
+        method: payout.method,
+        arrivalDate: payout.arrival_date ? new Date(payout.arrival_date * 1000).toISOString() : null,
+        hostName: host.name,
+        timestamp: new Date()
+      },
+      ipAddress: 'stripe-webhook'
+    }
+  })
+
+  // Send email notification to host
+  try {
+    const { sendEmail } = await import('@/app/lib/email/sender')
+    const amount = (payout.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    await sendEmail(
+      host.email,
+      `Your ItWhip payout of $${amount} has arrived`,
+      `<p>Your payout of <strong>$${amount}</strong> has been deposited to your bank account.</p><p>Thank you for hosting with ItWhip!</p>`,
+      `Your payout of $${amount} has been deposited to your bank account. Thank you for hosting with ItWhip!`
+    )
+  } catch (emailErr) {
+    console.error(`[Webhook] Failed to send payout.paid email to ${host.email}:`, emailErr)
+  }
+
+  console.log(`✅ payout.paid processed for ${host.name}: $${(payout.amount / 100).toFixed(2)}`)
+}
+
+/**
+ * Handle payout.failed — payout to host's bank failed
+ */
+async function handlePayoutFailed(payout: Stripe.Payout, connectAccountId?: string | null) {
+  console.log(`📥 payout.failed: ${payout.id} on account ${connectAccountId}`)
+
+  if (!connectAccountId) return
+
+  const host = await prisma.rentalHost.findFirst({
+    where: { stripeConnectAccountId: connectAccountId },
+    select: { id: true, name: true, email: true }
+  })
+
+  if (!host) {
+    console.log(`⚠️ No host found for payout.failed on account ${connectAccountId}`)
+    return
+  }
+
+  const failureMessage = payout.failure_message || 'Unknown failure'
+  const failureCode = payout.failure_code || 'unknown'
+
+  // Log the failure
+  await prisma.activityLog.create({
+    data: {
+      id: crypto.randomUUID(),
+      action: 'PAYOUT_BANK_FAILED',
+      entityType: 'RentalHost',
+      entityId: host.id,
+      metadata: {
+        stripePayoutId: payout.id,
+        amount: payout.amount / 100,
+        failureCode,
+        failureMessage,
+        hostName: host.name,
+        timestamp: new Date()
+      },
+      ipAddress: 'stripe-webhook'
+    }
+  })
+
+  // Create admin notification (HIGH priority)
+  await prisma.adminNotification.create({
+    data: {
+      type: 'SYSTEM_ALERT',
+      title: `Payout Failed - ${host.name}`,
+      message: `Bank payout of $${(payout.amount / 100).toFixed(2)} failed for ${host.name} (${host.email}). Reason: ${failureMessage}`,
+      priority: 'HIGH',
+      status: 'UNREAD',
+      actionRequired: true,
+      relatedId: host.id,
+      relatedType: 'RentalHost',
+      metadata: {
+        stripePayoutId: payout.id,
+        amount: payout.amount / 100,
+        failureCode,
+        failureMessage,
+        hostId: host.id
+      }
+    } as any
+  })
+
+  // Notify host
+  try {
+    const { sendEmail } = await import('@/app/lib/email/sender')
+    const amount = (payout.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    await sendEmail(
+      host.email,
+      `ItWhip Payout of $${amount} Failed`,
+      `<p>Your payout of <strong>$${amount}</strong> could not be delivered to your bank account.</p><p>Reason: ${failureMessage}</p><p>Please check your bank details in your <a href="https://itwhip.com/partner/settings?tab=banking">Banking Settings</a> and try again.</p>`,
+      `Your payout of $${amount} could not be delivered. Reason: ${failureMessage}. Please check your bank details.`
+    )
+  } catch (emailErr) {
+    console.error(`[Webhook] Failed to send payout.failed email to ${host.email}:`, emailErr)
+  }
+
+  console.log(`❌ payout.failed processed for ${host.name}: ${failureMessage}`)
+}
+
+/**
+ * Handle transfer.created — platform → Connect account transfer confirmed
+ */
+async function handleTransferCreated(transfer: Stripe.Transfer) {
+  const payoutId = transfer.metadata?.payoutId
+  console.log(`📥 transfer.created: ${transfer.id}, payoutId=${payoutId || 'N/A'}, $${(transfer.amount / 100).toFixed(2)}`)
+
+  if (!payoutId) return
+
+  // Update the RentalPayout with transfer confirmation
+  try {
+    await prisma.rentalPayout.updateMany({
+      where: { id: payoutId },
+      data: { transactionId: transfer.id }
+    })
+  } catch {
+    // Payout record may not exist if this was a manual fleet transfer
+  }
+
+  // Log confirmation
+  await prisma.activityLog.create({
+    data: {
+      id: crypto.randomUUID(),
+      action: 'TRANSFER_CONFIRMED',
+      entityType: 'RentalPayout',
+      entityId: payoutId,
+      metadata: {
+        stripeTransferId: transfer.id,
+        amount: transfer.amount / 100,
+        destination: transfer.destination,
+        timestamp: new Date()
+      },
+      ipAddress: 'stripe-webhook'
+    }
+  })
 }

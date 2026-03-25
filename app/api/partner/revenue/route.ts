@@ -227,71 +227,45 @@ export async function GET(request: NextRequest) {
       })
     )
 
-    // Get payout history from partner_payouts table
-    const payouts = await prisma.partner_payouts.findMany({
+    // Get payout history from RentalPayout (single source of truth)
+    const payoutRecords = await prisma.rentalPayout.findMany({
       where: { hostId: partner.id },
       orderBy: { createdAt: 'desc' },
-      take: 10
-    })
-
-    // Resolve booking details for each payout (car photo, guest, dates)
-    const recentPayouts = await Promise.all(payouts.map(async (p) => {
-      let bookingId: string | null = null
-      let car: any = null
-      let guestName: string | null = null
-      let startDate: string | null = null
-      let endDate: string | null = null
-      let numberOfDays: number | null = null
-      let dailyRate: number | null = null
-      let subtotal: number | null = null
-      let deliveryFee: number | null = null
-      let platformFeeRate: number | null = null
-      let paymentType: string | null = null
-      let isWelcomeDiscount = false
-
-      if (p.period) {
-        const booking = await prisma.rentalBooking.findFirst({
-          where: { OR: [{ bookingCode: p.period }, { id: { startsWith: p.period.replace('Booking ', '') } }] },
+      take: 10,
+      include: {
+        booking: {
           select: {
             id: true, bookingCode: true, guestName: true, startDate: true, endDate: true, numberOfDays: true,
             dailyRate: true, subtotal: true, deliveryFee: true, platformFeeRate: true, paymentType: true, isWelcomeDiscount: true,
             car: { select: { make: true, model: true, year: true, photos: { select: { url: true }, orderBy: { order: 'asc' }, take: 1 } } }
           }
-        })
-        if (booking) {
-          bookingId = booking.id
-          car = booking.car ? { year: booking.car.year, make: booking.car.make, model: booking.car.model, photo: booking.car.photos?.[0]?.url || null } : null
-          guestName = booking.guestName
-          startDate = booking.startDate?.toISOString() || null
-          endDate = booking.endDate?.toISOString() || null
-          numberOfDays = booking.numberOfDays
-          dailyRate = Number(booking.dailyRate) || null
-          subtotal = Number(booking.subtotal) || null
-          deliveryFee = Number(booking.deliveryFee) || null
-          platformFeeRate = booking.platformFeeRate ? Number(booking.platformFeeRate) : null
-          paymentType = booking.paymentType
-          isWelcomeDiscount = booking.isWelcomeDiscount || false
         }
       }
-      // Compute display status from RentalPayout eligibleAt
+    })
+
+    const recentPayouts = payoutRecords.map((p) => {
+      const b = p.booking
+      const car = b?.car ? { year: b.car.year, make: b.car.make, model: b.car.model, photo: b.car.photos?.[0]?.url || null } : null
+
+      // Compute display status from eligibleAt
       let displayStatus = p.status.toLowerCase()
-      let eligibleAt: string | null = null
-      if (bookingId) {
-        const rentalPayout = await prisma.rentalPayout.findFirst({ where: { bookingId }, select: { eligibleAt: true } })
-        eligibleAt = rentalPayout?.eligibleAt?.toISOString() || null
-        if (displayStatus === 'pending' && rentalPayout?.eligibleAt && rentalPayout.eligibleAt <= new Date()) {
-          displayStatus = 'available'
-        }
+      if (displayStatus === 'pending' && p.eligibleAt && p.eligibleAt <= new Date()) {
+        displayStatus = 'available'
       }
 
       return {
-        id: p.id, period: p.period, bookingId,
-        amount: p.netAmount, grossRevenue: p.grossRevenue, commission: p.commission,
-        status: displayStatus, paidAt: p.paidAt?.toISOString() || null, stripePayoutId: p.stripePayoutId,
-        eligibleAt,
-        car, guestName, startDate, endDate, numberOfDays, dailyRate, subtotal, deliveryFee, platformFeeRate, paymentType, isWelcomeDiscount
+        id: p.id, period: b?.bookingCode || null, bookingId: p.bookingId,
+        amount: p.netPayout, grossRevenue: p.grossEarnings, commission: p.platformFee,
+        status: displayStatus, paidAt: p.processedAt?.toISOString() || null, stripePayoutId: p.stripeTransferId,
+        eligibleAt: p.eligibleAt?.toISOString() || null,
+        car, guestName: b?.guestName || null,
+        startDate: b?.startDate?.toISOString() || null, endDate: b?.endDate?.toISOString() || null,
+        numberOfDays: b?.numberOfDays || null, dailyRate: b?.dailyRate ? Number(b.dailyRate) : null,
+        subtotal: b?.subtotal ? Number(b.subtotal) : null, deliveryFee: b?.deliveryFee ? Number(b.deliveryFee) : null,
+        platformFeeRate: b?.platformFeeRate ? Number(b.platformFeeRate) : null,
+        paymentType: b?.paymentType || null, isWelcomeDiscount: b?.isWelcomeDiscount || false
       }
-    }))
+    })
 
     // Get tier info
     const tierInfo = getTierInfo(partner)
