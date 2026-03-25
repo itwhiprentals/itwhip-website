@@ -136,20 +136,29 @@ export async function GET(request: NextRequest) {
     const activeVehicles = partner.cars.filter(c => c.isActive).length
 
     // Transform bookings for response
-    const recentBookings = bookings.map(booking => ({
-      id: booking.id,
-      guestName: booking.guestName || booking.renter?.name || 'Guest',
-      vehicleName: booking.car
-        ? `${booking.car.year} ${booking.car.make} ${booking.car.model}`
-        : 'Unknown Vehicle',
-      vehicle: booking.car
-        ? { year: booking.car.year, make: booking.car.make, model: booking.car.model, photo: booking.car.photos?.[0]?.url || null }
-        : undefined,
-      startDate: booking.startDate.toISOString(),
-      endDate: booking.endDate.toISOString(),
-      status: mapBookingStatus(booking.status),
-      totalAmount: booking.totalAmount
-    }))
+    const recentBookings = bookings.map(booking => {
+      const gross = (booking.subtotal || 0) + (booking.deliveryFee || 0)
+      const feeRate = booking.platformFeeRate ?? partner.currentCommissionRate ?? 0.25
+      const platformFee = gross * feeRate
+      const processingFee = gross * 0.029 + 0.30
+      const hostEarnings = Math.max(0, gross - platformFee - processingFee)
+
+      return {
+        id: booking.id,
+        guestName: booking.guestName || booking.renter?.name || 'Guest',
+        vehicleName: booking.car
+          ? `${booking.car.year} ${booking.car.make} ${booking.car.model}`
+          : 'Unknown Vehicle',
+        vehicle: booking.car
+          ? { year: booking.car.year, make: booking.car.make, model: booking.car.model, photo: booking.car.photos?.[0]?.url || null }
+          : undefined,
+        startDate: booking.startDate.toISOString(),
+        endDate: booking.endDate.toISOString(),
+        status: mapBookingStatus(booking.status),
+        totalAmount: booking.totalAmount,
+        hostEarnings: Math.round(hostEarnings * 100) / 100,
+      }
+    })
 
     // Calculate revenue stats
     const completedBookings = bookings.filter(b => b.status === 'COMPLETED')
