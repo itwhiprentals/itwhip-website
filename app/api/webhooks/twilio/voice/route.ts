@@ -46,11 +46,14 @@ export async function POST(request: NextRequest) {
 
     // ─── Initial call (no language selected yet) ──────────────────
     if (!lang) {
-      prisma.callLog.create({
-        data: {
+      const sid = callSid || crypto.randomUUID()
+      prisma.callLog.upsert({
+        where: { callSid: sid },
+        update: { status: 'ringing', menuPath: 'entry' },
+        create: {
           from: from || 'unknown',
           to: params.To || '',
-          callSid: callSid || crypto.randomUUID(),
+          callSid: sid,
           status: 'ringing',
           direction: 'INBOUND',
           menuPath: 'entry',
