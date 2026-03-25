@@ -672,29 +672,34 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if payment is in a valid state
-        if (existingPaymentIntent.status === 'succeeded') {
-          console.log('🔷 Payment already succeeded:', existingPaymentIntent.id)
-          stripePaymentIntentId = existingPaymentIntent.id
-          stripeCustomerId = existingPaymentIntent.customer as string || null
-          paymentAlreadyConfirmed = true
-        } else if (existingPaymentIntent.status === 'requires_capture') {
-          console.log('🔷 Payment authorized, requires capture:', existingPaymentIntent.id)
-          stripePaymentIntentId = existingPaymentIntent.id
-          stripeCustomerId = existingPaymentIntent.customer as string || null
-          paymentAlreadyConfirmed = true
-        } else if (existingPaymentIntent.status === 'processing') {
-          console.log('🔷 Payment processing:', existingPaymentIntent.id)
+        if (['succeeded', 'requires_capture', 'processing'].includes(existingPaymentIntent.status)) {
+          console.log(`🔷 Payment ${existingPaymentIntent.status}:`, existingPaymentIntent.id)
           stripePaymentIntentId = existingPaymentIntent.id
           stripeCustomerId = existingPaymentIntent.customer as string || null
           paymentAlreadyConfirmed = true
         } else {
-          console.warn('🔷 PaymentIntent in unexpected state:', existingPaymentIntent.status)
-          // Will create new payment below if needed
+          // PI exists but in unexpected state — still link it so we don't lose the reference
+          console.warn(`🔷 PaymentIntent in state ${existingPaymentIntent.status} — linking anyway:`, existingPaymentIntent.id)
+          stripePaymentIntentId = existingPaymentIntent.id
+          stripeCustomerId = existingPaymentIntent.customer as string || null
         }
       } catch (error) {
         console.error('🔷 Error retrieving PaymentIntent:', error)
-        // Will create new payment below if needed
+        // Still try to link the PI ID even if retrieval failed
+        stripePaymentIntentId = bookingData.paymentIntentId
       }
+    }
+
+    // If PI amount doesn't match booking total (guest changed insurance/options), update the PI
+    if (stripePaymentIntentId && paymentAlreadyConfirmed) {
+      try {
+        const pi = await stripe.paymentIntents.retrieve(stripePaymentIntentId)
+        const bookingAmountCents = Math.round(pricing.total * 100)
+        if (pi.status === 'requires_capture' && pi.amount !== bookingAmountCents) {
+          console.log(`🔷 PI amount mismatch: PI=$${(pi.amount / 100).toFixed(2)} vs booking=$${pricing.total.toFixed(2)} — will capture correct amount at approval`)
+          // Don't update the PI — just log it. At capture time, we capture the booking amount (partial capture is allowed)
+        }
+      } catch {}
     }
 
     // Create Stripe customer for bookings requiring verification (only if payment not already confirmed)
@@ -1426,6 +1431,21 @@ export async function POST(request: NextRequest) {
     }, { isolationLevel: 'Serializable', timeout: 15000 }) as any
 
     console.log(`[BOOKING_CREATE] SUCCESS carId=${bookingData.carId} code=${booking.booking.bookingCode} pickup=${pickupDateStr} ${bookingData.startTime} return=${returnDateStr} ${bookingData.endTime} guest=${bookingData.guestEmail}`)
+
+    // SAFETY NET: Verify paymentIntentId was saved — patch if transaction lost it
+    const piToLink = stripePaymentIntentId || bookingData?.paymentIntentId
+    if (piToLink && !booking.booking.paymentIntentId) {
+      console.warn(`[BOOKING_CREATE] ⚠️ PI ${piToLink} was NOT saved to booking ${booking.booking.bookingCode} — patching now`)
+      try {
+        await prisma.rentalBooking.update({
+          where: { id: booking.booking.id },
+          data: { paymentIntentId: piToLink }
+        })
+        console.log(`[BOOKING_CREATE] ✅ Patched paymentIntentId on ${booking.booking.bookingCode}`)
+      } catch (patchErr) {
+        console.error(`[BOOKING_CREATE] ❌ Failed to patch paymentIntentId:`, patchErr)
+      }
+    }
 
     // ALL bookings are now pending review (three-tier approval: fleet → host → confirmed)
     // Send pending review email to guest — never instant confirmation
