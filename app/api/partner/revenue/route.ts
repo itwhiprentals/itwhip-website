@@ -108,19 +108,17 @@ export async function GET(request: NextRequest) {
     })
 
     const defaultCommissionRate = partner.currentCommissionRate || 0.25
-    const grossRevenue = bookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
-    // Calculate commission per-booking using actual platformFeeRate (welcome discount = 10%)
-    const commission = bookings.reduce((sum, b) => {
-      const rate = b.platformFeeRate ? Number(b.platformFeeRate) : defaultCommissionRate
-      return sum + ((b.totalAmount || 0) * rate)
-    }, 0)
-    const netRevenue = grossRevenue - commission
+
+    const calcEarnings = (b: any) => calcHostEarnings(b, defaultCommissionRate)
+
+    // All amounts from host perspective — subtotal + deliveryFee, NOT totalAmount
+    const grossRevenue = bookings.reduce((sum, b) => sum + (Number(b.subtotal) || 0) + (Number(b.deliveryFee) || 0), 0)
+    const netRevenue = bookings.reduce((sum, b) => sum + calcEarnings(b), 0)
+    const commission = grossRevenue - netRevenue
     // Effective blended rate across all bookings
     const commissionRate = grossRevenue > 0 ? commission / grossRevenue : defaultCommissionRate
     // Count welcome discount bookings
     const welcomeDiscountBookings = bookings.filter(b => b.isWelcomeDiscount).length
-
-    const calcEarnings = (b: any) => calcHostEarnings(b, defaultCommissionRate)
 
     // CONFIRMED/ACTIVE = approved by both, in Available Balance (waiting for trip end + hold)
     const confirmedBookings = await prisma.rentalBooking.findMany({
@@ -171,12 +169,9 @@ export async function GET(request: NextRequest) {
         }
       })
 
-      const monthGross = monthBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
-      const monthCommission = monthBookings.reduce((sum, b) => {
-        const rate = b.platformFeeRate ? Number(b.platformFeeRate) : defaultCommissionRate
-        return sum + ((b.totalAmount || 0) * rate)
-      }, 0)
-      const monthNet = monthGross - monthCommission
+      const monthGross = monthBookings.reduce((sum, b) => sum + (Number(b.subtotal) || 0) + (Number(b.deliveryFee) || 0), 0)
+      const monthNet = monthBookings.reduce((sum, b) => sum + calcEarnings(b), 0)
+      const monthCommission = monthGross - monthNet
 
       monthlyData.push({
         month: monthStart.toLocaleString('en-US', { month: 'short' }),
@@ -213,6 +208,9 @@ export async function GET(request: NextRequest) {
           where: { id: v.carId },
           select: { make: true, model: true, year: true, photos: { select: { url: true, isHero: true }, orderBy: { order: 'asc' }, take: 1 } }
         })
+        // Calculate host earnings per vehicle (not totalAmount)
+        const carBookings = bookings.filter(b => b.carId === v.carId)
+        const carRevenue = carBookings.reduce((sum, b) => sum + calcEarnings(b), 0)
         const photo = car?.photos?.[0]?.url || null
         return {
           id: v.carId,
@@ -221,7 +219,7 @@ export async function GET(request: NextRequest) {
           make: car?.make || null,
           model: car?.model || null,
           photo,
-          revenue: v._sum.totalAmount || 0,
+          revenue: Math.round(carRevenue * 100) / 100,
           bookings: v._count
         }
       })
@@ -271,7 +269,7 @@ export async function GET(request: NextRequest) {
     const tierInfo = getTierInfo(partner)
 
     // Calculate average booking value
-    const avgBookingValue = bookings.length > 0 ? grossRevenue / bookings.length : 0
+    const avgBookingValue = bookings.length > 0 ? netRevenue / bookings.length : 0
 
     return NextResponse.json({
       success: true,
