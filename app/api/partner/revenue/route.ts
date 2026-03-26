@@ -290,7 +290,7 @@ export async function GET(request: NextRequest) {
         // Upcoming revenue (confirmed/active bookings)
         upcomingGrossRevenue,
         upcomingNetRevenue,
-        upcomingCommission,
+        upcomingCommission: upcomingGrossRevenue - upcomingNetRevenue,
         upcomingBookingsCount: upcomingBookings.length,
         // Pending revenue (awaiting confirmation)
         pendingGrossRevenue,
