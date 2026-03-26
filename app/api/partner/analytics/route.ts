@@ -101,20 +101,29 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Calculate overview stats
+    // Host earnings calculator
+    const defaultRate = partner.currentCommissionRate || 0.25
+    const calcHostEarnings = (b: any) => {
+      const gross = (b.subtotal || 0) + (b.deliveryFee || 0)
+      const rate = b.platformFeeRate ? Number(b.platformFeeRate) : defaultRate
+      const fee = gross * rate
+      const proc = gross * 0.029 + 0.30
+      return Math.max(0, gross - fee - proc)
+    }
+
+    // Calculate overview stats — all amounts are HOST EARNINGS
     const completedBookings = bookings.filter(b => b.status === 'COMPLETED')
     const confirmedBookings = bookings.filter(b => ['CONFIRMED', 'ACTIVE'].includes(b.status))
     const pendingBookings = bookings.filter(b => b.status === 'PENDING')
 
-    const totalRevenue = completedBookings.reduce((sum, b) => sum + b.totalAmount, 0)
-    const upcomingRevenue = confirmedBookings.reduce((sum, b) => sum + b.totalAmount, 0)
-    const pendingRevenue = pendingBookings.reduce((sum, b) => sum + b.totalAmount, 0)
+    const totalRevenue = completedBookings.reduce((sum, b) => sum + calcHostEarnings(b), 0)
+    const upcomingRevenue = confirmedBookings.reduce((sum, b) => sum + calcHostEarnings(b), 0)
+    const pendingRevenue = pendingBookings.reduce((sum, b) => sum + calcHostEarnings(b), 0)
 
     const totalBookings = bookings.length
-    // Calculate avg from all bookings (not just completed) to show meaningful values
-    const allBookingAmounts = bookings.filter(b => b.totalAmount > 0)
-    const avgBookingValue = allBookingAmounts.length > 0
-      ? allBookingAmounts.reduce((sum, b) => sum + b.totalAmount, 0) / allBookingAmounts.length
+    const completedWithEarnings = completedBookings.filter(b => calcHostEarnings(b) > 0)
+    const avgBookingValue = completedWithEarnings.length > 0
+      ? completedWithEarnings.reduce((sum, b) => sum + calcHostEarnings(b), 0) / completedWithEarnings.length
       : 0
 
     // Calculate average trip duration
@@ -150,18 +159,19 @@ export async function GET(request: NextRequest) {
       count
     }))
 
-    // Calculate revenue by month
+    // Calculate revenue by month — host earnings
     const revenueByMonth: Record<string, { gross: number; net: number; commission: number }> = {}
-    const commissionRate = partner.currentCommissionRate || 0.25
 
     completedBookings.forEach(booking => {
       const monthKey = new Date(booking.createdAt).toLocaleString('en-US', { month: 'short' })
       if (!revenueByMonth[monthKey]) {
         revenueByMonth[monthKey] = { gross: 0, net: 0, commission: 0 }
       }
-      revenueByMonth[monthKey].gross += booking.totalAmount
-      revenueByMonth[monthKey].net += booking.totalAmount * (1 - commissionRate)
-      revenueByMonth[monthKey].commission += booking.totalAmount * commissionRate
+      const hostNet = calcHostEarnings(booking)
+      const bookingGross = (booking.subtotal || 0) + (booking.deliveryFee || 0)
+      revenueByMonth[monthKey].gross += bookingGross
+      revenueByMonth[monthKey].net += hostNet
+      revenueByMonth[monthKey].commission += bookingGross - hostNet
     })
 
     const revenueByMonthArray = Object.entries(revenueByMonth).map(([month, data]) => ({
@@ -186,7 +196,7 @@ export async function GET(request: NextRequest) {
         }
         vehicleStats[carId].bookings++
         if (booking.status === 'COMPLETED') {
-          vehicleStats[carId].revenue += booking.totalAmount
+          vehicleStats[carId].revenue += calcHostEarnings(booking)
         }
       }
     })
