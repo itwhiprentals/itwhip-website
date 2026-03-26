@@ -119,18 +119,6 @@ export async function GET(request: NextRequest) {
     // Count welcome discount bookings
     const welcomeDiscountBookings = bookings.filter(b => b.isWelcomeDiscount).length
 
-    // Get upcoming/confirmed bookings (revenue that's expected but not yet earned)
-    const upcomingBookings = await prisma.rentalBooking.findMany({
-      where: {
-        carId: { in: vehicleIds },
-        status: { in: ['CONFIRMED', 'ACTIVE'] }
-      },
-      include: {
-        car: {
-          select: { make: true, model: true, year: true }
-        }
-      }
-    })
     const calcHostEarningsForBooking = (b: any) => {
       const gross = (b.subtotal || 0) + (b.deliveryFee || 0)
       const rate = b.platformFeeRate ? Number(b.platformFeeRate) : defaultCommissionRate
@@ -138,18 +126,31 @@ export async function GET(request: NextRequest) {
       const proc = gross * 0.029 + 0.30
       return Math.max(0, gross - fee - proc)
     }
-    const upcomingGrossRevenue = upcomingBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
-    const upcomingNetRevenue = upcomingBookings.reduce((sum, b) => sum + calcHostEarningsForBooking(b), 0)
 
-    // Get pending bookings (awaiting confirmation)
-    const pendingBookings = await prisma.rentalBooking.findMany({
+    // CONFIRMED/ACTIVE = approved by both, in Available Balance (waiting for trip end + hold)
+    const confirmedBookings = await prisma.rentalBooking.findMany({
       where: {
         carId: { in: vehicleIds },
-        status: 'PENDING'
-      }
+        status: { in: ['CONFIRMED', 'ACTIVE'] }
+      },
+      include: { car: { select: { make: true, model: true, year: true } } }
     })
-    const pendingGrossRevenue = pendingBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
-    const pendingNetRevenue = pendingBookings.reduce((sum, b) => sum + calcHostEarningsForBooking(b), 0)
+    const upcomingNetRevenue = confirmedBookings.reduce((sum, b) => sum + calcHostEarningsForBooking(b), 0)
+    const upcomingGrossRevenue = confirmedBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
+
+    // PENDING bookings split by fleet approval status
+    const allPendingBookings = await prisma.rentalBooking.findMany({
+      where: { carId: { in: vehicleIds }, status: 'PENDING' }
+    })
+    // Awaiting fleet approval (fleet hasn't approved yet)
+    const awaitingFleetBookings = allPendingBookings.filter(b => b.fleetStatus !== 'APPROVED')
+    const awaitingApprovalRevenue = awaitingFleetBookings.reduce((sum, b) => sum + calcHostEarningsForBooking(b), 0)
+    // Fleet approved, awaiting host approval (pending earnings in pipeline)
+    const awaitingHostBookings = allPendingBookings.filter(b => b.fleetStatus === 'APPROVED')
+    const pendingEarningsRevenue = awaitingHostBookings.reduce((sum, b) => sum + calcHostEarningsForBooking(b), 0)
+    // Keep legacy fields for backward compat
+    const pendingGrossRevenue = allPendingBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
+    const pendingNetRevenue = allPendingBookings.reduce((sum, b) => sum + calcHostEarningsForBooking(b), 0)
 
     // Calculate cash vs Stripe breakdown (host earnings, not guest totals)
     const stripeBookings = bookings.filter(b => b.stripeChargeId || b.paymentIntentId)
@@ -287,15 +288,21 @@ export async function GET(request: NextRequest) {
         commissionRate,
         totalBookings: bookings.length,
         avgBookingValue,
-        // Upcoming revenue (confirmed/active bookings)
+        // Confirmed/Active = in Available Balance (approved, waiting for trip + hold)
         upcomingGrossRevenue,
         upcomingNetRevenue,
         upcomingCommission: upcomingGrossRevenue - upcomingNetRevenue,
-        upcomingBookingsCount: upcomingBookings.length,
-        // Pending revenue (awaiting confirmation)
+        upcomingBookingsCount: confirmedBookings.length,
+        // Pipeline: Awaiting fleet approval
+        awaitingApprovalRevenue,
+        awaitingApprovalCount: awaitingFleetBookings.length,
+        // Pipeline: Fleet approved, awaiting host approval
+        pendingEarningsRevenue,
+        pendingEarningsCount: awaitingHostBookings.length,
+        // Legacy (total pending)
         pendingGrossRevenue,
         pendingNetRevenue,
-        pendingBookingsCount: pendingBookings.length,
+        pendingBookingsCount: allPendingBookings.length,
         // Cash vs Stripe breakdown
         stripeRevenue,
         cashRevenue,
