@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
+import { calcHostEarnings } from '@/app/lib/host-earnings'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
@@ -53,6 +54,9 @@ export async function GET(request: NextRequest) {
       case '12m':
         startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
         break
+      case 'all':
+        startDate = new Date(2020, 0, 1)
+        break
       default: // 30d
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
     }
@@ -95,35 +99,29 @@ export async function GET(request: NextRequest) {
             id: true,
             make: true,
             model: true,
-            year: true
+            year: true,
+            photos: { take: 1, orderBy: { order: 'asc' as const } }
           }
         }
       }
     })
 
-    // Host earnings calculator
     const defaultRate = partner.currentCommissionRate || 0.25
-    const calcHostEarnings = (b: any) => {
-      const gross = (b.subtotal || 0) + (b.deliveryFee || 0)
-      const rate = b.platformFeeRate ? Number(b.platformFeeRate) : defaultRate
-      const fee = gross * rate
-      const proc = gross * 0.029 + 0.30
-      return Math.max(0, gross - fee - proc)
-    }
+    const calcEarnings = (b: any) => calcHostEarnings(b, defaultRate)
 
     // Calculate overview stats — all amounts are HOST EARNINGS
     const completedBookings = bookings.filter(b => b.status === 'COMPLETED')
     const confirmedBookings = bookings.filter(b => ['CONFIRMED', 'ACTIVE'].includes(b.status))
     const pendingBookings = bookings.filter(b => b.status === 'PENDING')
 
-    const totalRevenue = completedBookings.reduce((sum, b) => sum + calcHostEarnings(b), 0)
-    const upcomingRevenue = confirmedBookings.reduce((sum, b) => sum + calcHostEarnings(b), 0)
-    const pendingRevenue = pendingBookings.reduce((sum, b) => sum + calcHostEarnings(b), 0)
+    const totalRevenue = completedBookings.reduce((sum, b) => sum + calcEarnings(b), 0)
+    const upcomingRevenue = confirmedBookings.reduce((sum, b) => sum + calcEarnings(b), 0)
+    const pendingRevenue = pendingBookings.reduce((sum, b) => sum + calcEarnings(b), 0)
 
     const totalBookings = bookings.length
-    const completedWithEarnings = completedBookings.filter(b => calcHostEarnings(b) > 0)
+    const completedWithEarnings = completedBookings.filter(b => calcEarnings(b) > 0)
     const avgBookingValue = completedWithEarnings.length > 0
-      ? completedWithEarnings.reduce((sum, b) => sum + calcHostEarnings(b), 0) / completedWithEarnings.length
+      ? completedWithEarnings.reduce((sum, b) => sum + calcEarnings(b), 0) / completedWithEarnings.length
       : 0
 
     // Calculate average trip duration
@@ -167,7 +165,7 @@ export async function GET(request: NextRequest) {
       if (!revenueByMonth[monthKey]) {
         revenueByMonth[monthKey] = { gross: 0, net: 0, commission: 0 }
       }
-      const hostNet = calcHostEarnings(booking)
+      const hostNet = calcEarnings(booking)
       const bookingGross = (booking.subtotal || 0) + (booking.deliveryFee || 0)
       revenueByMonth[monthKey].gross += bookingGross
       revenueByMonth[monthKey].net += hostNet
@@ -180,15 +178,18 @@ export async function GET(request: NextRequest) {
     }))
 
     // Calculate top vehicles
-    const vehicleStats: Record<string, { name: string; bookings: number; revenue: number; rating: number }> = {}
+    const vehicleStats: Record<string, { year: number; make: string; model: string; photo: string | null; bookings: number; revenue: number; rating: number }> = {}
     bookings.forEach(booking => {
       if (booking.car) {
         const carId = booking.carId
-        const carName = `${booking.car.year} ${booking.car.make} ${booking.car.model}`
         if (!vehicleStats[carId]) {
           const carData = partner.cars.find(c => c.id === carId)
+          const photo = (booking.car as any).photos?.[0]?.url || null
           vehicleStats[carId] = {
-            name: carName,
+            year: booking.car.year,
+            make: booking.car.make,
+            model: booking.car.model,
+            photo,
             bookings: 0,
             revenue: 0,
             rating: carData?.rating || 0
@@ -196,13 +197,13 @@ export async function GET(request: NextRequest) {
         }
         vehicleStats[carId].bookings++
         if (booking.status === 'COMPLETED') {
-          vehicleStats[carId].revenue += calcHostEarnings(booking)
+          vehicleStats[carId].revenue += calcEarnings(booking)
         }
       }
     })
 
     const topVehicles = Object.entries(vehicleStats)
-      .map(([id, stats]) => ({ id, ...stats }))
+      .map(([id, stats]) => ({ id, name: `${stats.year} ${stats.make} ${stats.model}`, ...stats }))
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5)
 

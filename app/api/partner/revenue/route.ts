@@ -6,6 +6,7 @@ import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
 import { getTierInfo } from '@/app/lib/commission/calculate-tier'
+import { calcHostEarnings, getBookingPipelineStage } from '@/app/lib/host-earnings'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
@@ -119,13 +120,7 @@ export async function GET(request: NextRequest) {
     // Count welcome discount bookings
     const welcomeDiscountBookings = bookings.filter(b => b.isWelcomeDiscount).length
 
-    const calcHostEarningsForBooking = (b: any) => {
-      const gross = (b.subtotal || 0) + (b.deliveryFee || 0)
-      const rate = b.platformFeeRate ? Number(b.platformFeeRate) : defaultCommissionRate
-      const fee = gross * rate
-      const proc = gross * 0.029 + 0.30
-      return Math.max(0, gross - fee - proc)
-    }
+    const calcEarnings = (b: any) => calcHostEarnings(b, defaultCommissionRate)
 
     // CONFIRMED/ACTIVE = approved by both, in Available Balance (waiting for trip end + hold)
     const confirmedBookings = await prisma.rentalBooking.findMany({
@@ -135,7 +130,7 @@ export async function GET(request: NextRequest) {
       },
       include: { car: { select: { make: true, model: true, year: true } } }
     })
-    const upcomingNetRevenue = confirmedBookings.reduce((sum, b) => sum + calcHostEarningsForBooking(b), 0)
+    const upcomingNetRevenue = confirmedBookings.reduce((sum, b) => sum + calcEarnings(b), 0)
     const upcomingGrossRevenue = confirmedBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
 
     // PENDING bookings split by fleet approval status
@@ -144,20 +139,20 @@ export async function GET(request: NextRequest) {
     })
     // Awaiting fleet approval (fleet hasn't approved yet)
     const awaitingFleetBookings = allPendingBookings.filter(b => b.fleetStatus !== 'APPROVED')
-    const awaitingApprovalRevenue = awaitingFleetBookings.reduce((sum, b) => sum + calcHostEarningsForBooking(b), 0)
+    const awaitingApprovalRevenue = awaitingFleetBookings.reduce((sum, b) => sum + calcEarnings(b), 0)
     // Fleet approved, awaiting host approval (pending earnings in pipeline)
     const awaitingHostBookings = allPendingBookings.filter(b => b.fleetStatus === 'APPROVED')
-    const pendingEarningsRevenue = awaitingHostBookings.reduce((sum, b) => sum + calcHostEarningsForBooking(b), 0)
+    const pendingEarningsRevenue = awaitingHostBookings.reduce((sum, b) => sum + calcEarnings(b), 0)
     // Keep legacy fields for backward compat
     const pendingGrossRevenue = allPendingBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0)
-    const pendingNetRevenue = allPendingBookings.reduce((sum, b) => sum + calcHostEarningsForBooking(b), 0)
+    const pendingNetRevenue = allPendingBookings.reduce((sum, b) => sum + calcEarnings(b), 0)
 
     // Calculate cash vs Stripe breakdown (host earnings, not guest totals)
     const stripeBookings = bookings.filter(b => b.stripeChargeId || b.paymentIntentId)
     const cashBookings = bookings.filter(b => !b.stripeChargeId && !b.paymentIntentId)
 
-    const stripeRevenue = stripeBookings.reduce((sum, b) => sum + calcHostEarningsForBooking(b), 0)
-    const cashRevenue = cashBookings.reduce((sum, b) => sum + calcHostEarningsForBooking(b), 0)
+    const stripeRevenue = stripeBookings.reduce((sum, b) => sum + calcEarnings(b), 0)
+    const cashRevenue = cashBookings.reduce((sum, b) => sum + calcEarnings(b), 0)
 
     // Get last 6 months of data
     const monthlyData = []

@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { calcHostEarnings } from '@/app/lib/host-earnings'
 
 export async function GET(request: NextRequest) {
   try {
@@ -439,13 +440,9 @@ export async function GET(request: NextRequest) {
         cars: formattedCars,
         
         recentBookings: h.bookings.map((b: any) => {
-          const gross = (Number(b.subtotal) || 0) + (Number(b.deliveryFee) || 0)
-          const rate = b.platformFeeRate ? Number(b.platformFeeRate) : commissionRate
-          const fee = gross * rate
-          const proc = gross * 0.029 + 0.30
           return {
             ...b,
-            hostEarnings: Math.round(Math.max(0, gross - fee - proc) * 100) / 100,
+            hostEarnings: calcHostEarnings(b, commissionRate),
             guestAvatar: b.reviewerProfile?.profilePhotoUrl
               || b.renter?.image
               || b.renter?.avatar
