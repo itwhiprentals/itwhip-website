@@ -217,6 +217,9 @@ export async function GET(request: NextRequest) {
         select: {
           status: true,
           totalAmount: true,
+          subtotal: true,
+          deliveryFee: true,
+          platformFeeRate: true,
           startDate: true,
           endDate: true,
           createdAt: true,
@@ -234,24 +237,22 @@ export async function GET(request: NextRequest) {
     const pendingBookingsCount = allBookingStats.filter(b => pendingStatuses.includes(b.status)).length
     const completedBookingsCount = allBookingStats.filter(b => completedStatuses.includes(b.status)).length
 
-    // Revenue from completed/active bookings
-    const revenueBookings = allBookingStats.filter(b =>
-      [...completedStatuses, ...activeStatuses, 'CONFIRMED'].includes(b.status)
-    )
-    const grossRevenue = revenueBookings.reduce((sum, b) => sum + Number(b.totalAmount || 0), 0)
+    // Revenue from COMPLETED bookings only — using calcHostEarnings
     const commissionRate = host.commissionRate || 0.25
-    const netRevenue = grossRevenue * (1 - commissionRate)
+    const revenueBookings = allBookingStats.filter(b => completedStatuses.includes(b.status))
+    const grossRevenue = revenueBookings.reduce((sum, b) => sum + (Number(b.subtotal) || 0) + (Number(b.deliveryFee) || 0), 0)
+    const netRevenue = revenueBookings.reduce((sum, b) => sum + calcHostEarnings(b, commissionRate), 0)
 
-    // Time-based revenue (by booking creation date)
+    // Time-based revenue (by booking creation date) — COMPLETED only, host earnings
     const todayRevenue = revenueBookings
       .filter(b => new Date(b.createdAt) >= todayStart)
-      .reduce((sum, b) => sum + Number(b.totalAmount || 0), 0) * (1 - commissionRate)
+      .reduce((sum, b) => sum + calcHostEarnings(b, commissionRate), 0)
     const weekRevenue = revenueBookings
       .filter(b => new Date(b.createdAt) >= weekStart)
-      .reduce((sum, b) => sum + Number(b.totalAmount || 0), 0) * (1 - commissionRate)
+      .reduce((sum, b) => sum + calcHostEarnings(b, commissionRate), 0)
     const monthRevenue = revenueBookings
       .filter(b => new Date(b.createdAt) >= monthStart)
-      .reduce((sum, b) => sum + Number(b.totalAmount || 0), 0) * (1 - commissionRate)
+      .reduce((sum, b) => sum + calcHostEarnings(b, commissionRate), 0)
 
     // Completed this month vs last month
     const completedThisMonth = allBookingStats.filter(b =>
