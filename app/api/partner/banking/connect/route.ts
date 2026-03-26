@@ -149,6 +149,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Determine business type: individual hosts vs fleet companies
+    const isCompany = partner.partnerCompanyName && ['FLEET_PARTNER', 'FLEET_MANAGER'].includes(partner.hostType || '')
+    const businessType = isCompany ? 'company' : 'individual'
+
+    // Parse name for individual accounts
+    const nameParts = (partner.name || '').trim().split(' ')
+    const firstName = nameParts[0] || ''
+    const lastName = nameParts.slice(1).join(' ') || nameParts[0] || ''
+
     // Create new Stripe Connect Express account
     const connectAccount = await stripe.accounts.create({
       type: 'express',
@@ -158,10 +167,11 @@ export async function POST(request: NextRequest) {
         card_payments: { requested: true },
         transfers: { requested: true },
       },
-      business_type: 'company', // Partners are businesses
-      company: {
-        name: partner.partnerCompanyName || partner.name
-      },
+      business_type: businessType,
+      ...(isCompany
+        ? { company: { name: partner.partnerCompanyName || partner.name } }
+        : { individual: { first_name: firstName, last_name: lastName, email: partner.email } }
+      ),
       settings: {
         payouts: {
           schedule: {
@@ -172,7 +182,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         hostId: partner.id,
         partnerName: partner.partnerCompanyName || partner.name,
-        hostType: partner.hostType,
+        hostType: partner.hostType || 'REAL',
         platform: 'itwhip'
       }
     })
