@@ -435,16 +435,23 @@ export async function GET(request: NextRequest) {
         // Cars with full data for completion checking
         cars: formattedCars,
         
-        recentBookings: h.bookings.map((b: any) => ({
-          ...b,
-          guestAvatar: b.reviewerProfile?.profilePhotoUrl
-            || b.renter?.image
-            || b.renter?.avatar
-            || null,
-          hostApproval: b.bookingType === 'MANUAL'
-            ? 'APPROVED'
-            : (b.hostStatus || null),
-        })),
+        recentBookings: h.bookings.map((b: any) => {
+          const gross = (Number(b.subtotal) || 0) + (Number(b.deliveryFee) || 0)
+          const rate = b.platformFeeRate ? Number(b.platformFeeRate) : commissionRate
+          const fee = gross * rate
+          const proc = gross * 0.029 + 0.30
+          return {
+            ...b,
+            hostEarnings: Math.round(Math.max(0, gross - fee - proc) * 100) / 100,
+            guestAvatar: b.reviewerProfile?.profilePhotoUrl
+              || b.renter?.image
+              || b.renter?.avatar
+              || null,
+            hostApproval: b.bookingType === 'MANUAL'
+              ? 'APPROVED'
+              : (b.hostStatus || null),
+          }
+        }),
         recentReviews: h.reviews.map((r: any) => ({
           id: r.id,
           rating: r.rating,
