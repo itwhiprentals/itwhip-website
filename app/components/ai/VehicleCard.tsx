@@ -218,7 +218,7 @@ export default function VehicleCard({ vehicle, onSelect, startDate, endDate }: V
             {/* View All link */}
             <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-700">
               <Link
-                href={`/rentals/${vehicle.id}`}
+                href={`/rentals/${vehicle.id || '#'}`}
                 target="_blank"
                 className="text-xs text-primary font-medium hover:underline"
                 onClick={(e) => e.stopPropagation()}

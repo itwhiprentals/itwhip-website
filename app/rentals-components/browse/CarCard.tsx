@@ -71,7 +71,7 @@ export default function CarCard({
 
   if (view === 'list') {
     return (
-      <Link href={`/rentals/${car.id}`}>
+      <Link href={`/rentals/${car.id || '#'}`}>
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
           <div className="flex">
             {/* Image Section */}
@@ -200,7 +200,7 @@ export default function CarCard({
 
   // Grid View (Default)
   return (
-    <Link href={`/rentals/${car.id}`}>
+    <Link href={`/rentals/${car.id || '#'}`}>
       <div 
         className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer"
         onMouseEnter={() => setIsHovered(true)}

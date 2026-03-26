@@ -221,7 +221,7 @@ function CarCarousel({
           return (
             <Link
               key={car.id}
-              href={`/rentals/${car.id}`}
+              href={`/rentals/${car.id || '#'}`}
               className="flex-shrink-0 w-72 group"
             >
               <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all border border-gray-100 dark:border-gray-700">
