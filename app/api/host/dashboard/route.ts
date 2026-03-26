@@ -236,6 +236,9 @@ export async function GET(request: NextRequest) {
     const activeBookings = allBookingStats.filter(b => activeStatuses.includes(b.status)).length
     const pendingBookingsCount = allBookingStats.filter(b => pendingStatuses.includes(b.status)).length
     const completedBookingsCount = allBookingStats.filter(b => completedStatuses.includes(b.status)).length
+    const cancelledBookingsCount = allBookingStats.filter(b => b.status === 'CANCELLED').length
+    const noShowBookingsCount = allBookingStats.filter(b => b.status === 'NO_SHOW').length
+    const confirmedBookingsCount = allBookingStats.filter(b => b.status === 'CONFIRMED').length
 
     // Revenue from COMPLETED bookings only — using calcHostEarnings
     const commissionRate = host.commissionRate || 0.25
@@ -305,6 +308,15 @@ export async function GET(request: NextRequest) {
         }, 0) / completedWithDates.length)
       : 0
 
+    // Rating distribution
+    const ratingGroups = await prisma.rentalReview.groupBy({
+      by: ['rating'],
+      where: { hostId },
+      _count: true
+    })
+    const ratingDistribution: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+    ratingGroups.forEach(g => { if (g.rating >= 1 && g.rating <= 5) ratingDistribution[g.rating] = g._count })
+
     // Calculate additional stats
     const stats = {
       totalCars: h.cars.length,
@@ -317,6 +329,9 @@ export async function GET(request: NextRequest) {
       activeBookings,
       pendingBookings: pendingBookingsCount,
       completedBookings: completedBookingsCount,
+      cancelledBookings: cancelledBookingsCount,
+      noShowBookings: noShowBookingsCount,
+      confirmedBookings: confirmedBookingsCount,
       totalEarnings: host.totalEarnings || netRevenue,
       grossEarnings: grossRevenue,
       netRevenue: Math.round(netRevenue * 100) / 100,
@@ -336,6 +351,7 @@ export async function GET(request: NextRequest) {
       claimsAmount: claimsAmount,
       pendingClaims: claimsPending,
       reviewCount: h._count?.reviews || 0,
+      ratingDistribution,
       unreadMessages: unreadMessagesCount,
       managedVehicles: managedVehiclesCount
     }
