@@ -35,6 +35,15 @@ COPY prisma ./prisma
 RUN npm install
 
 COPY . .
+
+# Server env vars needed at build time for static page generation
+# Real values injected at runtime by App Runner
+ENV NEXTAUTH_URL=https://itwhip.com
+ENV NEXTAUTH_SECRET=build-placeholder
+ENV DATABASE_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder
+ENV JWT_SECRET=build-placeholder
+ENV JWT_REFRESH_SECRET=build-placeholder
+
 RUN NODE_OPTIONS='--max-old-space-size=4096' npm run build
 
 FROM node:20-alpine AS runner
