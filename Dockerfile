@@ -9,7 +9,7 @@ COPY . .
 
 # .env.production is created by CI with all env vars
 # Next.js automatically reads .env.production during build
-RUN NODE_OPTIONS='--max-old-space-size=4096' npm run build
+RUN NODE_OPTIONS='--max-old-space-size=6144' npm run build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
