@@ -31,10 +31,10 @@ ENV NEXT_PUBLIC_OPENWEATHER_API_KEY=$NEXT_PUBLIC_OPENWEATHER_API_KEY
 ENV NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 
 COPY package*.json ./
+COPY prisma ./prisma
 RUN npm install
 
 COPY . .
-RUN npx prisma generate
 RUN NODE_OPTIONS='--max-old-space-size=4096' npm run build
 
 FROM node:20-alpine AS runner
