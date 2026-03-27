@@ -101,7 +101,7 @@ export async function GET(request: Request) {
       pong: true,
       timestamp: new Date().toISOString(),
       service: 'itwhip-api-v3',
-      region: process.env.VERCEL_REGION || 'us-west',
+      region: process.env.AWS_REGION || 'us-east-2',
       responseTime: `${responseTime}ms`,
       clientIp: process.env.NODE_ENV === 'production' ? undefined : clientIp, // Only show in dev
       headers: {
@@ -123,7 +123,7 @@ export async function GET(request: Request) {
         'X-RateLimit-Remaining': String(remaining),
         'X-RateLimit-Reset': String(resetTime),
         'X-Service-Name': 'itwhip-api-v3',
-        'X-Service-Region': process.env.VERCEL_REGION || 'us-west',
+        'X-Service-Region': process.env.AWS_REGION || 'us-east-2',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key'

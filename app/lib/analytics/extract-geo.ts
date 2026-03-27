@@ -1,6 +1,5 @@
 // app/lib/analytics/extract-geo.ts
-// Extract geographic data from request headers
-// Works with Vercel, Cloudflare, and other CDN headers
+// Extract geographic data from client IP using geoip-lite
 
 import { headers } from 'next/headers'
 
@@ -12,57 +11,33 @@ interface GeoData {
 
 export async function extractGeoFromHeaders(): Promise<GeoData> {
   const headersList = await headers()
+  const ip = getClientIP(headersList)
 
-  // Try Vercel headers first (most common for Next.js deployments)
-  let country = headersList.get('x-vercel-ip-country')
-  let region = headersList.get('x-vercel-ip-country-region')
-  let city = headersList.get('x-vercel-ip-city')
+  if (!ip) return { country: null, region: null, city: null }
 
-  // Fallback to Cloudflare headers
-  if (!country) {
-    country = headersList.get('cf-ipcountry')
-  }
-  if (!city) {
-    city = headersList.get('cf-ipcity')
-  }
-  if (!region) {
-    region = headersList.get('cf-region')
-  }
-
-  // Decode URL-encoded city names (common with Vercel)
-  if (city) {
-    try {
-      city = decodeURIComponent(city)
-    } catch {
-      // Keep original if decode fails
+  try {
+    const geoip = require('geoip-lite')
+    const geo = geoip.lookup(ip)
+    if (geo) {
+      return {
+        country: geo.country || null,
+        region: geo.region || null,
+        city: geo.city || null,
+      }
     }
-  }
+  } catch {}
 
-  return {
-    country: country || null,
-    region: region || null,
-    city: city || null
-  }
+  return { country: null, region: null, city: null }
 }
 
 export function getClientIP(headersList: Headers): string | null {
-  // Try various headers in order of preference
-  const ipHeaders = [
-    'x-forwarded-for',
-    'x-real-ip',
-    'cf-connecting-ip',
-    'x-vercel-forwarded-for'
-  ]
+  const ipHeaders = ['x-forwarded-for', 'x-real-ip', 'cf-connecting-ip']
 
   for (const header of ipHeaders) {
     const value = headersList.get(header)
     if (value) {
-      // x-forwarded-for can contain multiple IPs, take the first
       const ip = value.split(',')[0].trim()
-      // Basic validation - not localhost
-      if (ip && ip !== '127.0.0.1' && ip !== '::1') {
-        return ip
-      }
+      if (ip && ip !== '127.0.0.1' && ip !== '::1') return ip
     }
   }
 

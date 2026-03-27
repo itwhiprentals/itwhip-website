@@ -159,17 +159,23 @@ export async function getEnhancedLocation(ip: string, headers?: Headers): Promis
     let timezone: string | null = null
     let zipCode: string | null = null
 
-    if (headers) {
-      country = headers.get('x-vercel-ip-country') || null
-      region = headers.get('x-vercel-ip-country-region') || null
-      city = headers.get('x-vercel-ip-city') ? decodeURIComponent(headers.get('x-vercel-ip-city')!) : null
-      latitude = headers.get('x-vercel-ip-latitude') ? parseFloat(headers.get('x-vercel-ip-latitude')!) : null
-      longitude = headers.get('x-vercel-ip-longitude') ? parseFloat(headers.get('x-vercel-ip-longitude')!) : null
-      timezone = headers.get('x-vercel-ip-timezone') || null
-      zipCode = headers.get('x-vercel-ip-postal-code') || null
+    // Geo lookup via geoip-lite
+    if (ip) {
+      try {
+        const geoip = require('geoip-lite')
+        const geo = geoip.lookup(ip)
+        if (geo) {
+          country = geo.country || null
+          region = geo.region || null
+          city = geo.city || null
+          latitude = geo.ll?.[0] ?? null
+          longitude = geo.ll?.[1] ?? null
+          timezone = geo.timezone || null
+        }
+      } catch {}
     }
 
-    console.log(`[Geolocation] Vercel geo: ${city}, ${region}, ${country} (${latitude}, ${longitude})`)
+    console.log(`[Geolocation] Geo: ${city}, ${region}, ${country} (${latitude}, ${longitude})`)
 
     // Query proxycheck.io for threat intelligence (non-blocking)
     const proxy = await checkProxyStatus(ip)

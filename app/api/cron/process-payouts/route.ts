@@ -246,15 +246,13 @@ export async function GET(request: NextRequest) {
   const expectedAuth = `Bearer ${process.env.CRON_SECRET}`
   const cronSecret = process.env.CRON_SECRET || 'itwhip-cron-secret-2024'
 
-  // Vercel crons don't send Bearer — check multiple auth methods
-  const isVercelCron = request.headers.get('x-vercel-cron') === '1'
   const hasSecret = authHeader === expectedAuth || authHeader === `Bearer ${cronSecret}`
 
-  if (!isVercelCron && !hasSecret) {
+  if (!hasSecret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  console.log('[Cron GET] Starting payout processing (triggered by Vercel cron)...')
+  console.log('[Cron GET] Starting payout processing...')
 
   try {
     const result = await processEligiblePayouts()
