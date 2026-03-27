@@ -3,11 +3,18 @@ frontend:
   phases:
     preBuild:
       commands:
+        - nvm install 20
+        - nvm use 20
         - npm ci --prefer-offline
+        - npx prisma generate
     build:
       commands:
-        - env | grep -e '_ARN' -e 'AMPLIFY_' -e 'AWS_' > /dev/null 2>&1 || true
-        - NODE_OPTIONS='--max-old-space-size=4096' npx next build
+        - NODE_OPTIONS='--max-old-space-size=6144' npx next build
+        - rm -rf .next/cache
+        - rm -rf node_modules/@swc/core-linux-x64-gnu
+        - rm -rf node_modules/@swc/core-linux-x64-musl
+        - rm -rf node_modules/@esbuild/linux-x64
+        - rm -rf node_modules/esbuild/linux-x64
   artifacts:
     baseDirectory: .next
     files:
