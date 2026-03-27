@@ -1,7 +1,7 @@
 // app/[locale]/layout.tsx
 // Locale-aware layout — wraps all guest-facing pages with translation provider
 import type { Metadata, Viewport } from 'next'
-import { Analytics } from '@vercel/analytics/next'
+
 import { Suspense } from 'react'
 import { NextIntlClientProvider, hasLocale } from 'next-intl'
 import { setRequestLocale, getMessages, getTranslations } from 'next-intl/server'
@@ -299,7 +299,7 @@ export default async function LocaleLayout({
           {children}
         </Providers>
       </NextIntlClientProvider>
-      <Analytics />
+
       <Suspense fallback={null}>
         <PageTracker />
       </Suspense>

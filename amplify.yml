@@ -1,0 +1,18 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci --prefer-offline
+    build:
+      commands:
+        - env | grep -e '_ARN' -e 'AMPLIFY_' -e 'AWS_' > /dev/null 2>&1 || true
+        - NODE_OPTIONS='--max-old-space-size=4096' npx next build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*

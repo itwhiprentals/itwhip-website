@@ -7,9 +7,6 @@ const nextConfig = {
   output: 'standalone',
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
-  experimental: {
-    turbopackFileSystemCacheForDev: false,
-  },
   // Allow phones on local network to access dev server (for VIN scanning)
   // Allow phones on local network — use .local hostname + common IP ranges
   allowedDevOrigins: [
