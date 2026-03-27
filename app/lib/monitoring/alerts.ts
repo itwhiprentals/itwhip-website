@@ -588,12 +588,38 @@ class AlertManager extends EventEmitter {
    */
   private async sendEmailNotification(alert: Alert): Promise<void> {
     try {
-      // Implementation depends on your email service
-      // This is a placeholder
-      logger.info('Email notification sent', {
-        alert: alert.id,
-        recipients: this.notificationConfig.email?.recipients
+      const { Resend } = await import('resend')
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      const recipients = this.notificationConfig.email?.recipients || [process.env.ADMIN_EMAIL || 'info@itwhip.com']
+      const severityColors: Record<string, string> = { CRITICAL: '#dc2626', HIGH: '#f97316', MEDIUM: '#eab308', LOW: '#6b7280' }
+      const color = severityColors[alert.severity] || '#6b7280'
+
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM || 'ItWhip Rentals <info@itwhip.com>',
+        to: recipients,
+        subject: `[${alert.severity}] ${alert.title}`,
+        html: `
+          <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+            <div style="background:${color};color:white;padding:16px 20px;border-radius:8px 8px 0 0">
+              <h2 style="margin:0;font-size:18px">${alert.severity} Alert</h2>
+            </div>
+            <div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px">
+              <h3 style="margin:0 0 8px">${alert.title}</h3>
+              <p style="color:#6b7280;margin:0 0 16px">${alert.message}</p>
+              <table style="width:100%;font-size:13px;color:#374151">
+                <tr><td style="padding:4px 0;color:#9ca3af">Type</td><td>${alert.type}</td></tr>
+                <tr><td style="padding:4px 0;color:#9ca3af">Source</td><td>${alert.source || 'System'}</td></tr>
+                <tr><td style="padding:4px 0;color:#9ca3af">Time</td><td>${new Date(alert.timestamp).toLocaleString()}</td></tr>
+              </table>
+              <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af">
+                <a href="https://itwhip.com/fleet/monitoring" style="color:#6366f1">View in Dashboard</a>
+              </div>
+            </div>
+          </div>
+        `,
       })
+
+      logger.info('Email notification sent', { alert: alert.id, recipients })
     } catch (error) {
       logger.error('Failed to send email notification', { error, alert: alert.id })
     }

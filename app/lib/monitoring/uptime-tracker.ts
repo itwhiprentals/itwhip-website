@@ -1,6 +1,5 @@
 // app/lib/monitoring/uptime-tracker.ts
-// Real uptime tracking based on actual health checks
-// Stores health check results and calculates accurate uptime percentage
+// Real uptime tracking — persists health checks to DB for accurate historical data
 
 import prisma from '@/app/lib/database/prisma'
 
@@ -16,31 +15,35 @@ interface HealthCheckResult {
   error?: string
 }
 
-// In-memory buffer for health checks (flushed to DB periodically)
-// This provides sub-second uptime tracking without DB overhead
+// In-memory buffer for quick access (also persisted to DB)
 const healthCheckBuffer: HealthCheckResult[] = []
 const MAX_BUFFER_SIZE = 100
-const FLUSH_INTERVAL = 60000 // Flush to DB every minute
-
-// Last known status for quick access
 let lastKnownStatus: HealthCheckResult | null = null
 
 /**
- * Record a health check result
- * Called by the health check endpoint or cron job
+ * Record a health check result — stores in memory and persists to DB
  */
 export function recordHealthCheck(result: HealthCheckResult): void {
   lastKnownStatus = result
   healthCheckBuffer.push(result)
-
-  // Trim buffer if too large
   if (healthCheckBuffer.length > MAX_BUFFER_SIZE) {
     healthCheckBuffer.shift()
   }
+
+  // Persist to DB (fire and forget)
+  prisma.healthCheck.create({
+    data: {
+      status: result.status === 'up' ? 'healthy' : result.status === 'degraded' ? 'degraded' : 'down',
+      responseMs: Math.round(result.responseTime),
+      dbStatus: result.services.database ? 'healthy' : 'down',
+      dbLatencyMs: Math.round(result.responseTime),
+      details: { services: result.services, error: result.error },
+    }
+  }).catch(() => {}) // Don't fail if DB write fails
 }
 
 /**
- * Get current system status (from last check)
+ * Get current system status
  */
 export function getCurrentStatus(): HealthCheckResult | null {
   return lastKnownStatus
@@ -51,16 +54,11 @@ export function getCurrentStatus(): HealthCheckResult | null {
  */
 export async function performHealthCheck(): Promise<HealthCheckResult> {
   const startTime = Date.now()
-  const services = {
-    database: false,
-    api: true, // If we're running, API is up
-    auth: false
-  }
+  const services = { database: false, api: true, auth: false }
   let status: 'up' | 'down' | 'degraded' = 'up'
   let error: string | undefined
 
   try {
-    // Check database connectivity
     await prisma.$queryRaw`SELECT 1`
     services.database = true
   } catch (e) {
@@ -69,7 +67,6 @@ export async function performHealthCheck(): Promise<HealthCheckResult> {
     error = 'Database connection failed'
   }
 
-  // Check auth service (simple query to verify user table accessible)
   try {
     await prisma.user.count({ take: 1 })
     services.auth = true
@@ -81,28 +78,19 @@ export async function performHealthCheck(): Promise<HealthCheckResult> {
 
   const responseTime = Date.now() - startTime
 
-  // Determine overall status
   if (!services.database) {
-    status = 'down' // Can't function without DB
+    status = 'down'
   } else if (responseTime > 5000) {
-    status = 'degraded' // Slow but working
+    status = 'degraded'
   }
 
-  const result: HealthCheckResult = {
-    timestamp: new Date(),
-    status,
-    responseTime,
-    services,
-    error
-  }
-
+  const result: HealthCheckResult = { timestamp: new Date(), status, responseTime, services, error }
   recordHealthCheck(result)
   return result
 }
 
 /**
- * Calculate uptime percentage from recent health checks
- * Uses in-memory buffer for recent data, falls back to estimation
+ * Calculate recent uptime from in-memory buffer
  */
 export function calculateRecentUptime(): {
   uptimePercent: number
@@ -111,7 +99,6 @@ export function calculateRecentUptime(): {
   status: 'up' | 'down' | 'degraded'
 } {
   if (healthCheckBuffer.length === 0) {
-    // No checks recorded yet - return current status
     return {
       uptimePercent: lastKnownStatus?.status === 'up' ? 100 : 0,
       checksAnalyzed: 0,
@@ -120,22 +107,16 @@ export function calculateRecentUptime(): {
     }
   }
 
-  // Count up vs down/degraded checks
   let upCount = 0
   let lastDowntime: Date | null = null
 
   for (const check of healthCheckBuffer) {
-    if (check.status === 'up') {
-      upCount++
-    } else {
-      lastDowntime = check.timestamp
-    }
+    if (check.status === 'up') upCount++
+    else lastDowntime = check.timestamp
   }
 
-  const uptimePercent = Math.round((upCount / healthCheckBuffer.length) * 10000) / 100
-
   return {
-    uptimePercent,
+    uptimePercent: Math.round((upCount / healthCheckBuffer.length) * 10000) / 100,
     checksAnalyzed: healthCheckBuffer.length,
     lastDowntime,
     status: lastKnownStatus?.status || 'up'
@@ -143,8 +124,7 @@ export function calculateRecentUptime(): {
 }
 
 /**
- * Get uptime for a specific time range
- * For longer ranges, uses database if available, otherwise estimates
+ * Get uptime for a specific time range — queries DB for accurate historical data
  */
 export async function getUptimeForRange(range: '1h' | '24h' | '7d' | '30d'): Promise<{
   uptimePercent: number
@@ -152,13 +132,15 @@ export async function getUptimeForRange(range: '1h' | '24h' | '7d' | '30d'): Pro
   downChecks: number
   degradedChecks: number
   avgResponseTime: number | null
-  source: 'realtime' | 'estimated'
+  source: 'realtime' | 'database' | 'estimated'
 }> {
-  // For short ranges, use in-memory buffer
-  if (range === '1h' && healthCheckBuffer.length > 0) {
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
-    const recentChecks = healthCheckBuffer.filter(c => c.timestamp >= oneHourAgo)
+  const now = new Date()
+  const rangeMs = { '1h': 3600000, '24h': 86400000, '7d': 604800000, '30d': 2592000000 }
+  const startDate = new Date(now.getTime() - rangeMs[range])
 
+  // For 1h, prefer in-memory buffer
+  if (range === '1h' && healthCheckBuffer.length > 0) {
+    const recentChecks = healthCheckBuffer.filter(c => c.timestamp >= startDate)
     if (recentChecks.length > 0) {
       const upCount = recentChecks.filter(c => c.status === 'up').length
       const degradedCount = recentChecks.filter(c => c.status === 'degraded').length
@@ -176,95 +158,58 @@ export async function getUptimeForRange(range: '1h' | '24h' | '7d' | '30d'): Pro
     }
   }
 
-  // For longer ranges or no data, provide honest estimation
-  // Since we don't have historical data, we calculate from what we can measure:
-  // - Current status (if up now, likely was up)
-  // - Critical security events as proxy for issues
-
-  const now = new Date()
-  let startDate: Date
-
-  switch (range) {
-    case '1h':
-      startDate = new Date(now.getTime() - 60 * 60 * 1000)
-      break
-    case '24h':
-      startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-      break
-    case '7d':
-      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      break
-    case '30d':
-      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-      break
-  }
-
+  // Query DB for historical data
   try {
-    // Count actual system errors (not security blocks, but real failures)
-    const systemErrors = await prisma.securityEvent.count({
-      where: {
-        timestamp: { gte: startDate },
-        type: { in: ['system_error', 'database_error', 'api_error', 'service_down'] },
-        severity: { in: ['CRITICAL', 'HIGH'] }
+    const checks = await prisma.healthCheck.findMany({
+      where: { checkedAt: { gte: startDate } },
+      select: { status: true, responseMs: true },
+    })
+
+    if (checks.length > 0) {
+      const healthy = checks.filter(c => c.status === 'healthy').length
+      const degraded = checks.filter(c => c.status === 'degraded').length
+      const down = checks.filter(c => c.status === 'down').length
+      const avgMs = Math.round(checks.reduce((a, c) => a + c.responseMs, 0) / checks.length)
+
+      return {
+        uptimePercent: Math.round((healthy / checks.length) * 10000) / 100,
+        totalChecks: checks.length,
+        downChecks: down,
+        degradedChecks: degraded,
+        avgResponseTime: avgMs,
+        source: 'database'
       }
-    })
-
-    // Estimate: if we have page views, the system was up to serve them
-    const pageViewsInRange = await prisma.pageView.count({
-      where: { timestamp: { gte: startDate } }
-    })
-
-    // If we have page views and few errors, high uptime
-    // Each system error might indicate ~2 minutes of degraded service
-    const rangeMinutes = (now.getTime() - startDate.getTime()) / (1000 * 60)
-    const estimatedDowntimeMinutes = systemErrors * 2 // More conservative estimate
-
-    // But if we served page views, we were definitely up
-    // Use a weighted calculation
-    let uptimePercent: number
-
-    if (pageViewsInRange > 0) {
-      // We definitely served traffic, so minimum uptime is high
-      const maxDowntimePercent = (estimatedDowntimeMinutes / rangeMinutes) * 100
-      uptimePercent = Math.max(95, 100 - maxDowntimePercent) // Minimum 95% if serving traffic
-    } else {
-      // No traffic - could be down or just no visitors
-      uptimePercent = 100 - (estimatedDowntimeMinutes / rangeMinutes) * 100
     }
 
-    uptimePercent = Math.max(0, Math.min(100, Math.round(uptimePercent * 100) / 100))
-
+    // No DB data yet — estimate from page views
+    const pageViews = await prisma.pageView.count({ where: { timestamp: { gte: startDate } } })
     return {
-      uptimePercent,
+      uptimePercent: pageViews > 0 ? 99.9 : 0,
       totalChecks: 0,
-      downChecks: systemErrors,
+      downChecks: 0,
       degradedChecks: 0,
       avgResponseTime: null,
       source: 'estimated'
     }
   } catch (error) {
-    console.error('[Uptime] Error calculating uptime:', error)
-    return {
-      uptimePercent: 0, // If we can't query, assume down
-      totalChecks: 0,
-      downChecks: 1,
-      degradedChecks: 0,
-      avgResponseTime: null,
-      source: 'estimated'
-    }
+    console.error('[Uptime] Error:', error)
+    return { uptimePercent: 0, totalChecks: 0, downChecks: 1, degradedChecks: 0, avgResponseTime: null, source: 'estimated' }
   }
 }
 
 /**
- * Initialize uptime tracking
- * Sets up periodic health checks
+ * Initialize periodic health checks
  */
 export function initUptimeTracking(intervalMs: number = 30000): NodeJS.Timeout {
-  // Perform initial check
   performHealthCheck().catch(console.error)
+  return setInterval(() => { performHealthCheck().catch(console.error) }, intervalMs)
+}
 
-  // Schedule periodic checks
-  return setInterval(() => {
-    performHealthCheck().catch(console.error)
-  }, intervalMs)
+/**
+ * Clean up old health checks (keep 30 days)
+ */
+export async function cleanupOldHealthChecks(): Promise<number> {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+  const { count } = await prisma.healthCheck.deleteMany({ where: { checkedAt: { lt: thirtyDaysAgo } } })
+  return count
 }

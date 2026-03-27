@@ -3130,6 +3130,19 @@ model MonitoringAlert {
   @@index([createdAt])
 }
 
+model HealthCheck {
+  id          String   @id @default(cuid())
+  status      String // healthy, degraded, down
+  responseMs  Int
+  dbStatus    String // healthy, degraded, down
+  dbLatencyMs Int
+  details     Json? // additional check results
+  checkedAt   DateTime @default(now())
+
+  @@index([checkedAt])
+  @@index([status])
+}
+
 model Session {
   id           String    @id @default(cuid())
   userId       String?

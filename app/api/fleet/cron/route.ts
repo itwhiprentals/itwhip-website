@@ -7,17 +7,15 @@ import { prisma } from '@/app/lib/database/prisma'
 export const dynamic = 'force-dynamic'
 
 // All known cron jobs with their schedules
+// AWS EventBridge Scheduler → Lambda → API endpoint
 const CRON_JOBS = [
-  { name: 'expire-holds', label: 'Expire ON_HOLD Bookings', schedule: 'Daily (master)', color: '#ef4444' },
-  { name: 'release-deposits', label: 'Release Security Deposits', schedule: 'Daily (master)', color: '#f59e0b' },
-  { name: 'auto-complete', label: 'Auto-Complete Overdue', schedule: 'Daily (master)', color: '#8b5cf6' },
-  { name: 'pickup-reminder', label: 'Pickup Reminders', schedule: 'Daily (master)', color: '#06b6d4' },
-  { name: 'return-reminder', label: 'Return Reminders', schedule: 'Daily (master)', color: '#14b8a6' },
+  { name: 'system-cron', label: 'System Cron Suite', schedule: 'Daily midnight', color: '#64748b' },
   { name: 'expire-overdue-pickups', label: 'Expire Overdue Pickups', schedule: 'Every 10 min', color: '#f97316' },
   { name: 'noshow-detection', label: 'No-Show Detection', schedule: 'Every 10 min', color: '#ec4899' },
+  { name: 'auto-complete', label: 'Auto-Complete Overdue', schedule: 'Every 10 min', color: '#8b5cf6' },
   { name: 'payment-deadline', label: 'Payment Deadline', schedule: 'Every 30 min', color: '#6366f1' },
   { name: 'host-acceptance-reminders', label: 'Host Acceptance', schedule: 'Every hour', color: '#22c55e' },
-  { name: 'master-cron', label: 'Master Cron Suite', schedule: 'Daily midnight', color: '#64748b' },
+  { name: 'process-payouts', label: 'Process Payouts', schedule: 'Daily 2 AM', color: '#ef4444' },
 ]
 
 export async function GET() {
