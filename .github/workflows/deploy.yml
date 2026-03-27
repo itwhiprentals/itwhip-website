@@ -6,7 +6,6 @@ on:
 env:
   AWS_REGION: us-east-2
   ECR_REPOSITORY: itwhip-website
-  APP_RUNNER_SERVICE_ARN: arn:aws:apprunner:us-east-2:885446904257:service/itwhip-website/625d71c9b38e4a0698c4cf4deaedb0c0
 
 jobs:
   deploy:
@@ -30,21 +29,21 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }} \
+            --build-arg NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }} \
+            --build-arg NEXT_PUBLIC_BASE_URL=${{ secrets.NEXT_PUBLIC_BASE_URL }} \
+            --build-arg NEXT_PUBLIC_URL=${{ secrets.NEXT_PUBLIC_URL }} \
+            --build-arg NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=${{ secrets.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME }} \
+            --build-arg NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=${{ secrets.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET }} \
+            --build-arg NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }} \
+            --build-arg NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }} \
+            --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }} \
+            --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }} \
+            --build-arg NEXT_PUBLIC_MAPBOX_TOKEN=${{ secrets.NEXT_PUBLIC_MAPBOX_TOKEN }} \
+            --build-arg NEXT_PUBLIC_OPENWEATHER_API_KEY=${{ secrets.NEXT_PUBLIC_OPENWEATHER_API_KEY }} \
+            --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }} \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-      - name: Deploy to App Runner
-        run: |
-          aws apprunner update-service \
-            --service-arn $APP_RUNNER_SERVICE_ARN \
-            --source-configuration "{
-              \"ImageRepository\": {
-                \"ImageIdentifier\": \"${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}\",
-                \"ImageRepositoryType\": \"ECR\",
-                \"ImageConfiguration\": {
-                  \"Port\": \"3000\"
-                }
-              },
-              \"AutoDeploymentsEnabled\": false
-            }"
