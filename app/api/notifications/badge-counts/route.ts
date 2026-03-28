@@ -83,7 +83,7 @@ async function getHostBadges(hostId: string, userId: string) {
 
   const personalInfo = !host?.profilePhoto || !host?.phone || !host?.user?.emailVerified || !host?.user?.phoneVerified
   const bankingPayouts = !host?.stripePayoutsEnabled || !host?.stripeAccountId
-  const hasRevenue = revenue > 0
+  const hasRevenue = revenue > 0 || bankingPayouts
 
   return {
     role: 'host',
