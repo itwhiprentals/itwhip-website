@@ -1090,6 +1090,28 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       session.mode = parsed.mode
     }
 
+    // FORCED SEARCH FALLBACK: If Claude has location + dates but didn't call search_vehicles,
+    // auto-search so the user always sees cars when a location is set
+    if (session.location && !vehicles && !toolsUsedNames.includes('search_vehicles')) {
+      console.log(`[ai-booking-stream] FORCED SEARCH: Claude didn't call search_vehicles but location=${session.location}`)
+      try {
+        const { searchVehicles } = await import('@/app/lib/ai-booking/tools')
+        const forcedResults = await searchVehicles({
+          location: session.location,
+          pickupDate: session.startDate || undefined,
+          returnDate: session.endDate || undefined,
+          pickupTime: session.startTime || undefined,
+          returnTime: session.endTime || undefined,
+        })
+        if (forcedResults.length > 0) {
+          vehicles = forcedResults
+          console.log(`[ai-booking-stream] FORCED SEARCH: Found ${forcedResults.length} vehicles`)
+        }
+      } catch (err) {
+        console.error('[ai-booking-stream] FORCED SEARCH failed:', err)
+      }
+    }
+
     // Add only the reply text to session (not raw JSON)
     session = addMessage(session, 'assistant', parsed.reply)
 

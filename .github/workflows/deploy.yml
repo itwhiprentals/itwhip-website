@@ -102,6 +102,7 @@ jobs:
           UPSTASH_REDIS_REST_TOKEN=${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
           ANTHROPIC_ADMIN_API_KEY=${{ secrets.ANTHROPIC_ADMIN_API_KEY }}
+          NEXT_PUBLIC_SITE_URL=https://itwhip.com
           ENVFILE
           sed -i 's/^[[:space:]]*//' .env.production
 
