@@ -66,11 +66,11 @@ export async function searchVehicles(
 ): Promise<VehicleSummary[]> {
   try {
     const params = buildSearchParams(query);
-    // In production: use site URL. In dev: use DEV_SERVER_URL or localhost with PORT
-    const isDev = process.env.NODE_ENV === 'development';
-    const baseUrl = isDev
-      ? (process.env.DEV_SERVER_URL || `http://127.0.0.1:${process.env.PORT || '3000'}`)
-      : (process.env.NEXT_PUBLIC_SITE_URL || 'https://itwhip.com');
+    // Always use localhost for self-calls — avoids DNS/loopback issues on App Runner
+    const port = process.env.PORT || '3000';
+    const baseUrl = process.env.NODE_ENV === 'development'
+      ? (process.env.DEV_SERVER_URL || `http://127.0.0.1:${port}`)
+      : `http://localhost:${port}`;
     const url = `${baseUrl}/api/rentals/search?${params.toString()}`;
     console.log('[SEARCH-BRIDGE DEBUG] Query:', JSON.stringify(query));
     console.log('[SEARCH-BRIDGE DEBUG] URL:', url);
