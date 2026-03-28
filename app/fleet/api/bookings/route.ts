@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { sendPendingReviewEmail, sendHostReviewEmail } from '@/app/lib/email/booking-emails'
 import { sendEmail } from '@/app/lib/email/sender'
+import { NotificationTemplates } from '@/app/lib/notifications/push'
 
 export async function GET(request: NextRequest) {
   try {
@@ -399,7 +400,7 @@ export async function PATCH(request: NextRequest) {
             startDate: true, endDate: true, pickupLocation: true,
             totalAmount: true, numberOfDays: true,
             car: { select: { make: true, model: true, year: true, photos: { select: { url: true }, take: 1 } } },
-            host: { select: { email: true, name: true } }
+            host: { select: { email: true, name: true, userId: true } }
           }
         })
         if (approvedBooking?.host?.email) {
@@ -420,6 +421,13 @@ export async function PATCH(request: NextRequest) {
             numberOfDays: approvedBooking.numberOfDays || 1,
             reviewUrl: `${baseUrl}/partner/bookings/${approvedBooking.id}`
           }).catch(err => console.error('[Fleet Approve] Host email error:', err))
+        }
+        // Push — fleet approved, notify host + guest
+        if (approvedBooking) {
+          const carName = `${approvedBooking.car.year} ${approvedBooking.car.make} ${approvedBooking.car.model}`
+          if (approvedBooking.host?.userId && booking.renterId) {
+            NotificationTemplates.fleetBookingApproved(approvedBooking.host.userId, booking.renterId, carName, bookingId).catch(() => {})
+          }
         }
         break
       }
@@ -713,9 +721,15 @@ export async function PATCH(request: NextRequest) {
       data: updateData,
       include: {
         car: { select: { make: true, model: true, year: true } },
-        host: { select: { name: true, email: true } }
+        host: { select: { name: true, email: true, userId: true } }
       }
     })
+
+    // Push notifications for fleet actions
+    if (action === 'reject' && updatedBooking.host?.userId && updatedBooking.renterId) {
+      const carName = `${updatedBooking.car.year} ${updatedBooking.car.make} ${updatedBooking.car.model}`
+      NotificationTemplates.fleetBookingDeclined(updatedBooking.host.userId, updatedBooking.renterId, carName, bookingId).catch(() => {})
+    }
 
     // Create activity log
     await prisma.activityLog.create({

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { updateProfileStatus } from '@/lib/helpers/guestProfileStatus'
 import { nanoid } from 'nanoid'
+import { NotificationTemplates } from '@/app/lib/notifications/push'
 
 // ============================================================================
 // HELPER TYPES & FUNCTIONS FOR WARNING SYSTEM
@@ -637,6 +638,9 @@ export async function DELETE(
           })
         })
 
+        // Push notification to guest
+        if (guest.userId) NotificationTemplates.fleetWarnedGuest(guest.userId, reason).catch(() => {})
+
         console.log('⚠️ Enhanced warning issued:', {
           guestId: id,
           guestName: guest.name,
@@ -750,6 +754,9 @@ export async function DELETE(
             cancelledBookings = result.count
           }
         })
+
+        // Push notification to guest
+        if (guest.userId) NotificationTemplates.fleetSuspendedGuest(guest.userId, reason).catch(() => {})
 
         console.log(`🚫 Guest suspended (${suspensionLevel}):`, {
           guestId: id,

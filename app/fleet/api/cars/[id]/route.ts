@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { auditService, AuditEventType, AuditEntityType } from '@/app/lib/audit/audit-service'
+import { NotificationTemplates } from '@/app/lib/notifications/push'
 
 // GET - Fetch single car
 export async function GET(
@@ -69,7 +70,8 @@ export async function PUT(
     const currentCar = await prisma.rentalCar.findUnique({
       where: { id },
       include: {
-        photos: true
+        photos: true,
+        host: { select: { id: true, userId: true, name: true } }
       }
     })
 
@@ -265,23 +267,26 @@ export async function PUT(
       }
     )
 
-    // If car was deactivated, create notification
+    // Push notifications for car status changes
+    const carName = `${updatedCar.year} ${updatedCar.make} ${updatedCar.model}`
     if (body.isActive === false && currentCar.isActive === true) {
       await prisma.adminNotification.create({
         data: {
           type: 'CAR_DEACTIVATED',
-          title: `Car Deactivated: ${updatedCar.year} ${updatedCar.make} ${updatedCar.model}`,
+          title: `Car Deactivated: ${carName}`,
           message: `Car ${id} has been deactivated`,
           priority: 'MEDIUM',
           status: 'UNREAD',
           relatedId: id,
           relatedType: 'CAR',
-          metadata: {
-            carDetails: `${updatedCar.year} ${updatedCar.make} ${updatedCar.model}`,
-            reason: body.deactivationReason
-          }
+          metadata: { carDetails: carName, reason: body.deactivationReason }
         } as any
       })
+      // Push to host
+      if (currentCar.host?.userId) NotificationTemplates.fleetCarOnHold(currentCar.host.userId, carName, body.deactivationReason).catch(() => {})
+    } else if (body.isActive === true && currentCar.isActive === false) {
+      // Car released
+      if (currentCar.host?.userId) NotificationTemplates.fleetCarReleased(currentCar.host.userId, carName).catch(() => {})
     }
 
     // Fetch the updated car with photos to return

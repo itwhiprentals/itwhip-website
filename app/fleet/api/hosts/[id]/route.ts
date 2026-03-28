@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { auditService, AuditEventType, AuditEntityType } from '@/app/lib/audit/audit-service'
+import { NotificationTemplates } from '@/app/lib/notifications/push'
 
 // GET - Fetch host details
 export async function GET(
@@ -230,6 +231,11 @@ export async function PUT(
         }
       }
     )
+
+    // Push notification for commission rate change
+    if (body.commissionRate !== undefined && updatedHost.userId) {
+      NotificationTemplates.fleetCommissionUpdate(updatedHost.userId).catch(() => {})
+    }
 
     // If permissions changed, log that specifically
     if (permissionChanges) {

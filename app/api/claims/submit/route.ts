@@ -1,6 +1,7 @@
 // app/api/claims/submit/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/app/lib/database/prisma';
+import { NotificationTemplates } from '@/app/lib/notifications/push';
 
 // TEMPORARY: Testing flag - REMOVE BEFORE PRODUCTION
 const TESTING_MODE = process.env.NODE_ENV === 'development' && process.env.ENABLE_CLAIM_TESTING === 'true';
@@ -132,6 +133,15 @@ export async function POST(request: NextRequest) {
       where: { id: bookingId },
       data: { damageReported: true }
     });
+
+    // Push notification to host — claim filed
+    if (claim.host?.id) {
+      const host = await prisma.rentalHost.findUnique({ where: { id: claim.host.id }, select: { userId: true } })
+      if (host?.userId) {
+        const carName = booking.car ? `${booking.car.year} ${booking.car.make} ${booking.car.model}` : 'your vehicle'
+        NotificationTemplates.fleetClaimFiled(host.userId, carName).catch(() => {})
+      }
+    }
 
     // Add warning in response if testing mode
     const response: any = {

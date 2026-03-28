@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { NotificationTemplates } from '@/app/lib/notifications/push'
 
 /**
  * Fleet Appeal Review API - Approve or Deny Appeals
@@ -71,6 +72,7 @@ export async function POST(
             id: true,
             name: true,
             email: true,
+            userId: true,
             suspensionLevel: true,
             suspendedReason: true
           }
@@ -188,6 +190,9 @@ export async function POST(
           }
         })
       })
+
+      // Push notification — suspension lifted
+      if (appeal.guest.userId) NotificationTemplates.fleetLiftedSuspension(appeal.guest.userId).catch(() => {})
 
       return NextResponse.json({
         success: true,
