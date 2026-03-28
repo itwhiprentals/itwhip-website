@@ -15,6 +15,18 @@ export type PushNotificationType =
   | 'trip_reminder'
   | 'review_request'
   | 'host_reminder'
+  | 'fleet_suspended'
+  | 'fleet_warned'
+  | 'fleet_suspension_lifted'
+  | 'fleet_bonus'
+  | 'fleet_car_on_hold'
+  | 'fleet_car_released'
+  | 'fleet_booking_approved'
+  | 'fleet_booking_declined'
+  | 'fleet_vehicle_assigned'
+  | 'fleet_claim_filed'
+  | 'fleet_vehicle_update'
+  | 'fleet_commission_update'
 
 interface PushPayload {
   userId: string
@@ -184,4 +196,110 @@ export const NotificationTemplates = {
       type: 'host_reminder',
       data: { bookingId, screen: 'booking-detail' },
     }),
+
+  // ─── Fleet → Guest ──────────────────────────────────────────────
+
+  fleetSuspendedGuest: (guestUserId: string, reason?: string) =>
+    sendPushNotification({
+      userId: guestUserId,
+      title: 'Account Suspended',
+      body: reason ? `Your account has been suspended: ${reason}` : 'Your account has been suspended. Contact support for details.',
+      type: 'fleet_suspended',
+      data: { screen: 'account' },
+    }),
+
+  fleetWarnedGuest: (guestUserId: string, reason: string) =>
+    sendPushNotification({
+      userId: guestUserId,
+      title: 'Account Warning',
+      body: `You've received a warning: ${reason}`,
+      type: 'fleet_warned',
+      data: { screen: 'account' },
+    }),
+
+  fleetLiftedSuspension: (guestUserId: string) =>
+    sendPushNotification({
+      userId: guestUserId,
+      title: 'Account Reinstated',
+      body: 'Your account has been reinstated. You can book again.',
+      type: 'fleet_suspension_lifted',
+      data: { screen: 'home' },
+    }),
+
+  fleetBonusSent: (guestUserId: string, amount: string, fleetName: string) =>
+    sendPushNotification({
+      userId: guestUserId,
+      title: 'You Received a Bonus!',
+      body: `You received a $${amount} bonus from ${fleetName}!`,
+      type: 'fleet_bonus',
+      data: { screen: 'account' },
+    }),
+
+  // ─── Fleet → Host ───────────────────────────────────────────────
+
+  fleetCarOnHold: (hostUserId: string, carName: string, reason?: string) =>
+    sendPushNotification({
+      userId: hostUserId,
+      title: 'Vehicle On Hold',
+      body: reason ? `Your ${carName} is on hold: ${reason}` : `Your ${carName} is on hold pending verification`,
+      type: 'fleet_car_on_hold',
+      data: { screen: 'fleet' },
+    }),
+
+  fleetCarReleased: (hostUserId: string, carName: string) =>
+    sendPushNotification({
+      userId: hostUserId,
+      title: 'Vehicle Verified',
+      body: `Your ${carName} has been verified and is back live`,
+      type: 'fleet_car_released',
+      data: { screen: 'fleet' },
+    }),
+
+  fleetVehicleAssigned: (hostUserId: string, carName: string, fleetName: string) =>
+    sendPushNotification({
+      userId: hostUserId,
+      title: 'Vehicle Assigned',
+      body: `You've been assigned ${carName} by ${fleetName}`,
+      type: 'fleet_vehicle_assigned',
+      data: { screen: 'fleet' },
+    }),
+
+  fleetClaimFiled: (hostUserId: string, carName: string) =>
+    sendPushNotification({
+      userId: hostUserId,
+      title: 'Claim Filed',
+      body: `A claim was filed on your ${carName}`,
+      type: 'fleet_claim_filed',
+      data: { screen: 'claims' },
+    }),
+
+  fleetVehicleUpdate: (hostUserId: string, carName: string, status: string) =>
+    sendPushNotification({
+      userId: hostUserId,
+      title: 'Vehicle Status Updated',
+      body: `Your ${carName} was marked ${status} by fleet`,
+      type: 'fleet_vehicle_update',
+      data: { screen: 'fleet' },
+    }),
+
+  fleetCommissionUpdate: (hostUserId: string) =>
+    sendPushNotification({
+      userId: hostUserId,
+      title: 'Commission Updated',
+      body: 'Your commission rate has been updated by your fleet manager',
+      type: 'fleet_commission_update',
+      data: { screen: 'revenue' },
+    }),
+
+  // ─── Fleet → Both ──────────────────────────────────────────────
+
+  fleetBookingApproved: (hostUserId: string, guestUserId: string, carName: string, bookingId: string) => {
+    sendPushNotification({ userId: hostUserId, title: 'Fleet Approved Booking', body: `Your fleet manager approved the booking for ${carName}`, type: 'fleet_booking_approved', data: { bookingId, screen: 'booking-detail' } })
+    sendPushNotification({ userId: guestUserId, title: 'Booking Confirmed!', body: `Your ${carName} rental is confirmed. Get ready for your trip!`, type: 'fleet_booking_approved', data: { bookingId, screen: 'booking-detail' } })
+  },
+
+  fleetBookingDeclined: (hostUserId: string, guestUserId: string, carName: string, bookingId: string) => {
+    sendPushNotification({ userId: hostUserId, title: 'Fleet Declined Booking', body: `Your fleet manager declined the booking for ${carName}`, type: 'fleet_booking_declined', data: { bookingId, screen: 'booking-detail' } })
+    sendPushNotification({ userId: guestUserId, title: 'Booking Declined', body: `The ${carName} rental was declined by the fleet manager`, type: 'fleet_booking_declined', data: { bookingId, screen: 'booking-detail' } })
+  },
 }
