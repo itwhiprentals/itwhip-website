@@ -87,7 +87,11 @@ export async function searchVehicles(
     }
 
     const data = await response.json();
+    const carsInCity = data.carsInCity?.length || 0;
+    const nearbyCars = data.nearbyCars?.length || 0;
+    console.log(`[SEARCH-BRIDGE DEBUG] API returned: ${carsInCity} in city, ${nearbyCars} nearby`);
     const results = normalizeSearchResults(data);
+    console.log(`[SEARCH-BRIDGE DEBUG] After normalize: ${results.length} vehicles`);
 
     // Apply vehicle preferences sorting if provided
     if (preferences) {
