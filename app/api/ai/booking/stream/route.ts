@@ -1095,7 +1095,7 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     if (session.location && !vehicles && !toolsUsedNames.includes('search_vehicles')) {
       console.log(`[ai-booking-stream] FORCED SEARCH: Claude didn't call search_vehicles but location=${session.location}`)
       try {
-        const { searchVehicles } = await import('@/app/lib/ai-booking/tools')
+        const { searchVehicles } = await import('@/app/lib/ai-booking/search-bridge')
         const forcedResults = await searchVehicles({
           location: session.location,
           pickupDate: session.startDate || undefined,
