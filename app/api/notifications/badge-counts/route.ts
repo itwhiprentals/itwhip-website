@@ -44,11 +44,9 @@ export async function GET(request: NextRequest) {
 
 async function getHostBadges(hostId: string, userId: string) {
   const now = new Date()
-  const [requests, insurance, reviews, claims, unreadMessages, host, pushUnread] = await Promise.all([
+  const [requests, reviews, claims, unreadMessages, host, pushUnread] = await Promise.all([
     // Pending booking requests (fleet approved, waiting for host)
     prisma.rentalBooking.count({ where: { hostId, fleetStatus: 'APPROVED', hostStatus: 'PENDING' } }),
-    // Cars missing insurance
-    prisma.rentalCar.count({ where: { hostId, isActive: true, insuranceTier: null } }),
     // Unresponded reviews
     prisma.rentalReview.count({ where: { hostId, hostResponse: null } }),
     // Open claims
@@ -77,7 +75,7 @@ async function getHostBadges(hostId: string, userId: string) {
     role: 'host',
     totalUnread: pushUnread,
     tabs: {
-      fleet: insurance > 0,
+      fleet: false,
       bookings: requests > 0,
       dashboard: false,
       inbox: unreadMessages > 0,
@@ -85,9 +83,9 @@ async function getHostBadges(hostId: string, userId: string) {
     },
     explore: {
       requests,
-      insurance,
       reviews,
       claims,
+      insurance: 0,
       revenue: 0,
       verifyGuest: 0,
       tracking: 0,
@@ -98,7 +96,7 @@ async function getHostBadges(hostId: string, userId: string) {
       personalInfo,
       companyInfo: false,
       bankingPayouts,
-      insurance: insurance > 0,
+      insurance: false,
       calendar: false,
       revenue: false,
     },
