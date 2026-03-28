@@ -2,13 +2,15 @@
 
 import { BookingCancelledData, EmailTemplate } from '../types'
 import { escapeHtml } from '../sanitize'
+import { generateEmailReference } from '../config'
 
 /**
 * Email template for cancelled bookings
 * Sent when guest or admin cancels a booking
 */
 
-export function getBookingCancelledTemplate(data: BookingCancelledData): EmailTemplate {
+export function getBookingCancelledTemplate(data: BookingCancelledData & { referenceId?: string }): EmailTemplate {
+ const referenceId = data.referenceId || generateEmailReference('CA')
  const subject = `Booking Cancelled - ${data.carMake} ${data.carModel}`
  
  const html = `
@@ -182,8 +184,11 @@ export function getBookingCancelledTemplate(data: BookingCancelledData): EmailTe
          
          <div class="footer">
            <strong>ITWHIP</strong><br>
-           Premium Vehicle Rentals<br>
-           <span style="font-size: 11px;">© 2024 ItWhip Technologies. All rights reserved.</span>
+           Peer-to-Peer Vehicle Marketplace<br>
+           <span style="font-size: 11px;">© ${new Date().getFullYear()} ItWhip Technologies, Inc. • Phoenix, Arizona</span><br>
+           <a href="https://itwhip.com/verify-email?ref=${referenceId}" style="color: #374151; text-decoration: none; font-size: 11px; margin-top: 8px; display: inline-block;">
+             Ref: <strong style="color: #ea580c;">${referenceId}</strong>
+           </a>
          </div>
        </div>
      </body>
@@ -215,8 +220,9 @@ Book another vehicle: https://itwhip.com/rentals/search
 Questions about this cancellation?
 Contact info@itwhip.com with booking code #${data.bookingCode}
 
-ITWHIP - Premium Vehicle Rentals
-© 2024 ItWhip Technologies. All rights reserved.
+ITWHIP - Peer-to-Peer Vehicle Marketplace
+© ${new Date().getFullYear()} ItWhip Technologies, Inc. • Phoenix, Arizona
+Ref: ${referenceId}
  `
  
  return { subject, html, text }

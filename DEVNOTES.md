@@ -1,6 +1,78 @@
 # ItWhip Development Notes
 
+## Sync Rule (Established Mar 16, 2026)
+
+**All UI/screen/page changes MUST be made in both the website AND mobile app simultaneously.** Same stages, same cards, same data, same formatting. Never update one without the other. Both platforms share the same API and business logic.
+
+---
+
 ## Recent Deployments (March 2026)
+
+### AWS Migration — Vercel → App Runner (Mar 27)
+**Deployed to production**
+
+Infrastructure migration (Vercel site down due to $218 billing):
+- Migrated from Vercel to AWS App Runner (Docker container, auto-scaling)
+- CI/CD: GitHub Actions builds Docker image → pushes to ECR → auto-deploys to App Runner
+- DNS: Moved from Vercel DNS to Route53 (ALIAS record for root domain SSL)
+- Domain: GoDaddy (registrar) → Route53 (DNS) → App Runner (hosting)
+- Crons: 7 EventBridge Scheduler rules → Lambda → API endpoints (replaced vercel.json crons)
+- All 74 env vars set in App Runner runtime + GitHub Secrets for build
+
+Vercel cleanup:
+- Removed `@vercel/analytics`, `vercel.json`, all `x-vercel-*` header references
+- Geo tracking switched from Vercel headers to `geoip-lite` IP lookup
+- Security geolocation same fix
+- Ping API reports `us-east-2` region
+
+Monitoring improvements:
+- Added `HealthCheck` Prisma model for persistent uptime tracking (was estimated from page views)
+- Uptime tracker writes to DB — accurate % for 24h+ ranges
+- Alert email notifications implemented via Resend (was placeholder)
+- Cron dashboard updated to show 7 AWS EventBridge jobs (was 10 Vercel crons)
+
+AWS Resources:
+- App Runner: `itwhip-website` (2 vCPU, 4 GB, us-east-2)
+- ECR: `itwhip-website` (Docker images)
+- Route53: Hosted zone for itwhip.com (ALIAS → App Runner)
+- Lambda: `itwhip-cron` (calls API endpoints on schedule)
+- EventBridge: 7 scheduler rules
+- IAM: `github-actions-deploy` (ECR push + App Runner deploy)
+
+### Booking Detail Sync, Host Cancel UI, Bonus Notifications (Mar 16)
+**Deployed to production**
+
+Website ↔ App booking detail sync:
+- Shared time formatters (`formatTimeDisplay`, `parseTo24h`) across all booking cards
+- Progress bar verification logic synced (checks `documentsVerified` + `manuallyVerifiedByHost`)
+- NaN time display fixed in BookingDetails, all card components
+- App: photo carousel, car specs, host info card, payment summary, booking info grid
+- App: sticky progress bar, car name overlay on photo, license plate badge
+
+Host cancellation flow (new):
+- Guest sees "Cancelled by Host" (amber banner) vs "Booking Cancelled" (red) vs "Booking Not Approved" (system)
+- Green refund card: "Full Refund — No Charges Applied" for host cancellations
+- Payment Summary hidden for host cancellations
+- Rebook CTA: "Looking for another ride?" with search link
+- Partner dashboard: Approve/Reject buttons hidden for cancelled bookings
+- API: `cancelledBy` field now returned in user-bookings response
+- Stripe auth voided automatically on PENDING host cancellations
+- Email sent for ALL cancellation statuses (was skipping PENDING)
+- Bell notification (HIGH priority) for host cancellations
+
+Bonus/Credit notifications (new):
+- Email + SMS + Bell when credits/bonus/deposit added from fleet dashboard
+- Booking picker on fleet bonuses page (single guest) — enables bell notification
+- Bell links to `/payments/credits` or `/payments/deposit`
+- Email follows standard template format with REF-ID
+
+Other fixes:
+- No-show deadline extended from 2h to 24h after pickup
+- `licensePlate` added to user-bookings API response
+- Deposit page currency formatting ($12,749.00 with commas)
+- Horizontal wobble fixed on booking detail page (overflow-x-hidden on StatusProgression)
+
+---
 
 ### Platform Defaults & Photo Fixes (Mar 14)
 **Deployed to production**

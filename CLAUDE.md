@@ -1,5 +1,15 @@
 # Claude Code Project Guidelines
 
+## Website ↔ App Sync Rule
+
+**CRITICAL: All UI changes must be made in BOTH places simultaneously.**
+
+The ItWhip website and mobile app share the same API, business logic, and booking flow. Any change to a guest-facing screen (booking detail, cancellation, payments, progress bar, etc.) MUST be implemented in both:
+- **Website**: `app/[locale]/(guest)/rentals/...` components
+- **App**: `ItWhipApp/src/components/guest/...` and `ItWhipApp/app/(guest)/...`
+
+Same stages, same cards, same data, same formatting. Never update one without the other.
+
 ## Prisma / Database Migrations
 
 **CRITICAL: Follow these rules to prevent database drift**
