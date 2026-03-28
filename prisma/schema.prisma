@@ -3409,6 +3409,8 @@ model User {
   UserNotificationSettings UserNotificationSettings?
   identityLinks            IdentityLink[]
   locale                   String                    @default("en") // User's preferred language: en, es, fr
+  pushTokens               DevicePushToken[]
+  pushNotifications        PushNotification[]
 
   @@index([email])
   @@index([hotelId])
@@ -3433,6 +3435,39 @@ model UserNotificationSettings {
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// ===== PUSH NOTIFICATION MODELS =====
+
+model DevicePushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  hostId    String?
+  token     String   @unique
+  platform  String   // 'ios' | 'android'
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([hostId])
+}
+
+model PushNotification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  type      String   // booking_request, booking_confirmed, booking_cancelled, message, payment, trip_reminder, review_request, host_reminder
+  data      Json?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
 }
 
 model VehicleClassification {

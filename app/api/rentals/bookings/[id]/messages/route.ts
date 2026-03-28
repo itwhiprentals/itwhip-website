@@ -5,6 +5,7 @@ import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { sendEmail } from '@/app/lib/email/sender'
 import { messageRateLimit, getClientIp } from '@/app/lib/rate-limit'
 import { escapeHtml } from '@/app/lib/utils/escape-html'
+import { NotificationTemplates } from '@/app/lib/notifications/push'
 
 // GET /api/rentals/bookings/[id]/messages - Get messages for a booking
 export async function GET(
@@ -189,6 +190,7 @@ export async function POST(
             host: {
               select: {
                 id: true,
+                userId: true,
                 email: true,
                 name: true,
                 phone: true
@@ -272,6 +274,15 @@ export async function POST(
         createdAt: true
       }
     })
+
+    // Push notifications
+    try {
+      if ((senderType === 'guest' || senderType === 'renter') && booking.car.host.userId) {
+        NotificationTemplates.newMessage(booking.car.host.userId, senderName, message.slice(0, 100), bookingId).catch(() => {})
+      } else if ((senderType === 'host' || senderType === 'admin') && booking.renterId) {
+        NotificationTemplates.newMessage(booking.renterId, senderName, message.slice(0, 100), bookingId).catch(() => {})
+      }
+    } catch {}
 
     // Send email notifications
     try {

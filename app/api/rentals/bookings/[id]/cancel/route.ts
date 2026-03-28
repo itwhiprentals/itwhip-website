@@ -8,6 +8,7 @@ import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { sendHostBookingCancelledEmail } from '@/app/lib/email/host-booking-cancelled-email'
 import { calculateCancellationRefund, calculatePenaltyDistribution } from '@/app/lib/booking/cancellation-policy'
+import { NotificationTemplates } from '@/app/lib/notifications/push'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil' as Stripe.LatestApiVersion,
@@ -51,7 +52,7 @@ export async function POST(
         depositFromCard: true,
         securityDeposit: true,
         car: { select: { year: true, make: true, model: true } },
-        host: { select: { name: true, email: true, phone: true } }
+        host: { select: { name: true, email: true, phone: true, userId: true } }
       }
     })
 
@@ -96,6 +97,11 @@ export async function POST(
         totalAmount: true
       }
     })
+
+    // Push notifications — notify both guest and host
+    const carName = `${booking.car?.year} ${booking.car?.make} ${booking.car?.model}`
+    if (booking.renterId) NotificationTemplates.bookingCancelled(booking.renterId, carName, bookingId, 'guest').catch(() => {})
+    if (booking.host?.userId) NotificationTemplates.bookingCancelled(booking.host.userId, carName, bookingId, 'guest').catch(() => {})
 
     // Calculate percentage-based penalty — only the base rental (subtotal) is refundable
     // Service fee, insurance, and delivery fee are always non-refundable

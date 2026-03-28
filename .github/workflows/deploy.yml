@@ -100,6 +100,8 @@ jobs:
           AMADEUS_PROXY_ENABLED=${{ secrets.AMADEUS_PROXY_ENABLED }}
           UPSTASH_REDIS_REST_URL=${{ secrets.UPSTASH_REDIS_REST_URL }}
           UPSTASH_REDIS_REST_TOKEN=${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_ADMIN_API_KEY=${{ secrets.ANTHROPIC_ADMIN_API_KEY }}
           ENVFILE
           sed -i 's/^[[:space:]]*//' .env.production
 

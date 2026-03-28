@@ -8,6 +8,7 @@ import { prisma } from '@/app/lib/database/prisma'
 import { capturePayment } from '@/app/lib/booking/services/payment-service'
 import { generateAgreementToken, getTokenExpiryDate, generateSigningUrl } from '@/app/lib/agreements/tokens'
 import { sendEmail } from '@/app/lib/email/send-email'
+import { NotificationTemplates } from '@/app/lib/notifications/push'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
@@ -162,6 +163,12 @@ export async function POST(request: NextRequest) {
     })
 
     console.log(`[Confirm Booking] Booking ${bookingId} confirmed by partner ${partner.id}`)
+
+    // Push notification to guest
+    if (booking.renterId) {
+      const carName = `${booking.car?.year} ${booking.car?.make} ${booking.car?.model}`
+      NotificationTemplates.bookingConfirmed(booking.renterId, carName, bookingId).catch(() => {})
+    }
 
     // ═══════════════════════════════════════════════════════════════════
     // Auto-send rental agreement for MANUAL bookings
