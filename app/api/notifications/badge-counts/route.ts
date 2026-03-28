@@ -44,14 +44,25 @@ export async function GET(request: NextRequest) {
 
 async function getHostBadges(hostId: string, userId: string) {
   const now = new Date()
-  const [requests, reviews, claims, unreadMessages, host, pushUnread] = await Promise.all([
+  const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+
+  const [requests, verifyGuest, reviews, claims, unreadMessages, revenue, host, pushUnread] = await Promise.all([
     // Pending booking requests (fleet approved, waiting for host)
     prisma.rentalBooking.count({ where: { hostId, fleetStatus: 'APPROVED', hostStatus: 'PENDING' } }),
+    // Upcoming confirmed bookings with unverified guests
+    prisma.rentalBooking.count({
+      where: {
+        hostId,
+        status: 'CONFIRMED',
+        startDate: { gte: now, lte: twentyFourHoursFromNow },
+        renter: { reviewerProfile: { documentsVerified: false } },
+      }
+    }),
     // Unresponded reviews
     prisma.rentalReview.count({ where: { hostId, hostResponse: null } }),
     // Open claims
     prisma.claim.count({ where: { hostId, status: { in: ['PENDING', 'UNDER_REVIEW'] } } }),
-    // Unread message threads (messages sent to host that host hasn't read)
+    // Unread messages from guests
     prisma.rentalMessage.count({
       where: {
         booking: { hostId },
@@ -59,35 +70,38 @@ async function getHostBadges(hostId: string, userId: string) {
         readAt: null,
       }
     }),
+    // Pending payouts
+    prisma.hostPayout.count({ where: { hostId, status: 'PENDING' } }),
     // Host profile for account dots
     prisma.rentalHost.findUnique({
       where: { id: hostId },
-      select: { profilePhoto: true, phone: true, stripePayoutsEnabled: true, stripeAccountId: true, partnerCompanyName: true },
+      select: { profilePhoto: true, phone: true, stripePayoutsEnabled: true, stripeAccountId: true, partnerCompanyName: true, user: { select: { emailVerified: true, phoneVerified: true } } },
     }),
     // Push notification unread
     prisma.pushNotification.count({ where: { userId, read: false } }),
   ])
 
-  const personalInfo = !host?.profilePhoto || !host?.phone
+  const personalInfo = !host?.profilePhoto || !host?.phone || !host?.user?.emailVerified || !host?.user?.phoneVerified
   const bankingPayouts = !host?.stripePayoutsEnabled || !host?.stripeAccountId
+  const hasRevenue = revenue > 0
 
   return {
     role: 'host',
     totalUnread: pushUnread,
     tabs: {
       fleet: false,
-      bookings: requests > 0,
+      bookings: requests > 0 || verifyGuest > 0,
       dashboard: false,
       inbox: unreadMessages > 0,
-      account: personalInfo || bankingPayouts,
+      account: personalInfo || bankingPayouts || hasRevenue,
     },
     explore: {
       requests,
+      verifyGuest,
       reviews,
       claims,
+      revenue,
       insurance: 0,
-      revenue: 0,
-      verifyGuest: 0,
       tracking: 0,
       calendar: 0,
       maintenance: 0,
@@ -98,7 +112,15 @@ async function getHostBadges(hostId: string, userId: string) {
       bankingPayouts,
       insurance: false,
       calendar: false,
-      revenue: false,
+      revenue: hasRevenue,
+    },
+    validation: {
+      emailVerified: !!host?.user?.emailVerified,
+      phoneVerified: !!host?.user?.phoneVerified,
+      profilePhoto: !!host?.profilePhoto,
+      phone: !!host?.phone,
+      stripeConnected: !!host?.stripeAccountId,
+      stripePayoutsEnabled: !!host?.stripePayoutsEnabled,
     },
   }
 }
