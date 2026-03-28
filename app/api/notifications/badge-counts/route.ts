@@ -72,10 +72,16 @@ async function getHostBadges(hostId: string, userId: string) {
     }),
     // Pending payouts
     prisma.hostPayout.count({ where: { hostId, status: 'PENDING' } }),
-    // Host profile for account dots
+    // Host profile for account dots + insurance
     prisma.rentalHost.findUnique({
       where: { id: hostId },
-      select: { profilePhoto: true, phone: true, stripePayoutsEnabled: true, stripeAccountId: true, partnerCompanyName: true, user: { select: { emailVerified: true, phoneVerified: true } } },
+      select: {
+        profilePhoto: true, phone: true, stripePayoutsEnabled: true, stripeAccountId: true,
+        partnerCompanyName: true, revenuePath: true, earningsTier: true,
+        hostInsuranceProvider: true, hostInsuranceStatus: true,
+        p2pInsuranceStatus: true, commercialInsuranceStatus: true,
+        user: { select: { emailVerified: true, phoneVerified: true } },
+      },
     }),
     // Push notification unread
     prisma.pushNotification.count({ where: { userId, read: false } }),
@@ -85,15 +91,37 @@ async function getHostBadges(hostId: string, userId: string) {
   const bankingPayouts = !host?.stripePayoutsEnabled || !host?.stripeAccountId
   const hasRevenue = revenue > 0 || bankingPayouts
 
+  // Insurance badge logic
+  let insuranceCount = 0
+  if (host?.revenuePath === 'tiers') {
+    // Commission path: host must have fleet insurance
+    if (!host.hostInsuranceProvider || host.hostInsuranceStatus !== 'ACTIVE') {
+      // Count active cars that need coverage
+      insuranceCount = await prisma.rentalCar.count({ where: { hostId, isActive: true } })
+    }
+  } else if (host?.revenuePath === 'insurance') {
+    // Insurance tiers path
+    if (host.earningsTier === 'BASIC') {
+      insuranceCount = 0 // ITWhip covers at 40%
+    } else if (host.earningsTier === 'STANDARD') {
+      // 75% tier: needs P2P insurance
+      if (host.p2pInsuranceStatus !== 'ACTIVE') insuranceCount = 1
+    } else if (host.earningsTier === 'PREMIUM') {
+      // 90% tier: needs commercial insurance
+      if (host.commercialInsuranceStatus !== 'ACTIVE') insuranceCount = 1
+    }
+  }
+  const insuranceDot = insuranceCount > 0
+
   return {
     role: 'host',
     totalUnread: pushUnread,
     tabs: {
-      fleet: false,
+      fleet: insuranceDot,
       bookings: requests > 0 || verifyGuest > 0,
       dashboard: false,
       inbox: unreadMessages > 0,
-      account: personalInfo || bankingPayouts || hasRevenue,
+      account: personalInfo || bankingPayouts || hasRevenue || insuranceDot,
     },
     explore: {
       requests,
@@ -101,7 +129,7 @@ async function getHostBadges(hostId: string, userId: string) {
       reviews,
       claims,
       revenue,
-      insurance: 0,
+      insurance: insuranceCount,
       tracking: 0,
       calendar: 0,
       maintenance: 0,
@@ -110,7 +138,7 @@ async function getHostBadges(hostId: string, userId: string) {
       personalInfo,
       companyInfo: false,
       bankingPayouts,
-      insurance: false,
+      insurance: insuranceDot,
       calendar: false,
       revenue: hasRevenue,
     },
