@@ -12,14 +12,15 @@ async function getAuth(request: NextRequest): Promise<AuthResult | null> {
   if (!auth?.startsWith('Bearer ')) return null
   const token = auth.slice(7)
 
-  // Try host token first
   for (const secret of [process.env.HOST_JWT_SECRET!, process.env.GUEST_JWT_SECRET!, process.env.JWT_SECRET!].filter(Boolean)) {
     try {
       const { payload } = await jwtVerify(token, new TextEncoder().encode(secret))
       const userId = (payload.userId || payload.id || payload.sub) as string
-      if (secret === process.env.HOST_JWT_SECRET && payload.hostId) {
-        return { userId, role: 'host', hostId: payload.hostId as string }
-      }
+      if (!userId) continue
+
+      // Look up host by userId
+      const host = await prisma.rentalHost.findFirst({ where: { userId }, select: { id: true } })
+      if (host) return { userId, role: 'host', hostId: host.id }
       return { userId, role: 'guest' }
     } catch { continue }
   }
