@@ -341,8 +341,10 @@ export async function POST(request: NextRequest) {
         canMessageGuests: false,
         canWithdrawFunds: false,
 
-        // Default commission (will be set based on insurance tier later)
-        commissionRate: 0.20,
+        // Default: commission tiers path, Standard tier (0-9 cars = 25% platform fee)
+        revenuePath: 'tiers',
+        commissionRate: 0.25,
+        currentCommissionRate: 0.25,
 
         // Status - not active until verified and approved
         active: false,

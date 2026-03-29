@@ -210,8 +210,10 @@ export async function POST(request: NextRequest) {
           canMessageGuests: !!invitation,
           canWithdrawFunds: false, // Requires Stripe Connect setup
 
-          // Commission defaults (will be set per vehicle)
-          commissionRate: 0.30, // Default 30% platform fee
+          // Default: commission tiers, Standard (25% platform fee)
+          commissionRate: 0.25,
+          currentCommissionRate: 0.25,
+          revenuePath: 'tiers',
 
           // Status
           active: !!invitation,
@@ -256,8 +258,10 @@ export async function POST(request: NextRequest) {
           canMessageGuests: !!invitation,
           canWithdrawFunds: false, // Requires Stripe Connect setup
 
-          // Commission defaults (will be set per vehicle)
-          commissionRate: 0.30, // Default 30% platform fee
+          // Default: commission tiers, Standard (25% platform fee)
+          commissionRate: 0.25,
+          currentCommissionRate: 0.25,
+          revenuePath: 'tiers',
 
           // Status
           active: !!invitation,

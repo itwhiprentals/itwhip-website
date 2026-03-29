@@ -11,7 +11,7 @@ export async function POST(
     const body = await request.json()
     
     const {
-      commissionRate = 0.20,
+      commissionRate = 0.25,
       minDailyRate,
       maxDailyRate,
       permissions = {},

@@ -320,8 +320,10 @@ export async function POST(request: NextRequest) {
               canMessageGuests: false,
               canWithdrawFunds: false,
 
-              // Default commission
-              commissionRate: 0.20,
+              // Default: commission tiers, Standard (25% platform fee)
+              commissionRate: 0.25,
+              currentCommissionRate: 0.25,
+              revenuePath: 'tiers',
               hostType: 'REAL',
 
               // Host role fields from signup selection
@@ -655,8 +657,10 @@ export async function POST(request: NextRequest) {
           canMessageGuests: false,
           canWithdrawFunds: false,
 
-          // Default commission
-          commissionRate: 0.20,
+          // Default: commission tiers, Standard (25% platform fee)
+          commissionRate: 0.25,
+          currentCommissionRate: 0.25,
+          revenuePath: 'tiers',
           hostType: 'REAL',
 
           // Host role fields from signup selection
