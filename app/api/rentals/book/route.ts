@@ -11,6 +11,7 @@ import { bookingRateLimit, getClientIp, createRateLimitResponse } from '@/app/li
 import { verifyAdminRequest } from '@/app/lib/admin/middleware'
 import { verifyRecaptchaToken } from '@/app/lib/recaptcha'
 import { sendBookingConfirmation, sendPendingReviewEmail, sendFraudAlertEmail, sendHostReviewEmail } from '@/app/lib/email/booking-emails'
+import { NotificationTemplates } from '@/app/lib/notifications/push'
 
 // Import new verification rules
 import { 
@@ -1431,6 +1432,15 @@ export async function POST(request: NextRequest) {
     }, { isolationLevel: 'Serializable', timeout: 15000 }) as any
 
     console.log(`[BOOKING_CREATE] SUCCESS carId=${bookingData.carId} code=${booking.booking.bookingCode} pickup=${pickupDateStr} ${bookingData.startTime} return=${returnDateStr} ${bookingData.endTime} guest=${bookingData.guestEmail}`)
+
+    // Push notification to host — new booking request
+    try {
+      const hostForPush = await prisma.rentalHost.findUnique({ where: { id: bookingData.hostId }, select: { userId: true } });
+      if (hostForPush?.userId) {
+        const carName = `${bookingData.carYear || ''} ${bookingData.carMake || ''} ${bookingData.carModel || ''}`.trim() || 'Vehicle';
+        NotificationTemplates.bookingRequest(hostForPush.userId, bookingData.guestName || bookingData.guestEmail, carName, booking.booking.id).catch(() => {});
+      }
+    } catch (pushErr) { console.error('[BOOKING_CREATE] Push notification error:', pushErr); }
 
     // SAFETY NET: Verify paymentIntentId was saved — patch if transaction lost it
     const piToLink = stripePaymentIntentId || bookingData?.paymentIntentId
