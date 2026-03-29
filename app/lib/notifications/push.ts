@@ -293,13 +293,13 @@ export const NotificationTemplates = {
 
   // ─── Fleet → Both ──────────────────────────────────────────────
 
-  fleetBookingApproved: (hostUserId: string, guestUserId: string, carName: string, bookingId: string) => {
-    sendPushNotification({ userId: hostUserId, title: 'Fleet Approved Booking', body: `Your fleet manager approved the booking for ${carName}`, type: 'fleet_booking_approved', data: { bookingId, screen: 'booking-detail' } })
-    sendPushNotification({ userId: guestUserId, title: 'Booking Confirmed!', body: `Your ${carName} rental is confirmed. Get ready for your trip!`, type: 'fleet_booking_approved', data: { bookingId, screen: 'booking-detail' } })
+  fleetBookingApproved: async (hostUserId: string, guestUserId: string, carName: string, bookingId: string) => {
+    await sendPushNotification({ userId: hostUserId, title: 'Fleet Approved Booking', body: `Your fleet manager approved the booking for ${carName}`, type: 'fleet_booking_approved', data: { bookingId, screen: 'booking-detail' } })
+    await sendPushNotification({ userId: guestUserId, title: 'Booking Confirmed!', body: `Your ${carName} rental is confirmed. Get ready for your trip!`, type: 'fleet_booking_approved', data: { bookingId, screen: 'booking-detail' } })
   },
 
-  fleetBookingDeclined: (hostUserId: string, guestUserId: string, carName: string, bookingId: string) => {
-    sendPushNotification({ userId: hostUserId, title: 'Fleet Declined Booking', body: `Your fleet manager declined the booking for ${carName}`, type: 'fleet_booking_declined', data: { bookingId, screen: 'booking-detail' } })
-    sendPushNotification({ userId: guestUserId, title: 'Booking Declined', body: `The ${carName} rental was declined by the fleet manager`, type: 'fleet_booking_declined', data: { bookingId, screen: 'booking-detail' } })
+  fleetBookingDeclined: async (hostUserId: string, guestUserId: string, carName: string, bookingId: string) => {
+    await sendPushNotification({ userId: hostUserId, title: 'Fleet Declined Booking', body: `Your fleet manager declined the booking for ${carName}`, type: 'fleet_booking_declined', data: { bookingId, screen: 'booking-detail' } })
+    await sendPushNotification({ userId: guestUserId, title: 'Booking Declined', body: `The ${carName} rental was declined by the fleet manager`, type: 'fleet_booking_declined', data: { bookingId, screen: 'booking-detail' } })
   },
 }
