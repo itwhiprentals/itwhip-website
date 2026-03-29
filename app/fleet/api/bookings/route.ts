@@ -396,7 +396,7 @@ export async function PATCH(request: NextRequest) {
         const approvedBooking = await prisma.rentalBooking.findUnique({
           where: { id: bookingId },
           select: {
-            id: true, bookingCode: true, guestName: true,
+            id: true, bookingCode: true, guestName: true, renterId: true,
             startDate: true, endDate: true, pickupLocation: true,
             totalAmount: true, numberOfDays: true,
             car: { select: { make: true, model: true, year: true, photos: { select: { url: true }, take: 1 } } },
@@ -425,8 +425,8 @@ export async function PATCH(request: NextRequest) {
         // Push — fleet approved, notify host + guest
         if (approvedBooking) {
           const carName = `${approvedBooking.car.year} ${approvedBooking.car.make} ${approvedBooking.car.model}`
-          if (approvedBooking.host?.userId && booking.renterId) {
-            NotificationTemplates.fleetBookingApproved(approvedBooking.host.userId, booking.renterId, carName, bookingId).catch(() => {})
+          if (approvedBooking.host?.userId && approvedBooking.renterId) {
+            NotificationTemplates.fleetBookingApproved(approvedBooking.host.userId, approvedBooking.renterId, carName, bookingId).catch(() => {})
           }
         }
         break
