@@ -144,7 +144,14 @@ export async function GET(request: NextRequest) {
             name: true,
             email: true,
             phone: true,
-            avatar: true
+            avatar: true,
+            image: true,
+          }
+        },
+        reviewerProfile: {
+          select: {
+            id: true,
+            profilePhotoUrl: true,
           }
         },
         InsurancePolicy: {
@@ -203,6 +210,7 @@ export async function GET(request: NextRequest) {
       guestName: booking.guestName,
       guestEmail: booking.guestEmail,
       guestPhone: booking.guestPhone,
+      guestPhoto: (booking as any).reviewerProfile?.profilePhotoUrl || booking.renter?.image || booking.renter?.avatar || null,
       startDate: booking.startDate.toISOString(),
       endDate: booking.endDate.toISOString(),
       startTime: booking.startTime,
