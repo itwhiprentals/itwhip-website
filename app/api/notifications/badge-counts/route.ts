@@ -113,14 +113,13 @@ async function getHostBadges(hostId: string, userId: string) {
   }
   const insuranceDot = insuranceCount > 0
 
-  // Cars needing attention (missing photos, no rate, no description)
+  // Cars needing attention (no rate or no description)
   const carsNeedingAttention = await prisma.rentalCar.count({
     where: {
       hostId,
       isActive: true,
       OR: [
-        { dailyRate: { equals: 0 } },
-        { dailyRate: null },
+        { dailyRate: 0 },
         { description: null },
         { description: '' },
       ],
