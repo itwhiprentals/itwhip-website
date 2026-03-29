@@ -107,6 +107,15 @@ export async function GET(request: NextRequest) {
       },
       revenuePath: partner.revenuePath || null,
       revenueTier: partner.revenueTier || null,
+      earningsTier: partner.earningsTier || 'BASIC',
+      p2pInsuranceStatus: partner.p2pInsuranceStatus || null,
+      p2pInsuranceProvider: partner.p2pInsuranceProvider || null,
+      p2pPolicyNumber: partner.p2pPolicyNumber || null,
+      p2pInsuranceExpires: partner.p2pInsuranceExpires?.toISOString() || null,
+      commercialInsuranceStatus: partner.commercialInsuranceStatus || null,
+      commercialInsuranceProvider: partner.commercialInsuranceProvider || null,
+      commercialPolicyNumber: partner.commercialPolicyNumber || null,
+      commercialInsuranceExpires: partner.commercialInsuranceExpires?.toISOString() || null,
     })
 
   } catch (error) {
@@ -134,18 +143,45 @@ export async function PUT(request: NextRequest) {
       coversDuringRentals,
       acknowledgedNoInsurance,
       coveredVehicleIds,
-      rentalCoveredVehicleIds
+      rentalCoveredVehicleIds,
+      // P2P / Commercial insurance fields
+      insuranceType,
+      p2pInsuranceProvider,
+      p2pPolicyNumber,
+      p2pInsuranceExpires,
+      commercialInsuranceProvider,
+      commercialPolicyNumber,
+      commercialInsuranceExpires,
+      isCommercialPolicy,
     } = body
 
     // Build update data
     const updateData: Record<string, any> = {}
 
-    // Update insurance provider fields
+    // Handle P2P insurance submission (insurance path, 75% tier)
+    if (insuranceType === 'p2p') {
+      updateData.p2pInsuranceProvider = p2pInsuranceProvider || null
+      updateData.p2pPolicyNumber = p2pPolicyNumber || null
+      updateData.p2pInsuranceExpires = p2pInsuranceExpires ? new Date(p2pInsuranceExpires) : null
+      updateData.p2pInsuranceStatus = 'PENDING'
+      updateData.p2pInsuranceActive = false
+    }
+
+    // Handle Commercial insurance submission (insurance path, 90% tier)
+    if (insuranceType === 'commercial') {
+      updateData.commercialInsuranceProvider = commercialInsuranceProvider || null
+      updateData.commercialPolicyNumber = commercialPolicyNumber || null
+      updateData.commercialInsuranceExpires = commercialInsuranceExpires ? new Date(commercialInsuranceExpires) : null
+      updateData.commercialInsuranceStatus = 'PENDING'
+      updateData.commercialInsuranceActive = false
+    }
+
+    // Update host insurance provider fields (commission path)
     if (hasPartnerInsurance) {
       updateData.hostInsuranceProvider = insuranceProvider || null
       updateData.hostPolicyNumber = policyNumber || null
       updateData.hostInsuranceExpires = policyExpires ? new Date(policyExpires) : null
-    } else {
+    } else if (hasPartnerInsurance === false) {
       // Clear insurance fields if partner doesn't have insurance
       updateData.hostInsuranceProvider = null
       updateData.hostPolicyNumber = null
