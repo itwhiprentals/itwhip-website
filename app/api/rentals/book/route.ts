@@ -1435,7 +1435,8 @@ export async function POST(request: NextRequest) {
 
     // Push notification to host — new booking request
     try {
-      const hostForPush = await prisma.rentalHost.findUnique({ where: { id: bookingData.hostId }, select: { userId: true } });
+      const hostId = booking.booking.hostId || bookingData.hostId;
+      const hostForPush = hostId ? await prisma.rentalHost.findUnique({ where: { id: hostId }, select: { userId: true } }) : null;
       if (hostForPush?.userId) {
         const carName = `${bookingData.carYear || ''} ${bookingData.carMake || ''} ${bookingData.carModel || ''}`.trim() || 'Vehicle';
         NotificationTemplates.bookingRequest(hostForPush.userId, bookingData.guestName || bookingData.guestEmail, carName, booking.booking.id).catch(() => {});
