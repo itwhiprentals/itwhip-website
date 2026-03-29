@@ -164,8 +164,9 @@ export async function GET(request: NextRequest) {
         trim: car.trim,
         color: car.color,
         licensePlate: car.licensePlate,
-        vin: car.vin,  // ✅ Added for completion checking
-        
+        vin: car.vin,
+        description: car.description,
+
         // Specs
         carType: car.carType,
         seats: car.seats,
