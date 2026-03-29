@@ -446,6 +446,8 @@ export async function GET(request: NextRequest) {
 
         // Financial
         commissionRate: host.commissionRate,
+        revenuePath: host.revenuePath || null,
+        earningsTier: host.earningsTier || 'BASIC',
         bankVerified: host.bankVerified,
         requireDeposit: host.requireDeposit,
         depositAmount: host.depositAmount,
