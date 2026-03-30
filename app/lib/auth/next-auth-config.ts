@@ -28,7 +28,7 @@ async function generateAppleClientSecret(): Promise<string> {
   const now = Math.floor(Date.now() / 1000)
   const expiry = now + 86400 * 180 // 180 days
 
-  const key = await importPKCS8(privateKey, 'ES256')
+  const key = await importPKCS8(privateKey.replace(/\\n/g, '\n'), 'ES256')
 
   const jwt = await new SignJWT({})
     .setProtectedHeader({ alg: 'ES256', kid: keyId })
