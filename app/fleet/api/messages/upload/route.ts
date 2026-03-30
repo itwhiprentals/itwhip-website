@@ -67,8 +67,8 @@ export async function POST(request: NextRequest) {
 
     // Upload to S3 (public — message attachments need to be viewable)
     const ext = file.name.split('.').pop() || ''
-    const key = generateKey('message', `fleet-${Date.now()}`, ext ? `.${ext}` : undefined)
-    const url = await uploadPublicImage(key, buffer, file.type)
+    const s3Key = generateKey('message', `fleet-${Date.now()}`, ext ? `.${ext}` : undefined)
+    const url = await uploadPublicImage(s3Key, buffer, file.type)
 
     console.log('[MESSAGE UPLOAD] File uploaded successfully:', url)
 
