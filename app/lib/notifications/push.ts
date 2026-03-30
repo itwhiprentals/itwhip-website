@@ -39,10 +39,26 @@ interface PushPayload {
   data?: Record<string, string>
 }
 
+async function isNotificationTypeEnabled(type: string): Promise<boolean> {
+  try {
+    const setting = await prisma.notificationTypeSettings.findUnique({ where: { type } })
+    return setting?.enabled ?? true // default: enabled
+  } catch { return true }
+}
+
 export async function sendPushNotification(payload: PushPayload): Promise<void> {
   const { userId, title, body, type, data } = payload
 
   try {
+    // Check if this type is enabled
+    if (type !== 'manual') {
+      const enabled = await isNotificationTypeEnabled(type)
+      if (!enabled) {
+        console.log(`[Push] Type ${type} is disabled — skipping`)
+        return
+      }
+    }
+
     // 1. Save to in-app notification center
     await prisma.pushNotification.create({
       data: { userId, title, body, type, data: data || {}, read: false },

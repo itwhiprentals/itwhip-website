@@ -251,6 +251,12 @@ function InternalLayoutContent({
                     Comms
                   </Link>
                   <Link
+                    href="/fleet/notifications"
+                    className="px-2.5 py-1.5 rounded-md text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors whitespace-nowrap font-medium"
+                  >
+                    Push
+                  </Link>
+                  <Link
                     href="/fleet/cron"
                     className="px-2.5 py-1.5 rounded-md text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors whitespace-nowrap font-medium"
                   >
@@ -430,6 +436,13 @@ function InternalLayoutContent({
                     className="px-3 py-2 rounded-md text-sm text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 font-medium"
                   >
                     Comms
+                  </Link>
+                  <Link
+                    href="/fleet/notifications"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2 rounded-md text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 font-medium"
+                  >
+                    Push
                   </Link>
                   <Link
                     href="/fleet/cron"

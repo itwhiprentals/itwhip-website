@@ -28,7 +28,8 @@ import {
   IoStorefrontOutline,
   IoGlobeOutline,
   IoCallOutline,
-  IoTimerOutline
+  IoTimerOutline,
+  IoNotificationsOutline
 } from 'react-icons/io5'
 import { Car, CarStatus } from './types'
 import { StatCard, StatusBadge, EmptyState, LoadingSpinner, SectionHeader } from './components'
@@ -246,6 +247,15 @@ export default function FleetDashboard() {
           >
             <IoDocumentTextOutline className="text-2xl group-hover:scale-110 transition-transform" />
             <span className="text-xs font-medium text-center leading-tight">Claims</span>
+          </Link>
+
+          {/* Push Notifications */}
+          <Link
+            href={`/fleet/notifications?key=${apiKey}`}
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-violet-500 to-purple-600 text-white rounded-lg hover:from-violet-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
+          >
+            <IoNotificationsOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-xs font-medium text-center leading-tight">Push</span>
           </Link>
 
           {/* Appeals */}

@@ -3470,6 +3470,27 @@ model PushNotification {
   @@index([userId, createdAt])
 }
 
+model ManualNotification {
+  id             String   @id @default(cuid())
+  title          String
+  body           String
+  audience       String   // all_users, all_guests, all_hosts, specific_user, hosts_no_insurance, inactive_guests, phoenix_area
+  targetUserId   String?
+  deepLink       String?
+  sentBy         String
+  sentCount      Int      @default(0)
+  deliveredCount Int      @default(0)
+  failedCount    Int      @default(0)
+  createdAt      DateTime @default(now())
+}
+
+model NotificationTypeSettings {
+  id        String   @id @default(cuid())
+  type      String   @unique
+  enabled   Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
 model VehicleClassification {
   id                    String             @id
   make                  String
