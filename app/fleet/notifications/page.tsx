@@ -17,10 +17,19 @@ const AUDIENCES = [
 
 const DEEP_LINKS = [
   { value: '', label: 'None' },
-  { value: 'home', label: 'Home Screen' },
-  { value: 'search', label: 'Search / Choe' },
-  { value: 'insurance', label: 'Insurance Settings' },
+  { value: 'home', label: 'Home / Dashboard' },
+  { value: 'search', label: 'Search' },
+  { value: 'choe', label: 'Choe AI' },
+  { value: 'messages', label: 'Messages / Inbox' },
+  { value: 'bookings', label: 'Bookings' },
+  { value: 'fleet', label: 'Fleet' },
+  { value: 'account', label: 'Account' },
+  { value: 'insurance', label: 'Insurance' },
   { value: 'revenue', label: 'Revenue' },
+  { value: 'calendar', label: 'Calendar' },
+  { value: 'reviews', label: 'Reviews' },
+  { value: 'claims', label: 'Claims' },
+  { value: 'tracking', label: 'Tracking' },
 ]
 
 const TABS = ['Send', 'History', 'Stats', 'Settings']
