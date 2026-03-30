@@ -139,6 +139,8 @@ export async function PUT(request: NextRequest) {
         commissionRate: true,
         currentCommissionRate: true,
         partnerCompanyName: true,
+        p2pInsuranceStatus: true,
+        commercialInsuranceStatus: true,
       }
     })
 
@@ -153,7 +155,18 @@ export async function PUT(request: NextRequest) {
 
     const oldRate = partner.currentCommissionRate ?? partner.commissionRate ?? 0.25
     const effectiveTier = revenuePath === 'insurance' ? (revenueTier as RevenueTier || null) : null
-    const newRate = getCommissionRate(revenuePath as RevenuePath, effectiveTier, fleetSize)
+    const targetRate = getCommissionRate(revenuePath as RevenuePath, effectiveTier, fleetSize)
+
+    // For insurance 75%/90%: keep at 0.60 (40% keep) until insurance is approved
+    // Only set the actual target rate if insurance is already approved
+    let actualRate = targetRate
+    if (revenuePath === 'insurance') {
+      if (effectiveTier === 'p2p' && partner.p2pInsuranceStatus !== 'ACTIVE' && partner.p2pInsuranceStatus !== 'APPROVED') {
+        actualRate = 0.60 // Stay at 40% keep until P2P insurance approved
+      } else if (effectiveTier === 'commercial' && partner.commercialInsuranceStatus !== 'ACTIVE' && partner.commercialInsuranceStatus !== 'APPROVED') {
+        actualRate = 0.60 // Stay at 40% keep until commercial insurance approved
+      }
+    }
 
     // Update RentalHost with new revenue path, tier, and commission rate
     await prisma.rentalHost.update({
@@ -161,8 +174,12 @@ export async function PUT(request: NextRequest) {
       data: {
         revenuePath: revenuePath,
         revenueTier: effectiveTier,
-        commissionRate: newRate,
-        currentCommissionRate: newRate,
+        commissionRate: actualRate,
+        currentCommissionRate: actualRate,
+        // Store the target tier for reference (earningsTier maps to the SELECTED tier, not the active one)
+        earningsTier: revenuePath === 'insurance'
+          ? (effectiveTier === 'commercial' ? 'PREMIUM' : effectiveTier === 'p2p' ? 'STANDARD' : 'BASIC')
+          : undefined,
       }
     })
 
