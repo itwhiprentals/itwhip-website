@@ -20,8 +20,6 @@ ENV PORT=3000
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
-# expo-server-sdk needs its package.json for user-agent string
-COPY --from=builder /app/node_modules/expo-server-sdk/package.json ./node_modules/expo-server-sdk/package.json
 
 EXPOSE 3000
 CMD ["node", "server.js"]

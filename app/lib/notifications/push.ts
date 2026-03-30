@@ -1,10 +1,13 @@
 // app/lib/notifications/push.ts
-// Push notification service — sends via Expo SDK + saves to PushNotification model
+// Push notification service — sends via Expo Push API (direct fetch, no SDK)
 
-import { Expo, ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk'
 import { prisma } from '@/app/lib/database/prisma'
 
-const expo = new Expo()
+const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send'
+
+function isExpoPushToken(token: string): boolean {
+  return typeof token === 'string' && token.startsWith('ExponentPushToken[') && token.endsWith(']')
+}
 
 export type PushNotificationType =
   | 'booking_request'
@@ -44,6 +47,7 @@ export async function sendPushNotification(payload: PushPayload): Promise<void> 
     await prisma.pushNotification.create({
       data: { userId, title, body, type, data: data || {}, read: false },
     })
+    console.log(`[Push] Notification record created for user ${userId}: ${type}`)
 
     // 2. Find active push tokens
     const tokens = await prisma.devicePushToken.findMany({
@@ -51,45 +55,54 @@ export async function sendPushNotification(payload: PushPayload): Promise<void> 
       select: { token: true },
     })
 
-    if (tokens.length === 0) return
+    if (tokens.length === 0) {
+      console.log(`[Push] No active tokens for user ${userId} — skipping delivery`)
+      return
+    }
 
-    // 3. Build Expo messages
-    const messages: ExpoPushMessage[] = []
+    // 3. Build messages
     const unreadCount = await getUnreadCount(userId)
-
-    for (const { token } of tokens) {
-      if (!Expo.isExpoPushToken(token)) continue
-      messages.push({
-        to: token,
-        sound: 'default',
+    const messages = tokens
+      .filter(t => isExpoPushToken(t.token))
+      .map(t => ({
+        to: t.token,
+        sound: 'default' as const,
         title,
         body,
         data: { type, ...data },
         badge: unreadCount,
-      })
+      }))
+
+    if (messages.length === 0) {
+      console.log(`[Push] No valid Expo tokens for user ${userId}`)
+      return
     }
 
-    if (messages.length === 0) return
+    // 4. Send via Expo Push API (direct fetch — no expo-server-sdk dependency)
+    console.log(`[Push] Sending ${messages.length} notification(s) to user ${userId}`)
+    const response = await fetch(EXPO_PUSH_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(messages),
+    })
 
-    // 4. Send in chunks
-    const chunks = expo.chunkPushNotifications(messages)
-    for (const chunk of chunks) {
-      try {
-        const tickets: ExpoPushTicket[] = await expo.sendPushNotificationsAsync(chunk)
-        for (let i = 0; i < tickets.length; i++) {
-          const ticket = tickets[i]
-          if (ticket.status === 'error' && ticket.details?.error) {
-            if (['DeviceNotRegistered', 'InvalidCredentials'].includes(ticket.details.error)) {
-              const failedToken = (chunk[i] as ExpoPushMessage).to as string
-              await prisma.devicePushToken.updateMany({
-                where: { token: failedToken },
-                data: { active: false },
-              })
-            }
+    const result = await response.json()
+    console.log(`[Push] Expo response:`, JSON.stringify(result?.data?.slice?.(0, 3) || result))
+
+    // 5. Handle failed tokens
+    if (result.data && Array.isArray(result.data)) {
+      for (let i = 0; i < result.data.length; i++) {
+        const ticket = result.data[i]
+        if (ticket.status === 'error' && ticket.details?.error) {
+          if (['DeviceNotRegistered', 'InvalidCredentials'].includes(ticket.details.error)) {
+            const failedToken = messages[i].to
+            console.log(`[Push] Deactivating token: ${failedToken} (${ticket.details.error})`)
+            await prisma.devicePushToken.updateMany({
+              where: { token: failedToken },
+              data: { active: false },
+            })
           }
         }
-      } catch (error) {
-        console.error('[Push] Error sending chunk:', error)
       }
     }
   } catch (error) {
