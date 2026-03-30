@@ -46,9 +46,11 @@ async function getHostBadges(hostId: string, userId: string) {
   const now = new Date()
   const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
 
-  const [requests, verifyGuest, reviews, claims, unreadMessages, revenue, host, pushUnread] = await Promise.all([
+  const [requests, reservationRequests, verifyGuest, reviews, claims, unreadMessages, revenue, host, pushUnread] = await Promise.all([
     // Pending booking requests (fleet approved, waiting for host)
     prisma.rentalBooking.count({ where: { hostId, fleetStatus: 'APPROVED', hostStatus: 'PENDING' } }),
+    // Open reservation requests (matches /api/partner/requests screen)
+    prisma.reservationRequest.count({ where: { status: 'OPEN', OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] } }),
     // Upcoming confirmed bookings with unverified guests
     prisma.rentalBooking.count({
       where: {
@@ -138,7 +140,7 @@ async function getHostBadges(hostId: string, userId: string) {
       account: personalInfo || bankingPayouts || hasRevenue || insuranceDot,
     },
     explore: {
-      requests,
+      requests: reservationRequests,
       verifyGuest,
       reviews,
       claims,
