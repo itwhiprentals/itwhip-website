@@ -132,3 +132,29 @@ export async function DELETE(
     )
   }
 }
+
+// PATCH — Set photo as hero/main
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; photoId: string }> }
+) {
+  try {
+    const partner = await getPartnerFromToken()
+    if (!partner) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id: carId, photoId } = await params
+
+    // Verify car ownership
+    const car = await prisma.rentalCar.findFirst({ where: { id: carId, hostId: partner.id } })
+    if (!car) return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 })
+
+    // Unset all hero flags for this car, then set the chosen one
+    await prisma.rentalCarPhoto.updateMany({ where: { carId }, data: { isHero: false } })
+    await prisma.rentalCarPhoto.update({ where: { id: photoId }, data: { isHero: true, order: 0 } })
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('[Partner Fleet] Error setting hero photo:', error)
+    return NextResponse.json({ error: 'Failed to set main photo' }, { status: 500 })
+  }
+}
