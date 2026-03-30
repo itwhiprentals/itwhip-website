@@ -59,6 +59,10 @@ function SendTab() {
   const [body, setBody] = useState('')
   const [audience, setAudience] = useState('all_users')
   const [targetUserId, setTargetUserId] = useState('')
+  const [targetUserLabel, setTargetUserLabel] = useState('')
+  const [userSearch, setUserSearch] = useState('')
+  const [userResults, setUserResults] = useState<{ id: string; name: string; email: string; role: string }[]>([])
+  const [showDropdown, setShowDropdown] = useState(false)
   const [deepLink, setDeepLink] = useState('')
   const [preview, setPreview] = useState<{ audienceCount: number; tokenCount: number } | null>(null)
   const [sending, setSending] = useState(false)
@@ -111,10 +115,45 @@ function SendTab() {
           </select>
         </div>
         {audience === 'specific_user' && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">User ID</label>
-            <input value={targetUserId} onChange={e => setTargetUserId(e.target.value)} placeholder="User ID or email"
-              className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white" />
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search User</label>
+            {targetUserId ? (
+              <div className="flex items-center gap-2 px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700">
+                <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${targetUserLabel.includes('Host') ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                  {targetUserLabel.includes('Host') ? 'Host' : 'Guest'}
+                </span>
+                <span className="dark:text-white text-sm flex-1">{targetUserLabel}</span>
+                <button onClick={() => { setTargetUserId(''); setTargetUserLabel(''); setUserSearch(''); }} className="text-gray-400 hover:text-red-500">&times;</button>
+              </div>
+            ) : (
+              <>
+                <input value={userSearch} placeholder="Type name or email..."
+                  onChange={e => {
+                    const v = e.target.value; setUserSearch(v);
+                    if (v.length >= 2) {
+                      fetch(`${API_BASE}/search-users?key=${KEY}&q=${encodeURIComponent(v)}`).then(r => r.json()).then(d => { setUserResults(d.users || []); setShowDropdown(true); });
+                    } else { setUserResults([]); setShowDropdown(false); }
+                  }}
+                  onFocus={() => userResults.length > 0 && setShowDropdown(true)}
+                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white" />
+                {showDropdown && userResults.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {userResults.map(u => (
+                      <button key={u.id} className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                        onClick={() => { setTargetUserId(u.id); setTargetUserLabel(`${u.name} (${u.role === 'host' ? 'Host' : 'Guest'})`); setShowDropdown(false); setUserSearch(''); }}>
+                        <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${u.role === 'host' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {u.role === 'host' ? 'Host' : 'Guest'}
+                        </span>
+                        <div>
+                          <p className="text-sm font-medium dark:text-white">{u.name}</p>
+                          <p className="text-xs text-gray-500">{u.email}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
         <div>
