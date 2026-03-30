@@ -1,14 +1,8 @@
 // app/api/guest/appeals/upload/route.ts
-// Server-side Cloudinary upload for appeal evidence photos
+// Server-side S3 upload for appeal evidence photos
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
-import { v2 as cloudinary } from 'cloudinary'
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-})
+import { uploadPrivateDocument, generateKey, getPrivateDocumentUrl } from '@/app/lib/storage/s3'
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,27 +28,15 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    const uploadResponse = await new Promise<any>((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: 'guest-appeals',
-          public_id: `appeal-${user.id}-${Date.now()}`,
-          transformation: [
-            { width: 1200, height: 1200, crop: 'limit' },
-            { quality: 'auto', fetch_format: 'auto' }
-          ]
-        },
-        (error, result) => {
-          if (error) reject(error)
-          else resolve(result)
-        }
-      )
-      uploadStream.end(buffer)
-    })
+    // Upload to S3 (private — appeal evidence)
+    const key = generateKey('claim', user.id, `appeal-${Date.now()}`)
+    const s3Key = await uploadPrivateDocument(key, buffer, file.type)
+    const presignedUrl = await getPrivateDocumentUrl(s3Key)
 
     return NextResponse.json({
       success: true,
-      url: uploadResponse.secure_url
+      url: presignedUrl,
+      key: s3Key
     })
   } catch (error) {
     console.error('Appeal evidence upload failed:', error)

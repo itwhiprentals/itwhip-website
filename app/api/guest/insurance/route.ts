@@ -5,14 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
-import { v2 as cloudinary } from 'cloudinary'
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-})
+import { uploadPrivateDocument, generateKey } from '@/app/lib/storage/s3'
 
 // ============================================================================
 // GET: Fetch current insurance + complete history
@@ -201,10 +194,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Upload front card
-    const cardFrontUrl = await uploadToCloudinary(cardFrontFile, profile.id, 'front')
+    const cardFrontUrl = await uploadInsuranceCard(cardFrontFile, profile.id, 'front')
     
     // Upload back card
-    const cardBackUrl = await uploadToCloudinary(cardBackFile, profile.id, 'back')
+    const cardBackUrl = await uploadInsuranceCard(cardBackFile, profile.id, 'back')
 
     const now = new Date()
 
@@ -360,11 +353,11 @@ export async function PATCH(request: NextRequest) {
     let cardBackUrl = profile.insuranceCardBackUrl
 
     if (cardFrontFile) {
-      cardFrontUrl = await uploadToCloudinary(cardFrontFile, profile.id, 'front')
+      cardFrontUrl = await uploadInsuranceCard(cardFrontFile, profile.id, 'front')
     }
 
     if (cardBackFile) {
-      cardBackUrl = await uploadToCloudinary(cardBackFile, profile.id, 'back')
+      cardBackUrl = await uploadInsuranceCard(cardBackFile, profile.id, 'back')
     }
 
     const now = new Date()
@@ -568,9 +561,9 @@ export async function DELETE(request: NextRequest) {
 }
 
 // ============================================================================
-// HELPER: Upload to Cloudinary
+// HELPER: Upload insurance card to S3 (private)
 // ============================================================================
-async function uploadToCloudinary(file: File, profileId: string, side: 'front' | 'back'): Promise<string> {
+async function uploadInsuranceCard(file: File, profileId: string, side: 'front' | 'back'): Promise<string> {
   // Validate file type
   if (!file.type.startsWith('image/')) {
     throw new Error('Insurance card must be an image')
@@ -585,23 +578,7 @@ async function uploadToCloudinary(file: File, profileId: string, side: 'front' |
   const bytes = await file.arrayBuffer()
   const buffer = Buffer.from(bytes)
 
-  // Upload to Cloudinary
-  const uploadResponse = await new Promise<any>((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder: 'guest-insurance',
-        public_id: `guest-${profileId}-insurance-${side}-${Date.now()}`,
-        transformation: [
-          { quality: 'auto', fetch_format: 'auto' }
-        ]
-      },
-      (error, result) => {
-        if (error) reject(error)
-        else resolve(result)
-      }
-    )
-    uploadStream.end(buffer)
-  })
-
-  return uploadResponse.secure_url
+  // Upload to S3 (private)
+  const key = generateKey('identity', profileId, `insurance-${side}`)
+  return await uploadPrivateDocument(key, buffer, file.type)
 }

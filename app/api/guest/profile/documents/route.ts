@@ -2,17 +2,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
-import { v2 as cloudinary } from 'cloudinary'
+import { uploadPrivateDocument, generateKey } from '@/app/lib/storage/s3'
 
 // ========== 🆕 ACTIVITY TRACKING IMPORT ==========
 import { trackActivity } from '@/lib/helpers/guestProfileStatus'
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-})
 
 // POST: Upload identity documents
 export async function POST(request: NextRequest) {
@@ -87,35 +80,19 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Determine folder and public_id based on type
-    const folderMap = {
-      governmentId: 'guest-documents/government-ids',
-      driversLicense: 'guest-documents/drivers-licenses',
-      selfie: 'guest-documents/selfies',
-      additionalDocument: 'guest-documents/additional-documents'
+    // Determine S3 key type based on document type
+    const keyTypeMap: Record<string, 'dl' | 'identity'> = {
+      governmentId: 'identity',
+      driversLicense: 'dl',
+      selfie: 'identity',
+      additionalDocument: 'identity'
     }
 
-    const folder = folderMap[type as keyof typeof folderMap]
+    const keyType = keyTypeMap[type as keyof typeof keyTypeMap]
+    const key = generateKey(keyType, profile.id, type)
 
-    // Upload to Cloudinary
-    const uploadResponse = await new Promise<any>((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder,
-          public_id: `guest-${profile.id}-${type}-${Date.now()}`,
-          transformation: [
-            { quality: 'auto', fetch_format: 'auto' }
-          ]
-        },
-        (error, result) => {
-          if (error) reject(error)
-          else resolve(result)
-        }
-      )
-      uploadStream.end(buffer)
-    })
-
-    const documentUrl = uploadResponse.secure_url
+    // Upload to S3 (private)
+    const documentUrl = await uploadPrivateDocument(key, buffer, file.type)
 
     // Update profile based on document type
     const updateData: any = {}
@@ -182,7 +159,7 @@ export async function POST(request: NextRequest) {
           fileSize: file.size,
           fileType: file.type,
           fileName: file.name,
-          cloudinaryUrl: documentUrl,
+          s3Key: documentUrl,
           allDocsUploaded,
           uploadedAt: new Date().toISOString(),
           // Document completion status

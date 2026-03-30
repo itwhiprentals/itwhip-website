@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { prisma } from '@/app/lib/database/prisma'
-import { v2 as cloudinary } from 'cloudinary'
+import { uploadPrivateDocument, generateKey, getPrivateDocumentUrl } from '@/app/lib/storage/s3'
 import { sendEmail } from '@/app/lib/email/send-email'
 import {
   isTokenExpired,
@@ -18,13 +18,6 @@ import { mergeAgreementPDFs } from '@/app/lib/agreements/pdf-merge'
 function generateId(): string {
   return 'c' + crypto.randomBytes(12).toString('hex').slice(0, 24)
 }
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-})
 
 // POST - Submit signature
 export async function POST(
@@ -290,22 +283,9 @@ export async function POST(
           const hostName = booking.host?.partnerCompanyName || booking.host?.name || 'Provider'
           const mergedBuffer = await mergeAgreementPDFs(itwhipBuffer, booking.hostAgreementUrl, hostName)
 
-          // Upload merged PDF to Cloudinary
-          const folder = `agreements/${booking.host?.id || 'general'}`
-          const publicId = `agreement-${booking.bookingCode}-signed-consolidated`
-          const base64 = mergedBuffer.toString('base64')
-          const dataUrl = `data:application/pdf;base64,${base64}`
-
-          const uploadResult = await cloudinary.uploader.upload(dataUrl, {
-            resource_type: 'image',
-            folder,
-            public_id: publicId,
-            format: 'pdf',
-            overwrite: true,
-            access_mode: 'public'
-          })
-
-          signedPdfUrl = uploadResult.secure_url
+          // Upload merged PDF to S3
+          const mergedKey = generateKey('agreement', booking.host?.id || 'general', `-${booking.bookingCode}-consolidated`)
+          signedPdfUrl = await uploadPrivateDocument(mergedKey, mergedBuffer, 'application/pdf')
           console.log('[Agreement Sign] Merged PDF uploaded:', signedPdfUrl)
         } catch (mergeError) {
           console.error('[Agreement Sign] PDF merge failed, falling back to ItWhip-only:', mergeError)
@@ -318,26 +298,14 @@ export async function POST(
         const pdfDataUrl = await generateAgreementPDF(agreementData)
 
         try {
-          const folder = `agreements/${booking.host?.id || 'general'}`
-          const publicId = `agreement-${booking.bookingCode}-signed`
+          // Extract buffer from data URL
+          const base64Data = pdfDataUrl.replace(/^data:[^;]+;(?:filename=[^;]+;)?base64,/, '')
+          const pdfBuffer = Buffer.from(base64Data, 'base64')
 
-          let cleanDataUrl = pdfDataUrl
-          if (pdfDataUrl.includes(';filename=')) {
-            cleanDataUrl = pdfDataUrl.replace(/;filename=[^;]+/, '')
-          }
+          console.log('[Agreement Sign] Uploading PDF to S3...')
 
-          console.log('[Agreement Sign] Uploading PDF to Cloudinary...')
-
-          const uploadResult = await cloudinary.uploader.upload(cleanDataUrl, {
-            resource_type: 'image',
-            folder,
-            public_id: publicId,
-            format: 'pdf',
-            overwrite: true,
-            access_mode: 'public'
-          })
-
-          signedPdfUrl = uploadResult.secure_url
+          const pdfKey = generateKey('agreement', booking.host?.id || 'general', `-${booking.bookingCode}-signed`)
+          signedPdfUrl = await uploadPrivateDocument(pdfKey, pdfBuffer, 'application/pdf')
           console.log('[Agreement Sign] PDF uploaded successfully:', signedPdfUrl)
         } catch (uploadError: unknown) {
           const error = uploadError as Error & { http_code?: number; message?: string }
@@ -349,12 +317,11 @@ export async function POST(
     // Upload signature image separately for records
     let signatureUrl: string | null = null
     try {
-      const sigUploadResult = await cloudinary.uploader.upload(signatureImage, {
-        folder: `agreements/${booking.host?.id || 'general'}/signatures`,
-        resource_type: 'image',
-        public_id: `signature-${booking.bookingCode}`
-      })
-      signatureUrl = sigUploadResult.secure_url
+      // signatureImage is a base64 data URL (data:image/png;base64,...)
+      const sigBase64 = signatureImage.replace(/^data:image\/\w+;base64,/, '')
+      const sigBuffer = Buffer.from(sigBase64, 'base64')
+      const sigKey = `agreements/${booking.host?.id || 'general'}/signatures/signature-${booking.bookingCode}.png`
+      signatureUrl = await uploadPrivateDocument(sigKey, sigBuffer, 'image/png')
     } catch (sigUploadError) {
       console.error('[Agreement Sign] Signature upload error:', sigUploadError)
     }

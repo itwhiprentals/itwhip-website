@@ -3,14 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { sendEmail } from '@/app/lib/email/sender'
-import { v2 as cloudinary } from 'cloudinary'
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-})
+import { uploadPublicImage, generateKey } from '@/app/lib/storage/s3'
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,24 +46,15 @@ export async function POST(request: NextRequest) {
     if (photos && photos.length > 0) {
       for (const photo of photos.slice(0, 5)) { // Max 5 photos
         try {
-          // Convert file to base64
+          // Convert file to buffer
           const bytes = await photo.arrayBuffer()
           const buffer = Buffer.from(bytes)
-          const base64 = buffer.toString('base64')
-          const dataUri = `data:${photo.type};base64,${base64}`
-          
-          // Upload to Cloudinary
-          const result = await cloudinary.uploader.upload(dataUri, {
-            folder: 'host-inquiries',
-            resource_type: 'image',
-            transformation: [
-              { width: 1200, height: 800, crop: 'limit' },
-              { quality: 'auto' },
-              { fetch_format: 'auto' }
-            ]
-          })
-          
-          photoUrls.push(result.secure_url)
+
+          // Upload to S3
+          const key = generateKey('message', 'host-inquiry', `photo-${photoUrls.length + 1}.jpg`)
+          const url = await uploadPublicImage(key, buffer, photo.type || 'image/jpeg')
+
+          photoUrls.push(url)
         } catch (uploadError) {
           console.error('Photo upload failed:', uploadError)
           // Continue with other photos even if one fails

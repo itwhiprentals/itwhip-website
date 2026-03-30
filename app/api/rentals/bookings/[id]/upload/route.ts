@@ -2,15 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
-import { v2 as cloudinary } from 'cloudinary'
 import { quickVerifyDriverLicense, compareNames, validateAge } from '@/app/lib/booking/ai/license-analyzer'
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-})
+import { uploadPrivateDocument, generateKey, getPrivateDocumentUrl } from '@/app/lib/storage/s3'
 
 // POST /api/rentals/bookings/[id]/upload - Upload file for booking
 export async function POST(
@@ -99,36 +92,20 @@ export async function POST(
       )
     }
 
-    // Convert file to base64 for Cloudinary upload
+    // Convert file to buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    const base64 = buffer.toString('base64')
-    const dataUri = `data:${file.type};base64,${base64}`
 
-    // Determine folder based on file purpose
-    const isVerificationDoc = file.name.toLowerCase().includes('license') || 
+    // Determine if this is a verification document
+    const isVerificationDoc = file.name.toLowerCase().includes('license') ||
                              file.name.toLowerCase().includes('id') ||
                              file.name.toLowerCase().includes('verification')
-    
-    const folder = isVerificationDoc 
-      ? `rentals/${bookingId}/verification`
-      : `rentals/${bookingId}/documents`
 
-    // Upload to Cloudinary
-    const uploadResponse = await cloudinary.uploader.upload(dataUri, {
-      folder: folder,
-      resource_type: 'auto',
-      public_id: `${Date.now()}-${file.name.replace(/\.[^/.]+$/, '')}`, // Remove extension
-      transformation: file.type === 'application/pdf' 
-        ? undefined // No transformation for PDFs
-        : [
-            { quality: 'auto:good' },
-            { fetch_format: 'auto' },
-            { width: 2000, crop: 'limit' } // Max width 2000px for images
-          ]
-    })
+    // Upload to S3 (private — booking documents are sensitive)
+    const key = generateKey('dl', bookingId, `${Date.now()}-${file.name.replace(/\.[^/.]+$/, '')}`)
+    const s3Key = await uploadPrivateDocument(key, buffer, file.type)
 
-    // Save URL to the appropriate booking field based on documentType
+    // Save S3 key to the appropriate booking field based on documentType
     if (documentType === 'license-front' || documentType === 'license-back' || documentType === 'insurance') {
       const fieldMap: Record<string, string> = {
         'license-front': 'licensePhotoUrl',
@@ -137,7 +114,7 @@ export async function POST(
       }
       await prisma.rentalBooking.update({
         where: { id: bookingId },
-        data: { [fieldMap[documentType]]: uploadResponse.secure_url }
+        data: { [fieldMap[documentType]]: s3Key }
       })
     }
 
@@ -208,7 +185,7 @@ export async function POST(
             <p><strong>Document:</strong> ${file.name}</p>
           </div>
           <div style="margin-top: 20px;">
-            <a href="${uploadResponse.secure_url}" 
+            <a href="${process.env.NEXT_PUBLIC_URL}/admin/rentals/bookings/${bookingId}"
                style="background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-right: 10px;">
               View Document
             </a>
@@ -219,19 +196,20 @@ export async function POST(
           </div>
         </div>
       `
-      const emailText = `Verification documents uploaded for booking ${booking.bookingCode}. View at: ${uploadResponse.secure_url}`
+      const emailText = `Verification documents uploaded for booking ${booking.bookingCode}. Review at: ${process.env.NEXT_PUBLIC_URL}/admin/rentals/bookings/${bookingId}`
 
       sendEmail(adminEmail, emailSubject, emailHtml, emailText).catch(error => {
         console.error('Failed to send admin notification:', error)
       })
     }
 
+    // Generate a pre-signed URL for immediate access
+    const presignedUrl = await getPrivateDocumentUrl(s3Key)
+
     return NextResponse.json({
       success: true,
-      url: uploadResponse.secure_url,
-      publicId: uploadResponse.public_id,
-      format: uploadResponse.format,
-      size: uploadResponse.bytes,
+      url: presignedUrl,
+      key: s3Key,
       filename: file.name,
       isVerificationDoc
     })
@@ -239,17 +217,11 @@ export async function POST(
   } catch (error) {
     console.error('Upload error:', error)
     
-    // Check for specific Cloudinary errors
+    // Check for specific upload errors
     if (error instanceof Error) {
       if (error.message.includes('Invalid image file')) {
         return NextResponse.json(
           { error: 'Invalid or corrupted file' },
-          { status: 400 }
-        )
-      }
-      if (error.message.includes('File size too large')) {
-        return NextResponse.json(
-          { error: 'File size exceeds Cloudinary limits' },
           { status: 400 }
         )
       }

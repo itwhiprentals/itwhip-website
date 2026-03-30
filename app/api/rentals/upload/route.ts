@@ -1,13 +1,7 @@
 // app/api/rentals/upload/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/app/lib/database/prisma'
-import { v2 as cloudinary } from 'cloudinary'
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-})
+import { uploadPrivateDocument, generateKey, getPrivateDocumentUrl } from '@/app/lib/storage/s3'
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,30 +29,11 @@ export async function POST(request: NextRequest) {
     // Convert to buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    
-    // Always upload to Cloudinary, whether during booking or verification
-    const uploadResult = await new Promise<any>((resolve, reject) => {
-      const publicId = bookingId 
-        ? `${bookingId}_${type}_${Date.now()}`
-        : `temp_${type}_${Date.now()}`
-      
-      cloudinary.uploader.upload_stream(
-        {
-          folder: 'itwhip/verifications',
-          public_id: publicId,
-          resource_type: 'image',
-          transformation: [
-            { width: 1200, height: 800, crop: 'limit' },
-            { quality: 'auto' },
-            { fetch_format: 'auto' }
-          ]
-        },
-        (error, result) => {
-          if (error) reject(error)
-          else resolve(result)
-        }
-      ).end(buffer)
-    })
+
+    // Upload to S3 (private — verification documents)
+    const keyId = bookingId || `temp-${Date.now()}`
+    const key = generateKey('dl', keyId, type)
+    const s3Key = await uploadPrivateDocument(key, buffer, file.type)
 
     // If we have a bookingId, update the database
     if (bookingId) {
@@ -84,12 +59,12 @@ export async function POST(request: NextRequest) {
         documentsSubmittedAt: new Date(),
         verificationStatus: 'submitted'
       }
-      
+
       if (type === 'license') {
-        updateData.licensePhotoUrl = uploadResult.secure_url
+        updateData.licensePhotoUrl = s3Key
         updateData.licenseVerified = false
       } else if (type === 'insurance') {
-        updateData.insurancePhotoUrl = uploadResult.secure_url
+        updateData.insurancePhotoUrl = s3Key
         updateData.selfieVerified = false
       }
 
@@ -99,11 +74,12 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Always return the real Cloudinary URL
-    return NextResponse.json({ 
+    // Return a pre-signed URL for immediate access
+    const presignedUrl = await getPrivateDocumentUrl(s3Key)
+    return NextResponse.json({
       success: true,
-      url: uploadResult.secure_url,
-      publicId: uploadResult.public_id,
+      url: presignedUrl,
+      key: s3Key,
       message: 'Document uploaded successfully'
     })
     

@@ -3,15 +3,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { headers } from 'next/headers'
-import { v2 as cloudinary } from 'cloudinary'
 import { checkUploadRateLimit } from '@/app/lib/upload/rate-limiter'
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-})
+import { uploadPublicImage, uploadPrivateDocument, deletePublicImage, extractKeyFromUrl, generateKey } from '@/app/lib/storage/s3'
 
 // Helper to get host from headers
 async function getHostFromHeaders() {
@@ -113,36 +106,43 @@ async function logPhotoActivity(params: {
   }
 }
 
-// Helper to upload a single file to Cloudinary
-async function uploadToCloudinary(
+// Helper to upload a single file to S3
+async function uploadFileToS3(
   file: File,
-  folder: string,
   hostId: string,
   type: string,
   index?: number
-): Promise<any> {
+): Promise<{ secure_url: string; public_id: string; width: number; height: number; format: string; etag: string; exif: any; colors: any; predominant: any }> {
   const bytes = await file.arrayBuffer()
   const buffer = Buffer.from(bytes)
-  const base64 = buffer.toString('base64')
-  const dataUri = `data:${file.type};base64,${base64}`
-  
-  const publicId = index !== undefined 
-    ? `${hostId}-${type}-${Date.now()}-${index}`
-    : `${hostId}-${type}-${Date.now()}`
 
-  const uploadResult = await cloudinary.uploader.upload(dataUri, {
-    folder: folder,
-    public_id: publicId,
-    resource_type: 'auto',
-    transformation: type === 'profile' ? [
-      { width: 500, height: 500, crop: 'fill', gravity: 'face' }
-    ] : undefined,
-    exif: true,
-    colors: true,
-    image_metadata: true
-  })
+  // Determine if this is a public or private upload
+  const isPublic = type === 'carPhoto' || type === 'profile'
+  const isPrivateDoc = type === 'governmentId' || type === 'license' || type === 'insurance'
 
-  return uploadResult
+  let url: string
+  if (isPublic) {
+    const keyType = type === 'profile' ? 'host-profile' : 'car'
+    const suffix = index !== undefined ? `${index}` : undefined
+    const key = generateKey(keyType as any, hostId, suffix)
+    url = await uploadPublicImage(key, buffer, file.type)
+  } else {
+    const key = generateKey('identity', hostId, type)
+    url = await uploadPrivateDocument(key, buffer, file.type)
+  }
+
+  // Return a compatible result shape
+  return {
+    secure_url: url,
+    public_id: url,
+    width: 0,
+    height: 0,
+    format: file.type.split('/')[1] || 'jpg',
+    etag: '',
+    exif: {},
+    colors: null,
+    predominant: null
+  }
 }
 
 // POST - Upload file(s) - SUPPORTS MULTIPLE FILES
@@ -285,8 +285,8 @@ export async function POST(request: NextRequest) {
       })
 
       // ✅ Upload all files in parallel
-      const uploadPromises = files.map((file, index) => 
-        uploadToCloudinary(file, folder, host.id, type, index)
+      const uploadPromises = files.map((file, index) =>
+        uploadFileToS3(file, host.id, type, index)
       )
       
       const uploadResults = await Promise.all(uploadPromises)
@@ -301,7 +301,7 @@ export async function POST(request: NextRequest) {
         
         const enrichedMetadata = {
           ...photoMetadata,
-          cloudinaryPublicId: uploadResult.public_id,
+          s3Key: uploadResult.public_id,
           width: uploadResult.width,
           height: uploadResult.height,
           format: uploadResult.format,
@@ -376,12 +376,12 @@ export async function POST(request: NextRequest) {
     }
 
     const file = files[0]
-    const uploadResult = await uploadToCloudinary(file, folder, host.id, type)
+    const uploadResult = await uploadFileToS3(file, host.id, type)
     
     const photoMetadata = await extractPhotoMetadata(file)
     const enrichedMetadata = {
       ...photoMetadata,
-      cloudinaryPublicId: uploadResult.public_id,
+      s3Key: uploadResult.public_id,
       width: uploadResult.width,
       height: uploadResult.height,
       format: uploadResult.format
@@ -553,16 +553,13 @@ export async function DELETE(request: NextRequest) {
         }
       })
 
-      // Delete from Cloudinary
-      if (photo.url && photo.url.includes('cloudinary.com')) {
+      // Delete from S3
+      const photoKey = extractKeyFromUrl(photo.url)
+      if (photoKey) {
         try {
-          const urlParts = photo.url.split('/')
-          const publicIdWithExtension = urlParts.slice(-1)[0]
-          const publicId = publicIdWithExtension.split('.')[0]
-          const folder = urlParts.slice(-3, -1).join('/')
-          await cloudinary.uploader.destroy(`${folder}/${publicId}`)
-        } catch (cloudinaryError) {
-          console.error('Cloudinary deletion error:', cloudinaryError)
+          await deletePublicImage(photoKey)
+        } catch (s3Error) {
+          console.error('S3 deletion error:', s3Error)
         }
       }
 
@@ -618,16 +615,13 @@ export async function DELETE(request: NextRequest) {
         )
     }
     
-    // Delete from Cloudinary
-    if (currentUrl && currentUrl.includes('cloudinary.com')) {
+    // Delete from S3
+    const docKey = extractKeyFromUrl(currentUrl)
+    if (docKey) {
       try {
-        const urlParts = currentUrl.split('/')
-        const publicIdWithExtension = urlParts.slice(-1)[0]
-        const publicId = publicIdWithExtension.split('.')[0]
-        const folder = urlParts.slice(-3, -1).join('/')
-        await cloudinary.uploader.destroy(`${folder}/${publicId}`)
-      } catch (cloudinaryError) {
-        console.error('Cloudinary deletion error:', cloudinaryError)
+        await deletePublicImage(docKey)
+      } catch (s3Error) {
+        console.error('S3 deletion error:', s3Error)
       }
     }
     

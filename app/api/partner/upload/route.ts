@@ -5,15 +5,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 import { prisma } from '@/app/lib/database/prisma'
-import { v2 as cloudinary } from 'cloudinary'
 import { checkUploadRateLimit } from '@/app/lib/upload/rate-limiter'
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-})
+import { uploadPublicImage, generateKey } from '@/app/lib/storage/s3'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
@@ -56,37 +49,18 @@ async function getPartnerFromToken(request?: NextRequest) {
   }
 }
 
-// Helper to upload a single file to Cloudinary
-async function uploadToCloudinary(
+// Helper to upload a single file to S3
+async function uploadFileToS3(
   file: File,
-  folder: string,
-  partnerId: string,
+  carId: string,
   index?: number,
-  vehicleName?: string
-): Promise<any> {
+): Promise<{ secure_url: string }> {
   const bytes = await file.arrayBuffer()
   const buffer = Buffer.from(bytes)
-  const base64 = buffer.toString('base64')
-  const dataUri = `data:${file.type};base64,${base64}`
-
-  // Build a descriptive public_id from vehicle name if available
-  const slug = vehicleName
-    ? vehicleName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 80)
-    : 'vehicle'
-  const suffix = index !== undefined ? `-${index + 1}` : ''
-  const publicId = `${slug}-${partnerId.slice(-6)}-${Date.now()}${suffix}`
-
-  const uploadResult = await cloudinary.uploader.upload(dataUri, {
-    folder: folder,
-    public_id: publicId,
-    resource_type: 'auto',
-    format: 'jpg',           // Auto-convert HEIC/HEIF/WebP to JPEG for browser compatibility
-    exif: true,
-    colors: true,
-    image_metadata: true
-  })
-
-  return uploadResult
+  const suffix = index !== undefined ? `${index + 1}` : '1'
+  const key = generateKey('car', carId, suffix)
+  const url = await uploadPublicImage(key, buffer, file.type || 'image/jpeg')
+  return { secure_url: url }
 }
 
 // POST - Upload vehicle photos
@@ -193,7 +167,7 @@ export async function POST(request: NextRequest) {
       // Upload all files in parallel
       const carName = vehicleName || `${car.year || ''} ${car.make || ''} ${car.model || ''}`.trim() || null
       const uploadPromises = files.map((file, index) =>
-        uploadToCloudinary(file, folder, partner.id, index, carName || undefined)
+        uploadFileToS3(file, carId, index)
       )
 
       const uploadResults = await Promise.all(uploadPromises)

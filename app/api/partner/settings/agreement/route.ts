@@ -5,17 +5,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
-import { v2 as cloudinary } from 'cloudinary'
+import { uploadPrivateDocument, deletePrivateDocument, generateKey, isS3Key } from '@/app/lib/storage/s3'
 import { validateAgreementPdf } from '@/app/lib/agreements/validate-pdf'
 import { extractAgreementSections } from '@/app/lib/agreements/extract-sections'
 
 const JWT_SECRET = process.env.JWT_SECRET!
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-})
 
 async function getCurrentHost(request?: NextRequest) {
   // Check Authorization header first (mobile app)
@@ -126,22 +120,14 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Settings Agreement Upload] Uploading ${file.name} for host ${host.id}`)
 
-    // Convert file to base64 for Cloudinary
+    // Convert file to buffer for S3
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    const base64 = buffer.toString('base64')
-    const dataUri = `data:${file.type};base64,${base64}`
 
-    // Upload to Cloudinary
-    const uploadResult = await cloudinary.uploader.upload(dataUri, {
-      folder: 'itwhip/agreements',
-      resource_type: 'raw',
-      public_id: `agreement_${host.id}_${Date.now()}`,
-      format: 'pdf'
-    })
-
-    const pdfUrl = uploadResult.secure_url
-    console.log(`[Settings Agreement Upload] Uploaded to: ${pdfUrl}`)
+    // Upload to S3
+    const key = generateKey('agreement', host.id)
+    const pdfUrl = await uploadPrivateDocument(key, buffer, 'application/pdf')
+    console.log(`[Settings Agreement Upload] Uploaded to S3: ${pdfUrl}`)
 
     // AI validation with rule-based fallback
     const validationResult = await validateAgreementPdf(pdfUrl, file.name, buffer)
@@ -161,7 +147,7 @@ export async function POST(request: NextRequest) {
 
     if (shouldReject) {
       try {
-        await cloudinary.uploader.destroy(uploadResult.public_id, { resource_type: 'raw' })
+        await deletePrivateDocument(key)
       } catch { /* ignore */ }
 
       return NextResponse.json({
@@ -180,13 +166,10 @@ export async function POST(request: NextRequest) {
       console.error('[Settings Agreement Upload] Section extraction failed (non-blocking):', extractError)
     }
 
-    // Delete old agreement from Cloudinary if exists
-    if (host.hostAgreementUrl) {
+    // Delete old agreement from S3 if exists
+    if (host.hostAgreementUrl && isS3Key(host.hostAgreementUrl)) {
       try {
-        const urlParts = host.hostAgreementUrl.split('/')
-        const fileName = urlParts[urlParts.length - 1]
-        const publicId = `itwhip/agreements/${fileName.replace('.pdf', '')}`
-        await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' })
+        await deletePrivateDocument(host.hostAgreementUrl)
       } catch { /* ignore */ }
     }
 
@@ -230,12 +213,9 @@ export async function DELETE() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (host.hostAgreementUrl) {
+    if (host.hostAgreementUrl && isS3Key(host.hostAgreementUrl)) {
       try {
-        const urlParts = host.hostAgreementUrl.split('/')
-        const fileName = urlParts[urlParts.length - 1]
-        const publicId = `itwhip/agreements/${fileName.replace('.pdf', '')}`
-        await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' })
+        await deletePrivateDocument(host.hostAgreementUrl)
       } catch { /* ignore */ }
     }
 

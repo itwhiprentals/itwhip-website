@@ -4,16 +4,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verify } from 'jsonwebtoken'
 import { sendHostDocumentRequest } from '@/app/lib/email'
-import { v2 as cloudinary } from 'cloudinary'
+import { uploadPrivateDocument, generateKey } from '@/app/lib/storage/s3'
 
 const JWT_SECRET = process.env.JWT_SECRET!
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-})
 
 // Valid photo ID types and their required pages
 const PHOTO_ID_TYPES = {
@@ -176,22 +169,12 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Upload to Cloudinary
+      // Upload to S3 (private)
       const bytes = await file.arrayBuffer()
       const buffer = Buffer.from(bytes)
-      const base64 = buffer.toString('base64')
-      const dataUri = `data:${file.type};base64,${base64}`
 
-      const folder = `host-documents/photo-id/${photoIdType.toLowerCase()}`
-      const publicId = `${host.id}-${photoIdType.toLowerCase()}-${documentSide}-${Date.now()}`
-
-      const uploadResult = await cloudinary.uploader.upload(dataUri, {
-        folder: folder,
-        public_id: publicId,
-        resource_type: 'auto'
-      })
-
-      const documentUrl = uploadResult.secure_url
+      const key = generateKey('identity', host.id, `${photoIdType.toLowerCase()}-${documentSide}`)
+      const documentUrl = await uploadPrivateDocument(key, buffer, file.type)
 
       // Update photoIdUrls JSON field
       const currentPhotoIdUrls = (host.photoIdUrls as Record<string, string>) || {}
@@ -279,22 +262,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Upload to Cloudinary
+    // Upload to S3 (private)
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    const base64 = buffer.toString('base64')
-    const dataUri = `data:${file.type};base64,${base64}`
 
-    const folder = `host-documents/${documentType}`
-    const publicId = `${host.id}-${documentType}-${Date.now()}`
-
-    const uploadResult = await cloudinary.uploader.upload(dataUri, {
-      folder: folder,
-      public_id: publicId,
-      resource_type: 'auto'
-    })
-
-    const documentUrl = uploadResult.secure_url
+    const key = generateKey('identity', host.id, documentType!)
+    const documentUrl = await uploadPrivateDocument(key, buffer, file.type)
 
     // Start transaction
     const result = await prisma.$transaction(async (tx) => {

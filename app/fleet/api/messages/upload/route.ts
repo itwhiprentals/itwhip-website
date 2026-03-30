@@ -1,13 +1,6 @@
 // app/fleet/api/messages/upload/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { v2 as cloudinary } from 'cloudinary'
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-})
+import { uploadPublicImage, generateKey } from '@/app/lib/storage/s3'
 
 // Allowed file types
 const ALLOWED_TYPES = [
@@ -71,51 +64,22 @@ export async function POST(request: NextRequest) {
 
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    
-    // Determine resource type
-    const isImage = file.type.startsWith('image/')
-    const resourceType = isImage ? 'image' : 'raw'
 
-    // Upload to Cloudinary
-    const uploadResult = await new Promise<any>((resolve, reject) => {
-      const uploadOptions: any = {
-        resource_type: resourceType,
-        folder: 'message-attachments',
-        use_filename: true,
-        unique_filename: true
-      }
+    // Upload to S3 (public — message attachments need to be viewable)
+    const ext = file.name.split('.').pop() || ''
+    const key = generateKey('message', `fleet-${Date.now()}`, ext ? `.${ext}` : undefined)
+    const url = await uploadPublicImage(key, buffer, file.type)
 
-      // Add image transformations only for images
-      if (isImage) {
-        uploadOptions.transformation = [
-          { width: 1200, height: 1200, crop: 'limit' },
-          { quality: 'auto:good' }
-        ]
-      }
-
-      cloudinary.uploader.upload_stream(
-        uploadOptions,
-        (error, result) => {
-          if (error) {
-            console.error('[MESSAGE UPLOAD] Cloudinary error:', error)
-            reject(error)
-          } else {
-            resolve(result)
-          }
-        }
-      ).end(buffer)
-    })
-
-    console.log('[MESSAGE UPLOAD] ✅ File uploaded successfully:', uploadResult.secure_url)
+    console.log('[MESSAGE UPLOAD] File uploaded successfully:', url)
 
     return NextResponse.json({
       success: true,
       data: {
-        url: uploadResult.secure_url,
+        url,
         name: file.name,
         type: file.type,
         size: file.size,
-        publicId: uploadResult.public_id
+        key
       }
     })
   } catch (error) {

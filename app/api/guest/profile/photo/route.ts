@@ -2,14 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
-import { v2 as cloudinary } from 'cloudinary'
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-})
+import { uploadPublicImage, generateKey } from '@/app/lib/storage/s3'
 
 // POST: Upload profile photo
 export async function POST(request: NextRequest) {
@@ -75,26 +68,9 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Upload to Cloudinary
-    const uploadResponse = await new Promise<any>((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: 'guest-profiles',
-          public_id: `guest-${profile.id}-${Date.now()}`,
-          transformation: [
-            { width: 500, height: 500, crop: 'fill', gravity: 'face' },
-            { quality: 'auto', fetch_format: 'auto' }
-          ]
-        },
-        (error, result) => {
-          if (error) reject(error)
-          else resolve(result)
-        }
-      )
-      uploadStream.end(buffer)
-    })
-
-    const photoUrl = uploadResponse.secure_url
+    // Upload to S3 (public via CloudFront)
+    const key = generateKey('profile', profile.id)
+    const photoUrl = await uploadPublicImage(key, buffer, file.type)
 
     // Update profile with new photo URL
     await prisma.reviewerProfile.update({

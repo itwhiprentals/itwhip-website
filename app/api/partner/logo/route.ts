@@ -5,18 +5,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
-import { v2 as cloudinary } from 'cloudinary'
+import { uploadPublicImage, deletePublicImage, extractKeyFromUrl, generateKey } from '@/app/lib/storage/s3'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
 )
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-})
 
 // Logo specs
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
@@ -128,44 +121,34 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Convert file to base64 for Cloudinary
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    const base64 = `data:${file.type};base64,${buffer.toString('base64')}`
 
     // Delete old logo if exists
     if (partner.partnerLogo) {
-      try {
-        // Extract public_id from URL
-        const urlParts = partner.partnerLogo.split('/')
-        const fileName = urlParts[urlParts.length - 1]
-        const publicId = `partner-logo/${partner.id}/${fileName.split('.')[0]}`
-        await cloudinary.uploader.destroy(publicId)
-      } catch (e) {
-        console.error('Failed to delete old logo:', e)
+      const oldKey = extractKeyFromUrl(partner.partnerLogo)
+      if (oldKey) {
+        try {
+          await deletePublicImage(oldKey)
+        } catch (e) {
+          console.error('Failed to delete old logo:', e)
+        }
       }
     }
 
-    // Upload to Cloudinary - logos are square, preserve aspect ratio
-    const uploadResult = await cloudinary.uploader.upload(base64, {
-      folder: `partner-logo/${partner.id}`,
-      resource_type: 'image',
-      transformation: [
-        { width: 400, height: 400, crop: 'fit' },
-        { quality: 'auto:good' },
-        { fetch_format: 'auto' }
-      ]
-    })
+    // Upload to S3 (public via CloudFront)
+    const key = generateKey('host-logo', partner.id)
+    const logoUrl = await uploadPublicImage(key, buffer, file.type)
 
     // Update partner record
     await prisma.rentalHost.update({
       where: { id: partner.id },
-      data: { partnerLogo: uploadResult.secure_url }
+      data: { partnerLogo: logoUrl }
     })
 
     return NextResponse.json({
       success: true,
-      logo: uploadResult.secure_url
+      logo: logoUrl
     })
 
   } catch (error: any) {
@@ -196,14 +179,14 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Delete from Cloudinary
-    try {
-      const urlParts = partner.partnerLogo.split('/')
-      const fileName = urlParts[urlParts.length - 1]
-      const publicId = `partner-logo/${partner.id}/${fileName.split('.')[0]}`
-      await cloudinary.uploader.destroy(publicId)
-    } catch (e) {
-      console.error('Failed to delete from Cloudinary:', e)
+    // Delete from S3
+    const logoKey = extractKeyFromUrl(partner.partnerLogo)
+    if (logoKey) {
+      try {
+        await deletePublicImage(logoKey)
+      } catch (e) {
+        console.error('Failed to delete from S3:', e)
+      }
     }
 
     // Update partner record

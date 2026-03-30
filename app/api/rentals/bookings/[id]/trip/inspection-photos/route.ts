@@ -1,16 +1,9 @@
 // app/api/rentals/bookings/[id]/trip/inspection-photos/route.ts
 
 import { NextRequest, NextResponse } from 'next/server'
-import { v2 as cloudinary } from 'cloudinary'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
-
-// Configure Cloudinary
-cloudinary.config({
- cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
- api_key: process.env.CLOUDINARY_API_KEY,
- api_secret: process.env.CLOUDINARY_API_SECRET,
-})
+import { uploadPublicImage, generateKey } from '@/app/lib/storage/s3'
 
 export async function POST(
  request: NextRequest,
@@ -77,28 +70,13 @@ export async function POST(
      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
    }
 
-   // Convert file to base64
+   // Convert file to buffer
    const bytes = await file.arrayBuffer()
    const buffer = Buffer.from(bytes)
-   const base64 = buffer.toString('base64')
-   const dataUri = `data:${file.type};base64,${base64}`
 
-   // Upload to Cloudinary with specific folder structure
-   const uploadResponse = await cloudinary.uploader.upload(dataUri, {
-     folder: `rentals/inspections/${bookingId}`,
-     public_id: `${photoType}_${Date.now()}`,
-     resource_type: 'auto',
-     transformation: [
-       { width: 1920, height: 1920, crop: 'limit' },
-       { quality: 'auto:good' },
-       { fetch_format: 'auto' }
-     ],
-     context: {
-       booking_code: booking.bookingCode,
-       photo_type: photoType,
-       upload_date: new Date().toISOString()
-     }
-   })
+   // Upload to S3 (public — inspection photos need to be viewable)
+   const key = generateKey('inspection', bookingId, photoType)
+   const photoUrl = await uploadPublicImage(key, buffer, file.type)
 
    // Log the photo upload in the database
    await prisma.activityLog.create({
@@ -109,8 +87,8 @@ export async function POST(
        entityId: bookingId,
        metadata: {
          photoType,
-         url: uploadResponse.secure_url,
-         publicId: uploadResponse.public_id,
+         url: photoUrl,
+         s3Key: key,
          timestamp: new Date()
        },
        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
@@ -119,8 +97,8 @@ export async function POST(
 
    return NextResponse.json({
      success: true,
-     url: uploadResponse.secure_url,
-     publicId: uploadResponse.public_id,
+     url: photoUrl,
+     key,
      photoType
    })
 

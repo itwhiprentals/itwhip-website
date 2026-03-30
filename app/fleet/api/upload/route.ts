@@ -1,14 +1,7 @@
 // app/sys-2847/fleet/api/upload/route.ts
 
 import { NextRequest, NextResponse } from 'next/server'
-import { v2 as cloudinary } from 'cloudinary'
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-})
+import { uploadPublicImage, generateKey } from '@/app/lib/storage/s3'
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,26 +15,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const uploadPromises = files.map(async (file) => {
+    const uploadPromises = files.map(async (file, index) => {
       const bytes = await file.arrayBuffer()
       const buffer = Buffer.from(bytes)
-      
-      return new Promise<string>((resolve, reject) => {
-        cloudinary.uploader.upload_stream(
-          {
-            resource_type: 'auto',
-            folder: 'rental-cars',
-            transformation: [
-              { width: 1200, height: 800, crop: 'limit' },
-              { quality: 'auto:good' }
-            ]
-          },
-          (error, result) => {
-            if (error) reject(error)
-            else resolve(result!.secure_url)
-          }
-        ).end(buffer)
-      })
+      const key = generateKey('car', `fleet-${Date.now()}`, `${index}`)
+      return await uploadPublicImage(key, buffer, file.type)
     })
 
     const urls = await Promise.all(uploadPromises)

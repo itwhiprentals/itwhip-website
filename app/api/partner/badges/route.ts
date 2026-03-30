@@ -5,18 +5,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/app/lib/database/prisma'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
-import { v2 as cloudinary } from 'cloudinary'
+import { uploadPublicImage, deletePublicImage, generateKey, extractKeyFromUrl } from '@/app/lib/storage/s3'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
 )
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-})
 
 // Badge specs
 const MAX_FILE_SIZE = 1 * 1024 * 1024 // 1MB per badge
@@ -152,26 +145,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Convert file to base64 for Cloudinary
+    // Convert file to buffer for S3
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    const base64 = `data:${file.type};base64,${buffer.toString('base64')}`
 
-    // Upload to Cloudinary
-    const uploadResult = await cloudinary.uploader.upload(base64, {
-      folder: `partner-badges/${partner.id}`,
-      resource_type: 'image',
-      transformation: [
-        { width: 200, height: 200, crop: 'fit' as any },
-        { quality: 'auto:good' as any },
-        { fetch_format: 'auto' as any }
-      ]
-    })
+    // Upload to S3
+    const key = generateKey('host-logo', partner.id)
+    const imageUrl = await uploadPublicImage(key, buffer, file.type || 'image/png')
 
     // Add new badge
     const newBadge: Badge = {
       name: name.trim(),
-      imageUrl: uploadResult.secure_url
+      imageUrl
     }
 
     const updatedBadges = [...currentBadges, newBadge]
@@ -232,14 +217,14 @@ export async function DELETE(request: NextRequest) {
 
     const badgeToDelete = currentBadges[index]
 
-    // Delete from Cloudinary
+    // Delete from S3
     try {
-      const urlParts = badgeToDelete.imageUrl.split('/')
-      const fileName = urlParts[urlParts.length - 1]
-      const publicId = `partner-badges/${partner.id}/${fileName.split('.')[0]}`
-      await cloudinary.uploader.destroy(publicId)
+      const s3Key = extractKeyFromUrl(badgeToDelete.imageUrl)
+      if (s3Key) {
+        await deletePublicImage(s3Key)
+      }
     } catch (e) {
-      console.error('Failed to delete from Cloudinary:', e)
+      console.error('Failed to delete from S3:', e)
     }
 
     // Remove badge from array

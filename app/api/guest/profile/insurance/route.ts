@@ -4,13 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
-import { v2 as cloudinary } from 'cloudinary'
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-})
+import { uploadPrivateDocument, generateKey } from '@/app/lib/storage/s3'
 
 // GET - Fetch current insurance and history
 export async function GET(req: NextRequest) {
@@ -175,27 +169,15 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Upload front card
+    // Upload front card to S3 (private)
     const cardFrontBuffer = Buffer.from(await cardFrontFile.arrayBuffer())
-    const cardFrontBase64 = cardFrontBuffer.toString('base64')
-    const cardFrontDataUri = `data:${cardFrontFile.type};base64,${cardFrontBase64}`
+    const frontKey = generateKey('identity', profile.id, 'insurance-front')
+    const frontUploadResult = { secure_url: await uploadPrivateDocument(frontKey, cardFrontBuffer, cardFrontFile.type) }
 
-    const frontUploadResult = await cloudinary.uploader.upload(cardFrontDataUri, {
-      folder: 'insurance-cards',
-      public_id: `${user.userId}-front-${Date.now()}`,
-      resource_type: 'image'
-    })
-
-    // Upload back card
+    // Upload back card to S3 (private)
     const cardBackBuffer = Buffer.from(await cardBackFile.arrayBuffer())
-    const cardBackBase64 = cardBackBuffer.toString('base64')
-    const cardBackDataUri = `data:${cardBackFile.type};base64,${cardBackBase64}`
-
-    const backUploadResult = await cloudinary.uploader.upload(cardBackDataUri, {
-      folder: 'insurance-cards',
-      public_id: `${user.userId}-back-${Date.now()}`,
-      resource_type: 'image'
-    })
+    const backKey = generateKey('identity', profile.id, 'insurance-back')
+    const backUploadResult = { secure_url: await uploadPrivateDocument(backKey, cardBackBuffer, cardBackFile.type) }
 
     // Update ReviewerProfile
     await prisma.reviewerProfile.update({
@@ -313,29 +295,15 @@ export async function PATCH(req: NextRequest) {
     // Upload new front card if provided
     if (cardFrontFile) {
       const cardFrontBuffer = Buffer.from(await cardFrontFile.arrayBuffer())
-      const cardFrontBase64 = cardFrontBuffer.toString('base64')
-      const cardFrontDataUri = `data:${cardFrontFile.type};base64,${cardFrontBase64}`
-
-      const frontUploadResult = await cloudinary.uploader.upload(cardFrontDataUri, {
-        folder: 'insurance-cards',
-        public_id: `${user.userId}-front-${Date.now()}`,
-        resource_type: 'image'
-      })
-      updateData.insuranceCardFrontUrl = frontUploadResult.secure_url
+      const frontKey = generateKey('identity', profile.id, 'insurance-front')
+      updateData.insuranceCardFrontUrl = await uploadPrivateDocument(frontKey, cardFrontBuffer, cardFrontFile.type)
     }
 
     // Upload new back card if provided
     if (cardBackFile) {
       const cardBackBuffer = Buffer.from(await cardBackFile.arrayBuffer())
-      const cardBackBase64 = cardBackBuffer.toString('base64')
-      const cardBackDataUri = `data:${cardBackFile.type};base64,${cardBackBase64}`
-
-      const backUploadResult = await cloudinary.uploader.upload(cardBackDataUri, {
-        folder: 'insurance-cards',
-        public_id: `${user.userId}-back-${Date.now()}`,
-        resource_type: 'image'
-      })
-      updateData.insuranceCardBackUrl = backUploadResult.secure_url
+      const backKey = generateKey('identity', profile.id, 'insurance-back')
+      updateData.insuranceCardBackUrl = await uploadPrivateDocument(backKey, cardBackBuffer, cardBackFile.type)
     }
 
     await prisma.reviewerProfile.update({

@@ -5,15 +5,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
-import { v2 as cloudinary } from 'cloudinary'
+import { uploadPublicImage, generateKey } from '@/app/lib/storage/s3'
 
 const JWT_SECRET = process.env.JWT_SECRET!
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-})
 
 async function getCurrentHostId() {
   const cookieStore = await cookies()
@@ -55,26 +49,9 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Upload to Cloudinary with face-aware cropping
-    const uploadResponse = await new Promise<any>((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: 'host-profiles',
-          public_id: `host-${hostId}-${Date.now()}`,
-          transformation: [
-            { width: 500, height: 500, crop: 'fill', gravity: 'face' },
-            { quality: 'auto', fetch_format: 'auto' }
-          ]
-        },
-        (error, result) => {
-          if (error) reject(error)
-          else resolve(result)
-        }
-      )
-      uploadStream.end(buffer)
-    })
-
-    const photoUrl = uploadResponse.secure_url
+    // Upload to S3 (public via CloudFront)
+    const key = generateKey('host-profile', hostId)
+    const photoUrl = await uploadPublicImage(key, buffer, file.type)
 
     // Update host profile photo
     await prisma.rentalHost.update({

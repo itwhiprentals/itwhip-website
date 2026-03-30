@@ -2,15 +2,8 @@
 // Phase 14: Document upload endpoint for DL and selfie verification
 
 import { NextRequest, NextResponse } from 'next/server'
-import { v2 as cloudinary } from 'cloudinary'
 import { checkUploadIpRateLimit } from '@/app/lib/upload/rate-limiter'
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-})
+import { uploadPrivateDocument, generateKey } from '@/app/lib/storage/s3'
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,37 +49,12 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Determine folder based on type
-    const folder = type === 'selfie'
-      ? 'booking-verification/selfies'
-      : 'booking-verification/licenses'
+    // Determine S3 key type based on document type
+    const keyType = type === 'selfie' ? 'identity' : 'dl'
+    const key = generateKey(keyType as any, `upload-${Date.now()}`, type || 'document')
 
-    // Upload to Cloudinary with appropriate settings
-    const url = await new Promise<string>((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
-        {
-          resource_type: 'image',
-          folder,
-          transformation: [
-            // Preserve quality for document verification
-            { width: 1600, height: 1200, crop: 'limit' },
-            { quality: 'auto:best' }
-          ],
-          // Add privacy-related tags
-          tags: ['verification', 'sensitive', type || 'document']
-        },
-        (error, result) => {
-          if (error) {
-            console.error('[document-upload] Cloudinary error:', error)
-            reject(error)
-          } else if (result) {
-            resolve(result.secure_url)
-          } else {
-            reject(new Error('Upload failed - no result'))
-          }
-        }
-      ).end(buffer)
-    })
+    // Upload to S3 (private)
+    const url = await uploadPrivateDocument(key, buffer, file.type)
 
     console.log(`[document-upload] Uploaded ${type} document: ${url}`)
 
