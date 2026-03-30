@@ -35,7 +35,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
     "default-src 'self'",
     `script-src 'self' 'unsafe-inline'${isProd ? '' : " 'unsafe-eval'"} https://maps.googleapis.com https://js.stripe.com https://www.gstatic.com https://www.google.com https://apis.google.com https://*.firebaseapp.com https://api.mapbox.com https://cdn.jsdelivr.net blob:`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.mapbox.com",
-    "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com https://images.unsplash.com https://itwhip.com https://*.stripe.com https://via.placeholder.com https://maps.googleapis.com https://*.gstatic.com",
+    "img-src 'self' data: blob: https://photos.itwhip.com https://d3obhisxllm2ne.cloudfront.net https://res.cloudinary.com https://lh3.googleusercontent.com https://images.unsplash.com https://itwhip.com https://*.stripe.com https://via.placeholder.com https://maps.googleapis.com https://*.gstatic.com",
     "font-src 'self' data: https://fonts.gstatic.com",
     "connect-src 'self' https://www.google.com https://*.googleapis.com https://api.stripe.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://cloudflareinsights.com https://api.mapbox.com https://*.tiles.mapbox.com https://events.mapbox.com https://res.cloudinary.com https://api.cloudinary.com https://api.smartcar.com https://lh3.googleusercontent.com https://images.unsplash.com wss://*.twilio.com https://*.twilio.com https://vpic.nhtsa.dot.gov",
     "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.google.com https://*.firebaseapp.com",

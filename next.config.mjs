@@ -58,6 +58,14 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'photos.itwhip.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'd3obhisxllm2ne.cloudfront.net',
+      },
+      {
+        protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
       }
     ]
