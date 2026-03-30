@@ -10,10 +10,19 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
 )
 
-async function getPartnerFromToken() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('partner_token')?.value ||
-                cookieStore.get('hostAccessToken')?.value
+async function getPartnerFromToken(request?: NextRequest) {
+  // Check Authorization header first (mobile app)
+  let token: string | undefined
+  const authHeader = request?.headers.get('authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.substring(7)
+  }
+  // Fall back to cookies (web)
+  if (!token) {
+    const cookieStore = await cookies()
+    token = cookieStore.get('partner_token')?.value ||
+                  cookieStore.get('hostAccessToken')?.value
+  }
 
   if (!token) return null
 
@@ -38,7 +47,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; photoId: string }> }
 ) {
   try {
-    const partner = await getPartnerFromToken()
+    const partner = await getPartnerFromToken(request)
 
     if (!partner) {
       return NextResponse.json(
@@ -139,7 +148,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; photoId: string }> }
 ) {
   try {
-    const partner = await getPartnerFromToken()
+    const partner = await getPartnerFromToken(request)
     if (!partner) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id: carId, photoId } = await params
