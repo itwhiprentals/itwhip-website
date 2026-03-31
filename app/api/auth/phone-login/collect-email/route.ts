@@ -233,14 +233,17 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      requiresEmailVerification: !skipVerification, // Only require if not skipped
+      requiresEmailVerification: !skipVerification,
       user: {
         id: user.id,
         email: email,
         name: user.name,
         phone: user.phone,
         emailVerified: false
-      }
+      },
+      accessToken,
+      refreshToken,
+      expiresIn: 15 * 60,
     })
 
   } catch (error) {

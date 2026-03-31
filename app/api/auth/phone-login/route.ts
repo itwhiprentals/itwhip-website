@@ -398,7 +398,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Phone Login] Login successful for user: ${user.id}`)
 
-    // Create response with cookies set in headers
+    // Create response with tokens in body (mobile) + cookies (web)
     const response = NextResponse.json({
       success: true,
       message: 'Phone login successful',
@@ -409,7 +409,10 @@ export async function POST(request: NextRequest) {
         phone: user.phone,
         phoneVerified: user.phoneVerified,
         role: user.role
-      }
+      },
+      accessToken,
+      refreshToken,
+      expiresIn: 15 * 60,
     })
 
     // Set access token cookie (15 minutes)
