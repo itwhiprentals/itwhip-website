@@ -225,18 +225,27 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     )
-  } catch (error) {
-    console.error('❌ Mobile signup error:', error)
+  } catch (error: any) {
+    console.error('❌ Mobile signup error:', error?.message || error, 'code:', error?.code, 'meta:', JSON.stringify(error?.meta))
+
+    // Prisma unique constraint violations (P2002)
+    if (error?.code === 'P2002') {
+      const field = error.meta?.target?.[0] || error.meta?.target || ''
+      if (String(field).includes('email')) {
+        return NextResponse.json({ error: 'An account with this email already exists. Try signing in instead.' }, { status: 409 })
+      }
+      if (String(field).includes('phone')) {
+        return NextResponse.json({ error: 'This phone number is already registered to another account.' }, { status: 409 })
+      }
+      return NextResponse.json({ error: `This ${field || 'information'} is already in use.` }, { status: 409 })
+    }
 
     if (error instanceof Error && error.message.includes('duplicate key')) {
-      return NextResponse.json(
-        { error: 'An account with this email already exists' },
-        { status: 409 }
-      )
+      return NextResponse.json({ error: 'An account with this email already exists.' }, { status: 409 })
     }
 
     return NextResponse.json(
-      { error: 'Failed to create account. Please try again.' },
+      { error: 'Failed to create account. Please try again.', details: error?.message || String(error) },
       { status: 500 }
     )
   }
