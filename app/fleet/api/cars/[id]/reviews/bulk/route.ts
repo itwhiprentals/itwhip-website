@@ -13,7 +13,8 @@ const carTypeReviewTitles = {
       "Classy cruise!", "Upscale excellence!", "Distinguished drive!", "Luxe life!",
       "Premium paradise!", "Elite experience!", "High-end heaven!", "Sumptuous service!"
     ],
-    4: ["Almost luxury perfection", "Premium with minor notes", "Luxury with small hiccup", "High-end, tiny issue"]
+    4: ["Almost luxury perfection", "Premium with minor notes", "Luxury with small hiccup", "High-end, tiny issue",
+        "Elegant but one thing", "Plush ride, minor delay", "Refined with a note", "Near-perfect premium"]
   },
   sports: {
     5: [
@@ -24,7 +25,8 @@ const carTypeReviewTitles = {
       "Torque monster!", "Zoom zoom perfection!", "Pedal to metal!", "Velocity victory!",
       "RPM paradise!", "Handling heaven!", "Curve hugger!", "Speed symphony!"
     ],
-    4: ["Fast with minor flaws", "Performance nearly perfect", "Sporty with small issue", "Quick but quirky"]
+    4: ["Fast with minor flaws", "Performance nearly perfect", "Sporty with small issue", "Quick but quirky",
+        "Thrilling but one note", "Power with a hiccup", "Almost race-ready", "Speed with a caveat"]
   },
   suv: {
     5: [
@@ -35,7 +37,8 @@ const carTypeReviewTitles = {
       "Utility utopia!", "Space supreme!", "Cargo champion!", "Family friendly fantastic!",
       "All-terrain ace!", "Capability king!", "Rugged and ready!", "Space master!"
     ],
-    4: ["Great SUV, minor issue", "Spacious with small note", "Family-friendly, tiny flaw", "Roomy but"]
+    4: ["Great SUV, minor issue", "Spacious with small note", "Family-friendly, tiny flaw", "Roomy but one thing",
+        "Almost perfect family car", "Versatile with a hiccup", "Cargo king, small delay", "Comfortable but thirsty"]
   },
   economy: {
     5: [
@@ -46,7 +49,8 @@ const carTypeReviewTitles = {
       "Savings superstar!", "Efficient and easy!", "Money saver!", "Budget breakthrough!",
       "Fuel-friendly fantastic!", "Value virtuoso!", "Economic elegance!", "Affordable awesome!"
     ],
-    4: ["Good value, small issue", "Budget-friendly with note", "Economical, minor flaw", "Value with quirk"]
+    4: ["Good value, small issue", "Budget-friendly with note", "Economical, minor flaw", "Value with quirk",
+        "Fuel efficient, one thing", "Great price, small hiccup", "Practical but noisy", "Affordable and mostly great"]
   },
   minivan: {
     5: [
@@ -56,7 +60,8 @@ const carTypeReviewTitles = {
       "Vacation vehicle victor!", "Crew carrier!", "Space shuttle!", "Family fun machine!",
       "People mover perfection!", "Group getaway great!", "Squad goals!", "Family express!"
     ],
-    4: ["Great for families, minor issue", "Spacious van, small note", "Family-sized with flaw"]
+    4: ["Great for families, minor issue", "Spacious van, small note", "Family-sized with flaw", "Sliding doors great, one thing",
+        "Kid-approved with a hiccup", "Road trip ready, small delay", "Almost perfect family hauler", "Van life, minor note"]
   },
   convertible: {
     5: [
@@ -66,7 +71,8 @@ const carTypeReviewTitles = {
       "Hair-raising fun!", "Blue sky beauty!", "Drop-top dream!", "Sun seeker's choice!",
       "Open-air odyssey!", "Vitamin D delight!", "Endless sky!", "Fresh air freedom!"
     ],
-    4: ["Great convertible, top quirk", "Open-air with minor issue", "Top-down, small problem"]
+    4: ["Great convertible, top quirk", "Open-air with minor issue", "Top-down, small problem", "Sunshine with a hiccup",
+        "Almost perfect drop-top", "Fresh air, minor delay", "Fun ride with one note", "Breezy but one thing"]
   },
   electric: {
     5: [
@@ -76,7 +82,8 @@ const carTypeReviewTitles = {
       "Emission-free excellence!", "Electric elegance!", "Battery boss!", "Green glory!",
       "Eco warrior!", "Silent speed!", "Clean cruise!", "Future forward!"
     ],
-    4: ["Great EV, charging hiccup", "Electric with range anxiety", "Green with minor issue"]
+    4: ["Great EV, charging hiccup", "Electric with range anxiety", "Green with minor issue", "Silent power, one note",
+        "Future-ready, small delay", "Torque monster, charging wait", "Almost perfect EV", "Clean ride with a caveat"]
   },
   truck: {
     5: [
@@ -86,7 +93,19 @@ const carTypeReviewTitles = {
       "Rugged ruler!", "Tow pro!", "Haul of fame!", "Truck stop triumph!",
       "Payload perfection!", "Built tough!", "Heavy hauler!", "Load legend!"
     ],
-    4: ["Great truck, minor quirk", "Capable with small issue", "Hauler with hiccup"]
+    4: ["Great truck, minor quirk", "Capable with small issue", "Hauler with hiccup", "Solid workhorse, one note",
+        "Towed great, small delay", "Powerful but thirsty", "Bed space king, tiny issue", "Almost perfect truck"]
+  },
+  sedan: {
+    5: [
+      "Smooth highway cruiser!", "Professional and polished!", "Comfortable commuter!", "Refined daily driver!",
+      "Executive elegance!", "Highway hero!", "Sleek and sophisticated!", "Perfect business car!",
+      "Effortless commute!", "Classic comfort!", "Road trip ready sedan!", "Fuel efficient beauty!",
+      "Trunk space champion!", "Smooth operator!", "City to highway perfection!", "Quiet cabin bliss!",
+      "Professional polish!", "Daily driver dream!", "Dependable delight!", "Sedan perfection!"
+    ],
+    4: ["Great sedan, minor note", "Comfortable with small quirk", "Smooth ride, tiny issue", "Nearly perfect commuter",
+        "Solid sedan, one thing", "Professional but", "Reliable with a note", "Good daily, small hiccup"]
   }
 }
 
@@ -144,6 +163,16 @@ const enthusiastReviews = {
     "CCS fast charging compatibility meant more options than just Superchargers. The built-in trip planner with charger preconditioning was brilliant.",
     "The frunk and trunk space was massive without an engine. The camp mode with climate control running off the battery was perfect for waiting.",
     "Over-the-air updates added features during my rental! The acceleration boost was definitely noticeable. Track mode v2 was insane."
+  ],
+  truck: [
+    "The Max Tow package with the integrated trailer brake controller made hauling my 8,000lb boat effortless. Pro Trailer Backup Assist was a game changer.",
+    "Payload capacity was no joke. Loaded 1,500lbs of landscaping material and the leaf springs barely compressed. This thing is built for work.",
+    "The 4WD low range with locking rear diff got me through some serious mud at the job site. Transfer case shifted smoothly between modes.",
+    "Spray-in bed liner and the 120V outlet in the bed were clutch for the job site. Could run my compressor right off the truck.",
+    "The crew cab is legit spacious. Under-seat storage bins fit all my tools. Rear window slides down for ventilation while parked.",
+    "Tow/Haul mode completely changed the transmission behavior. Downshifts on grades to engine brake. Exhaust brake saved my actual brakes on I-17.",
+    "The integrated tonneau cover and LED bed lights made loading at night easy. Bed tie-downs held my motorcycle perfectly.",
+    "Approach and departure angles were impressive for a full-size. Skid plates underneath took the hits on the forest road without worry."
   ]
 }
 
@@ -242,6 +271,20 @@ const carTypeReviewTexts = {
     "Backup camera and sensors made parking this beast surprisingly easy.",
     "The torque for merging and passing was impressive. Never felt underpowered.",
     "Work truck on weekdays, family hauler on weekends. Does it all."
+  ],
+  sedan: [
+    "The trunk swallowed all three suitcases with room to spare. Perfect for airport pickups.",
+    "Highway cruise was whisper quiet. Adaptive cruise made the 3-hour drive feel like nothing.",
+    "Great gas mileage for a car this comfortable. Barely filled up the whole trip.",
+    "The sedan handled perfectly in city traffic. Easy to park, easy to merge, just easy.",
+    "Bluetooth connected instantly. CarPlay worked flawlessly. The infotainment was intuitive.",
+    "Back seat had plenty of legroom for my 6-foot friend. No complaints from passengers.",
+    "The ride quality was smooth over every pothole and speed bump. Suspension tuned perfectly.",
+    "Professional looking car for my business meetings. Made the right impression.",
+    "AC cooled down the cabin in under a minute. Essential for Arizona summer.",
+    "Heated seats in the morning, cooled seats in the afternoon. Best of both worlds.",
+    "The blind spot monitors and lane keep assist made highway driving stress-free.",
+    "Fuel economy was impressive. Got 35+ mpg on the highway run to Tucson."
   ]
 }
 
@@ -337,10 +380,9 @@ const genericReviewTexts = {
   ]
 }
 
-// Expanded name pools with diverse backgrounds
+// Diverse name pool — deduplicated
 const firstNames = [
-  // Traditional English names
-  'Michael', 'Jennifer', 'David', 'Sarah', 'James', 'Emily', 'Robert', 'Jessica', 'John', 'Ashley', 
+  'Michael', 'Jennifer', 'David', 'Sarah', 'James', 'Emily', 'Robert', 'Jessica', 'John', 'Ashley',
   'William', 'Amanda', 'Richard', 'Melissa', 'Joseph', 'Nicole', 'Christopher', 'Stephanie', 'Daniel', 'Laura',
   'Matthew', 'Christina', 'Anthony', 'Amy', 'Mark', 'Michelle', 'Paul', 'Kimberly', 'Steven', 'Lisa',
   'Brian', 'Rachel', 'Kevin', 'Sophia', 'Olivia', 'Chris', 'Anna', 'Thomas', 'Brandon', 'Hannah',
@@ -350,27 +392,20 @@ const firstNames = [
   'Noah', 'Lily', 'Logan', 'Mia', 'Jack', 'Zoe', 'Ava', 'Amelia', 'Jacob', 'Charlotte',
   'Alexander', 'Harper', 'Mason', 'Evelyn', 'Liam', 'Abigail', 'Aiden', 'Scarlett', 'Jackson', 'Madison',
   'Ryan', 'Katie', 'Nathan', 'Alexis', 'Jordan', 'Taylor', 'Cameron', 'Morgan', 'Austin', 'Brooke',
-  
-  // Hispanic/Latino names
   'Carlos', 'Maria', 'Luis', 'Ana', 'Miguel', 'Diego', 'Carmen', 'Jorge', 'Isabel', 'Rosa',
-  'Pedro', 'Elena', 'Juan', 'Patricia', 'Ricardo', 'Linda', 'Fernando', 'Barbara', 'Adrian', 'Monica',
+  'Pedro', 'Elena', 'Juan', 'Patricia', 'Ricardo', 'Fernando', 'Barbara', 'Adrian', 'Monica',
   'Alejandro', 'Gabriela', 'Roberto', 'Daniela', 'Eduardo', 'Natalia', 'Javier', 'Valeria', 'Marco', 'Andrea',
-  'Oscar', 'Fernanda', 'Sergio', 'Camila', 'Andres', 'Lucia', 'Rafael', 'Sofia', 'Alberto', 'Regina',
-  
-  // Additional diverse names
+  'Oscar', 'Fernanda', 'Sergio', 'Camila', 'Andres', 'Lucia', 'Rafael', 'Alberto', 'Regina',
   'Derek', 'Heather', 'Shane', 'Rebecca', 'Brett', 'Tiffany', 'Chad', 'Crystal', 'Troy', 'Dawn',
   'Blake', 'Amber', 'Cody', 'April', 'Dustin', 'Jasmine', 'Trevor', 'Kayla', 'Wesley', 'Destiny',
-  'Marcus', 'Vanessa', 'Andre', 'Alicia', 'Jerome', 'Jasmin', 'Terrell', 'Latoya', 'Damon', 'Ebony',
-  'Keith', 'Monique', 'Darren', 'Tanya', 'Reginald', 'Shanice', 'Maurice', 'Keisha', 'Cedric', 'Tamara',
-  
-  // Asian names
-  'Kevin', 'Grace', 'Jason', 'Amy', 'Eric', 'Jennifer', 'Brian', 'Michelle', 'Andrew', 'Lisa',
+  'Marcus', 'Vanessa', 'Andre', 'Alicia', 'Jerome', 'Terrell', 'Damon',
+  'Keith', 'Monique', 'Darren', 'Tanya', 'Reginald', 'Maurice', 'Cedric', 'Tamara',
   'Jay', 'Cindy', 'Ken', 'Jenny', 'Tony', 'Helen', 'Steve', 'Nancy', 'Mike', 'Karen',
-  
-  // Modern trendy names
-  'Mason', 'Emma', 'Oliver', 'Ava', 'Elijah', 'Charlotte', 'William', 'Sophia', 'James', 'Amelia',
-  'Benjamin', 'Isabella', 'Lucas', 'Mia', 'Henry', 'Evelyn', 'Alexander', 'Harper', 'Sebastian', 'Luna',
-  'Mateo', 'Camila', 'Jackson', 'Gianna', 'Levi', 'Elizabeth', 'Daniel', 'Eleanor', 'Michael', 'Ella'
+  'Oliver', 'Elijah', 'Sebastian', 'Luna', 'Mateo', 'Gianna', 'Levi', 'Elizabeth', 'Eleanor', 'Linda',
+  'Priya', 'Raj', 'Aisha', 'Omar', 'Fatima', 'Hassan', 'Yuki', 'Hiroshi', 'Mei', 'Wei',
+  'Tariq', 'Layla', 'Kwame', 'Nia', 'Dante', 'Bianca', 'Malik', 'Zara', 'Kai', 'Nyla',
+  'Sienna', 'River', 'Phoenix', 'Sage', 'Quinn', 'Riley', 'Rowan', 'Harley', 'Dakota', 'Skyler',
+  'Nadia', 'Ivan', 'Vera', 'Sasha', 'Yara', 'Ravi', 'Ananya', 'Luca', 'Aria', 'Theo'
 ]
 
 const lastNames = [
@@ -444,7 +479,11 @@ function findNextAvailableSlot(
 }
 
 // Get car type category for proper review selection
-function getCarTypeCategory(carType: string): string {
+function getCarTypeCategory(carType: string, fuelType?: string): string {
+  // Electric vehicles get electric category regardless of body type (e.g. Cybertruck)
+  if (fuelType && ['electric', 'ev', 'battery'].some(t => fuelType.toLowerCase().includes(t))) {
+    return 'electric'
+  }
   const typeMap: { [key: string]: string } = {
     'luxury': 'luxury',
     'premium': 'luxury',
@@ -466,7 +505,10 @@ function getCarTypeCategory(carType: string): string {
     'ev': 'electric',
     'hybrid': 'electric',
     'truck': 'truck',
-    'pickup': 'truck'
+    'pickup': 'truck',
+    'sedan': 'sedan',
+    'coupe': 'sedan',
+    'hatchback': 'sedan'
   }
   
   const lowerType = carType.toLowerCase()
@@ -479,8 +521,8 @@ function getCarTypeCategory(carType: string): string {
 }
 
 // Select car-type aware review content with enhanced variety
-function selectCarAwareReviewContent(rating: number, carType: string, hostName?: string): { title: string; text: string } {
-  const category = getCarTypeCategory(carType)
+function selectCarAwareReviewContent(rating: number, carType: string, hostName?: string, fuelType?: string): { title: string; text: string } {
+  const category = getCarTypeCategory(carType, fuelType)
   
   // Determine review style (30% short, 10% enthusiast/jargon, 60% regular)
   const styleRoll = Math.random()
@@ -703,9 +745,13 @@ export async function POST(
     
     console.log('Bulk review processing request:', { carId, ...body })
     
-    // Reset tracking arrays for new batch
-    recentlyUsedTitles = []
-    recentlyUsedTexts = []
+    // Reset tracking arrays + seed with existing reviews to avoid global duplicates
+    const existingReviews = await prisma.rentalReview.findMany({
+      where: { carId },
+      select: { title: true, comment: true }
+    })
+    recentlyUsedTitles = existingReviews.map(r => r.title).filter(Boolean) as string[]
+    recentlyUsedTexts = existingReviews.map(r => r.comment).filter(Boolean)
     recentlyUsedNames = []
     
     const {
@@ -732,6 +778,7 @@ export async function POST(
     }
 
     const carType = car.carType || 'generic'
+    const fuelType = car.fuelType || undefined
     const hostName = car.host?.name?.split(' ')[0] || undefined // Get first name of host
 
     // Get available reviewer profiles
@@ -753,7 +800,7 @@ export async function POST(
     
     if (mix === 'realistic') {
       // Luxury/sports cars might have slightly higher ratings
-      const isHighEnd = ['luxury', 'sports', 'convertible'].includes(getCarTypeCategory(carType))
+      const isHighEnd = ['luxury', 'sports', 'convertible'].includes(getCarTypeCategory(carType, fuelType))
       const fiveStars = Math.round(count * (isHighEnd ? 0.70 : 0.65))
       const fourStars = Math.round(count * (isHighEnd ? 0.22 : 0.25))
       const threeStars = Math.round(count * 0.06)
@@ -844,7 +891,7 @@ export async function POST(
     
     for (let i = 0; i < actualCount; i++) {
       const rating = ratings[i]
-      const content = selectCarAwareReviewContent(rating, carType, hostName)
+      const content = selectCarAwareReviewContent(rating, carType, hostName, fuelType)
       const { tripStart, tripEnd } = tripDates[i]
       const profile = profilesForReviews[i]
       
@@ -863,7 +910,7 @@ export async function POST(
       const engagementScore = calculateEngagementScore(daysOld, rating)
       
       // Higher verification rate for luxury/sports cars
-      const isHighEndCar = ['luxury', 'sports', 'convertible'].includes(getCarTypeCategory(carType))
+      const isHighEndCar = ['luxury', 'sports', 'convertible'].includes(getCarTypeCategory(carType, fuelType))
       const isVerified = rating >= 4 ? 
         Math.random() < (isHighEndCar ? 0.4 : 0.3) : 
         Math.random() < 0.1
@@ -912,7 +959,7 @@ export async function POST(
       reviews: reviewBatch,
       carInfo: {
         type: carType,
-        category: getCarTypeCategory(carType),
+        category: getCarTypeCategory(carType, fuelType),
         hostName: car.host?.name
       },
       stats: {
