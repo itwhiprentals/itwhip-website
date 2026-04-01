@@ -190,7 +190,8 @@ export function AvailabilityCalendar({
           </div>
 
           {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-1 mb-4">
+          <div className="overflow-x-auto">
+          <div className="grid grid-cols-7 gap-1 mb-4 min-w-[280px]">
             {/* Day headers */}
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
               <div key={day} className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 p-2">
@@ -244,6 +245,7 @@ export function AvailabilityCalendar({
                 </button>
               )
             })}
+          </div>
           </div>
 
           {/* Legend */}

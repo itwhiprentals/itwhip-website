@@ -257,7 +257,7 @@ export function TripSettings({
           {/* Mileage Preview */}
           <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-900 rounded">
             <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Mileage allowance examples:</p>
-            <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
               <div>
                 <span className="text-gray-500 dark:text-gray-400">1 day:</span>
                 <span className="ml-1 text-gray-900 dark:text-white">{calculateMileageOverage(1)} mi</span>
@@ -358,7 +358,7 @@ export function TripSettings({
           <h4 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
             Trip Policy Summary
           </h4>
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
             <div className="text-blue-700 dark:text-blue-400">
               <span className="font-medium">Booking:</span> {instantBook ? 'Instant' : 'Request to book'}
             </div>

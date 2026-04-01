@@ -132,7 +132,7 @@ export function ReviewManager({ carId }: ReviewManagerProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...reviewData,
-          source: 'SEED'
+          source: 'GUEST'
         })
       })
 

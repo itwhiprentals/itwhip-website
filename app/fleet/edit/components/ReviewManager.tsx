@@ -132,7 +132,7 @@ export function ReviewManager({ carId }: ReviewManagerProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...reviewData,
-          source: 'SEED'
+          source: 'GUEST'
         })
       })
 
@@ -359,22 +359,22 @@ export function ReviewManager({ carId }: ReviewManagerProps) {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
           Reviews Management
         </h3>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex-1 sm:flex-none"
           >
             Add Review
           </button>
           <button
             type="button"
             onClick={() => setShowBulkModal(true)}
-            className="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+            className="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 flex-1 sm:flex-none"
           >
             Quick Add Multiple
           </button>

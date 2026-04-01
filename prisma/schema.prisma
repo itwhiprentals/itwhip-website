@@ -5208,7 +5208,6 @@ enum RevenueStatus {
 
 enum ReviewSource {
   GUEST
-  SEED
   MANAGED
   ADMIN
 }

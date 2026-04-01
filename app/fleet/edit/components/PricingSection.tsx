@@ -159,7 +159,7 @@ export function PricingSection({
 
         {/* Discounts */}
         {autoCalculate && (
-          <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Weekly Discount (%)
@@ -194,7 +194,7 @@ export function PricingSection({
           <h4 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-3">
             Potential Earnings (70% occupancy estimate)
           </h4>
-          <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             <div>
               <p className="text-xs text-blue-700 dark:text-blue-400">Weekly</p>
               <p className="text-lg font-semibold text-blue-900 dark:text-blue-200">

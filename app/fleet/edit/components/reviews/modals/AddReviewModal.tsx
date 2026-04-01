@@ -113,8 +113,10 @@ export function AddReviewModal({
   )
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full my-8">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-lg p-4 sm:p-6 w-full sm:max-w-2xl sm:my-8 max-h-[95vh] sm:max-h-none">
+        {/* Mobile drag handle */}
+        <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-3 sm:hidden" />
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Add Review
         </h3>
@@ -176,7 +178,7 @@ export function AddReviewModal({
 
           {newReview.createNewProfile && (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Reviewer Name
@@ -226,7 +228,7 @@ export function AddReviewModal({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     City
@@ -256,7 +258,7 @@ export function AddReviewModal({
           )}
 
           {/* Trip Dates */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Trip Start Date
@@ -340,7 +342,7 @@ export function AddReviewModal({
           </div>
 
           {/* Options */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="flex items-center">
                 <input

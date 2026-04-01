@@ -27,7 +27,7 @@ export function ReviewCard({
   return (
     <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
       {/* Header */}
-      <div className="flex justify-between items-start mb-2">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-2 mb-2">
         <div className="flex items-start gap-3">
           {/* Profile Photo */}
           {reviewer?.profilePhotoUrl ? (
@@ -90,7 +90,7 @@ export function ReviewCard({
         </div>
         
         {/* Action Buttons */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {review.helpfulCount === 0 && (
             <button
               onClick={() => onEditHelpfulCount(review)}

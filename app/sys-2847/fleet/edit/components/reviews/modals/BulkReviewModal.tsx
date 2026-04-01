@@ -132,7 +132,7 @@ export function BulkReviewModal({ carId, carName, reviewerProfiles, onClose, onC
     for (const review of selectedReviews) {
       try {
         const reviewData: any = {
-          source: 'SEED',
+          source: 'GUEST',
           rating: review.rating,
           title: review.title,
           comment: review.comment,

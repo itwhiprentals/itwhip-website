@@ -272,7 +272,7 @@ export async function POST(
         carId,
         hostId: car.hostId,
         reviewerProfileId,
-        source: body.source || 'SEED', // Store internally but never expose
+        source: body.source || 'GUEST',
         rating: body.rating, // Rating is required
         cleanliness: body.cleanliness,
         accuracy: body.accuracy,

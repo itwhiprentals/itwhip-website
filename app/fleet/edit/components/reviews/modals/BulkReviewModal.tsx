@@ -132,7 +132,7 @@ export function BulkReviewModal({ carId, carName, reviewerProfiles, onClose, onC
     for (const review of selectedReviews) {
       try {
         const reviewData: any = {
-          source: 'SEED',
+          source: 'GUEST',
           rating: review.rating,
           title: review.title,
           comment: review.comment,
@@ -210,11 +210,13 @@ export function BulkReviewModal({ carId, carName, reviewerProfiles, onClose, onC
   const availableProfiles = getAvailableProfiles()
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full" style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 sm:p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-lg shadow-xl w-full sm:max-w-6xl" style={{ maxHeight: '95vh', display: 'flex', flexDirection: 'column' }}>
         {!showPreview ? (
           // Configuration Screen
-          <div className="p-6 overflow-y-auto">
+          <div className="p-4 sm:p-6 overflow-y-auto">
+            {/* Mobile drag handle */}
+            <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-3 sm:hidden" />
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Quick Add Multiple Reviews
@@ -235,7 +237,7 @@ export function BulkReviewModal({ carId, carName, reviewerProfiles, onClose, onC
 
             <div className="space-y-6">
               {/* Date Range */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Start Date
@@ -431,7 +433,7 @@ export function BulkReviewModal({ carId, carName, reviewerProfiles, onClose, onC
         ) : (
           // Preview Screen with fixed scrolling and checkbox
           <>
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+            <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <div className="flex justify-between items-center">
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                   Preview Generated Reviews
@@ -462,7 +464,7 @@ export function BulkReviewModal({ carId, carName, reviewerProfiles, onClose, onC
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6" style={{ minHeight: 0 }}>
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6" style={{ minHeight: 0 }}>
               <div className="space-y-4">
                 {generatedReviews.map((review) => (
                   <div
@@ -486,7 +488,7 @@ export function BulkReviewModal({ carId, carName, reviewerProfiles, onClose, onC
                         onClick={(e) => e.stopPropagation()}
                       />
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
                           <span className="text-lg">{renderStars(review.rating)}</span>
                           <span className="font-medium text-gray-900 dark:text-white">
                             {review.useExistingProfile && review.reviewerProfile 
@@ -521,7 +523,7 @@ export function BulkReviewModal({ carId, carName, reviewerProfiles, onClose, onC
                         <p className="text-gray-700 dark:text-gray-300 text-sm">
                           {review.comment}
                         </p>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-xs text-gray-500">
                           <span>Trip: {formatDate(review.tripStartDate)} - {formatDate(review.tripEndDate)}</span>
                           <span>Posted: {formatDate(review.reviewDate)}</span>
                           {review.helpfulCount > 0 && (
@@ -535,8 +537,8 @@ export function BulkReviewModal({ carId, carName, reviewerProfiles, onClose, onC
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
-              <div className="flex justify-between">
+            <div className="p-4 sm:p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <div className="flex flex-col sm:flex-row justify-between gap-3">
                 <button
                   onClick={() => {
                     setShowPreview(false)
