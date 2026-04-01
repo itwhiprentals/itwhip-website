@@ -10,6 +10,7 @@ import { resolveIdentity, linkAllIdentifiers, normalizeEmail, normalizePhone } f
 import { sanitizeValue } from '@/app/middleware/validation'
 import { validateEmail as validateEmailRisk } from '@/app/utils/email-validator'
 import { verifyRecaptchaToken } from '@/app/lib/recaptcha'
+import { getFlag } from '@/app/lib/featureFlags'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 
@@ -116,6 +117,7 @@ async function createTokens(userId: string, email: string, role: string, name?: 
 
 export async function POST(request: NextRequest) {
   try {
+    if (!await getFlag('GUEST_SIGNUP')) return NextResponse.json({ error: 'Guest signup is temporarily disabled' }, { status: 503 })
     // SECURITY FIX: Rate limiting - check FIRST before any processing
     const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
                      request.headers.get('x-real-ip') ||

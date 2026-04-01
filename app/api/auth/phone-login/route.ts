@@ -13,6 +13,8 @@ import { detectBot, isLegitimateBot } from '@/app/lib/security/botDetection'
 import { sendEmail } from '@/app/lib/email/sender'
 import { getNewDeviceAlertTemplate } from '@/app/lib/email/templates/new-device-alert'
 import { checkSuspendedIdentifiers } from '@/app/lib/services/identityResolution'
+import { getFlag } from '@/app/lib/featureFlags'
+import { isKilled, maintenanceResponse } from '@/app/lib/killswitch'
 
 // JWT secrets — guest vs host use different secrets
 const GUEST_JWT_SECRET = new TextEncoder().encode(process.env.GUEST_JWT_SECRET!)
@@ -58,6 +60,10 @@ async function generateJWTTokens(
 
 export async function POST(request: NextRequest) {
   try {
+    // Killswitch + feature flag
+    if (await isKilled('PHONE_AUTH')) return NextResponse.json(maintenanceResponse('PHONE_AUTH'), { status: 503 })
+    if (!await getFlag('PHONE_AUTH')) return NextResponse.json({ error: 'Phone login is temporarily disabled' }, { status: 503 })
+
     // ============================================================================
     // RATE LIMITING
     // ============================================================================

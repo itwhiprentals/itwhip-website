@@ -8,6 +8,8 @@ import { calculateBookingPricing, getActualDeposit } from '@/app/[locale]/(guest
 import { addHours } from 'date-fns'
 import { extractIpAddress } from '@/app/utils/ip-lookup'
 import { bookingRateLimit, getClientIp, createRateLimitResponse } from '@/app/lib/rate-limit'
+import { getFlag } from '@/app/lib/featureFlags'
+import { isKilled, maintenanceResponse } from '@/app/lib/killswitch'
 import { verifyAdminRequest } from '@/app/lib/admin/middleware'
 import { verifyRecaptchaToken } from '@/app/lib/recaptcha'
 import { sendBookingConfirmation, sendPendingReviewEmail, sendFraudAlertEmail, sendHostReviewEmail } from '@/app/lib/email/booking-emails'
@@ -122,6 +124,10 @@ const bookingSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  // Killswitch + feature flag
+  if (await isKilled('STRIPE_PAYMENTS')) return NextResponse.json(maintenanceResponse('STRIPE_PAYMENTS'), { status: 503 })
+  if (!await getFlag('STRIPE_PAYMENTS')) return NextResponse.json({ error: 'Bookings are temporarily disabled' }, { status: 503 })
+
   // Rate limit check
   const ip = getClientIp(request)
   const { success, reset, remaining } = await bookingRateLimit.limit(ip)

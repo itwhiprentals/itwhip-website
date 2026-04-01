@@ -5,6 +5,7 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import sharp from 'sharp'
+import { logCost } from '@/app/lib/costTracker'
 
 const REGION = process.env.AWS_REGION || 'us-east-2'
 const PRIVATE_BUCKET = process.env.AWS_S3_PRIVATE_BUCKET || 'itwhip-private-documents'
@@ -75,6 +76,7 @@ export async function uploadPublicImage(key: string, buffer: Buffer, contentType
   }))
   const url = `https://${CLOUDFRONT_DOMAIN}/${finalKey}`
   console.log(`[S3] Public upload: ${finalKey} → ${url}`)
+  await logCost('S3_UPLOAD', optimizedBuffer.length / 1e9 * 0.023, undefined, { key: finalKey, sizeKB: Math.round(optimizedBuffer.length / 1024) }).catch(() => {})
   return url
 }
 

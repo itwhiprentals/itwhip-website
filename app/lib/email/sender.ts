@@ -3,6 +3,7 @@
 import { EmailResponse } from './types'
 import { Resend } from 'resend'
 import crypto from 'crypto'
+import { logCost } from '@/app/lib/costTracker'
 
 // Lazy-initialized so build-time module loading doesn't throw when env var is absent
 let _resend: InstanceType<typeof Resend> | null = null
@@ -69,6 +70,7 @@ export async function sendEmail(
     }
 
     console.log(`[${requestId}] Email sent successfully:`, { to, messageId: result.data?.id })
+    await logCost('EMAIL_SENT', 0.001, undefined, { to, subject }).catch(() => {})
 
     return {
       success: true,

@@ -2,6 +2,10 @@
 // Push notification service — sends via Expo Push API (direct fetch, no SDK)
 
 import { prisma } from '@/app/lib/database/prisma'
+import { getFlag } from '@/app/lib/featureFlags'
+import { isKilled } from '@/app/lib/killswitch'
+import { logCost } from '@/app/lib/costTracker'
+import { retryWithLimit } from '@/app/lib/resilience/retryWithLimit'
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send'
 
@@ -50,6 +54,9 @@ export async function sendPushNotification(payload: PushPayload): Promise<void> 
   const { userId, title, body, type, data } = payload
 
   try {
+    // Platform killswitch + feature flag
+    if (await isKilled('PUSH_NOTIFICATIONS') || !await getFlag('PUSH_NOTIFICATIONS')) return
+
     // Check if this type is enabled
     if (type !== 'manual') {
       const enabled = await isNotificationTypeEnabled(type)
@@ -94,15 +101,20 @@ export async function sendPushNotification(payload: PushPayload): Promise<void> 
       return
     }
 
-    // 4. Send via Expo Push API (direct fetch — no expo-server-sdk dependency)
+    // 4. Send via Expo Push API with retry (direct fetch — no expo-server-sdk dependency)
     console.log(`[Push] Sending ${messages.length} notification(s) to user ${userId}`)
-    const response = await fetch(EXPO_PUSH_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify(messages),
+    const result = await retryWithLimit('PUSH_NOTIFICATION', async () => {
+      const response = await fetch(EXPO_PUSH_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(messages),
+      })
+      if (!response.ok) throw new Error(`Expo API ${response.status}`)
+      return response.json()
     })
 
-    const result = await response.json()
+    // Cost tracking
+    await logCost('PUSH_SENT', 0, userId, { count: messages.length, type }).catch(() => {})
     console.log(`[Push] Expo response:`, JSON.stringify(result?.data?.slice?.(0, 3) || result))
 
     // 5. Handle failed tokens

@@ -2,6 +2,7 @@
 // Core SMS sending service with SmsLog tracking and duplicate protection
 
 import { prisma } from '@/app/lib/database/prisma'
+import { logCost } from '@/app/lib/costTracker'
 import { twilioClient, TWILIO_TOLLFREE_NUMBER, TWILIO_MESSAGING_SERVICE_SID, WEBHOOK_BASE_URL } from './client'
 import { normalizePhone } from './phone'
 
@@ -130,6 +131,7 @@ export async function sendSms(
     })
 
     console.log(`[SMS] Sent ${opts.type} to ${normalizedTo}: ${message.sid}`)
+    await logCost('SMS_SENT', 0.0079, undefined, { to: normalizedTo, type: opts.type, sid: message.sid }).catch(() => {})
     return { success: true, sid: message.sid, logId: logRecord.id }
   } catch (error: unknown) {
     const twilioError = error as { code?: number; message?: string; status?: number }

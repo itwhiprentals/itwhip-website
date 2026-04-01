@@ -2,8 +2,13 @@
 // Streaming AI Booking endpoint with Tool Use
 // Uses Server-Sent Events (SSE) for real-time response streaming
 
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { aiBookingRateLimit, getClientIp, createRateLimitResponse } from '@/app/lib/rate-limit'
+import { getFlag } from '@/app/lib/featureFlags'
+import { isKilled, maintenanceResponse } from '@/app/lib/killswitch'
+import { checkPromptInjection, INJECTION_RESPONSE } from '@/app/lib/security/promptInjection'
+import { logCost } from '@/app/lib/costTracker'
+import { getChoeSystemPromptAddon } from '@/app/lib/ai/choeConfig'
 import Anthropic from '@anthropic-ai/sdk'
 import {
   BookingState,
@@ -623,6 +628,10 @@ function createSSEWriter(writer: WritableStreamDefaultWriter<Uint8Array>): SSEWr
 // =============================================================================
 
 export async function POST(request: NextRequest) {
+  // Killswitch + feature flag check
+  if (await isKilled('CHOE_AI')) return NextResponse.json(maintenanceResponse('CHOE_AI'), { status: 503 })
+  if (!await getFlag('CHOE_ENABLED')) return NextResponse.json({ error: 'Choé is currently disabled' }, { status: 503 })
+
   // Rate limit check (protects Claude API costs)
   const rateLimitIp = getClientIp(request)
   const { success: rlSuccess, reset: rlReset, remaining: rlRemaining } = await aiBookingRateLimit.limit(rateLimitIp)
@@ -656,6 +665,16 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     // Validate request
     if (!body.message || typeof body.message !== 'string') {
       await sse.sendEvent('error', { error: 'Message is required' })
+      await sse.close()
+      return
+    }
+
+    // Prompt injection check — block before calling Claude API
+    const injectionCheck = checkPromptInjection(body.message)
+    if (!injectionCheck.safe) {
+      console.warn(`[Choé] Prompt injection blocked: ${injectionCheck.pattern}`)
+      await sse.sendEvent('text', { text: INJECTION_RESPONSE })
+      await sse.sendEvent('done', { session: body.session })
       await sse.close()
       return
     }
@@ -1157,6 +1176,7 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       const settings = await getChoeSettings()
       const cost = calculateCostSimple(totalTokensUsed, settings.modelId)
       await updateConversationStats(conversationId, session, totalTokensUsed, cost)
+      await logCost('CHOE_CONVERSATION', cost, body.visitorId || undefined, { tokens: totalTokensUsed, model: settings.modelId }).catch(() => {})
     }
 
     // Determine cards — use Claude's response, but auto-inject cards
