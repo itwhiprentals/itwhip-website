@@ -9,7 +9,19 @@ import { uploadPublicImage, generateKey } from '@/app/lib/storage/s3'
 
 const JWT_SECRET = process.env.JWT_SECRET!
 
-async function getCurrentHostId() {
+async function getCurrentHostId(request: NextRequest) {
+  // Try Bearer token first (mobile app)
+  const authHeader = request.headers.get('authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    try {
+      const decoded = verify(authHeader.slice(7), JWT_SECRET) as any
+      console.log('[Photo Upload] Bearer decoded:', { hostId: decoded.hostId, userId: decoded.userId, userType: decoded.userType })
+      if (decoded.hostId) return decoded.hostId
+    } catch (err: any) {
+      console.error('[Photo Upload] Bearer verify failed:', err.message)
+    }
+  }
+  // Fall back to cookies (web)
   const cookieStore = await cookies()
   const token = cookieStore.get('partner_token')?.value
     || cookieStore.get('hostAccessToken')?.value
@@ -26,7 +38,7 @@ async function getCurrentHostId() {
 
 export async function POST(request: NextRequest) {
   try {
-    const hostId = await getCurrentHostId()
+    const hostId = await getCurrentHostId(request)
     if (!hostId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
