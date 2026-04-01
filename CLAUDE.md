@@ -1,188 +1,144 @@
-# Claude Code Project Guidelines
+# CLAUDE.md — ITWhip Website (Next.js Backend + Website)
 
-## Website ↔ App Sync Rule
+## Project Overview
+ITWhip is a peer-to-peer car rental marketplace operating in Arizona (itwhip.com).
+Next.js app with Prisma/PostgreSQL, Stripe Connect, AWS App Runner, S3 + CloudFront.
+Solo founder build. The mobile app (ItWhipApp) is a separate React Native/Expo repo
+that consumes this backend's API routes. Both repos MUST share the same logic.
 
-**CRITICAL: All UI changes must be made in BOTH places simultaneously.**
+## Golden Rule
+The website backend and the mobile app are ONE platform. If logic exists here,
+the mobile app must match. If a field changes here, update the mobile API calls.
+If a business rule changes here, the mobile app's behavior must reflect it.
+Never fix something on the backend that breaks the mobile app, and vice versa.
 
-The ItWhip website and mobile app share the same API, business logic, and booking flow. Any change to a guest-facing screen (booking detail, cancellation, payments, progress bar, etc.) MUST be implemented in both:
-- **Website**: `app/[locale]/(guest)/rentals/...` components
-- **App**: `ItWhipApp/src/components/guest/...` and `ItWhipApp/app/(guest)/...`
+---
 
-Same stages, same cards, same data, same formatting. Never update one without the other.
+## Architecture Rules
 
-## Prisma / Database Migrations
+### Schema-First Development
+- Define Prisma schema fields BEFORE writing UI or API code
+- Every business rule must map to a database field
+- Claude Code can reference fields directly instead of interpreting paragraphs of logic
+- Run `npx prisma db push` or create a migration after schema changes
 
-**CRITICAL: Follow these rules to prevent database drift**
+### Auth Tokens — NEVER MIX
+- **Host tokens**: signed with `JWT_SECRET` + `JWT_REFRESH_SECRET`, audience `itwhip-host`
+- **Guest tokens**: signed with `GUEST_JWT_SECRET` + `GUEST_JWT_REFRESH_SECRET`, audience `itwhip-guest`
+- When `roleHint=host`: backend MUST return host tokens
+- When `roleHint=host`: backend MUST create RentalHost record if none exists
+- NEVER store guest tokens in host token slots or vice versa
+- The mobile app stores them separately: `host_access_token` vs `auth_access_token`
 
-- **ALWAYS** use `npx prisma migrate dev --name <migration_name>` for schema changes
-- **NEVER** use `npx prisma db push` (causes drift - migrations won't match database state)
-- For production deployments: use `npx prisma migrate deploy`
-- For hotfixes: use the patching workflow (create targeted migration, test, deploy)
+### Phone-First Auth
+- Firebase for phone OTP (free 10K/month) — website + mobile
+- Twilio ONLY for transactional SMS (booking alerts, trip reminders)
+- Never use Twilio for authentication
+- Priority: Phone → Apple → Google → Email (fallback)
 
-### Why this matters
-The project was baselined on 2025-01-13 after severe migration drift caused by `db push`.
-All 61 migrations were squashed into a single `0_init` baseline. Going forward, every
-schema change MUST go through proper migrations to maintain sync between:
-- `prisma/schema.prisma` (source of truth)
-- `prisma/migrations/` (migration history)
-- Production database (actual state)
+### Storage — S3 + CloudFront
+- **Private bucket** (`itwhip-private-documents`): DL photos, identity docs, agreements, claims
+  - Encrypted AES-256, no public access, pre-signed URLs (15-min expiry)
+  - Store S3 KEY in database, never a URL
+- **Public bucket** (`itwhip-public-assets`): car photos, profiles, logos
+  - Served via CloudFront: `photos.itwhip.com`
+  - Store full CloudFront URL in database
+- NO Cloudinary. Cloudinary is eliminated.
 
-### Prisma Commands Reference
-```bash
-# Development: Create a new migration
-npx prisma migrate dev --name add_user_preferences
+### Push Notifications
+- Direct fetch to `https://exp.host/--/api/v2/push/send`
+- No expo-server-sdk (breaks in Docker)
+- Create PushNotification DB record FIRST, then send push
+- On logout: deregister push token BEFORE clearing auth tokens
 
-# Production: Apply pending migrations
-npx prisma migrate deploy
+### Deployment
+- GitHub Actions → ECR → AWS App Runner (~8 min deploy)
+- Docker with `output: 'standalone'` and `binaryTargets: ['native', 'linux-arm64']`
+- 74 environment variables in App Runner
+- 8+ EventBridge cron jobs with CRON_SECRET Bearer token
 
-# Check migration status
-npx prisma migrate status
+---
 
-# Generate Prisma client (after schema changes)
-npx prisma generate
-```
+## Signup Defaults (ALL paths MUST match)
 
-## Authentication System
+Every host creation path sets these exact defaults:
+revenuePath: 'tiers'
+commissionRate: 0.25
+currentCommissionRate: 0.25
+approvalStatus: 'PENDING'
+dashboardAccess: false (regular) or true (prospect)
+active: false
 
-The app uses a dual-role authentication system:
-- **Guest/Renter**: Uses `accessToken` cookie, `ReviewerProfile` model
-- **Host/Partner**: Uses `partner_token` or `hostAccessToken` cookie, `RentalHost` model
-- Users can have both profiles linked via `User.legacyDualId`
+Paths: host/signup, partner/signup, auth/complete-profile, admin/approve, phone-login/collect-email
 
-## Project Structure
+---
 
-- `/app/partner/` - Unified business portal (hosts, fleet managers, partners)
-- `/app/host/` - Legacy host dashboard (being deprecated, redirects to /partner/)
-- `/app/admin/` - Admin dashboard
-- `/app/api/` - API routes
+## Revenue Paths (Two Models)
 
-## Code Style
+1. **Insurance Tiers** — host opts into ITWhip insurance:
+   - 40% BASIC (platform insurance, no upload needed)
+   - 75% STANDARD (P2P insurance, upload required)
+   - 90% PREMIUM (commercial insurance, upload required)
 
-- Use TypeScript for all new files
-- Follow existing patterns in the codebase
-- Prefer editing existing files over creating new ones
-- All card components must use `rounded-lg` for consistent border radius
+2. **Commission Tiers** — host uses own insurance:
+   - Standard (0-9 cars): 25%
+   - Gold (10-49): 20%
+   - Platinum (50-99): 15%
+   - Diamond (100+): 10%
 
-## AI Booking Assistant (Choé)
+---
 
-- Service layer: `app/lib/ai-booking/` (types, state-machine, prompts/, filters/, validators/, detection/)
-- API: `POST /api/ai/booking` — Claude Haiku pattern (~$0.005/conversation)
-- UI components: `app/components/ai/` (ChatView, ChatViewStreaming, MessageBubble, VehicleCard, ProgressBar, BookingSummary, ChatInput, SearchToggle, SearchWrapper)
-- Entry points: `/rentals/search?mode=ai` (toggle in SearchResultsClient), homepage AI button
-- Search API returns photos as `[{url, alt}]` objects — search-bridge normalizes to string URLs
-- Model: `claude-haiku-4-5-20251001` (stored in ChoeAISettings table)
+## Lessons Learned — DO NOT REPEAT
 
-## Mobile App Card & Color Standards
+- `RentalHost.userId` MUST be set when creating a host. Never null.
+- `bookingData.hostId` can be undefined — always use `booking.booking.hostId` as fallback
+- expo-server-sdk crashes in Docker (`Cannot find module '../package.json'`) — use direct fetch
+- Fleet approval code: variable is `approvedBooking`, not `booking` — check scope
+- Fleet push templates MUST be async — `.catch()` crashes if function returns undefined
+- Badge-counts requires RentalHost.userId linked to User for emailVerified/phoneVerified checks
+- Phone-login `collect-email`: when `roleHint=host`, create RentalHost AND return host tokens
+- Phone-login: if existing host found by email with null userId, PATCH the userId
+- Payout name mismatch: compare host profile name vs Stripe bank name BEFORE payout, not before listing
+- Email verification: sent but NOT enforced at signup (red dot nudges later)
+- Don't ship `.map` files in production builds
+- Always check `authApi.ts` API_BASE is production before deploying mobile app
 
-All mobile app cards/pages/screens MUST follow these rules:
+---
 
-- **Cards**: `backgroundColor: colors.surface`, `borderWidth: 1`, `borderColor: colors.border`, `borderRadius: RADIUS.lg`, `SHADOW.sm`
-- **Edge-to-edge**: Cards stretch full width within `paddingHorizontal: SPACING.md`
-- **Stat tiles**: Tinted `#F3F4F6` (light) / `rgba(55,65,81,0.5)` (dark) — not plain white
-- **Dark mode**: Clean Tailwind grays (`#111827` bg, `#1F2937` surface, `#374151` border) — NO purple tints
-- **Light mode**: White surface + visible borders (never borderless white-on-white)
-- **Theme file**: `ItWhipApp/src/theme/index.ts`
-- Any screen touched that has old faded/borderless styles gets updated to match
+## Verification Timing
 
-## Git Commits
+| Verification | At Signup | At Booking | At Pickup |
+|---|---|---|---|
+| Phone | Yes (if phone auth) | No | No |
+| Email | Code sent, NOT blocking | No | No |
+| DL + Selfie | No | Yes (checkout) | Host can verify manually |
+| Banking name match | No | No | Before payout |
 
-- Use author: Chris H <info@itwhip.com>
-- Do NOT use Co-Authored-By: Claude lines
+---
 
-## After Each Deployment
+## Workflow Rules
 
-**IMPORTANT: Update documentation after every deployment**
+1. **Plan before building** — 3+ steps = write plan, get approval
+2. **Audit before changing** — read existing code, report what exists
+3. **Build in order** — schema → API → UI
+4. **Verify after building** — check logs, test endpoint, confirm DB state
+5. **Never say "done" without proving it works** — show the log output, the DB state, the API response
+6. **If something goes sideways, STOP and re-plan** — don't keep pushing a broken approach
+7. **After ANY correction, remember the lesson** — add to Lessons Learned above
 
-After pushing changes to main (deployment), update `DEVNOTES.md`:
-1. Move completed items from "In Progress" to the appropriate "Recent Fixes" section
-2. Add new items to "In Progress" if work is ongoing
-3. Keep the file organized by feature area
+---
 
-This ensures development history is tracked and teammates can see what changed.
+## DO NOT
 
-## Business Rules & Architecture
-
-### Development Approach
-- ALWAYS define Prisma schema fields BEFORE writing UI/API code
-- Every business rule maps to a database field — if you can't answer a question with a query, the schema is incomplete
-- When implementing features with multiple logic branches, run the schema migration first as a separate step, confirm it passes, then implement UI/API
-- One-liner logic per field, no paragraph interpretation
-
-### Revenue System (Two Separate Paths)
-
-**Insurance Tiers** (host opts INTO ITWhip insurance):
-- Guest picks protection level at checkout
-- Revenue split tied to coverage: Basic 40% / Standard 75% / Premium 90%
-- Host keeps more when guest picks higher coverage (platform risk lower)
-
-**Commission Tiers** (host uses OWN insurance):
-- Split by fleet size, NOT per booking:
-  - Standard: 0-9 cars → 25% commission, host keeps 75%
-  - Gold: 10-49 cars → 20% commission, host keeps 80%
-  - Platinum: 50-99 cars → 15% commission, host keeps 85%
-  - Diamond: 100+ cars → 10% commission, host keeps 90%
-- Auto-update tier when car count changes
-- Prospect/recruited hosts ALWAYS land here (they have their own insurance)
-
-### Prospect Host Flow
-- Zero-CAC supply acquisition: target luxury car owners on Facebook/Instagram
-- Booking-first onboarding: DM with real booking → email link → dashboard shows payout
-- Onboarding bottomsheet: Secure → Agreement → Payment → Add Car
-- Agreement preference: ITWHIP (default, recommended) | OWN (host uploads PDF, AI validates) | BOTH
-- Payment preference: CASH | PLATFORM (Stripe Connect)
-- Fleet admin approves car (5 min) → booking auto-links → host confirms
-
-### Welcome Discount
-- First recruited booking: 10% platform fee instead of 25%
-- Schema: host.welcomeDiscountUsed === false → apply 10%
-- After first booking COMPLETES: flip welcomeDiscountUsed = true
-- All subsequent bookings: standard tier rate (25% for Standard)
-- UI: strikethrough 25%, green "+$X Welcome Partner Discount", actual 10% fee
-
-### Cash Booking Rules
-- Guest pays host directly at pickup
-- Handoff checklist is SEQUENTIAL and REQUIRED:
-  1. Guest arrived
-  2. Payment received (cash collected) — REQUIRED, cannot skip
-  3. DL checked in person
-  4. Guest identity confirmed personally (manual verification, saves $5)
-  5. Guest begins vehicle inspection
-  6. Handoff complete
-- No "didn't pay" option — if no cash, host cancels booking
-- Handoff complete on cash booking = ALWAYS paid
-- Platform fee tracked in PlatformFeeOwed, deducted from next payout
-
-### Guest Verification (Two Paths)
-- Stripe Identity: $5 charge to host → added to HostDeductible
-- Manual by host during handoff: host checks DL, confirms identity → saves $5
-- Guest is verified if: documentsVerified === true OR manuallyVerifiedByHost === true
-- ITWhip verifies document is authentic + selfie matches. Does NOT verify DL standing with DMV.
-
-### Platform Fee Collection
-- Platform bookings: deducted automatically from Stripe capture
-- Cash bookings: tracked in PlatformFeeOwed, deducted from next payout or charged to payment method on file
-- Host deductibles ($5 verification): tracked in HostDeductible, deducted from next payout
-- Payout formula: hostEarnings - SUM(HostDeductible.PENDING) - SUM(PlatformFeeOwed.PENDING)
-
-### Key Schema One-Liners
-```
-COMMISSION RATE:    booking.platformFeeRate ?? (host.welcomeDiscountUsed === false && prospect ? 0.10 : host.commissionRate)
-GUEST VERIFIED:     guest.documentsVerified === true || guest.manuallyVerifiedByHost === true
-WELCOME DISCOUNT:   host.welcomeDiscountUsed === false (one field, one check)
-CASH PAID:          handoff complete on cash booking = always paid
-PAYOUT:             hostEarnings - SUM(HostDeductible.PENDING) - SUM(PlatformFeeOwed.PENDING)
-CAR ACTIVATABLE:    car.approvalStatus === 'APPROVED' && car.isActive === false
-TIER:               0-9 STANDARD 0.25 | 10-49 GOLD 0.20 | 50-99 PLATINUM 0.15 | 100+ DIAMOND 0.10
-```
-
-### Choé AI Assistant
-- Powered by Claude API (Haiku for search, Sonnet for document validation)
-- Handles: car search, booking flow, guest verification, booking status, policy questions, host support
-- Detects host vs guest context and adjusts responses
-- Roadside emergencies route to phone: (602) 609-2577
-- Cost: ~$0.005 per conversation
-
-### What's Needed for Booking (Context-Aware)
-- Cash booking: Insurance OPTIONAL, Agreement OPTIONAL (host may use own), Bank Account NOT REQUIRED, Guest Verification OPTIONAL (host verifies at handoff)
-- Platform booking: Insurance OPTIONAL, Agreement REQUIRED (ITWhip standard minimum), Bank Account REQUIRED, Guest Verification REQUIRED
-- Insurance is NEVER required regardless of payment type — never show red warning for insurance
+- Change guest flows when fixing host flows (and vice versa)
+- Go on tangents about unrelated systems
+- Revert fixes without being asked
+- Store pre-signed S3 URLs in the database (they expire)
+- Use Cloudinary for anything
+- Use expo-server-sdk for push notifications
+- Leave console.log debug statements in production
+- Add TODO comments instead of implementing
+- Make the private S3 bucket publicly accessible
+- Ship source maps in production builds
+- Skip the plan step for non-trivial changes
+- Say "expected behavior" without verifying the actual API response data
