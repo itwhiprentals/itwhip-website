@@ -156,6 +156,11 @@ export async function POST(request: NextRequest) {
     let hostRecord: any = null
     if (isHostSignup) {
       hostRecord = await prisma.rentalHost.findFirst({ where: { OR: [{ userId: user.id }, { email }] } })
+      // Patch stale records from pre-fix signups (userId was null)
+      if (hostRecord && !hostRecord.userId && user.id) {
+        hostRecord = await prisma.rentalHost.update({ where: { id: hostRecord.id }, data: { userId: user.id } })
+        console.log(`[Phone Login] Patched RentalHost userId: ${hostRecord.id} → ${user.id}`)
+      }
       if (!hostRecord) {
         hostRecord = await prisma.rentalHost.create({
           data: {
@@ -181,7 +186,7 @@ export async function POST(request: NextRequest) {
             updatedAt: new Date(),
           }
         })
-        console.log(`[Phone Login] Created RentalHost: ${hostRecord.id} for ${email}`)
+        console.log(`[Phone Login] Created RentalHost: ${hostRecord.id} userId: ${hostRecord.userId} for ${email}`)
       }
     }
 
