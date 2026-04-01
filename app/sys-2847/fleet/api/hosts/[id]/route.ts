@@ -62,7 +62,7 @@ export async function PUT(
       responseTime: body.responseTime ? parseInt(body.responseTime) : null,
       responseRate: body.responseRate ? parseFloat(body.responseRate) : null,
       totalTrips: body.totalTrips ? parseInt(body.totalTrips) : 0,
-      rating: body.rating ? parseFloat(body.rating) : null,
+      rating: body.rating ? parseFloat(body.rating) : 0,
       // Store verificationStatus in verificationLevel field (that's what exists in schema)
       verificationLevel: body.verificationStatus || null,
       // Handle member since / joined at date
