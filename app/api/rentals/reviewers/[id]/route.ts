@@ -136,7 +136,7 @@ export async function GET(
       take: 10
     })
 
-    const tripCount = recentTrips.length > 10 ? recentTrips.length : await prisma.rentalBooking.count({
+    const bookingCount = recentTrips.length > 10 ? recentTrips.length : await prisma.rentalBooking.count({
       where: {
         OR: [
           { reviewerProfileId: profileId },
@@ -146,6 +146,8 @@ export async function GET(
         status: { in: ['COMPLETED', 'ACTIVE', 'CONFIRMED'] }
       }
     })
+    // Use booking count if available, otherwise fall back to review count (each review = 1 trip)
+    const tripCount = bookingCount > 0 ? bookingCount : allReviews.length
 
     const stats = {
       totalReviews: allReviews.length,

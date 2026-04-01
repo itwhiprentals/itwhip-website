@@ -311,7 +311,7 @@ export async function POST(
       }
     })
 
-    // If review has a profile, calculate its actual current counts
+    // If review has a profile, update its trip + review counts in DB
     if (review.reviewerProfile) {
       const actualCount = await prisma.rentalReview.count({
         where: {
@@ -319,6 +319,11 @@ export async function POST(
           isVisible: true
         }
       })
+
+      await prisma.reviewerProfile.update({
+        where: { id: review.reviewerProfile.id },
+        data: { tripCount: actualCount, reviewCount: actualCount, updatedAt: new Date() }
+      }).catch(() => {}) // non-blocking
 
       ;(review as any).reviewerProfile.reviewCount = actualCount
       ;(review as any).reviewerProfile.tripCount = actualCount

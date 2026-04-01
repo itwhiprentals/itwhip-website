@@ -279,7 +279,7 @@ export default function ReviewerProfileModal({ reviewer, isOpen, onClose }: Revi
                     {profileData.tripCount}
                   </div>
                   <div className="text-xs text-gray-600 dark:text-gray-400">
-                    Trips
+                    {profileData.tripCount === 1 ? 'Trip' : 'Trips'}
                   </div>
                 </div>
                 
@@ -288,7 +288,7 @@ export default function ReviewerProfileModal({ reviewer, isOpen, onClose }: Revi
                     {profileData.reviewCount}
                   </div>
                   <div className="text-xs text-gray-600 dark:text-gray-400">
-                    Reviews
+                    {profileData.reviewCount === 1 ? 'Review' : 'Reviews'}
                   </div>
                 </div>
 
