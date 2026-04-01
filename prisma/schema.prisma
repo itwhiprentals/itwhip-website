@@ -5212,6 +5212,43 @@ enum ReviewSource {
   ADMIN
 }
 
+// ─── PLATFORM HARDENING ─────────────────────────────────────────────
+
+model FeatureFlag {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  enabled   Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}
+
+model Killswitch {
+  id        String   @id @default(cuid())
+  feature   String   @unique
+  active    Boolean  @default(false)
+  reason    String?
+  killedAt  DateTime?
+  killedBy  String?
+}
+
+model CostLog {
+  id        String   @id @default(cuid())
+  action    String
+  cost      Float
+  userId    String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  @@index([action, createdAt])
+}
+
+model ChoeConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}
+
 enum RideStatus {
   REQUESTED
   SEARCHING

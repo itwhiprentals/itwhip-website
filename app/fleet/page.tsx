@@ -29,7 +29,12 @@ import {
   IoGlobeOutline,
   IoCallOutline,
   IoTimerOutline,
-  IoNotificationsOutline
+  IoNotificationsOutline,
+  IoToggleOutline,
+  IoPowerOutline,
+  IoPulseOutline,
+  IoCashOutline,
+  IoOptionsOutline
 } from 'react-icons/io5'
 import { Car, CarStatus } from './types'
 import { StatCard, StatusBadge, EmptyState, LoadingSpinner, SectionHeader } from './components'
@@ -434,6 +439,51 @@ export default function FleetDashboard() {
           >
             <IoSettingsOutline className="text-2xl group-hover:scale-110 transition-transform" />
             <span className="text-xs font-medium text-center leading-tight">Settings</span>
+          </Link>
+
+          {/* Feature Flags */}
+          <Link
+            href={`/fleet/feature-flags?key=${apiKey}`}
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
+          >
+            <IoToggleOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-xs font-medium text-center leading-tight">Flags</span>
+          </Link>
+
+          {/* Killswitches */}
+          <Link
+            href={`/fleet/killswitches?key=${apiKey}`}
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
+          >
+            <IoPowerOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-xs font-medium text-center leading-tight">Killswitch</span>
+          </Link>
+
+          {/* System Status */}
+          <Link
+            href={`/fleet/system-status?key=${apiKey}`}
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
+          >
+            <IoPulseOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-xs font-medium text-center leading-tight">Status</span>
+          </Link>
+
+          {/* Costs */}
+          <Link
+            href={`/fleet/costs?key=${apiKey}`}
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
+          >
+            <IoCashOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-xs font-medium text-center leading-tight">Costs</span>
+          </Link>
+
+          {/* Choé Config */}
+          <Link
+            href={`/fleet/choe-config?key=${apiKey}`}
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
+          >
+            <IoOptionsOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-xs font-medium text-center leading-tight">Choé Config</span>
           </Link>
         </div>
       </div>
