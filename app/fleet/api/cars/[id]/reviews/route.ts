@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { nanoid } from 'nanoid'
 
 // Helper function to calculate realistic member since date
 function calculateMemberSince(tripStartDate?: string | Date | null): Date {
@@ -203,6 +204,7 @@ export async function POST(
       // Create new reviewer profile
       const newProfile = await prisma.reviewerProfile.create({
         data: {
+          id: nanoid(),
           name: body.reviewerName || 'Anonymous Guest',
           profilePhotoUrl: body.profilePhotoUrl,
           city: body.reviewerCity || car.city,
@@ -210,7 +212,8 @@ export async function POST(
           memberSince: memberSince,
           tripCount: body.tripCount || 1,
           reviewCount: 1,
-          isVerified: body.isVerified || false
+          isVerified: body.isVerified || false,
+          updatedAt: new Date(),
         } as any
       })
       reviewerProfileId = newProfile.id
@@ -269,6 +272,7 @@ export async function POST(
     // Note: We still store source internally for tracking, but never expose it
     const review = await prisma.rentalReview.create({
       data: {
+        id: nanoid(),
         carId,
         hostId: car.hostId,
         reviewerProfileId,
@@ -292,7 +296,8 @@ export async function POST(
         hostRespondedAt: body.hostRespondedAt ? new Date(body.hostRespondedAt) : null,
         supportResponse: body.supportResponse || null,
         supportRespondedAt: body.supportRespondedAt ? new Date(body.supportRespondedAt) : null,
-        supportRespondedBy: body.supportRespondedBy || null
+        supportRespondedBy: body.supportRespondedBy || null,
+        updatedAt: new Date(),
       } as any,
       include: {
         reviewerProfile: true,
