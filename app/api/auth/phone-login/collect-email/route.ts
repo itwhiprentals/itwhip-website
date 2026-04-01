@@ -11,48 +11,55 @@ import { getEnhancedLocation } from '@/app/lib/security/geolocation'
 import { detectBot } from '@/app/lib/security/botDetection'
 import { existingAccountGuard } from '@/app/lib/services/identityResolution'
 
-// JWT secrets
-const GUEST_JWT_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_SECRET!
-)
-const GUEST_JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_REFRESH_SECRET!
-)
+// JWT secrets — guest vs host
+const GUEST_JWT_SECRET = new TextEncoder().encode(process.env.GUEST_JWT_SECRET!)
+const GUEST_JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.GUEST_JWT_REFRESH_SECRET!)
+const HOST_JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!)
+const HOST_JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET!)
 
-// Generate JWT tokens
-async function generateJWTTokens(userId: string, email: string, name: string | null, role: string) {
+// Generate JWT tokens — picks secrets based on isHost
+async function generateJWTTokens(
+  userId: string, email: string, name: string | null, role: string,
+  isHost: boolean = false, hostId?: string
+) {
   const now = Math.floor(Date.now() / 1000)
+  const secret = isHost ? HOST_JWT_SECRET : GUEST_JWT_SECRET
+  const refreshSecret = isHost ? HOST_JWT_REFRESH_SECRET : GUEST_JWT_REFRESH_SECRET
 
-  const accessToken = await new SignJWT({
-    userId,
-    email,
-    name,
-    role,
-    userType: 'guest'
-  })
+  const payload: any = { userId, email, name, role }
+  if (isHost && hostId) {
+    payload.hostId = hostId
+    payload.isRentalHost = true
+    payload.userType = 'host'
+  } else {
+    payload.userType = 'guest'
+  }
+
+  const accessToken = await new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt(now)
-    .setExpirationTime(now + 15 * 60) // 15 minutes
+    .setExpirationTime(now + 15 * 60)
     .setIssuer('itwhip')
-    .setAudience('itwhip-guest')
-    .sign(GUEST_JWT_SECRET)
+    .setAudience(isHost ? 'itwhip-host' : 'itwhip-guest')
+    .sign(secret)
 
-  const refreshToken = await new SignJWT({
-    userId,
-    type: 'refresh'
-  })
+  const refreshToken = await new SignJWT({ userId, type: 'refresh' })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt(now)
-    .setExpirationTime(now + 7 * 24 * 60 * 60) // 7 days
+    .setExpirationTime(now + 7 * 24 * 60 * 60)
     .setIssuer('itwhip')
-    .sign(GUEST_JWT_REFRESH_SECRET)
+    .sign(refreshSecret)
 
   return { accessToken, refreshToken }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { phone, email, name, userId, skipVerification } = await request.json()
+    const body = await request.json()
+    const { phone, email, name, firstName, lastName, userId, skipVerification, roleHint } = body
+    const fullName = name || [firstName, lastName].filter(Boolean).join(' ') || email.split('@')[0]
+    const isHostSignup = roleHint === 'host'
+    console.log(`[Collect Email] Request body:`, JSON.stringify({ phone, email, firstName, lastName, roleHint, isHostSignup, fullName }))
 
     if (!phone || !email) {
       return NextResponse.json(
@@ -104,7 +111,8 @@ export async function POST(request: NextRequest) {
         where: { id: userId },
         data: {
           email,
-          name,
+          name: fullName,
+          role: isHostSignup ? 'BUSINESS' : 'CLAIMED',
           emailVerified: false,
           emailVerificationCode: verificationCode,
           emailVerificationExpiry: codeExpiry
@@ -116,31 +124,65 @@ export async function POST(request: NextRequest) {
         data: {
           id: nanoid(),
           email,
-          name,
+          name: fullName,
           phone,
           phoneVerified: true,
           emailVerified: false,
           emailVerificationCode: verificationCode,
           emailVerificationExpiry: codeExpiry,
-          role: 'CLAIMED',
+          role: isHostSignup ? 'BUSINESS' : 'CLAIMED',
           updatedAt: new Date()
         }
       })
 
-      // Create ReviewerProfile
+      // Create ReviewerProfile (guest profile — all users get one)
       await prisma.reviewerProfile.create({
         data: {
           id: nanoid(),
           userId: user.id,
-          name: name || email.split('@')[0],
+          name: fullName,
           email,
-          city: 'Unknown',
+          city: 'Phoenix',
+          state: 'AZ',
           phoneNumber: phone,
           phoneVerified: true,
           emailVerified: false,
           updatedAt: new Date()
         }
       })
+    }
+
+    // If host signup: create RentalHost record
+    let hostRecord: any = null
+    if (isHostSignup) {
+      hostRecord = await prisma.rentalHost.findFirst({ where: { OR: [{ userId: user.id }, { email }] } })
+      if (!hostRecord) {
+        hostRecord = await prisma.rentalHost.create({
+          data: {
+            id: nanoid(),
+            userId: user.id,
+            email,
+            name: fullName,
+            phone: phone || '',
+            city: 'Phoenix',
+            state: 'AZ',
+            hostType: 'REAL',
+            approvalStatus: 'PENDING',
+            dashboardAccess: false,
+            active: false,
+            isVerified: true,
+            emailVerified: false,
+            revenuePath: 'tiers',
+            commissionRate: 0.25,
+            currentCommissionRate: 0.25,
+            managesOwnCars: true,
+            isHostManager: false,
+            managesOthersCars: false,
+            updatedAt: new Date(),
+          }
+        })
+        console.log(`[Phone Login] Created RentalHost: ${hostRecord.id} for ${email}`)
+      }
     }
 
     // Send verification email (unless user chose to skip)
@@ -206,12 +248,14 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Phone Login] Email collection logged - Risk: ${location.riskScore}, Bot: ${botDetection.confidence}`)
 
-    // Generate JWT tokens
+    // Generate JWT tokens — host secrets if host signup
     const { accessToken, refreshToken } = await generateJWTTokens(
       user.id,
-      email, // Use the validated email input
+      email,
       user.name,
-      user.role
+      user.role,
+      !!(isHostSignup && hostRecord),
+      hostRecord?.id
     )
 
     // Set auth cookies
@@ -241,6 +285,7 @@ export async function POST(request: NextRequest) {
         phone: user.phone,
         emailVerified: false
       },
+      ...(hostRecord ? { host: { id: hostRecord.id, approvalStatus: hostRecord.approvalStatus, hostType: hostRecord.hostType } } : {}),
       accessToken,
       refreshToken,
       expiresIn: 15 * 60,

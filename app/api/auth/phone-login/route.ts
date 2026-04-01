@@ -14,43 +14,44 @@ import { sendEmail } from '@/app/lib/email/sender'
 import { getNewDeviceAlertTemplate } from '@/app/lib/email/templates/new-device-alert'
 import { checkSuspendedIdentifiers } from '@/app/lib/services/identityResolution'
 
-// JWT secrets — guest tokens must use guest-specific secrets
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_SECRET!
-)
-const JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.GUEST_JWT_REFRESH_SECRET!
-)
+// JWT secrets — guest vs host use different secrets
+const GUEST_JWT_SECRET = new TextEncoder().encode(process.env.GUEST_JWT_SECRET!)
+const GUEST_JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.GUEST_JWT_REFRESH_SECRET!)
+const HOST_JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!)
+const HOST_JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET!)
 
-// Generate JWT tokens
-// SECURITY FIX: Include user status in JWT for runtime enforcement without DB lookup
-async function generateJWTTokens(userId: string, email: string, name: string | null, role: string, status: string = 'ACTIVE') {
+// Generate JWT tokens — picks secrets based on isHost flag
+async function generateJWTTokens(
+  userId: string, email: string, name: string | null, role: string,
+  status: string = 'ACTIVE', isHost: boolean = false, hostId?: string
+) {
   const now = Math.floor(Date.now() / 1000)
+  const secret = isHost ? HOST_JWT_SECRET : GUEST_JWT_SECRET
+  const refreshSecret = isHost ? HOST_JWT_REFRESH_SECRET : GUEST_JWT_REFRESH_SECRET
 
-  const accessToken = await new SignJWT({
-    userId,
-    email,
-    name,
-    role,
-    status, // SECURITY: Include status for middleware enforcement
-    userType: 'guest'
-  })
+  const payload: any = { userId, email, name, role, status }
+  if (isHost && hostId) {
+    payload.hostId = hostId
+    payload.isRentalHost = true
+    payload.userType = 'host'
+  } else {
+    payload.userType = 'guest'
+  }
+
+  const accessToken = await new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt(now)
-    .setExpirationTime(now + 15 * 60) // 15 minutes
+    .setExpirationTime(now + 15 * 60)
     .setIssuer('itwhip')
-    .setAudience('itwhip-guest')
-    .sign(JWT_SECRET)
+    .setAudience(isHost ? 'itwhip-host' : 'itwhip-guest')
+    .sign(secret)
 
-  const refreshToken = await new SignJWT({
-    userId,
-    type: 'refresh'
-  })
+  const refreshToken = await new SignJWT({ userId, type: 'refresh' })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt(now)
-    .setExpirationTime(now + 7 * 24 * 60 * 60) // 7 days
+    .setExpirationTime(now + 7 * 24 * 60 * 60)
     .setIssuer('itwhip')
-    .sign(JWT_REFRESH_SECRET)
+    .sign(refreshSecret)
 
   return { accessToken, refreshToken }
 }
@@ -226,11 +227,10 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Check if email is fake (phone_XXX@itwhip.temp)
-      const isFakeEmail = (user.email || '').includes('@itwhip.temp')
+      // Check if email is fake (phone_XXX@itwhip.temp) — only require email if truly missing
+      const isFakeEmail = !user.email || (user.email || '').includes('@itwhip.temp')
 
-      // If fake email OR email not verified, require email
-      if (isFakeEmail || !user.emailVerified) {
+      if (isFakeEmail) {
         return NextResponse.json({
           requiresEmail: true,
           userId: user.id,
@@ -387,16 +387,31 @@ export async function POST(request: NextRequest) {
       console.error('[Phone Login] Security monitoring failed (non-blocking):', securityError)
     }
 
-    // Generate JWT tokens (includes status for runtime enforcement)
+    // Check if host when roleHint=host
+    let hostRecord: any = null
+    const isHostLogin = roleHint === 'host'
+    if (isHostLogin) {
+      hostRecord = await prisma.rentalHost.findFirst({
+        where: { OR: [{ userId: user.id }, ...(user.email ? [{ email: user.email }] : [])] },
+        select: { id: true, approvalStatus: true, hostType: true, name: true },
+      })
+      if (hostRecord) {
+        console.log(`[Phone Login] Host record found: ${hostRecord.id} (${hostRecord.approvalStatus})`)
+      }
+    }
+
+    // Generate JWT tokens — host secrets if host, guest secrets otherwise
     const { accessToken, refreshToken } = await generateJWTTokens(
       user.id,
       user.email || '',
       user.name,
       user.role as any,
-      (user.status as any) || 'ACTIVE'
+      (user.status as any) || 'ACTIVE',
+      !!(isHostLogin && hostRecord),
+      hostRecord?.id
     )
 
-    console.log(`[Phone Login] Login successful for user: ${user.id}`)
+    console.log(`[Phone Login] Login successful for user: ${user.id} (${isHostLogin && hostRecord ? 'HOST' : 'GUEST'} tokens)`)
 
     // Create response with tokens in body (mobile) + cookies (web)
     const response = NextResponse.json({
@@ -410,6 +425,7 @@ export async function POST(request: NextRequest) {
         phoneVerified: user.phoneVerified,
         role: user.role
       },
+      ...(hostRecord ? { host: { id: hostRecord.id, approvalStatus: hostRecord.approvalStatus, hostType: hostRecord.hostType } } : {}),
       accessToken,
       refreshToken,
       expiresIn: 15 * 60,
