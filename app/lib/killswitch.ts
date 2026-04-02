@@ -3,6 +3,18 @@
 
 import { prisma } from '@/app/lib/database/prisma'
 
+// Descriptions for fleet dashboard
+export const KILLSWITCH_INFO: Record<string, { label: string; desc: string; impact: string }> = {
+  STRIPE_PAYMENTS: { label: 'Stripe Payments', desc: 'All payment processing — bookings, payouts, refunds.', impact: 'Guests cannot book. Hosts cannot receive payouts. Browsing still works.' },
+  PUSH_NOTIFICATIONS: { label: 'Push Notifications', desc: 'All push notifications to mobile devices.', impact: 'No booking alerts, no trip reminders, no messages. In-app notifications still work.' },
+  EMAIL_SERVICE: { label: 'Email Service (Resend)', desc: 'All outgoing emails — verification, booking confirmation, receipts.', impact: 'No email verification codes, no booking confirmations, no password resets.' },
+  CHOE_AI: { label: 'Choé AI', desc: 'AI-powered search and booking assistant.', impact: 'Choé returns "temporarily unavailable". Classic search still works.' },
+  PHONE_AUTH: { label: 'Phone Login (Firebase)', desc: 'Phone number OTP authentication.', impact: 'No phone login/signup. Apple, Google, and email login still work.' },
+  S3_UPLOADS: { label: 'S3 Photo Uploads', desc: 'Photo uploads to S3/CloudFront.', impact: 'No new photo uploads. Existing photos still display from CDN cache.' },
+  GUEST_SIGNUP: { label: 'Guest Signup', desc: 'New guest account creation.', impact: 'No new guest accounts. Existing guests can still log in and book.' },
+  HOST_SIGNUP: { label: 'Host Signup', desc: 'New host account creation.', impact: 'No new host accounts. Existing hosts can still manage fleet and bookings.' },
+}
+
 let cache: Map<string, boolean> = new Map()
 let cacheTime = 0
 const CACHE_TTL = 10_000 // 10 seconds (faster than feature flags — emergency)

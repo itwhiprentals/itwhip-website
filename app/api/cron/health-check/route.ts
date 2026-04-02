@@ -70,6 +70,38 @@ export async function GET(request: NextRequest) {
       })
       if (!res.ok) throw new Error(`Resend ${res.status}`)
     }),
+
+    // Twilio SMS
+    checkService('twilio', async () => {
+      const res = await fetch('https://api.twilio.com/2010-04-01/Accounts.json', {
+        headers: { Authorization: `Basic ${Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}` },
+      })
+      if (!res.ok) throw new Error(`Twilio ${res.status}`)
+    }),
+
+    // Firebase Auth
+    checkService('firebase', async () => {
+      const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"idToken":"test"}',
+      })
+      if (res.status >= 500) throw new Error(`Firebase ${res.status}`)
+    }),
+
+    // Anthropic / Claude API
+    checkService('anthropic', async () => {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1, messages: [{ role: 'user', content: 'ping' }] }),
+      })
+      if (res.status >= 500) throw new Error(`Anthropic ${res.status}`)
+    }),
+
+    // Website self-check
+    checkService('website', async () => {
+      const res = await fetch('https://itwhip.com/api/auth/check-dual-role')
+      if (res.status >= 500) throw new Error(`Website ${res.status}`)
+    }),
   ])
 
   // Auto-killswitch for down services
@@ -77,6 +109,8 @@ export async function GET(request: NextRequest) {
     stripe: 'STRIPE_PAYMENTS',
     'expo-push': 'PUSH_NOTIFICATIONS',
     resend: 'EMAIL_SERVICE',
+    anthropic: 'CHOE_AI',
+    firebase: 'PHONE_AUTH',
   }
 
   for (const result of results) {

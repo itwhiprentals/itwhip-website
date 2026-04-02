@@ -7,7 +7,7 @@ import { checkAvailability } from '@/lib/utils/availability'
 import { getLocationByName, ALL_ARIZONA_LOCATIONS } from '@/lib/data/arizona-locations'
 import { getTaxRate } from '@/app/[locale]/(guest)/rentals/lib/arizona-taxes'
 import { getActualDeposit } from '@/app/[locale]/(guest)/rentals/lib/booking-pricing'
-import { buildSearchWhereClause, type SearchRouteFilters } from '@/app/lib/ai-booking/filters'
+import { buildSearchWhereClause, type SearchRouteFilters, PHOENIX_METRO, TUCSON_METRO } from '@/app/lib/ai-booking/filters'
 
 // Default search radius in miles
 const DEFAULT_RADIUS_MILES = 25
@@ -97,9 +97,20 @@ export async function GET(request: NextRequest) {
     // Build where clause using filters module (includes base conditions)
     const whereClause: any = buildSearchWhereClause(filterParams)
 
-    // Add location-based filtering (specific to search route, not in filters module)
+    // Add location-based filtering — expand to metro area for nearby inventory
     if (exactCity) {
-      whereClause.city = { equals: exactCity, mode: 'insensitive' }
+      const cityLower = exactCity.toLowerCase()
+      const isPhoenixMetro = PHOENIX_METRO.some(c => c.toLowerCase() === cityLower)
+      const isTucsonMetro = TUCSON_METRO.some(c => c.toLowerCase() === cityLower)
+
+      if (isPhoenixMetro) {
+        // Search all Phoenix metro cities (Phoenix → also Scottsdale, Tempe, Mesa, Paradise Valley, etc.)
+        whereClause.city = { in: PHOENIX_METRO, mode: 'insensitive' }
+      } else if (isTucsonMetro) {
+        whereClause.city = { in: TUCSON_METRO, mode: 'insensitive' }
+      } else {
+        whereClause.city = { equals: exactCity, mode: 'insensitive' }
+      }
     } else if (searchCoordinates) {
       // Use bounding box to pre-filter cars (optimization)
       const boundingBox = getBoundingBox(searchCoordinates, radiusMiles)

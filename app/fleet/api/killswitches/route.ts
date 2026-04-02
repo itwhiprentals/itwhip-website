@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllKillswitches, killFeature, reviveFeature } from '@/app/lib/killswitch'
+import { getAllKillswitches, killFeature, reviveFeature, KILLSWITCH_INFO } from '@/app/lib/killswitch'
 
 export async function GET() {
   try {
     const switches = await getAllKillswitches()
-    return NextResponse.json({ switches })
+    return NextResponse.json({ switches, info: KILLSWITCH_INFO })
   } catch (error) {
     return NextResponse.json({ error: 'Failed to load killswitches' }, { status: 500 })
   }
