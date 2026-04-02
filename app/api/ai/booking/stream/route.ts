@@ -803,8 +803,8 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     // Look up logged-in user's email for prompt context
     let userEmail: string | null = null
     if (body.userId) {
-      const profile = await prisma.reviewerProfile.findUnique({
-        where: { id: body.userId },
+      const profile = await prisma.reviewerProfile.findFirst({
+        where: { OR: [{ id: body.userId }, { userId: body.userId }] },
         select: { email: true },
       })
       userEmail = profile?.email ?? null
