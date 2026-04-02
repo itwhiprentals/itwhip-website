@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllFlags, setFlag, seedDefaultFlags } from '@/app/lib/featureFlags'
+import { prisma } from '@/app/lib/database/prisma'
+import { setFlag, seedDefaultFlags } from '@/app/lib/featureFlags'
 
 export async function GET() {
   try {
     await seedDefaultFlags()
-    const flags = await getAllFlags()
+    const flags = await prisma.featureFlag.findMany({ orderBy: { key: 'asc' } })
     return NextResponse.json({ flags })
   } catch (error) {
     return NextResponse.json({ error: 'Failed to load flags' }, { status: 500 })

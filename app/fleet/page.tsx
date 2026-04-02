@@ -34,7 +34,8 @@ import {
   IoPowerOutline,
   IoPulseOutline,
   IoCashOutline,
-  IoOptionsOutline
+  IoOptionsOutline,
+  IoBarChartOutline
 } from 'react-icons/io5'
 import { Car, CarStatus } from './types'
 import { StatCard, StatusBadge, EmptyState, LoadingSpinner, SectionHeader } from './components'
@@ -484,6 +485,15 @@ export default function FleetDashboard() {
           >
             <IoOptionsOutline className="text-2xl group-hover:scale-110 transition-transform" />
             <span className="text-xs font-medium text-center leading-tight">Choé Config</span>
+          </Link>
+
+          {/* Usage */}
+          <Link
+            href={`/fleet/usage?key=${apiKey}`}
+            className="min-h-[76px] px-3 py-3 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
+          >
+            <IoBarChartOutline className="text-2xl group-hover:scale-110 transition-transform" />
+            <span className="text-xs font-medium text-center leading-tight">Usage</span>
           </Link>
         </div>
       </div>

@@ -31,6 +31,20 @@ export async function killFeature(feature: string, reason: string, adminId?: str
   })
   cache.set(feature, true)
   console.log(`[Killswitch] KILLED: ${feature} — ${reason} by ${adminId || 'system'}`)
+
+  // Alert fleet admin via push notification
+  try {
+    const { sendPushNotification } = await import('@/app/lib/notifications/push')
+    const admins = await prisma.user.findMany({ where: { role: 'ADMIN' }, select: { id: true }, take: 5 })
+    for (const admin of admins) {
+      await sendPushNotification({
+        userId: admin.id,
+        title: `⚠️ Killswitch: ${feature}`,
+        body: reason || 'Feature killed',
+        type: 'manual',
+      }).catch(() => {})
+    }
+  } catch {}
 }
 
 export async function reviveFeature(feature: string, adminId?: string): Promise<void> {

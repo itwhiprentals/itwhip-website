@@ -8,6 +8,7 @@ import type { BookingSession, VehicleSummary, WeatherContext } from '../types';
 import { ConversationMode } from '../types';
 
 import { IDENTITY } from './identity';
+import { getChoeSystemPromptAddon } from '@/app/lib/ai/choeConfig';
 import { buildStateContext, buildUserContext, BOOKING_SEQUENCE } from './state-flow';
 import { buildVehicleContext, buildWeatherContext } from './vehicle-handling';
 import { PERSONALITY_RULES, OFF_TOPIC_RULES, FAQ_CONTENT, HOST_FAQ_CONTENT, BOOKING_SUPPORT_RULES, GUARDRAILS } from './behavior';
@@ -98,7 +99,7 @@ function buildModeContext(mode: ConversationMode): string {
  * Per Anthropic's guide: role prompting belongs in the system prompt.
  * Critical guardrails are also here so they're reinforced every turn.
  */
-export function buildSystemPrompt(params: PromptContext): string {
+export async function buildSystemPrompt(params: PromptContext): Promise<string> {
   const { session, isLoggedIn, isVerified, userEmail, vehicles, weather, location, locale } = params;
 
   const language = LOCALE_LANGUAGE[locale ?? 'en'] ?? 'English';
@@ -140,6 +141,8 @@ export function buildSystemPrompt(params: PromptContext): string {
     vehicles?.length ? buildVehicleContext(vehicles) : '',
     weather ? buildWeatherContext(weather) : '',
     '</dynamic_context>',
+    // 5. Hot-reload config — promotions, seasonal messages, admin additions
+    await getChoeSystemPromptAddon(),
   ]
     .filter(Boolean)
     .join('\n\n');

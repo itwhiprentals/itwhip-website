@@ -29,6 +29,7 @@ import { parseClaudeResponse } from '@/app/lib/ai-booking/parse-response'
 import { assessBookingRisk } from '@/app/lib/ai-booking/risk-bridge'
 import { checkAISecurity } from '@/app/lib/ai-booking/security'
 import prisma from '@/app/lib/database/prisma'
+import { nanoid } from 'nanoid'
 import {
   getChoeSettings,
   getModelConfig,
@@ -673,6 +674,21 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     const injectionCheck = checkPromptInjection(body.message)
     if (!injectionCheck.safe) {
       console.warn(`[Choé] Prompt injection blocked: ${injectionCheck.pattern}`)
+      // Log to security audit trail
+      await prisma.securityEvent.create({
+        data: {
+          id: nanoid(),
+          type: 'PROMPT_INJECTION_ATTEMPT',
+          severity: 'HIGH',
+          sourceIp: rateLimitIp,
+          targetId: body.visitorId || body.userId || 'anonymous',
+          message: `Prompt injection blocked: ${injectionCheck.pattern}`,
+          details: JSON.stringify({ input: body.message.slice(0, 500), pattern: injectionCheck.pattern }),
+          action: 'blocked',
+          blocked: true,
+          timestamp: new Date(),
+        }
+      }).catch(() => {})
       await sse.sendEvent('text', { text: INJECTION_RESPONSE })
       await sse.sendEvent('done', { session: body.session })
       await sse.close()
@@ -798,7 +814,7 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
 
     // Build system prompt (enhanced for complex queries)
     const locale = body.locale || 'en'
-    let systemPrompt = buildSystemPrompt({
+    let systemPrompt = await buildSystemPrompt({
       session,
       isLoggedIn: !!body.userId,
       isVerified,
@@ -1039,7 +1055,7 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
           await sse.sendEvent('vehicles', { vehicles })
 
           // CRITICAL: Rebuild system prompt with vehicles so Claude sees presentation rules
-          systemPrompt = buildSystemPrompt({
+          systemPrompt = await buildSystemPrompt({
             session: updatedSession,
             isLoggedIn: !!body.userId,
             isVerified,
