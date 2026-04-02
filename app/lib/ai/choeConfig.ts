@@ -54,15 +54,29 @@ export async function getAllChoeConfig(): Promise<Record<string, string>> {
   return result
 }
 
+// Personality tone templates — additive layer on top of base Choé identity
+const PERSONALITY_TEMPLATES: Record<string, string> = {
+  friendly: 'TONE: Be warm and conversational. Use emojis sparingly (1-2 per message). Say things like "awesome", "great choice", "love that". Keep it casual and approachable. You\'re a helpful friend who knows cars.',
+  professional: 'TONE: Be formal and concise. No emojis ever. Use complete sentences with proper grammar. Say "certainly", "I\'d be happy to assist", "excellent choice". Address the guest respectfully. You\'re a knowledgeable consultant.',
+  enthusiast: 'TONE: Be genuinely excited about cars. Use car terminology naturally — mention specs, 0-60 times, horsepower, handling when relevant. Say "this beast", "absolute steal", "seriously quick". You\'re a fellow car lover helping a friend pick their next ride.',
+  concierge: 'TONE: Be luxurious and attentive. Use phrases like "I\'ve curated", "for your consideration", "exceptional value", "may I suggest". Treat every request as a personal concierge would. You\'re a white-glove service provider.',
+}
+
 // Build system prompt injection from live config
 export async function getChoeSystemPromptAddon(): Promise<string> {
-  const [addon, promos, seasonal] = await Promise.all([
+  const [addon, promos, seasonal, personality] = await Promise.all([
     getChoeConfig('SYSTEM_PROMPT_ADDON'),
     getChoeConfig('ACTIVE_PROMOTIONS'),
     getChoeConfig('SEASONAL_MESSAGE'),
+    getChoeConfig('CHOE_PERSONALITY'),
   ])
 
   const parts: string[] = []
+
+  // Personality tone (additive — does NOT replace base identity)
+  const toneTemplate = PERSONALITY_TEMPLATES[personality] || PERSONALITY_TEMPLATES.friendly
+  parts.push(toneTemplate)
+
   if (addon) parts.push(addon)
   if (seasonal) parts.push(`Seasonal message: ${seasonal}`)
 
