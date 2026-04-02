@@ -30,6 +30,7 @@ interface StreamingState {
   toolsInUse: Array<{ name: string; input: unknown }>
   cards: CardType[] | null
   bookings: BookingData[] | null
+  reviews: any | null
   mode: ConversationMode | null
 }
 
@@ -50,6 +51,7 @@ interface StreamingResponse {
   tokensUsed: number
   cards: CardType[] | null
   bookings: BookingData[] | null
+  reviews: any | null
   mode: ConversationMode | null
 }
 
@@ -81,6 +83,7 @@ export function useStreamingChat(options: StreamingOptions = {}) {
     toolsInUse: [],
     cards: null,
     bookings: null,
+    reviews: null,
     mode: null,
   })
 
@@ -242,6 +245,7 @@ export function useStreamingChat(options: StreamingOptions = {}) {
               toolsInUse: [],
               cards: response.cards ?? null,
               bookings: response.bookings ?? null,
+              reviews: response.reviews ?? null,
               mode: response.mode ?? prev.mode,
             }))
             options.onComplete?.(response)
@@ -313,6 +317,7 @@ export function useStreamingChat(options: StreamingOptions = {}) {
       toolsInUse: [],
       cards: null,
       bookings: null,
+      reviews: null,
       mode: null,
     })
   }, [cancel])
@@ -324,7 +329,7 @@ export function useStreamingChat(options: StreamingOptions = {}) {
 
   // Clear cards + bookings (e.g. when user dismisses a card)
   const clearCards = useCallback(() => {
-    setState(prev => ({ ...prev, cards: null, bookings: null }))
+    setState(prev => ({ ...prev, cards: null, bookings: null, reviews: null }))
   }, [])
 
   return {

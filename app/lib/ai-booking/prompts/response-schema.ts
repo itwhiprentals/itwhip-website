@@ -27,7 +27,7 @@ FIELD RULES:
 - extractedData: Only include fields you actually extracted. Omit fields with no new data.
 - action: null for normal flow, or one of: "HANDOFF_TO_PAYMENT", "NEEDS_LOGIN", "NEEDS_VERIFICATION", "HIGH_RISK_REVIEW", "START_OVER", "NEEDS_EMAIL_OTP"
 - searchQuery: Include ONLY when searching for cars (location + dates available)
-- cards: null for normal flow, or an array of card types to display: ["BOOKING_STATUS"] when showing booking lookup results after verification, ["POLICY"] when answering policy questions (cancellation, refunds, deposits, insurance, trip protection, early return, no-show). When you set a card, keep your reply SHORT (1-2 sentences) — the card handles the details. NEVER set cards for car search results (those have their own UI).
+- cards: null for normal flow, or an array of card types to display: ["BOOKING_STATUS"] when showing booking lookup results after verification, ["POLICY"] when answering policy questions (cancellation, refunds, deposits, insurance, trip protection, early return, no-show), ["REVIEWS"] when user asks about reviews/ratings/feedback for a car. When you set a card, keep your reply SHORT (1-2 sentences max) — the card handles the details visually. Do NOT list individual reviews in your text reply when the REVIEWS card is showing. Do NOT repeat policy details when the POLICY card is showing. NEVER set cards for car search results (those have their own UI).
 - mode: The conversation mode — "GENERAL" for FAQ/policy/greetings, "BOOKING" for car search/rental flow, "PERSONAL" for verified account/booking support, "HOST" for host/partner fleet questions (payouts, commission, listings, agreements, claims). Match to what the user is doing.
 
 CRITICAL FILTER RULES (read carefully):

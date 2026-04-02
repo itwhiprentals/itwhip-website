@@ -1211,6 +1211,42 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       finalCards = finalCards ? [...finalCards, 'POLICY'] : ['POLICY']
     }
 
+    // Auto-inject REVIEWS when user asks about reviews/ratings and we have vehicles
+    let reviewCardData: any = null
+    const isReviewQuestion = /review|rating|rated|stars|feedback|recommend|experience/i.test(body.message)
+    if (isReviewQuestion && vehicles && vehicles.length > 0) {
+      try {
+        const carId = vehicles[0].id // Show reviews for the first/featured car
+        const reviews = await prisma.rentalReview.findMany({
+          where: { carId, isVisible: true },
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          include: { reviewerProfile: { select: { name: true, profilePhotoUrl: true, city: true } } },
+        })
+        if (reviews.length > 0) {
+          const car = vehicles[0]
+          reviewCardData = {
+            carId,
+            carName: `${car.year} ${car.make} ${car.model}`,
+            rating: car.rating || 0,
+            reviewCount: car.reviewCount || reviews.length,
+            reviews: reviews.map(r => ({
+              id: r.id,
+              rating: r.rating,
+              title: r.title,
+              comment: r.comment,
+              reviewerName: r.reviewerProfile?.name || 'Guest',
+              reviewerPhoto: r.reviewerProfile?.profilePhotoUrl || null,
+              reviewerCity: r.reviewerProfile?.city || '',
+              createdAt: r.createdAt.toISOString(),
+              helpfulCount: r.helpfulCount,
+            })),
+          }
+          finalCards = finalCards ? [...finalCards, 'REVIEWS'] : ['REVIEWS']
+        }
+      } catch {}
+    }
+
     // Re-display cards when user says "I don't see it" / "pull it back up"
     if (isCardRedisplayRequest(body.message)) {
       if (bookingLookup?.bookings && bookingLookup.bookings.length > 0) {
@@ -1238,6 +1274,7 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       tokensUsed: totalTokensUsed,
       cards: finalCards,
       bookings: bookingLookup?.bookings ?? null,
+      reviews: reviewCardData,
       mode: session.mode,
     })
 

@@ -17,6 +17,7 @@ import ConfirmationCard from './ConfirmationCard'
 import VerificationCard from './VerificationCard'
 import PolicyCard from './PolicyCard'
 import BookingStatusCard from './BookingStatusCard'
+import ReviewCard from './ReviewCard'
 import { IoSunnyOutline, IoMoonOutline } from 'react-icons/io5'
 import { useLocale, useTranslations } from 'next-intl'
 import { useStreamingChat } from '@/app/hooks/useStreamingChat'
@@ -108,6 +109,7 @@ export default function ChatViewStreaming({
     toolsInUse,
     cards: streamCards,
     bookings: streamBookings,
+    reviews: streamReviews,
     mode: streamMode,
     sendMessage,
     reset: resetStream,
@@ -663,6 +665,26 @@ export default function ChatViewStreaming({
               transition={springTransition}
             >
               <BookingStatusCard bookings={activeBookings} onDismiss={() => { dismissedCardsRef.current.add('BOOKING_STATUS'); clearCards(); setPersistedCards(null); setPersistedBookings(null) }} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Review card */}
+        <AnimatePresence>
+          {activeCards?.includes('REVIEWS') && streamReviews && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={springTransition}
+            >
+              <ReviewCard
+                carName={streamReviews.carName}
+                rating={streamReviews.rating}
+                reviewCount={streamReviews.reviewCount}
+                reviews={streamReviews.reviews}
+                onDismiss={() => { dismissedCardsRef.current.add('REVIEWS'); clearCards() }}
+              />
             </motion.div>
           )}
         </AnimatePresence>

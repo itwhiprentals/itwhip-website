@@ -101,7 +101,26 @@ export type BookingAction =
   | 'NEEDS_EMAIL_OTP';
 
 /** Card types that Claude can request to display */
-export type CardType = 'BOOKING_STATUS' | 'POLICY';
+export type CardType = 'BOOKING_STATUS' | 'POLICY' | 'REVIEWS';
+
+/** Review data for ReviewCard rendering */
+export interface ReviewCardData {
+  carId: string;
+  carName: string;
+  rating: number;
+  reviewCount: number;
+  reviews: {
+    id: string;
+    rating: number;
+    title: string | null;
+    comment: string;
+    reviewerName: string;
+    reviewerPhoto: string | null;
+    reviewerCity: string;
+    createdAt: string;
+    helpfulCount: number;
+  }[];
+}
 
 /** Structured booking data for BookingStatusCard rendering */
 export interface BookingData {
