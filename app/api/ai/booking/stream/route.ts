@@ -9,6 +9,7 @@ import { isKilled, maintenanceResponse } from '@/app/lib/killswitch'
 import { checkPromptInjection, INJECTION_RESPONSE } from '@/app/lib/security/promptInjection'
 import { logCost } from '@/app/lib/costTracker'
 import { getChoeSystemPromptAddon } from '@/app/lib/ai/choeConfig'
+import { compressConversation } from '@/app/lib/ai/contextCompression'
 import Anthropic from '@anthropic-ai/sdk'
 import {
   BookingState,
@@ -680,12 +681,13 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
           id: nanoid(),
           type: 'PROMPT_INJECTION_ATTEMPT',
           severity: 'HIGH',
-          sourceIp: rateLimitIp,
+          sourceIp: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown',
           targetId: body.visitorId || body.userId || 'anonymous',
           message: `Prompt injection blocked: ${injectionCheck.pattern}`,
           details: JSON.stringify({ input: body.message.slice(0, 500), pattern: injectionCheck.pattern }),
           action: 'blocked',
           blocked: true,
+          userAgent: request.headers.get('user-agent') || '',
           timestamp: new Date(),
         }
       }).catch(() => {})
@@ -846,14 +848,17 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     // Build messages for Claude with multi-turn caching
     // Add cache_control to second-to-last user message for conversation prefix caching
     // This saves ~90% on tokens for repeated conversation context
+    // Compress long conversations to save tokens (keeps first + last 5, summarizes middle)
+    const conversationMessages = compressConversation(
+      session.messages.map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      }))
+    )
+
     let claudeMessages: Anthropic.MessageParam[] = [
       ...instructionMessages,
-      ...addCacheControlToMessages(
-        session.messages.map((m) => ({
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-        }))
-      ),
+      ...addCacheControlToMessages(conversationMessages),
     ]
 
     const client = getClient()

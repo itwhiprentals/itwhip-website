@@ -307,7 +307,69 @@ export async function executeTools(
   let weather: unknown = null
   let updatedSession = { ...session }
 
-  for (const toolUse of toolUses) {
+  // Parallelize search_vehicles calls — run all searches simultaneously, merge + deduplicate
+  const searchCalls = toolUses.filter(t => t.name === 'search_vehicles')
+  const otherCalls = toolUses.filter(t => t.name !== 'search_vehicles')
+
+  if (searchCalls.length > 1) {
+    // Multiple searches — run in parallel
+    const searchPromises = searchCalls.map(async (toolUse) => {
+      const input = toolUse.input as Record<string, unknown>
+      const searchQuery: SearchQuery = {
+        location: input.location as string,
+        pickupDate: input.pickupDate as string | undefined,
+        returnDate: input.returnDate as string | undefined,
+        pickupTime: input.pickupTime as string | undefined,
+        returnTime: input.returnTime as string | undefined,
+        carType: input.carType as string | undefined,
+        make: input.make as string | undefined,
+        priceMin: input.priceMin as number | undefined,
+        priceMax: input.priceMax as number | undefined,
+        seats: input.seats as number | undefined,
+        transmission: input.transmission as string | undefined,
+        noDeposit: input.noDeposit as boolean | undefined,
+      }
+      let found = await searchVehicles(searchQuery)
+      let expandedSearch = false
+      if (found.length === 0 && input.location) {
+        found = await searchVehicles({ ...searchQuery, location: 'Phoenix, AZ' })
+        if (found.length > 0) { expandedSearch = true; console.log(`[tools] Expanded search from ${input.location} to Phoenix, found ${found.length} vehicles`) }
+      }
+      return { toolUse, input, found, expandedSearch }
+    })
+
+    const searchResults = await Promise.all(searchPromises)
+
+    // Merge all vehicles, deduplicate by ID
+    const allVehicles: VehicleSummary[] = []
+    const seenIds = new Set<string>()
+    for (const sr of searchResults) {
+      for (const v of sr.found) {
+        if (!seenIds.has(v.id)) { seenIds.add(v.id); allVehicles.push(v) }
+      }
+    }
+    vehicles = allVehicles
+
+    // Build results for each tool call
+    for (const sr of searchResults) {
+      if (sr.input.location) updatedSession.location = sr.input.location as string
+      if (sr.input.pickupDate) updatedSession.startDate = sr.input.pickupDate as string
+      if (sr.input.returnDate) updatedSession.endDate = sr.input.returnDate as string
+      results.push({
+        type: 'tool_result',
+        tool_use_id: sr.toolUse.id,
+        content: sr.found.length > 0
+          ? JSON.stringify({ found: sr.found.length, expandedSearch: sr.expandedSearch, vehicles: sr.found.slice(0, 12).map(v => ({ id: v.id, name: `${v.year} ${v.make} ${v.model}`, dailyRate: v.dailyRate, depositAmount: v.depositAmount, seats: v.seats, transmission: v.transmission, location: v.location, vehicleType: v.vehicleType, instantBook: v.instantBook, hostFirstName: v.hostFirstName })) })
+          : JSON.stringify({ found: 0, message: 'No vehicles available for these dates.' }),
+      })
+    }
+    console.log(`[tools] Parallel search: ${searchCalls.length} calls → ${allVehicles.length} unique vehicles`)
+  }
+
+  // Process remaining tools (including single search calls) sequentially
+  const toolsToProcess = searchCalls.length > 1 ? otherCalls : toolUses
+
+  for (const toolUse of toolsToProcess) {
     const input = toolUse.input as Record<string, unknown>
 
     switch (toolUse.name) {
