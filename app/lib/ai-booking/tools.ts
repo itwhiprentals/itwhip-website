@@ -420,6 +420,9 @@ export async function executeTools(
           content: vehicles.length > 0
             ? JSON.stringify({
                 found: vehicles.length,
+                inCity: vehicles.filter(v => v.location?.toLowerCase().includes(requestedLocation?.toLowerCase() || '')).length,
+                nearby: vehicles.filter(v => !v.location?.toLowerCase().includes(requestedLocation?.toLowerCase() || '')).length,
+                searchedCity: requestedLocation,
                 expandedSearch,
                 originalLocation: expandedSearch ? requestedLocation : undefined,
                 expandedTo: expandedSearch ? 'Phoenix metro area' : undefined,

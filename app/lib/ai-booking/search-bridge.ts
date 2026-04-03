@@ -90,6 +90,9 @@ export async function searchVehicles(
     const carsInCity = data.carsInCity?.length || 0;
     const nearbyCars = data.nearbyCars?.length || 0;
     console.log(`[SEARCH-BRIDGE DEBUG] API returned: ${carsInCity} in city, ${nearbyCars} nearby`);
+    // Store city breakdown for Claude context
+    (data as any)._cityCount = carsInCity;
+    (data as any)._nearbyCount = nearbyCars;
     const results = normalizeSearchResults(data);
     console.log(`[SEARCH-BRIDGE DEBUG] After normalize: ${results.length} vehicles`);
 
@@ -209,25 +212,30 @@ function getDefaultDeposit(dailyRate: number): number {
 
 /** Normalize search API response into VehicleSummary array */
 function normalizeSearchResults(data: RawSearchResult): VehicleSummary[] {
-  // Combine carsInCity and nearbyCars for comprehensive results
-  // This ensures statewide searches include all matching cars
-  const allCars = [
-    ...(data.carsInCity || []),
-    ...(data.nearbyCars || []),
-  ];
+  const cityCars = (data.carsInCity || []);
+  const nearby = (data.nearbyCars || []);
 
-  // Fall back to flat results if grouped data isn't available
-  const carsToProcess = allCars.length > 0 ? allCars : (data.results || []);
+  if (cityCars.length > 0 || nearby.length > 0) {
+    // Normalize and sort each group separately by rating
+    const cityNormalized = cityCars.map(normalizeCarResult);
+    cityNormalized.sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
-  // Deduplicate by ID
+    const nearbyNormalized = nearby.map(normalizeCarResult);
+    nearbyNormalized.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+
+    // Deduplicate: city cars first, then nearby (skip any nearby that's already in city)
+    const seen = new Set(cityNormalized.map(c => c.id));
+    const uniqueNearby = nearbyNormalized.filter(c => { if (seen.has(c.id)) return false; seen.add(c.id); return true; });
+
+    // City cars ALWAYS first, then nearby — cap at 20 total
+    const combined = [...cityNormalized, ...uniqueNearby];
+    return combined.slice(0, 20);
+  }
+
+  // Fallback to flat results
+  const fallback = (data.results || []);
   const seen = new Set<string>();
-  const unique = carsToProcess.filter((car) => {
-    if (seen.has(car.id)) return false;
-    seen.add(car.id);
-    return true;
-  });
-
-  // Normalize, sort by rating (highest first), then cap at 20
+  const unique = fallback.filter(car => { if (seen.has(car.id)) return false; seen.add(car.id); return true; });
   const normalized = unique.map(normalizeCarResult);
   normalized.sort((a, b) => (b.rating || 0) - (a.rating || 0));
   return normalized.slice(0, 20);
