@@ -1148,7 +1148,10 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     }
 
     // Update session state - use parsed.nextState or compute from session
-    session.state = parsed.nextState || computeNextState(session)
+    // Don't overwrite CONFIRMING if we just set it from vehicle selection fallback
+    if (session.state !== BookingState.CONFIRMING || !session.vehicleId) {
+      session.state = parsed.nextState || computeNextState(session)
+    }
 
     // Apply Claude's mode suggestion if valid (overrides detection)
     if (parsed.mode && Object.values(ConversationMode).includes(parsed.mode)) {
@@ -1199,6 +1202,39 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     // Build booking summary if confirming or ready for payment
     const pricingConfig = await getPricingConfig()
     let summary: BookingSummary | null = null
+
+    // If vehicle was selected but not in current results, fetch it for the summary
+    if (session.vehicleId && (!vehicles || !vehicles.find(v => v.id === session.vehicleId))) {
+      try {
+        const { searchVehicles } = await import('@/app/lib/ai-booking/search-bridge')
+        const car = await prisma.rentalCar.findUnique({
+          where: { id: session.vehicleId },
+          select: { id: true, make: true, model: true, year: true, dailyRate: true, city: true,
+            photos: { select: { url: true }, where: { isHero: true }, take: 1 },
+            host: { select: { name: true, requireDeposit: true, depositAmount: true } },
+            instantBook: true, vehicleType: true, seats: true, transmission: true, totalTrips: true, rating: true,
+          }
+        })
+        if (car) {
+          const photo = car.photos?.[0]?.url || null
+          const deposit = car.host?.requireDeposit === false ? 0 : (car.host?.depositAmount ? Number(car.host.depositAmount) : 250)
+          const v: VehicleSummary = {
+            id: car.id, make: car.make, model: car.model, year: car.year,
+            dailyRate: Number(car.dailyRate) || 0, photo, photos: photo ? [photo] : [],
+            rating: car.rating ? Number(car.rating) : null, reviewCount: 0,
+            trips: car.totalTrips || 0, distance: null, location: car.city || '',
+            instantBook: car.instantBook || false, vehicleType: car.vehicleType || null,
+            seats: car.seats || null, transmission: car.transmission || null,
+            depositAmount: deposit, insuranceBasicDaily: null,
+            hostFirstName: car.host?.name?.split(' ')[0] || null,
+          }
+          vehicles = vehicles ? [...vehicles, v] : [v]
+        }
+      } catch (err) {
+        console.warn('[ai-booking-stream] Failed to fetch selected vehicle:', err)
+      }
+    }
+
     if ((session.state === BookingState.CONFIRMING || session.state === BookingState.READY_FOR_PAYMENT) && session.vehicleId && vehicles) {
       const selectedVehicle = vehicles.find((v) => v.id === session.vehicleId)
       if (selectedVehicle && session.startDate && session.endDate) {
