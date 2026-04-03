@@ -1,7 +1,7 @@
 // app/api/cron/payment-deadline/route.ts
 // Auto-cancels bookings where guest signed agreement but didn't pay within 48h
 // Sends reminder at 24h mark
-// Runs every 30 minutes via Vercel Cron
+// Runs every 30 minutes via EventBridge cron
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'

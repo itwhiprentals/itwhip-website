@@ -250,7 +250,7 @@ model PageView {
   browserVer String? // Browser version
   os         String? // Windows, macOS, iOS, Android
 
-  // Location (from Vercel/Cloudflare headers)
+  // Location (from request headers)
   country String? // US, UK, MX (ISO 3166-1 alpha-2)
   region  String? // Arizona, California, Texas
   city    String? // Phoenix, Los Angeles

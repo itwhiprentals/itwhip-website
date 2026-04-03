@@ -1002,6 +1002,7 @@ export async function POST(request: NextRequest) {
           depositAmount: true,
           status: true,
           paymentStatus: true,
+          paymentIntentId: true,
           flaggedForReview: true,
           riskScore: true,
           reviewerProfileId: true,

@@ -1,5 +1,5 @@
 // app/api/admin/system/cron/route.ts
-// This should be called by Vercel Cron, Uptime Robot, or external scheduler every 5 minutes
+// This should be called by EventBridge cron or external scheduler every 5 minutes
 
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'

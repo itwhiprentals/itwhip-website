@@ -11,7 +11,7 @@ import { startCronLog } from '@/app/lib/cron/logger'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-// GET handler for Vercel Cron (crons only trigger GET)
+// GET handler for EventBridge cron
 export async function GET(request: NextRequest) {
   return handleAutoComplete(request)
 }

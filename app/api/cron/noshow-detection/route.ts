@@ -1,7 +1,7 @@
 // app/api/cron/noshow-detection/route.ts
 // Detects no-shows: CONFIRMED bookings where trip never started past deadline
 // All booking types: pickup + 2h (matches Turo US standard)
-// Runs every 10 minutes via Vercel Cron
+// Runs every 10 minutes via EventBridge cron
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'

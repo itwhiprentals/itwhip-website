@@ -158,9 +158,25 @@ export async function POST(
             })
             console.log('[Cancel Booking] Voided entire authorization hold (free cancellation)')
           } else if (cancellation.tier === 'no_refund') {
-            // No refund — capture the full hold amount
-            await stripe.paymentIntents.capture(cancelledBooking.paymentIntentId)
-            console.log('[Cancel Booking] Captured full authorization (no refund — <12 hours before pickup)')
+            // No refund on TRIP portion — but deposit is ALWAYS released
+            // Only capture the penalty amount, release the rest (deposit + excess)
+            const penaltyFromCardCents = Math.round(distribution.penaltyFromCard * 100)
+            if (penaltyFromCardCents > 0 && penaltyFromCardCents < pi.amount) {
+              await stripe.paymentIntents.capture(cancelledBooking.paymentIntentId, {
+                amount_to_capture: penaltyFromCardCents,
+              })
+              console.log(`[Cancel Booking] Captured $${distribution.penaltyFromCard.toFixed(2)} penalty, released $${((pi.amount - penaltyFromCardCents) / 100).toFixed(2)} (deposit + excess)`)
+            } else if (penaltyFromCardCents <= 0) {
+              // Penalty fully absorbed by credits/bonus — void entire hold
+              await stripe.paymentIntents.cancel(cancelledBooking.paymentIntentId, {
+                cancellation_reason: 'requested_by_customer',
+              })
+              console.log('[Cancel Booking] Voided authorization (no_refund penalty absorbed by credits/bonus)')
+            } else {
+              // Penalty >= hold amount — capture full
+              await stripe.paymentIntents.capture(cancelledBooking.paymentIntentId)
+              console.log('[Cancel Booking] Captured full authorization (penalty >= hold amount)')
+            }
           } else {
             // Moderate or late cancellation with partial penalty — capture only the penalty amount
             const penaltyFromCardCents = Math.round(distribution.penaltyFromCard * 100)

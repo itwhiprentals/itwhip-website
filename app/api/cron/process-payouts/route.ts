@@ -6,9 +6,9 @@ import { prisma } from '@/app/lib/database/prisma'
 import { stripe } from '@/app/lib/stripe'
 
 /**
- * Vercel Cron Job Endpoint - Process Eligible Payouts
- * 
- * Runs daily at 2:00 AM UTC (configured in vercel.json)
+ * EventBridge Cron Job Endpoint - Process Eligible Payouts
+ *
+ * Runs daily at 2:00 AM UTC (configured in EventBridge)
  * Can also be triggered manually for testing
  * 
  * Security: Protected by CRON_SECRET environment variable
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
           executionTime: `${executionTime}s`,
           timestamp: new Date()
         },
-        ipAddress: 'vercel-cron'
+        ipAddress: 'eventbridge-cron'
       } as any
     })
 
@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
             executionTime: `${executionTime}s`,
             timestamp: new Date()
           },
-          ipAddress: 'vercel-cron'
+          ipAddress: 'eventbridge-cron'
         } as any
       })
 
@@ -241,7 +241,7 @@ export async function POST(request: NextRequest) {
  * Returns status without processing
  */
 export async function GET(request: NextRequest) {
-  // Vercel crons call GET — run the same payout processing as POST
+  // EventBridge crons call GET — run the same payout processing as POST
   const authHeader = request.headers.get('authorization')
   const expectedAuth = `Bearer ${process.env.CRON_SECRET}`
   const cronSecret = process.env.CRON_SECRET || 'itwhip-cron-secret-2024'
@@ -268,7 +268,7 @@ export async function GET(request: NextRequest) {
           entityId: 'cron-payout',
           category: 'FINANCIAL',
           adminId: 'system',
-          newValue: JSON.stringify({ ...result, trigger: 'vercel-cron-GET' })
+          newValue: JSON.stringify({ ...result, trigger: 'eventbridge-cron-GET' })
         }
       })
     } catch {}

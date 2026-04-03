@@ -1,5 +1,5 @@
 // app/lib/database/prisma.ts
-// Serverless-compatible Prisma client for Vercel/Neon
+// Prisma client for App Runner / PostgreSQL
 
 import { PrismaClient } from '@prisma/client'
 

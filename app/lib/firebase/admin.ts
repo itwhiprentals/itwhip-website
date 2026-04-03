@@ -17,7 +17,8 @@ function getAdminApp(): App {
       // Check if we have service account credentials
       const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID
       const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL
-      const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n')
+      const rawKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY
+      const privateKey = rawKey?.includes('\\n') ? rawKey.replace(/\\n/g, '\n') : rawKey
 
       if (projectId && clientEmail && privateKey) {
         // Initialize with service account

@@ -1,6 +1,6 @@
 // app/api/cron/host-acceptance-reminders/route.ts
 // Sends reminders to hosts who haven't accepted requests, auto-expires after 3 days
-// Runs every hour via Vercel Cron
+// Runs every hour via EventBridge cron
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'

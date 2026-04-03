@@ -401,9 +401,9 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET endpoint for Vercel Cron (Vercel crons use GET)
+// GET endpoint for EventBridge cron
 export async function GET(request: NextRequest) {
-  // Verify cron secret via header (Vercel sets this automatically)
+  // Verify cron secret via header (EventBridge sets this via CRON_SECRET)
   const authHeader = request.headers.get('authorization')
   const expectedAuth = `Bearer ${process.env.CRON_SECRET}`
 

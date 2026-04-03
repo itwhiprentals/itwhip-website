@@ -454,9 +454,9 @@ export async function checkSuspensionOnLogin(guestId: string): Promise<{
 // ============================================
 
 /**
- * Main cron handler - Call this from Vercel Cron or similar
- * 
- * Example Vercel Cron config (vercel.json):
+ * Main cron handler - Call this from EventBridge cron or similar
+ *
+ * Example cron config:
  * {
  *   "crons": [{
  *     "path": "/api/cron/check-suspensions",

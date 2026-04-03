@@ -571,7 +571,7 @@ export async function POST(request: NextRequest) {
             requiresAccountLinking: true
           }, { status: 409 })
         }
-        // Log transaction/post-transaction error details at info level for Vercel visibility
+        // Log transaction/post-transaction error details at info level for CloudWatch visibility
         console.log(`[Complete Profile] ❌ Transaction/signup error: code=${error?.code || 'UNKNOWN'} message=${error?.message || String(error)} meta=${error?.meta ? JSON.stringify(error.meta) : 'none'}`)
         // Re-throw other errors
         throw error
@@ -1021,7 +1021,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error: any) {
-    // Log at info level too — Vercel log exports often only capture info
+    // Log at info level too — CloudWatch log exports often only capture info
     const errMsg = error?.message || String(error)
     const errCode = error?.code || 'UNKNOWN'
     const errMeta = error?.meta ? JSON.stringify(error.meta) : 'none'

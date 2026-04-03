@@ -1,11 +1,11 @@
 // app/api/cron/expire-claims/route.ts
 // Cron job to expire claims that haven't had a car assigned within 30 minutes
-// Can be triggered by Vercel cron or manually
+// Can be triggered by EventBridge cron or manually
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 
-// Vercel cron configuration - runs every 5 minutes
+// EventBridge cron - runs every 5 minutes
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 

@@ -46,7 +46,7 @@ function getBaseUrl(): string {
     return process.env.NEXT_PUBLIC_BASE_URL
   }
   // IMPORTANT: In production, ALWAYS use the production domain
-  // Do NOT use VERCEL_URL as it returns preview deployment URLs
+  // Always use the production domain
   if (process.env.NODE_ENV === 'production') {
     return 'https://itwhip.com'
   }

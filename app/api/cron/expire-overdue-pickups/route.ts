@@ -1,6 +1,6 @@
 // app/api/cron/expire-overdue-pickups/route.ts
 // Expires request claims where the booking pickup date + 12h has passed
-// Runs every 10 minutes via Vercel Cron
+// Runs every 10 minutes via EventBridge cron
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'

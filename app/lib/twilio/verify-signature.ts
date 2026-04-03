@@ -8,7 +8,7 @@ import { WEBHOOK_BASE_URL } from './client'
  * Verify Twilio webhook signature for form-encoded requests (voice + SMS)
  *
  * IMPORTANT: Use WEBHOOK_BASE_URL + path, NOT request.url
- * Vercel/CDN may rewrite the URL internally, causing signature mismatch
+ * Reverse proxy/CDN may rewrite the URL internally, causing signature mismatch
  */
 export function verifyTwilioWebhook(
   path: string,

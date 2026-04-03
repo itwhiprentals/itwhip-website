@@ -1,5 +1,5 @@
 // Enhanced IP → Location lookup with threat intelligence
-// Uses Vercel's built-in geo headers + proxycheck.io for VPN/Proxy/Tor detection
+// Uses request geo headers + proxycheck.io for VPN/Proxy/Tor detection
 
 export interface EnhancedLocationData {
   ip: string
@@ -136,12 +136,11 @@ async function checkProxyStatus(ip: string): Promise<ProxyCheckResult> {
 }
 
 /**
- * Enhanced geolocation using Vercel's built-in geo headers + proxycheck.io threat intelligence.
- * Vercel headers: free, zero-dependency, automatic on every request.
+ * Enhanced geolocation using request geo headers + proxycheck.io threat intelligence.
  * proxycheck.io: 1,000 free queries/day for VPN/Proxy/Tor detection.
  *
  * @param ip - Client IP address
- * @param headers - Request headers (optional, but needed for Vercel geo data)
+ * @param headers - Request headers (optional, for geo data)
  */
 export async function getEnhancedLocation(ip: string, headers?: Headers): Promise<EnhancedLocationData> {
   try {
@@ -150,7 +149,7 @@ export async function getEnhancedLocation(ip: string, headers?: Headers): Promis
       return { ...EMPTY_LOCATION, ip }
     }
 
-    // Get Vercel geo data from headers
+    // Get geo data from request headers
     let country: string | null = null
     let region: string | null = null
     let city: string | null = null

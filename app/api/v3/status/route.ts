@@ -110,8 +110,8 @@ export async function GET(request: Request) {
         database: 'PostgreSQL (itwhip_prod)',
         cache: cacheStats?.connected ? 'Redis (Upstash)' : 'Not configured',
         cache_size: cacheStats?.size || 0,
-        deployment: 'Vercel Edge',
-        cdn: 'Cloudflare'
+        deployment: 'AWS App Runner',
+        cdn: 'CloudFront'
       },
       last_incident: '2024-11-28T14:32:00Z',
       timestamp: new Date().toISOString(),
@@ -176,7 +176,7 @@ export async function GET(request: Request) {
       infrastructure: {
         database: 'PostgreSQL (itwhip_prod)',
         cache: 'Error connecting',
-        deployment: 'Vercel Edge'
+        deployment: 'AWS App Runner'
       },
       error: 'Cache unavailable, using fallback',
       timestamp: new Date().toISOString(),

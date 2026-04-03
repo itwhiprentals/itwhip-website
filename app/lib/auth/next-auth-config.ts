@@ -23,12 +23,14 @@ async function generateAppleClientSecret(): Promise<string> {
   const teamId = process.env.APPLE_TEAM_ID!
   const clientId = process.env.APPLE_CLIENT_ID!
   const keyId = process.env.APPLE_KEY_ID!
-  const privateKey = process.env.APPLE_PRIVATE_KEY!
+  const rawKey = process.env.APPLE_PRIVATE_KEY!
+  // Handle both formats: literal \n in env var OR real newlines from GitHub Secrets
+  const privateKey = rawKey.includes('\\n') ? rawKey.replace(/\\n/g, '\n') : rawKey
 
   const now = Math.floor(Date.now() / 1000)
   const expiry = now + 86400 * 180 // 180 days
 
-  const key = await importPKCS8(privateKey.replace(/\\n/g, '\n'), 'ES256')
+  const key = await importPKCS8(privateKey, 'ES256')
 
   const jwt = await new SignJWT({})
     .setProtectedHeader({ alg: 'ES256', kid: keyId })

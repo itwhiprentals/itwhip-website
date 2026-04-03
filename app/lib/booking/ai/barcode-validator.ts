@@ -220,7 +220,7 @@ function findWasmFile(): string {
     join(process.cwd(), 'node_modules/zxing-wasm/dist/reader/zxing_reader.wasm'),
     join(process.cwd(), '.next/server/node_modules/zxing-wasm/dist/reader/zxing_reader.wasm'),
   ]
-  // require.resolve can return a numeric module ID in bundled environments (Vercel webpack)
+  // require.resolve can return a numeric module ID in bundled environments (webpack)
   // instead of a file path — guard against that
   try {
     const resolved = require.resolve('zxing-wasm/reader')

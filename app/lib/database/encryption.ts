@@ -109,7 +109,7 @@ class KeyManager {
   
   /**
    * Schedule key rotation
-   * DISABLED: This causes infinite loop during Vercel build
+   * DISABLED: This causes infinite loop during build
    */
   private scheduleKeyRotation(): void {
     // Rotation disabled to prevent build issues
