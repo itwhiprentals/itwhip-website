@@ -193,7 +193,19 @@ export async function POST(request: NextRequest) {
     // Send verification email (unless user chose to skip)
     if (!skipVerification) {
       const emailTemplate = getEmailVerificationTemplate(name, verificationCode)
-      await sendEmail(email, emailTemplate.subject, emailTemplate.html, emailTemplate.text)
+      const emailResult = await sendEmail(email, emailTemplate.subject, emailTemplate.html, emailTemplate.text)
+      // Track in EmailLog
+      const { generateEmailReference, logEmail } = await import('@/app/lib/email/config')
+      await logEmail({
+        referenceId: generateEmailReference('VE'),
+        recipientEmail: email,
+        recipientName: name,
+        subject: emailTemplate.subject,
+        emailType: 'EMAIL_VERIFICATION',
+        relatedType: 'user',
+        relatedId: user.id,
+        messageId: emailResult?.messageId || undefined,
+      }).catch(() => {})
       console.log(`[Phone Login] Verification email sent to: ${email}`)
     } else {
       console.log(`[Phone Login] User skipped email verification: ${email}`)

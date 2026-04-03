@@ -116,12 +116,26 @@ If you didn't request this code, please ignore this email.
 - ItWhip Team
       `.trim()
 
-      await sendEmail(
+      const subject = 'Your ItWhip Verification Code'
+      const result = await sendEmail(
         user.email as string,
-        'Your ItWhip Verification Code',
+        subject,
         htmlContent,
         textContent
       )
+
+      // Track in EmailLog
+      const { generateEmailReference, logEmail } = await import('@/app/lib/email/config')
+      await logEmail({
+        referenceId: generateEmailReference('VE'),
+        recipientEmail: user.email as string,
+        recipientName: user.name || undefined,
+        subject,
+        emailType: 'EMAIL_VERIFICATION',
+        relatedType: 'user',
+        relatedId: user.id,
+        messageId: result?.messageId || undefined,
+      }).catch(() => {})
 
       console.log(`[Resend Verification] Email sent to: ${user.email}`)
     } catch (emailError) {

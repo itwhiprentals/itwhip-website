@@ -273,8 +273,19 @@ ItWhip Technologies, Inc.
         { requestId }
       )
 
-      // Log email send result
+      // Track in EmailLog
       if (emailResult.success) {
+        const { generateEmailReference, logEmail } = await import('@/app/lib/email/config')
+        await logEmail({
+          referenceId: generateEmailReference('PR'),
+          recipientEmail: user.email!,
+          recipientName: user.name || undefined,
+          subject: 'Reset Your ItWhip Password',
+          emailType: 'PASSWORD_RESET',
+          relatedType: 'user',
+          relatedId: user.id,
+          messageId: emailResult.messageId || undefined,
+        }).catch(() => {})
         console.log(`[${requestId}] Password reset email sent successfully:`, {
           to: user.email?.substring(0, 3) + '***',
           messageId: emailResult.messageId

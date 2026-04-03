@@ -14,8 +14,9 @@ export async function POST(request: NextRequest) {
       return createRateLimitResponse(rateLimit.reset, rateLimit.remaining)
     }
 
-    // Get user from auth cookie
+    // Get user from auth cookie OR Bearer token (mobile sends Bearer)
     const accessToken = request.cookies.get('guest_access_token')?.value
+      || request.headers.get('authorization')?.replace('Bearer ', '')
     if (!accessToken) {
       return NextResponse.json(
         { error: 'Not authenticated' },

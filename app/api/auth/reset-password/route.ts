@@ -187,6 +187,18 @@ ItWhip Technologies, Inc.
         `
       )
       
+      // Track in EmailLog
+      const { generateEmailReference, logEmail } = await import('@/app/lib/email/config')
+      await logEmail({
+        referenceId: generateEmailReference('PR'),
+        recipientEmail: user.email!,
+        recipientName: user.name || undefined,
+        subject: 'Your ItWhip Password Was Changed',
+        emailType: 'PASSWORD_RESET',
+        relatedType: 'user',
+        relatedId: user.id,
+      }).catch(() => {})
+
       console.log(`[Password Reset] Confirmation email sent to: ${user.email}`)
     } catch (emailError) {
       console.error('[Password Reset] Confirmation email failed:', emailError)

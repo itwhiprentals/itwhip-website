@@ -409,12 +409,26 @@ If you didn't create an account, please ignore this email.
 - ItWhip Team
       `.trim()
 
-      await sendEmail(
+      const subject = 'Verify Your ItWhip Account'
+      const emailResult = await sendEmail(
         email.toLowerCase(),
-        'Verify Your ItWhip Account',
+        subject,
         htmlContent,
         textContent
       )
+
+      // Track in EmailLog
+      const { generateEmailReference, logEmail } = await import('@/app/lib/email/config')
+      await logEmail({
+        referenceId: generateEmailReference('VE'),
+        recipientEmail: email.toLowerCase(),
+        recipientName: name || undefined,
+        subject,
+        emailType: 'EMAIL_VERIFICATION',
+        relatedType: 'user',
+        relatedId: newUser.id,
+        messageId: emailResult?.messageId || undefined,
+      }).catch(() => {})
 
       console.log(`[Signup] Verification email sent to: ${email}`)
     } catch (emailError) {

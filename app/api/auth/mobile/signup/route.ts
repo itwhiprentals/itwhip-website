@@ -157,15 +157,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Send verification email
+    // Send verification email (tracked in EmailLog)
     try {
       const { sendEmail } = await import('@/app/lib/email/sender')
-      await sendEmail(
+      const { generateEmailReference, logEmail } = await import('@/app/lib/email/config')
+      const emailRefId = generateEmailReference('VE')
+      const subject = 'Verify Your ItWhip Account'
+      const result = await sendEmail(
         email.toLowerCase(),
-        'Verify Your ItWhip Account',
+        subject,
         `<p>Your verification code is: <strong>${verificationCode}</strong></p>`,
         `Your ItWhip verification code is: ${verificationCode}. Expires in 15 minutes.`
       )
+      await logEmail({
+        referenceId: emailRefId,
+        recipientEmail: email.toLowerCase(),
+        recipientName: name,
+        subject,
+        emailType: 'EMAIL_VERIFICATION',
+        relatedType: 'user',
+        relatedId: newUser.id,
+        messageId: result?.messageId || undefined,
+      }).catch(() => {})
     } catch {
       console.error('[Mobile Signup] Verification email failed')
     }
