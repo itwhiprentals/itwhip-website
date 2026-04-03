@@ -149,13 +149,8 @@ async function buildAuthOptions(): Promise<NextAuthOptions> {
           return false
         }
 
-        // ========================================================================
-        // RULE 1: Reject Apple "Hide My Email" (private relay)
-        // ========================================================================
-        if (user.email.endsWith('@privaterelay.appleid.com')) {
-          console.warn(`[NextAuth] Rejected private relay email: ${user.email}`)
-          return '/auth/login?error=hidden-email'
-        }
+        // Apple relay emails (@privaterelay.appleid.com) are valid — Apple forwards to real inbox
+        // Blocking them violates Apple guidelines. Both mobile and web must allow them.
 
         // ========================================================================
         // SECURITY GUARD: Require verification before linking NEW provider

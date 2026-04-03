@@ -161,12 +161,26 @@ Welcome aboard!
 The ItWhip Team
       `.trim()
 
-      await sendEmail(
+      const subject = 'Welcome to ItWhip - Your Email is Verified!'
+      const emailResult = await sendEmail(
         user.email as string,
-        'Welcome to ItWhip - Your Email is Verified!',
+        subject,
         htmlContent,
         textContent
       )
+
+      // Track in EmailLog
+      const { generateEmailReference, logEmail } = await import('@/app/lib/email/config')
+      await logEmail({
+        referenceId: generateEmailReference('WE'),
+        recipientEmail: user.email as string,
+        recipientName: user.name || undefined,
+        subject,
+        emailType: 'WELCOME',
+        relatedType: 'user',
+        relatedId: user.id,
+        messageId: emailResult?.messageId || undefined,
+      }).catch(() => {})
 
       console.log(`[Verify Email] Welcome email sent to: ${user.email}`)
     } catch (emailError) {
