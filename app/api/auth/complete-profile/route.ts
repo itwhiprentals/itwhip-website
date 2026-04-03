@@ -530,6 +530,7 @@ export async function POST(request: NextRequest) {
       if (newUser.email) {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://itwhip.com'
         try {
+          const { generateEmailReference, logEmail } = await import('@/app/lib/email/config')
           if (roleHint === 'host') {
             // Send host OAuth welcome email with verification checklist
             await sendHostOAuthWelcomeEmail(newUser.email, {
@@ -542,6 +543,15 @@ export async function POST(request: NextRequest) {
               insuranceUrl: `${appUrl}/host/profile?tab=insurance`,
               dashboardUrl: `${appUrl}/host/dashboard`
             })
+            await logEmail({
+              referenceId: generateEmailReference('HW'),
+              recipientEmail: newUser.email,
+              recipientName: newUser.name || 'Host',
+              subject: 'Welcome to ItWhip — Host Account',
+              emailType: 'HOST_WELCOME',
+              relatedType: 'user',
+              relatedId: newUser.id,
+            }).catch(() => {})
             console.log(`[Complete Profile] Sent host OAuth welcome email to: ${newUser.email}`)
           } else {
             // Send guest OAuth welcome email
@@ -552,6 +562,15 @@ export async function POST(request: NextRequest) {
               insuranceUrl: `${appUrl}/profile?tab=insurance`,
               dashboardUrl: `${appUrl}/dashboard`
             })
+            await logEmail({
+              referenceId: generateEmailReference('GW'),
+              recipientEmail: newUser.email,
+              recipientName: newUser.name || 'Guest',
+              subject: 'Welcome to ItWhip',
+              emailType: 'WELCOME',
+              relatedType: 'user',
+              relatedId: newUser.id,
+            }).catch(() => {})
             console.log(`[Complete Profile] Sent guest OAuth welcome email to: ${newUser.email}`)
           }
         } catch (emailError) {
@@ -833,6 +852,16 @@ export async function POST(request: NextRequest) {
           insuranceUrl: `${appUrl}/host/profile?tab=insurance`,
           dashboardUrl: `${appUrl}/host/dashboard`
         })
+        const { generateEmailReference, logEmail } = await import('@/app/lib/email/config')
+        await logEmail({
+          referenceId: generateEmailReference('HW'),
+          recipientEmail: email || '',
+          recipientName: updatedUser.name || 'Host',
+          subject: 'Welcome to ItWhip — Host Account',
+          emailType: 'HOST_WELCOME',
+          relatedType: 'user',
+          relatedId: userId,
+        }).catch(() => {})
         console.log(`[Complete Profile] Sent host OAuth welcome email to: ${email}`)
       } catch (emailError) {
         console.error(`[Complete Profile] Failed to send welcome email:`, emailError)
@@ -988,6 +1017,16 @@ export async function POST(request: NextRequest) {
           insuranceUrl: `${appUrl}/profile?tab=insurance`,
           dashboardUrl: `${appUrl}/dashboard`
         })
+        const { generateEmailReference, logEmail } = await import('@/app/lib/email/config')
+        await logEmail({
+          referenceId: generateEmailReference('GW'),
+          recipientEmail: email || '',
+          recipientName: updatedUser.name || 'Guest',
+          subject: 'Welcome to ItWhip',
+          emailType: 'WELCOME',
+          relatedType: 'user',
+          relatedId: userId,
+        }).catch(() => {})
         console.log(`[Complete Profile] Welcome email sent to: ${email}`)
       } catch (emailError) {
         console.error(`[Complete Profile] Failed to send welcome email:`, emailError)
