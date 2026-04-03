@@ -44,9 +44,10 @@ export async function GET(request: NextRequest) {
     // ============================================================================
     
     let searchCoordinates: { latitude: number; longitude: number } | null = null
-    
-    // Try to find location in our Arizona locations data
-    const locationData = getLocationByName(location)
+
+    // When city param is provided, use it for coordinates (search bridge sends city, not location)
+    const coordinateSource = exactCity || location
+    const locationData = getLocationByName(coordinateSource)
     
     if (locationData) {
       searchCoordinates = {
@@ -54,8 +55,8 @@ export async function GET(request: NextRequest) {
         longitude: locationData.longitude
       }
     } else {
-      // Fallback: Try to match city name from location string
-      const cityName = location.split(',')[0].trim()
+      // Fallback: Try to match city name from coordinate source string
+      const cityName = coordinateSource.split(',')[0].trim()
       const matchedLocation = ALL_ARIZONA_LOCATIONS.find(
         loc => loc.city.toLowerCase() === cityName.toLowerCase()
       )
