@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
         resetToken: null,
         resetTokenExpiry: null,
         resetTokenUsed: true,
+        emailVerified: true,
         lastPasswordReset: new Date(),
         updatedAt: new Date()
       }
