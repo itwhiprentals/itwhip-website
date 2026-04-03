@@ -1132,7 +1132,9 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
 
     // FORCED SEARCH FALLBACK: If Claude has location + dates but didn't call search_vehicles,
     // auto-search so the user always sees cars when a location is set
-    if (session.location && !vehicles && !toolsUsedNames.includes('search_vehicles')) {
+    // Skip if user selected a vehicle (past search phase) or state is past COLLECTING_VEHICLE
+    const pastSearchPhase = ['CONFIRMING', 'HANDOFF_TO_PAYMENT', 'COMPLETED'].includes(session.state) || body.message?.includes('[id:')
+    if (session.location && !vehicles && !toolsUsedNames.includes('search_vehicles') && !pastSearchPhase) {
       console.log(`[ai-booking-stream] FORCED SEARCH: Claude didn't call search_vehicles but location=${session.location}`)
       try {
         const { searchVehicles } = await import('@/app/lib/ai-booking/search-bridge')

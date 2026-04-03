@@ -227,9 +227,9 @@ function normalizeSearchResults(data: RawSearchResult): VehicleSummary[] {
     const seen = new Set(cityNormalized.map(c => c.id));
     const uniqueNearby = nearbyNormalized.filter(c => { if (seen.has(c.id)) return false; seen.add(c.id); return true; });
 
-    // City cars ALWAYS first, then nearby — cap at 20 total
+    // City cars ALWAYS first, then nearby — show 5 at a time (guest can ask for more)
     const combined = [...cityNormalized, ...uniqueNearby];
-    return combined.slice(0, 20);
+    return combined.slice(0, 5);
   }
 
   // Fallback to flat results
@@ -238,7 +238,7 @@ function normalizeSearchResults(data: RawSearchResult): VehicleSummary[] {
   const unique = fallback.filter(car => { if (seen.has(car.id)) return false; seen.add(car.id); return true; });
   const normalized = unique.map(normalizeCarResult);
   normalized.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-  return normalized.slice(0, 20);
+  return normalized.slice(0, 5);
 }
 
 function normalizeCarResult(car: RawCarResult): VehicleSummary {
