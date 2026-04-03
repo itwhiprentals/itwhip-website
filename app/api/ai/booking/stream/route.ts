@@ -54,10 +54,21 @@ import { ConversationMode } from '@/app/lib/ai-booking/types'
 // BOOKING LOOKUP (for verified users asking about their bookings)
 // =============================================================================
 
+interface AccountData {
+  credits: number;
+  bonus: number;
+  depositWallet: number;
+  insuranceStatus: 'verified' | 'uploaded' | 'none';
+  coverageType: string | null;
+  identityStatus: string | null;
+  accountStatus: 'active' | 'suspended' | 'on_hold' | 'banned';
+}
+
 interface BookingLookupResult {
   contextString: string;
   bookings: BookingData[];
   stripeIdentityStatus: string | null;
+  accountData: AccountData | null;
 }
 
 /** Build account status, balances, and insurance context from guest profile */
@@ -173,6 +184,17 @@ async function fetchBookingContextByEmail(email: string): Promise<BookingLookupR
 
     const identityStatus = (guestProfile?.stripeIdentityStatus as string) || null
 
+    // Build structured account data for client-side cards
+    const accountData: AccountData | null = guestProfile ? {
+      credits: Number(guestProfile.creditBalance) || 0,
+      bonus: Number(guestProfile.bonusBalance) || 0,
+      depositWallet: Number(guestProfile.depositWalletBalance) || 0,
+      insuranceStatus: guestProfile.insuranceVerifiedBy ? 'verified' : guestProfile.insuranceCardFrontUrl ? 'uploaded' : 'none',
+      coverageType: guestProfile.coverageType || null,
+      identityStatus,
+      accountStatus: guestProfile.bannedBy ? 'banned' : guestProfile.suspendedBy ? 'suspended' : guestProfile.accountOnHold ? 'on_hold' : 'active',
+    } : null
+
     if (bookings.length === 0) {
       let noBookingContext = 'BOOKING LOOKUP: No active bookings found for this email.'
       if (guestProfile) {
@@ -182,6 +204,7 @@ async function fetchBookingContextByEmail(email: string): Promise<BookingLookupR
         contextString: noBookingContext,
         bookings: [],
         stripeIdentityStatus: identityStatus,
+        accountData,
       }
     }
 
@@ -250,6 +273,7 @@ async function fetchBookingContextByEmail(email: string): Promise<BookingLookupR
       contextString: `BOOKING LOOKUP (verified email: ${email}):\n${lines.join('\n')}${identityContext}\nUse the ACTIVE BOOKING SUPPORT rules to handle questions about these bookings.`,
       bookings: structuredBookings,
       stripeIdentityStatus: identityStatus,
+      accountData,
     }
   } catch (error) {
     console.error('[ai-booking-stream] Booking lookup failed:', error)
@@ -257,6 +281,7 @@ async function fetchBookingContextByEmail(email: string): Promise<BookingLookupR
       contextString: 'BOOKING LOOKUP: Unable to retrieve bookings at this time.',
       bookings: [],
       stripeIdentityStatus: null,
+      accountData: null,
     }
   }
 }
@@ -766,7 +791,7 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
         // Auto-lookup: don't add a visible user message — just inject context for Claude
         // Use a system-level instruction as the user message so Claude knows what to do
         userMessage = 'Email verification complete. Look up my bookings and tell me what you see.'
-        bookingContext = `IMPORTANT: The user just completed email OTP verification. Their booking data is below. Help them directly — do NOT ask to verify again or return NEEDS_EMAIL_OTP.\nYou MUST respond in JSON format with cards: ["BOOKING_STATUS"]. Keep your reply to a brief summary — the BookingStatusCard displays all booking details.\n\n${bookingContext}`
+        bookingContext = `IMPORTANT: The user just completed email OTP verification. Their booking data is below. Help them directly — do NOT ask to verify again or return NEEDS_EMAIL_OTP.\nYou MUST respond in JSON format with cards: ["BOOKING_STATUS"]. Keep your reply to 1-2 sentences MAX. Do NOT list bookings, balances, insurance status, or identity details in text — the BookingStatusCard and AccountCard display all of this visually. Just greet and offer to help.\n\n${bookingContext}`
         console.log(`[ai-booking-stream] Auto-lookup after verification: ${verifiedEmail}`)
       }
     }
@@ -1290,6 +1315,7 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       tokensUsed: totalTokensUsed,
       cards: finalCards,
       bookings: bookingLookup?.bookings ?? null,
+      accountData: bookingLookup?.accountData ?? null,
       reviews: reviewCardData,
       mode: session.mode,
     })
