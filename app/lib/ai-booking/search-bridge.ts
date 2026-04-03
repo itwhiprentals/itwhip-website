@@ -216,20 +216,23 @@ function normalizeSearchResults(data: RawSearchResult): VehicleSummary[] {
   const nearby = (data.nearbyCars || []);
 
   if (cityCars.length > 0 || nearby.length > 0) {
-    // Normalize and sort each group separately by rating
     const cityNormalized = cityCars.map(normalizeCarResult);
     cityNormalized.sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
     const nearbyNormalized = nearby.map(normalizeCarResult);
     nearbyNormalized.sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
-    // Deduplicate: city cars first, then nearby (skip any nearby that's already in city)
+    // Deduplicate
     const seen = new Set(cityNormalized.map(c => c.id));
     const uniqueNearby = nearbyNormalized.filter(c => { if (seen.has(c.id)) return false; seen.add(c.id); return true; });
 
-    // City cars ALWAYS first, then nearby — show 5 at a time (guest can ask for more)
-    const combined = [...cityNormalized, ...uniqueNearby];
-    return combined.slice(0, 5);
+    // Show city cars first (up to 5). If city has 0, show nearby instead.
+    if (cityNormalized.length > 0) {
+      // Tag nearby cars so UI can section them separately
+      uniqueNearby.forEach(v => { (v as any)._nearby = true });
+      return [...cityNormalized.slice(0, 5), ...uniqueNearby.slice(0, 3)];
+    }
+    return uniqueNearby.slice(0, 5);
   }
 
   // Fallback to flat results
