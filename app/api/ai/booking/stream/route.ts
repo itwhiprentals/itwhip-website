@@ -1154,14 +1154,22 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
       }
     }
 
+    // Stream the parsed reply text to frontend immediately (before DB work)
+    // This ensures the user sees text even if post-processing fails
+    if (parsed.reply) {
+      await sse.sendEvent('text', { text: parsed.reply })
+    }
+
     // Add only the reply text to session (not raw JSON)
     session = addMessage(session, 'assistant', parsed.reply)
+    console.log(`[ai-booking-stream] Session state: ${session.state}, vehicles: ${vehicles?.length || 0}`)
 
     // Persist assistant message to DB
     if (conversationId) {
       const vehiclesReturnedCount = vehicles?.length || 0
       await saveMessage(conversationId, 'assistant', parsed.reply, totalTokensUsed, undefined, toolsUsedNames, vehiclesReturnedCount)
     }
+    console.log(`[ai-booking-stream] Message saved, building summary...`)
 
     // Build booking summary if confirming or ready for payment
     const pricingConfig = await getPricingConfig()
@@ -1272,6 +1280,7 @@ async function processStreamingRequest(request: NextRequest, sse: SSEWriter) {
     }
 
     // Send final response
+    console.log(`[ai-booking-stream] Sending done event: text=${parsed.reply.length}chars, vehicles=${vehicles?.length || 0}, action=${action}, cards=${JSON.stringify(finalCards)}`)
     await sse.sendEvent('done', {
       session,
       vehicles,
