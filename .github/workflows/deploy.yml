@@ -107,15 +107,23 @@ jobs:
           NEXT_PUBLIC_SITE_URL=https://itwhip.com
           ENVFILE
           sed -i 's/^[[:space:]]*//' .env.production
-          # Fix multi-line PEM keys: remove the broken lines and re-add as single-line with \n
-          # APPLE_PRIVATE_KEY
-          APPLE_KEY=$(echo "${{ secrets.APPLE_PRIVATE_KEY }}" | tr '\n' '~' | sed 's/~$//' | sed 's/~/\\n/g')
+
+      - name: Fix multi-line PEM keys in .env.production
+        env:
+          APPLE_PK: ${{ secrets.APPLE_PRIVATE_KEY }}
+          FIREBASE_PK: ${{ secrets.FIREBASE_ADMIN_PRIVATE_KEY }}
+        run: |
+          # Remove broken multi-line entries from heredoc
           sed -i '/^APPLE_PRIVATE_KEY/d' .env.production
-          echo "APPLE_PRIVATE_KEY=${APPLE_KEY}" >> .env.production
-          # FIREBASE_ADMIN_PRIVATE_KEY
-          FIREBASE_KEY=$(echo "${{ secrets.FIREBASE_ADMIN_PRIVATE_KEY }}" | tr '\n' '~' | sed 's/~$//' | sed 's/~/\\n/g')
           sed -i '/^FIREBASE_ADMIN_PRIVATE_KEY/d' .env.production
-          echo "FIREBASE_ADMIN_PRIVATE_KEY=${FIREBASE_KEY}" >> .env.production
+          # Remove stray PEM lines (BEGIN/END PRIVATE KEY, base64 fragments)
+          sed -i '/^-----/d' .env.production
+          sed -i '/^[A-Za-z0-9+/=]\{20,\}$/d' .env.production
+          # Re-add as single-line with literal \n
+          APPLE_SINGLE=$(printf '%s' "$APPLE_PK" | tr '\n' '~' | sed 's/~$//' | sed 's/~/\\n/g')
+          echo "APPLE_PRIVATE_KEY=${APPLE_SINGLE}" >> .env.production
+          FIREBASE_SINGLE=$(printf '%s' "$FIREBASE_PK" | tr '\n' '~' | sed 's/~$//' | sed 's/~/\\n/g')
+          echo "FIREBASE_ADMIN_PRIVATE_KEY=${FIREBASE_SINGLE}" >> .env.production
 
       - name: Build, tag, and push image to ECR
         env:
