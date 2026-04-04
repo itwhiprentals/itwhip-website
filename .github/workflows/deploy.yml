@@ -74,10 +74,10 @@ jobs:
           APPLE_CLIENT_ID=${{ secrets.APPLE_CLIENT_ID }}
           APPLE_KEY_ID=${{ secrets.APPLE_KEY_ID }}
           APPLE_TEAM_ID=${{ secrets.APPLE_TEAM_ID }}
-          APPLE_PRIVATE_KEY="${{ secrets.APPLE_PRIVATE_KEY }}"
+          APPLE_PRIVATE_KEY=${{ secrets.APPLE_PRIVATE_KEY }}
           FIREBASE_ADMIN_PROJECT_ID=${{ secrets.FIREBASE_ADMIN_PROJECT_ID }}
           FIREBASE_ADMIN_CLIENT_EMAIL=${{ secrets.FIREBASE_ADMIN_CLIENT_EMAIL }}
-          FIREBASE_ADMIN_PRIVATE_KEY="${{ secrets.FIREBASE_ADMIN_PRIVATE_KEY }}"
+          FIREBASE_ADMIN_PRIVATE_KEY=${{ secrets.FIREBASE_ADMIN_PRIVATE_KEY }}
           TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}
           TWILIO_API_KEY_SID=${{ secrets.TWILIO_API_KEY_SID }}
@@ -107,6 +107,15 @@ jobs:
           NEXT_PUBLIC_SITE_URL=https://itwhip.com
           ENVFILE
           sed -i 's/^[[:space:]]*//' .env.production
+          # Fix multi-line PEM keys: remove the broken lines and re-add as single-line with \n
+          # APPLE_PRIVATE_KEY
+          APPLE_KEY=$(echo "${{ secrets.APPLE_PRIVATE_KEY }}" | tr '\n' '~' | sed 's/~$//' | sed 's/~/\\n/g')
+          sed -i '/^APPLE_PRIVATE_KEY/d' .env.production
+          echo "APPLE_PRIVATE_KEY=${APPLE_KEY}" >> .env.production
+          # FIREBASE_ADMIN_PRIVATE_KEY
+          FIREBASE_KEY=$(echo "${{ secrets.FIREBASE_ADMIN_PRIVATE_KEY }}" | tr '\n' '~' | sed 's/~$//' | sed 's/~/\\n/g')
+          sed -i '/^FIREBASE_ADMIN_PRIVATE_KEY/d' .env.production
+          echo "FIREBASE_ADMIN_PRIVATE_KEY=${FIREBASE_KEY}" >> .env.production
 
       - name: Build, tag, and push image to ECR
         env:
