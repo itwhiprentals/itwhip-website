@@ -824,41 +824,6 @@ export default function ListYourCarPage() {
           </div>
         </section>
 
-        {/* Tax Benefits */}
-        <section className="py-12 sm:py-16 bg-green-50 dark:bg-green-900/10">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8">
-              <div className="text-center mb-6">
-                <IoReceiptOutline className="w-12 h-12 text-green-600 mx-auto mb-3" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  {t('taxTitle')}
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {t('taxSubtitle')}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-2xl font-bold text-green-600">{t('taxBenefit1Title')}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">{t('taxBenefit1Desc')}</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-green-600">{t('taxBenefit2Title')}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">{t('taxBenefit2Desc')}</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-green-600">{t('taxBenefit3Title')}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">{t('taxBenefit3Desc')}</div>
-                </div>
-              </div>
-
-              <p className="text-xs text-gray-500 text-center mt-4">
-                {t('taxNote')}
-              </p>
-            </div>
-          </div>
-        </section>
 
         {/* Final CTA */}
         <section className="py-12 sm:py-16 bg-gradient-to-r from-purple-600 to-purple-700">
