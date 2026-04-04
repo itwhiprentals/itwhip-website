@@ -165,6 +165,8 @@ async function getHostBadges(hostId: string, userId: string) {
       phone: !!host?.phone,
       stripeConnected: !!host?.stripeAccountId,
       stripePayoutsEnabled: !!host?.stripePayoutsEnabled,
+      insurance: !insuranceDot,
+      hasVehicles: (await prisma.rentalCar.count({ where: { hostId } })) > 0,
     },
   }
 }
