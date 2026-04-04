@@ -3,6 +3,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { hash } from 'argon2'
+import { SignJWT } from 'jose'
+
+const GUEST_JWT_SECRET = new TextEncoder().encode(process.env.GUEST_JWT_SECRET || process.env.JWT_SECRET || 'dev-secret')
+const GUEST_JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.GUEST_JWT_REFRESH_SECRET || process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret')
 import { getVehicleSpecData } from '@/app/lib/utils/vehicleSpec'
 import { resolveIdentity, linkAllIdentifiers } from '@/app/lib/services/identityResolution'
 import { sanitizeValue } from '@/app/middleware/validation'
@@ -18,7 +22,7 @@ const hostSignupRateLimit = new Ratelimit({
     url: process.env.UPSTASH_REDIS_REST_URL!,
     token: process.env.UPSTASH_REDIS_REST_TOKEN!,
   }),
-  limiter: Ratelimit.slidingWindow(5, '1 h'), // 5 signups per hour per IP
+  limiter: Ratelimit.slidingWindow(50, '1 h'), // 50 signups per hour per IP (raised for testing)
   analytics: true,
   prefix: 'ratelimit:host-signup',
 })
@@ -91,13 +95,15 @@ export async function POST(request: NextRequest) {
 
     const rawBody = await request.json()
 
-    // Verify reCAPTCHA token (soft-fails if not configured)
-    const captcha = await verifyRecaptchaToken(rawBody.recaptchaToken)
-    if (!captcha.success) {
-      return NextResponse.json(
-        { error: captcha.error || 'reCAPTCHA verification failed' },
-        { status: 403 }
-      )
+    // Verify reCAPTCHA token (web only — mobile doesn't send it)
+    if (rawBody.recaptchaToken) {
+      const captcha = await verifyRecaptchaToken(rawBody.recaptchaToken)
+      if (!captcha.success) {
+        return NextResponse.json(
+          { error: captcha.error || 'reCAPTCHA verification failed' },
+          { status: 403 }
+        )
+      }
     }
 
     // Sanitize user-provided string fields to prevent stored XSS
@@ -158,25 +164,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Non-OAuth users require password and phone
-    if (!isOAuthUser && (!password || !phone)) {
+    // Non-OAuth users require password (phone collected after email verification)
+    if (!isOAuthUser && !password) {
       return NextResponse.json(
-        { error: 'Missing required fields: password and phone are required' },
+        { error: 'Missing required field: password is required' },
         { status: 400 }
       )
     }
 
-    // Validation - location fields only required for hosts with vehicles (not manage-only)
-    if (!isManageOnly && (!city || !state || !zipCode)) {
+    // Location only required when adding a vehicle at signup
+    if (hasVehicle && (!city || !state || !zipCode)) {
       return NextResponse.json(
-        { error: 'Missing required fields: city, state, and zip code are required' },
-        { status: 400 }
-      )
-    }
-
-    if (!agreeToTerms) {
-      return NextResponse.json(
-        { error: 'You must agree to the Terms of Service' },
+        { error: 'City, state, and zip code are required for vehicle listings' },
         { status: 400 }
       )
     }
@@ -316,8 +315,10 @@ export async function POST(request: NextRequest) {
     const passwordHash = !isOAuthUser && password ? await hash(password) : null
 
     // Create the host with PENDING status
+    const { nanoid } = await import('nanoid')
     const newHost = await prisma.rentalHost.create({
       data: {
+        id: nanoid(),
         name,
         email,
         phone: phone || '',
@@ -353,6 +354,7 @@ export async function POST(request: NextRequest) {
         active: false,
         // OAuth users have verified email already
         isVerified: isOAuthUser ? true : false,
+        updatedAt: new Date(),
 
         // Link to existing user (OAuth) or create new user
         ...(isOAuthUser && existingUser ? {
@@ -362,13 +364,15 @@ export async function POST(request: NextRequest) {
         } : {
           user: {
             create: {
+              id: nanoid(),
               email,
               name,
               phone: phone || null,
               passwordHash: passwordHash || '',
               role: 'CLAIMED',
               emailVerified: false,
-              isActive: true
+              isActive: true,
+              updatedAt: new Date(),
             }
           }
         })
@@ -555,9 +559,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create admin notification for new host application
-    await (prisma.adminNotification.create as any)({
+    // Create admin notification for new host application (non-blocking)
+    ;(prisma.adminNotification.create as any)({
       data: {
+        id: nanoid(),
+        updatedAt: new Date(),
         type: 'HOST_APPLICATION',
         title: 'New Host Application',
         message: `${name} has submitted a host application${createdCarId ? ' with a vehicle' : ''}`,
@@ -579,11 +585,12 @@ export async function POST(request: NextRequest) {
           carId: createdCarId
         }
       }
-    })
+    }).catch(() => {})
 
-    // Create audit log for tracking
-    await (prisma.auditLog.create as any)({
+    // Create audit log for tracking (non-blocking)
+    ;(prisma.auditLog.create as any)({
       data: {
+        id: nanoid(),
         category: 'HOST_MANAGEMENT',
         eventType: 'host_application_submitted',
         severity: 'INFO',
@@ -607,7 +614,43 @@ export async function POST(request: NextRequest) {
         hash: '',
         verified: false
       }
-    })
+    }).catch(() => {})
+
+    // Generate and send email verification code
+    if (newHost.user?.id) {
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
+      await prisma.user.update({
+        where: { id: newHost.user.id },
+        data: {
+          emailVerificationCode: verificationCode,
+          emailVerificationExpiry: new Date(Date.now() + 15 * 60 * 1000),
+        },
+      })
+      // Send verification email (non-blocking)
+      import('@/app/lib/email/sender').then(({ sendEmail }) => {
+        import('@/app/lib/email/config').then(({ generateEmailReference, logEmail }) => {
+          const subject = 'Verify Your ItWhip Account'
+          sendEmail(
+            email.toLowerCase(),
+            subject,
+            `<p>Your verification code is: <strong>${verificationCode}</strong></p><p>This code expires in 15 minutes.</p>`,
+            `Your ItWhip verification code is: ${verificationCode}. Expires in 15 minutes.`
+          ).then((result) => {
+            logEmail({
+              referenceId: generateEmailReference('VE'),
+              recipientEmail: email.toLowerCase(),
+              recipientName: name,
+              subject,
+              emailType: 'EMAIL_VERIFICATION',
+              relatedType: 'user',
+              relatedId: newHost.user!.id,
+              messageId: result?.messageId || undefined,
+            }).catch(() => {})
+          }).catch(() => {})
+        })
+      })
+      console.log(`[Host Signup] Verification code sent to: ${email}`)
+    }
 
     // Link identifiers to the user for identity resolution
     if (newHost.user?.id) {
@@ -624,10 +667,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Generate tokens for mobile auto-login flow
+    const userId = newHost.user?.id || newHost.userId
+    let accessToken: string | undefined
+    let refreshToken: string | undefined
+    if (userId) {
+      accessToken = await new SignJWT({ userId, email, role: 'CLAIMED', name, userType: 'guest', type: 'access' })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setJti(nanoid())
+        .setIssuedAt()
+        .setExpirationTime('15m')
+        .setIssuer('itwhip')
+        .setAudience('itwhip-guest')
+        .sign(GUEST_JWT_SECRET)
+      refreshToken = await new SignJWT({ userId, email, role: 'CLAIMED', userType: 'guest', type: 'refresh', family: nanoid() })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setJti(nanoid())
+        .setIssuedAt()
+        .setExpirationTime('7d')
+        .setIssuer('itwhip')
+        .sign(GUEST_JWT_REFRESH_SECRET)
+    }
+
     // Return success response
     return NextResponse.json({
       success: true,
       message: 'Application submitted successfully',
+      accessToken,
+      refreshToken,
+      requiresVerification: true,
       data: {
         hostId: newHost.id,
         email: newHost.email,

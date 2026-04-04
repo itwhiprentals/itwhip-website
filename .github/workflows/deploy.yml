@@ -119,10 +119,10 @@ jobs:
           # Remove stray PEM lines (BEGIN/END PRIVATE KEY, base64 fragments)
           sed -i '/^-----/d' .env.production
           sed -i '/^[A-Za-z0-9+/=]\{20,\}$/d' .env.production
-          # Re-add as single-line with literal \n
-          APPLE_SINGLE=$(printf '%s' "$APPLE_PK" | tr '\n' '~' | sed 's/~$//' | sed 's/~/\\n/g')
+          # Re-add as single-line with literal \n using awk (not sed — sed converts \\n to real newlines)
+          APPLE_SINGLE=$(printf '%s' "$APPLE_PK" | awk '{printf "%s", (NR>1 ? "\\n" : "") $0}')
           echo "APPLE_PRIVATE_KEY=${APPLE_SINGLE}" >> .env.production
-          FIREBASE_SINGLE=$(printf '%s' "$FIREBASE_PK" | tr '\n' '~' | sed 's/~$//' | sed 's/~/\\n/g')
+          FIREBASE_SINGLE=$(printf '%s' "$FIREBASE_PK" | awk '{printf "%s", (NR>1 ? "\\n" : "") $0}')
           echo "FIREBASE_ADMIN_PRIVATE_KEY=${FIREBASE_SINGLE}" >> .env.production
 
       - name: Build, tag, and push image to ECR
