@@ -208,16 +208,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Upload without saving to database (for wizard flow before vehicle is created)
-    const uploadPromises = files.map((file, index) =>
-      uploadToCloudinary(file, folder, partner.id, index, vehicleName || undefined)
-    )
+    const uploadPromises = files.map(async (file, index) => {
+      const buffer = Buffer.from(await file.arrayBuffer())
+      const key = generateKey(`vehicles/${partner.id}`, `${Date.now()}-${index}`)
+      const url = await uploadPublicImage(key, buffer, file.type)
+      return { url, isHero: false }
+    })
 
-    const uploadResults = await Promise.all(uploadPromises)
-
-    const urls = uploadResults.map(result => ({
-      url: result.secure_url,
-      isHero: false
-    }))
+    const urls = await Promise.all(uploadPromises)
 
     console.log('✅ Partner uploaded', files.length, 'photos (not yet attached to vehicle)')
 
