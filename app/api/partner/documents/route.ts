@@ -130,6 +130,24 @@ export async function POST(request: NextRequest) {
 
     const url = await getPrivateDocumentUrl(key)
 
+    // Log activity for fleet admin visibility
+    try {
+      await prisma.activityLog.create({
+        data: {
+          id: crypto.randomUUID(),
+          action: 'VEHICLE_DOCUMENT_UPLOADED',
+          entityType: 'RentalCar',
+          entityId: carId,
+          hostId: host.id,
+          metadata: {
+            documentType: docType,
+            fileName: file.name,
+            uploadedBy: 'host',
+          },
+        } as any,
+      })
+    } catch {}
+
     return NextResponse.json({
       success: true,
       document: {

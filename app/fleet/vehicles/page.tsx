@@ -179,7 +179,22 @@ export default function FleetVehiclesPage() {
       case 'SAFETY_HOLD':
         return 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/30'
       default:
-        return 'text-gray-700 bg-gray-100'
+        return 'text-gray-700 bg-gray-100 dark:text-gray-400 dark:bg-gray-800'
+    }
+  }
+
+  const getApprovalBadge = (status: string | null) => {
+    switch (status) {
+      case 'PENDING':
+        return { label: 'Pending Review', style: 'text-yellow-700 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30' }
+      case 'CHANGES_REQUESTED':
+        return { label: 'Updates Needed', style: 'text-orange-700 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30' }
+      case 'REJECTED':
+        return { label: 'Rejected', style: 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/30' }
+      case 'APPROVED':
+        return null // Don't show badge for approved
+      default:
+        return null
     }
   }
 
@@ -380,6 +395,14 @@ export default function FleetVehiclesPage() {
                         >
                           {vehicle.status.replace('_', ' ')}
                         </span>
+                        {(() => {
+                          const badge = getApprovalBadge(vehicle.fleetApprovalStatus)
+                          return badge ? (
+                            <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${badge.style}`}>
+                              {badge.label}
+                            </span>
+                          ) : null
+                        })()}
                         {vehicle.issues.map((issue) => (
                           <span
                             key={issue}
@@ -439,22 +462,28 @@ export default function FleetVehiclesPage() {
                   {/* Actions */}
                   <div className="flex-shrink-0 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                     {/* Toggle Active Switch */}
-                    <button
-                      onClick={(e) => handleToggleActive(vehicle, e)}
-                      disabled={toggling === vehicle.id}
-                      className={`relative w-10 h-5 rounded-full transition-colors ${
-                        vehicle.isActive
-                          ? 'bg-green-500'
-                          : 'bg-gray-300 dark:bg-gray-600'
-                      } ${toggling === vehicle.id ? 'opacity-50' : ''}`}
-                      title={vehicle.isActive ? 'Deactivate listing' : 'Activate listing'}
-                    >
-                      <span
-                        className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
-                          vehicle.isActive ? 'translate-x-5' : 'translate-x-0.5'
-                        }`}
-                      />
-                    </button>
+                    {vehicle.fleetApprovalStatus === 'APPROVED' || !vehicle.fleetApprovalStatus ? (
+                      <button
+                        onClick={(e) => handleToggleActive(vehicle, e)}
+                        disabled={toggling === vehicle.id}
+                        className={`relative w-11 h-6 rounded-full transition-colors shadow-inner ${
+                          vehicle.isActive
+                            ? 'bg-green-500'
+                            : 'bg-gray-300 dark:bg-gray-600'
+                        } ${toggling === vehicle.id ? 'opacity-50' : ''}`}
+                        title={vehicle.isActive ? 'Deactivate listing' : 'Activate listing'}
+                      >
+                        <span
+                          className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform ${
+                            vehicle.isActive ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    ) : (
+                      <span className="text-xs text-gray-400 dark:text-gray-500 italic">
+                        {vehicle.fleetApprovalStatus === 'PENDING' ? 'Reviewing' : vehicle.fleetApprovalStatus === 'CHANGES_REQUESTED' ? 'Awaiting host' : 'Rejected'}
+                      </span>
+                    )}
 
                     {/* View Details Button (desktop) */}
                     <button

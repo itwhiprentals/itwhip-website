@@ -423,11 +423,27 @@ export async function PUT(
       data: updateData
     })
 
-    console.log(`[Partner Fleet] Vehicle updated:`, {
-      partnerId: partner.id,
-      vehicleId: id,
-      updatedFields: Object.keys(updateData)
-    })
+    const updatedFields = Object.keys(updateData)
+    console.log(`[Partner Fleet] Vehicle updated:`, { partnerId: partner.id, vehicleId: id, updatedFields })
+
+    // Log activity for fleet admin visibility
+    try {
+      await prisma.activityLog.create({
+        data: {
+          id: crypto.randomUUID(),
+          action: 'VEHICLE_FIELD_UPDATED',
+          entityType: 'RentalCar',
+          entityId: id,
+          hostId: partner.id,
+          metadata: {
+            updatedFields,
+            updatedBy: 'host',
+            hostEmail: partner.email,
+          },
+        } as any,
+      })
+    } catch {}
+
 
     return NextResponse.json({
       success: true,

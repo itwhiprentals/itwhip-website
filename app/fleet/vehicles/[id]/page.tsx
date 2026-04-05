@@ -1275,6 +1275,8 @@ function ApprovalTimeline({ timeline }: { timeline: VehicleDetail['approvalTimel
     VEHICLE_BULK_ACTION: 'Bulk Action',
     HOST_NOTIFIED_VEHICLE_ISSUES: 'Host Notified (Issues)',
     HOST_NOTIFIED_CUSTOM: 'Host Notified (Custom)',
+    VEHICLE_FIELD_UPDATED: 'Host Updated Vehicle',
+    VEHICLE_DOCUMENT_UPLOADED: 'Host Uploaded Document',
   }
 
   const actionColors: Record<string, string> = {
@@ -1286,6 +1288,8 @@ function ApprovalTimeline({ timeline }: { timeline: VehicleDetail['approvalTimel
     request_changes: 'bg-orange-500',
     HOST_NOTIFIED_VEHICLE_ISSUES: 'bg-blue-500',
     HOST_NOTIFIED_CUSTOM: 'bg-purple-500',
+    VEHICLE_FIELD_UPDATED: 'bg-teal-500',
+    VEHICLE_DOCUMENT_UPLOADED: 'bg-indigo-500',
   }
 
   return (
@@ -1295,9 +1299,20 @@ function ApprovalTimeline({ timeline }: { timeline: VehicleDetail['approvalTimel
         {timeline.map((entry, i) => {
           const meta = entry.metadata || {}
           const action = meta.action || entry.action
-          const dotColor = actionColors[action] || 'bg-gray-400'
-          const label = meta.logMessage || meta.message || actionLabels[entry.action] || entry.action
-          const notes = meta.notes || meta.reason || ''
+          const dotColor = actionColors[action] || actionColors[entry.action] || 'bg-gray-400'
+
+          let label = meta.logMessage || meta.message || actionLabels[entry.action] || entry.action
+          let notes = meta.notes || meta.reason || ''
+
+          // Friendly labels for host actions
+          if (entry.action === 'VEHICLE_FIELD_UPDATED' && meta.updatedFields) {
+            const fields = (meta.updatedFields as string[]).join(', ')
+            label = `Host updated: ${fields}`
+          }
+          if (entry.action === 'VEHICLE_DOCUMENT_UPLOADED' && meta.documentType) {
+            const docLabels: Record<string, string> = { INSPECTION_FRONT: 'Inspection (Front)', INSPECTION_BACK: 'Inspection (Back)', TITLE: 'Title Document' }
+            label = `Host uploaded: ${docLabels[meta.documentType] || meta.documentType}`
+          }
           const isLast = i === timeline.length - 1
 
           return (

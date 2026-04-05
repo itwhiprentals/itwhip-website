@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { sendPushNotification } from '@/app/lib/notifications/push'
 
 export async function POST(
   request: NextRequest,
@@ -87,11 +88,11 @@ export async function POST(
       }
     })
 
-    // Activate all their cars if they have any
+    // Activate all their approved cars
     if (host.cars.length > 0) {
       await prisma.rentalCar.updateMany({
-        where: { hostId: id },
-        data: { isActive: true }
+        where: { hostId: id, fleetApprovalStatus: { in: ['APPROVED', null] } },
+        data: { isActive: true, isListed: true }
       })
     }
 
@@ -142,16 +143,16 @@ export async function POST(
       } as any
     })
 
-    // Send approval email (placeholder - implement your email service)
-    // await sendEmail({
-    //   to: host.email,
-    //   subject: 'Welcome to ItWhip - You\'re Approved!',
-    //   template: 'host-approved',
-    //   data: {
-    //     name: host.name,
-    //     dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/host/dashboard`
-    //   }
-    // })
+    // Send push notification to host
+    if (host.userId) {
+      sendPushNotification({
+        userId: host.userId,
+        title: 'You\'re approved! 🎉',
+        body: 'Welcome to ItWhip! Your host account is now active. Start earning today.',
+        type: 'fleet_vehicle_update',
+        data: { screen: 'home' },
+      }).catch(err => console.error('[Host Approve] Push error:', err))
+    }
 
     return NextResponse.json({
       success: true,
@@ -280,16 +281,16 @@ export async function DELETE(
       } as any
     })
 
-    // Send rejection email (placeholder - implement your email service)
-    // await sendEmail({
-    //   to: host.email,
-    //   subject: 'ItWhip Host Application Update',
-    //   template: 'host-rejected',
-    //   data: {
-    //     name: host.name,
-    //     reason
-    //   }
-    // })
+    // Send push notification to host
+    if (host.userId) {
+      sendPushNotification({
+        userId: host.userId,
+        title: 'Host application update',
+        body: 'Your host application was not approved. Contact support for details.',
+        type: 'fleet_vehicle_update',
+        data: { screen: 'account' },
+      }).catch(err => console.error('[Host Reject] Push error:', err))
+    }
 
     return NextResponse.json({
       success: true,

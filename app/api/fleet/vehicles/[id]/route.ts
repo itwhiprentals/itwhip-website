@@ -134,7 +134,7 @@ export async function GET(
       where: {
         entityId: id,
         entityType: 'RentalCar',
-        action: { in: ['VEHICLE_STATUS_CHANGE', 'VEHICLE_BULK_ACTION', 'HOST_NOTIFIED_VEHICLE_ISSUES', 'HOST_NOTIFIED_CUSTOM'] },
+        action: { in: ['VEHICLE_STATUS_CHANGE', 'VEHICLE_BULK_ACTION', 'HOST_NOTIFIED_VEHICLE_ISSUES', 'HOST_NOTIFIED_CUSTOM', 'VEHICLE_FIELD_UPDATED', 'VEHICLE_DOCUMENT_UPLOADED'] },
       },
       orderBy: { createdAt: 'desc' },
       take: 20,
