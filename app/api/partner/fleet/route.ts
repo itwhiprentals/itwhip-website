@@ -120,6 +120,8 @@ export async function GET(request: NextRequest) {
         status,
         isActive: vehicle.isActive,
         isListed: vehicle.isListed,
+        fleetApprovalStatus: vehicle.fleetApprovalStatus || null,
+        fleetApprovalNotes: vehicle.fleetApprovalNotes || null,
         vehicleType: vehicle.vehicleType || 'RENTAL',
         minTripDuration: vehicle.minTripDuration || 1,
         photo: vehicle.photos?.[0]?.url || null,

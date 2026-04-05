@@ -7,6 +7,7 @@ import { sendEmail } from '@/app/lib/email/sender'
 import { logEmail, generateEmailReference, emailConfig } from '@/app/lib/email/config'
 import { sendSms } from '@/app/lib/twilio/sms'
 import { vehicleIssuesHost } from '@/app/lib/twilio/sms-templates'
+import { sendPushNotification } from '@/app/lib/notifications/push'
 
 const FLEET_KEY = 'phoenix-fleet-2847'
 
@@ -44,6 +45,7 @@ export async function POST(
         host: {
           select: {
             id: true,
+            userId: true,
             name: true,
             email: true,
             phone: true,
@@ -126,16 +128,20 @@ export async function POST(
     let text: string
     let logAction: string
 
-    // Common issue labels for custom mode dropdown
+    // Common issue labels for custom mode dropdown — must match COMMON_ISSUES in fleet UI
     const issueLabels: Record<string, string> = {
       no_plate: 'License plate missing',
+      missing_vin: 'VIN number missing',
       adjust_price: 'Daily rate needs adjustment',
-      update_photos: 'Photos need updating',
-      insurance_docs: 'Insurance documents needed',
-      stripe_setup: 'Stripe payouts not set up',
+      update_photos: 'Photos need updating (minimum 3)',
       no_description: 'Vehicle description missing',
       incomplete_location: 'Pickup location incomplete',
-      missing_vin: 'VIN number missing',
+      missing_color: 'Vehicle color not set',
+      missing_transmission: 'Transmission type not set',
+      inspection_docs: 'Inspection papers needed (front & back)',
+      title_docs: 'Title document needed',
+      insurance_docs: 'Insurance documents needed',
+      stripe_setup: 'Stripe payouts not set up',
     }
 
     // Generate the public listing URL for the car
@@ -147,7 +153,10 @@ export async function POST(
     if (messageType === 'custom') {
       // ── Custom message mode ──
       logAction = 'HOST_NOTIFIED_CUSTOM'
-      subject = `Update on your ${carName} listing`
+      const issueCount = (selectedIssues || []).length
+      subject = issueCount > 0
+        ? `Action needed: ${carName} — ${issueCount} item${issueCount !== 1 ? 's' : ''} to update`
+        : `Update on your ${carName} listing`
 
       const selectedIssueLabels = (selectedIssues || [])
         .map((key: string) => issueLabels[key])
@@ -389,10 +398,46 @@ export async function POST(
       console.log('[notify-host] No phone on file for host — skipping SMS')
     }
 
+    // Set vehicle status to CHANGES_REQUESTED
+    try {
+      await prisma.rentalCar.update({
+        where: { id },
+        data: {
+          fleetApprovalStatus: 'CHANGES_REQUESTED',
+          fleetApprovalDate: new Date(),
+          fleetApprovalNotes: messageType === 'custom'
+            ? (customMessage?.trim() || 'Changes requested by fleet admin')
+            : `${blockers.length} issue(s) flagged by fleet admin`,
+          fleetApprovedBy: 'fleet_admin',
+        },
+      })
+    } catch (statusErr) {
+      console.error('[notify-host] Failed to set CHANGES_REQUESTED:', statusErr)
+    }
+
+    // Send push notification (non-blocking)
+    if (vehicle.host.userId) {
+      try {
+        await sendPushNotification({
+          userId: vehicle.host.userId,
+          title: 'Your vehicle needs attention',
+          body: `Your ${carName} needs updates before it can go live`,
+          type: 'fleet_vehicle_update',
+          data: { screen: 'fleet' },
+        })
+        console.log(`[notify-host] Push sent to userId: ${vehicle.host.userId}`)
+      } catch (pushErr) {
+        console.error('[notify-host] Push error (non-blocking):', pushErr)
+      }
+    } else {
+      console.log('[notify-host] No userId on host — skipping push')
+    }
+
     return NextResponse.json({
       success: true,
       emailSent: true,
       smsSent: !!smsSid,
+      pushSent: !!vehicle.host.userId,
       messageId: emailResult.messageId,
       smsSid,
       referenceId: emailReferenceId,

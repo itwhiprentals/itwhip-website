@@ -2060,6 +2060,10 @@ model RentalCar {
   keyInstructions            String?                    @db.Text  // lockbox/key info, reusable across bookings
   isActive                   Boolean                    @default(true)
   isListed                   Boolean                    @default(true)
+  fleetApprovalStatus        String?                    @default("PENDING")
+  fleetApprovalDate          DateTime?
+  fleetApprovalNotes         String?
+  fleetApprovedBy            String?
   instantBook                Boolean                    @default(true)
   advanceNotice              Int                        @default(2)
   minTripDuration            Int                        @default(1)
@@ -2159,6 +2163,7 @@ model RentalCar {
   VehicleClassification      VehicleClassification?     @relation(fields: [classificationId], references: [id])
   host                       RentalHost                 @relation(fields: [hostId], references: [id])
   photos                     RentalCarPhoto[]
+  documents                  RentalCarDocument[]
   reviews                    RentalReview[]
   UserFavorite               UserFavorite[]
   VehicleCoverageOverride    VehicleCoverageOverride[]
@@ -2173,6 +2178,7 @@ model RentalCar {
   @@index([carType])
   @@index([city, state])
   @@index([classificationId])
+  @@index([fleetApprovalStatus])
   @@index([hasActiveClaim])
   @@index([hasAlarm])
   @@index([hasLien])
@@ -2224,6 +2230,28 @@ model RentalCarPhoto {
   @@index([relatedClaimId])
   @@index([uploadedBy])
   @@index([verified])
+}
+
+model RentalCarDocument {
+  id             String    @id
+  carId          String
+  type           String    // INSPECTION_FRONT, INSPECTION_BACK, TITLE
+  s3Key          String    // private bucket key (never store URL)
+  fileName       String?
+  mimeType       String?
+  uploadedBy     String    // hostId or admin ID
+  uploadedByType String    @default("HOST") // HOST or ADMIN
+  verified       Boolean   @default(false)
+  verifiedAt     DateTime?
+  verifiedBy     String?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  deletedAt      DateTime?
+  car            RentalCar @relation(fields: [carId], references: [id], onDelete: Cascade)
+
+  @@index([carId])
+  @@index([type])
+  @@index([uploadedBy])
 }
 
 model RentalDispute {

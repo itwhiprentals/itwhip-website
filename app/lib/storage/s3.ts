@@ -58,7 +58,10 @@ export async function uploadPublicImage(key: string, buffer: Buffer, contentType
         .webp({ quality: 82 })
         .toBuffer()
       finalContentType = 'image/webp'
-      finalKey = key.replace(/\.(jpg|jpeg|png|heic|heif)$/i, '.webp')
+      // Replace existing extension or append .webp if no extension
+      finalKey = /\.(jpg|jpeg|png|heic|heif|webp)$/i.test(key)
+        ? key.replace(/\.(jpg|jpeg|png|heic|heif|webp)$/i, '.webp')
+        : `${key}.webp`
       console.log(`[S3] Image optimized: ${(originalSize / 1024).toFixed(0)}KB → ${(optimizedBuffer.length / 1024).toFixed(0)}KB (${Math.round((1 - optimizedBuffer.length / originalSize) * 100)}% smaller)`)
     } catch (err) {
       console.warn('[S3] Sharp optimization failed, uploading original:', err)
@@ -91,7 +94,7 @@ export async function deletePublicImage(key: string): Promise<void> {
 
 // ─── KEY GENERATORS ───────────────────────────────────────────────────
 
-export function generateKey(type: 'car' | 'profile' | 'host-profile' | 'host-logo' | 'host-hero' | 'dl' | 'identity' | 'agreement' | 'claim' | 'inspection' | 'message', id: string, suffix?: string): string {
+export function generateKey(type: 'car' | 'profile' | 'host-profile' | 'host-logo' | 'host-hero' | 'dl' | 'identity' | 'agreement' | 'claim' | 'inspection' | 'vehicle-doc' | 'message', id: string, suffix?: string): string {
   const ts = Date.now()
   switch (type) {
     case 'car': return `cars/${id}/${ts}${suffix ? `-${suffix}` : ''}.webp`
@@ -104,6 +107,7 @@ export function generateKey(type: 'car' | 'profile' | 'host-profile' | 'host-log
     case 'agreement': return `agreements/${id}/${ts}.pdf`
     case 'claim': return `claims/${id}/${ts}${suffix ? `-${suffix}` : ''}.jpg`
     case 'inspection': return `inspections/${id}/${ts}${suffix ? `-${suffix}` : ''}.jpg`
+    case 'vehicle-doc': return `vehicle-docs/${id}/${ts}${suffix ? `-${suffix}` : ''}.jpg`
     case 'message': return `messages/${id}/${ts}${suffix ? `-${suffix}` : ''}`
     default: return `misc/${id}/${ts}`
   }

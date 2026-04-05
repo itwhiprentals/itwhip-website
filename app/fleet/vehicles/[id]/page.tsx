@@ -26,6 +26,10 @@ import {
   IoSendOutline,
   IoCloseOutline,
   IoPhonePortraitOutline,
+  IoDocumentOutline,
+  IoCloudUploadOutline,
+  IoTrashOutline,
+  IoTimeOutline,
 } from 'react-icons/io5'
 import AvailabilityRulesCard from '../components/AvailabilityRulesCard'
 
@@ -77,6 +81,10 @@ interface VehicleDetail {
   vin: string | null
   licensePlate: string | null
   isActive: boolean
+  fleetApprovalStatus: string
+  fleetApprovalDate: string | null
+  fleetApprovalNotes: string | null
+  fleetApprovedBy: string | null
   vehicleType: string
   carType: string
   hasActiveClaim: boolean
@@ -124,6 +132,12 @@ interface VehicleDetail {
   blockers: Blocker[]
   host: VehicleHost | null
   recentBookings: Booking[]
+  approvalTimeline: {
+    id: string
+    action: string
+    metadata: any
+    createdAt: string
+  }[]
   stats: {
     totalRevenue: number
     completedBookings: number
@@ -189,13 +203,17 @@ function InlineEdit({
 
 const COMMON_ISSUES = [
   { key: 'no_plate', label: 'License plate missing' },
+  { key: 'missing_vin', label: 'VIN number missing' },
   { key: 'adjust_price', label: 'Daily rate needs adjustment' },
-  { key: 'update_photos', label: 'Photos need updating' },
-  { key: 'insurance_docs', label: 'Insurance documents needed' },
-  { key: 'stripe_setup', label: 'Stripe payouts not set up' },
+  { key: 'update_photos', label: 'Photos need updating (minimum 3)' },
   { key: 'no_description', label: 'Vehicle description missing' },
   { key: 'incomplete_location', label: 'Pickup location incomplete' },
-  { key: 'missing_vin', label: 'VIN number missing' },
+  { key: 'missing_color', label: 'Vehicle color not set' },
+  { key: 'missing_transmission', label: 'Transmission type not set' },
+  { key: 'inspection_docs', label: 'Inspection papers needed (front & back)' },
+  { key: 'title_docs', label: 'Title document needed' },
+  { key: 'insurance_docs', label: 'Insurance documents needed' },
+  { key: 'stripe_setup', label: 'Stripe payouts not set up' },
 ] as const
 
 function NotifyHostSheet({
@@ -218,12 +236,16 @@ function NotifyHostSheet({
   const [messageType, setMessageType] = useState<'issues' | 'custom'>(blockers.length > 0 ? 'issues' : 'custom')
   const [customMessage, setCustomMessage] = useState('')
   const [selectedIssues, setSelectedIssues] = useState<string[]>([])
-  const [includeListingLink, setIncludeListingLink] = useState(true)
+
+  // Car not live yet = no listing link
+  const isLive = vehicle.fleetApprovalStatus === 'APPROVED' && vehicle.isActive
+  const [includeListingLink, setIncludeListingLink] = useState(isLive)
 
   const errors = blockers.filter(b => b.severity === 'error')
   const warnings = blockers.filter(b => b.severity === 'warning')
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
   const carName = `${vehicle.year} ${vehicle.make} ${vehicle.model}`
+  const firstName = host.name?.split(' ')[0] || 'there'
 
   const canSend = isValidEmail && !sending && (
     messageType === 'issues'
@@ -231,10 +253,60 @@ function NotifyHostSheet({
       : (customMessage.trim().length > 0 || selectedIssues.length > 0)
   )
 
+  // Build smart message from selected issues
+  const issueToLabel = Object.fromEntries(COMMON_ISSUES.map(i => [i.key, i.label]))
+
+  function buildSmartMessage(issues: string[]): string {
+    if (issues.length === 0) return ''
+
+    const isPending = vehicle.fleetApprovalStatus !== 'APPROVED'
+    const labels = issues.map(k => issueToLabel[k]).filter(Boolean)
+
+    // Group by category
+    const docIssues = issues.filter(k => ['inspection_docs', 'title_docs', 'insurance_docs'].includes(k))
+    const detailIssues = issues.filter(k => ['no_plate', 'missing_vin', 'no_description', 'missing_color', 'missing_transmission'].includes(k))
+    const listingIssues = issues.filter(k => ['adjust_price', 'update_photos', 'incomplete_location'].includes(k))
+    const accountIssues = issues.filter(k => ['stripe_setup'].includes(k))
+
+    const lines: string[] = []
+
+    if (isPending) {
+      lines.push(`Hi ${firstName}, thanks for listing your ${carName} on ItWhip! We've reviewed your vehicle and there are a few things that need to be updated before we can approve it.`)
+    } else {
+      lines.push(`Hi ${firstName}, we noticed a few items on your ${carName} listing that need attention.`)
+    }
+
+    lines.push('')
+
+    if (detailIssues.length > 0) {
+      const items = detailIssues.map(k => issueToLabel[k]?.toLowerCase()).filter(Boolean)
+      lines.push(`Vehicle details: Please update your ${items.join(', ')}.`)
+    }
+    if (listingIssues.length > 0) {
+      const items = listingIssues.map(k => issueToLabel[k]?.toLowerCase()).filter(Boolean)
+      lines.push(`Listing quality: ${items.join(', ')}.`)
+    }
+    if (docIssues.length > 0) {
+      const items = docIssues.map(k => issueToLabel[k]?.toLowerCase()).filter(Boolean)
+      lines.push(`Documents: Please upload your ${items.join(' and ')}.`)
+    }
+    if (accountIssues.length > 0) {
+      lines.push('Account: Please complete your Stripe payout setup so you can receive earnings.')
+    }
+
+    lines.push('')
+    lines.push('You can make these updates directly from your fleet dashboard. Once everything looks good, your vehicle will be reviewed and approved.')
+
+    return lines.join('\n')
+  }
+
   const toggleIssue = (key: string) => {
-    setSelectedIssues(prev =>
-      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
-    )
+    setSelectedIssues(prev => {
+      const next = prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+      // Auto-generate message from flags
+      setCustomMessage(buildSmartMessage(next))
+      return next
+    })
   }
 
   const handleSend = async () => {
@@ -383,34 +455,51 @@ function NotifyHostSheet({
                 </div>
               </div>
 
-              {/* Custom message */}
+              {/* Auto-generated message (editable) */}
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Your message</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">Message {selectedIssues.length > 0 && <span className="text-green-600 font-normal">(auto-generated)</span>}</label>
+                  {selectedIssues.length > 0 && (
+                    <button
+                      onClick={() => setCustomMessage(buildSmartMessage(selectedIssues))}
+                      className="text-xs text-blue-600 hover:text-blue-700"
+                    >
+                      Regenerate
+                    </button>
+                  )}
+                </div>
                 <textarea
                   value={customMessage}
                   onChange={e => setCustomMessage(e.target.value)}
-                  placeholder={`Hi ${host.name.split(' ')[0]}, your car is now active on ItWhip! Please update your license plate and adjust the daily rate...`}
-                  rows={4}
+                  placeholder="Select issues above to auto-generate a message, or type your own..."
+                  rows={6}
                   className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400"
                 />
               </div>
 
-              {/* Include listing link */}
-              <label className="flex items-center gap-2 cursor-pointer">
+              {/* Include listing link — disabled if not live */}
+              <label className={`flex items-center gap-2 ${isLive ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
                 <input
                   type="checkbox"
                   checked={includeListingLink}
                   onChange={e => setIncludeListingLink(e.target.checked)}
+                  disabled={!isLive}
                   className="rounded text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-xs text-gray-600 dark:text-gray-400">Include link to live listing</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400">
+                  Include link to live listing
+                  {!isLive && <span className="ml-1 text-orange-500">(vehicle not live yet)</span>}
+                </span>
               </label>
 
               {/* Subject preview */}
               <div>
                 <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Email subject</label>
                 <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 font-mono text-xs">
-                  Update on your {carName} listing
+                  {selectedIssues.length > 0
+                    ? `Action needed: ${carName} — ${selectedIssues.length} item${selectedIssues.length !== 1 ? 's' : ''} to update`
+                    : `Update on your ${carName} listing`
+                  }
                 </p>
               </div>
             </>
@@ -491,6 +580,130 @@ function NotifyHostSheet({
 
 // ─── Listing Status Banner ────────────────────────────────────────────────────
 
+function ApprovalPanel({
+  vehicle,
+  onApproved,
+}: {
+  vehicle: VehicleDetail
+  onApproved: () => void
+}) {
+  const [rejectReason, setRejectReason] = useState('')
+  const [showRejectForm, setShowRejectForm] = useState(false)
+  const [acting, setActing] = useState(false)
+
+  const status = vehicle.fleetApprovalStatus || 'PENDING'
+  if (status === 'APPROVED') return null
+
+  const handleAction = async (action: 'approve' | 'reject') => {
+    if (action === 'reject' && !rejectReason.trim()) return
+    setActing(true)
+    try {
+      const res = await fetch(`/api/fleet/vehicles/${vehicle.id}?key=phoenix-fleet-2847`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, reason: action === 'reject' ? rejectReason.trim() : undefined }),
+      })
+      if ((await res.json()).success) {
+        setShowRejectForm(false)
+        setRejectReason('')
+        onApproved()
+      }
+    } catch (err) {
+      console.error('Approval action failed:', err)
+    } finally {
+      setActing(false)
+    }
+  }
+
+  const statusColors: Record<string, string> = {
+    PENDING: 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800',
+    REJECTED: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',
+    CHANGES_REQUESTED: 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800',
+  }
+
+  const statusLabels: Record<string, string> = {
+    PENDING: 'Pending Approval',
+    REJECTED: 'Rejected',
+    CHANGES_REQUESTED: 'Changes Requested',
+  }
+
+  const statusIcons: Record<string, string> = {
+    PENDING: 'text-yellow-600 dark:text-yellow-400',
+    REJECTED: 'text-red-600 dark:text-red-400',
+    CHANGES_REQUESTED: 'text-orange-600 dark:text-orange-400',
+  }
+
+  return (
+    <div className={`rounded-lg p-4 mb-4 border ${statusColors[status] || statusColors.PENDING}`}>
+      <div className="flex items-start gap-3">
+        <IoAlertCircleOutline className={`text-2xl flex-shrink-0 mt-0.5 ${statusIcons[status] || statusIcons.PENDING}`} />
+        <div className="flex-1">
+          <p className="font-semibold text-gray-900 dark:text-white">
+            {statusLabels[status] || 'Pending Approval'}
+          </p>
+          {vehicle.fleetApprovalNotes && (
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              {vehicle.fleetApprovalNotes}
+            </p>
+          )}
+          {vehicle.fleetApprovalDate && (
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              {new Date(vehicle.fleetApprovalDate).toLocaleDateString()} by {vehicle.fleetApprovedBy || 'admin'}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Action buttons */}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          onClick={() => handleAction('approve')}
+          disabled={acting}
+          className="px-4 py-2 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
+        >
+          {acting ? '...' : status === 'REJECTED' ? 'Re-approve' : 'Approve'}
+        </button>
+        {!showRejectForm && status !== 'REJECTED' && (
+          <button
+            onClick={() => setShowRejectForm(true)}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 transition-colors"
+          >
+            Reject
+          </button>
+        )}
+      </div>
+
+      {/* Reject reason form */}
+      {showRejectForm && (
+        <div className="mt-3 space-y-2">
+          <textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Reason for rejection (required)..."
+            rows={2}
+            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleAction('reject')}
+              disabled={acting || !rejectReason.trim()}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+            >
+              {acting ? '...' : 'Confirm Reject'}
+            </button>
+            <button
+              onClick={() => { setShowRejectForm(false); setRejectReason('') }}
+              className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function ListingStatusBanner({
   vehicle,
   toggling,
@@ -528,17 +741,19 @@ function ListingStatusBanner({
             </p>
           )}
         </div>
-        <button
-          onClick={onToggle}
-          disabled={toggling}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            vehicle.isActive
-              ? 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50'
-              : 'bg-green-600 text-white hover:bg-green-700'
-          } ${toggling ? 'opacity-50' : ''}`}
-        >
-          {toggling ? '...' : vehicle.isActive ? 'Deactivate' : 'Activate'}
-        </button>
+        {(vehicle.fleetApprovalStatus === 'APPROVED' || !vehicle.fleetApprovalStatus) && (
+          <button
+            onClick={onToggle}
+            disabled={toggling}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              vehicle.isActive
+                ? 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50'
+                : 'bg-green-600 text-white hover:bg-green-700'
+            } ${toggling ? 'opacity-50' : ''}`}
+          >
+            {toggling ? '...' : vehicle.isActive ? 'Deactivate' : 'Activate'}
+          </button>
+        )}
       </div>
 
       {activateError && (
@@ -658,21 +873,40 @@ function BlockersList({
 // ─── Vehicle Photo ────────────────────────────────────────────────────────────
 
 function VehiclePhoto({ vehicle }: { vehicle: VehicleDetail }) {
-  return (
-    <div className="sm:col-span-1">
-      <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden aspect-[4/3]">
-        {vehicle.primaryPhoto ? (
-          <img src={vehicle.primaryPhoto} alt={vehicle.name} className="w-full h-full object-cover" />
-        ) : (
+  const photos = vehicle.photos || []
+
+  if (photos.length === 0) {
+    return (
+      <div className="sm:col-span-1">
+        <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden aspect-[4/3]">
           <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-700">
             <div className="text-center text-gray-400">
               <IoImageOutline className="text-4xl mx-auto mb-1" />
               <p className="text-xs">No Photos</p>
             </div>
           </div>
-        )}
+        </div>
       </div>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
+    )
+  }
+
+  return (
+    <div className="sm:col-span-1 space-y-2">
+      {/* Hero photo */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden aspect-[4/3]">
+        <img src={vehicle.primaryPhoto || photos[0]} alt={vehicle.name} className="w-full h-full object-cover" />
+      </div>
+      {/* Thumbnail grid */}
+      {photos.length > 1 && (
+        <div className="grid grid-cols-4 gap-1.5">
+          {photos.map((url, i) => (
+            <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="aspect-square rounded-md overflow-hidden bg-gray-100 dark:bg-gray-700">
+              <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover hover:opacity-80 transition-opacity" />
+            </a>
+          ))}
+        </div>
+      )}
+      <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
         {vehicle.photoCount} photo{vehicle.photoCount !== 1 ? 's' : ''} uploaded
       </p>
     </div>
@@ -1031,6 +1265,242 @@ function RecentBookings({ bookings }: { bookings: Booking[] }) {
   )
 }
 
+// ─── Approval Timeline ───────────────────────────────────────────────────────
+
+function ApprovalTimeline({ timeline }: { timeline: VehicleDetail['approvalTimeline'] }) {
+  if (!timeline || timeline.length === 0) return null
+
+  const actionLabels: Record<string, string> = {
+    VEHICLE_STATUS_CHANGE: 'Status Change',
+    VEHICLE_BULK_ACTION: 'Bulk Action',
+    HOST_NOTIFIED_VEHICLE_ISSUES: 'Host Notified (Issues)',
+    HOST_NOTIFIED_CUSTOM: 'Host Notified (Custom)',
+  }
+
+  const actionColors: Record<string, string> = {
+    approve: 'bg-green-500',
+    reject: 'bg-red-500',
+    suspend: 'bg-yellow-500',
+    reactivate: 'bg-blue-500',
+    activate: 'bg-green-500',
+    request_changes: 'bg-orange-500',
+    HOST_NOTIFIED_VEHICLE_ISSUES: 'bg-blue-500',
+    HOST_NOTIFIED_CUSTOM: 'bg-purple-500',
+  }
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4">
+      <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Approval History</h3>
+      <div className="space-y-0">
+        {timeline.map((entry, i) => {
+          const meta = entry.metadata || {}
+          const action = meta.action || entry.action
+          const dotColor = actionColors[action] || 'bg-gray-400'
+          const label = meta.logMessage || meta.message || actionLabels[entry.action] || entry.action
+          const notes = meta.notes || meta.reason || ''
+          const isLast = i === timeline.length - 1
+
+          return (
+            <div key={entry.id} className="flex gap-3">
+              <div className="flex flex-col items-center">
+                <div className={`w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 ${dotColor}`} />
+                {!isLast && <div className="w-px flex-1 bg-gray-200 dark:bg-gray-700 my-1" />}
+              </div>
+              <div className={`flex-1 ${isLast ? '' : 'pb-3'}`}>
+                <p className="text-sm text-gray-900 dark:text-white">{label}</p>
+                {notes && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{notes}</p>}
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                  {new Date(entry.createdAt).toLocaleDateString()} {new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {meta.adminId && ` · ${meta.adminId}`}
+                </p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── Documents Card ──────────────────────────────────────────────────────────
+
+interface DocItem {
+  id: string
+  type: string
+  fileName: string | null
+  url: string
+  verified: boolean
+  verifiedAt: string | null
+  verifiedBy: string | null
+  uploadedByType: string
+  notes: string | null
+  createdAt: string
+}
+
+function DocumentsCard({ vehicleId }: { vehicleId: string }) {
+  const [docs, setDocs] = useState<DocItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState(false)
+  const [uploadType, setUploadType] = useState<string | null>(null)
+
+  const fetchDocs = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/fleet/vehicles/${vehicleId}/documents?key=phoenix-fleet-2847`)
+      const data = await res.json()
+      if (data.success) setDocs(data.documents || [])
+    } catch (err) {
+      console.error('Failed to fetch docs:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [vehicleId])
+
+  useEffect(() => { fetchDocs() }, [fetchDocs])
+
+  const handleUpload = async (file: File, type: string) => {
+    setUploading(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('type', type)
+      form.append('adminId', 'fleet_admin')
+      const res = await fetch(`/api/fleet/vehicles/${vehicleId}/documents?key=phoenix-fleet-2847`, {
+        method: 'POST',
+        body: form,
+      })
+      if ((await res.json()).success) {
+        setUploadType(null)
+        fetchDocs()
+      }
+    } catch (err) {
+      console.error('Upload failed:', err)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleDelete = async (docId: string) => {
+    if (!confirm('Delete this document?')) return
+    try {
+      await fetch(`/api/fleet/vehicles/${vehicleId}/documents?key=phoenix-fleet-2847`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId: docId }),
+      })
+      fetchDocs()
+    } catch (err) {
+      console.error('Delete failed:', err)
+    }
+  }
+
+  const docTypeLabels: Record<string, string> = {
+    INSPECTION_FRONT: 'Inspection (Front)',
+    INSPECTION_BACK: 'Inspection (Back)',
+    TITLE: 'Title Document',
+  }
+
+  const uploadTypes = ['INSPECTION_FRONT', 'INSPECTION_BACK', 'TITLE']
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Documents</h3>
+        {!uploadType && (
+          <div className="flex gap-1">
+            {uploadTypes.map(type => (
+              <button
+                key={type}
+                onClick={() => setUploadType(type)}
+                className="text-xs px-2 py-1 rounded bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+              >
+                + {docTypeLabels[type]?.split(' (')[0] || type}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Upload area */}
+      {uploadType && (
+        <div className="mb-3 p-3 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-lg bg-blue-50/50 dark:bg-blue-900/10">
+          <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">
+            Upload {docTypeLabels[uploadType] || uploadType}
+          </p>
+          <div className="flex items-center gap-2">
+            <label className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium cursor-pointer hover:bg-blue-700 transition-colors">
+              <IoCloudUploadOutline />
+              {uploading ? 'Uploading...' : 'Choose File'}
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                className="hidden"
+                disabled={uploading}
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleUpload(file, uploadType)
+                }}
+              />
+            </label>
+            <button
+              onClick={() => setUploadType(null)}
+              className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Document list */}
+      {loading ? (
+        <p className="text-sm text-gray-400">Loading...</p>
+      ) : docs.length === 0 ? (
+        <p className="text-sm text-gray-400 dark:text-gray-500">No documents uploaded yet.</p>
+      ) : (
+        <div className="space-y-2">
+          {docs.map(doc => (
+            <div key={doc.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+              <IoDocumentOutline className="text-lg text-gray-500 dark:text-gray-400 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    {docTypeLabels[doc.type] || doc.type}
+                  </span>
+                  {doc.verified ? (
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">Verified</span>
+                  ) : (
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">Unverified</span>
+                  )}
+                  <span className="text-xs text-gray-400">
+                    {doc.uploadedByType === 'HOST' ? 'by host' : 'by admin'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                  {doc.fileName || 'Document'} &bull; {new Date(doc.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+              <a
+                href={doc.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+              >
+                View
+              </a>
+              <button
+                onClick={() => handleDelete(doc.id)}
+                className="text-gray-400 hover:text-red-500 transition-colors"
+              >
+                <IoTrashOutline className="text-sm" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Actions Panel ────────────────────────────────────────────────────────────
 
 function ActionsPanel({ vehicle }: { vehicle: VehicleDetail }) {
@@ -1232,6 +1702,7 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
 
   const handleToggleActive = async () => {
     if (!vehicle) return
+    if (vehicle.fleetApprovalStatus && vehicle.fleetApprovalStatus !== 'APPROVED') return
 
     if (!vehicle.isActive) {
       const blockingErrors = vehicle.blockers.filter(b => b.severity === 'error' && b.key !== 'inactive')
@@ -1341,6 +1812,8 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <ApprovalPanel vehicle={vehicle} onApproved={fetchVehicle} />
+
         <ListingStatusBanner
           vehicle={vehicle}
           toggling={toggling}
@@ -1396,6 +1869,7 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
         </div>
 
         {vehicle.host && <HostCard host={vehicle.host} />}
+        <DocumentsCard vehicleId={vehicle.id} />
         <LocationDelivery vehicle={vehicle} />
         <StatsGrid stats={vehicle.stats} />
         <div className="mb-4">
@@ -1410,6 +1884,7 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
         </div>
         <RecentBookings bookings={vehicle.recentBookings} />
         <ActionsPanel vehicle={vehicle} />
+        <ApprovalTimeline timeline={vehicle.approvalTimeline} />
 
         <div className="text-xs text-gray-400 dark:text-gray-500 text-center pb-4">
           Created {new Date(vehicle.createdAt).toLocaleDateString()} &bull; Updated {new Date(vehicle.updatedAt).toLocaleDateString()} &bull; ID: {vehicle.id}

@@ -142,6 +142,8 @@ export async function GET(
       // Availability settings
       isActive: vehicle.isActive,
       isListed: vehicle.isListed,
+      fleetApprovalStatus: vehicle.fleetApprovalStatus || null,
+      fleetApprovalNotes: vehicle.fleetApprovalNotes || null,
       instantBook: vehicle.instantBook,
       advanceNotice: vehicle.advanceNotice,
       tripBuffer: vehicle.tripBuffer,

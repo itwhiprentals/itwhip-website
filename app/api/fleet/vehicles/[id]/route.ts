@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { sendPushNotification } from '@/app/lib/notifications/push'
 
 const FLEET_KEY = 'phoenix-fleet-2847'
 
@@ -128,6 +129,23 @@ export async function GET(
       _count: true
     })
 
+    // Get approval/notification activity logs
+    const activityLogs = await prisma.activityLog.findMany({
+      where: {
+        entityId: id,
+        entityType: 'RentalCar',
+        action: { in: ['VEHICLE_STATUS_CHANGE', 'VEHICLE_BULK_ACTION', 'HOST_NOTIFIED_VEHICLE_ISSUES', 'HOST_NOTIFIED_CUSTOM'] },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      select: {
+        id: true,
+        action: true,
+        metadata: true,
+        createdAt: true,
+      },
+    })
+
     // Build listing blockers
     const blockers: { key: string; label: string; severity: 'error' | 'warning' }[] = []
     if (!vehicle.isActive) blockers.push({ key: 'inactive', label: 'Car is deactivated', severity: 'error' })
@@ -162,6 +180,10 @@ export async function GET(
         vin: vehicle.vin,
         licensePlate: vehicle.licensePlate,
         isActive: vehicle.isActive,
+        fleetApprovalStatus: vehicle.fleetApprovalStatus || 'PENDING',
+        fleetApprovalDate: vehicle.fleetApprovalDate?.toISOString() || null,
+        fleetApprovalNotes: vehicle.fleetApprovalNotes || null,
+        fleetApprovedBy: vehicle.fleetApprovedBy || null,
         vehicleType: vehicle.vehicleType || 'RENTAL',
         carType: vehicle.carType,
         // Claim fields
@@ -259,6 +281,13 @@ export async function GET(
           date: s.serviceDate.toISOString(),
           cost: s.costTotal
         })),
+        // Approval/Activity timeline
+        approvalTimeline: activityLogs.map((log: any) => ({
+          id: log.id,
+          action: log.action,
+          metadata: log.metadata,
+          createdAt: log.createdAt.toISOString(),
+        })),
         // Stats
         stats: {
           totalRevenue: revenueStats._sum.totalAmount || 0,
@@ -297,7 +326,7 @@ export async function PUT(
       where: { id },
       include: {
         host: {
-          select: { partnerCompanyName: true, email: true }
+          select: { partnerCompanyName: true, email: true, userId: true }
         }
       }
     })
@@ -306,15 +335,25 @@ export async function PUT(
       return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 })
     }
 
+    const carName = `${vehicle.year} ${vehicle.make} ${vehicle.model}`
     let updateData: any = {}
     let logMessage = ''
+    let pushTitle = ''
+    let pushBody = ''
 
     switch (action) {
       case 'approve':
         updateData = {
-          isActive: true
+          isActive: true,
+          isListed: true,
+          fleetApprovalStatus: 'APPROVED',
+          fleetApprovalDate: new Date(),
+          fleetApprovalNotes: notes || 'Approved by fleet admin',
+          fleetApprovedBy: adminId || 'fleet_admin',
         }
-        logMessage = `Vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model} approved`
+        logMessage = `Vehicle ${carName} approved`
+        pushTitle = 'Your vehicle has been approved!'
+        pushBody = `Your ${carName} is now live and visible to guests`
         break
 
       case 'reject':
@@ -325,28 +364,48 @@ export async function PUT(
           )
         }
         updateData = {
-          isActive: false
+          isActive: false,
+          isListed: false,
+          fleetApprovalStatus: 'REJECTED',
+          fleetApprovalDate: new Date(),
+          fleetApprovalNotes: notes,
+          fleetApprovedBy: adminId || 'fleet_admin',
         }
-        logMessage = `Vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model} rejected: ${notes}`
+        logMessage = `Vehicle ${carName} rejected: ${notes}`
+        pushTitle = 'Vehicle not approved'
+        pushBody = `Your ${carName} was not approved. Check your fleet for details.`
         break
 
       case 'suspend':
         updateData = {
           isActive: false
         }
-        logMessage = `Vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model} suspended`
+        logMessage = `Vehicle ${carName} suspended`
         break
 
       case 'reactivate':
+        if (vehicle.fleetApprovalStatus && vehicle.fleetApprovalStatus !== 'APPROVED') {
+          return NextResponse.json(
+            { error: 'Cannot reactivate — vehicle must be approved first' },
+            { status: 400 }
+          )
+        }
         updateData = {
           isActive: true
         }
-        logMessage = `Vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model} reactivated`
+        logMessage = `Vehicle ${carName} reactivated`
         break
 
       case 'request_changes':
-        updateData = {}
-        logMessage = `Changes requested for vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model}`
+        updateData = {
+          fleetApprovalStatus: 'CHANGES_REQUESTED',
+          fleetApprovalDate: new Date(),
+          fleetApprovalNotes: notes,
+          fleetApprovedBy: adminId || 'fleet_admin',
+        }
+        logMessage = `Changes requested for vehicle ${carName}`
+        pushTitle = 'Your vehicle needs attention'
+        pushBody = `Your ${carName} needs updates before it can go live`
         break
 
       default:
@@ -379,12 +438,24 @@ export async function PUT(
       }
     })
 
+    // Send push notification (non-blocking)
+    if (pushTitle && vehicle.host?.userId) {
+      sendPushNotification({
+        userId: vehicle.host.userId,
+        title: pushTitle,
+        body: pushBody,
+        type: 'fleet_vehicle_update',
+        data: { screen: 'fleet' },
+      }).catch(err => console.error('[Fleet Vehicle Update] Push error:', err))
+    }
+
     return NextResponse.json({
       success: true,
       message: logMessage,
       vehicle: {
         id: updated.id,
-        isActive: updated.isActive
+        isActive: updated.isActive,
+        fleetApprovalStatus: updated.fleetApprovalStatus || 'PENDING',
       }
     })
 
@@ -412,7 +483,7 @@ export async function PATCH(
       where: { id },
       include: {
         host: {
-          select: { partnerCompanyName: true, email: true }
+          select: { partnerCompanyName: true, email: true, userId: true }
         }
       }
     })
@@ -421,36 +492,59 @@ export async function PATCH(
       return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 })
     }
 
+    const carName = `${vehicle.year} ${vehicle.make} ${vehicle.model}`
     let updateData: any = {}
     let logMessage = ''
+    let pushTitle = ''
+    let pushBody = ''
 
     switch (action) {
       case 'approve':
         updateData = {
-          isActive: true
+          isActive: true,
+          isListed: true,
+          fleetApprovalStatus: 'APPROVED',
+          fleetApprovalDate: new Date(),
+          fleetApprovalNotes: reason || 'Approved by fleet admin',
+          fleetApprovedBy: 'fleet_admin',
         }
+        pushTitle = 'Your vehicle has been approved!'
+        pushBody = `Your ${carName} is now live and visible to guests`
         logMessage = `Vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model} approved`
         break
 
       case 'reject':
         updateData = {
-          isActive: false
+          isActive: false,
+          isListed: false,
+          fleetApprovalStatus: 'REJECTED',
+          fleetApprovalDate: new Date(),
+          fleetApprovalNotes: reason || '',
+          fleetApprovedBy: 'fleet_admin',
         }
-        logMessage = `Vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model} rejected`
+        logMessage = `Vehicle ${carName} rejected`
+        pushTitle = 'Vehicle not approved'
+        pushBody = `Your ${carName} was not approved. Check your fleet for details.`
         break
 
       case 'suspend':
         updateData = {
           isActive: false
         }
-        logMessage = `Vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model} suspended`
+        logMessage = `Vehicle ${carName} suspended`
         break
 
       case 'activate':
+        if (vehicle.fleetApprovalStatus && vehicle.fleetApprovalStatus !== 'APPROVED') {
+          return NextResponse.json(
+            { error: 'Cannot activate — vehicle must be approved first' },
+            { status: 400 }
+          )
+        }
         updateData = {
           isActive: true
         }
-        logMessage = `Vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model} activated`
+        logMessage = `Vehicle ${carName} activated`
         break
 
       default:
@@ -487,12 +581,24 @@ export async function PATCH(
       console.error('[Fleet Vehicle PATCH] Activity log error:', logError)
     }
 
+    // Send push notification (non-blocking)
+    if (pushTitle && vehicle.host?.userId) {
+      sendPushNotification({
+        userId: vehicle.host.userId,
+        title: pushTitle,
+        body: pushBody,
+        type: 'fleet_vehicle_update',
+        data: { screen: 'fleet' },
+      }).catch(err => console.error('[Fleet Vehicle PATCH] Push error:', err))
+    }
+
     return NextResponse.json({
       success: true,
       message: logMessage,
       vehicle: {
         id: updated.id,
-        isActive: updated.isActive
+        isActive: updated.isActive,
+        fleetApprovalStatus: updated.fleetApprovalStatus || 'PENDING',
       }
     })
 

@@ -384,7 +384,8 @@ export async function POST(request: NextRequest) {
         deliveryRadius: body.deliveryRadius || 10,
         
         // Availability settings
-        isActive: body.isActive !== false,
+        isActive: host.approvalStatus === 'APPROVED' ? (body.isActive !== false) : false,
+        isListed: host.approvalStatus === 'APPROVED',
         instantBook: body.instantBook !== false,
         advanceNotice: body.advanceNotice || 2,
         minTripDuration: body.minTripDuration || (body.vehicleType === 'RIDESHARE' ? 3 : 1),
