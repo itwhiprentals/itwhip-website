@@ -9,6 +9,8 @@ import { prisma } from '@/app/lib/database/prisma'
 import { updatePartnerCommissionRate } from '@/app/lib/commission/calculate-tier'
 import { getVehicleSpecData } from '@/app/lib/utils/vehicleSpec'
 import { getPlatformBookingRules } from '@/app/lib/booking/booking-time-rules'
+import { getCarTypeFromDatabase, normalizeCarType } from '@/app/lib/utils/getCarType'
+import { normalizeMake } from '@/app/lib/ai-booking/filters/make-model'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET!
@@ -321,9 +323,9 @@ export async function POST(request: NextRequest) {
         hostId: partner.id,
         source: 'partner',
 
-        // VIN-decoded fields
+        // VIN-decoded fields (normalize make casing + carType)
         vin: vin.trim().toUpperCase(),
-        make,
+        make: normalizeMake(make),
         model,
         year: parseInt(year),
         trim: trim || null,
@@ -331,7 +333,7 @@ export async function POST(request: NextRequest) {
         transmission: transmission || 'automatic',
         fuelType: fuelType || 'gas',
         driveType: driveType || null,
-        carType: carType || 'midsize',
+        carType: normalizeCarType(carType || getCarTypeFromDatabase(make, model) || 'SEDAN'),
 
         // Manual fields
         color: color || 'Unknown',

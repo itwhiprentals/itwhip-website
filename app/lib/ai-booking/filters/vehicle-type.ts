@@ -72,7 +72,11 @@ const CAR_TYPE_MAPPINGS: Record<string, Prisma.RentalCarWhereInput> = {
   sports: {
     OR: [
       { carType: { contains: 'sports', mode: 'insensitive' } },
-      { make: { in: ['Porsche', 'Ferrari', 'Lamborghini', 'McLaren', 'Corvette'] } },
+      { make: { in: ['Porsche', 'Ferrari', 'Lamborghini', 'McLaren'] } },
+      { model: { contains: 'Corvette', mode: 'insensitive' } },
+      { model: { contains: 'AMG GT', mode: 'insensitive' } },
+      { model: { contains: 'Hellcat', mode: 'insensitive' } },
+      { model: { contains: 'GR86', mode: 'insensitive' } },
     ],
   },
   exotic: {

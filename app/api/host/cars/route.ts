@@ -5,6 +5,8 @@ import { prisma } from '@/app/lib/database/prisma'
 import { headers } from 'next/headers'
 import { classifyVehicle } from '@/app/lib/insurance/classification-service'
 import { checkVehicleEligibility } from '@/app/lib/insurance/eligibility-engine'
+import { getCarTypeFromDatabase, normalizeCarType } from '@/app/lib/utils/getCarType'
+import { normalizeMake } from '@/app/lib/ai-booking/filters/make-model'
 
 // ========== ✅ NEW: ESG EVENT HOOK IMPORT ==========
 import { handleVehicleAdded } from '@/app/lib/esg/event-hooks'
@@ -323,22 +325,27 @@ export async function POST(request: NextRequest) {
       trim: body.trim
     })
     
+    // Normalize make casing and carType for consistency
+    const normalizedMake = normalizeMake(body.make)
+    const inferredType = body.carType || getCarTypeFromDatabase(body.make, body.model)
+    const normalizedCarType = normalizeCarType(inferredType || 'SEDAN')
+
     // Create the car with classification
     const newCar = await prisma.rentalCar.create({
       data: {
         id: crypto.randomUUID(),
         updatedAt: new Date(),
         hostId: host.id,
-        make: body.make,
+        make: normalizedMake,
         model: body.model,
         year: body.year,
         trim: body.trim,
         color: body.color,
         licensePlate: body.licensePlate,
         vin: body.vin,
-        
+
         // Specifications
-        carType: body.carType,
+        carType: normalizedCarType,
         seats: body.seats,
         doors: body.doors,
         transmission: body.transmission,
