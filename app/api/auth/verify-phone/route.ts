@@ -5,6 +5,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { verifyRequest } from '@/app/lib/auth/verify-request'
 import { verifyPhoneToken } from '@/app/lib/firebase/admin'
+import { sendPushNotification } from '@/app/lib/notifications/push'
+import { sendEmail } from '@/app/lib/email/sender'
+import { sendSms } from '@/app/lib/twilio/sms'
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,6 +45,11 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Capture old phone before update (for security notifications)
+    const existingUser = await prisma.user.findUnique({ where: { id: user.id }, select: { phone: true } })
+    const oldPhone = existingUser?.phone || null
+    const phoneChanged = oldPhone && oldPhone !== verifiedPhone
 
     // Update user's phone verification status
     await prisma.user.update({
@@ -98,6 +106,45 @@ export async function POST(request: NextRequest) {
       } catch (syncError) {
         console.error('[Phone Verify] Failed to sync phoneVerified to RentalHost:', syncError)
       }
+    }
+
+    // Security notifications for phone change (non-blocking)
+    if (phoneChanged) {
+      const lastFour = oldPhone!.slice(-4)
+
+      // 1. SMS to OLD number — alert about removal
+      sendSms(oldPhone!, `ItWhip Security: This phone number (***${lastFour}) has been removed from your ItWhip account. If you didn't make this change, call us immediately at (480) 618-1272.`, {
+        type: 'SYSTEM',
+      }).catch(err => console.error('[Phone Verify] Old number SMS failed:', err))
+
+      // 2. Email notification about the change
+      if (user.email) {
+        sendEmail(
+          user.email,
+          'ItWhip Security Alert: Phone Number Changed',
+          `<div style="font-family: -apple-system, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #1f2937;">Phone Number Changed</h2>
+            <p style="color: #374151;">Your ItWhip account phone number has been updated.</p>
+            <div style="background: #f3f4f6; border-radius: 8px; padding: 16px; margin: 16px 0;">
+              <p style="margin: 0; color: #6b7280;">Previous: ***${lastFour}</p>
+              <p style="margin: 8px 0 0; color: #1f2937; font-weight: 600;">New: ***${verifiedPhone.slice(-4)}</p>
+            </div>
+            <p style="color: #374151;">If you didn't make this change, contact us immediately:</p>
+            <p style="color: #1f2937; font-weight: 600;">📞 (480) 618-1272</p>
+            <p style="color: #1f2937; font-weight: 600;">📧 support@itwhip.com</p>
+          </div>`,
+          `ItWhip Security Alert: Your phone number has been changed. Previous: ***${lastFour}, New: ***${verifiedPhone.slice(-4)}. If you didn't make this change, call (480) 618-1272 immediately.`
+        ).catch(err => console.error('[Phone Verify] Email notification failed:', err))
+      }
+
+      // 3. Push notification — security alert
+      sendPushNotification({
+        userId: user.id,
+        title: 'Phone number changed',
+        body: `Your phone number was updated. If this wasn't you, contact support immediately.`,
+        type: 'fleet_vehicle_update',
+        data: { screen: 'account' },
+      }).catch(err => console.error('[Phone Verify] Push notification failed:', err))
     }
 
     return NextResponse.json({

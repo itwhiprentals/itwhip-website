@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           success: true,
-          user: { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role, avatar: guestProfile?.profilePhotoUrl || null },
+          user: { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role, avatar: guestProfile?.profilePhotoUrl || null, emailVerified: true, phoneVerified: !!existingUser.phoneVerified, phone: existingUser.phone || null },
           accessToken,
           refreshToken,
           expiresIn: 15 * 60,
@@ -326,7 +326,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        user: { id: newUser.id, email: newUser.email || '', name: newUser.name || '', role: newUser.role, avatar: null },
+        user: { id: newUser.id, email: newUser.email || '', name: newUser.name || '', role: newUser.role, avatar: null, emailVerified: true, phoneVerified: false, phone: null },
         accessToken,
         refreshToken,
         expiresIn: 15 * 60,
@@ -368,7 +368,7 @@ export async function POST(request: NextRequest) {
 
           return NextResponse.json({
             success: true,
-            user: { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role },
+            user: { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role, emailVerified: true, phoneVerified: !!existingUser.phoneVerified, phone: existingUser.phone || null },
             host: {
               id: host.id,
               approvalStatus: host.approvalStatus,
@@ -412,7 +412,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           success: true,
-          user: { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role },
+          user: { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role, emailVerified: true, phoneVerified: !!existingUser.phoneVerified, phone: existingUser.phone || null },
           host: {
             id: newHost.id,
             approvalStatus: 'PENDING',
@@ -501,7 +501,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        user: { id: newUser.id, email: newUser.email || '', name: newUser.name || '', role: newUser.role },
+        user: { id: newUser.id, email: newUser.email || '', name: newUser.name || '', role: newUser.role, emailVerified: true, phoneVerified: false, phone: null },
         host: {
           id: newHost.id,
           approvalStatus: 'PENDING',

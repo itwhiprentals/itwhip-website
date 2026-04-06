@@ -56,6 +56,8 @@ export const db = {
       role: user.role,
       password_hash: user.passwordHash,
       is_verified: user.emailVerified,
+      emailVerified: user.emailVerified,
+      phoneVerified: user.phoneVerified,
       is_active: user.isActive,
       last_login: user.lastActive,
       created_at: user.createdAt
@@ -77,6 +79,8 @@ export const db = {
       phone: user.phone,
       role: user.role,
       is_verified: user.emailVerified,
+      emailVerified: user.emailVerified,
+      phoneVerified: user.phoneVerified,
       is_active: user.isActive,
       last_login: user.lastActive,
       created_at: user.createdAt

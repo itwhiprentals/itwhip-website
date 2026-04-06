@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
               await logSuccessfulLogin({ userId: primaryUser.id, email: primaryUser.email || '', source: 'guest', ip: clientIp, userAgent })
               return NextResponse.json({
                 success: true,
-                user: { id: primaryUser.id, email: primaryUser.email || '', name: primaryUser.name || '', role: primaryUser.role },
+                user: { id: primaryUser.id, email: primaryUser.email || '', name: primaryUser.name || '', role: primaryUser.role, emailVerified: true, phoneVerified: !!primaryUser.phoneVerified, phone: primaryUser.phone || null },
                 accessToken: pAccess, refreshToken: pRefresh, expiresIn: 15 * 60, isNewUser: false,
                 redirectedFrom: email.toLowerCase(),
                 linkedAccount: { message: 'This login has been linked to your primary account.', primaryEmail: identityGuard.maskedEmail, matchedOn: identityGuard.matchedOn },
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           success: true,
-          user: { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role },
+          user: { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role, emailVerified: true, phoneVerified: !!existingUser.phoneVerified, phone: existingUser.phone || null },
           accessToken, refreshToken, expiresIn: 15 * 60, isNewUser: false,
         })
       }
@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        user: { id: newUser.id, email: newUser.email || '', name: newUser.name || '', role: newUser.role },
+        user: { id: newUser.id, email: newUser.email || '', name: newUser.name || '', role: newUser.role, emailVerified: true, phoneVerified: false, phone: null },
         accessToken, refreshToken, expiresIn: 15 * 60, isNewUser: true,
       }, { status: 201 })
     }
@@ -274,7 +274,7 @@ export async function POST(request: NextRequest) {
 
           return NextResponse.json({
             success: true,
-            user: { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role },
+            user: { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role, emailVerified: true, phoneVerified: !!existingUser.phoneVerified, phone: existingUser.phone || null },
             host: { id: host.id, approvalStatus: host.approvalStatus, hostType: host.hostType, name: host.name, role: host.hostType === 'FLEET_PARTNER' ? 'fleet_partner' : 'individual', cars: host.cars },
             accessToken, refreshToken, expiresIn: 15 * 60, isNewUser: false,
           })
@@ -297,7 +297,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           success: true,
-          user: { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role },
+          user: { id: existingUser.id, email: existingUser.email || '', name: existingUser.name || name || '', role: existingUser.role, emailVerified: true, phoneVerified: !!existingUser.phoneVerified, phone: existingUser.phone || null },
           host: { id: newHost.id, approvalStatus: 'PENDING', hostType: 'REAL', role: 'individual' },
           accessToken, refreshToken, expiresIn: 15 * 60, isNewUser: false, isNewHost: true,
         }, { status: 201 })
@@ -345,7 +345,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        user: { id: newUser.id, email: newUser.email || '', name: newUser.name || '', role: newUser.role },
+        user: { id: newUser.id, email: newUser.email || '', name: newUser.name || '', role: newUser.role, emailVerified: true, phoneVerified: false, phone: null },
         host: { id: newHost.id, approvalStatus: 'PENDING', hostType: 'REAL', role: 'individual' },
         accessToken, refreshToken, expiresIn: 15 * 60, isNewUser: true, isNewHost: true,
       }, { status: 201 })
