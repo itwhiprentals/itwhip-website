@@ -52,8 +52,8 @@ function HostSignupContent() {
   // Dark mode detection
   const [isDark, setIsDark] = useState(false)
 
-  // Start at step 2 if OAuth user (they already have account, just need vehicle info)
-  const [currentStep, setCurrentStep] = useState(isOAuthUser ? 2 : 1)
+  // Single step — personal info only (no vehicle at signup)
+  const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -85,8 +85,6 @@ function HostSignupContent() {
         lastName: nameParts.slice(1).join(' ') || '',
         email: session.user?.email || ''
       }))
-      // OAuth users start at step 2 (only set once, don't reset if already advanced to step 3)
-      setCurrentStep(2)
       setOauthInitialized(true)
     }
   }, [isOAuthUser, session, oauthInitialized])
@@ -285,70 +283,29 @@ function HostSignupContent() {
     e.preventDefault()
     setError('')
 
-    const isManageOnly = formData.hostRole === 'manage'
-
-    // For manage-only, skip step 3 validation (no photos required)
-    if (!isManageOnly && !isStep3Valid()) {
-      setError(t('errorIncomplete'))
+    // Simple validation — personal info only
+    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim()) {
+      setError('Please fill in your name and email.')
       return
     }
-
-    // For manage-only, just need to agree to terms
-    if (isManageOnly && !formData.agreeToTerms) {
-      setError(t('errorAgreeTerms'))
+    if (!isOAuthUser && (!formData.password || formData.password.length < 8)) {
+      setError('Password must be at least 8 characters.')
+      return
+    }
+    if (!isOAuthUser && formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match.')
       return
     }
 
     setIsLoading(true)
 
     try {
-      // Determine host role flags
-      const managesOwnCars = formData.hostRole === 'own' || formData.hostRole === 'both' || formData.hostRole === 'fleet_owner'
-      const isHostManager = formData.hostRole === 'manage' || formData.hostRole === 'both'
-      const managesOthersCars = formData.hostRole === 'manage' || formData.hostRole === 'both'
-      const isFleetOwner = formData.hostRole === 'fleet_owner'
-
-      // Build request body - OAuth users don't need password
       const requestBody: any = {
-        name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
-        phone: formData.phone,
-        agreeToTerms: formData.agreeToTerms,
-        // Host role flags
-        managesOwnCars,
-        isHostManager,
-        managesOthersCars,
-        // Is manage-only fleet manager
-        isManageOnly,
-        // Fleet owner (5+ vehicles) — gets fleet partner profile
-        isFleetOwner
-      }
-
-      // Only include vehicle data for hosts who own cars
-      if (!isManageOnly) {
-        // Location info
-        requestBody.address = vehicleData.address || null
-        requestBody.city = vehicleData.city
-        requestBody.state = vehicleData.state
-        requestBody.zipCode = vehicleData.zipCode
-        // Vehicle info
-        requestBody.hasVehicle = true
-        requestBody.vehicleVin = vehicleData.vin || null
-        requestBody.vehicleMake = vehicleData.make
-        requestBody.vehicleModel = vehicleData.model
-        requestBody.vehicleYear = vehicleData.year
-        requestBody.vehicleColor = vehicleData.color
-        requestBody.vehicleTrim = vehicleData.trim || null
-        // VIN-decoded specs
-        requestBody.vehicleFuelType = vehicleData.fuelType || null
-        requestBody.vehicleDoors = vehicleData.doors || null
-        requestBody.vehicleBodyClass = vehicleData.bodyClass || null
-        requestBody.vehicleTransmission = vehicleData.transmission || null
-        requestBody.vehicleDriveType = vehicleData.driveType || null
-        // Vehicle photos
-        requestBody.vehiclePhotoUrls = vehiclePhotos.map(p => p.url)
-      } else {
-        requestBody.hasVehicle = false
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+        email: formData.email.trim().toLowerCase(),
+        hasVehicle: false,
       }
 
       // Only include password for non-OAuth users
@@ -657,14 +614,13 @@ function HostSignupContent() {
                         )}
                       </div>
 
-                      {/* Next Button */}
+                      {/* Submit Button */}
                       <button
-                        type="button"
-                        onClick={handleNextStep}
-                        disabled={!isStep1Valid()}
+                        type="submit"
+                        disabled={!isStep1Valid() || isLoading}
                         className="w-full py-3 px-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                       >
-                        {t('continueToVehicle')}
+                        {isLoading ? 'Creating Account...' : 'Create Account'}
                       </button>
                     </div>
                   )}
