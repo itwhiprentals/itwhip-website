@@ -22,12 +22,14 @@ export async function GET(request: NextRequest) {
         createdAt: true,
         reviewerProfile: {
           select: {
+            id: true,
             name: true,
             profilePhotoUrl: true,
           }
         },
         car: {
           select: {
+            id: true,
             make: true,
             model: true,
             year: true,
@@ -42,8 +44,10 @@ export async function GET(request: NextRequest) {
       id: r.id,
       rating: r.rating,
       comment: r.comment,
+      reviewerId: r.reviewerProfile?.id || null,
       reviewerName: r.reviewerProfile?.name || 'Guest',
       reviewerPhoto: r.reviewerProfile?.profilePhotoUrl || null,
+      carId: r.car?.id || null,
       carInfo: r.car ? `${r.car.year} ${r.car.make} ${r.car.model}` : null,
       createdAt: r.createdAt.toISOString(),
     }))
