@@ -180,7 +180,14 @@ async function getHostBadges(hostId: string, userId: string) {
 }
 
 async function getGuestBadges(userId: string) {
-  const [unreadMessages, pushUnread] = await Promise.all([
+  const now = new Date()
+  const startOfToday = new Date(now)
+  startOfToday.setHours(0, 0, 0, 0)
+  const endOfToday = new Date(now)
+  endOfToday.setHours(23, 59, 59, 999)
+
+  const [unreadMessages, pushUnread, pickupToday, overdueReturn, reviewNeeded, user] = await Promise.all([
+    // Unread messages from hosts/admins/support
     prisma.rentalMessage.count({
       where: {
         booking: { renterId: userId },
@@ -188,8 +195,54 @@ async function getGuestBadges(userId: string) {
         readAt: null,
       }
     }),
+    // Push notification unread count
     prisma.pushNotification.count({ where: { userId, read: false } }),
+    // Trip ready for pickup: CONFIRMED bookings starting today
+    prisma.rentalBooking.count({
+      where: {
+        renterId: userId,
+        status: 'CONFIRMED',
+        startDate: { gte: startOfToday, lte: endOfToday },
+      }
+    }),
+    // Trip needs to end: ACTIVE bookings past return date
+    prisma.rentalBooking.count({
+      where: {
+        renterId: userId,
+        status: 'ACTIVE',
+        endDate: { lt: now },
+      }
+    }),
+    // Review needed: COMPLETED bookings with no review yet
+    prisma.rentalBooking.count({
+      where: {
+        renterId: userId,
+        status: 'COMPLETED',
+        review: null,
+      }
+    }),
+    // User profile + reviewer profile for verification dot
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        emailVerified: true,
+        phoneVerified: true,
+        reviewerProfile: {
+          select: {
+            documentsVerified: true,
+            profilePhotoUrl: true,
+          }
+        },
+      },
+    }),
   ])
+
+  const reviewerProfile = user?.reviewerProfile
+  const accountNeedsAttention =
+    !user?.emailVerified ||
+    !user?.phoneVerified ||
+    !reviewerProfile?.documentsVerified ||
+    !reviewerProfile?.profilePhotoUrl
 
   return {
     role: 'guest',
@@ -198,10 +251,20 @@ async function getGuestBadges(userId: string) {
       home: false,
       search: false,
       explore: false,
+      dashboard: pickupToday > 0 || overdueReturn > 0 || reviewNeeded > 0,
       messages: unreadMessages > 0,
-      account: false,
+      account: accountNeedsAttention,
     },
-    explore: {},
-    account: {},
+    explore: {
+      pickupToday,
+      overdueReturn,
+      reviewNeeded,
+    },
+    account: {
+      emailVerified: !!user?.emailVerified,
+      phoneVerified: !!user?.phoneVerified,
+      documentsVerified: !!reviewerProfile?.documentsVerified,
+      profilePhoto: !!reviewerProfile?.profilePhotoUrl,
+    },
   }
 }
