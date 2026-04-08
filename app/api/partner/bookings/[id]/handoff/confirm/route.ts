@@ -8,17 +8,40 @@ import { sendEmail } from '@/app/lib/email/send-email'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!)
 
-async function getPartnerFromToken() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('partner_token')?.value ||
-                cookieStore.get('hostAccessToken')?.value
-  if (!token) return null
+async function getPartnerFromToken(request?: NextRequest) {
+  // Check Authorization header first (mobile app)
+  const authHeader = request?.headers.get('authorization')
+  console.log('[HandoffConfirm/Route] authHeader present:', !!authHeader, 'starts with Bearer:', authHeader?.startsWith('Bearer '))
+  let token: string | undefined
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.substring(7)
+  }
+  // Fall back to cookies (web)
+  if (!token) {
+    const cookieStore = await cookies()
+    token = cookieStore.get('partner_token')?.value ||
+            cookieStore.get('hostAccessToken')?.value
+    console.log('[HandoffConfirm/Route] No header token, cookie token present:', !!token)
+  }
+  if (!token) {
+    console.log('[HandoffConfirm/Route] NO TOKEN — returning null')
+    return null
+  }
+  console.log('[HandoffConfirm/Route] Token present, length:', token.length)
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET)
-    return await prisma.rentalHost.findUnique({
+    console.log('[HandoffConfirm/Route] Token verified. payload.hostId:', payload.hostId, 'payload.userId:', payload.userId, 'role:', payload.role)
+    if (!payload.hostId) {
+      console.log('[HandoffConfirm/Route] NO hostId in payload — returning null')
+      return null
+    }
+    const partner = await prisma.rentalHost.findUnique({
       where: { id: payload.hostId as string }
     })
-  } catch {
+    console.log('[HandoffConfirm/Route] DB lookup result:', partner ? `found ${partner.id}` : 'NOT FOUND')
+    return partner
+  } catch (err: any) {
+    console.log('[HandoffConfirm/Route] jwtVerify FAILED:', err?.message || err)
     return null
   }
 }
@@ -28,7 +51,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const partner = await getPartnerFromToken()
+    const partner = await getPartnerFromToken(request)
     if (!partner) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

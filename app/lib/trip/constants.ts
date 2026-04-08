@@ -101,7 +101,7 @@ export const TRIP_CONSTANTS = {
   // Handoff verification
   HANDOFF_RADIUS_METERS: 500,           // Guest must be within 500m
   HOST_HANDOFF_RADIUS_METERS: 500,      // Host soft-check (logged, doesn't block)
-  HANDOFF_AUTO_FALLBACK_MINUTES: 5,     // Auto-complete after 5min (instant-book only)
+  HANDOFF_AUTO_FALLBACK_MINUTES: 30,    // Auto-complete after 30min (instant-book only) — gives host time to confirm via push
   HANDOFF_POLLING_INTERVAL: 2000,       // 2s polling during handoff — near-instant sync
   HANDOFF_TIMEOUT_MINUTES: 30,          // Mark expired after 30min no-action
   GUEST_PING_INTERVAL: 15000,           // 15s guest location ping

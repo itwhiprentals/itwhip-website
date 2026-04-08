@@ -7,6 +7,7 @@ import { TRIP_CONSTANTS, HANDOFF_STATUS } from '@/app/lib/trip/constants'
 import { TESTING_MODE } from '@/app/lib/trip/validation'
 import { generateArrivalSummary } from '@/app/lib/trip/handoff-ai'
 import { sendEmail } from '@/app/lib/email/send-email'
+import { sendPushNotification } from '@/app/lib/notifications/push'
 
 export async function POST(
   request: NextRequest,
@@ -52,6 +53,7 @@ export async function POST(
             host: {
               select: {
                 id: true,
+                userId: true,
                 email: true,
                 name: true,
                 businessName: true,
@@ -253,6 +255,26 @@ export async function POST(
           `,
           text: `${booking.guestName || 'Your guest'} has arrived near the ${carLabel} (${distanceLabel} away). ${arrivalMessage}`,
         }).catch(err => console.error('[Handoff] Host email failed:', err))
+      }
+
+      // Push notification to host's mobile device(s)
+      const hostUserId = booking.car.host?.userId
+      if (hostUserId) {
+        const carLabel = `${booking.car.year || ''} ${booking.car.make || ''} ${booking.car.model || ''}`.trim()
+        const distanceLabel = distanceMeters < 1000
+          ? `${distanceMeters}m`
+          : `${(distanceMeters / 1609.34).toFixed(1)} mi`
+
+        await sendPushNotification({
+          userId: hostUserId,
+          title: 'Guest has arrived',
+          body: `${booking.guestName || 'Your guest'} is at the ${carLabel} (${distanceLabel} away). Tap to confirm handoff.`,
+          type: 'fleet_booking_approved',
+          data: {
+            screen: 'booking-detail',
+            bookingId,
+          },
+        }).catch(err => console.error('[Handoff] Host push failed:', err))
       }
     }
 

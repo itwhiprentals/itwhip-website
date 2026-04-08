@@ -11,11 +11,17 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!)
 // Dual-auth: partner JWT checked first (so host sessions use the correct path),
 // then guest JWT fallback
 async function getAuthenticatedUser(request: NextRequest) {
-  // Try partner auth first — avoids verifyRequest picking up the host's
-  // accessToken and treating it as guest auth (which fails ownership check)
-  const cookieStore = await cookies()
-  const partnerToken = cookieStore.get('partner_token')?.value ||
-                       cookieStore.get('hostAccessToken')?.value
+  // Try partner auth first — check Authorization header (mobile app), then cookies (web)
+  const authHeader = request.headers.get('authorization')
+  let partnerToken: string | undefined
+  if (authHeader?.startsWith('Bearer ')) {
+    partnerToken = authHeader.substring(7)
+  }
+  if (!partnerToken) {
+    const cookieStore = await cookies()
+    partnerToken = cookieStore.get('partner_token')?.value ||
+                   cookieStore.get('hostAccessToken')?.value
+  }
   if (partnerToken) {
     try {
       const { payload } = await jwtVerify(partnerToken, JWT_SECRET)
