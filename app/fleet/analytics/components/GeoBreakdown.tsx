@@ -4,6 +4,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { IoGlobeOutline, IoLocationOutline, IoChevronDownOutline, IoChevronUpOutline } from 'react-icons/io5'
 
 // Simple country data (for backwards compatibility)
@@ -77,6 +78,7 @@ const countryNames: Record<string, string> = {
 
 export default function GeoBreakdown({ data, locationData, loading = false }: GeoBreakdownProps) {
   const [showDetailedView, setShowDetailedView] = useState(false)
+  const router = useRouter()
 
   const maxViews = data.length ? Math.max(...data.map(d => d.views)) : 1
   const totalViews = data.reduce((sum, d) => sum + d.views, 0)
@@ -146,12 +148,19 @@ export default function GeoBreakdown({ data, locationData, loading = false }: Ge
             const flag = countryFlags[item.country] || '🌍'
 
             return (
-              <div key={`${item.location}-${index}`}>
+              <div
+                key={`${item.location}-${index}`}
+                className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750 rounded-lg px-2 py-1 -mx-2 transition-colors"
+                onClick={() => {
+                  const cityName = item.city || item.region
+                  if (cityName) router.push(`/fleet/analytics/location/${encodeURIComponent(cityName)}?key=phoenix-fleet-2847`)
+                }}
+              >
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     <span className="text-base flex-shrink-0">{flag}</span>
                     <div className="min-w-0 flex-1">
-                      <span className="text-sm text-gray-700 dark:text-gray-300 truncate block">
+                      <span className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 truncate block">
                         {item.city || item.region || countryNames[item.country] || item.country}
                       </span>
                       {(item.city || item.region) && (

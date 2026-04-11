@@ -7,11 +7,12 @@ import { headers } from 'next/headers'
 import prisma from '@/app/lib/database/prisma'
 import {
   parseUserAgent,
-  extractGeoFromHeaders,
   getClientIP,
   sanitizeQueryParams,
   generateVisitorId
 } from '@/app/lib/analytics'
+import { enrichIp } from '@/app/lib/analytics/threat-enrichment'
+import { evaluateThreats } from '@/app/lib/analytics/threat-patterns'
 
 // Rate limit: Max 100 events per minute per IP
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
@@ -70,8 +71,10 @@ export async function POST(request: NextRequest) {
 
     // Extract data from headers
     const userAgent = headersList.get('user-agent') || ''
-    const geo = await extractGeoFromHeaders()
     const parsed = parseUserAgent(userAgent)
+
+    // Enrich IP with full threat intel (geo + ProxyCheck, cached)
+    const threat = await enrichIp(ip !== 'unknown' ? ip : null)
 
     // Generate visitor ID (rotates daily, privacy-friendly)
     const visitorId = generateVisitorId(userAgent, ip)
@@ -109,9 +112,21 @@ export async function POST(request: NextRequest) {
       browser: parsed.browser,
       browserVer: parsed.browserVer,
       os: parsed.os,
-      country: geo.country,
-      region: geo.region,
-      city: geo.city,
+      country: threat.country,
+      region: threat.region,
+      city: threat.city,
+      ip: threat.ip,
+      isp: threat.isp,
+      asn: threat.asn,
+      org: threat.org,
+      isVpn: threat.isVpn,
+      isProxy: threat.isProxy,
+      isTor: threat.isTor,
+      isHosting: threat.isHosting,
+      riskScore: threat.riskScore,
+      latitude: threat.latitude,
+      longitude: threat.longitude,
+      address: threat.address,
       loadTime: typeof loadTime === 'number' ? loadTime : null,
       eventType,
       metadata: metadata || null
@@ -130,6 +145,38 @@ export async function POST(request: NextRequest) {
         console.error('[Analytics] Failed to record page view:', err)
       }
     })
+
+    // Evaluate threat patterns (fire-and-forget, non-blocking)
+    if (threat.riskScore > 0 || threat.isVpn || threat.isProxy || threat.isTor || threat.isHosting) {
+      // Get recent view count for this IP (from rate limit map as proxy)
+      const recentCount = rateLimitMap.get(ip)?.count || 0
+      const alerts = evaluateThreats(
+        { path: cleanPath, ...threat },
+        recentCount,
+        recentCount, // viewsInLast5Min approximated from 1-min rate limit
+      )
+      // Fire alerts asynchronously
+      if (alerts.length > 0) {
+        Promise.resolve().then(async () => {
+          for (const alert of alerts) {
+            try {
+              await prisma.monitoringAlert.create({
+                data: {
+                  type: 'security',
+                  severity: alert.severity,
+                  status: 'active',
+                  title: `[${alert.pattern}] ${alert.severity} threat detected`,
+                  message: alert.message,
+                  source: 'threat-patterns',
+                  metadata: { ip: threat.ip, city: threat.city, country: threat.country, isp: threat.isp, pattern: alert.pattern, path: cleanPath },
+                },
+              })
+              console.log(`[ThreatAlert] ${alert.severity}: ${alert.message}`)
+            } catch {}
+          }
+        }).catch(() => {})
+      }
+    }
 
     // Return immediately
     return NextResponse.json({ success: true })

@@ -7,10 +7,10 @@ import { headers } from 'next/headers'
 import prisma from '@/app/lib/database/prisma'
 import {
   parseUserAgent,
-  extractGeoFromHeaders,
   getClientIP,
   sanitizeQueryParams
 } from '@/app/lib/analytics'
+import { enrichIp } from '@/app/lib/analytics/threat-enrichment'
 import { identifyVisitor } from '@/app/lib/analytics/visitor-identification'
 
 // Rate limit: Max 100 events per minute per IP
@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
     // Extract data from headers
     const userAgent = headersList.get('user-agent') || ''
     const acceptLanguage = headersList.get('accept-language') || undefined
-    const geo = await extractGeoFromHeaders()
     const parsed = parseUserAgent(userAgent)
+    const threat = await enrichIp(ip !== 'unknown' ? ip : null)
 
     // Prepare visitor signals for identification
     const visitorSignals = {
@@ -94,9 +94,9 @@ export async function POST(request: NextRequest) {
       ip,
       userAgent,
       acceptLanguage,
-      country: geo.country,
-      region: geo.region,
-      city: geo.city,
+      country: threat.country,
+      region: threat.region,
+      city: threat.city,
       device: parsed.device,
       browser: parsed.browser,
       browserVer: parsed.browserVer,
@@ -137,9 +137,21 @@ export async function POST(request: NextRequest) {
       browser: parsed.browser,
       browserVer: parsed.browserVer,
       os: parsed.os,
-      country: geo.country,
-      region: geo.region,
-      city: geo.city,
+      country: threat.country,
+      region: threat.region,
+      city: threat.city,
+      ip: threat.ip,
+      isp: threat.isp,
+      asn: threat.asn,
+      org: threat.org,
+      isVpn: threat.isVpn,
+      isProxy: threat.isProxy,
+      isTor: threat.isTor,
+      isHosting: threat.isHosting,
+      riskScore: threat.riskScore,
+      latitude: threat.latitude,
+      longitude: threat.longitude,
+      address: threat.address,
       loadTime: typeof loadTime === 'number' ? loadTime : null,
       eventType,
       metadata: metadata ? JSON.stringify({

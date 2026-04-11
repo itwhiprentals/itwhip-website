@@ -255,6 +255,20 @@ model PageView {
   region  String? // Arizona, California, Texas
   city    String? // Phoenix, Los Angeles
 
+  // Threat intel (from ProxyCheck + ip-api)
+  ip        String?  // Client IP for threat correlation
+  isp       String?  // ISP name (T-Mobile, DigitalOcean, etc.)
+  asn       String?  // AS number (network identifier)
+  org       String?  // Organization name
+  isVpn     Boolean  @default(false)
+  isProxy   Boolean  @default(false)
+  isTor     Boolean  @default(false)
+  isHosting Boolean  @default(false) // Datacenter IP
+  riskScore Int      @default(0)     // 0-100 threat score
+  latitude  Float?
+  longitude Float?
+  address   String?  // Reverse-geocoded address from lat/lng
+
   // Performance metrics
   loadTime Int? // Page load time in ms
 
@@ -278,6 +292,9 @@ model PageView {
   @@index([visitorId, timestamp]) // Returning users analysis
   @@index([sessionId, visitorId]) // Bounce rate (single-page sessions)
   @@index([visitorId, eventType, timestamp]) // Visitor activity tracking
+  @@index([ip])                              // Threat correlation by IP
+  @@index([city, timestamp])                 // City drill-down
+  @@index([riskScore])                       // High-risk visitor queries
 }
 
 model BackgroundCheck {
