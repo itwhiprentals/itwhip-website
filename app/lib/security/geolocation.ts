@@ -215,16 +215,14 @@ export async function getEnhancedLocation(ip: string, headers?: Headers): Promis
  * Check if IP is private/local (won't have geolocation data)
  */
 function isPrivateIp(ip: string): boolean {
-  return (
-    ip === '127.0.0.1' ||
-    ip === '::1' ||
-    ip === 'localhost' ||
-    ip.startsWith('10.') ||
-    ip.startsWith('172.') ||
-    ip.startsWith('192.168.') ||
-    ip.startsWith('169.254.') ||
-    ip === '0.0.0.0'
-  )
+  if (ip === '127.0.0.1' || ip === '::1' || ip === 'localhost' || ip === '0.0.0.0') return true
+  if (ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('169.254.')) return true
+  // RFC 1918: only 172.16.0.0 – 172.31.255.255 is private (not all 172.x.x.x)
+  if (ip.startsWith('172.')) {
+    const second = parseInt(ip.split('.')[1], 10)
+    return second >= 16 && second <= 31
+  }
+  return false
 }
 
 /**
