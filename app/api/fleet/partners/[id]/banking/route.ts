@@ -91,7 +91,7 @@ export async function GET(
         currentCommissionRate: true,
 
         // Payment methods relation
-        paymentMethods: {
+        PaymentMethod: {
           select: {
             id: true,
             type: true,
@@ -109,7 +109,7 @@ export async function GET(
         },
 
         // Recent charges
-        hostCharges: {
+        host_charges: {
           take: 20,
           orderBy: { createdAt: 'desc' },
           select: {
@@ -127,7 +127,7 @@ export async function GET(
         },
 
         // Recent payouts
-        partnerPayouts: {
+        partner_payouts: {
           take: 10,
           orderBy: { createdAt: 'desc' },
           select: {
@@ -240,7 +240,7 @@ export async function GET(
 
     // Calculate stats
     const stats = {
-      totalCharges: partner.hostCharges.length,
+      totalCharges: partner.host_charges.length,
       totalChargedAmount: partner.totalChargedAmount || 0,
       currentBalance: partner.currentBalance || 0,
       pendingBalance: partner.pendingBalance || 0,
@@ -338,9 +338,9 @@ export async function GET(
           expMonth: partner.debitCardExpMonth,
           expYear: partner.debitCardExpYear
         } : null,
-        paymentMethods: partner.paymentMethods,
-        recentCharges: partner.hostCharges,
-        recentPayouts: partner.partnerPayouts.map((p: any) => ({
+        paymentMethods: partner.PaymentMethod,
+        recentCharges: partner.host_charges,
+        recentPayouts: partner.partner_payouts.map((p: any) => ({
           id: p.id,
           amount: p.netAmount,
           grossRevenue: p.grossRevenue,

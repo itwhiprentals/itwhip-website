@@ -393,7 +393,7 @@ export default function ApplicationsQueuePage() {
                         </button>
                       )}
                       <Link
-                        href={`/fleet/partners/applications/${app.id}?key=${apiKey}`}
+                        href={`/fleet/partners/${app.hostId}?key=${apiKey}`}
                         className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors"
                       >
                         <IoEyeOutline className="w-4 h-4" />

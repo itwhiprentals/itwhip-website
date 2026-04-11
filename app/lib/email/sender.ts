@@ -19,6 +19,16 @@ function getResend(): InstanceType<typeof Resend> {
 const EMAIL_FROM = process.env.EMAIL_FROM || 'ItWhip Rentals <info@itwhip.com>'
 const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO || 'info@itwhip.com'
 
+// Store last sent HTML so logEmail can auto-attach it (keyed by messageId)
+const recentHtmlCache = new Map<string, string>()
+
+/** Get and remove cached HTML for a messageId (one-shot) */
+export function popHtmlForMessageId(messageId: string): string | undefined {
+  const html = recentHtmlCache.get(messageId)
+  if (html) recentHtmlCache.delete(messageId)
+  return html
+}
+
 /**
  * Send an email via Resend
  *
@@ -69,12 +79,21 @@ export async function sendEmail(
       }
     }
 
-    console.log(`[${requestId}] Email sent successfully:`, { to, messageId: result.data?.id })
+    const messageId = result.data?.id
+    console.log(`[${requestId}] Email sent successfully:`, { to, messageId })
     await logCost('EMAIL_SENT', 0.001, undefined, { to, subject }).catch(() => {})
+
+    // Cache HTML so logEmail can auto-attach it for fleet audit
+    if (messageId) recentHtmlCache.set(messageId, html)
+    // Clean up old entries (prevent memory leak)
+    if (recentHtmlCache.size > 50) {
+      const oldest = recentHtmlCache.keys().next().value
+      if (oldest) recentHtmlCache.delete(oldest)
+    }
 
     return {
       success: true,
-      messageId: result.data?.id
+      messageId,
     }
 
   } catch (error: any) {

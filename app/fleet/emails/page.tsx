@@ -60,6 +60,21 @@ export default function FleetEmailsPage() {
   const [emailType, setEmailType] = useState('')
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
+  const [previewEmail, setPreviewEmail] = useState<(EmailLog & { htmlBody?: string | null }) | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
+
+  const openPreview = async (email: EmailLog) => {
+    setPreviewLoading(true)
+    setPreviewEmail(email as any)
+    try {
+      const res = await fetch(`/api/fleet/emails/${email.id}?key=phoenix-fleet-2847`)
+      const data = await res.json()
+      if (data.success && data.email) {
+        setPreviewEmail(data.email)
+      }
+    } catch {}
+    setPreviewLoading(false)
+  }
 
   const fetchEmails = async () => {
     setLoading(true)
@@ -225,16 +240,11 @@ export default function FleetEmailsPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {emails.map((email) => (
-                    <tr key={email.id} className="hover:bg-gray-50">
+                    <tr key={email.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => openPreview(email)}>
                       <td className="px-4 py-3">
-                        <a
-                          href={`/verify-email?ref=${email.referenceId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-mono text-sm text-orange-600 hover:text-orange-700"
-                        >
+                        <span className="font-mono text-sm text-orange-600 hover:text-orange-700">
                           {email.referenceId}
-                        </a>
+                        </span>
                       </td>
                       <td className="px-4 py-3">
                         <div>
@@ -299,6 +309,58 @@ export default function FleetEmailsPage() {
           )}
         </div>
       </div>
+      {/* Email Preview Modal */}
+      {previewEmail && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setPreviewEmail(null)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-semibold text-gray-900 truncate">{previewEmail.subject}</h3>
+                <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                  <span>To: {previewEmail.recipientName ? `${previewEmail.recipientName} <${previewEmail.recipientEmail}>` : previewEmail.recipientEmail}</span>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(previewEmail.status)}`}>
+                    {previewEmail.status}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                  <span>{formatDate(previewEmail.sentAt || previewEmail.createdAt)}</span>
+                  <span className="font-mono">{previewEmail.referenceId}</span>
+                  <span>{formatEmailType(previewEmail.emailType)}</span>
+                </div>
+              </div>
+              <button onClick={() => setPreviewEmail(null)} className="p-2 hover:bg-gray-100 rounded-lg transition">
+                <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {/* Modal Body */}
+            <div className="flex-1 overflow-auto">
+              {previewLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="w-8 h-8 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : previewEmail.htmlBody ? (
+                <iframe
+                  srcDoc={previewEmail.htmlBody}
+                  className="w-full h-full min-h-[500px] border-0"
+                  sandbox="allow-same-origin"
+                  title="Email preview"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                  <svg className="w-12 h-12 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-sm font-medium">Email body not available</p>
+                  <p className="text-xs mt-1">Emails sent before this update don&apos;t have stored HTML</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

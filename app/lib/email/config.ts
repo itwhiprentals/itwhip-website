@@ -3,6 +3,7 @@
 
 import { prisma } from '@/app/lib/database/prisma'
 import { nanoid } from 'nanoid'
+import { popHtmlForMessageId } from './sender'
 
 // Use string literals for email types and statuses to avoid Prisma client caching issues
 type EmailTypeString = 'GUEST_INVITE' | 'HOST_INVITE' | 'PASSWORD_RESET' | 'EMAIL_VERIFICATION' |
@@ -103,6 +104,7 @@ export async function logEmail(params: {
   messageId?: string
   metadata?: Record<string, any>
   referenceId?: string // Optional pre-generated reference ID (for including in email body)
+  htmlBody?: string // Full HTML for fleet audit/preview
 }): Promise<{ referenceId: string; emailLogId: string }> {
   const referenceId = params.referenceId || generateEmailReference(params.emailType.slice(0, 2))
 
@@ -122,7 +124,8 @@ export async function logEmail(params: {
       messageId: params.messageId,
       status: params.messageId ? 'SENT' : 'QUEUED',
       sentAt: params.messageId ? new Date() : null,
-      metadata: params.metadata
+      metadata: params.metadata,
+      htmlBody: params.htmlBody || (params.messageId ? popHtmlForMessageId(params.messageId) : undefined) || null,
     }
   })
 
