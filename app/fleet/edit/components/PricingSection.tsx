@@ -168,6 +168,7 @@ export function PricingSection({
                 type="number"
                 min="0"
                 max="50"
+                step="any"
                 value={weeklyDiscount}
                 onChange={(e) => handleDiscountChange('weeklyDiscount', parseFloat(e.target.value) || 0)}
                 className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded text-gray-900 dark:text-white"
@@ -181,6 +182,7 @@ export function PricingSection({
                 type="number"
                 min="0"
                 max="50"
+                step="any"
                 value={monthlyDiscount}
                 onChange={(e) => handleDiscountChange('monthlyDiscount', parseFloat(e.target.value) || 0)}
                 className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded text-gray-900 dark:text-white"

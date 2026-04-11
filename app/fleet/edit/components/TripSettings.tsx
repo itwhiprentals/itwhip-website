@@ -220,7 +220,7 @@ export function TripSettings({
                 value={mileageDaily}
                 onChange={(e) => onChange('mileageDaily', parseInt(e.target.value))}
                 min="0"
-                max="500"
+                max="99999"
                 className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -234,7 +234,7 @@ export function TripSettings({
                 value={mileageWeekly}
                 onChange={(e) => onChange('mileageWeekly', parseInt(e.target.value))}
                 min="0"
-                max="3000"
+                max="99999"
                 className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -248,7 +248,7 @@ export function TripSettings({
                 value={mileageMonthly}
                 onChange={(e) => onChange('mileageMonthly', parseInt(e.target.value))}
                 min="0"
-                max="10000"
+                max="99999"
                 className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
               />
             </div>

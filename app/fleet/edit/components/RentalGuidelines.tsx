@@ -344,7 +344,7 @@ export function RentalGuidelines({
                   onChange={(e) => setMileageLimit(parseInt(e.target.value) || 0)}
                   className="w-24 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded text-gray-900 dark:text-white"
                   min="50"
-                  max="500"
+                  max="99999"
                 />
                 <span className="text-sm text-gray-600 dark:text-gray-400">miles/day</span>
               </div>
