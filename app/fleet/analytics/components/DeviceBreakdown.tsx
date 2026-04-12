@@ -3,7 +3,10 @@
 
 'use client'
 
+import { useState } from 'react'
 import { IoDesktopOutline, IoPhonePortraitOutline, IoTabletPortraitOutline, IoLogoChrome } from 'react-icons/io5'
+import DeviceDrilldownModal from './DeviceDrilldown/DeviceDrilldownModal'
+import BrowserDrilldownModal from './BrowserDrilldown/BrowserDrilldownModal'
 
 interface DeviceData {
   device: string
@@ -37,6 +40,8 @@ const deviceColors: Record<string, string> = {
 }
 
 export default function DeviceBreakdown({ devices, browsers, loading = false }: DeviceBreakdownProps) {
+  const [selectedDevice, setSelectedDevice] = useState<string | null>(null)
+  const [selectedBrowser, setSelectedBrowser] = useState<string | null>(null)
   const totalDevices = devices.reduce((sum, d) => sum + d.views, 0)
   const totalBrowsers = browsers.reduce((sum, b) => sum + b.views, 0)
 
@@ -75,7 +80,8 @@ export default function DeviceBreakdown({ devices, browsers, loading = false }: 
             return (
               <div
                 key={item.device}
-                className="text-center p-3 rounded-lg bg-gray-50 dark:bg-gray-900"
+                className="text-center p-3 rounded-lg bg-gray-50 dark:bg-gray-900 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                onClick={() => setSelectedDevice(item.device.toLowerCase())}
               >
                 <Icon className="w-6 h-6 mx-auto mb-1 text-gray-600 dark:text-gray-400" />
                 <p className="text-lg font-bold text-gray-900 dark:text-white">{percentage}%</p>
@@ -119,9 +125,13 @@ export default function DeviceBreakdown({ devices, browsers, loading = false }: 
               const percentage = totalBrowsers > 0 ? ((item.views / totalBrowsers) * 100).toFixed(0) : 0
               const colors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-red-500']
               return (
-                <div key={item.browser} className="flex items-center gap-1.5">
+                <div
+                  key={item.browser}
+                  className="flex items-center gap-1.5 cursor-pointer hover:opacity-75 transition-opacity"
+                  onClick={() => setSelectedBrowser(item.browser)}
+                >
                   <div className={`w-2.5 h-2.5 rounded-full ${colors[i % colors.length]}`} />
-                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                  <span className="text-xs text-blue-600 dark:text-blue-400">
                     {item.browser} ({percentage}%)
                   </span>
                 </div>
@@ -129,6 +139,13 @@ export default function DeviceBreakdown({ devices, browsers, loading = false }: 
             })}
           </div>
         </>
+      )}
+      {/* Drill-down modals */}
+      {selectedDevice && (
+        <DeviceDrilldownModal device={selectedDevice} onClose={() => setSelectedDevice(null)} />
+      )}
+      {selectedBrowser && (
+        <BrowserDrilldownModal browser={selectedBrowser} onClose={() => setSelectedBrowser(null)} />
       )}
     </div>
   )

@@ -137,6 +137,7 @@ export async function POST(request: NextRequest) {
       browser: parsed.browser,
       browserVer: parsed.browserVer,
       os: parsed.os,
+      osVersion: parsed.osVersion,
       country: threat.country,
       region: threat.region,
       city: threat.city,

@@ -249,6 +249,7 @@ model PageView {
   browser    String? // Chrome, Safari, Firefox
   browserVer String? // Browser version
   os         String? // Windows, macOS, iOS, Android
+  osVersion  String? // 18.2, 15, 10.15.7
 
   // Location (from request headers)
   country String? // US, UK, MX (ISO 3166-1 alpha-2)

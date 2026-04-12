@@ -6,6 +6,7 @@ interface ParsedUA {
   browser: string | null
   browserVer: string | null
   os: string | null
+  osVersion: string | null
   device: 'desktop' | 'mobile' | 'tablet' | null
   deviceConfidence: 'high' | 'medium' | 'low'
 }
@@ -23,13 +24,14 @@ const BOT_REGEX = /bot|crawl|spider|slurp|googlebot|bingbot|yandex|baidu|duckduc
 
 export function parseUserAgent(ua: string): ParsedUA {
   if (!ua) {
-    return { browser: null, browserVer: null, os: null, device: null, deviceConfidence: 'low' }
+    return { browser: null, browserVer: null, os: null, osVersion: null, device: null, deviceConfidence: 'low' }
   }
 
   const result: ParsedUA = {
     browser: null,
     browserVer: null,
     os: null,
+    osVersion: null,
     device: null,
     deviceConfidence: 'high'
   }
@@ -38,7 +40,7 @@ export function parseUserAgent(ua: string): ParsedUA {
 
   // Skip bots - they're not real devices
   if (BOT_REGEX.test(ua)) {
-    return { browser: 'Bot', browserVer: null, os: null, device: 'desktop', deviceConfidence: 'high' }
+    return { browser: 'Bot', browserVer: null, os: null, osVersion: null, device: 'desktop', deviceConfidence: 'high' }
   }
 
   // Detect browser (order matters - check specific before generic)
@@ -65,29 +67,40 @@ export function parseUserAgent(ua: string): ParsedUA {
     result.browserVer = ua.match(/SamsungBrowser\/([\d.]+)/)?.[1] || null
   }
 
-  // Detect OS
+  // Detect OS + OS version
   if (ua.includes('Windows NT')) {
     result.os = 'Windows'
-    // Get Windows version
     const winVer = ua.match(/Windows NT ([\d.]+)/)
     if (winVer) {
       const verMap: Record<string, string> = {
         '10.0': '10/11', '6.3': '8.1', '6.2': '8', '6.1': '7', '6.0': 'Vista', '5.1': 'XP'
       }
-      result.os = `Windows ${verMap[winVer[1]] || winVer[1]}`
+      result.osVersion = verMap[winVer[1]] || winVer[1]
+      result.os = `Windows ${result.osVersion}`
     }
   } else if (ua.includes('Mac OS X')) {
     result.os = 'macOS'
+    const macVer = ua.match(/Mac OS X ([\d_.]+)/)
+    if (macVer) result.osVersion = macVer[1].replace(/_/g, '.')
   } else if (ua.includes('iPhone')) {
     result.os = 'iOS'
+    const iosVer = ua.match(/iPhone OS ([\d_]+)/)
+    if (iosVer) result.osVersion = iosVer[1].replace(/_/g, '.')
   } else if (ua.includes('iPad')) {
     result.os = 'iPadOS'
+    const ipadVer = ua.match(/CPU OS ([\d_]+)/)
+    if (ipadVer) result.osVersion = ipadVer[1].replace(/_/g, '.')
   } else if (ua.includes('Android')) {
     result.os = 'Android'
     const androidVer = ua.match(/Android ([\d.]+)/)
-    if (androidVer) result.os = `Android ${androidVer[1]}`
+    if (androidVer) {
+      result.osVersion = androidVer[1]
+      result.os = `Android ${result.osVersion}`
+    }
   } else if (ua.includes('CrOS')) {
     result.os = 'Chrome OS'
+    const crosVer = ua.match(/CrOS \S+ ([\d.]+)/)
+    if (crosVer) result.osVersion = crosVer[1]
   } else if (ua.includes('Linux')) {
     result.os = 'Linux'
   }
