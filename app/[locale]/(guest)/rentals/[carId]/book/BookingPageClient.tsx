@@ -36,6 +36,7 @@ import { capitalizeCarMake, normalizeModelName } from '@/app/lib/utils/formatter
 // Import Phase 14 booking UI components
 import { VisitorIdentityVerify, GuestIdentityVerify, InsurancePill, BookingSuccessModal, HeaderBar, CarInfoCard, BookingModals, AlertBanners, HostGuardModal, BookingDetailsCards, SecondDriverForm, PrimaryDriverForm, PriceSummary, PricingFooter, IdentityVerificationSection } from './components'
 import type { AppliedPromo } from './components/PromoCodeInput'
+import { trackFunnelStep } from '@/app/lib/analytics/funnel-events'
 
 // Stripe Payment Element for Apple Pay, Google Pay, and Card payments
 import { loadStripe } from '@stripe/stripe-js'
@@ -279,9 +280,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   
   // Funnel: checkout page loaded
   useEffect(() => {
-    import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
-      trackFunnelStep('funnel_checkout_loaded', { carId })
-    }).catch(() => {})
+    trackFunnelStep('funnel_checkout_loaded', { carId })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Track page load time for fraud detection
@@ -1509,9 +1508,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           setLicensePhotoUrl(data.url)
           setLicenseUploaded(true)
           // Funnel: identity started
-          import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
-            trackFunnelStep('funnel_identity_started', { carId, step: 6 })
-          }).catch(() => {})
+          trackFunnelStep('funnel_identity_started', { carId, step: 6 })
         } else if (type === 'insurance') {
           setInsurancePhotoUrl(data.url)
           setInsuranceUploaded(true)
@@ -1907,9 +1904,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     setBookingError(null)
 
     // Funnel: payment processing started
-    import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
-      trackFunnelStep('funnel_payment_processing', { carId, carName: car ? `${car.year} ${car.make} ${car.model}` : undefined, totalAmount: pricing?.total })
-    }).catch(() => {})
+    trackFunnelStep('funnel_payment_processing', { carId, carName: car ? `${car.year} ${car.make} ${car.model}` : undefined, totalAmount: pricing?.total })
 
     try {
       // Step 1: Confirm payment (skip for $0 bookings)
@@ -2180,12 +2175,10 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         })
 
         // Funnel: booking confirmed!
-        import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
-          trackFunnelStep('funnel_booking_confirmed', {
-            carId, carName: car ? `${car.year} ${car.make} ${car.model}` : undefined,
-            totalAmount: pricing?.total, bookingCode: data.booking.bookingCode,
-          })
-        }).catch(() => {})
+        trackFunnelStep('funnel_booking_confirmed', {
+          carId, carName: car ? `${car.year} ${car.make} ${car.model}` : undefined,
+          totalAmount: pricing?.total, bookingCode: data.booking.bookingCode,
+        })
         // Auto-redirect after a short delay so guest can see confirmation
         setTimeout(() => {
           if (data.booking.id) {
@@ -2214,12 +2207,10 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       setBookingError(error?.message || t('failedToSubmitBooking'))
 
       // Funnel: error during booking
-      import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
-        trackFunnelStep('funnel_error', {
-          carId, carName: car ? `${car.year} ${car.make} ${car.model}` : undefined,
-          totalAmount: pricing?.total, errorMessage: error?.message || 'Unknown error',
-        })
-      }).catch(() => {})
+      trackFunnelStep('funnel_error', {
+        carId, carName: car ? `${car.year} ${car.make} ${car.model}` : undefined,
+        totalAmount: pricing?.total, errorMessage: error?.message || 'Unknown error',
+      })
     } finally {
       setIsProcessing(false)
     }
@@ -2411,9 +2402,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             if (result.passed && result.data) {
               console.log('[Booking] AI DL verification passed:', result.data)
               // Funnel: identity completed
-              import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
-                trackFunnelStep('funnel_identity_completed', { carId, step: 7 })
-              }).catch(() => {})
+              trackFunnelStep('funnel_identity_completed', { carId, step: 7 })
             }
           }}
           onPhotosUploaded={(frontUrl, backUrl) => {
@@ -2578,9 +2567,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                   onReady={() => {
                     setIsPaymentElementReady(true)
                     // Funnel: payment started
-                    import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
-                      trackFunnelStep('funnel_payment_started', { carId, step: 8 })
-                    }).catch(() => {})
+                    trackFunnelStep('funnel_payment_started', { carId, step: 8 })
                   }}
                   onComplete={(complete) => setIsPaymentElementComplete(complete)}
                   onError={(error) => setPaymentError(error)}

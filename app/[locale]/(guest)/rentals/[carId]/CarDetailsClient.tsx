@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { extractCarId } from '@/app/lib/utils/urls'
+import { trackFunnelStep } from '@/app/lib/analytics/funnel-events'
 import { 
   IoArrowBackOutline,
   IoLocationOutline,
@@ -429,13 +430,11 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
         setCar(data as RentalCarWithDetails)
 
         // Track funnel step: car viewed
-        import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
-          trackFunnelStep('funnel_car_viewed', {
-            carId: data.id,
-            carName: `${data.year} ${data.make} ${data.model}`,
-            totalAmount: data.dailyRate,
-          })
-        }).catch(() => {})
+        trackFunnelStep('funnel_car_viewed', {
+          carId: data.id,
+          carName: `${data.year} ${data.make} ${data.model}`,
+          totalAmount: data.dailyRate,
+        })
       } else if (response.status === 404) {
         setCar(null)
       } else {

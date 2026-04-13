@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { trackFunnelStep } from '@/app/lib/analytics/funnel-events'
 import { Link } from '@/i18n/navigation'
 import { useTranslations, useFormatter } from 'next-intl'
 import {
@@ -395,9 +396,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
   useEffect(() => {
     if (days > 0 && !dateError && !datesTrackedRef.current && car?.id) {
       datesTrackedRef.current = true
-      import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
-        trackFunnelStep('funnel_dates_selected', { carId: car.id, step: 3 })
-      }).catch(() => {})
+      trackFunnelStep('funnel_dates_selected', { carId: car.id, step: 3 })
     }
   }, [days, dateError, car?.id])
 
@@ -409,9 +408,7 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
       return
     }
     if (car?.id) {
-      import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
-        trackFunnelStep('funnel_insurance_selected', { carId: car.id, insuranceTier, step: 4 })
-      }).catch(() => {})
+      trackFunnelStep('funnel_insurance_selected', { carId: car.id, insuranceTier, step: 4 })
     }
   }, [insuranceTier]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -459,12 +456,10 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
     sessionStorage.setItem('rentalBookingDetails', JSON.stringify(bookingDetails))
 
     // Funnel: book clicked — critical transition from browsing to checkout
-    import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
-      trackFunnelStep('funnel_book_clicked', {
-        carId: car?.id, carName: car ? `${car.year} ${car.make} ${car.model}` : undefined,
-        totalAmount: pricing.total, insuranceTier,
-      })
-    }).catch(() => {})
+    trackFunnelStep('funnel_book_clicked', {
+      carId: car?.id, carName: car ? `${car.year} ${car.make} ${car.model}` : undefined,
+      totalAmount: pricing.total, insuranceTier,
+    })
 
     router.push(`/rentals/${car?.id}/book`)
   }

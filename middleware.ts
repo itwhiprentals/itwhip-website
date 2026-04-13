@@ -435,6 +435,7 @@ export async function middleware(request: NextRequest) {
                        pathname === '/fleet' || pathname.startsWith('/fleet/')
   const isFleetExcluded = pathname.startsWith('/api/fleet/auth') ||
                           pathname.startsWith('/api/fleet/analytics/track') ||
+                          pathname === '/api/fleet/analytics/heartbeat' ||
                           pathname === '/fleet/login'
 
   if (isFleetRoute && !isFleetExcluded) {
