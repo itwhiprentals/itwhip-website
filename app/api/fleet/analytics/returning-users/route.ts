@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       // Get paginated visitor statistics (aggregated at DB level)
       prisma.$queryRaw<VisitorStats[]>`
         SELECT
-          "visitorId",
+          COALESCE(ip, "visitorId") as "visitorId",
           COUNT(DISTINCT DATE(timestamp)) as "sessionCount",
           COUNT(*) as "pageViews",
           COUNT(DISTINCT path) as "uniquePages",
@@ -63,8 +63,8 @@ export async function GET(request: NextRequest) {
           MAX(timestamp)::text as "lastVisit"
         FROM "PageView"
         WHERE timestamp >= ${startDate}
-          AND "visitorId" IS NOT NULL
-        GROUP BY "visitorId"
+          AND ("visitorId" IS NOT NULL OR ip IS NOT NULL)
+        GROUP BY COALESCE(ip, "visitorId")
         ORDER BY "sessionCount" DESC, "pageViews" DESC
         LIMIT ${limit}
         OFFSET ${offset}
@@ -79,13 +79,13 @@ export async function GET(request: NextRequest) {
       }>>`
         WITH visitor_sessions AS (
           SELECT
-            "visitorId",
+            COALESCE(ip, "visitorId") as visitor_key,
             COUNT(DISTINCT DATE(timestamp)) as session_count,
             COUNT(*) as page_count
           FROM "PageView"
           WHERE timestamp >= ${startDate}
-            AND "visitorId" IS NOT NULL
-          GROUP BY "visitorId"
+            AND ("visitorId" IS NOT NULL OR ip IS NOT NULL)
+          GROUP BY COALESCE(ip, "visitorId")
         )
         SELECT
           COUNT(*) as total_visitors,
@@ -102,12 +102,12 @@ export async function GET(request: NextRequest) {
       }>>`
         WITH visitor_sessions AS (
           SELECT
-            "visitorId",
+            COALESCE(ip, "visitorId") as visitor_key,
             COUNT(DISTINCT DATE(timestamp)) as session_count
           FROM "PageView"
           WHERE timestamp >= ${startDate}
-            AND "visitorId" IS NOT NULL
-          GROUP BY "visitorId"
+            AND ("visitorId" IS NOT NULL OR ip IS NOT NULL)
+          GROUP BY COALESCE(ip, "visitorId")
         )
         SELECT
           CASE
@@ -131,10 +131,10 @@ export async function GET(request: NextRequest) {
 
       // Get total count for pagination
       prisma.$queryRaw<Array<{ count: bigint }>>`
-        SELECT COUNT(DISTINCT "visitorId") as count
+        SELECT COUNT(DISTINCT COALESCE(ip, "visitorId")) as count
         FROM "PageView"
         WHERE timestamp >= ${startDate}
-          AND "visitorId" IS NOT NULL
+          AND ("visitorId" IS NOT NULL OR ip IS NOT NULL)
       `
     ])
 
