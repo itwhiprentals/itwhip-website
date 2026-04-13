@@ -149,6 +149,21 @@ const nextConfig = {
       { source: '/signup', destination: '/auth/signup', permanent: true },
 
       // ============================================
+      // GSC FIX — Redirect errors + 404s + duplicates (Apr 2026)
+      // ============================================
+      { source: '/help', destination: '/support', permanent: true },
+      { source: '/sitemap', destination: '/sitemap.xml', permanent: true },
+      { source: '/partner/login', destination: '/auth/login', permanent: true },
+      { source: '/host/register', destination: '/host/signup', permanent: true },
+      { source: '/host/fleet-owners', destination: '/list-your-car', permanent: true },
+      { source: '/partners/apply', destination: '/partner/signup', permanent: true },
+      { source: '/partners/apply/start', destination: '/partner/signup', permanent: true },
+      { source: '/rentals/makes/maserati', destination: '/rentals/search', permanent: true },
+      { source: '/rentals/makes/mercedes', destination: '/rentals/makes/mercedes-benz', permanent: true },
+      { source: '/legal', destination: '/terms', permanent: true },
+      { source: '/demo', destination: '/', permanent: true },
+
+      // ============================================
       // Arizona City Hubs
       // ============================================
       { source: '/phoenix', destination: '/rentals/cities/phoenix', permanent: true },

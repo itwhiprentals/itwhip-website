@@ -277,6 +277,13 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   const [showManualApprovalModal, setShowManualApprovalModal] = useState<string | null>(null)
   const manualApprovalAccepted = useRef(false)
   
+  // Funnel: checkout page loaded
+  useEffect(() => {
+    import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
+      trackFunnelStep('funnel_checkout_loaded', { carId })
+    }).catch(() => {})
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Track page load time for fraud detection
   useEffect(() => {
     (window as any).pageLoadTime = Date.now();
@@ -1895,6 +1902,11 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     setPaymentError(null)
     setBookingError(null)
 
+    // Funnel: payment processing started
+    import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
+      trackFunnelStep('funnel_payment_processing', { carId, carName: car ? `${car.year} ${car.make} ${car.model}` : undefined, totalAmount: pricing?.total })
+    }).catch(() => {})
+
     try {
       // Step 1: Confirm payment (skip for $0 bookings)
       let confirmedPaymentIntentId: string | undefined
@@ -2162,6 +2174,14 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           status: data.status || 'pending_review',
           id: data.booking.id,
         })
+
+        // Funnel: booking confirmed!
+        import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
+          trackFunnelStep('funnel_booking_confirmed', {
+            carId, carName: car ? `${car.year} ${car.make} ${car.model}` : undefined,
+            totalAmount: pricing?.total, bookingCode: data.booking.bookingCode,
+          })
+        }).catch(() => {})
         // Auto-redirect after a short delay so guest can see confirmation
         setTimeout(() => {
           if (data.booking.id) {
@@ -2188,6 +2208,14 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     } catch (error: any) {
       console.error('Booking submission error:', error)
       setBookingError(error?.message || t('failedToSubmitBooking'))
+
+      // Funnel: error during booking
+      import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
+        trackFunnelStep('funnel_error', {
+          carId, carName: car ? `${car.year} ${car.make} ${car.model}` : undefined,
+          totalAmount: pricing?.total, errorMessage: error?.message || 'Unknown error',
+        })
+      }).catch(() => {})
     } finally {
       setIsProcessing(false)
     }

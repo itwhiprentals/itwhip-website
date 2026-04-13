@@ -427,6 +427,15 @@ export default function CarDetailsClient({ params, initialSimilarCars, initialHo
           suspensionMessage: data.suspensionMessage
         })
         setCar(data as RentalCarWithDetails)
+
+        // Track funnel step: car viewed
+        import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
+          trackFunnelStep('funnel_car_viewed', {
+            carId: data.id,
+            carName: `${data.year} ${data.make} ${data.model}`,
+            totalAmount: data.dailyRate,
+          })
+        }).catch(() => {})
       } else if (response.status === 404) {
         setCar(null)
       } else {

@@ -10,6 +10,9 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: '*',
         allow: [
           '/',
+          // Allow public auth pages
+          '/auth/login',
+          '/auth/signup',
           // Allow public host acquisition pages
           '/host/signup',
           '/host/requirements',
