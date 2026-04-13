@@ -3,6 +3,7 @@
 import { ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
 import {
   IoPersonOutline,
   IoCheckmarkCircle,
