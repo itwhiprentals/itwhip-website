@@ -249,18 +249,18 @@ export default function FleetDashboard() {
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Emails Sent Today</p>
             <p className="text-2xl font-bold text-indigo-600">{activeUsers.emailsSentToday}</p>
           </Link>
-          <Link href={`/fleet/messages?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
+          <Link href={`/fleet/communications?key=${apiKey}&tab=sms`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">SMS Sent Today</p>
             <p className="text-2xl font-bold text-green-600">{activeUsers.smsSentToday}</p>
           </Link>
-          <Link href={`/fleet/messages?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
+          <Link href={`/fleet/communications?key=${apiKey}&tab=sms`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">SMS Received Today</p>
             <p className="text-2xl font-bold text-teal-600">{activeUsers.smsReceivedToday}</p>
           </Link>
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center">
+          <Link href={`/fleet/communications?key=${apiKey}&tab=calls`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Calls Today</p>
             <p className="text-2xl font-bold text-purple-600">{activeUsers.callsToday}</p>
-          </div>
+          </Link>
         </div>
       )}
 

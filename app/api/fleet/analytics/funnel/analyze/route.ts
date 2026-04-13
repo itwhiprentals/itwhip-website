@@ -75,16 +75,17 @@ export async function POST(request: NextRequest) {
     ])
 
     // Build funnel steps
+    // Order matches actual user flow: car page (view→dates→insurance→book) → checkout
     const STEP_ORDER = [
-      'funnel_car_viewed', 'funnel_book_clicked', 'funnel_checkout_loaded',
-      'funnel_dates_selected', 'funnel_insurance_selected',
+      'funnel_car_viewed', 'funnel_dates_selected', 'funnel_insurance_selected',
+      'funnel_book_clicked', 'funnel_checkout_loaded',
       'funnel_identity_started', 'funnel_identity_completed',
       'funnel_payment_started', 'funnel_payment_processing', 'funnel_booking_confirmed',
     ]
     const STEP_LABELS: Record<string, string> = {
-      funnel_car_viewed: 'Viewed Car', funnel_book_clicked: 'Clicked Book',
-      funnel_checkout_loaded: 'Checkout Loaded', funnel_dates_selected: 'Selected Dates',
-      funnel_insurance_selected: 'Chose Insurance', funnel_identity_started: 'Started ID Verify',
+      funnel_car_viewed: 'Viewed Car', funnel_dates_selected: 'Selected Dates',
+      funnel_insurance_selected: 'Chose Insurance', funnel_book_clicked: 'Clicked Book',
+      funnel_checkout_loaded: 'Checkout Loaded', funnel_identity_started: 'Started ID Verify',
       funnel_identity_completed: 'ID Verified', funnel_payment_started: 'Started Payment',
       funnel_payment_processing: 'Processing Payment', funnel_booking_confirmed: 'Booking Confirmed',
     }

@@ -17,11 +17,12 @@ export type FunnelStep =
   | 'funnel_error'
 
 // Step numbers for ordering in the funnel chart
+// Matches the ACTUAL user flow: browse car page → select dates/insurance → click Book → checkout
 export const FUNNEL_STEP_ORDER: Record<FunnelStep, number> = {
   funnel_car_viewed: 1,
-  funnel_book_clicked: 2,
-  funnel_dates_selected: 3,
-  funnel_insurance_selected: 4,
+  funnel_dates_selected: 2,
+  funnel_insurance_selected: 3,
+  funnel_book_clicked: 4,
   funnel_checkout_loaded: 5,
   funnel_identity_started: 6,
   funnel_identity_completed: 7,
@@ -35,9 +36,9 @@ export const FUNNEL_STEP_ORDER: Record<FunnelStep, number> = {
 // Human-readable labels for the dashboard
 export const FUNNEL_STEP_LABELS: Record<FunnelStep, string> = {
   funnel_car_viewed: 'Viewed Car',
-  funnel_book_clicked: 'Clicked Book',
   funnel_dates_selected: 'Selected Dates',
   funnel_insurance_selected: 'Chose Insurance',
+  funnel_book_clicked: 'Clicked Book',
   funnel_checkout_loaded: 'Checkout Loaded',
   funnel_identity_started: 'Started ID Verify',
   funnel_identity_completed: 'ID Verified',

@@ -5,12 +5,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { generateInsights } from '@/app/lib/analytics/funnel-insights'
 
+// Order matches the ACTUAL user flow:
+// Car page (view → dates → insurance → book) → Checkout (load → ID → payment → confirmed)
 const FUNNEL_STEPS = [
   'funnel_car_viewed',
-  'funnel_book_clicked',
-  'funnel_checkout_loaded',
   'funnel_dates_selected',
   'funnel_insurance_selected',
+  'funnel_book_clicked',
+  'funnel_checkout_loaded',
   'funnel_identity_started',
   'funnel_identity_completed',
   'funnel_payment_started',
@@ -20,10 +22,10 @@ const FUNNEL_STEPS = [
 
 const STEP_LABELS: Record<string, string> = {
   funnel_car_viewed: 'Viewed Car',
-  funnel_book_clicked: 'Clicked Book',
-  funnel_checkout_loaded: 'Checkout Loaded',
   funnel_dates_selected: 'Selected Dates',
   funnel_insurance_selected: 'Chose Insurance',
+  funnel_book_clicked: 'Clicked Book',
+  funnel_checkout_loaded: 'Checkout Loaded',
   funnel_identity_started: 'Started ID Verify',
   funnel_identity_completed: 'ID Verified',
   funnel_payment_started: 'Started Payment',

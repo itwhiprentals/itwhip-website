@@ -72,7 +72,7 @@ export function generateInsights(
       title: 'No One Clicks "Book"',
       message: `${viewed} people viewed cars but 0 clicked the booking button. This is the #1 bottleneck.`,
       metric: '100% drop-off',
-      recommendation: 'Make the price and availability instantly visible. Add a sticky "Book Now" bar. Show total price upfront — guests may be confused about what it costs.',
+      recommendation: 'Sticky Book button and total price are already live. Check if car photos are compelling, reviews are visible, and the Book button stands out on mobile. Add host response time and ratings near the button.',
     })
   } else if (viewed > 0 && clicked / viewed < 0.15) {
     const dropPct = Math.round((1 - clicked / viewed) * 100)
@@ -81,7 +81,7 @@ export function generateInsights(
       title: 'Car Page Drop-Off Too High',
       message: `${dropPct}% of visitors leave the car page without clicking "Continue to Checkout." Industry benchmark is 25-40% click-through.`,
       metric: `${dropPct}% drop-off`,
-      recommendation: 'Add a price summary visible without scrolling. Show "Fully Insured" and "Free Cancellation" badges prominently. Consider adding a "Price Match Guarantee."',
+      recommendation: 'Price summary, sticky Book button, and trust badges are already live. Focus on adding social proof (review count, host rating), improving car photo quality, and ensuring the value proposition is clear above the fold.',
     })
   } else if (viewed > 0 && clicked / viewed >= 0.25) {
     insights.push({
@@ -101,7 +101,7 @@ export function generateInsights(
       title: 'Checkout Abandonment at ID Verification',
       message: `${dropPct}% of guests who reach checkout leave before uploading their driver's license.`,
       metric: `${dropPct}% drop-off`,
-      recommendation: 'Guests may not have their DL ready. Add "You\'ll need your driver\'s license" messaging on the car page BEFORE they reach checkout. Consider allowing booking first, verify later.',
+      recommendation: 'Add "You\'ll need your driver\'s license" messaging on the car page BEFORE checkout. Add a progress bar showing where they are in checkout. Make the DL upload feel fast and safe with reassurance copy ("AI-verified in seconds, 100% secure").',
     })
   }
 
