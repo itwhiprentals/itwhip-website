@@ -835,9 +835,9 @@ function InputModeToggle({
 function PhotoTips({ uploadMode = false }: { uploadMode?: boolean }) {
   const t = useTranslations('DLVerification')
   return (
-    <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg mb-4">
-      <IoInformationCircleOutline className="text-blue-500 flex-shrink-0 text-base" />
-      <p className="text-xs text-blue-700 dark:text-blue-400">
+    <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
+      <IoInformationCircleOutline className="text-gray-500 flex-shrink-0 text-base" />
+      <p className="text-xs text-gray-600 dark:text-gray-400">
         {uploadMode ? t('uploadPhotoTips') : t('photoTips')}
       </p>
     </div>
@@ -874,44 +874,39 @@ function UploadTarget({
           ? 'border-2 border-green-500'
           : 'border-2 border-dashed border-gray-300 dark:border-gray-600 cursor-pointer hover:border-orange-400'
       } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-      style={{ aspectRatio: '1.586' }}
     >
       {isUploading && !preview ? (
-        /* Uploading without preview (fallback path) */
-        <div className="flex flex-col items-center justify-center h-full gap-2">
-          <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
           <p className="text-xs text-gray-500">{t('uploading')}</p>
         </div>
       ) : preview ? (
-        /* Image preview with upload overlay */
-        <div className="relative h-full">
-          <img src={preview} alt={label} className="w-full h-full object-cover" />
-          {isUploading && (
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-              <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            </div>
-          )}
-          {!isUploading && (
+        <div className="relative flex items-center gap-3 p-2">
+          <img src={preview} alt={label} className="w-20 h-14 object-cover rounded" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-green-600 truncate">{label}</p>
+          </div>
+          {isUploading ? (
+            <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+          ) : (
             <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onRetake()
-              }}
-              className="absolute bottom-2 right-2 flex items-center gap-1 px-3 py-1.5 bg-black/60 backdrop-blur text-white text-xs rounded-lg hover:bg-black/80 transition-colors"
+              onClick={(e) => { e.stopPropagation(); onRetake() }}
+              className="flex items-center gap-1 px-2 py-1 text-[10px] text-gray-500 hover:text-gray-700 border border-gray-200 dark:border-gray-600 rounded-md"
             >
-              <IoRefreshOutline className="text-sm" />
+              <IoRefreshOutline className="text-xs" />
               {t('retake')}
             </button>
           )}
         </div>
       ) : (
-        /* Empty upload target */
-        <div className="flex flex-col items-center justify-center h-full gap-2 px-4">
-          {icon}
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</p>
-          <div className="flex items-center gap-1.5 text-orange-500">
-            {uploadMode ? <IoCloudUploadOutline className="text-base" /> : <IoCameraOutline className="text-base" />}
-            <span className="text-xs font-medium">{sublabel}</span>
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="text-gray-400 flex-shrink-0">{icon}</div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</p>
+            <div className="flex items-center gap-1 text-orange-500 mt-0.5">
+              {uploadMode ? <IoCloudUploadOutline className="text-xs" /> : <IoCameraOutline className="text-xs" />}
+              <span className="text-[11px]">{sublabel}</span>
+            </div>
           </div>
         </div>
       )}

@@ -99,7 +99,8 @@ export function PrimaryDriverForm({
             <input
               type="text"
               value={driverFirstName}
-              onChange={(e) => onFirstNameChange(e.target.value)}
+              onChange={(e) => onFirstNameChange(e.target.value.replace(/^\w/, c => c.toUpperCase()))}
+              style={{ textTransform: 'capitalize' }}
               className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white ${
                 driverFirstName && firstNameValidation.isValid
                   ? 'border-green-500 dark:border-green-500'
@@ -137,7 +138,8 @@ export function PrimaryDriverForm({
             <input
               type="text"
               value={driverLastName}
-              onChange={(e) => onLastNameChange(e.target.value)}
+              onChange={(e) => onLastNameChange(e.target.value.replace(/^\w/, c => c.toUpperCase()))}
+              style={{ textTransform: 'capitalize' }}
               className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:text-white ${
                 driverLastName && lastNameValidation.isValid
                   ? 'border-green-500 dark:border-green-500'

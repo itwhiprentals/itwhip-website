@@ -215,6 +215,7 @@ export function IdentityVerificationSection({
                     driverPhone={driverPhone}
                     carId={carId}
                     disabled={!emailValidation.isValid}
+                    allowFileUpload={true}
                   />
                 </>
               )}
