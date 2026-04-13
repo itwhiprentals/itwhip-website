@@ -6,6 +6,44 @@
 
 ---
 
+## Recent Deployments (April 2026)
+
+### Pricing Transparency — Trip Cost Preview + Deposit Clarity (Apr 13)
+**Deployed to production**
+
+Goal: Remove pricing confusion causing 98% drop-off at booking. Users couldn't tell what they were actually paying vs what was a refundable hold.
+
+BookingWidget (car detail page):
+- Replaced 3-column grid with rate math display: "3 days × $199.00/day = $597.00"
+- Trip Total shown bold and prominent above Book button
+- Refundable deposit in separate blue info box with explanation text
+- Floating mobile bar split: "$742.12 trip" + "+ $500.00 refundable hold"
+
+PriceSummary (checkout page):
+- Replaced single "Total Due Today: $1,242" with split display
+- Trip Charge: $742.12 (bold) + Refundable Deposit (hold): $500.00 (green solid box)
+- Card summary line: "Card charge: $742.12 + $500.00 hold"
+- Deposit badge changed from red to green (refundable = reassuring)
+
+PricingFooter (checkout sticky bar):
+- Desktop: "$742.12 trip + $500.00 deposit hold [Book Now]"
+- Mobile: stacked two lines with trip total and deposit hold
+
+InsurancePill popup:
+- Fixed misleading copy — was "upload after booking", now correctly says "create account first"
+- "Sign up" is now a clickable link to /auth/signup
+- Fixed "50% on coverage" → "50% on deposit" (correct business logic)
+
+Grammar/punctuation audit (all 3 languages):
+- Added missing periods to 5 strings
+- Replaced hyphens with em dashes in 4 strings
+- Fixed "in profile" → "in your profile"
+- Fixed Spanish usted→tú form in 3 checkout strings
+
+Files: BookingWidget.tsx, PriceSummary.tsx, PricingFooter.tsx, InsurancePill.tsx, en/es/fr.json
+
+---
+
 ## Recent Deployments (March 2026)
 
 ### AWS Migration — Vercel → App Runner (Mar 27)
