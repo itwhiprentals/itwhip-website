@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
       prisma.$queryRaw<VisitorStats[]>`
         SELECT
           "visitorId",
-          COUNT(DISTINCT "sessionId") as "sessionCount",
+          COUNT(DISTINCT DATE(timestamp)) as "sessionCount",
           COUNT(*) as "pageViews",
           COUNT(DISTINCT path) as "uniquePages",
           MIN(timestamp)::text as "firstVisit",
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         WITH visitor_sessions AS (
           SELECT
             "visitorId",
-            COUNT(DISTINCT "sessionId") as session_count,
+            COUNT(DISTINCT DATE(timestamp)) as session_count,
             COUNT(*) as page_count
           FROM "PageView"
           WHERE timestamp >= ${startDate}
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
         WITH visitor_sessions AS (
           SELECT
             "visitorId",
-            COUNT(DISTINCT "sessionId") as session_count
+            COUNT(DISTINCT DATE(timestamp)) as session_count
           FROM "PageView"
           WHERE timestamp >= ${startDate}
             AND "visitorId" IS NOT NULL
