@@ -71,6 +71,7 @@ const severityConfig = {
 }
 
 // Event type analysis configurations
+// Keys match BOTH the action field (lowercase) AND the type field (UPPERCASE)
 const eventTypeAnalysis: Record<string, {
   title: string
   description: string
@@ -78,31 +79,13 @@ const eventTypeAnalysis: Record<string, {
   recommendedFixes: string[]
   isNormal?: boolean
 }> = {
-  'login_failure': {
-    title: 'Failed Login Attempt',
-    description: 'A user attempted to log in but authentication failed.',
-    possibleCauses: [
-      'Incorrect password entered',
-      'User forgot their credentials',
-      'Automated brute force attempt',
-      'Credential stuffing attack',
-      'Typo in email/username'
-    ],
-    recommendedFixes: [
-      'Check if this IP has multiple failed attempts - could indicate attack',
-      'Review the account for any signs of compromise',
-      'Consider implementing rate limiting if not already in place',
-      'Enable 2FA for the affected account',
-      'Check if the account exists - could be probing for valid users'
-    ]
-  },
-  'login_success': {
+  'LOGIN_SUCCESS': {
     title: 'Successful Login',
     description: 'A user successfully authenticated.',
     possibleCauses: [
       'Normal user login',
       'Admin accessing the system',
-      'API token authentication'
+      'Host or guest returning to their account'
     ],
     recommendedFixes: [
       'Verify the login location matches expected user patterns',
@@ -111,22 +94,81 @@ const eventTypeAnalysis: Record<string, {
     ],
     isNormal: true
   },
+  'LOGIN_FAILED': {
+    title: 'Failed Login Attempt',
+    description: 'A user attempted to log in but authentication failed.',
+    possibleCauses: [
+      'Incorrect password or wrong email entered',
+      'User forgot their credentials',
+      'Typo in email address (e.g. thomascarsrentals vs thomasrentalscars)',
+      'Account does not exist (ACCOUNT_NOT_FOUND)',
+      'Password not set for phone/OAuth user (PASSWORD_NOT_SET)',
+      'Automated brute force attempt'
+    ],
+    recommendedFixes: [
+      'Check if this IP has multiple failed attempts — could indicate attack',
+      'If ACCOUNT_NOT_FOUND: likely a typo, not an attack',
+      'If PASSWORD_NOT_SET: user signed up with phone/OAuth, not email',
+      'If INVALID_CREDENTIALS: wrong password, monitor for repeat failures',
+      'Enable 2FA for the affected account if suspicious'
+    ]
+  },
+  'EMAIL_COLLECTED': {
+    title: 'Email Collected',
+    description: 'An email was collected for a phone-authenticated user.',
+    possibleCauses: [
+      'User completed their profile after phone login',
+      'Guest provided email during booking flow'
+    ],
+    recommendedFixes: [
+      'No action needed — this is normal profile completion'
+    ],
+    isNormal: true
+  },
+  'BRUTE_FORCE_DETECTED': {
+    title: 'Brute Force Attack Detected',
+    description: 'Multiple rapid authentication attempts from the same IP suggest a brute force attack.',
+    possibleCauses: [
+      'Automated attack script targeting login',
+      'Credential stuffing from leaked database',
+      'Dictionary attack on passwords',
+      'Systematic user enumeration'
+    ],
+    recommendedFixes: [
+      'IP has been automatically blocked for 1 hour',
+      'Review affected accounts for compromise',
+      'Check if any accounts were successfully accessed',
+      'Report IP to threat intelligence services'
+    ]
+  },
+  'ACCOUNT_TARGETED': {
+    title: 'Account Targeted',
+    description: 'Multiple failed login attempts targeting the same email suggest account targeting.',
+    possibleCauses: [
+      'Targeted attack on a specific user account',
+      'User repeatedly entering wrong password',
+      'Credential stuffing with known email'
+    ],
+    recommendedFixes: [
+      'Account has been temporarily locked',
+      'Contact the user to verify if they were trying to login',
+      'Review if the email appeared in any data breaches',
+      'Consider forcing a password reset'
+    ]
+  },
   'rate_limit': {
     title: 'Rate Limit Exceeded',
     description: 'Request rate exceeded the allowed threshold and was throttled.',
     possibleCauses: [
-      'Legitimate high traffic (viral content, marketing campaign)',
+      'Legitimate high traffic',
       'Automated scraping attempt',
       'DDoS attack',
-      'Misconfigured client/bot',
-      'API integration sending too many requests'
+      'Misconfigured client/bot'
     ],
     recommendedFixes: [
       'Check if the IP belongs to a known service or bot',
       'Review the endpoints being accessed for patterns',
-      'Consider whitelisting legitimate API integrations',
-      'Implement progressive rate limiting instead of hard blocks',
-      'Check for DDoS patterns (distributed IPs, specific endpoint)'
+      'Consider whitelisting legitimate API integrations'
     ]
   },
   'suspicious_activity': {
@@ -136,103 +178,24 @@ const eventTypeAnalysis: Record<string, {
       'Unusual access patterns',
       'Accessing restricted endpoints',
       'Unusual geographic access',
-      'Rapid sequential requests',
       'Known attack signatures detected'
     ],
     recommendedFixes: [
       'Review the full request logs for this IP',
       'Check if this is a new user or returning attacker',
-      'Consider temporary IP ban if activity continues',
-      'Enable additional logging for this session',
-      'Alert security team for manual review'
-    ]
-  },
-  'account_lockout': {
-    title: 'Account Locked',
-    description: 'An account was automatically locked due to multiple failed authentication attempts.',
-    possibleCauses: [
-      'User forgot password and tried multiple times',
-      'Targeted brute force attack on specific account',
-      'Shared account with multiple users',
-      'Saved password no longer valid'
-    ],
-    recommendedFixes: [
-      'Contact the user to verify if they were trying to login',
-      'Review failed attempt history for attack patterns',
-      'Provide secure password reset option',
-      'Consider implementing temporary soft-locks before hard-locks'
-    ]
-  },
-  'password_reset': {
-    title: 'Password Reset Request',
-    description: 'A password reset was requested for an account.',
-    possibleCauses: [
-      'User forgot their password',
-      'User proactively changing credentials',
-      'Potential account takeover attempt'
-    ],
-    recommendedFixes: [
-      'Verify the reset was completed from expected location',
-      'Check if there are unusual login attempts after reset',
-      'Review if user reported suspicious activity',
-      'Monitor account for unauthorized access'
-    ]
-  },
-  'brute_force': {
-    title: 'Brute Force Attack Detected',
-    description: 'Multiple rapid authentication attempts suggest a brute force attack.',
-    possibleCauses: [
-      'Automated attack script targeting login',
-      'Credential stuffing from leaked database',
-      'Dictionary attack on passwords',
-      'Systematic user enumeration'
-    ],
-    recommendedFixes: [
-      'Immediately block the source IP temporarily',
-      'Enable CAPTCHA after failed attempts',
-      'Review affected accounts for strong passwords',
-      'Check if any accounts were compromised',
-      'Report IP to threat intelligence services',
-      'Consider implementing honeypot accounts'
-    ]
-  },
-  'sql_injection': {
-    title: 'SQL Injection Attempt',
-    description: 'A request contained SQL injection patterns attempting to manipulate database queries.',
-    possibleCauses: [
-      'Automated vulnerability scanner',
-      'Targeted attack on your application',
-      'Penetration testing (check if authorized)',
-      'Bot exploiting known vulnerabilities'
-    ],
-    recommendedFixes: [
-      'Verify all database queries use parameterized statements',
-      'Review the targeted endpoint for vulnerabilities',
-      'Block the IP and report to threat intelligence',
-      'Ensure WAF rules are up to date',
-      'Check database for any unauthorized changes',
-      'Run a security audit on affected endpoints'
-    ]
-  },
-  'xss_attempt': {
-    title: 'XSS Attack Attempt',
-    description: 'A request contained cross-site scripting (XSS) patterns attempting to inject malicious scripts.',
-    possibleCauses: [
-      'Automated vulnerability scanner',
-      'Targeted XSS attack',
-      'Testing for stored XSS vulnerabilities',
-      'Attempting session hijacking'
-    ],
-    recommendedFixes: [
-      'Verify all user inputs are properly sanitized',
-      'Check Content-Security-Policy headers are in place',
-      'Review the targeted endpoint for vulnerabilities',
-      'Ensure output encoding is implemented',
-      'Block the IP if persistent',
-      'Test application for reflected and stored XSS'
+      'Consider temporary IP ban if activity continues'
     ]
   }
 }
+
+// Also match lowercase action field names to the same configs
+eventTypeAnalysis['login_success'] = eventTypeAnalysis['LOGIN_SUCCESS']
+eventTypeAnalysis['login_failure'] = eventTypeAnalysis['LOGIN_FAILED']
+eventTypeAnalysis['login_failed'] = eventTypeAnalysis['LOGIN_FAILED']
+eventTypeAnalysis['brute_force'] = eventTypeAnalysis['BRUTE_FORCE_DETECTED']
+eventTypeAnalysis['brute_force_block'] = eventTypeAnalysis['BRUTE_FORCE_DETECTED']
+eventTypeAnalysis['account_targeted'] = eventTypeAnalysis['ACCOUNT_TARGETED']
+eventTypeAnalysis['email_collected'] = eventTypeAnalysis['EMAIL_COLLECTED']
 
 export default function SecurityEventDetailModal({ event, onClose }: SecurityEventDetailModalProps) {
   const [isVisible, setIsVisible] = useState(false)
