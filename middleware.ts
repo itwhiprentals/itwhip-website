@@ -27,7 +27,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
 
   // Permissions policy
-  response.headers.set('Permissions-Policy', 'geolocation=(self), microphone=(), camera=(self)')
+  response.headers.set('Permissions-Policy', 'geolocation=(self), microphone=(self), camera=(self)')
 
   // Content Security Policy (allows Next.js, Firebase, Stripe, Google Maps)
   const isProd = process.env.NODE_ENV === 'production'

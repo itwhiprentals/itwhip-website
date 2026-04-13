@@ -83,8 +83,31 @@ export async function POST(request: NextRequest) {
         if (!conferenceSid) {
           return NextResponse.json({ error: 'Missing conferenceSid' }, { status: 400 })
         }
-        await twilioClient.conferences(conferenceSid).update({ status: 'completed' })
+        try {
+          await twilioClient.conferences(conferenceSid).update({ status: 'completed' })
+        } catch (e: any) {
+          // 404 = conference already ended (endConferenceOnExit fired first) — safe to ignore
+          if (e?.status !== 404) throw e
+        }
         return NextResponse.json({ success: true, action: 'end' })
+      }
+
+      case 'end-by-room': {
+        // Find conference by friendly name and terminate all calls
+        const roomName = body.roomName as string
+        if (!roomName) return NextResponse.json({ error: 'Missing roomName' }, { status: 400 })
+        try {
+          const conferences = await twilioClient.conferences.list({ friendlyName: roomName, status: 'in-progress', limit: 1 })
+          if (conferences.length > 0) {
+            await twilioClient.conferences(conferences[0].sid).update({ status: 'completed' })
+          }
+          // Also cancel any ringing calls for this room
+          const calls = await twilioClient.calls.list({ status: 'ringing', limit: 10 })
+          for (const call of calls) {
+            try { await twilioClient.calls(call.sid).update({ status: 'canceled' }) } catch {}
+          }
+        } catch {}
+        return NextResponse.json({ success: true, action: 'end-by-room' })
       }
 
       // ─── Participant list with enriched data ───────────────────────

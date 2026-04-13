@@ -241,11 +241,21 @@ export default function PhoneWidget() {
     resetCall()
   }, [resetCall])
 
-  const hangUp = useCallback(() => {
+  const hangUp = useCallback(async () => {
     if (!callRef.current) return
+    const browserCallSid = callRef.current.parameters?.CallSid
     callRef.current.disconnect()
+    // End the conference AND cancel any ringing outbound legs
+    if (conference?.sid) {
+      try { await confAction({ action: 'end', conferenceSid: conference.sid }) } catch {}
+    }
+    // If we know the browser call SID, the conference room is browser-{callSid}
+    // Try to end it even if conference object isn't populated yet
+    if (browserCallSid) {
+      try { await confAction({ action: 'end-by-room', roomName: `browser-${browserCallSid}` }) } catch {}
+    }
     resetCall()
-  }, [resetCall])
+  }, [resetCall, conference])
 
   const toggleMute = useCallback(() => {
     if (!callRef.current) return
