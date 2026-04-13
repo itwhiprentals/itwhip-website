@@ -11,6 +11,7 @@ import {
   sanitizeQueryParams
 } from '@/app/lib/analytics'
 import { enrichIp } from '@/app/lib/analytics/threat-enrichment'
+import { reverseGeocode } from '@/app/lib/analytics/reverse-geocode'
 import { identifyVisitor } from '@/app/lib/analytics/visitor-identification'
 
 // Rate limit: Max 100 events per minute per IP
@@ -64,6 +65,7 @@ export async function POST(request: NextRequest) {
       loadTime,
       eventType = 'pageview',
       metadata,
+      gps,
       // Enhanced visitor identification
       visitorId: clientVisitorId,
       fingerprintHash,
@@ -153,6 +155,10 @@ export async function POST(request: NextRequest) {
       latitude: threat.latitude,
       longitude: threat.longitude,
       address: threat.address,
+      gpsLatitude: gps?.lat || null,
+      gpsLongitude: gps?.lng || null,
+      gpsAccuracy: gps?.accuracy || null,
+      gpsAddress: null as string | null,
       loadTime: typeof loadTime === 'number' ? loadTime : null,
       eventType,
       metadata: metadata ? JSON.stringify({
@@ -165,6 +171,14 @@ export async function POST(request: NextRequest) {
         confidence: visitorMatch.confidence,
         isReturning: visitorMatch.isReturning
       })
+    }
+
+    // Reverse geocode GPS if provided
+    if (gps?.lat && gps?.lng) {
+      try {
+        const gpsAddr = await reverseGeocode(gps.lat, gps.lng)
+        if (gpsAddr) pageViewData.gpsAddress = gpsAddr
+      } catch {}
     }
 
     // Fire and forget with 5s timeout - don't hold connections too long

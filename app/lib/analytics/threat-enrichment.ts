@@ -3,6 +3,7 @@
 // Pure data — no DB access. Returns flat object matching PageView fields.
 
 import { getEnhancedLocation } from '@/app/lib/security/geolocation'
+import { reverseGeocode } from './reverse-geocode'
 
 export interface ThreatEnrichment {
   ip: string | null
@@ -29,40 +30,7 @@ const EMPTY: ThreatEnrichment = {
   riskScore: 0, latitude: null, longitude: null, address: null,
 }
 
-// Cache reverse-geocoded addresses (keyed by rounded lat/lng)
-const addressCache = new Map<string, { address: string; expires: number }>()
-const ADDRESS_CACHE_TTL = 24 * 60 * 60 * 1000 // 24 hours (addresses don't change)
-
-async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
-  // Round to 3 decimals (~100m precision) for cache key
-  const cacheKey = `${lat.toFixed(3)},${lng.toFixed(3)}`
-  const cached = addressCache.get(cacheKey)
-  if (cached && cached.expires > Date.now()) return cached.address
-
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`,
-      {
-        headers: { 'Accept-Language': 'en', 'User-Agent': 'ITWhip/1.0 (info@itwhip.com)' },
-        signal: AbortSignal.timeout(3000),
-      }
-    )
-    if (!res.ok) return null
-    const data = await res.json()
-    const address = data.display_name || null
-    if (address) {
-      addressCache.set(cacheKey, { address, expires: Date.now() + ADDRESS_CACHE_TTL })
-      // Cap cache size
-      if (addressCache.size > 500) {
-        const oldest = addressCache.keys().next().value
-        if (oldest) addressCache.delete(oldest)
-      }
-    }
-    return address
-  } catch {
-    return null
-  }
-}
+// reverseGeocode imported from ./reverse-geocode.ts (shared with GPS enrichment)
 
 /**
  * Enrich an IP address with full geo + threat intel.

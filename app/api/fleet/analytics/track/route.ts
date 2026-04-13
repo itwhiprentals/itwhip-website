@@ -13,6 +13,7 @@ import {
 } from '@/app/lib/analytics'
 import { enrichIp } from '@/app/lib/analytics/threat-enrichment'
 import { evaluateThreats } from '@/app/lib/analytics/threat-patterns'
+import { reverseGeocode } from '@/app/lib/analytics/reverse-geocode'
 
 // Rate limit: Max 100 events per minute per IP
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json().catch(() => ({}))
-    const { path, referrer, loadTime, eventType = 'pageview', metadata } = body
+    const { path, referrer, loadTime, eventType = 'pageview', metadata, gps } = body
 
     // Validate required fields
     if (!path || typeof path !== 'string') {
@@ -128,9 +129,21 @@ export async function POST(request: NextRequest) {
       latitude: threat.latitude,
       longitude: threat.longitude,
       address: threat.address,
+      gpsLatitude: gps?.lat || null,
+      gpsLongitude: gps?.lng || null,
+      gpsAccuracy: gps?.accuracy || null,
+      gpsAddress: null as string | null, // populated async below
       loadTime: typeof loadTime === 'number' ? loadTime : null,
       eventType,
       metadata: metadata || null
+    }
+
+    // Reverse geocode GPS if provided (cached, fast for repeat locations)
+    if (gps?.lat && gps?.lng) {
+      try {
+        const gpsAddr = await reverseGeocode(gps.lat, gps.lng)
+        if (gpsAddr) pageViewData.gpsAddress = gpsAddr
+      } catch {}
     }
 
     // Fire and forget with 5s timeout - don't hold connections too long

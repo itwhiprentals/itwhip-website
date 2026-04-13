@@ -11,6 +11,7 @@ import SessionTimeline from '../../components/VisitorProfile/SessionTimeline'
 import SecurityEvents from '../../components/VisitorProfile/SecurityEvents'
 import BehavioralSignals from '../../components/VisitorProfile/BehavioralSignals'
 import ThreatAssessment from '../../components/VisitorProfile/ThreatAssessment'
+import LocationComparison from '../../components/VisitorProfile/LocationComparison'
 import type { EnrichedVisitor, PageViewEntry, SecurityEventEntry } from '../../components/shared/types'
 
 interface VisitorResponse {
@@ -105,6 +106,23 @@ export default function VisitorProfilePage() {
 
         {/* Visitor identity */}
         <VisitorCard visitor={data.visitor} />
+
+        {/* Location comparison — IP vs GPS */}
+        <LocationComparison
+          ipLocation={{
+            latitude: (data.visitor as any).latitude || null,
+            longitude: (data.visitor as any).longitude || null,
+            address: (data.visitor as any).address || null,
+            label: 'IP Location',
+          }}
+          gpsLocation={{
+            latitude: (data as any).gpsLocation?.latitude || null,
+            longitude: (data as any).gpsLocation?.longitude || null,
+            address: (data as any).gpsLocation?.address || null,
+            accuracy: (data as any).gpsLocation?.accuracy || null,
+            label: 'Device GPS',
+          }}
+        />
 
         {/* Two-column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

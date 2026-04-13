@@ -27,18 +27,7 @@ export default function VisitorCard({ visitor }: VisitorCardProps) {
         <RiskBadge score={visitor.riskScore} />
       </div>
 
-      {/* Physical address */}
-      {(visitor as any).address && (
-        <div className="mt-3 px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
-          <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Approximate Address</p>
-          <p className="text-sm text-gray-800 dark:text-gray-200">{(visitor as any).address}</p>
-          {(visitor as any).latitude && (
-            <p className="text-[10px] text-gray-400 mt-0.5 font-mono">
-              {(visitor as any).latitude?.toFixed(4)}, {(visitor as any).longitude?.toFixed(4)}
-            </p>
-          )}
-        </div>
-      )}
+      {/* Location comparison handled by LocationComparison component in parent */}
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5">
         <InfoCell label="ISP" value={visitor.isp} />

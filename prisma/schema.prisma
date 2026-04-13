@@ -270,6 +270,12 @@ model PageView {
   longitude Float?
   address   String?  // Reverse-geocoded address from lat/lng
 
+  // Device GPS (exact location, if user granted browser permission)
+  gpsLatitude   Float?
+  gpsLongitude  Float?
+  gpsAddress    String?  // Reverse-geocoded from GPS
+  gpsAccuracy   Float?   // Accuracy in meters
+
   // Performance metrics
   loadTime Int? // Page load time in ms
 

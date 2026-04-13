@@ -6,6 +6,7 @@
 
 import { useEffect, useRef } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
+import { getCachedGps } from '@/app/lib/analytics/gps-collector'
 
 interface PageTrackerProps {
   // Optional: only track paths starting with this prefix
@@ -48,6 +49,7 @@ export default function PageTracker({ pathPrefix, disabled = false }: PageTracke
       try {
         const loadTime = Date.now() - loadStartTime.current
 
+        const gps = getCachedGps()
         await fetch('/api/fleet/analytics/track', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -55,7 +57,8 @@ export default function PageTracker({ pathPrefix, disabled = false }: PageTracke
             path: fullPath,
             referrer: document.referrer || null,
             loadTime,
-            eventType: 'pageview'
+            eventType: 'pageview',
+            gps: gps || undefined,
           }),
           // Don't wait for response, fire and forget
           keepalive: true

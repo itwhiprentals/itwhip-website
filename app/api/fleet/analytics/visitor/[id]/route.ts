@@ -31,6 +31,7 @@ export async function GET(
         country: true, region: true, city: true,
         isVpn: true, isProxy: true, isTor: true, isHosting: true,
         riskScore: true, latitude: true, longitude: true, address: true,
+        gpsLatitude: true, gpsLongitude: true, gpsAddress: true, gpsAccuracy: true,
       },
       orderBy: { timestamp: 'desc' },
       take: 200,
@@ -142,9 +143,19 @@ export async function GET(
       timestamp: e.timestamp.toISOString(),
     }))
 
+    // Find the best GPS data (most accurate, non-null)
+    const gpsView = pageViews.find(v => v.gpsLatitude != null) || null
+    const gpsLocation = gpsView ? {
+      latitude: gpsView.gpsLatitude,
+      longitude: gpsView.gpsLongitude,
+      address: gpsView.gpsAddress,
+      accuracy: gpsView.gpsAccuracy,
+    } : null
+
     return NextResponse.json({
       success: true,
       visitor,
+      gpsLocation,
       pageViews: formattedViews,
       securityEvents: formattedEvents,
       loginAttempts: loginAttempts.map((l: any) => ({
