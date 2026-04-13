@@ -978,58 +978,69 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
           )}
         </div>
         
-        {/* Price Breakdown - Using shared pricing for consistency */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
-          <div className="grid text-sm" style={{ gridTemplateColumns: '1fr 2rem 1fr' }}>
-            {/* Labels column */}
-            <div className="flex flex-col gap-3 text-gray-600 dark:text-gray-300">
-              <span>${formatPrice(dailyRate)} × {days > 1 ? t('daysSummaryPlural', { days }) : t('daysSummary', { days })}</span>
-              {pricing.insurancePrice > 0 && <span>{t('insurance')} ({getInsuranceTierName(insuranceTier)})</span>}
-              {pricing.enhancementsTotal > 0 && <span>{t('enhancements')}</span>}
-              {pricing.deliveryFee > 0 && <span>{t('delivery')}</span>}
-              <span>{t('serviceFee')}</span>
-              <span>{t('taxes', { rate: pricing.taxRateDisplay })}</span>
+        {/* Price Breakdown — Trip Cost Preview */}
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
+          {/* Rate math */}
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600 dark:text-gray-300">
+              {t('rateMath', { days, dailyRate: formatPrice(dailyRate) })}
+            </span>
+            <span className="font-medium text-gray-900 dark:text-white">${formatPrice(pricing.basePrice)}</span>
+          </div>
+
+          {/* Line items */}
+          {pricing.insurancePrice > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600 dark:text-gray-300">{t('insurance')} ({getInsuranceTierName(insuranceTier)})</span>
+              <span className="text-gray-900 dark:text-white">${formatPrice(pricing.insurancePrice)}</span>
             </div>
+          )}
+          {pricing.enhancementsTotal > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600 dark:text-gray-300">{t('enhancements')}</span>
+              <span className="text-gray-900 dark:text-white">${formatPrice(pricing.enhancementsTotal)}</span>
+            </div>
+          )}
+          {pricing.deliveryFee > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600 dark:text-gray-300">{t('delivery')}</span>
+              <span className="text-gray-900 dark:text-white">${formatPrice(pricing.deliveryFee)}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600 dark:text-gray-300">{t('serviceFee')}</span>
+            <span className="text-gray-900 dark:text-white">${formatPrice(pricing.serviceFee)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600 dark:text-gray-300">{t('taxes', { rate: pricing.taxRateDisplay })}</span>
+            <span className="text-gray-900 dark:text-white">${formatPrice(pricing.taxes)}</span>
+          </div>
 
-            {/* Single centered arrow */}
-            <div className="flex items-center justify-center text-gray-900 dark:text-white select-none">→</div>
-
-            {/* Prices column */}
-            <div className="flex flex-col gap-3 text-right text-gray-900 dark:text-white">
-              <span>${formatPrice(pricing.basePrice)}</span>
-              {pricing.insurancePrice > 0 && <span>${formatPrice(pricing.insurancePrice)}</span>}
-              {pricing.enhancementsTotal > 0 && <span>${formatPrice(pricing.enhancementsTotal)}</span>}
-              {pricing.deliveryFee > 0 && <span>${formatPrice(pricing.deliveryFee)}</span>}
-              <span>${formatPrice(pricing.serviceFee)}</span>
-              <span>${formatPrice(pricing.taxes)}</span>
+          {/* Trip Total */}
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-1">
+            <div className="flex justify-between items-baseline">
+              <span className="text-base font-bold text-gray-900 dark:text-white">{t('tripTotalLabel')}</span>
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">${formatPrice(pricing.total)}</span>
             </div>
           </div>
 
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-1">
-            <div className="flex justify-between items-baseline">
-              <span className="font-semibold text-gray-900 dark:text-white">{t('total')}</span>
-              <div className="text-right">
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                  ${formatPrice(pricing.total)}
-                </span>
-                {/* Deposit display: show strikethrough when waived, normal when required */}
-                {actualDeposit > 0 ? (
-                  <p className="text-xs text-gray-500 dark:text-gray-300 mt-1">
-                    {t('securityDepositHold', { amount: formatPrice(actualDeposit) })}
-                  </p>
-                ) : rateBasedDeposit > 0 ? (
-                  <p className="text-xs mt-1 flex items-center justify-end gap-1.5">
-                    <span className="line-through text-gray-400 dark:text-gray-500">
-                      ${formatPrice(rateBasedDeposit)}
-                    </span>
-                    <span className="text-green-600 dark:text-green-400 font-medium">
-                      {t('depositWaived')}
-                    </span>
-                  </p>
-                ) : null}
+          {/* Refundable Deposit — visually separate */}
+          {actualDeposit > 0 ? (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-blue-800 dark:text-blue-300">{t('refundableDeposit')}</span>
+                <span className="text-sm font-bold text-blue-800 dark:text-blue-300">${formatPrice(actualDeposit)}</span>
+              </div>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">{t('depositHoldExplanation')}</p>
+            </div>
+          ) : rateBasedDeposit > 0 ? (
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mt-2">
+              <div className="flex items-center gap-2">
+                <span className="line-through text-sm text-gray-400 dark:text-gray-500">${formatPrice(rateBasedDeposit)}</span>
+                <span className="text-sm font-semibold text-green-600 dark:text-green-400">{t('depositWaived')}</span>
               </div>
             </div>
-          </div>
+          ) : null}
         </div>
         
         {/* Book Button */}
@@ -1078,23 +1089,24 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
           <div className="max-w-7xl mx-auto px-4 py-3">
             <div className="flex items-center justify-between">
               <div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xl font-bold text-gray-900 dark:text-white">
                     ${formatPrice(pricing.total)}
                   </span>
-                  {/* Show deposit info in floating bar */}
-                  {actualDeposit > 0 ? (
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {t('hold', { amount: formatPrice(actualDeposit) })}
-                    </span>
-                  ) : rateBasedDeposit > 0 ? (
-                    <span className="text-xs flex items-center gap-1">
-                      <span className="line-through text-gray-400">${formatPrice(rateBasedDeposit)}</span>
-                      <span className="text-green-600 dark:text-green-400 font-medium">{t('waived')}</span>
-                    </span>
-                  ) : null}
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{t('tripLabel')}</span>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-300">{days > 1 ? t('daysSummaryPlural', { days }) : t('daysSummary', { days })} • {t('taxIncluded')}</p>
+                {actualDeposit > 0 ? (
+                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                    + ${formatPrice(actualDeposit)} {t('refundableHold')}
+                  </p>
+                ) : rateBasedDeposit > 0 ? (
+                  <p className="text-xs flex items-center gap-1">
+                    <span className="line-through text-gray-400">${formatPrice(rateBasedDeposit)}</span>
+                    <span className="text-green-600 dark:text-green-400 font-medium">{t('waived')}</span>
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500 dark:text-gray-300">{days > 1 ? t('daysSummaryPlural', { days }) : t('daysSummary', { days })} • {t('taxIncluded')}</p>
+                )}
               </div>
               <button
                 onClick={handleBooking}

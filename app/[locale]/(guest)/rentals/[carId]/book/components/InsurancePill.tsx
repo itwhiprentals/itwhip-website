@@ -108,7 +108,14 @@ export function InsurancePill({
               </h4>
 
               <p className="text-center text-sm text-gray-600 dark:text-gray-400 mb-4">
-                {t('uploadInsuranceAfterBookingDesc')}
+                {t('uploadInsuranceAfterBookingDescPrefix')}
+                <a
+                  href="/auth/signup"
+                  className="text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 font-medium underline"
+                >
+                  {t('uploadInsuranceAfterBookingDescLink')}
+                </a>
+                {t('uploadInsuranceAfterBookingDescSuffix')}
               </p>
 
               <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 mb-4">

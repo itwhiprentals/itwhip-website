@@ -80,45 +80,70 @@ export function PricingFooter({
     0.25
   )
 
-  const grandTotal = stickyAppliedBalances.amountToPay + stickyAppliedBalances.depositFromCard
-
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-2xl z-40">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3">
         <div className="flex items-center justify-between gap-3">
-          {/* Pricing Info - Compact on mobile */}
+          {/* Pricing Info — split trip vs deposit */}
           <div className="min-w-0 flex-1">
-            <div className="flex items-baseline gap-1.5 sm:gap-2">
-              <span className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                ${formatPrice(grandTotal)}
+            {/* Desktop: single line with trip + deposit */}
+            <div className="hidden sm:flex items-baseline gap-2 flex-wrap">
+              <span className="text-xl font-bold text-gray-900 dark:text-white">
+                ${formatPrice(stickyAppliedBalances.amountToPay)}
               </span>
-              <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{t('total')}</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{t('tripLabel')}</span>
+              {adjustedDeposit > 0 && stickyAppliedBalances.depositFromCard > 0 && (
+                <>
+                  <span className="text-gray-400 dark:text-gray-500">+</span>
+                  <span className="text-base font-semibold text-blue-600 dark:text-blue-400">
+                    ${formatPrice(stickyAppliedBalances.depositFromCard)}
+                  </span>
+                  <span className="text-xs text-blue-500 dark:text-blue-400">{t('depositHoldLabel')}</span>
+                </>
+              )}
+              {adjustedDeposit > 0 && stickyAppliedBalances.depositFromCard === 0 && (
+                <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                  {t('depositCoveredByWallet')}
+                </span>
+              )}
+              {rateBasedDeposit > 0 && adjustedDeposit === 0 && (
+                <span className="text-xs flex items-center gap-1">
+                  <span className="line-through text-gray-400 dark:text-gray-500">${formatPrice(rateBasedDeposit)}</span>
+                  <span className="text-green-600 dark:text-green-400 font-medium">{t('depositWaivedStatus')}</span>
+                </span>
+              )}
             </div>
-            {/* Show deposit info based on wallet coverage */}
-            {adjustedDeposit > 0 && stickyAppliedBalances.depositFromCard > 0 ? (
-              <>
-                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
-                  <span className="hidden sm:inline">${formatPrice(stickyAppliedBalances.amountToPay)} + </span>
-                  <span className="text-red-600 dark:text-red-400">${formatPrice(stickyAppliedBalances.depositFromCard)} {t('depositLabel')}</span>
-                  <span className="text-gray-400 dark:text-gray-500 ml-1">{t('depositRefundable')}</span>
+
+            {/* Mobile: stacked two lines */}
+            <div className="sm:hidden">
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-bold text-gray-900 dark:text-white">
+                  ${formatPrice(stickyAppliedBalances.amountToPay)}
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{t('tripTotalLabel')}</span>
+              </div>
+              {adjustedDeposit > 0 && stickyAppliedBalances.depositFromCard > 0 ? (
+                <p className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">
+                  + ${formatPrice(stickyAppliedBalances.depositFromCard)} {t('refundableHoldShort')}
                 </p>
-                {userProfile?.insuranceVerified && (
-                  <p className="text-[10px] sm:text-xs text-green-600 dark:text-green-400 font-medium">
-                    {t('fiftyPercentDepositDiscountApplied')}
-                  </p>
-                )}
-              </>
-            ) : adjustedDeposit > 0 && stickyAppliedBalances.depositFromCard === 0 ? (
+              ) : adjustedDeposit > 0 && stickyAppliedBalances.depositFromCard === 0 ? (
+                <p className="text-[10px] text-green-600 dark:text-green-400 font-medium">
+                  {t('depositCoveredByWallet')}
+                </p>
+              ) : rateBasedDeposit > 0 && adjustedDeposit === 0 ? (
+                <p className="text-[10px] flex items-center gap-1">
+                  <span className="line-through text-gray-400 dark:text-gray-500">${formatPrice(rateBasedDeposit)}</span>
+                  <span className="text-green-600 dark:text-green-400 font-medium">{t('depositWaivedStatus')}</span>
+                </p>
+              ) : null}
+            </div>
+
+            {/* Insurance discount note */}
+            {userProfile?.insuranceVerified && adjustedDeposit > 0 && stickyAppliedBalances.depositFromCard > 0 && (
               <p className="text-[10px] sm:text-xs text-green-600 dark:text-green-400 font-medium">
-                {t('depositCoveredByWallet')}
+                {t('fiftyPercentDepositDiscountApplied')}
               </p>
-            ) : rateBasedDeposit > 0 ? (
-              <p className="text-[10px] sm:text-xs flex items-center gap-1">
-                <span className="hidden sm:inline text-gray-500 dark:text-gray-400">${formatPrice(stickyAppliedBalances.amountToPay)} + </span>
-                <span className="line-through text-gray-400 dark:text-gray-500">${formatPrice(rateBasedDeposit)}</span>
-                <span className="text-green-600 dark:text-green-400 font-medium">{t('depositWaivedStatus')}</span>
-              </p>
-            ) : null}
+            )}
           </div>
 
           {/* Book Button */}

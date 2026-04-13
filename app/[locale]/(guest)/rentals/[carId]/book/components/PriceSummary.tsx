@@ -175,7 +175,7 @@ export function PriceSummary({
 
           {/* Totals Section */}
           <div className="pt-4 mt-4 border-t dark:border-gray-700">
-            {/* Trip Total - strikethrough if savings applied */}
+            {/* Trip Charge — with savings display when credits/bonus applied */}
             {appliedBalances.totalSavings > 0 ? (
               <>
                 <div className="flex justify-between items-baseline">
@@ -183,8 +183,8 @@ export function PriceSummary({
                   <span className="text-gray-500 dark:text-gray-400 line-through">${formatPrice(pricing.total)}</span>
                 </div>
                 <div className="flex justify-between items-baseline mt-1">
-                  <span className="font-bold text-gray-900 dark:text-white">{t('amountToPay')}</span>
-                  <span className="text-base sm:text-lg font-bold text-green-600 dark:text-green-400">${formatPrice(appliedBalances.amountToPay)}</span>
+                  <span className="text-base font-bold text-gray-900 dark:text-white">{t('tripCharge')}</span>
+                  <span className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">${formatPrice(appliedBalances.amountToPay)}</span>
                 </div>
                 <div className="flex justify-end mt-1">
                   <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
@@ -194,43 +194,28 @@ export function PriceSummary({
               </>
             ) : (
               <div className="flex justify-between items-baseline">
-                <span className="font-bold text-gray-900 dark:text-white">{t('tripTotal')}</span>
-                <span className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">${formatPrice(pricing.total)}</span>
+                <span className="text-base font-bold text-gray-900 dark:text-white">{t('tripCharge')}</span>
+                <span className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">${formatPrice(appliedBalances.amountToPay)}</span>
               </div>
             )}
 
-            {/* Security Deposit - Show wallet coverage, card hold, or waived */}
-            <div className="flex justify-end mt-2 mb-3">
-              {adjustedDeposit > 0 ? (
-                appliedBalances.depositFromCard > 0 ? (
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-500 rounded-lg">
-                    <span className="text-sm font-medium text-white">
-                      {t('depositFromCard', { amount: formatPrice(appliedBalances.depositFromCard) })}
-                    </span>
-                    {userProfile?.insuranceVerified && (
-                      <span className="text-xs text-green-200 font-medium">
-                        {t('fiftyPercentOff')}
-                      </span>
-                    )}
-                    {appliedBalances.depositFromWallet > 0 && (
-                      <span className="text-xs text-green-200 font-medium">
-                        {t('walletCoverage', { amount: formatPrice(appliedBalances.depositFromWallet) })}
-                      </span>
-                    )}
-                    {/* (Hold) with tooltip inline */}
-                    <div className="relative inline-flex items-center gap-0.5">
-                      <span className="text-xs text-white/80 font-medium">{t('hold')}</span>
+            {/* Refundable Deposit — solid green (refundable) with tooltip */}
+            {adjustedDeposit > 0 ? (
+              appliedBalances.depositFromCard > 0 ? (
+                <div className="flex justify-between items-center mt-3 px-3 py-2.5 bg-green-600 dark:bg-green-700 rounded-lg">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-medium text-white">{t('refundableDepositHold')}</span>
+                    <div className="relative inline-flex items-center">
                       <button
                         type="button"
                         onMouseEnter={() => onShowDepositTooltipChange(true)}
                         onMouseLeave={() => onShowDepositTooltipChange(false)}
                         onClick={() => onShowDepositTooltipChange(!showDepositTooltip)}
-                        className="text-white/70 hover:text-white -mt-0.5"
+                        className="text-white/70 hover:text-white"
                         aria-label="Learn about security deposit"
                       >
-                        <IoHelpCircleOutline className="w-3.5 h-3.5" />
+                        <IoHelpCircleOutline className="w-4 h-4" />
                       </button>
-
                       {showDepositTooltip && (
                         <div className="absolute z-50 right-0 bottom-full mb-1 whitespace-nowrap px-2 py-1 bg-white dark:bg-gray-800 rounded shadow-lg border border-gray-200 dark:border-gray-600">
                           <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-line">{t('temporaryHoldNotACharge')}</p>
@@ -239,8 +224,21 @@ export function PriceSummary({
                       )}
                     </div>
                   </div>
-                ) : (
-                  /* Deposit fully covered by wallet */
+                  <div className="text-right">
+                    <span className="text-base font-bold text-white">
+                      ${formatPrice(appliedBalances.depositFromCard)}
+                    </span>
+                    {userProfile?.insuranceVerified && (
+                      <p className="text-[10px] text-green-200 font-medium">{t('fiftyPercentOff')}</p>
+                    )}
+                    {appliedBalances.depositFromWallet > 0 && (
+                      <p className="text-[10px] text-green-200">{t('walletCoverage', { amount: formatPrice(appliedBalances.depositFromWallet) })}</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* Deposit fully covered by wallet */
+                <div className="flex justify-end mt-2 mb-1">
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-lg">
                     {userProfile?.insuranceVerified && (
                       <span className="text-sm font-medium line-through text-gray-400 dark:text-gray-500">
@@ -254,28 +252,32 @@ export function PriceSummary({
                       {t('depositCoveredByWallet')}
                     </span>
                   </div>
-                )
-              ) : rateBasedDeposit > 0 ? (
+                </div>
+              )
+            ) : rateBasedDeposit > 0 ? (
+              <div className="flex justify-end mt-2 mb-1">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-lg">
                   <span className="text-sm font-medium line-through text-gray-400 dark:text-gray-500">
-                    ${rateBasedDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ${formatPrice(rateBasedDeposit)}
                   </span>
                   <span className="text-sm font-semibold text-green-600 dark:text-green-400">
                     {t('depositWaived')}
                   </span>
                 </div>
-              ) : null}
-            </div>
-
-            {/* Grand Total (Trip + Deposit from card only) */}
-            <div className="flex justify-between items-baseline pt-3 border-t dark:border-gray-700">
-              <span className="text-base font-semibold text-gray-900 dark:text-white">{t('totalDueToday')}</span>
-              <div className="text-right">
-                <span className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                  ${formatPrice(appliedBalances.amountToPay + appliedBalances.depositFromCard)}
-                </span>
               </div>
-            </div>
+            ) : null}
+
+            {/* Card summary line */}
+            {appliedBalances.depositFromCard > 0 && (
+              <div className="mt-2 pt-2 border-t border-dashed dark:border-gray-600">
+                <p className="text-xs text-center text-gray-500 dark:text-gray-400">
+                  {t('totalChargedToCard', {
+                    tripAmount: formatPrice(appliedBalances.amountToPay),
+                    depositAmount: formatPrice(appliedBalances.depositFromCard)
+                  })}
+                </p>
+              </div>
+            )}
 
             {/* Promo Code Input - underneath total */}
             <div className="mt-3">
