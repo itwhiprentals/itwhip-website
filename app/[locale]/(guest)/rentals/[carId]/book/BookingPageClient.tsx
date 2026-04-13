@@ -1508,6 +1508,10 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         if (type === 'license') {
           setLicensePhotoUrl(data.url)
           setLicenseUploaded(true)
+          // Funnel: identity started
+          import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
+            trackFunnelStep('funnel_identity_started', { carId, step: 6 })
+          }).catch(() => {})
         } else if (type === 'insurance') {
           setInsurancePhotoUrl(data.url)
           setInsuranceUploaded(true)
@@ -2406,6 +2410,10 @@ export default function BookingPageClient({ carId }: { carId: string }) {
             setAiVerificationResult(result)
             if (result.passed && result.data) {
               console.log('[Booking] AI DL verification passed:', result.data)
+              // Funnel: identity completed
+              import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
+                trackFunnelStep('funnel_identity_completed', { carId, step: 7 })
+              }).catch(() => {})
             }
           }}
           onPhotosUploaded={(frontUrl, backUrl) => {
@@ -2567,7 +2575,13 @@ export default function BookingPageClient({ carId }: { carId: string }) {
                 }}
               >
                 <PaymentFormWrapper
-                  onReady={() => setIsPaymentElementReady(true)}
+                  onReady={() => {
+                    setIsPaymentElementReady(true)
+                    // Funnel: payment started
+                    import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
+                      trackFunnelStep('funnel_payment_started', { carId, step: 8 })
+                    }).catch(() => {})
+                  }}
                   onComplete={(complete) => setIsPaymentElementComplete(complete)}
                   onError={(error) => setPaymentError(error)}
                   confirmPaymentRef={confirmPaymentRef}

@@ -17,6 +17,7 @@ import {
 } from './components'
 import FunnelChart from './components/BookingFunnel/FunnelChart'
 import DropOffAnalysis from './components/BookingFunnel/DropOffAnalysis'
+import FunnelInsights from './components/BookingFunnel/FunnelInsights'
 
 interface AnalyticsData {
   overview: {
@@ -273,10 +274,17 @@ export default function FleetAnalyticsPage() {
             Booking Funnel
           </h2>
           {funnelData ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <FunnelChart steps={funnelData.funnel} />
-              <DropOffAnalysis summary={funnelData.summary} />
-            </div>
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <FunnelChart steps={funnelData.funnel} />
+                <DropOffAnalysis summary={funnelData.summary} />
+              </div>
+              {funnelData.insights && funnelData.insights.length > 0 && (
+                <div className="mt-6">
+                  <FunnelInsights insights={funnelData.insights} />
+                </div>
+              )}
+            </>
           ) : (
             <p className="text-sm text-gray-400 text-center py-8">
               No funnel data yet — events will populate as users go through checkout

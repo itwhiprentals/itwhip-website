@@ -390,6 +390,31 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
   
+  // Funnel: track dates selected (fires once when valid dates produce pricing)
+  const datesTrackedRef = useRef(false)
+  useEffect(() => {
+    if (days > 0 && !dateError && !datesTrackedRef.current && car?.id) {
+      datesTrackedRef.current = true
+      import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
+        trackFunnelStep('funnel_dates_selected', { carId: car.id, step: 3 })
+      }).catch(() => {})
+    }
+  }, [days, dateError, car?.id])
+
+  // Funnel: track insurance tier change (fires once on first change from default)
+  const insuranceTrackedRef = useRef(false)
+  useEffect(() => {
+    if (!insuranceTrackedRef.current && car?.id) {
+      insuranceTrackedRef.current = true // skip initial mount
+      return
+    }
+    if (car?.id) {
+      import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
+        trackFunnelStep('funnel_insurance_selected', { carId: car.id, insuranceTier, step: 4 })
+      }).catch(() => {})
+    }
+  }, [insuranceTier]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleBooking = () => {
     if (!isBookable) return
     
@@ -432,6 +457,15 @@ export default function BookingWidget({ car, isBookable = true, suspensionMessag
     }
     
     sessionStorage.setItem('rentalBookingDetails', JSON.stringify(bookingDetails))
+
+    // Funnel: book clicked — critical transition from browsing to checkout
+    import('@/app/lib/analytics/funnel-events').then(({ trackFunnelStep }) => {
+      trackFunnelStep('funnel_book_clicked', {
+        carId: car?.id, carName: car ? `${car.year} ${car.make} ${car.model}` : undefined,
+        totalAmount: pricing.total, insuranceTier,
+      })
+    }).catch(() => {})
+
     router.push(`/rentals/${car?.id}/book`)
   }
   

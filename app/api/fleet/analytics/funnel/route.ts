@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
+import { generateInsights } from '@/app/lib/analytics/funnel-insights'
 
 const FUNNEL_STEPS = [
   'funnel_car_viewed',
@@ -104,6 +105,13 @@ export async function GET(request: NextRequest) {
           dropOff: biggestDropOff.dropOff,
         } : null,
       },
+      insights: generateInsights(steps, {
+        topOfFunnel,
+        bottomOfFunnel,
+        overallConversion,
+        errorCount,
+        abandonedCount,
+      }),
     })
   } catch (error) {
     console.error('[Funnel] Error:', error)

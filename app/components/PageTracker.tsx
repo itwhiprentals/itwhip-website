@@ -83,6 +83,21 @@ export default function PageTracker({ pathPrefix, disabled = false }: PageTracke
     return () => clearTimeout(timeoutId)
   }, [pathname, searchParams, pathPrefix, disabled])
 
+  // Track funnel abandonment — fires when user leaves a booking page
+  useEffect(() => {
+    const FUNNEL_PATHS = ['/book', '/rentals/']
+    const isOnFunnelPage = FUNNEL_PATHS.some(p => pathname?.includes(p))
+    if (!isOnFunnelPage) return
+
+    const handleBeforeUnload = () => {
+      const { trackFunnelStep } = require('@/app/lib/analytics/funnel-events')
+      trackFunnelStep('funnel_abandoned', { abandonedAtPath: pathname })
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [pathname])
+
   // This component renders nothing
   return null
 }
