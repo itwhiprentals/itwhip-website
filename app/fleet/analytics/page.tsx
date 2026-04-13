@@ -18,6 +18,7 @@ import {
 import FunnelChart from './components/BookingFunnel/FunnelChart'
 import DropOffAnalysis from './components/BookingFunnel/DropOffAnalysis'
 import FunnelInsights from './components/BookingFunnel/FunnelInsights'
+import ChoeAnalysis from './components/BookingFunnel/ChoeAnalysis'
 
 interface AnalyticsData {
   overview: {
@@ -284,6 +285,11 @@ export default function FleetAnalyticsPage() {
                   <FunnelInsights insights={funnelData.insights} />
                 </div>
               )}
+              <ChoeAnalysis onAnalyze={async () => {
+                const res = await fetch('/api/fleet/analytics/funnel/analyze', { method: 'POST', credentials: 'include' })
+                const data = await res.json()
+                return data.success ? data.analysis : null
+              }} />
             </>
           ) : (
             <p className="text-sm text-gray-400 text-center py-8">
