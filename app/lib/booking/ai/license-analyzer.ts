@@ -215,11 +215,14 @@ const DL_ANALYSIS_SCHEMA = {
  * Non-Cloudinary URLs are returned unchanged.
  */
 function optimizeImageForClaude(url: string): string {
-  if (!url.includes('cloudinary.com')) return url
+  // Ensure HTTPS — Claude Vision API requires it
+  let safeUrl = url.startsWith('http://') ? url.replace('http://', 'https://') : url
+  if (!safeUrl.startsWith('https://')) return safeUrl // S3 key — caller must convert
+  if (!safeUrl.includes('cloudinary.com')) return safeUrl
   // Insert resize transform into Cloudinary URL: c_limit keeps aspect ratio,
   // w/h 1568 matches Claude's max, q_90 reduces file size with minimal quality loss,
   // f_jpg converts HEIC/HEIF (unsupported by Claude Vision API) to JPEG on the fly
-  return url.replace('/upload/', '/upload/c_limit,w_1568,h_1568,q_90,f_jpg/')
+  return safeUrl.replace('/upload/', '/upload/c_limit,w_1568,h_1568,q_90,f_jpg/')
 }
 
 // ─── Main Verification Function ─────────────────────────────────────────────

@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     const endingSoon = await prisma.rentalBooking.findMany({
       where: {
         status: 'CONFIRMED',
-        tripStatus: 'IN_PROGRESS',
+        tripStatus: 'ACTIVE',
         endDate: { gte: thirtyMinFromNow, lte: oneHourFromNow },
         returnReminder3hSent: false,
       },

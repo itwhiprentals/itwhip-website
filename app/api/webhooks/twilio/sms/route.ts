@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
           { host: { phone: { endsWith: phoneLast10 } } },
         ],
         status: { in: ['CONFIRMED', 'ACTIVE'] },
-        tripStatus: { in: ['PENDING', 'ACTIVE', null] },
+        tripStatus: { in: ['NOT_STARTED', 'ACTIVE', null] },
       },
       select: {
         id: true,

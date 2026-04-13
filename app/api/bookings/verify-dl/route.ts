@@ -17,7 +17,17 @@ import { decodeAndValidateBarcode } from '@/app/lib/booking/ai/barcode-validator
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { frontImageUrl, backImageUrl, expectedName, expectedDob, stateHint, bookingId, guestEmail } = body
+    let { frontImageUrl, backImageUrl, expectedName, expectedDob, stateHint, bookingId, guestEmail } = body
+
+    // If URLs are S3 keys (not https://), convert to pre-signed URLs
+    if (frontImageUrl && !frontImageUrl.startsWith('https://')) {
+      const { getPrivateDocumentUrl } = await import('@/app/lib/storage/s3')
+      frontImageUrl = await getPrivateDocumentUrl(frontImageUrl)
+    }
+    if (backImageUrl && !backImageUrl.startsWith('https://')) {
+      const { getPrivateDocumentUrl } = await import('@/app/lib/storage/s3')
+      backImageUrl = await getPrivateDocumentUrl(backImageUrl)
+    }
 
     if (!frontImageUrl) {
       return NextResponse.json(

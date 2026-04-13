@@ -174,6 +174,28 @@ export async function getEnhancedLocation(ip: string, headers?: Headers): Promis
       } catch {}
     }
 
+    // Fallback: ip-api.com if geoip-lite failed (Docker has no MaxMind DB)
+    if (!city && !country && ip) {
+      try {
+        const res = await fetch(
+          `http://ip-api.com/json/${ip}?fields=status,countryCode,regionName,city,lat,lon,timezone,zip`,
+          { signal: AbortSignal.timeout(2000) }
+        )
+        if (res.ok) {
+          const json = await res.json()
+          if (json.status === 'success') {
+            country = json.countryCode || null
+            region = json.regionName || null
+            city = json.city || null
+            latitude = json.lat || null
+            longitude = json.lon || null
+            timezone = json.timezone || null
+            zipCode = json.zip || null
+          }
+        }
+      } catch {}
+    }
+
     console.log(`[Geolocation] Geo: ${city}, ${region}, ${country} (${latitude}, ${longitude})`)
 
     // Query proxycheck.io for threat intelligence (non-blocking)

@@ -68,8 +68,14 @@ export async function POST(request: NextRequest) {
   const eventAgeMinutes = (Date.now() - eventCreatedAt.getTime()) / (1000 * 60)
 
   if (eventAgeMinutes < 5) {
-    console.log(`[Webhook/Stripe] PI ${piId} event is only ${eventAgeMinutes.toFixed(1)}min old — skipping (booking flow may still be in progress)`)
-    return NextResponse.json({ received: true })
+    // Return 503 so Stripe retries with exponential backoff (~1min, ~5min, ~30min).
+    // NEVER return 200 for an event we haven't fully processed — that tells Stripe
+    // "all good, don't retry" and orphaned payments slip through.
+    console.log(`[Webhook/Stripe] PI ${piId} is ${eventAgeMinutes.toFixed(1)}min old — returning 503 for Stripe retry`)
+    return NextResponse.json(
+      { retry: true, message: 'Booking flow may still be in progress' },
+      { status: 503 }
+    )
   }
 
   // Check if a booking exists for this PaymentIntent
