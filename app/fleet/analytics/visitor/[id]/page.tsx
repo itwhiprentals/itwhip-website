@@ -97,8 +97,10 @@ export default function VisitorProfilePage() {
         <ThreatAssessment
           visitor={data.visitor}
           behavioral={data.behavioral}
-          securityEventCount={data.securityEvents.length}
-          loginAttemptCount={data.loginAttempts.length}
+          blockedEventCount={data.securityEvents.filter(e => e.blocked).length}
+          failedLoginCount={data.loginAttempts.filter(l => !l.success).length}
+          totalSecurityEvents={data.securityEvents.length}
+          totalLoginAttempts={data.loginAttempts.length}
         />
 
         {/* Visitor identity */}

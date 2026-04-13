@@ -14,8 +14,10 @@ interface ThreatAssessmentProps {
     sensitivePagesVisited: string[]
     sessionDurationMs: number | null
   }
-  securityEventCount: number
-  loginAttemptCount: number
+  blockedEventCount: number
+  failedLoginCount: number
+  totalSecurityEvents: number
+  totalLoginAttempts: number
 }
 
 interface Finding {
@@ -23,7 +25,7 @@ interface Finding {
   message: string
 }
 
-export default function ThreatAssessment({ visitor, behavioral, securityEventCount, loginAttemptCount }: ThreatAssessmentProps) {
+export default function ThreatAssessment({ visitor, behavioral, blockedEventCount, failedLoginCount, totalSecurityEvents, totalLoginAttempts }: ThreatAssessmentProps) {
   const findings: Finding[] = []
 
   // Evaluate threat indicators
@@ -40,11 +42,13 @@ export default function ThreatAssessment({ visitor, behavioral, securityEventCou
   if (behavioral.avgTimeBetweenPages !== null && behavioral.avgTimeBetweenPages < 1000) {
     findings.push({ level: 'high', message: `Bot-like speed — ${behavioral.avgTimeBetweenPages}ms avg between pages` })
   }
-  if (securityEventCount > 0) {
-    findings.push({ level: 'high', message: `${securityEventCount} security event(s) from this IP` })
+  if (blockedEventCount > 0) {
+    findings.push({ level: 'critical', message: `${blockedEventCount} blocked event(s) from this IP` })
   }
-  if (loginAttemptCount > 3) {
-    findings.push({ level: 'high', message: `${loginAttemptCount} login attempt(s) — possible brute force` })
+  if (failedLoginCount >= 3) {
+    findings.push({ level: 'high', message: `${failedLoginCount} failed login attempt(s) — possible brute force` })
+  } else if (failedLoginCount > 0) {
+    findings.push({ level: 'medium', message: `${failedLoginCount} failed login attempt(s)` })
   }
 
   if (findings.length === 0) {
