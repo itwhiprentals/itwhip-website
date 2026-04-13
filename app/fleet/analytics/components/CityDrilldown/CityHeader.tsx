@@ -15,13 +15,16 @@ interface CityHeaderProps {
   range: string
 }
 
-const countryFlags: Record<string, string> = {
-  US: '🇺🇸', CA: '🇨🇦', MX: '🇲🇽', GB: '🇬🇧', DE: '🇩🇪', FR: '🇫🇷',
-  JP: '🇯🇵', CN: '🇨🇳', RU: '🇷🇺', IN: '🇮🇳', BR: '🇧🇷', AU: '🇦🇺',
+function getFlag(code: string | null): string {
+  if (!code) return '🌍'
+  const upper = code.toUpperCase()
+  const a = upper.codePointAt(0)! - 65 + 0x1F1E6
+  const b = upper.codePointAt(1)! - 65 + 0x1F1E6
+  return String.fromCodePoint(a, b)
 }
 
 export default function CityHeader({ city, country, totalViews, uniqueVisitors, avgRiskScore, maxRiskScore, range }: CityHeaderProps) {
-  const flag = country ? countryFlags[country] || '🌍' : '🌍'
+  const flag = getFlag(country)
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">

@@ -28,52 +28,25 @@ interface GeoBreakdownProps {
   loading?: boolean
 }
 
-// Country code to flag emoji
-const countryFlags: Record<string, string> = {
-  US: '🇺🇸',
-  GB: '🇬🇧',
-  UK: '🇬🇧',
-  CA: '🇨🇦',
-  AU: '🇦🇺',
-  DE: '🇩🇪',
-  FR: '🇫🇷',
-  ES: '🇪🇸',
-  IT: '🇮🇹',
-  JP: '🇯🇵',
-  CN: '🇨🇳',
-  IN: '🇮🇳',
-  BR: '🇧🇷',
-  MX: '🇲🇽',
-  NL: '🇳🇱',
-  SE: '🇸🇪',
-  PL: '🇵🇱',
-  KR: '🇰🇷',
-  RU: '🇷🇺',
-  Unknown: '🌍'
+// Convert ISO country code to flag emoji (works for ALL countries)
+function getFlag(code: string): string {
+  if (!code || code === 'Unknown') return '🌍'
+  const upper = code.toUpperCase()
+  // Regional indicator symbols: A=🇦 (0x1F1E6), B=🇧 (0x1F1E7), etc.
+  const a = upper.codePointAt(0)! - 65 + 0x1F1E6
+  const b = upper.codePointAt(1)! - 65 + 0x1F1E6
+  return String.fromCodePoint(a, b)
 }
 
-// Country code to name
-const countryNames: Record<string, string> = {
-  US: 'United States',
-  GB: 'United Kingdom',
-  UK: 'United Kingdom',
-  CA: 'Canada',
-  AU: 'Australia',
-  DE: 'Germany',
-  FR: 'France',
-  ES: 'Spain',
-  IT: 'Italy',
-  JP: 'Japan',
-  CN: 'China',
-  IN: 'India',
-  BR: 'Brazil',
-  MX: 'Mexico',
-  NL: 'Netherlands',
-  SE: 'Sweden',
-  PL: 'Poland',
-  KR: 'South Korea',
-  RU: 'Russia',
-  Unknown: 'Unknown'
+// Resolve country name using Intl API (handles every ISO code)
+const countryNameFormatter = typeof Intl !== 'undefined'
+  ? new Intl.DisplayNames(['en'], { type: 'region' })
+  : null
+
+function getCountryName(code: string): string {
+  if (!code || code === 'Unknown') return 'Unknown'
+  try { return countryNameFormatter?.of(code.toUpperCase()) || code }
+  catch { return code }
 }
 
 export default function GeoBreakdown({ data, locationData, loading = false }: GeoBreakdownProps) {
@@ -145,7 +118,7 @@ export default function GeoBreakdown({ data, locationData, loading = false }: Ge
           {locationData.map((item, index) => {
             const widthPercent = (item.views / detailedMaxViews) * 100
             const percentage = ((item.views / detailedTotalViews) * 100).toFixed(1)
-            const flag = countryFlags[item.country] || '🌍'
+            const flag = getFlag(item.country)
 
             return (
               <div
@@ -161,11 +134,11 @@ export default function GeoBreakdown({ data, locationData, loading = false }: Ge
                     <span className="text-base flex-shrink-0">{flag}</span>
                     <div className="min-w-0 flex-1">
                       <span className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 truncate block">
-                        {item.city || item.region || countryNames[item.country] || item.country}
+                        {item.city || item.region || getCountryName(item.country)}
                       </span>
                       {(item.city || item.region) && (
                         <span className="text-xs text-gray-500 dark:text-gray-400 truncate block">
-                          {[item.region, countryNames[item.country] || item.country]
+                          {[item.region, getCountryName(item.country)]
                             .filter(Boolean)
                             .join(', ')}
                         </span>
@@ -195,8 +168,8 @@ export default function GeoBreakdown({ data, locationData, loading = false }: Ge
           {data.map((item) => {
             const widthPercent = (item.views / maxViews) * 100
             const percentage = ((item.views / totalViews) * 100).toFixed(1)
-            const flag = countryFlags[item.country] || '🌍'
-            const name = countryNames[item.country] || item.country
+            const flag = getFlag(item.country)
+            const name = getCountryName(item.country)
 
             return (
               <div key={item.country}>
