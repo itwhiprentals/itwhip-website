@@ -146,22 +146,21 @@ export default async function ExoticNearMePage() {
           '@type': 'ListItem',
           position: index + 1,
           item: {
-            '@type': 'Product',
+            '@type': (car.rating && car.rating > 0 && car.totalTrips > 0) ? 'Product' : 'Thing',
             name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
             url: `https://itwhip.com/rentals/${car.id}`,
             description: `Exotic ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} supercar rental in ${car.city}`,
             image: car.photos?.[0]?.url || 'https://itwhip.com/Luxury-car.png',
-            brand: { '@type': 'Brand', name: capitalizeCarMake(car.make) },
-            ...(car.rating && car.totalTrips > 0 ? {
+            ...((car.rating && car.rating > 0 && car.totalTrips > 0) ? {
+              brand: { '@type': 'Brand', name: capitalizeCarMake(car.make) },
               aggregateRating: {
                 '@type': 'AggregateRating',
                 ratingValue: car.rating,
                 reviewCount: car.totalTrips,
                 bestRating: 5,
                 worstRating: 1
-              }
-            } : {}),
-            offers: {
+              },
+              offers: {
               '@type': 'Offer',
               price: car.dailyRate,
               priceCurrency: 'USD',
@@ -204,6 +203,7 @@ export default async function ExoticNearMePage() {
                 }
               }
             }
+            } : {})
           }
         }))
       },

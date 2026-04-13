@@ -411,27 +411,27 @@ export default async function CarModelPage({ params }: PageProps) {
     '@context': 'https://schema.org',
     '@graph': [
       {
-        '@type': 'Product',
+        '@type': (avgRating && carsWithRatings.length > 0) ? 'Product' : 'Thing',
         name: t('schemaRentalName', { model: displayName }),
         url: `https://itwhip.com/rentals/makes/${make}/${model}`,
         description: t('schemaRentalDescription', { model: displayName }),
         image: cars[0]?.photos?.[0]?.url || 'https://itwhip.com/images/placeholder-car.jpg',
-        brand: {
-          '@type': 'Brand',
-          name: makeName
-        },
-        offers: {
-          '@type': 'AggregateOffer',
-          priceCurrency: 'USD',
-          lowPrice: minPrice,
-          highPrice: maxPrice,
-          offerCount: totalCars,
-          priceValidUntil,
-          availability: totalCars > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-          shippingDetails: SHIPPING_DETAILS,
-          hasMerchantReturnPolicy: MERCHANT_RETURN_POLICY
-        },
-        ...(totalCars > 0 ? {
+        ...((avgRating && carsWithRatings.length > 0) ? {
+          brand: {
+            '@type': 'Brand',
+            name: makeName
+          },
+          offers: {
+            '@type': 'AggregateOffer',
+            priceCurrency: 'USD',
+            lowPrice: minPrice,
+            highPrice: maxPrice,
+            offerCount: totalCars,
+            priceValidUntil,
+            availability: totalCars > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            shippingDetails: SHIPPING_DETAILS,
+            hasMerchantReturnPolicy: MERCHANT_RETURN_POLICY
+          },
           aggregateRating: {
             '@type': 'AggregateRating',
             ratingValue: avgRating,

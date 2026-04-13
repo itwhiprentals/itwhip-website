@@ -281,26 +281,26 @@ export default async function RentalsPage({
       '@type': 'ListItem',
       position: idx + 1,
       item: {
-        '@type': 'Product',
+        '@type': (car.rating && car.rating > 0 && car.totalTrips > 0) ? 'Product' : 'Thing',
         name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
         url: `https://itwhip.com/rentals/${car.id}`,
         image: car.photos[0]?.url || 'https://itwhip.com/images/placeholder-car.jpg',
         description: t('schemaCarDescription', { year: car.year, make: capitalizeCarMake(car.make), model: normalizeModelName(car.model, car.make), city: car.city || 'Phoenix' }),
-        brand: {
-          '@type': 'Brand',
-          name: capitalizeCarMake(car.make)
-        },
-        offers: {
-          '@type': 'Offer',
-          priceCurrency: 'USD',
-          price: car.dailyRate.toString(),
-          priceValidUntil,
-          availability: 'https://schema.org/InStock',
-          url: `https://itwhip.com/rentals/${car.id}`,
-          shippingDetails: SHIPPING_DETAILS,
-          hasMerchantReturnPolicy: MERCHANT_RETURN_POLICY
-        },
-        ...(car.rating && car.totalTrips > 0 ? {
+        ...((car.rating && car.rating > 0 && car.totalTrips > 0) ? {
+          brand: {
+            '@type': 'Brand',
+            name: capitalizeCarMake(car.make)
+          },
+          offers: {
+            '@type': 'Offer',
+            priceCurrency: 'USD',
+            price: car.dailyRate.toString(),
+            priceValidUntil,
+            availability: 'https://schema.org/InStock',
+            url: `https://itwhip.com/rentals/${car.id}`,
+            shippingDetails: SHIPPING_DETAILS,
+            hasMerchantReturnPolicy: MERCHANT_RETURN_POLICY
+          },
           aggregateRating: {
             '@type': 'AggregateRating',
             ratingValue: car.rating.toFixed(1),

@@ -715,70 +715,57 @@ export default async function CityPage({
         '@id': `https://itwhip.com/rentals/cities/${city}#carlist`,
         name: t('schemaCarListName', { city: cityName }),
         numberOfItems: allCars.length,
-        itemListElement: allCars.slice(0, 10).map((car, index) => ({
-          '@type': 'ListItem',
-          position: index + 1,
-          item: {
-            '@type': 'Product',
-            name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
-            url: `https://itwhip.com/rentals/${car.id}`,
-            description: t('schemaCarDescription', { year: car.year, make: capitalizeCarMake(car.make), model: normalizeModelName(car.model, car.make), city: cityName }),
-            image: car.photos?.[0]?.url,
-            brand: { '@type': 'Brand', name: capitalizeCarMake(car.make) },
-            offers: {
-              '@type': 'Offer',
-              price: car.dailyRate,
-              priceCurrency: 'USD',
-              availability: 'https://schema.org/InStock',
-              priceValidUntil,
-              hasMerchantReturnPolicy: {
-                '@type': 'MerchantReturnPolicy',
-                applicableCountry: 'US',
-                returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
-                merchantReturnDays: 3,
-                returnMethod: 'https://schema.org/ReturnAtKiosk',
-                returnFees: 'https://schema.org/FreeReturn',
-                refundType: 'https://schema.org/FullRefund',
-                returnPolicyCountry: 'US'
-              },
-              shippingDetails: {
-                '@type': 'OfferShippingDetails',
-                shippingRate: {
-                  '@type': 'MonetaryAmount',
-                  value: 0,
-                  currency: 'USD'
-                },
-                shippingDestination: {
-                  '@type': 'DefinedRegion',
-                  addressCountry: 'US',
-                  addressRegion: 'AZ'
-                },
-                deliveryTime: {
-                  '@type': 'ShippingDeliveryTime',
-                  handlingTime: {
-                    '@type': 'QuantitativeValue',
-                    minValue: 0,
-                    maxValue: 24,
-                    unitCode: 'd'
+        itemListElement: allCars.slice(0, 10).map((car, index) => {
+          const hasReviews = car.rating && car.rating > 0 && car.totalTrips > 0
+          return {
+            '@type': 'ListItem',
+            position: index + 1,
+            item: {
+              // Only use Product schema for cars with reviews — avoids Google warnings
+              // about missing aggregateRating/review on Product items
+              '@type': hasReviews ? 'Product' : 'Thing',
+              name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
+              url: `https://itwhip.com/rentals/${car.id}`,
+              description: t('schemaCarDescription', { year: car.year, make: capitalizeCarMake(car.make), model: normalizeModelName(car.model, car.make), city: cityName }),
+              image: car.photos?.[0]?.url,
+              ...(hasReviews ? {
+                brand: { '@type': 'Brand', name: capitalizeCarMake(car.make) },
+                offers: {
+                  '@type': 'Offer',
+                  price: car.dailyRate,
+                  priceCurrency: 'USD',
+                  availability: 'https://schema.org/InStock',
+                  priceValidUntil,
+                  hasMerchantReturnPolicy: {
+                    '@type': 'MerchantReturnPolicy',
+                    applicableCountry: 'US',
+                    returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+                    merchantReturnDays: 3,
+                    returnMethod: 'https://schema.org/ReturnAtKiosk',
+                    returnFees: 'https://schema.org/FreeReturn',
+                    refundType: 'https://schema.org/FullRefund',
+                    returnPolicyCountry: 'US'
                   },
-                  transitTime: {
-                    '@type': 'QuantitativeValue',
-                    minValue: 0,
-                    maxValue: 2,
-                    unitCode: 'd'
+                  shippingDetails: {
+                    '@type': 'OfferShippingDetails',
+                    shippingRate: { '@type': 'MonetaryAmount', value: 0, currency: 'USD' },
+                    shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'US', addressRegion: 'AZ' },
+                    deliveryTime: {
+                      '@type': 'ShippingDeliveryTime',
+                      handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 24, unitCode: 'd' },
+                      transitTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 2, unitCode: 'd' }
+                    }
                   }
+                },
+                aggregateRating: {
+                  '@type': 'AggregateRating',
+                  ratingValue: car.rating,
+                  reviewCount: car.totalTrips
                 }
-              }
-            },
-            ...(car.rating && car.totalTrips > 0 ? {
-              aggregateRating: {
-                '@type': 'AggregateRating',
-                ratingValue: car.rating,
-                reviewCount: car.totalTrips
-              }
-            } : {})
+              } : {})
+            }
           }
-        }))
+        })
       },
       // FAQPage
       {

@@ -304,60 +304,60 @@ export default async function BudgetRentalsPage() {
           '@type': 'ListItem',
           position: index + 1,
           item: {
-            '@type': 'Product',
+            '@type': (car.rating && car.rating > 0 && car.totalTrips > 0) ? 'Product' : 'Thing',
             name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
             url: `https://itwhip.com/rentals/${car.id}`,
             description: `Budget ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)} rental in ${car.city || 'Arizona'} - $${car.dailyRate}/day`,
             image: car.photos?.[0]?.url,
-            brand: {
-              '@type': 'Brand',
-              name: car.make
-            },
-            offers: {
-              '@type': 'Offer',
-              price: car.dailyRate,
-              priceCurrency: 'USD',
-              availability: 'https://schema.org/InStock',
-              priceValidUntil,
-              hasMerchantReturnPolicy: {
-                '@type': 'MerchantReturnPolicy',
-                applicableCountry: 'US',
-                returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
-                merchantReturnDays: 3,
-                returnMethod: 'https://schema.org/ReturnAtKiosk',
-                returnFees: 'https://schema.org/FreeReturn',
-                refundType: 'https://schema.org/FullRefund'
+            ...((car.rating && car.rating > 0 && car.totalTrips > 0) ? {
+              brand: {
+                '@type': 'Brand',
+                name: car.make
               },
-              shippingDetails: {
-                '@type': 'OfferShippingDetails',
-                shippingRate: {
-                  '@type': 'MonetaryAmount',
-                  value: 0,
-                  currency: 'USD'
+              offers: {
+                '@type': 'Offer',
+                price: car.dailyRate,
+                priceCurrency: 'USD',
+                availability: 'https://schema.org/InStock',
+                priceValidUntil,
+                hasMerchantReturnPolicy: {
+                  '@type': 'MerchantReturnPolicy',
+                  applicableCountry: 'US',
+                  returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+                  merchantReturnDays: 3,
+                  returnMethod: 'https://schema.org/ReturnAtKiosk',
+                  returnFees: 'https://schema.org/FreeReturn',
+                  refundType: 'https://schema.org/FullRefund'
                 },
-                shippingDestination: {
-                  '@type': 'DefinedRegion',
-                  addressCountry: 'US',
-                  addressRegion: 'AZ'
-                },
-                deliveryTime: {
-                  '@type': 'ShippingDeliveryTime',
-                  handlingTime: {
-                    '@type': 'QuantitativeValue',
-                    minValue: 0,
-                    maxValue: 24,
-                    unitCode: 'd'
+                shippingDetails: {
+                  '@type': 'OfferShippingDetails',
+                  shippingRate: {
+                    '@type': 'MonetaryAmount',
+                    value: 0,
+                    currency: 'USD'
                   },
-                  transitTime: {
-                    '@type': 'QuantitativeValue',
-                    minValue: 0,
-                    maxValue: 2,
-                    unitCode: 'd'
+                  shippingDestination: {
+                    '@type': 'DefinedRegion',
+                    addressCountry: 'US',
+                    addressRegion: 'AZ'
+                  },
+                  deliveryTime: {
+                    '@type': 'ShippingDeliveryTime',
+                    handlingTime: {
+                      '@type': 'QuantitativeValue',
+                      minValue: 0,
+                      maxValue: 24,
+                      unitCode: 'd'
+                    },
+                    transitTime: {
+                      '@type': 'QuantitativeValue',
+                      minValue: 0,
+                      maxValue: 2,
+                      unitCode: 'd'
+                    }
                   }
                 }
-              }
-            },
-            ...(car.rating && car.totalTrips > 0 ? {
+              },
               aggregateRating: {
                 '@type': 'AggregateRating',
                 ratingValue: car.rating,

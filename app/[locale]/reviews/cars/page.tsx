@@ -260,64 +260,64 @@ export default async function CarReviewsPage({ searchParams }: PageProps) {
       '@type': 'ListItem',
       position: index + 1,
       item: {
-        '@type': 'Product',
+        '@type': (car.rating && car.rating > 0 && car._count.reviews > 0) ? 'Product' : 'Thing',
         name: `${car.year} ${car.make} ${car.model}`,
         url: `https://itwhip.com/rentals/${car.id}`,
         description: `${car.year} ${car.make} ${car.model} rental in ${car.city}, AZ - ${getTypeLabel(car.carType, t)} from $${car.dailyRate}/day`,
         image: car.photos[0]?.url || 'https://itwhip.com/images/car-default.jpg',
-        ...(car.rating && car._count.reviews > 0 ? {
+        ...((car.rating && car.rating > 0 && car._count.reviews > 0) ? {
           aggregateRating: {
             '@type': 'AggregateRating',
             ratingValue: car.rating,
             reviewCount: car._count.reviews,
             bestRating: 5,
             worstRating: 1
-          }
-        } : {}),
-        offers: {
-          '@type': 'Offer',
-          priceCurrency: 'USD',
-          price: car.dailyRate,
-          availability: 'https://schema.org/InStock',
-          url: `https://itwhip.com/rentals/${car.id}`,
-          priceValidUntil,
-          hasMerchantReturnPolicy: {
-            '@type': 'MerchantReturnPolicy',
-            applicableCountry: 'US',
-            returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
-            merchantReturnDays: 3,
-            returnMethod: 'https://schema.org/ReturnAtKiosk',
-            returnFees: 'https://schema.org/FreeReturn'
           },
-          shippingDetails: {
-            '@type': 'OfferShippingDetails',
-            shippingDestination: {
-              '@type': 'DefinedRegion',
-              addressCountry: 'US',
-              addressRegion: 'AZ'
+          offers: {
+            '@type': 'Offer',
+            priceCurrency: 'USD',
+            price: car.dailyRate,
+            availability: 'https://schema.org/InStock',
+            url: `https://itwhip.com/rentals/${car.id}`,
+            priceValidUntil,
+            hasMerchantReturnPolicy: {
+              '@type': 'MerchantReturnPolicy',
+              applicableCountry: 'US',
+              returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+              merchantReturnDays: 3,
+              returnMethod: 'https://schema.org/ReturnAtKiosk',
+              returnFees: 'https://schema.org/FreeReturn'
             },
-            deliveryTime: {
-              '@type': 'ShippingDeliveryTime',
-              handlingTime: {
-                '@type': 'QuantitativeValue',
-                minValue: 0,
-                maxValue: 1,
-                unitCode: 'd'
+            shippingDetails: {
+              '@type': 'OfferShippingDetails',
+              shippingDestination: {
+                '@type': 'DefinedRegion',
+                addressCountry: 'US',
+                addressRegion: 'AZ'
               },
-              transitTime: {
-                '@type': 'QuantitativeValue',
-                minValue: 0,
-                maxValue: 1,
-                unitCode: 'd'
+              deliveryTime: {
+                '@type': 'ShippingDeliveryTime',
+                handlingTime: {
+                  '@type': 'QuantitativeValue',
+                  minValue: 0,
+                  maxValue: 1,
+                  unitCode: 'd'
+                },
+                transitTime: {
+                  '@type': 'QuantitativeValue',
+                  minValue: 0,
+                  maxValue: 1,
+                  unitCode: 'd'
+                }
+              },
+              shippingRate: {
+                '@type': 'MonetaryAmount',
+                value: 0,
+                currency: 'USD'
               }
-            },
-            shippingRate: {
-              '@type': 'MonetaryAmount',
-              value: 0,
-              currency: 'USD'
             }
           }
-        }
+        } : {})
       }
     }))
   }

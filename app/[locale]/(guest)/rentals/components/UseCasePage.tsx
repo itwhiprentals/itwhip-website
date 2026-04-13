@@ -99,20 +99,22 @@ export default function UseCasePage({
           '@type': 'ListItem',
           position: index + 1,
           item: {
-            '@type': 'Product',
+            '@type': (car.rating && car.rating > 0 && car.totalTrips > 0) ? 'Product' : 'Thing',
             name: `${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
             url: `https://itwhip.com/rentals/${car.id}`,
             description: `${title} - ${car.year} ${capitalizeCarMake(car.make)} ${normalizeModelName(car.model, car.make)}`,
             image: car.photos?.[0]?.url,
-            offers: {
-              '@type': 'Offer',
-              price: car.dailyRate,
-              priceCurrency: 'USD',
-              availability: 'https://schema.org/InStock',
-              priceValidUntil,
-              shippingDetails: SHIPPING_DETAILS,
-              hasMerchantReturnPolicy: MERCHANT_RETURN_POLICY
-            }
+            ...((car.rating && car.rating > 0 && car.totalTrips > 0) ? {
+              offers: {
+                '@type': 'Offer',
+                price: car.dailyRate,
+                priceCurrency: 'USD',
+                availability: 'https://schema.org/InStock',
+                priceValidUntil,
+                shippingDetails: SHIPPING_DETAILS,
+                hasMerchantReturnPolicy: MERCHANT_RETURN_POLICY
+              }
+            } : {})
           }
         }))
       },
