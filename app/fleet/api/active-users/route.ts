@@ -19,39 +19,17 @@ export async function GET(request: NextRequest) {
     const startOfToday = new Date(now)
     startOfToday.setHours(0, 0, 0, 0)
 
+    const sixtySecondsAgo = new Date(now.getTime() - 60 * 1000)
+
     const [onlineNow, activeGuests, activeHosts, totalRegisteredGuests, totalRegisteredHosts, smsSentToday, smsReceivedToday, emailsSentToday, callsToday] = await Promise.all([
-      // Visitors with page view in last 5 minutes (unique by visitorId or IP)
-      prisma.pageView.findMany({
-        where: { timestamp: { gte: fiveMinAgo } },
-        select: { visitorId: true, ip: true },
-        distinct: ['visitorId'],
-      }).then(views => views.length),
+      // Online now — heartbeat received in last 60 seconds
+      prisma.presence.count({ where: { lastSeen: { gte: sixtySecondsAgo } } }),
 
-      // Guests with active session (logged in within last 30 min)
-      prisma.securityEvent.findMany({
-        where: {
-          type: 'LOGIN_SUCCESS',
-          timestamp: { gte: thirtyMinAgo },
-          message: { contains: 'via guest' },
-        },
-        select: { targetId: true },
-        distinct: ['targetId'],
-      }).then(events => events.length),
+      // Active guests — heartbeat in last 60s with role = guest
+      prisma.presence.count({ where: { lastSeen: { gte: sixtySecondsAgo }, role: 'guest' } }),
 
-      // Hosts with active session (logged in within last 30 min)
-      prisma.securityEvent.findMany({
-        where: {
-          type: 'LOGIN_SUCCESS',
-          timestamp: { gte: thirtyMinAgo },
-          OR: [
-            { message: { contains: 'via host' } },
-            { message: { contains: 'via partner' } },
-            { message: { contains: 'via mobile_host' } },
-          ],
-        },
-        select: { targetId: true },
-        distinct: ['targetId'],
-      }).then(events => events.length),
+      // Active hosts — heartbeat in last 60s with role = host or admin
+      prisma.presence.count({ where: { lastSeen: { gte: sixtySecondsAgo }, role: { in: ['host', 'admin'] } } }),
 
       // Total registered guests
       prisma.reviewerProfile.count(),

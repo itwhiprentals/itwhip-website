@@ -7,6 +7,7 @@
 import { useEffect, useRef } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { getCachedGps } from '@/app/lib/analytics/gps-collector'
+import { startHeartbeat } from '@/app/lib/analytics/heartbeat'
 
 interface PageTrackerProps {
   // Optional: only track paths starting with this prefix
@@ -20,6 +21,11 @@ export default function PageTracker({ pathPrefix, disabled = false }: PageTracke
   const searchParams = useSearchParams()
   const lastTrackedPath = useRef<string | null>(null)
   const loadStartTime = useRef<number>(Date.now())
+
+  useEffect(() => {
+    // Start presence heartbeat (idempotent — safe to call multiple times)
+    startHeartbeat()
+  }, [])
 
   useEffect(() => {
     // Reset load time on path change

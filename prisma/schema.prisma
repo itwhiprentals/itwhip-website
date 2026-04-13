@@ -5852,6 +5852,23 @@ model CallLog {
   @@map("call_logs")
 }
 
+// Real-time presence — heartbeat every 30s from each visitor
+model Presence {
+  id        String   @id // visitorId or visitorId:userId
+  visitorId String
+  userId    String?
+  role      String   @default("anonymous") // anonymous, guest, host
+  ip        String?
+  path      String?
+  device    String?
+  browser   String?
+  lastSeen  DateTime @default(now())
+
+  @@index([lastSeen])
+  @@index([role])
+  @@map("presence")
+}
+
 // Cron execution log — tracks every cron job run for monitoring dashboard
 model CronLog {
   id            String    @id @default(cuid())

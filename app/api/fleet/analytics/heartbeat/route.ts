@@ -1,0 +1,129 @@
+// app/api/fleet/analytics/heartbeat/route.ts
+// Receives presence heartbeats from visitors. Upserts into Presence table.
+// Cleans up stale entries (older than 5 min) on each request (throttled).
+
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/app/lib/database/prisma'
+import { headers } from 'next/headers'
+import { getClientIP } from '@/app/lib/analytics'
+import { jwtVerify } from 'jose'
+
+// Rate limit: max 1 heartbeat per 10s per IP
+const rateLimitMap = new Map<string, number>()
+let lastCleanup = 0
+
+export async function POST(request: NextRequest) {
+  try {
+    const headersList = await headers()
+    const ip = getClientIP(headersList) || 'unknown'
+
+    // Rate limit
+    const now = Date.now()
+    const lastBeat = rateLimitMap.get(ip) || 0
+    if (now - lastBeat < 10_000) {
+      return NextResponse.json({ ok: true }) // silently skip
+    }
+    rateLimitMap.set(ip, now)
+
+    // Clean rate limit map every 5 min
+    if (rateLimitMap.size > 500) {
+      const cutoff = now - 60_000
+      for (const [k, v] of rateLimitMap) {
+        if (v < cutoff) rateLimitMap.delete(k)
+      }
+    }
+
+    const body = await request.json().catch(() => ({}))
+    const path = body.path || '/'
+
+    // Generate visitor ID (same logic as page tracking)
+    const ua = headersList.get('user-agent') || ''
+    const dateKey = new Date().toISOString().slice(0, 10)
+    const visitorId = `v_${simpleHash(`${ua}${ip}${dateKey}`).slice(0, 6)}`
+
+    // Detect role from auth cookies
+    let userId: string | null = null
+    let role = 'anonymous'
+
+    // Check guest token
+    const guestToken = request.cookies.get('guest_access_token')?.value
+    if (guestToken) {
+      const decoded = await decodeToken(guestToken, process.env.GUEST_JWT_SECRET)
+      if (decoded) {
+        userId = decoded.userId
+        role = 'guest'
+      }
+    }
+
+    // Check host token (overrides guest if both present)
+    const hostToken = request.cookies.get('host_access_token')?.value
+    if (hostToken) {
+      const decoded = await decodeToken(hostToken, process.env.HOST_JWT_SECRET || process.env.JWT_SECRET)
+      if (decoded) {
+        userId = decoded.userId
+        role = 'host'
+      }
+    }
+
+    // Check fleet session
+    const fleetSession = request.cookies.get('fleet_session')?.value
+    if (fleetSession) {
+      role = 'admin'
+    }
+
+    // Parse UA for device/browser
+    const device = /mobi|iphone|android.*mobile/i.test(ua) ? 'mobile' : /ipad|tablet/i.test(ua) ? 'tablet' : 'desktop'
+    const browser = ua.includes('Edg/') ? 'Edge' : ua.includes('Chrome/') ? 'Chrome' : ua.includes('Safari/') ? 'Safari' : ua.includes('Firefox/') ? 'Firefox' : 'Other'
+
+    const presenceId = userId ? `${visitorId}:${userId}` : visitorId
+
+    // Upsert presence
+    await prisma.presence.upsert({
+      where: { id: presenceId },
+      update: { lastSeen: new Date(), path, ip },
+      create: {
+        id: presenceId,
+        visitorId,
+        userId,
+        role,
+        ip,
+        path,
+        device,
+        browser,
+        lastSeen: new Date(),
+      },
+    })
+
+    // Cleanup stale entries (max once per minute)
+    if (now - lastCleanup > 60_000) {
+      lastCleanup = now
+      const fiveMinAgo = new Date(now - 5 * 60 * 1000)
+      prisma.presence.deleteMany({ where: { lastSeen: { lt: fiveMinAgo } } }).catch(() => {})
+    }
+
+    return NextResponse.json({ ok: true })
+  } catch {
+    return NextResponse.json({ ok: true }) // never fail — heartbeats are non-critical
+  }
+}
+
+function simpleHash(str: string): string {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash |= 0
+  }
+  return Math.abs(hash).toString(36)
+}
+
+async function decodeToken(token: string, secret?: string): Promise<{ userId: string } | null> {
+  if (!secret) return null
+  try {
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret))
+    const userId = (payload.userId || payload.id || payload.sub) as string
+    return userId ? { userId } : null
+  } catch {
+    return null
+  }
+}
