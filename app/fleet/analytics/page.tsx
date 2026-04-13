@@ -15,6 +15,8 @@ import {
   LiveFeed,
   TimeRangeSelector
 } from './components'
+import FunnelChart from './components/BookingFunnel/FunnelChart'
+import DropOffAnalysis from './components/BookingFunnel/DropOffAnalysis'
 
 interface AnalyticsData {
   overview: {
@@ -93,6 +95,7 @@ export default function FleetAnalyticsPage() {
   const [error, setError] = useState<string | null>(null)
   const [timeRange, setTimeRange] = useState('7d')
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [funnelData, setFunnelData] = useState<{ funnel: any[]; summary: any } | null>(null)
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -116,6 +119,12 @@ export default function FleetAnalyticsPage() {
       const result = await response.json()
       setData(result)
       setLastUpdated(new Date())
+
+      // Fetch funnel data in parallel
+      fetch(`/api/fleet/analytics/funnel?range=${timeRange}`)
+        .then(r => r.json())
+        .then(d => { if (d.success) setFunnelData(d) })
+        .catch(() => {})
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load analytics')
     } finally {
@@ -254,6 +263,25 @@ export default function FleetAnalyticsPage() {
             browsers={data?.viewsByBrowser || []}
             loading={loading && !data}
           />
+        </div>
+      </section>
+
+      {/* Booking Funnel */}
+      <section className="mt-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Booking Funnel
+          </h2>
+          {funnelData ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <FunnelChart steps={funnelData.funnel} />
+              <DropOffAnalysis summary={funnelData.summary} />
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 text-center py-8">
+              No funnel data yet — events will populate as users go through checkout
+            </p>
+          )}
         </div>
       </section>
 
