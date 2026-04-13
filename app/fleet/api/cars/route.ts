@@ -110,6 +110,15 @@ export async function GET(request: NextRequest) {
             take: 1,
             select: { url: true, isHero: true },
           },
+          bookings: {
+            where: {
+              status: { in: ['CONFIRMED', 'ACTIVE'] },
+              startDate: { lte: new Date() },
+              endDate: { gte: new Date() },
+            },
+            select: { id: true, status: true },
+            take: 1,
+          },
           _count: {
             select: {
               bookings: true,
@@ -160,13 +169,16 @@ export async function GET(request: NextRequest) {
       if (car.requiresInspection) issues.push('Needs Inspection')
 
       // Determine display status
-      let status = 'ACTIVE'
+      const hasActiveBooking = car.bookings && car.bookings.length > 0
+      let status = 'AVAILABLE'
       if (!car.isActive && car.hasActiveClaim) {
         status = 'CLAIMED'
       } else if (!car.isActive) {
         status = 'UNLISTED'
-      } else if (car.safetyHold) {
-        status = 'SAFETY_HOLD'
+      } else if (car.safetyHold || car.requiresInspection) {
+        status = 'MAINTENANCE'
+      } else if (hasActiveBooking) {
+        status = 'BOOKED'
       }
 
       return {

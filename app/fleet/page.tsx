@@ -53,6 +53,7 @@ export default function FleetDashboard() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [pendingApplications, setPendingApplications] = useState(0)
   const [pendingBusinessApprovals, setPendingBusinessApprovals] = useState(0)
+  const [activeUsers, setActiveUsers] = useState<{ onlineNow: number; activeGuests: number; activeHosts: number; totalRegisteredGuests: number; totalRegisteredHosts: number; smsSentToday: number; smsReceivedToday: number; emailsSentToday: number; callsToday: number } | null>(null)
 
   // Get API key from URL
   const apiKey = searchParams.get('key') || 'phoenix-fleet-2847'
@@ -62,6 +63,10 @@ export default function FleetDashboard() {
     fetchUnreadMessages()
     fetchPendingApplications()
     fetchPendingBusinessApprovals()
+    fetchActiveUsers()
+    // Refresh active users every 30s
+    const interval = setInterval(fetchActiveUsers, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   // Separate effect for client-side only window operations
@@ -70,6 +75,14 @@ export default function FleetDashboard() {
       setViewMode('list')
     }
   }, [])
+
+  const fetchActiveUsers = async () => {
+    try {
+      const res = await fetch(`/fleet/api/active-users?key=${apiKey}`)
+      const data = await res.json()
+      if (data.success) setActiveUsers(data)
+    } catch {}
+  }
 
   const fetchCars = async () => {
     try {
@@ -182,13 +195,74 @@ export default function FleetDashboard() {
         </div>
       </div>
 
-      {/* Stats - Mobile responsive */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <StatCard title="Total" value={stats.total} color="white" />
-        <StatCard title="Available" value={stats.available} color="green" />
-        <StatCard title="Booked" value={stats.booked} color="blue" />
-        <StatCard title="Maintenance" value={stats.maintenance} color="yellow" />
+      {/* Vehicle Stats — clickable to filter */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4">
+        <div onClick={() => setFilter('all')} className={`cursor-pointer transition-all ${filter === 'all' ? 'ring-2 ring-gray-400 rounded-lg' : ''}`}>
+          <StatCard title="Total" value={stats.total} color="white" />
+        </div>
+        <div onClick={() => setFilter('AVAILABLE')} className={`cursor-pointer transition-all ${filter === 'AVAILABLE' ? 'ring-2 ring-green-400 rounded-lg' : ''}`}>
+          <StatCard title="Available" value={stats.available} color="green" />
+        </div>
+        <div onClick={() => setFilter('BOOKED')} className={`cursor-pointer transition-all ${filter === 'BOOKED' ? 'ring-2 ring-blue-400 rounded-lg' : ''}`}>
+          <StatCard title="Booked" value={stats.booked} color="blue" />
+        </div>
+        <div onClick={() => setFilter('MAINTENANCE')} className={`cursor-pointer transition-all ${filter === 'MAINTENANCE' ? 'ring-2 ring-yellow-400 rounded-lg' : ''}`}>
+          <StatCard title="Maintenance" value={stats.maintenance} color="yellow" />
+        </div>
       </div>
+
+      {/* User Stats — all clickable */}
+      {activeUsers && (
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 mb-6">
+          <Link href={`/fleet/analytics?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <p className="text-xs text-gray-500 dark:text-gray-400">Online Now</p>
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{activeUsers.onlineNow}</p>
+          </Link>
+          <Link href={`/fleet/guests?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Guests Active</p>
+            <p className="text-2xl font-bold text-blue-600">{activeUsers.activeGuests}</p>
+            <p className="text-[10px] text-gray-400">{activeUsers.totalRegisteredGuests.toLocaleString()} registered</p>
+          </Link>
+          <Link href={`/fleet/hosts?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Hosts Active</p>
+            <p className="text-2xl font-bold text-orange-600">{activeUsers.activeHosts}</p>
+            <p className="text-[10px] text-gray-400">{activeUsers.totalRegisteredHosts.toLocaleString()} approved</p>
+          </Link>
+          <Link href={`/fleet/guests?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Guests</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{activeUsers.totalRegisteredGuests.toLocaleString()}</p>
+          </Link>
+          <Link href={`/fleet/hosts?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Hosts</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{activeUsers.totalRegisteredHosts.toLocaleString()}</p>
+          </Link>
+        </div>
+      )}
+
+      {/* Communications Today */}
+      {activeUsers && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+          <Link href={`/fleet/emails?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Emails Sent Today</p>
+            <p className="text-2xl font-bold text-indigo-600">{activeUsers.emailsSentToday}</p>
+          </Link>
+          <Link href={`/fleet/messages?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">SMS Sent Today</p>
+            <p className="text-2xl font-bold text-green-600">{activeUsers.smsSentToday}</p>
+          </Link>
+          <Link href={`/fleet/messages?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">SMS Received Today</p>
+            <p className="text-2xl font-bold text-teal-600">{activeUsers.smsReceivedToday}</p>
+          </Link>
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Calls Today</p>
+            <p className="text-2xl font-bold text-purple-600">{activeUsers.callsToday}</p>
+          </div>
+        </div>
+      )}
 
       {/* Navigation Actions - Management Operations */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 p-4 mb-6">
