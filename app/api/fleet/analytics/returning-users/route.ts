@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
         SELECT
           COUNT(*) as total_visitors,
           COUNT(CASE WHEN session_count > 1 THEN 1 END) as returning_visitors,
-          SUM(session_count) as total_sessions,
+          SUM(CASE WHEN session_count > 1 THEN session_count ELSE 0 END) as total_sessions,
           SUM(page_count) as total_pageviews
         FROM visitor_sessions
       `,
