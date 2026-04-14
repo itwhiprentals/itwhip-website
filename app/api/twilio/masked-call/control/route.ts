@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Phone system unavailable' }, { status: 503 })
     }
 
-    const body = await request.json()
+    const body = await request.json().catch(() => ({}))
     const { action, conferenceSid, participantSid, phone, label, hold, muted, callSid, bookingId } = body
 
     if (!action) {
