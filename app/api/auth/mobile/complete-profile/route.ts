@@ -60,6 +60,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
+    // Check if phone is already taken by another user
+    const existingPhone = await prisma.user.findFirst({
+      where: { phone: formattedPhone, id: { not: user.id } },
+      select: { id: true }
+    })
+    if (existingPhone) {
+      return NextResponse.json(
+        { error: 'This phone number is already associated with another account. Please use a different number or log in with your existing account.' },
+        { status: 409 }
+      )
+    }
+
     // Update User phone
     await prisma.user.update({
       where: { id: user.id },
