@@ -5859,13 +5859,15 @@ model Presence {
   userId    String?
   role      String   @default("anonymous") // anonymous, guest, host
   ip        String?
-  path      String?
-  device    String?
-  browser   String?
-  lastSeen  DateTime @default(now())
+  path        String?
+  device      String?
+  browser     String?
+  funnelStage String?  // browsing, car_detail, selecting_dates, checkout, id_verify, payment, confirmed
+  lastSeen    DateTime @default(now())
 
   @@index([lastSeen])
   @@index([role])
+  @@index([funnelStage])
   @@map("presence")
 }
 

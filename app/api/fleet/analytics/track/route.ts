@@ -192,6 +192,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Update Presence with precise funnel stage (fire-and-forget)
+    if (eventType?.startsWith('funnel_')) {
+      const stageMap: Record<string, string> = {
+        funnel_car_viewed: 'car_detail',
+        funnel_dates_selected: 'selecting_dates',
+        funnel_insurance_selected: 'selecting_dates',
+        funnel_book_clicked: 'checkout',
+        funnel_checkout_loaded: 'checkout',
+        funnel_identity_started: 'id_verify',
+        funnel_identity_completed: 'id_verify',
+        funnel_payment_started: 'payment',
+        funnel_payment_processing: 'payment',
+        funnel_booking_confirmed: 'confirmed',
+      }
+      const funnelStage = stageMap[eventType]
+      if (funnelStage) {
+        prisma.presence.updateMany({
+          where: { visitorId },
+          data: { funnelStage, lastSeen: new Date() },
+        }).catch(() => {})
+      }
+    }
+
     // Return immediately
     return NextResponse.json({ success: true })
 

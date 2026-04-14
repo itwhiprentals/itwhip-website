@@ -16,12 +16,18 @@ export async function GET(request: NextRequest) {
     const fiveMinAgo = new Date(now.getTime() - 5 * 60 * 1000)
     const thirtyMinAgo = new Date(now.getTime() - 30 * 60 * 1000)
 
-    const startOfToday = new Date(now)
-    startOfToday.setHours(0, 0, 0, 0)
+    // "Today" in Arizona time (MST = UTC-7, no daylight saving)
+    const arizonaNow = new Date(now.getTime() - 7 * 60 * 60 * 1000)
+    const startOfToday = new Date(Date.UTC(
+      arizonaNow.getUTCFullYear(),
+      arizonaNow.getUTCMonth(),
+      arizonaNow.getUTCDate(),
+      7, 0, 0, 0 // midnight MST = 7:00 UTC
+    ))
 
     const sixtySecondsAgo = new Date(now.getTime() - 60 * 1000)
 
-    const [onlineNow, activeGuests, activeHosts, totalRegisteredGuests, totalRegisteredHosts, smsSentToday, smsReceivedToday, emailsSentToday, callsToday] = await Promise.all([
+    const [onlineNow, activeGuests, activeHosts, totalRegisteredGuests, totalRegisteredHosts, smsSentToday, smsReceivedToday, emailsSentToday, callsToday, funnelStages] = await Promise.all([
       // Online now — heartbeat received in last 60 seconds
       prisma.presence.count({ where: { lastSeen: { gte: sixtySecondsAgo } } }),
 
@@ -48,7 +54,24 @@ export async function GET(request: NextRequest) {
 
       // Calls today (Twilio call logs)
       prisma.callLog.count({ where: { createdAt: { gte: startOfToday } } }).catch(() => 0),
+
+      // Funnel stage breakdown — where are active visitors right now?
+      prisma.presence.groupBy({
+        by: ['funnelStage'],
+        where: { lastSeen: { gte: sixtySecondsAgo } },
+        _count: { funnelStage: true },
+      }),
     ])
+
+    // Build funnel breakdown object
+    const funnelBreakdown: Record<string, number> = {
+      browsing: 0, car_detail: 0, selecting_dates: 0,
+      checkout: 0, id_verify: 0, payment: 0, confirmed: 0, other: 0,
+    }
+    for (const stage of funnelStages) {
+      const key = stage.funnelStage || 'other'
+      funnelBreakdown[key] = (funnelBreakdown[key] || 0) + stage._count.funnelStage
+    }
 
     return NextResponse.json({
       success: true,
@@ -61,6 +84,7 @@ export async function GET(request: NextRequest) {
       smsReceivedToday,
       emailsSentToday,
       callsToday,
+      funnelBreakdown,
     })
   } catch (error) {
     console.error('[Active Users] Error:', error)

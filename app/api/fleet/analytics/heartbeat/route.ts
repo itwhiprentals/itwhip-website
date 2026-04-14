@@ -75,12 +75,15 @@ export async function POST(request: NextRequest) {
     const device = /mobi|iphone|android.*mobile/i.test(ua) ? 'mobile' : /ipad|tablet/i.test(ua) ? 'tablet' : 'desktop'
     const browser = ua.includes('Edg/') ? 'Edge' : ua.includes('Chrome/') ? 'Chrome' : ua.includes('Safari/') ? 'Safari' : ua.includes('Firefox/') ? 'Firefox' : 'Other'
 
+    // Derive funnel stage from current path
+    const funnelStage = deriveFunnelStage(path)
+
     const presenceId = userId ? `${visitorId}:${userId}` : visitorId
 
     // Upsert presence
     await prisma.presence.upsert({
       where: { id: presenceId },
-      update: { lastSeen: new Date(), path, ip },
+      update: { lastSeen: new Date(), path, ip, funnelStage },
       create: {
         id: presenceId,
         visitorId,
@@ -90,6 +93,7 @@ export async function POST(request: NextRequest) {
         path,
         device,
         browser,
+        funnelStage,
         lastSeen: new Date(),
       },
     })
@@ -115,6 +119,13 @@ function simpleHash(str: string): string {
     hash |= 0
   }
   return Math.abs(hash).toString(36)
+}
+
+function deriveFunnelStage(path: string): string {
+  if (/\/rentals\/[^/]+\/book/.test(path)) return 'checkout'
+  if (/\/rentals\/[^/]+/.test(path) && !path.includes('/search')) return 'car_detail'
+  if (path.includes('/rentals/search') || path.includes('/rentals')) return 'browsing'
+  return 'other'
 }
 
 async function decodeToken(token: string, secret?: string): Promise<{ userId: string } | null> {

@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import {
   IoLocationOutline,
   IoChevronForwardOutline,
@@ -14,9 +14,21 @@ import {
   IoFilterOutline,
   IoCloseOutline,
   IoChevronDownOutline,
-  IoRefreshOutline
+  IoRefreshOutline,
+  IoCarSportOutline,
+  IoCalendarOutline,
+  IoShieldCheckmarkOutline,
+  IoCartOutline,
+  IoDocumentTextOutline,
+  IoIdCardOutline,
+  IoCheckmarkCircleOutline,
+  IoCardOutline,
+  IoHourglassOutline,
+  IoRibbonOutline,
+  IoAlertCircleOutline,
 } from 'react-icons/io5'
 import ViewDetailModal, { ViewDetail } from './ViewDetailModal'
+import VisitorJourney from './LiveFeed/VisitorJourney'
 
 interface RecentView {
   id: string
@@ -25,6 +37,9 @@ interface RecentView {
   device: string | null
   browser: string | null
   timestamp: string
+  eventType?: string
+  metadata?: any
+  visitorId?: string | null
 }
 
 interface LiveFeedProps {
@@ -60,6 +75,38 @@ function formatPath(path: string): string {
   return clean.length > 30 ? clean.slice(0, 30) + '...' : clean
 }
 
+// Funnel event config — icon component, label, dot color
+const FUNNEL_EVENT_CONFIG: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
+  funnel_car_viewed: { icon: <IoCarSportOutline className="w-4 h-4 text-blue-500" />, label: 'Viewed Car', color: 'bg-blue-500' },
+  funnel_dates_selected: { icon: <IoCalendarOutline className="w-4 h-4 text-indigo-500" />, label: 'Selected Dates', color: 'bg-indigo-500' },
+  funnel_insurance_selected: { icon: <IoShieldCheckmarkOutline className="w-4 h-4 text-indigo-500" />, label: 'Chose Insurance', color: 'bg-indigo-500' },
+  funnel_book_clicked: { icon: <IoCartOutline className="w-4 h-4 text-amber-500" />, label: 'Clicked Book', color: 'bg-amber-500' },
+  funnel_checkout_loaded: { icon: <IoDocumentTextOutline className="w-4 h-4 text-amber-500" />, label: 'Checkout Loaded', color: 'bg-amber-500' },
+  funnel_identity_started: { icon: <IoIdCardOutline className="w-4 h-4 text-orange-500" />, label: 'Started ID Verify', color: 'bg-orange-500' },
+  funnel_identity_completed: { icon: <IoCheckmarkCircleOutline className="w-4 h-4 text-green-500" />, label: 'ID Verified', color: 'bg-green-500' },
+  funnel_payment_started: { icon: <IoCardOutline className="w-4 h-4 text-purple-500" />, label: 'Started Payment', color: 'bg-purple-500' },
+  funnel_payment_processing: { icon: <IoHourglassOutline className="w-4 h-4 text-purple-500" />, label: 'Processing Payment', color: 'bg-purple-500' },
+  funnel_booking_confirmed: { icon: <IoRibbonOutline className="w-4 h-4 text-green-600" />, label: 'Booking Confirmed!', color: 'bg-green-600' },
+  funnel_error: { icon: <IoAlertCircleOutline className="w-4 h-4 text-red-500" />, label: 'Checkout Error', color: 'bg-red-500' },
+}
+
+function isFunnelEvent(eventType?: string): boolean {
+  return !!eventType && eventType.startsWith('funnel_')
+}
+
+function getFunnelLabel(view: RecentView): string {
+  const config = FUNNEL_EVENT_CONFIG[view.eventType || '']
+  if (!config) return formatPath(view.path)
+  const carName = view.metadata?.carName
+  const amount = view.metadata?.totalAmount
+  let label = config.label
+  if (carName) label += ` — ${carName}`
+  if (amount && view.eventType === 'funnel_booking_confirmed') {
+    label += ` ($${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
+  }
+  return label
+}
+
 // Get device icon
 function getDeviceIcon(device: string | null) {
   switch (device?.toLowerCase()) {
@@ -75,6 +122,7 @@ function getDeviceIcon(device: string | null) {
 export default function LiveFeed({ views: initialViews, loading = false, timeRange = '7d' }: LiveFeedProps) {
   const [selectedView, setSelectedView] = useState<ViewDetail | null>(null)
   const [loadingDetail, setLoadingDetail] = useState<string | null>(null)
+  const [expandedVisitor, setExpandedVisitor] = useState<string | null>(null)
 
   // Pagination and filtering state
   const [allViews, setAllViews] = useState<RecentView[]>(initialViews)
@@ -357,8 +405,8 @@ export default function LiveFeed({ views: initialViews, loading = false, timeRan
           <>
             <div className="space-y-1 max-h-[500px] overflow-y-auto">
               {allViews.map((view, index) => (
+                <React.Fragment key={`${view.id}-${index}`}>
                 <button
-                  key={`${view.id}-${index}`}
                   onClick={() => handleViewClick(view.id)}
                   disabled={loadingDetail === view.id}
                   className={`w-full flex items-start gap-3 p-2 rounded-lg text-left transition-colors ${
@@ -367,19 +415,21 @@ export default function LiveFeed({ views: initialViews, loading = false, timeRan
                       : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
                   }`}
                 >
-                  {/* Activity dot or loading indicator */}
-                  <div className="mt-1.5 flex-shrink-0">
+                  {/* Activity indicator */}
+                  <div className="mt-1 flex-shrink-0">
                     {loadingDetail === view.id ? (
                       <div className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
+                    ) : isFunnelEvent(view.eventType) ? (
+                      <span className="flex-shrink-0">{FUNNEL_EVENT_CONFIG[view.eventType!]?.icon || <div className="w-2 h-2 rounded-full bg-blue-500" />}</span>
                     ) : (
-                      <div className="w-2 h-2 rounded-full bg-blue-500" />
+                      <div className="w-2 h-2 rounded-full bg-blue-500 mt-0.5" />
                     )}
                   </div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900 dark:text-white truncate" title={view.path}>
-                      {formatPath(view.path)}
+                    <p className={`text-sm truncate ${isFunnelEvent(view.eventType) ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-900 dark:text-white'}`} title={view.path}>
+                      {isFunnelEvent(view.eventType) ? getFunnelLabel(view) : formatPath(view.path)}
                     </p>
                     <div className="flex items-center gap-3 mt-0.5">
                       {view.location && view.location !== 'Unknown' && (
@@ -407,10 +457,34 @@ export default function LiveFeed({ views: initialViews, loading = false, timeRan
                     <span className="text-xs text-gray-400">
                       {formatRelativeTime(view.timestamp)}
                     </span>
-                    <IoChevronForwardOutline className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                    {isFunnelEvent(view.eventType) && view.visitorId ? (
+                      <span
+                        role="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          e.preventDefault()
+                          setExpandedVisitor(expandedVisitor === view.visitorId ? null : view.visitorId!)
+                        }}
+                        className="text-xs text-purple-500 hover:text-purple-700 font-medium cursor-pointer"
+                        title="View journey"
+                      >
+                        {expandedVisitor === view.visitorId ? <IoChevronDownOutline className="w-4 h-4" /> : <IoChevronForwardOutline className="w-4 h-4" />}
+                      </span>
+                    ) : (
+                      <IoChevronForwardOutline className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                    )}
                   </div>
                 </button>
-              ))}
+
+                {/* Expandable visitor journey */}
+                {expandedVisitor === view.visitorId && view.visitorId && (
+                  <VisitorJourney
+                    visitorId={view.visitorId}
+                    onClose={() => setExpandedVisitor(null)}
+                  />
+                )}
+              </React.Fragment>
+            ))}
             </div>
 
             {/* Load More */}

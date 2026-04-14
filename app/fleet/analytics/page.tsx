@@ -19,6 +19,7 @@ import FunnelChart from './components/BookingFunnel/FunnelChart'
 import DropOffAnalysis from './components/BookingFunnel/DropOffAnalysis'
 import FunnelInsights from './components/BookingFunnel/FunnelInsights'
 import ChoeAnalysis from './components/BookingFunnel/ChoeAnalysis'
+import LiveFunnelStrip from './components/LiveFunnelStrip'
 
 interface AnalyticsData {
   overview: {
@@ -48,6 +49,9 @@ interface AnalyticsData {
     browser: string | null
     timestamp: string
     loadTime?: number | null
+    eventType?: string
+    metadata?: any
+    visitorId?: string | null
   }>
   drillDown?: {
     loadTime: {
@@ -268,8 +272,13 @@ export default function FleetAnalyticsPage() {
         </div>
       </section>
 
-      {/* Booking Funnel */}
+      {/* Live Funnel Strip — real-time stage counts */}
       <section className="mt-8">
+        <LiveFunnelStrip />
+      </section>
+
+      {/* Booking Funnel */}
+      <section>
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Booking Funnel

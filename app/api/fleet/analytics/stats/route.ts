@@ -141,11 +141,15 @@ export async function GET(request: NextRequest) {
         take: 5
       }),
 
-      // Recent views (for live feed) - with enhanced location
+      // Recent views + funnel events (for live feed) - with enhanced location
       prisma.pageView.findMany({
-        where,
+        where: {
+          timestamp: { gte: startDate },
+          ...(pathFilter ? { path: { startsWith: pathFilter } } : {}),
+          eventType: { in: ['pageview', 'funnel_car_viewed', 'funnel_book_clicked', 'funnel_checkout_loaded', 'funnel_dates_selected', 'funnel_insurance_selected', 'funnel_identity_started', 'funnel_identity_completed', 'funnel_payment_started', 'funnel_payment_processing', 'funnel_booking_confirmed', 'funnel_error'] },
+        },
         orderBy: { timestamp: 'desc' },
-        take: 20,
+        take: 30,
         select: {
           id: true,
           path: true,
@@ -155,7 +159,10 @@ export async function GET(request: NextRequest) {
           device: true,
           browser: true,
           timestamp: true,
-          loadTime: true
+          loadTime: true,
+          eventType: true,
+          metadata: true,
+          visitorId: true,
         }
       }),
 
@@ -212,12 +219,14 @@ export async function GET(request: NextRequest) {
       recentViews: recentViews.map(v => ({
         id: v.id,
         path: v.path,
-        // Enhanced location format: City, Region, Country
         location: formatLocation(v.city, v.region, v.country),
         device: v.device,
         browser: v.browser,
         timestamp: v.timestamp,
-        loadTime: v.loadTime
+        loadTime: v.loadTime,
+        eventType: v.eventType || 'pageview',
+        metadata: v.metadata || null,
+        visitorId: v.visitorId || null,
       })),
       // Drill-down data for metrics analysis
       drillDown: {
