@@ -195,74 +195,114 @@ export default function FleetDashboard() {
         </div>
       </div>
 
-      {/* Vehicle Stats — clickable to filter */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4">
-        <div onClick={() => setFilter('all')} className={`cursor-pointer transition-all ${filter === 'all' ? 'ring-2 ring-gray-400 rounded-lg' : ''}`}>
-          <StatCard title="Total" value={stats.total} color="white" />
-        </div>
-        <div onClick={() => setFilter('AVAILABLE')} className={`cursor-pointer transition-all ${filter === 'AVAILABLE' ? 'ring-2 ring-green-400 rounded-lg' : ''}`}>
-          <StatCard title="Available" value={stats.available} color="green" />
-        </div>
-        <div onClick={() => setFilter('BOOKED')} className={`cursor-pointer transition-all ${filter === 'BOOKED' ? 'ring-2 ring-blue-400 rounded-lg' : ''}`}>
-          <StatCard title="Booked" value={stats.booked} color="blue" />
-        </div>
-        <div onClick={() => setFilter('MAINTENANCE')} className={`cursor-pointer transition-all ${filter === 'MAINTENANCE' ? 'ring-2 ring-yellow-400 rounded-lg' : ''}`}>
-          <StatCard title="Maintenance" value={stats.maintenance} color="yellow" />
-        </div>
-      </div>
-
-      {/* User Stats — all clickable */}
-      {activeUsers && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 mb-6">
-          <Link href={`/fleet/analytics?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
-            <div className="flex items-center justify-center gap-1.5 mb-1">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <p className="text-xs text-gray-500 dark:text-gray-400">Online Now</p>
+      {/* Fleet Metrics — host-style grid with sub-metric badges */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+        {/* Online Now */}
+        <Link href={`/fleet/analytics?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <IoPulseOutline className="w-4 h-4 text-green-600" />
+              </div>
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Online Now</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{activeUsers.onlineNow}</p>
-          </Link>
-          <Link href={`/fleet/guests?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Guests Active</p>
-            <p className="text-2xl font-bold text-blue-600">{activeUsers.activeGuests}</p>
-            <p className="text-[10px] text-gray-400">{activeUsers.totalRegisteredGuests.toLocaleString()} registered</p>
-          </Link>
-          <Link href={`/fleet/hosts?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Hosts Active</p>
-            <p className="text-2xl font-bold text-orange-600">{activeUsers.activeHosts}</p>
-            <p className="text-[10px] text-gray-400">{activeUsers.totalRegisteredHosts.toLocaleString()} approved</p>
-          </Link>
-          <Link href={`/fleet/guests?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Guests</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{activeUsers.totalRegisteredGuests.toLocaleString()}</p>
-          </Link>
-          <Link href={`/fleet/hosts?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Hosts</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{activeUsers.totalRegisteredHosts.toLocaleString()}</p>
-          </Link>
-        </div>
-      )}
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse mt-1" />
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{activeUsers?.onlineNow ?? 0}</p>
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-blue-500" />Today {activeUsers?.visitorsToday ?? 0}</span>
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-gray-400" />Yesterday {activeUsers?.visitorsYesterday ?? 0}</span>
+            {activeUsers?.visitorsYesterday > 0 && (
+              <span className={`text-[10px] font-medium ${(activeUsers?.visitorsToday ?? 0) >= (activeUsers?.visitorsYesterday ?? 0) ? 'text-green-600' : 'text-red-500'}`}>
+                {(activeUsers?.visitorsToday ?? 0) >= (activeUsers?.visitorsYesterday ?? 0) ? '+' : ''}{Math.round(((activeUsers?.visitorsToday ?? 0) - (activeUsers?.visitorsYesterday ?? 1)) / (activeUsers?.visitorsYesterday ?? 1) * 100)}%
+              </span>
+            )}
+          </div>
+        </Link>
 
-      {/* Communications Today */}
-      {activeUsers && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <Link href={`/fleet/emails?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Emails Sent Today</p>
-            <p className="text-2xl font-bold text-indigo-600">{activeUsers.emailsSentToday}</p>
-          </Link>
-          <Link href={`/fleet/communications?key=${apiKey}&tab=sms`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">SMS Sent Today</p>
-            <p className="text-2xl font-bold text-green-600">{activeUsers.smsSentToday}</p>
-          </Link>
-          <Link href={`/fleet/communications?key=${apiKey}&tab=sms`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">SMS Received Today</p>
-            <p className="text-2xl font-bold text-teal-600">{activeUsers.smsReceivedToday}</p>
-          </Link>
-          <Link href={`/fleet/communications?key=${apiKey}&tab=calls`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Calls Today</p>
-            <p className="text-2xl font-bold text-purple-600">{activeUsers.callsToday}</p>
-          </Link>
+        {/* Guests */}
+        <Link href={`/fleet/guests?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <IoPeopleOutline className="w-4 h-4 text-blue-600" />
+            </div>
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Guests</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{activeUsers?.totalRegisteredGuests?.toLocaleString() ?? 0}</p>
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-green-500" />Active {activeUsers?.activeGuests ?? 0}</span>
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-blue-400" />New Today {activeUsers?.newGuestsToday ?? 0}</span>
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />Logins {activeUsers?.guestLoginsToday ?? 0}</span>
+          </div>
+        </Link>
+
+        {/* Hosts */}
+        <Link href={`/fleet/hosts?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+              <IoPersonOutline className="w-4 h-4 text-orange-600" />
+            </div>
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Hosts</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{activeUsers?.totalRegisteredHosts?.toLocaleString() ?? 0}</p>
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Pending {activeUsers?.pendingHosts ?? 0}</span>
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-blue-500" />Active {activeUsers?.activeHosts ?? 0}</span>
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-blue-400" />New Today {activeUsers?.newHostsToday ?? 0}</span>
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />Logins {activeUsers?.hostLoginsToday ?? 0}</span>
+          </div>
+        </Link>
+
+        {/* Bookings */}
+        <Link href={`/fleet/bookings?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+              <IoCalendarOutline className="w-4 h-4 text-indigo-600" />
+            </div>
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Bookings</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{(activeUsers?.pendingBookings ?? 0) + (activeUsers?.approvedBookings ?? 0) + (activeUsers?.completedBookings ?? 0)}</p>
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Pending {activeUsers?.pendingBookings ?? 0}</span>
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-green-500" />Approved {activeUsers?.approvedBookings ?? 0}</span>
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-red-500" />Rejected {activeUsers?.rejectedBookings ?? 0}</span>
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-blue-500" />Completed {activeUsers?.completedBookings ?? 0}</span>
+          </div>
+        </Link>
+
+        {/* Vehicles */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors" onClick={() => setFilter('all')}>
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+              <IoCarSportOutline className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            </div>
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Vehicles</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{stats.total}</p>
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-green-500" />Available {stats.available}</span>
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-blue-500" />Booked {stats.booked}</span>
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />Maintenance {stats.maintenance}</span>
+          </div>
         </div>
-      )}
+
+        {/* Communications */}
+        <Link href={`/fleet/communications?key=${apiKey}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+              <IoChatbubblesOutline className="w-4 h-4 text-purple-600" />
+            </div>
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Communications</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{(activeUsers?.emailsSentToday ?? 0) + (activeUsers?.smsSentToday ?? 0) + (activeUsers?.smsReceivedToday ?? 0) + (activeUsers?.callsToday ?? 0)}</p>
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />Email {activeUsers?.emailsSentToday ?? 0}</span>
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-green-500" />SMS Out {activeUsers?.smsSentToday ?? 0}</span>
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-teal-500" />SMS In {activeUsers?.smsReceivedToday ?? 0}</span>
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-purple-500" />Calls {activeUsers?.callsToday ?? 0}</span>
+          </div>
+        </Link>
+      </div>
 
       {/* Navigation Actions - Management Operations */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 p-4 mb-6">

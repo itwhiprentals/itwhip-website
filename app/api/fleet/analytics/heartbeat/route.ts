@@ -63,7 +63,8 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // Guest pages (everything else — rentals, search, dashboard, etc.)
-      const guestToken = request.cookies.get('guest_access_token')?.value
+      // Guest cookie is 'accessToken' (set by /api/auth/login), signed with GUEST_JWT_SECRET
+      const guestToken = request.cookies.get('accessToken')?.value
       if (guestToken) {
         const decoded = await decodeToken(guestToken, process.env.GUEST_JWT_SECRET)
         if (decoded) { userId = decoded.userId; role = 'guest' }

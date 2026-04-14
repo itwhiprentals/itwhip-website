@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     const sixtySecondsAgo = new Date(now.getTime() - 60 * 1000)
 
-    const [onlineNow, activeGuests, activeHosts, totalRegisteredGuests, totalRegisteredHosts, smsSentToday, smsReceivedToday, emailsSentToday, callsToday, funnelStages] = await Promise.all([
+    const [onlineNow, activeGuests, activeHosts, totalRegisteredGuests, totalRegisteredHosts, pendingHosts, smsSentToday, smsReceivedToday, emailsSentToday, callsToday, funnelStages, pendingBookings, approvedBookings, rejectedBookings, completedBookings, newGuestsToday, visitorsToday, visitorsYesterday, guestLoginsToday, guestLoginsYesterday, hostLoginsToday, hostLoginsYesterday, newHostsToday] = await Promise.all([
       // Online now — heartbeat received in last 60 seconds
       prisma.presence.count({ where: { lastSeen: { gte: sixtySecondsAgo } } }),
 
@@ -42,6 +42,9 @@ export async function GET(request: NextRequest) {
 
       // Total registered hosts
       prisma.rentalHost.count({ where: { approvalStatus: 'APPROVED' } }),
+
+      // Pending hosts
+      prisma.rentalHost.count({ where: { approvalStatus: 'PENDING' } }),
 
       // SMS sent today (everything except INBOUND is outbound)
       prisma.smsLog.count({ where: { createdAt: { gte: startOfToday }, type: { not: 'INBOUND' } } }),
@@ -61,6 +64,36 @@ export async function GET(request: NextRequest) {
         where: { lastSeen: { gte: sixtySecondsAgo } },
         _count: { funnelStage: true },
       }),
+
+      // Booking status counts
+      prisma.rentalBooking.count({ where: { status: 'PENDING' } }),
+      prisma.rentalBooking.count({ where: { status: 'CONFIRMED' } }),
+      prisma.rentalBooking.count({ where: { status: 'CANCELLED' } }),
+      prisma.rentalBooking.count({ where: { status: 'COMPLETED' } }),
+
+      // New guests today
+      prisma.reviewerProfile.count({ where: { createdAt: { gte: startOfToday } } }),
+
+      // Daily visitor counts (from PageView — unique visitorIds)
+      prisma.pageView.groupBy({ by: ['visitorId'], where: { timestamp: { gte: startOfToday } } }).then(r => r.length),
+
+      // Yesterday visitor count
+      prisma.pageView.groupBy({ by: ['visitorId'], where: { timestamp: { gte: new Date(startOfToday.getTime() - 86400000), lt: startOfToday } } }).then(r => r.length),
+
+      // Guest logins today (source contains 'guest')
+      prisma.securityEvent.count({ where: { type: 'LOGIN_SUCCESS', timestamp: { gte: startOfToday }, details: { contains: '"source":"guest' } } }),
+
+      // Guest logins yesterday
+      prisma.securityEvent.count({ where: { type: 'LOGIN_SUCCESS', timestamp: { gte: new Date(startOfToday.getTime() - 86400000), lt: startOfToday }, details: { contains: '"source":"guest' } } }),
+
+      // Host logins today (host, mobile_host, partner)
+      prisma.securityEvent.count({ where: { type: 'LOGIN_SUCCESS', timestamp: { gte: startOfToday }, OR: [{ details: { contains: '"source":"host' } }, { details: { contains: '"source":"mobile_host' } }, { details: { contains: '"source":"partner' } }] } }),
+
+      // Host logins yesterday
+      prisma.securityEvent.count({ where: { type: 'LOGIN_SUCCESS', timestamp: { gte: new Date(startOfToday.getTime() - 86400000), lt: startOfToday }, OR: [{ details: { contains: '"source":"host' } }, { details: { contains: '"source":"mobile_host' } }, { details: { contains: '"source":"partner' } }] } }),
+
+      // New hosts today
+      prisma.rentalHost.count({ where: { createdAt: { gte: startOfToday } } }),
     ])
 
     // Build funnel breakdown object
@@ -85,6 +118,19 @@ export async function GET(request: NextRequest) {
       emailsSentToday,
       callsToday,
       funnelBreakdown,
+      pendingHosts,
+      pendingBookings,
+      approvedBookings,
+      rejectedBookings,
+      completedBookings,
+      newGuestsToday,
+      visitorsToday,
+      visitorsYesterday,
+      guestLoginsToday,
+      guestLoginsYesterday,
+      hostLoginsToday,
+      hostLoginsYesterday,
+      newHostsToday,
     })
   } catch (error) {
     console.error('[Active Users] Error:', error)
