@@ -41,34 +41,33 @@ export async function POST(request: NextRequest) {
     const dateKey = new Date().toISOString().slice(0, 10)
     const visitorId = `v_${simpleHash(`${ua}${ip}${dateKey}`).slice(0, 6)}`
 
-    // Detect role from auth cookies
+    // Detect role from auth cookies — role is determined by CURRENT page context
     let userId: string | null = null
     let role = 'anonymous'
 
-    // Check guest token
-    const guestToken = request.cookies.get('guest_access_token')?.value
-    if (guestToken) {
-      const decoded = await decodeToken(guestToken, process.env.GUEST_JWT_SECRET)
-      if (decoded) {
-        userId = decoded.userId
-        role = 'guest'
-      }
-    }
+    // Determine role based on what section of the site they're on
+    const isFleetPage = path.startsWith('/fleet')
+    const isPartnerPage = path.startsWith('/partner')
+    const isHostPage = path.startsWith('/host') || isPartnerPage
 
-    // Check host token (overrides guest if both present)
-    const hostToken = request.cookies.get('host_access_token')?.value
-    if (hostToken) {
-      const decoded = await decodeToken(hostToken, process.env.HOST_JWT_SECRET || process.env.JWT_SECRET)
-      if (decoded) {
-        userId = decoded.userId
-        role = 'host'
+    if (isFleetPage) {
+      // Fleet admin pages
+      const fleetSession = request.cookies.get('fleet_session')?.value
+      if (fleetSession) role = 'admin'
+    } else if (isHostPage) {
+      // Host/partner pages
+      const hostToken = request.cookies.get('host_access_token')?.value
+      if (hostToken) {
+        const decoded = await decodeToken(hostToken, process.env.HOST_JWT_SECRET || process.env.JWT_SECRET)
+        if (decoded) { userId = decoded.userId; role = 'host' }
       }
-    }
-
-    // Check fleet session
-    const fleetSession = request.cookies.get('fleet_session')?.value
-    if (fleetSession) {
-      role = 'admin'
+    } else {
+      // Guest pages (everything else — rentals, search, dashboard, etc.)
+      const guestToken = request.cookies.get('guest_access_token')?.value
+      if (guestToken) {
+        const decoded = await decodeToken(guestToken, process.env.GUEST_JWT_SECRET)
+        if (decoded) { userId = decoded.userId; role = 'guest' }
+      }
     }
 
     // Parse UA for device/browser

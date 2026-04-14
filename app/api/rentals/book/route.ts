@@ -842,11 +842,21 @@ export async function POST(request: NextRequest) {
     )
     if (!validation.allowed) {
       console.log(`[BOOKING_CREATE] DENIED by canBookCar: ${validation.reason}`, { carId: bookingData.carId, conflicts: validation.conflicts })
+      // Cancel the pre-confirmed PaymentIntent to release the hold on the card
+      if (bookingData.paymentIntentId) {
+        try {
+          await stripe.paymentIntents.cancel(bookingData.paymentIntentId)
+          console.log(`[BOOKING_CREATE] Cancelled PI ${bookingData.paymentIntentId} after availability denial`)
+        } catch (cancelErr: any) {
+          console.error(`[BOOKING_CREATE] Failed to cancel PI ${bookingData.paymentIntentId}:`, cancelErr.message)
+        }
+      }
       return NextResponse.json({
         success: false,
         error: 'AVAILABILITY_CONFLICT',
         message: validation.reason || 'This vehicle is not available for the selected dates.',
         suggestedPickup: validation.suggestedPickup,
+        paymentCancelled: !!bookingData.paymentIntentId,
       }, { status: 409 })
     }
 

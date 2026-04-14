@@ -265,6 +265,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [bookingSuccess, setBookingSuccess] = useState<{ bookingCode: string; accessToken?: string; status?: string; id?: string } | null>(null)
   const [bookingError, setBookingError] = useState<string | null>(null)
+  const [bookingErrorCode, setBookingErrorCode] = useState<string | null>(null)
 
   // User profile states
   const [userProfile, setUserProfile] = useState<ReviewerProfile | null>(null)
@@ -1904,7 +1905,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
     setBookingError(null)
 
     // Funnel: payment processing started
-    trackFunnelStep('funnel_payment_processing', { carId, carName: car ? `${car.year} ${car.make} ${car.model}` : undefined, totalAmount: pricing?.total })
+    trackFunnelStep('funnel_payment_processing', { carId, carName: car ? `${car.year} ${car.make} ${car.model}` : undefined, totalAmount: savedBookingDetails?.pricing?.total })
 
     try {
       // Step 1: Confirm payment (skip for $0 bookings)
@@ -2177,7 +2178,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         // Funnel: booking confirmed!
         trackFunnelStep('funnel_booking_confirmed', {
           carId, carName: car ? `${car.year} ${car.make} ${car.model}` : undefined,
-          totalAmount: pricing?.total, bookingCode: data.booking.bookingCode,
+          totalAmount: savedBookingDetails?.pricing?.total, bookingCode: data.booking.bookingCode,
         })
         // Auto-redirect after a short delay so guest can see confirmation
         setTimeout(() => {
@@ -2188,8 +2189,25 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           }
         }, 3000)
       } else {
-        const errorMessage = data.error || data.message || t('bookingFailed')
-        console.error('Booking error:', errorMessage)
+        console.error('Booking error:', data.error, data.message)
+
+        // Map error codes to user-friendly messages
+        const ERROR_MESSAGES: Record<string, string> = {
+          'AVAILABILITY_CONFLICT': 'These dates are no longer available. Please select different dates.',
+          'PAYMENT_FAILED': 'Your payment was declined. Please try a different card.',
+          'PAYMENT_REQUIRED': 'Payment is required to complete your booking.',
+          'CARD_DECLINED': 'Your card was declined. Please try a different payment method.',
+          'INSUFFICIENT_FUNDS': 'Insufficient funds. Please try a different card.',
+          'EXPIRED_CARD': 'Your card has expired. Please use a different card.',
+          'INVALID_PAYMENT': 'Payment could not be processed. Please try again.',
+          'VERIFICATION_REQUIRED': 'Identity verification is required before booking.',
+          'CAR_UNAVAILABLE': 'This vehicle is no longer available for rental.',
+          'BOOKING_LIMIT': 'You have reached the maximum number of active bookings.',
+        }
+
+        // Prefer the human-readable message from API, fall back to mapped code, then generic
+        const friendlyMessage = data.message || ERROR_MESSAGES[data.error] || data.error || t('bookingFailed')
+        setBookingErrorCode(data.error || null)
 
         if (data.details) {
           console.error('Validation errors:', data.details)
@@ -2197,19 +2215,20 @@ export default function BookingPageClient({ carId }: { carId: string }) {
           const errorsList = Object.entries(fieldErrors)
             .map(([field, errors]: [string, any]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
             .join('; ')
-          setBookingError(`${errorMessage} — ${errorsList}`)
+          setBookingError(`${friendlyMessage}${errorsList ? ` — ${errorsList}` : ''}`)
         } else {
-          setBookingError(errorMessage)
+          setBookingError(friendlyMessage)
         }
       }
     } catch (error: any) {
       console.error('Booking submission error:', error)
       setBookingError(error?.message || t('failedToSubmitBooking'))
+      setBookingErrorCode(null)
 
       // Funnel: error during booking
       trackFunnelStep('funnel_error', {
         carId, carName: car ? `${car.year} ${car.make} ${car.model}` : undefined,
-        totalAmount: pricing?.total, errorMessage: error?.message || 'Unknown error',
+        totalAmount: savedBookingDetails?.pricing?.total, errorMessage: error?.message || 'Unknown error',
       })
     } finally {
       setIsProcessing(false)
@@ -2378,6 +2397,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         </PrimaryDriverForm>
         
         {/* Identity Verification Section */}
+        <div id="identity-section" />
         <IdentityVerificationSection
           sessionStatus={sessionStatus}
           userProfile={userProfile}
@@ -2423,6 +2443,7 @@ export default function BookingPageClient({ carId }: { carId: string }) {
 
         {/* Payment Section */}
         <div
+          id="payment-section"
           ref={paymentRef}
           className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 mt-4 shadow-sm border border-gray-300 dark:border-gray-600"
         >
@@ -2654,15 +2675,79 @@ export default function BookingPageClient({ carId }: { carId: string }) {
       {/* Sticky Floating Checkout Bar - Mobile Optimized */}
       {bookingSuccess && <BookingSuccessModal bookingSuccess={bookingSuccess} />}
 
-      {/* Booking Error Banner */}
+      {/* Booking Error Modal */}
       {bookingError && !bookingSuccess && (
-        <div className="fixed bottom-[72px] left-0 right-0 z-40 px-4 pb-2">
-          <div className="max-w-2xl mx-auto bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3 flex items-start gap-3">
-            <IoCloseCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-700 dark:text-red-300 flex-1">{bookingError}</p>
-            <button onClick={() => setBookingError(null)} className="text-red-400 hover:text-red-600">
-              <IoCloseCircleOutline className="w-5 h-5" />
-            </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => { setBookingError(null); setBookingErrorCode(null) }}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm w-full p-6" onClick={e => e.stopPropagation()}>
+            {/* Icon */}
+            <div className="flex justify-center mb-4">
+              <div className="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
+                <IoWarningOutline className="w-7 h-7 text-red-600" />
+              </div>
+            </div>
+
+            {/* Title + Message */}
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center mb-2">
+              {bookingErrorCode === 'AVAILABILITY_CONFLICT' || bookingErrorCode === 'CAR_UNAVAILABLE'
+                ? 'Dates Not Available'
+                : bookingErrorCode === 'CARD_DECLINED' || bookingErrorCode === 'PAYMENT_FAILED' || bookingErrorCode === 'INSUFFICIENT_FUNDS' || bookingErrorCode === 'EXPIRED_CARD'
+                ? 'Payment Declined'
+                : bookingErrorCode === 'VERIFICATION_REQUIRED'
+                ? 'Verification Needed'
+                : bookingErrorCode === 'BOOKING_LIMIT'
+                ? 'Booking Limit Reached'
+                : 'Booking Failed'}
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-6">{bookingError}</p>
+
+            {/* Action Buttons */}
+            <div className="space-y-2">
+              {/* Availability errors */}
+              {(bookingErrorCode === 'AVAILABILITY_CONFLICT') && (
+                <>
+                  <button onClick={() => { setBookingError(null); setBookingErrorCode(null); router.back() }} className="w-full py-2.5 px-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg text-sm font-semibold hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors">
+                    Change Dates
+                  </button>
+                  <button onClick={() => { setBookingError(null); setBookingErrorCode(null); router.push('/rentals/search') }} className="w-full py-2.5 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    Browse Other Cars
+                  </button>
+                </>
+              )}
+
+              {/* Car unavailable */}
+              {bookingErrorCode === 'CAR_UNAVAILABLE' && (
+                <button onClick={() => { setBookingError(null); setBookingErrorCode(null); router.push('/rentals/search') }} className="w-full py-2.5 px-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg text-sm font-semibold hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors">
+                  Browse Other Cars
+                </button>
+              )}
+
+              {/* Payment errors */}
+              {(bookingErrorCode === 'CARD_DECLINED' || bookingErrorCode === 'PAYMENT_FAILED' || bookingErrorCode === 'INSUFFICIENT_FUNDS' || bookingErrorCode === 'EXPIRED_CARD' || bookingErrorCode === 'INVALID_PAYMENT') && (
+                <button onClick={() => { setBookingError(null); setBookingErrorCode(null); document.getElementById('payment-section')?.scrollIntoView({ behavior: 'smooth' }) }} className="w-full py-2.5 px-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg text-sm font-semibold hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors">
+                  Try Different Card
+                </button>
+              )}
+
+              {/* Verification errors */}
+              {bookingErrorCode === 'VERIFICATION_REQUIRED' && (
+                <button onClick={() => { setBookingError(null); setBookingErrorCode(null); document.getElementById('identity-section')?.scrollIntoView({ behavior: 'smooth' }) }} className="w-full py-2.5 px-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg text-sm font-semibold hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors">
+                  Complete Verification
+                </button>
+              )}
+
+              {/* Booking limit */}
+              {bookingErrorCode === 'BOOKING_LIMIT' && (
+                <button onClick={() => { setBookingError(null); setBookingErrorCode(null); router.push('/rentals/dashboard/bookings') }} className="w-full py-2.5 px-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg text-sm font-semibold hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors">
+                  View My Bookings
+                </button>
+              )}
+
+              {/* Dismiss — always shown */}
+              <button onClick={() => { setBookingError(null); setBookingErrorCode(null) }} className="w-full py-2.5 px-4 text-gray-500 dark:text-gray-400 text-sm font-medium hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                Dismiss
+              </button>
+            </div>
           </div>
         </div>
       )}
