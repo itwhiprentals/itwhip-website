@@ -1943,15 +1943,20 @@ export default function BookingPageClient({ carId }: { carId: string }) {
         })
 
         if (!confirmRes.ok) {
-          const errorData = await confirmRes.json()
-          throw new Error(errorData.error || 'Payment confirmation failed')
+          const errorData = await confirmRes.json().catch(() => ({}))
+          setBookingError(errorData.error || 'Payment could not be processed. Please try a different card.')
+          setBookingErrorCode('PAYMENT_FAILED')
+          setIsProcessing(false)
+          return
         }
 
         const confirmData = await confirmRes.json()
         if (!confirmData.success) {
           if (confirmData.isCardError) {
-            // Card-specific errors — show near payment section, not as generic booking error
-            setPaymentError(confirmData.error || 'Your card was declined')
+            // Card errors — show modal with "Try Different Card" action
+            const declineMsg = confirmData.error || 'Your card was declined'
+            setBookingError(declineMsg)
+            setBookingErrorCode('CARD_DECLINED')
             setIsProcessing(false)
             return
           }

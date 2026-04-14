@@ -45,7 +45,7 @@ export const CancelledCard: React.FC<CancelledCardProps> = ({
   // Host cancellations = full refund (no penalty to guest)
   // Guest cancellations = time-based tier
   const isHostCancel = booking.cancelledBy?.toUpperCase() === 'HOST'
-  const isSystemCancel = booking.cancelledBy?.toUpperCase() === 'SYSTEM' || booking.cancelledBy?.toUpperCase() === 'FLEET'
+  const isSystemCancel = booking.cancelledBy?.toUpperCase() === 'SYSTEM' || booking.cancelledBy?.toUpperCase() === 'FLEET' || booking.cancelledBy?.toUpperCase() === 'ADMIN'
   const cancelledAt = booking.cancelledAt ? new Date(booking.cancelledAt) : undefined
   const refund = calculateRefund(booking, cancelledAt)
   // Override tier for host/system cancellations — guest is never penalized
@@ -53,7 +53,7 @@ export const CancelledCard: React.FC<CancelledCardProps> = ({
     refund.tier = 'free'
     refund.penaltyAmount = 0
     refund.refundPercentage = 1
-    refund.label = 'Full refund — cancelled by host'
+    refund.label = isHostCancel ? 'Full refund — cancelled by host' : 'Full refund — booking declined'
   }
 
   return (
@@ -147,7 +147,7 @@ export const CancelledCard: React.FC<CancelledCardProps> = ({
       </div>
 
       {/* Refund Summary Card */}
-      <RefundSummaryCard booking={booking} refund={refund} isHostCancel={isHostCancel || isSystemCancel} />
+      <RefundSummaryCard booking={booking} refund={refund} isHostCancel={isHostCancel || isSystemCancel} isAdminCancel={isSystemCancel} />
 
       {/* Host + Messages — read-only / locked */}
       <HostMessagesCard
@@ -253,7 +253,7 @@ function CancelledInfoGrid({
 
 // ─── Refund Summary Card ────────────────────────────────────────────────────
 
-function RefundSummaryCard({ booking, refund, isHostCancel = false }: { booking: Booking; refund: ReturnType<typeof calculateRefund>; isHostCancel?: boolean }) {
+function RefundSummaryCard({ booking, refund, isHostCancel = false, isAdminCancel = false }: { booking: Booking; refund: ReturnType<typeof calculateRefund>; isHostCancel?: boolean; isAdminCancel?: boolean }) {
   const t = useTranslations('BookingDetail')
 
   // Host/system cancelled — full refund, no penalties
@@ -273,7 +273,9 @@ function RefundSummaryCard({ booking, refund, isHostCancel = false }: { booking:
 
         <div className="space-y-2">
           <p className="text-xs text-green-800 dark:text-green-300">
-            The host cancelled this booking. All holds and charges have been reversed.
+            {isAdminCancel
+              ? 'This booking was declined by ItWhip. All holds and charges have been automatically reversed.'
+              : 'The host cancelled this booking. All holds and charges have been reversed.'}
           </p>
 
           <div className="border-t border-green-200 dark:border-green-700 pt-2 mt-2" />

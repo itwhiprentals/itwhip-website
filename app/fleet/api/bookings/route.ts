@@ -725,6 +725,48 @@ export async function PATCH(request: NextRequest) {
       }
     })
 
+    // Refund guest when booking is rejected (before capture — full refund)
+    if (action === 'reject') {
+      try {
+        // Get booking financial details
+        const bookingFinancials = await prisma.rentalBooking.findUnique({
+          where: { id: bookingId },
+          select: { paymentIntentId: true, creditsApplied: true, bonusApplied: true, depositFromWallet: true, depositFromCard: true, chargeAmount: true, renterId: true }
+        })
+
+        if (bookingFinancials) {
+          // 1. Cancel/refund the Stripe PaymentIntent
+          if (bookingFinancials.paymentIntentId) {
+            const stripe = (await import('stripe')).default
+            const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY!)
+            try {
+              // PI should be requires_capture (authorized but not charged) — cancel to release hold
+              await stripeClient.paymentIntents.cancel(bookingFinancials.paymentIntentId)
+              console.log(`[REJECT] Cancelled PI ${bookingFinancials.paymentIntentId} — card hold released`)
+            } catch (stripeErr: any) {
+              // If cancel fails (already cancelled/expired), log but don't block
+              console.error(`[REJECT] Stripe cancel error for PI ${bookingFinancials.paymentIntentId}:`, stripeErr.message)
+            }
+          }
+
+          // 2. Restore credits to guest
+          if (bookingFinancials.renterId && (bookingFinancials.creditsApplied > 0 || bookingFinancials.bonusApplied > 0 || bookingFinancials.depositFromWallet > 0)) {
+            await prisma.reviewerProfile.updateMany({
+              where: { userId: bookingFinancials.renterId },
+              data: {
+                ...(bookingFinancials.creditsApplied > 0 ? { creditBalance: { increment: bookingFinancials.creditsApplied } } : {}),
+                ...(bookingFinancials.bonusApplied > 0 ? { bonusBalance: { increment: bookingFinancials.bonusApplied } } : {}),
+                ...(bookingFinancials.depositFromWallet > 0 ? { depositWalletBalance: { increment: bookingFinancials.depositFromWallet } } : {}),
+              }
+            })
+            console.log(`[REJECT] Restored to guest ${bookingFinancials.renterId}: credits=$${bookingFinancials.creditsApplied}, bonus=$${bookingFinancials.bonusApplied}, deposit=$${bookingFinancials.depositFromWallet}`)
+          }
+        }
+      } catch (refundErr: any) {
+        console.error('[REJECT] Refund error:', refundErr.message)
+      }
+    }
+
     // Push notifications for fleet actions
     if (action === 'reject' && updatedBooking.host?.userId && updatedBooking.renterId) {
       const carName = `${updatedBooking.car.year} ${updatedBooking.car.make} ${updatedBooking.car.model}`
