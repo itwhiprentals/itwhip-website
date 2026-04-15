@@ -142,3 +142,33 @@ Paths: host/signup, partner/signup, auth/complete-profile, admin/approve, phone-
 - Ship source maps in production builds
 - Skip the plan step for non-trivial changes
 - Say "expected behavior" without verifying the actual API response data
+
+---
+
+## SIBLING PROJECT: CHOE CLOUD
+
+ITWhip has a sibling project: **Choe Cloud** (repo: `choe-cloud`).
+
+Choe Cloud is a standalone AI commerce infrastructure platform. The Choe AI assistant
+currently embedded in ITWhip is being extracted into Choe Cloud as a multi-tenant service.
+ITWhip will become Choe Cloud's Client #1, calling the Choe Cloud API instead of running
+its own embedded engine.
+
+**Key rules:**
+- ITWhip and Choe Cloud share an AWS account but NOTHING else
+- Different database (separate Neon project)
+- Different Stripe account
+- Different S3 bucket
+- Different App Runner service
+- Different domain (choe.cloud vs itwhip.com)
+- NEVER import code from one project into the other
+- NEVER share database connections
+- NEVER share auth tokens or JWT secrets
+
+**Migration plan:**
+- Phase 1 (now): Choe Cloud built as independent platform
+- Phase 2 (after launch): ITWhip's embedded Choe gets an API key for Choe Cloud
+- Phase 3: ITWhip calls Choe Cloud API for AI features instead of local engine
+- Phase 4: ITWhip's local Choe engine deprecated, fully using Choe Cloud
+
+**If working in ITWhip and asked about Choe Cloud:** Direct to the choe-cloud repo. Do not build Choe Cloud features inside ITWhip.
