@@ -29,7 +29,9 @@ interface ActiveBooking {
   dropoffLocation: string | null
   totalAmount: number
   reservationRequestId: string | null
+  isRecruitedBooking: boolean
   agreementStatus: string | null
+  bookingType: string
   guest: {
     name: string
     phone: string | null
@@ -91,7 +93,9 @@ export default function ActiveBookingCard({
               dropoffLocation: b.dropoffLocation,
               totalAmount: b.totalAmount || 0,
               reservationRequestId: b.reservationRequestId || null,
+              isRecruitedBooking: b.isRecruitedBooking || false,
               agreementStatus: b.agreementStatus || null,
+              bookingType: b.bookingType || 'STANDARD',
               guest: {
                 name: b.guest?.name || b.guestName || 'Guest',
                 phone: b.guest?.phone || b.guestPhone || null,
@@ -126,14 +130,20 @@ export default function ActiveBookingCard({
     })
   }
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (booking: { status: string; bookingType?: string }) => {
+    if (booking.status === 'modified') {
+      return { label: 'Modified', className: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' }
+    }
+    if (booking.bookingType === 'MANUAL') {
+      return { label: 'Manual Booking', className: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' }
+    }
     const statusMap: Record<string, { label: string; className: string }> = {
       pending: { label: t('abPending'), className: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' },
       confirmed: { label: t('abConfirmed'), className: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' },
       active: { label: t('abInProgress'), className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' },
       completed: { label: t('abCompleted'), className: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }
     }
-    return statusMap[status] || { label: status, className: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }
+    return statusMap[booking.status] || { label: booking.status, className: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }
   }
 
   const getTimeRemaining = (endDate: string) => {
@@ -231,11 +241,11 @@ export default function ActiveBookingCard({
       {!isCollapsed && (
         <div className="p-4 space-y-3">
           {bookings.map((booking) => {
-            const statusBadge = getStatusBadge(booking.status)
+            const statusBadge = getStatusBadge(booking)
             return (
               <Link
                 key={booking.id}
-                href={booking.reservationRequestId && booking.agreementStatus !== 'sent' && booking.agreementStatus !== 'viewed' && booking.agreementStatus !== 'signed'
+                href={booking.reservationRequestId && booking.isRecruitedBooking && booking.agreementStatus !== 'sent' && booking.agreementStatus !== 'viewed' && booking.agreementStatus !== 'signed'
                   ? `/partner/requests/${booking.reservationRequestId}`
                   : `/partner/bookings/${booking.id}`
                 }

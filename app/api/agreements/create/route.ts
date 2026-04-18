@@ -12,6 +12,7 @@ import {
   getTokenExpiryDate,
   generateSigningUrl
 } from '@/app/lib/agreements/tokens'
+import { logEmail, generateEmailReference } from '@/app/lib/email/config'
 
 // Generate a cuid-like ID
 function generateId(): string {
@@ -26,13 +27,22 @@ const JWT_SECRET = new TextEncoder().encode(
 async function getPartner() {
   const cookieStore = await cookies()
   const token = cookieStore.get('partner_token')?.value ||
+                cookieStore.get('hostAccessToken')?.value ||
                 cookieStore.get('host_access_token')?.value
 
-  if (!token) return null
+  if (!token) {
+    console.log('[Agreement Create] No token found in cookies:', {
+      partner_token: !!cookieStore.get('partner_token')?.value,
+      hostAccessToken: !!cookieStore.get('hostAccessToken')?.value,
+      host_access_token: !!cookieStore.get('host_access_token')?.value,
+    })
+    return null
+  }
 
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET)
     const hostId = payload.hostId as string
+    console.log('[Agreement Create] Token verified, hostId:', hostId)
 
     const host = await prisma.rentalHost.findUnique({
       where: { id: hostId },
@@ -53,7 +63,8 @@ async function getPartner() {
     })
 
     return host
-  } catch {
+  } catch (err: any) {
+    console.log('[Agreement Create] Token verification failed:', err.message)
     return null
   }
 }
@@ -180,6 +191,7 @@ export async function POST(request: NextRequest) {
 
     // Send email to customer
     let emailSent = false
+    const emailRef = generateEmailReference('AG')
     try {
       const partnerName = partner.partnerCompanyName || partner.name
       const vehicleName = `${booking.car?.year} ${booking.car?.make} ${booking.car?.model}`
@@ -207,9 +219,9 @@ export async function POST(request: NextRequest) {
                   ${vehicleName}
                 </p>
                 <p style="color: #6b7280; font-size: 14px; margin: 0;">
-                  <strong>Pickup:</strong> ${new Date(String(booking.startDate).split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${booking.startTime ? new Date('2000-01-01T' + booking.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '10:00 AM'}
+                  <strong>Pickup:</strong> ${new Date(booking.startDate.toISOString().split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${booking.startTime || '10:00 AM'}
                   <br>
-                  <strong>Return:</strong> ${new Date(String(booking.endDate).split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${booking.endTime ? new Date('2000-01-01T' + booking.endTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '10:00 AM'}
+                  <strong>Return:</strong> ${new Date(booking.endDate.toISOString().split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${booking.endTime || '10:00 AM'}
                 </p>
                 <p style="color: #374151; font-size: 16px; margin: 10px 0 0 0;">
                   Total: <strong>$${Number(booking.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
@@ -222,8 +234,8 @@ export async function POST(request: NextRequest) {
 
               <div style="text-align: center; margin: 30px 0;">
                 <a href="${signingUrl}"
-                   style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
-                  Review & Sign Agreement
+                   style="display: inline-block; background-color: #ea580c; color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; mso-padding-alt: 0;">
+                  Review &amp; Sign Agreement
                 </a>
               </div>
 
@@ -249,16 +261,31 @@ export async function POST(request: NextRequest) {
             </div>
 
             <div style="background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
-              <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+              <p style="color: #9ca3af; font-size: 12px; margin: 0 0 4px 0;">
                 Powered by <a href="https://itwhip.com" style="color: #f97316;">ItWhip</a> - The trusted car rental marketplace
               </p>
+              <p style="color: #d1d5db; font-size: 10px; margin: 0; font-family: monospace;">${emailRef}</p>
             </div>
           </div>
         `,
-        text: `Hi ${customerName},\n\n${partnerName} has prepared your rental agreement for:\n\n${vehicleName}\nPickup: ${new Date(String(booking.startDate).split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${booking.startTime ? new Date('2000-01-01T' + booking.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '10:00 AM'}\nReturn: ${new Date(String(booking.endDate).split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${booking.endTime ? new Date('2000-01-01T' + booking.endTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '10:00 AM'}\nTotal: $${Number(booking.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\nPlease review and sign your agreement:\n${signingUrl}\n\nThis link expires in 7 days.\n\nIf you have questions, contact ${partnerName} at ${partner.partnerSupportEmail || partner.email}.\n\nPowered by ItWhip`
+        text: `Hi ${customerName},\n\n${partnerName} has prepared your rental agreement for:\n\n${vehicleName}\nPickup: ${new Date(booking.startDate.toISOString().split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${booking.startTime || '10:00 AM'}\nReturn: ${new Date(booking.endDate.toISOString().split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${booking.endTime || '10:00 AM'}\nTotal: $${Number(booking.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\nPlease review and sign your agreement:\n${signingUrl}\n\nThis link expires in 7 days.\n\nIf you have questions, contact ${partnerName} at ${partner.partnerSupportEmail || partner.email}.\n\nPowered by ItWhip`
       })
       emailSent = true
       console.log(`[Agreement] Email sent to ${customerEmail}`)
+
+      // Log to EmailLog for fleet/email reference
+      try {
+        await logEmail({
+          referenceId: emailRef,
+          recipientEmail: customerEmail,
+          recipientName: customerName,
+          subject: `Please Sign Your Rental Agreement - ${partnerName}`,
+          emailType: 'SYSTEM',
+          relatedType: 'booking',
+          relatedId: bookingId,
+          metadata: { type: 'agreement_signing', hostId: partner.id, hostName: partnerName, vehicleName, signingUrl },
+        })
+      } catch {}
     } catch (emailError) {
       console.error('[Agreement] Email send error:', emailError)
     }

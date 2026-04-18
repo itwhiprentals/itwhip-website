@@ -298,10 +298,10 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       const data = await response.json()
 
       if (data.success) {
-        // Redirect to request page if request stage is still active
-        // (agreement not yet sent/viewed/signed — request page handles the onboarding)
+        // Redirect to request page ONLY for recruited hosts (prospect onboarding flow)
+        // Existing hosts with fleet-created manual bookings stay on this page
         const b = data.booking
-        if (b.reservationRequestId && !['sent', 'viewed', 'signed'].includes(b.agreementStatus || '')) {
+        if (b.reservationRequestId && b.isRecruitedBooking && !['sent', 'viewed', 'signed'].includes(b.agreementStatus || '')) {
           router.replace(`/partner/requests/${b.reservationRequestId}`)
           return
         }

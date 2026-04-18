@@ -132,7 +132,7 @@ export default function PaymentChoiceCard({ booking, onComplete }: PaymentChoice
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2 mb-1">
-            <IoCardOutline className="w-5 h-5 text-purple-600" />
+            <IoCardOutline className="w-5 h-5 text-orange-600" />
             <h3 className="font-semibold text-gray-900 dark:text-white">
               {t('addPaymentMethod')}
             </h3>
@@ -150,7 +150,7 @@ export default function PaymentChoiceCard({ booking, onComplete }: PaymentChoice
               appearance: {
                 theme: 'stripe',
                 variables: {
-                  colorPrimary: '#9333ea',
+                  colorPrimary: '#ea580c',
                   borderRadius: '8px',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   fontSizeBase: '14px',
@@ -184,9 +184,9 @@ export default function PaymentChoiceCard({ booking, onComplete }: PaymentChoice
 
   // ─── CHOOSE STATE ───────────────────────────────────────
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-purple-200 dark:border-purple-700 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-orange-200 dark:border-orange-700 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-900/20 p-4 sm:p-6 border-b border-purple-200 dark:border-purple-700">
+      <div className="bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-900/20 p-4 sm:p-6 border-b border-orange-200 dark:border-orange-700">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
           {t('paymentChoiceTitle')}
         </h3>
@@ -207,7 +207,7 @@ export default function PaymentChoiceCard({ booking, onComplete }: PaymentChoice
         </div>
         <div className="flex justify-between font-semibold text-base pt-2 border-t border-gray-100 dark:border-gray-700 mt-2">
           <span className="text-gray-900 dark:text-white">{t('total')}</span>
-          <span className="text-purple-600 dark:text-purple-400">
+          <span className="text-orange-600 dark:text-orange-400">
             {formatCurrency(booking.totalAmount)}
           </span>
         </div>
@@ -219,10 +219,10 @@ export default function PaymentChoiceCard({ booking, onComplete }: PaymentChoice
         <button
           onClick={handleChooseCard}
           disabled={loading}
-          className="w-full flex items-center gap-4 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-purple-400 dark:hover:border-purple-500 transition-all group disabled:opacity-50"
+          className="w-full flex items-center gap-4 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500 transition-all group disabled:opacity-50"
         >
-          <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/60 transition-colors">
-            <IoCardOutline className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+          <div className="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center flex-shrink-0 group-hover:bg-orange-200 dark:group-hover:bg-orange-900/60 transition-colors">
+            <IoCardOutline className="w-6 h-6 text-orange-600 dark:text-orange-400" />
           </div>
           <div className="text-left flex-1">
             <p className="font-semibold text-gray-900 dark:text-white">{t('payWithCard')}</p>
@@ -319,7 +319,7 @@ function CardPaymentForm({
       <button
         type="submit"
         disabled={!stripe || !ready || processing}
-        className="w-full mt-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+        className="w-full mt-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
       >
         {processing ? (
           <>

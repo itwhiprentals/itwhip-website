@@ -234,9 +234,147 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // If this request replaces an existing booking, update the original
+    let modifiedBooking = null
+    if (existingBookingId) {
+      const originalBooking = await prisma.rentalBooking.findUnique({
+        where: { id: existingBookingId },
+        select: {
+          id: true, status: true, bookingCode: true, renterId: true,
+          hostId: true, carId: true, startDate: true, endDate: true,
+          startTime: true, endTime: true, dailyRate: true, numberOfDays: true,
+          subtotal: true, serviceFee: true, taxes: true, insuranceFee: true,
+          depositAmount: true, totalAmount: true, securityDeposit: true,
+          insuranceSelection: true, insuranceTier: true, insuranceProvider: true,
+          pickupLocation: true, paymentIntentId: true,
+          car: { select: { make: true, model: true, year: true } },
+          host: { select: { name: true, id: true, userId: true } },
+        }
+      })
+
+      if (originalBooking && originalBooking.status !== 'CANCELLED' && originalBooking.status !== 'MODIFIED') {
+        // Mark original as MODIFIED (not cancelled — host/guest see "updated")
+        modifiedBooking = await prisma.rentalBooking.update({
+          where: { id: existingBookingId },
+          data: {
+            status: 'MODIFIED',
+            replacedByBookingId: reservationRequest.id, // link to the request for now
+            cancellationReason: 'MODIFIED — converted to manual booking via fleet request ' + reservationRequest.requestCode,
+            cancelledBy: 'SYSTEM',
+            cancelledAt: new Date(),
+          }
+        })
+
+        console.log(`[Fleet Request] Booking ${originalBooking.bookingCode} marked as MODIFIED → request ${reservationRequest.requestCode}`)
+
+        // NOTE: Stripe PI is NOT auto-cancelled — admin manually refunds
+        if (originalBooking.paymentIntentId) {
+          console.log(`[Fleet Request] PI ${originalBooking.paymentIntentId} left as-is for manual refund`)
+        }
+
+        // === AUTO-CREATE MANUAL BOOKING (Scenario 1: same host/car) ===
+        const newBookingCode = `RENT-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+
+        const newBooking = await prisma.rentalBooking.create({
+          data: {
+            id: nanoid(),
+            bookingCode: newBookingCode,
+            carId: originalBooking.carId,
+            hostId: originalBooking.hostId,
+            renterId: originalBooking.renterId,
+            guestEmail: guestEmail || null,
+            guestName: guestName || null,
+            guestPhone: guestPhone || null,
+            startDate: startDate ? new Date(startDate) : originalBooking.startDate,
+            endDate: endDate ? new Date(endDate) : originalBooking.endDate,
+            startTime: startTime || originalBooking.startTime || '10:00',
+            endTime: endTime || originalBooking.endTime || '10:00',
+            dailyRate: offeredRate ? Number(offeredRate) : (originalBooking.dailyRate || 0),
+            numberOfDays: calculatedDuration || originalBooking.numberOfDays || 1,
+            subtotal: Number(originalBooking.subtotal) || ((offeredRate ? Number(offeredRate) : (originalBooking.dailyRate || 0)) * (calculatedDuration || originalBooking.numberOfDays || 1)),
+            serviceFee: Number(originalBooking.serviceFee) || 0,
+            taxes: Number(originalBooking.taxes) || 0,
+            depositAmount: Number(originalBooking.depositAmount) || 0,
+            totalAmount: Number(originalBooking.totalAmount) || ((offeredRate ? Number(offeredRate) : (originalBooking.dailyRate || 0)) * (calculatedDuration || originalBooking.numberOfDays || 1)),
+            status: 'PENDING',
+            paymentStatus: 'PENDING',
+            bookingType: 'MANUAL',
+            originalBookingId: existingBookingId,
+            originalCarId: originalBooking.carId,
+            verificationStatus: 'APPROVED',
+            fleetStatus: 'APPROVED',
+            hostStatus: 'APPROVED',
+            pickupLocation: pickupAddress || originalBooking.pickupLocation || 'TBD',
+            pickupType: 'OWNER_PICKUP',
+            agreementStatus: 'not_sent',
+            updatedAt: new Date(),
+            insuranceFee: Number(originalBooking.insuranceFee) || 0,
+            insuranceSelection: originalBooking.insuranceSelection || null,
+            insuranceTier: originalBooking.insuranceTier || null,
+            insuranceProvider: originalBooking.insuranceProvider || null,
+            deliveryFee: 0,
+            depositHeld: 0,
+            securityDeposit: Number(originalBooking.securityDeposit) || 0,
+          }
+        })
+
+        // Link old booking to new one
+        await prisma.rentalBooking.update({
+          where: { id: existingBookingId },
+          data: { replacedByBookingId: newBooking.id }
+        })
+
+        // Update request with the fulfilled booking
+        await prisma.reservationRequest.update({
+          where: { id: reservationRequest.id },
+          data: { status: 'FULFILLED', fulfilledBookingId: newBooking.id }
+        })
+
+        console.log(`[Fleet Request] Manual booking ${newBookingCode} created from ${originalBooking.bookingCode}`)
+
+        // Send push notifications
+        const carName = originalBooking.car ? `${originalBooking.car.year} ${originalBooking.car.make} ${originalBooking.car.model}` : 'vehicle'
+
+        // Notify guest
+        if (originalBooking.renterId) {
+          try {
+            await prisma.pushNotification.create({
+              data: {
+                userId: originalBooking.renterId,
+                title: 'Booking Updated',
+                body: `Your booking for ${carName} has been updated. View your new reservation for details.`,
+                type: 'booking_modified',
+                data: { bookingId: newBooking.id, oldBookingId: existingBookingId, requestCode: reservationRequest.requestCode },
+              }
+            }).catch(() => {})
+          } catch {}
+        }
+
+        // Notify host — send agreement to guest
+        if (originalBooking.host?.userId) {
+          try {
+            await prisma.pushNotification.create({
+              data: {
+                userId: originalBooking.host.userId,
+                title: 'New Manual Booking',
+                body: `A booking for ${carName} has been assigned to you. Send the rental agreement to the guest to proceed.`,
+                type: 'manual_booking_created',
+                data: { bookingId: newBooking.id, bookingCode: newBookingCode },
+              }
+            }).catch(() => {})
+          } catch {}
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      request: reservationRequest
+      request: reservationRequest,
+      modifiedBooking: modifiedBooking ? {
+        id: modifiedBooking.id,
+        bookingCode: modifiedBooking.bookingCode,
+        status: modifiedBooking.status,
+      } : null,
     })
 
   } catch (error: any) {

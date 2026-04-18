@@ -95,6 +95,9 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
           }
+        },
+        convertedFromProspect: {
+          select: { id: true }
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -135,7 +138,9 @@ export async function GET(request: NextRequest) {
         createdAt: booking.createdAt.toISOString(),
         days,
         paymentType: booking.paymentType || null,
+        bookingType: booking.bookingType || 'STANDARD',
         reservationRequestId: (booking as any).reservationRequest?.id || null,
+        isRecruitedBooking: !!(booking as any).convertedFromProspect,
         agreementStatus: booking.agreementStatus || null
       }
     })
@@ -165,7 +170,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function mapBookingStatus(status: string): 'confirmed' | 'pending' | 'active' | 'completed' | 'cancelled' {
+function mapBookingStatus(status: string): 'confirmed' | 'pending' | 'active' | 'completed' | 'cancelled' | 'modified' {
   switch (status) {
     case 'CONFIRMED':
       return 'confirmed'
@@ -185,6 +190,8 @@ function mapBookingStatus(status: string): 'confirmed' | 'pending' | 'active' | 
     case 'COMPLETED':
     case 'FINISHED':
       return 'completed'
+    case 'MODIFIED':
+      return 'modified'
     case 'CANCELLED':
     case 'REJECTED':
     case 'NO_SHOW':

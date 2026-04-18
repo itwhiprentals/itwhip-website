@@ -102,6 +102,12 @@ export default function PartnerBookingsPage() {
           color: 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30',
           icon: IoCloseCircleOutline
         }
+      case 'modified':
+        return {
+          label: 'Modified',
+          color: 'text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30',
+          icon: IoTimeOutline
+        }
       default:
         return {
           label: status,

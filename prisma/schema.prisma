@@ -5240,6 +5240,7 @@ enum RentalBookingStatus {
   ACTIVE
   COMPLETED
   CANCELLED
+  MODIFIED
   NO_SHOW
   DISPUTE_REVIEW
 }

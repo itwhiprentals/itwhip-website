@@ -15,8 +15,14 @@ interface AgreementData {
     endTime: string
     numberOfDays: number
     dailyRate: number
+    subtotal: number
+    serviceFee: number
+    taxes: number
+    insuranceFee: number
     totalAmount: number
     securityDeposit: number
+    depositAmount: number
+    insuranceTier: string | null
     pickupLocation: string
     pickupType: string
   }
@@ -416,17 +422,13 @@ export default function SignAgreementPage() {
                 )}
                 <div>
                   <p className="text-lg font-medium text-gray-900">
-                    {agreementData.vehicle.year} {agreementData.vehicle.make} {agreementData.vehicle.model}
+                    {agreementData.vehicle.year} {agreementData.vehicle.make}
                   </p>
+                  <p className="text-sm text-gray-600">{agreementData.vehicle.model}</p>
                   {agreementData.vehicle.color && (
                     <p className="text-sm text-gray-600">Color: {agreementData.vehicle.color}</p>
                   )}
-                  {agreementData.vehicle.licensePlate && (
-                    <p className="text-sm text-gray-600">License: {agreementData.vehicle.licensePlate}</p>
-                  )}
-                  {agreementData.vehicle.vin && (
-                    <p className="text-sm text-gray-600">VIN: {agreementData.vehicle.vin}</p>
-                  )}
+                  {/* License plate and VIN hidden until booking is confirmed */}
                 </div>
               </div>
             </div>
@@ -454,7 +456,7 @@ export default function SignAgreementPage() {
                 <strong>Duration:</strong> {agreementData.booking.numberOfDays} day(s)
               </p>
               <p className="text-sm text-gray-600">
-                <strong>Pickup:</strong> {agreementData.booking.pickupLocation} ({agreementData.booking.pickupType})
+                <strong>Pickup:</strong> Location provided after booking is confirmed
               </p>
             </div>
           </div>
@@ -463,19 +465,91 @@ export default function SignAgreementPage() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Rental Charges</h2>
 
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Daily Rate</span>
-                <span className="text-gray-900">{formatCurrency(agreementData.booking.dailyRate)}</span>
+            {/* ── Driver 25+ (Standard) ── */}
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">Driver 25+ (Standard)</p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Security Deposit</span>
-                <span className="text-gray-900">{formatCurrency(agreementData.booking.securityDeposit)}</span>
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Daily Rate</span>
+                  <span className="text-gray-900">{formatCurrency(agreementData.booking.dailyRate)} x {agreementData.booking.numberOfDays} day{agreementData.booking.numberOfDays !== 1 ? 's' : ''}</span>
+                </div>
+                {agreementData.booking.insuranceFee > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Trip Insurance{agreementData.booking.insuranceTier ? ` (${agreementData.booking.insuranceTier})` : ''}</span>
+                    <span className="text-gray-900">{formatCurrency(agreementData.booking.insuranceFee)}</span>
+                  </div>
+                )}
+                {agreementData.booking.serviceFee > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Service Fee</span>
+                    <span className="text-gray-900">{formatCurrency(agreementData.booking.serviceFee)}</span>
+                  </div>
+                )}
+                {agreementData.booking.taxes > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Taxes</span>
+                    <span className="text-gray-900">{formatCurrency(agreementData.booking.taxes)}</span>
+                  </div>
+                )}
+                {agreementData.booking.securityDeposit > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Security Deposit</span>
+                    <span className="text-gray-900">{formatCurrency(agreementData.booking.securityDeposit)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between pt-2 border-t border-gray-100 font-semibold">
+                  <span className="text-gray-900">Total</span>
+                  <span className="text-green-700">{formatCurrency(agreementData.booking.totalAmount + agreementData.booking.securityDeposit)}</span>
+                </div>
               </div>
-              <div className="flex justify-between pt-2 border-t border-gray-100 font-semibold">
-                <span className="text-gray-900">Total Amount</span>
-                <span className="text-orange-600">{formatCurrency(agreementData.booking.totalAmount)}</span>
+            </div>
+
+            {/* ── Driver Under 25 ── */}
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2 h-2 rounded-full bg-orange-500" />
+                <p className="text-xs font-semibold text-orange-800 uppercase tracking-wide">Driver Under 25</p>
               </div>
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-orange-700">Daily Rate</span>
+                  <span className="text-orange-900">{formatCurrency(agreementData.booking.dailyRate)} x {agreementData.booking.numberOfDays} day{agreementData.booking.numberOfDays !== 1 ? 's' : ''}</span>
+                </div>
+                {agreementData.booking.insuranceFee > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-orange-700">Trip Insurance</span>
+                    <span className="text-orange-900">{formatCurrency(agreementData.booking.insuranceFee)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-orange-700">Young Driver Surcharge</span>
+                  <span className="text-orange-900">$50.00/day x {agreementData.booking.numberOfDays} = {formatCurrency(50 * agreementData.booking.numberOfDays)}</span>
+                </div>
+                {agreementData.booking.serviceFee > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-orange-700">Service Fee</span>
+                    <span className="text-orange-900">{formatCurrency(agreementData.booking.serviceFee)}</span>
+                  </div>
+                )}
+                {agreementData.booking.taxes > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-orange-700">Taxes</span>
+                    <span className="text-orange-900">{formatCurrency(agreementData.booking.taxes)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-orange-700">Security Deposit</span>
+                  <span className="text-orange-900">{formatCurrency(1500)}</span>
+                </div>
+                <div className="flex justify-between pt-2 border-t border-orange-200 font-semibold">
+                  <span className="text-orange-800">Total</span>
+                  <span className="text-orange-900">{formatCurrency(agreementData.booking.totalAmount + (50 * agreementData.booking.numberOfDays) + 1500)}</span>
+                </div>
+              </div>
+              <p className="text-[10px] text-orange-600 mt-3">Deposit is fully refundable upon vehicle return. Insurance surcharge is non-refundable after booking confirmation.</p>
             </div>
           </div>
 
@@ -610,7 +684,10 @@ export default function SignAgreementPage() {
                   <section>
                     <h3 className="text-sm font-semibold text-gray-900 mb-2">1. Driver Eligibility & Requirements</h3>
                     <p className="text-sm text-gray-600 mb-2">
-                      The renter must be at least 21 years of age and possess a valid driver&apos;s license that has been active for a minimum of one year. International renters must provide a valid passport and international driving permit if their license is not in English.
+                      The renter must be at least 18 years of age and possess a valid driver&apos;s license that has been active for a minimum of one year. International renters must provide a valid passport and international driving permit if their license is not in English.
+                    </p>
+                    <p className="text-sm text-orange-700 dark:text-orange-400 font-medium bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3 mb-2">
+                      Drivers under 25 years of age: A $1,500.00 security deposit and $50.00/day insurance surcharge are required, payable after signing this agreement. Deposit is fully refundable upon vehicle return. Insurance surcharge is non-refundable after booking confirmation.
                     </p>
                   </section>
 

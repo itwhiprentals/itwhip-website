@@ -91,7 +91,10 @@ export default function ManualBookingGuestView({
         />
       </div>
 
-      {/* Host Messages — right after car + trip details */}
+      {/* Payment Summary — show breakdown upfront */}
+      <CollapsiblePaymentSummary booking={booking} defaultOpen />
+
+      {/* Host Messages */}
       <HostMessagesCard
         booking={booking}
         messages={messages}
@@ -141,9 +144,6 @@ export default function ManualBookingGuestView({
           cardLast4={booking.cardLast4}
         />
       )}
-
-      {/* Payment Summary */}
-      <CollapsiblePaymentSummary booking={booking} />
 
       {/* Actions */}
       <div className="grid grid-cols-2 gap-2">

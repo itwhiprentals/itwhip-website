@@ -174,6 +174,22 @@ export async function GET(request: NextRequest) {
         b."noShowFeeStatus",
         b."replacedByBookingId",
         b."originalBookingId",
+        (
+          SELECT json_build_object(
+            'id', rb.id,
+            'bookingCode', rb."bookingCode",
+            'status', rb.status,
+            'startDate', rb."startDate",
+            'endDate', rb."endDate",
+            'startTime', rb."startTime",
+            'endTime', rb."endTime",
+            'dailyRate', rb."dailyRate",
+            'totalAmount', rb."totalAmount",
+            'numberOfDays', rb."numberOfDays"
+          )
+          FROM "RentalBooking" rb
+          WHERE rb.id = b."replacedByBookingId"
+        ) as "replacedByBooking",
         b."vehicleAccepted",
         b."vehicleChangeToken",
         b."vehicleChangeExpiresAt",
@@ -490,6 +506,10 @@ export async function GET(request: NextRequest) {
         noShowMarkedAt: booking.noShowMarkedAt || null,
         noShowFeeCharged: booking.noShowFeeCharged ? parseFloat(booking.noShowFeeCharged) : null,
         noShowFeeStatus: booking.noShowFeeStatus || null,
+        // Replacement booking (for MODIFIED status)
+        replacedByBookingId: booking.replacedByBookingId || null,
+        replacedByBooking: booking.replacedByBooking || null,
+        originalBookingId: booking.originalBookingId || null,
         // Card identity (only populated for single-booking detail view)
         ...(isSingleBooking ? { cardBrand, cardLast4 } : {})
       }

@@ -25,6 +25,7 @@ import { BookedCard, VerifiedCard, IssuesCard, OnHoldCard, ConfirmedCard, Comple
 import ManualBookingGuestView from './components/ManualBookingGuestView'
 import ManualBookingProgress from './components/ManualBookingProgress'
 import { MinimalLegalFooter } from './components/cards/SharedCardSections'
+import { CarPhotoOverlay } from './components/cards/CarPhotoOverlay'
 import { getVehicleClass, formatFuelTypeBadge } from '@/app/lib/utils/vehicleClassification'
 import {
   getTimeUntilPickup, validateFileUpload
@@ -405,7 +406,7 @@ export default function BookingDetailsPage() {
   // Load and poll messages (skip PENDING unless recruited booking has inline messages)
   // Pauses when tab hidden
   useEffect(() => {
-    if (!booking || (booking.status === 'PENDING' && !booking.isRecruitedBooking)) return
+    if (!booking || (booking.status === 'PENDING' && !booking.isRecruitedBooking && !booking.isManualBooking)) return
 
     loadMessages()
     let messageInterval: ReturnType<typeof setInterval> | null = null
@@ -486,13 +487,168 @@ export default function BookingDetailsPage() {
     booking.paymentStatus?.toLowerCase() === 'failed' ||
     vsLower === 'rejected' ||
     (booking as any).disputeCount > 0
-  ) && booking.status !== 'ON_HOLD' && booking.status !== 'CANCELLED'
+  ) && booking.status !== 'ON_HOLD' && booking.status !== 'CANCELLED' && booking.status !== 'MODIFIED'
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MODIFIED BOOKING — clean page, no progress bar, just the update card
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (booking.status === 'MODIFIED') {
+    const fmtDate = (d: string | Date | null) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'
+    const fmtMoney = (n: number | null | undefined) => n != null ? `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'
+
+    return (
+      <div className="bg-gray-50 dark:bg-gray-950 min-h-screen px-4 py-8">
+        <div className="max-w-3xl mx-auto space-y-4">
+          {/* Back button */}
+          <a href="/rentals/dashboard/bookings" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mb-4">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            Back
+          </a>
+
+          {/* Car photo + Booking Updated header */}
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <CarPhotoOverlay car={booking.car} />
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Booking Updated</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Your reservation has been modified by ItWhip.</p>
+                </div>
+              </div>
+
+              {/* Two-column comparison — always side by side */}
+              <div className="grid grid-cols-[1fr_auto_1fr] gap-0 mb-5">
+                {/* Left: Original Booking */}
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                    <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Previous</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400">Pickup</p>
+                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 line-through decoration-gray-400">
+                      {fmtDate(booking.startDate)}
+                    </p>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 line-through decoration-gray-400">
+                      {booking.startTime || ''}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400">Return</p>
+                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 line-through decoration-gray-400">
+                      {fmtDate(booking.endDate)}
+                    </p>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 line-through decoration-gray-400">
+                      {booking.endTime || ''}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400">Rate</p>
+                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 line-through decoration-gray-400">
+                      {fmtMoney(booking.dailyRate)}/day
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400">Total</p>
+                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 line-through decoration-gray-400">
+                      {fmtMoney(booking.totalAmount)}
+                    </p>
+                  </div>
+                  <div className="pt-1 border-t border-gray-200 dark:border-gray-700">
+                    <p className="text-[9px] text-gray-400 dark:text-gray-500 font-mono">{booking.bookingCode}</p>
+                  </div>
+                </div>
+
+                {/* Arrow */}
+                <div className="flex items-center justify-center px-2">
+                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </div>
+
+                {/* Right: Updated Booking */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">Updated</p>
+                  </div>
+                  {booking.replacedByBooking ? (
+                    <>
+                      <div>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Pickup</p>
+                        <p className="text-xs font-medium text-gray-900 dark:text-white">
+                          {fmtDate(booking.replacedByBooking.startDate)}
+                        </p>
+                        <p className="text-[10px] text-gray-600 dark:text-gray-300">
+                          {booking.replacedByBooking.startTime || ''}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Return</p>
+                        <p className="text-xs font-medium text-gray-900 dark:text-white">
+                          {fmtDate(booking.replacedByBooking.endDate)}
+                        </p>
+                        <p className="text-[10px] text-gray-600 dark:text-gray-300">
+                          {booking.replacedByBooking.endTime || ''}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Rate</p>
+                        <p className="text-xs font-medium text-gray-900 dark:text-white">
+                          {fmtMoney(booking.replacedByBooking.dailyRate)}/day
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Total</p>
+                        <p className="text-xs font-semibold text-gray-900 dark:text-white">
+                          {fmtMoney(booking.replacedByBooking.totalAmount)}
+                        </p>
+                      </div>
+                      <div className="pt-1 border-t border-blue-200 dark:border-blue-700">
+                        <p className="text-[9px] text-blue-500 dark:text-blue-400 font-mono">{booking.replacedByBooking.bookingCode}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 italic">Details coming soon.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* View New Reservation button */}
+              {booking.replacedByBookingId && (
+                <a
+                  href={`/rentals/dashboard/bookings/${booking.replacedByBookingId}`}
+                  className="block w-full text-center py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors mb-4"
+                >
+                  View New Reservation
+                </a>
+              )}
+
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                <p className="text-sm text-amber-800 dark:text-amber-300">
+                  Any previous charges or holds will be refunded. Your new reservation may have updated payment options.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <PolicyFooter booking={booking} compact={true} />
+        </div>
+      </div>
+    )
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // MANUAL / RECRUITED BOOKING — PRE-CONFIRMATION only
   // After CONFIRMED, manual bookings merge into the standard flow below
   // ═══════════════════════════════════════════════════════════════════════════
-  if (booking.isRecruitedBooking && booking.status === 'PENDING') {
+  if ((booking.isRecruitedBooking || booking.isManualBooking) && booking.status === 'PENDING') {
     return (
       <div className="bg-gray-50 dark:bg-gray-950 min-h-screen">
         {/* Toast Notification */}
@@ -655,7 +811,7 @@ export default function BookingDetailsPage() {
           </div>
           
           {/* Car info header — hidden for all card-based states (shown in CarPhotoOverlay) */}
-          {!isTripActive && !isCompletedTrip && booking.status !== 'ON_HOLD' && booking.status !== 'PENDING' && booking.status !== 'CONFIRMED' && booking.status !== 'CANCELLED' && booking.status !== 'NO_SHOW' && !hasIssues && (
+          {!isTripActive && !isCompletedTrip && booking.status !== 'ON_HOLD' && booking.status !== 'PENDING' && booking.status !== 'CONFIRMED' && booking.status !== 'CANCELLED' && booking.status !== 'MODIFIED' && booking.status !== 'NO_SHOW' && !hasIssues && (
             <div className="space-y-3 pl-6">
               <div>
                 <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -742,7 +898,7 @@ export default function BookingDetailsPage() {
             documentsVerified={booking.documentsVerified}
             manuallyVerifiedByHost={booking.manuallyVerifiedByHost}
             cancelledBy={booking.cancelledBy}
-            hideStatusMessage={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ON_HOLD' || booking.status === 'CANCELLED' || booking.status === 'NO_SHOW'}
+            hideStatusMessage={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ON_HOLD' || booking.status === 'CANCELLED' || booking.status === 'MODIFIED' || booking.status === 'NO_SHOW'}
             hideTitle={isTripActive || isCompletedTrip || booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ON_HOLD' || booking.status === 'NO_SHOW'}
           />
         )}
@@ -807,6 +963,37 @@ export default function BookingDetailsPage() {
             onModify={() => setShowModifyModal(true)}
             onAgreement={() => setShowAgreement(true)}
           />
+        )}
+
+        {/* MODIFIED card — booking was converted to manual */}
+        {booking.status === 'MODIFIED' && (
+          <div className="max-w-3xl mx-auto mt-3 space-y-3">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Booking Updated</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Your reservation has been modified by ItWhip. A new booking is being prepared for you.</p>
+                  </div>
+                </div>
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                    Any previous charges or holds will be refunded. You&apos;ll receive a new booking confirmation with updated payment options shortly.
+                  </p>
+                </div>
+                {booking.cancellationReason && booking.cancellationReason.includes('REQ-') && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                    Reference: {booking.cancellationReason.split('REQ-').pop()?.split(' ')[0] ? `REQ-${booking.cancellationReason.split('REQ-').pop()?.split(' ')[0]}` : ''}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
         )}
 
         {/* CANCELLED card */}
@@ -900,7 +1087,7 @@ export default function BookingDetailsPage() {
         )}
 
         {/* Main Content — skip for CANCELLED / NO_SHOW (their cards handle everything) */}
-        {(booking.status === 'CANCELLED' || booking.status === 'NO_SHOW') ? null : isCompletedTrip ? (
+        {(booking.status === 'CANCELLED' || booking.status === 'MODIFIED' || booking.status === 'NO_SHOW') ? null : isCompletedTrip ? (
           <CompletedCard
             booking={booking}
             messages={messages}
@@ -915,7 +1102,7 @@ export default function BookingDetailsPage() {
         ) : isTripActive ? (
           /* Active trip: collapsible messages */
           <>
-            {booking.status !== 'CANCELLED' && (
+            {booking.status !== 'CANCELLED' && booking.status !== 'MODIFIED' && (
               <div className="mt-5">
                 <MessagesPanel
                   bookingId={bookingId}
@@ -947,7 +1134,7 @@ export default function BookingDetailsPage() {
                 />
 
                 {/* Messages Panel - hidden during inspection phase and ON_HOLD */}
-                {!isPreTripReady && booking.status !== 'CANCELLED' && (
+                {!isPreTripReady && booking.status !== 'CANCELLED' && booking.status !== 'MODIFIED' && (
                   <MessagesPanel
                     bookingId={bookingId}
                     messages={messages}
@@ -1009,7 +1196,7 @@ export default function BookingDetailsPage() {
 
         {/* Policy Footer — hidden during inspection phase, active trip & ON_HOLD */}
         {!isPreTripReady && !isTripActive && booking.status !== 'ON_HOLD' && (
-          <PolicyFooter booking={booking} compact={booking.status === 'PENDING' || isCompletedTrip || booking.status === 'CANCELLED' || booking.status === 'NO_SHOW'} />
+          <PolicyFooter booking={booking} compact={booking.status === 'PENDING' || isCompletedTrip || booking.status === 'CANCELLED' || booking.status === 'MODIFIED' || booking.status === 'NO_SHOW'} />
         )}
 
         {/* Legal footer — always visible (matches mobile app) */}

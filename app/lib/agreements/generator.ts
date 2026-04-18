@@ -238,14 +238,7 @@ export async function generateAgreementPDF(data: AgreementData): Promise<string>
     doc.text(`Color: ${data.vehicle.color}`, margin, yPos)
     yPos += 4
   }
-  if (data.vehicle.licensePlate) {
-    doc.text(`License: ${data.vehicle.licensePlate}`, margin, yPos)
-    yPos += 4
-  }
-  if (data.vehicle.vin) {
-    doc.text(`VIN: ${data.vehicle.vin}`, margin, yPos)
-    yPos += 4
-  }
+  // License plate and VIN hidden until booking is confirmed
 
   yPos += 8
 
@@ -280,7 +273,7 @@ export async function generateAgreementPDF(data: AgreementData): Promise<string>
   doc.setTextColor(75, 85, 99)
   doc.text(`Duration: ${data.booking.numberOfDays} day(s)`, margin, yPos)
   yPos += 4
-  doc.text(`Pickup: ${data.booking.pickupLocation} (${data.booking.pickupType})`, margin, yPos)
+  doc.text('Pickup: Location provided after booking is confirmed', margin, yPos)
 
   yPos += 12
 
@@ -426,10 +419,20 @@ export async function generateAgreementPDF(data: AgreementData): Promise<string>
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(75, 85, 99)
   doc.setFontSize(8)
-  const eligibilityText = 'The renter must be at least 21 years of age and possess a valid driver\'s license that has been active for a minimum of one year. International renters must provide a valid passport and international driving permit if their license is not in English.'
+  const eligibilityText = 'The renter must be at least 18 years of age and possess a valid driver\'s license that has been active for a minimum of one year. International renters must provide a valid passport and international driving permit if their license is not in English.'
   const eligibilityLines = doc.splitTextToSize(eligibilityText, contentWidth)
   doc.text(eligibilityLines, margin, yPos)
-  yPos += eligibilityLines.length * 3.5 + 6
+  yPos += eligibilityLines.length * 3.5 + 4
+
+  // Young driver surcharge
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(234, 88, 12) // orange-600
+  const youngDriverText = 'Drivers under 25 years of age: A $1,500.00 security deposit and $50.00/day insurance surcharge are required, payable after signing this agreement. Deposit is fully refundable upon vehicle return. Insurance surcharge is non-refundable after booking confirmation.'
+  const youngDriverLines = doc.splitTextToSize(youngDriverText, contentWidth)
+  doc.text(youngDriverLines, margin, yPos)
+  doc.setTextColor(75, 85, 99)
+  doc.setFont('helvetica', 'normal')
+  yPos += youngDriverLines.length * 3.5 + 6
 
   // Section 2: Authorized Use
   checkNewPage(35)
