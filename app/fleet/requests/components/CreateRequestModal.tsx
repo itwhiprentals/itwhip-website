@@ -97,14 +97,28 @@ export default function CreateRequestModal({
     guestSearchTimer.current = setTimeout(() => searchGuests(query), 300)
   }
 
-  // When an existing guest is selected, auto-populate form fields
+  // When an existing guest is selected, auto-populate ALL form fields from active booking
   const handleSelectGuest = (guest: any) => {
     setSelectedExistingGuest(guest)
+    const b = guest.activeBooking
     setFormData(prev => ({
       ...prev,
       guestName: guest.guestName || '',
       guestEmail: guest.guestEmail || '',
       guestPhone: guest.guestPhone || '',
+      // Auto-populate from active booking if exists
+      ...(b ? {
+        vehicleMake: b.carMake || '',
+        vehicleModel: b.carModel || '',
+        vehicleType: b.carType || '',
+        startDate: b.startDate ? new Date(b.startDate).toISOString().split('T')[0] : '',
+        endDate: b.endDate ? new Date(b.endDate).toISOString().split('T')[0] : '',
+        startTime: b.startTime || '10:00',
+        endTime: b.endTime || '10:00',
+        offeredRate: b.dailyRate ? String(Math.round(b.dailyRate)) : '',
+        pickupCity: b.carCity || 'Phoenix',
+        pickupState: b.carState || 'AZ',
+      } : {}),
     }))
   }
 

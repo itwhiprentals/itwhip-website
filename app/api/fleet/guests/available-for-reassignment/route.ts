@@ -45,16 +45,21 @@ export async function GET(request: NextRequest) {
             paymentStatus: true,
             startDate: true,
             endDate: true,
+            startTime: true,
+            endTime: true,
             dailyRate: true,
             totalAmount: true,
             numberOfDays: true,
+            pickupLocation: true,
             createdAt: true,
             replacedByBookingId: true,
+            carId: true,
+            hostId: true,
             car: {
-              select: { make: true, model: true, year: true }
+              select: { make: true, model: true, year: true, carType: true, city: true, state: true }
             },
             host: {
-              select: { name: true, partnerCompanyName: true }
+              select: { id: true, name: true, partnerCompanyName: true }
             },
           }
         },
@@ -89,12 +94,23 @@ export async function GET(request: NextRequest) {
             car: booking.car
               ? `${booking.car.year} ${booking.car.make} ${booking.car.model}`
               : 'Unknown',
+            carMake: booking.car?.make || '',
+            carModel: booking.car?.model || '',
+            carYear: booking.car?.year || 0,
+            carType: booking.car?.carType || '',
+            carCity: booking.car?.city || '',
+            carState: booking.car?.state || 'AZ',
+            carId: booking.carId,
             host: booking.host?.partnerCompanyName || booking.host?.name || 'Unknown',
+            hostId: booking.hostId,
             startDate: booking.startDate,
             endDate: booking.endDate,
+            startTime: booking.startTime || '10:00',
+            endTime: booking.endTime || '10:00',
             dailyRate: booking.dailyRate || 0,
             totalAmount: booking.totalAmount || 0,
             numberOfDays: booking.numberOfDays || 1,
+            pickupLocation: booking.pickupLocation || '',
             daysSinceCreated: Math.floor((now - new Date(booking.createdAt).getTime()) / 86400000),
             alreadyReplaced: !!booking.replacedByBookingId,
           }
