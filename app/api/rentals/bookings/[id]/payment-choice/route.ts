@@ -18,10 +18,10 @@ export async function POST(
     }
 
     const { id: bookingId } = await params
-    const { choice } = await request.json()
+    const { choice, underAge, amount: cashappAmount } = await request.json()
 
-    if (!choice || !['CARD', 'CASH'].includes(choice)) {
-      return NextResponse.json({ error: 'Invalid choice. Must be CARD or CASH.' }, { status: 400 })
+    if (!choice || !['CARD', 'CASH', 'CASHAPP'].includes(choice)) {
+      return NextResponse.json({ error: 'Invalid choice. Must be CARD, CASH, or CASHAPP.' }, { status: 400 })
     }
 
     // Step 1: Find booking by ID with all data needed
@@ -90,10 +90,10 @@ export async function POST(
       )
     }
 
-    // Step 5: Must be a recruited booking
-    if (!booking.convertedFromProspect) {
+    // Step 5: Must be a recruited or manual booking
+    if (!booking.convertedFromProspect && booking.bookingType !== 'MANUAL') {
       return NextResponse.json(
-        { error: 'Payment choice is only available for recruited bookings' },
+        { error: 'Payment choice is only available for manual bookings' },
         { status: 400 }
       )
     }
@@ -150,6 +150,54 @@ export async function POST(
         success: true,
         paymentType: 'CASH',
         autoConfirmed: isManualBooking,
+      })
+    }
+
+    // Handle under-25 surcharge if flagged
+    if (underAge) {
+      const surcharge = 50 * (booking.numberOfDays || 1)
+      await prisma.rentalBooking.update({
+        where: { id: bookingId },
+        data: {
+          securityDeposit: 1500,
+          depositAmount: 1500,
+          totalAmount: Number(booking.totalAmount) + surcharge,
+          notes: (booking.notes || '') + '\n[Young driver under 25 — surcharge applied]',
+        }
+      })
+      console.log(`[Payment Choice] Under-25 surcharge applied: +$${surcharge}, deposit → $1500`)
+    }
+
+    // CASHAPP path — guest pays via CashApp, awaits fleet verification
+    if (choice === 'CASHAPP') {
+      await prisma.rentalBooking.update({
+        where: { id: bookingId },
+        data: {
+          paymentType: 'CASHAPP',
+          paymentStatus: 'PENDING',
+          notes: (booking.notes || '') + `\n[Guest paid via CashApp — amount: $${cashappAmount || 'unknown'} — awaiting fleet verification]`,
+        }
+      })
+
+      // Notify fleet
+      try {
+        await prisma.pushNotification.create({
+          data: {
+            userId: 'FLEET_ADMIN',
+            title: 'CashApp Payment Received',
+            body: `${booking.guestName || 'Guest'} paid $${cashappAmount || '?'} via CashApp for ${booking.bookingCode}. Verify and confirm.`,
+            type: 'cashapp_payment',
+            data: { bookingId, bookingCode: booking.bookingCode, amount: cashappAmount },
+          }
+        }).catch(() => {})
+      } catch {}
+
+      console.log(`[Payment Choice] Guest ${user.email} paid via CASHAPP for ${booking.bookingCode} — awaiting verification`)
+
+      return NextResponse.json({
+        success: true,
+        paymentType: 'CASHAPP',
+        status: 'AWAITING_VERIFICATION',
       })
     }
 

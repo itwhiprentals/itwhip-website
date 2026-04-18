@@ -59,6 +59,7 @@ export default function ManualBookingGuestView({
   // hasPayment should only be true when payment is actually authorized/paid.
   const hasPayment = !!booking.paymentType && booking.paymentStatus !== 'PENDING'
   const needsCardForm = booking.paymentType === 'CARD' && booking.paymentStatus === 'PENDING'
+  const cashappAwaitingVerification = booking.paymentType === 'CASHAPP' && booking.paymentStatus === 'PENDING'
   const agreementStatus = booking.agreementStatus || 'not_sent'
   const isSigned = agreementStatus === 'signed'
 
@@ -116,12 +117,12 @@ export default function ManualBookingGuestView({
       />
 
       {/* Payment — locked until agreement signed */}
-      {!hasPayment && !needsCardForm && !isSigned && (
+      {!hasPayment && !needsCardForm && !cashappAwaitingVerification && !isSigned && (
         <LockedPaymentCard />
       )}
 
       {/* Payment Choice — unlocked after agreement signed, OR card selected but not yet completed */}
-      {((!hasPayment && !needsCardForm && isSigned) || needsCardForm) && (
+      {!cashappAwaitingVerification && ((!hasPayment && !needsCardForm && isSigned) || needsCardForm) && (
         <PaymentChoiceCard
           booking={{
             id: booking.id,
@@ -131,9 +132,32 @@ export default function ManualBookingGuestView({
             numberOfDays: booking.numberOfDays || 1,
             dailyRate: booking.dailyRate,
             carName: `${booking.car.year} ${booking.car.make} ${booking.car.model}`,
+            securityDeposit: booking.depositAmount || 0,
+            insuranceFee: booking.insuranceFee || 0,
+            serviceFee: booking.serviceFee || 0,
+            taxes: booking.taxes || 0,
           }}
+          isManualBooking
+          isModifiedBooking={!!booking.originalBookingId}
           onComplete={onBookingRefresh}
         />
+      )}
+
+      {/* CashApp Awaiting Verification */}
+      {cashappAwaitingVerification && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-amber-200 dark:border-amber-700 p-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Payment Submitted</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Your CashApp payment is being verified by ItWhip. You will be notified once confirmed.</p>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Payment Info Card — after payment actually authorized/paid */}

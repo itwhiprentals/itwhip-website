@@ -376,9 +376,35 @@ export function BookingDetailDrawer({
                   booking.paymentStatus === 'CANCELLED' ? 'text-red-600' :
                   'text-yellow-600'
                 }`}>
-                  {booking.paymentStatus === 'AUTHORIZED' ? 'AUTHORIZED (Hold)' : booking.paymentStatus}
+                  {booking.paymentStatus === 'AUTHORIZED' ? 'AUTHORIZED (Hold)' : booking.paymentType === 'CASHAPP' && booking.paymentStatus === 'PENDING' ? 'CASHAPP — Awaiting Verification' : booking.paymentStatus}
                 </span>
               </div>
+              {booking.paymentType === 'CASHAPP' && booking.paymentStatus === 'PENDING' && (
+                <button
+                  onClick={async () => {
+                    if (!confirm(`Confirm CashApp payment received for ${booking.bookingCode}? This will mark the booking as CONFIRMED.`)) return
+                    try {
+                      const res = await fetch(`/fleet/api/bookings/${booking.id}/confirm-cashapp`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                      })
+                      const data = await res.json()
+                      if (data.success) {
+                        alert('Payment confirmed — booking is now CONFIRMED')
+                        onRefresh?.()
+                      } else {
+                        alert('Failed: ' + (data.error || 'Unknown error'))
+                      }
+                    } catch {
+                      alert('Failed to confirm payment')
+                    }
+                  }}
+                  className="w-full mt-2 py-2.5 bg-[#00D632] hover:bg-[#00C02E] text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                >
+                  <IoCheckmarkCircleOutline className="w-4 h-4" />
+                  Confirm CashApp Payment Received
+                </button>
+              )}
             </div>
           </div>
 
