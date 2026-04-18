@@ -24,9 +24,14 @@ interface SmsTableProps {
   expandedRow: string | null
   onToggleRow: (id: string) => void
   onReply: (phone: string) => void
+  onResend?: (log: SmsLog) => void
 }
 
-export function SmsTable({ logs, expandedRow, onToggleRow, onReply }: SmsTableProps) {
+function dialPhone(phone: string) {
+  window.dispatchEvent(new CustomEvent('phone-dial', { detail: { phone } }))
+}
+
+export function SmsTable({ logs, expandedRow, onToggleRow, onReply, onResend }: SmsTableProps) {
   if (logs.length === 0) {
     return <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No SMS logs found</div>
   }
@@ -76,17 +81,34 @@ export function SmsTable({ logs, expandedRow, onToggleRow, onReply }: SmsTablePr
                 </td>
                 <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDate(log.createdAt)}</td>
                 <td className="px-4 py-3">
-                  {log.type === 'INBOUND' && (
+                  <div className="flex items-center gap-1.5">
+                    {/* Call button */}
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onReply(log.from)
-                      }}
-                      className="px-2 py-1 text-xs bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded hover:bg-purple-100 dark:hover:bg-purple-900/50"
+                      onClick={(e) => { e.stopPropagation(); dialPhone(log.type === 'INBOUND' ? log.from : log.to) }}
+                      className="px-2 py-1 text-xs bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded hover:bg-green-100 dark:hover:bg-green-900/50"
+                      title="Call this number"
                     >
-                      Reply
+                      Call
                     </button>
-                  )}
+                    {/* Reply for inbound */}
+                    {log.type === 'INBOUND' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onReply(log.from) }}
+                        className="px-2 py-1 text-xs bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded hover:bg-purple-100 dark:hover:bg-purple-900/50"
+                      >
+                        Reply
+                      </button>
+                    )}
+                    {/* Resend for failed */}
+                    {(log.status === 'failed' || log.status === 'undelivered') && onResend && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onResend(log) }}
+                        className="px-2 py-1 text-xs bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded hover:bg-red-100 dark:hover:bg-red-900/50"
+                      >
+                        Resend
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -133,17 +155,30 @@ export function SmsTable({ logs, expandedRow, onToggleRow, onReply }: SmsTablePr
                   </a>
                 )}
               </div>
-              {log.type === 'INBOUND' && (
+              <div className="flex items-center gap-1.5 shrink-0 ml-2">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onReply(log.from)
-                  }}
-                  className="px-2.5 py-1 text-xs bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded hover:bg-purple-100 dark:hover:bg-purple-900/50 shrink-0 ml-2"
+                  onClick={(e) => { e.stopPropagation(); dialPhone(log.type === 'INBOUND' ? log.from : log.to) }}
+                  className="px-2 py-1 text-xs bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded hover:bg-green-100 dark:hover:bg-green-900/50"
                 >
-                  Reply
+                  Call
                 </button>
-              )}
+                {log.type === 'INBOUND' && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onReply(log.from) }}
+                    className="px-2 py-1 text-xs bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded hover:bg-purple-100 dark:hover:bg-purple-900/50"
+                  >
+                    Reply
+                  </button>
+                )}
+                {(log.status === 'failed' || log.status === 'undelivered') && onResend && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onResend(log) }}
+                    className="px-2 py-1 text-xs bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded hover:bg-red-100 dark:hover:bg-red-900/50"
+                  >
+                    Resend
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}

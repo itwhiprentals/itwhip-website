@@ -250,7 +250,15 @@ export function CallTable({ logs, expandedRow, onToggleRow, onText, onQuickSend 
                 </td>
                 <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDate(log.createdAt)}</td>
                 <td className="px-4 py-3">
-                  <QuickSendMenu log={log} onText={onText} onQuickSend={onQuickSend} />
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('phone-dial', { detail: { phone: log.from || log.to } })) }}
+                      className="px-2 py-1 text-xs bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded hover:bg-green-100 dark:hover:bg-green-900/50"
+                    >
+                      Call Back
+                    </button>
+                    <QuickSendMenu log={log} onText={onText} onQuickSend={onQuickSend} />
+                  </div>
                 </td>
               </tr>
             ))}
@@ -316,7 +324,13 @@ export function CallTable({ logs, expandedRow, onToggleRow, onText, onQuickSend 
             )}
 
             {/* Action */}
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-1.5">
+              <button
+                onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('phone-dial', { detail: { phone: log.from || log.to } })) }}
+                className="px-2 py-1 text-xs bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded hover:bg-green-100 dark:hover:bg-green-900/50"
+              >
+                Call Back
+              </button>
               <QuickSendMenu log={log} onText={onText} onQuickSend={onQuickSend} />
             </div>
           </div>

@@ -196,6 +196,24 @@ export default function CommunicationsPage() {
             expandedRow={expandedRow}
             onToggleRow={(id) => setExpandedRow(expandedRow === id ? null : id)}
             onReply={(phone) => openCompose(phone)}
+            onResend={async (log) => {
+              try {
+                const res = await fetch(`/fleet/api/communications?key=phoenix-fleet-2847`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ to: log.to, body: log.body }),
+                })
+                const data = await res.json()
+                if (data.success) {
+                  alert('Message resent successfully')
+                  fetchData()
+                } else {
+                  alert('Failed to resend: ' + (data.error || 'Unknown error'))
+                }
+              } catch {
+                alert('Failed to resend message')
+              }
+            }}
           />
         ) : (
           <CallTable
