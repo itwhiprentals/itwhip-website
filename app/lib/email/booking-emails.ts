@@ -34,6 +34,7 @@ interface BookingConfirmationParams {
     photos?: { url: string }[]
   }
   accessToken: string
+  bookingId?: string
   [key: string]: any
 }
 
@@ -155,7 +156,11 @@ export async function sendBookingConfirmation(params: BookingConfirmationParams)
   const firstName = guestName.split(' ')[0]
   const carName = `${car.year} ${car.make} ${car.model}`
   const carImage = car.photos?.[0]?.url || ''
-  const dashboardUrl = `${baseUrl}/rentals/dashboard/guest/${accessToken}`
+  const dashboardUrl = params.bookingId
+    ? `${baseUrl}/rentals/dashboard/bookings/${params.bookingId}`
+    : accessToken
+      ? `${baseUrl}/rentals/dashboard/guest/${accessToken}`
+      : `${baseUrl}/rentals/dashboard/bookings`
   const emailReferenceId = generateEmailReference('BC')
 
   const subject = `Booking Confirmed — ${carName}`
@@ -1266,16 +1271,13 @@ Review Trip: ${reviewUrl}
 ${getEmailFooterText(emailReferenceId)}`
 
   try {
-    const result = await sendEmail({
-      to: hostEmail,
+    const result = await sendEmail(
+      hostEmail,
       subject,
       html,
       text,
-      tags: [
-        { name: 'category', value: 'host-trip-review' },
-        { name: 'booking_code', value: bookingCode },
-      ],
-    })
+      { requestId: emailReferenceId }
+    )
 
     await logEmail({
       recipientEmail: hostEmail,

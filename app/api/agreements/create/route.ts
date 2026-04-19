@@ -13,6 +13,8 @@ import {
   generateSigningUrl
 } from '@/app/lib/agreements/tokens'
 import { logEmail, generateEmailReference } from '@/app/lib/email/config'
+import { nanoid } from 'nanoid'
+import { NotificationTemplates } from '@/app/lib/notifications/push'
 
 // Generate a cuid-like ID
 function generateId(): string {
@@ -288,6 +290,35 @@ export async function POST(request: NextRequest) {
       } catch {}
     } catch (emailError) {
       console.error('[Agreement] Email send error:', emailError)
+    }
+
+    // Post system message on the booking thread + push guest
+    if (emailSent) {
+      const systemMessageText = `Your host has prepared your rental agreement. [Click here](${signingUrl}) to sign — or check your email for the signing link.`
+      try {
+        await prisma.rentalMessage.create({
+          data: {
+            id: nanoid(),
+            bookingId,
+            senderId: 'system',
+            senderType: 'SYSTEM',
+            senderName: 'System',
+            category: 'system',
+            message: systemMessageText,
+            updatedAt: new Date(),
+          }
+        })
+      } catch (e) {
+        console.error('[Agreement] Failed to post system message:', e)
+      }
+      if (booking.renterId) {
+        NotificationTemplates.newMessage(
+          booking.renterId,
+          'System',
+          'Your host has prepared your rental agreement. Tap to sign.',
+          bookingId
+        ).catch((e: any) => console.error('[Agreement] System push failed:', e))
+      }
     }
 
     // Log activity

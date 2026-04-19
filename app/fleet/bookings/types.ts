@@ -127,6 +127,7 @@ export type BookingStatus =
   | 'ACTIVE'
   | 'COMPLETED'
   | 'CANCELLED'
+  | 'MODIFIED'
   | 'NO_SHOW'
   | 'DISPUTE_REVIEW'
 
@@ -260,6 +261,7 @@ export function getStatusColor(status: BookingStatus): string {
     case 'ACTIVE': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
     case 'COMPLETED': return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
     case 'CANCELLED': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+    case 'MODIFIED': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
     case 'NO_SHOW': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
     case 'DISPUTE_REVIEW': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
     default: return 'bg-gray-100 text-gray-800'
@@ -274,6 +276,7 @@ export function getStatusLabel(status: BookingStatus): string {
     case 'ACTIVE': return 'Active'
     case 'COMPLETED': return 'Completed'
     case 'CANCELLED': return 'Cancelled'
+    case 'MODIFIED': return 'Modified'
     case 'NO_SHOW': return 'No-Show'
     case 'DISPUTE_REVIEW': return 'Dispute Review'
     default: return status

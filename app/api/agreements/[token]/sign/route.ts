@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { prisma } from '@/app/lib/database/prisma'
-import { uploadPrivateDocument, generateKey, getPrivateDocumentUrl } from '@/app/lib/storage/s3'
+import { uploadPrivateDocument, generateKey, getPrivateDocumentUrl, isS3Key } from '@/app/lib/storage/s3'
 import { sendEmail } from '@/app/lib/email/send-email'
 import {
   isTokenExpired,
@@ -420,6 +420,20 @@ export async function POST(
       if (guestEmail) {
         const hostName = booking.host?.partnerCompanyName || booking.host?.name || 'your rental provider'
 
+        // Convert S3 key to pre-signed URL (valid for 7 days, max allowed by AWS)
+        let signedPdfDownloadUrl: string | null = null
+        if (signedPdfUrl) {
+          if (isS3Key(signedPdfUrl)) {
+            try {
+              signedPdfDownloadUrl = await getPrivateDocumentUrl(signedPdfUrl, 7 * 24 * 60 * 60)
+            } catch (err) {
+              console.error('[Agreement Sign] Failed to generate pre-signed PDF URL:', err)
+            }
+          } else {
+            signedPdfDownloadUrl = signedPdfUrl
+          }
+        }
+
         await sendEmail({
           to: guestEmail,
           subject: `Your Signed Rental Agreement - ${vehicleName}`,
@@ -472,12 +486,16 @@ export async function POST(
                   </a>
                 </div>
 
-                ${signedPdfUrl ? `
-                <p style="text-align: center; margin-top: 15px;">
-                  <a href="${signedPdfUrl}" style="color: #f97316; text-decoration: underline; font-size: 13px;">
-                    Or download the PDF directly
-                  </a>
-                </p>
+                ${signedPdfDownloadUrl ? `
+                <a href="${signedPdfDownloadUrl}" style="display: block; text-decoration: none; margin-top: 15px;">
+                  <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; display: flex; align-items: center;">
+                    <div style="width: 40px; height: 40px; background: #fef3c7; border-radius: 8px; display: inline-block; text-align: center; line-height: 40px; vertical-align: middle; font-size: 20px; margin-right: 12px;">📄</div>
+                    <div style="display: inline-block; vertical-align: middle;">
+                      <p style="color: #111827; font-size: 14px; font-weight: 600; margin: 0 0 2px 0;">Download Signed Agreement</p>
+                      <p style="color: #6b7280; font-size: 12px; margin: 0;">PDF • Link valid for 7 days</p>
+                    </div>
+                  </div>
+                </a>
                 ` : ''}
 
                 <div style="background: #fef3c7; border: 1px solid #fcd34d; padding: 15px; border-radius: 8px; margin-top: 25px;">
@@ -494,7 +512,7 @@ export async function POST(
               </div>
             </div>
           `,
-          text: `Agreement Confirmed\n\nHi ${signerName.trim()},\n\nThank you for signing the rental agreement. Please keep this email for your records.\n\nBooking Code: #${booking.bookingCode}\nVehicle: ${vehicleName}\nRental Provider: ${hostName}\nSigned: ${formatSignedDate}\n\nView your signed agreement: ${viewerUrl}\n\n${signedPdfUrl ? `Download PDF: ${signedPdfUrl}` : ''}\n\nPlease review the terms and conditions in your agreement. Contact ${hostName} if you have any questions.\n\nPowered by ItWhip - The trusted car rental marketplace`
+          text: `Agreement Confirmed\n\nHi ${signerName.trim()},\n\nThank you for signing the rental agreement. Please keep this email for your records.\n\nBooking Code: #${booking.bookingCode}\nVehicle: ${vehicleName}\nRental Provider: ${hostName}\nSigned: ${formatSignedDate}\n\nView your signed agreement: ${viewerUrl}\n\n${signedPdfDownloadUrl ? `Download PDF: ${signedPdfDownloadUrl}` : ''}\n\nPlease review the terms and conditions in your agreement. Contact ${hostName} if you have any questions.\n\nPowered by ItWhip - The trusted car rental marketplace`
         })
         console.log(`[Agreement Sign] Guest confirmation email sent to ${guestEmail}`)
       }

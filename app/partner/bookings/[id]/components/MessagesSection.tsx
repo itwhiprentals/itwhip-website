@@ -76,9 +76,10 @@ export function MessagesSection({
               <div className="p-3 space-y-3">
                 {bookingMessages.map((msg: any, index: number) => {
                   const isHost = msg.senderType === 'host' || msg.senderType === 'admin_as_host'
+                  const isSystem = msg.senderType === 'SYSTEM' || msg.senderType === 'system'
                   const showDate = index === 0 ||
                     new Date(msg.createdAt).toDateString() !== new Date(bookingMessages[index - 1].createdAt).toDateString()
-                  const roleLabel = isHost ? t('bdHost') : t('bdGuest')
+                  const roleLabel = isSystem ? '' : (isHost ? t('bdHost') : t('bdGuest'))
 
                   return (
                     <React.Fragment key={msg.id}>

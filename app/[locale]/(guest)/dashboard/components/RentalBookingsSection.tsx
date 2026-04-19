@@ -191,6 +191,8 @@ export default function RentalBookingsSection() {
                       ? 'bg-gray-500 text-white'
                       : booking.status === 'CANCELLED' || booking.status === 'CANCELED'
                       ? 'bg-red-500 text-white'
+                      : booking.status === 'MODIFIED'
+                      ? 'bg-orange-500 text-white'
                       : booking.status === 'NO_SHOW'
                       ? 'bg-red-500 text-white'
                       : booking.status === 'PENDING'
@@ -202,6 +204,7 @@ export default function RentalBookingsSection() {
                      booking.status === 'ACTIVE' ? t('active') :
                      booking.status === 'PENDING' ? t('pending') :
                      booking.status === 'CONFIRMED' ? t('confirmed') :
+                     booking.status === 'MODIFIED' ? 'Modified' :
                      booking.status === 'NO_SHOW' ? t('noShow') :
                      booking.status}
                   </span>
@@ -301,6 +304,8 @@ export default function RentalBookingsSection() {
                       ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                       : booking.status === 'CANCELLED' || booking.status === 'CANCELED'
                       ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                      : booking.status === 'MODIFIED'
+                      ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
                       : booking.status === 'PENDING'
                       ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
                       : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
@@ -310,6 +315,7 @@ export default function RentalBookingsSection() {
                      booking.status === 'ACTIVE' ? t('active') :
                      booking.status === 'PENDING' ? t('pending') :
                      booking.status === 'CONFIRMED' ? t('confirmed') :
+                     booking.status === 'MODIFIED' ? 'Modified' :
                      booking.status}
                   </span>
                 </div>

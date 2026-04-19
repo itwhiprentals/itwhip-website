@@ -182,7 +182,8 @@ export async function completeBookingConfirmation(
         insuranceFee: booking.insuranceFee,
         deliveryFee: booking.deliveryFee,
         car: booking.car,
-        accessToken: guestToken?.token || ''
+        accessToken: guestToken?.token || '',
+        bookingId,
       } as any).catch(e => console.error('[Confirmation] Email failed:', e))
     } catch (e) {
       console.error('[Confirmation] Email setup failed:', e)

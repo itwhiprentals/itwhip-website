@@ -85,6 +85,8 @@ export default function BookingsListPage() {
        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
      case 'CANCELLED':
        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+     case 'MODIFIED':
+       return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
      case 'NO_SHOW':
        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
      default:
@@ -107,6 +109,8 @@ export default function BookingsListPage() {
        return <IoCheckmarkCircle className="w-5 h-5 text-gray-600" />
      case 'NO_SHOW':
        return <IoCloseCircle className="w-5 h-5 text-red-600" />
+     case 'MODIFIED':
+       return <IoTimeOutline className="w-5 h-5 text-orange-600" />
      default:
        return <IoDocumentTextOutline className="w-5 h-5 text-gray-600" />
    }
@@ -120,6 +124,7 @@ export default function BookingsListPage() {
      case 'COMPLETED': return t('complete')
      case 'CANCELLED':
      case 'CANCELED': return t('canceled')
+     case 'MODIFIED': return 'Modified'
      case 'NO_SHOW': return t('noShow')
      default: return status
    }

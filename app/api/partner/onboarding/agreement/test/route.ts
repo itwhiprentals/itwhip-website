@@ -191,16 +191,12 @@ export async function POST() {
               </tr>`).join('')}
             </table>
 
-            <!-- CTA Button -->
-            <div style="text-align: center; margin: 28px 0;">
-              <a href="${signingUrl}" style="display: inline-block; background: #ea580c; color: #ffffff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
-                Preview E-Sign Experience
-              </a>
+            <!-- Confirmation notice -->
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 16px; margin: 28px 0;">
+              <p style="font-size: 14px; color: #166534; margin: 0;">
+                <strong>✓ Your e-sign settings are working.</strong> This is a test confirmation — your guests will receive the real signing link in their booking confirmation email.
+              </p>
             </div>
-
-            <p style="font-size: 14px; color: #111827; margin: 20px 0;">
-              <strong>This test link expires in 24 hours.</strong> Your signature here won't create a real agreement.
-            </p>
 
             ${getEmailFooterHtml(emailRefId)}
           </body>
@@ -218,9 +214,7 @@ You requested a preview of the e-signature experience for your ${vehicleName}.
 What you'll see:
 ${whatYoullSee.map(item => `- ${item}`).join('\n')}
 
-Preview the signing experience: ${signingUrl}
-
-This test link expires in 24 hours. Your signature here won't create a real agreement.
+Your e-sign settings are working. This is a test confirmation — your guests will receive the real signing link in their booking confirmation email.
 
 ${getEmailFooterText(emailRefId)}
         `.trim()

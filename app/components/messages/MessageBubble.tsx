@@ -38,6 +38,30 @@ function formatMessageTime(date: string | Date): string {
   })
 }
 
+// Turn [label](url) markdown and bare URLs in message text into clickable links
+function renderMessageWithLinks(text: string, isSelf: boolean, theme: 'green' | 'orange') {
+  const linkColor = isSelf
+    ? 'text-white underline font-semibold'
+    : theme === 'green' ? 'text-blue-300 underline hover:text-blue-200 font-semibold' : 'text-orange-300 underline hover:text-orange-200 font-semibold'
+  const combined = /(\[[^\]]+\]\(https?:\/\/[^\s)]+\))|(https?:\/\/[^\s]+)/g
+  const out: React.ReactNode[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+  let keyIdx = 0
+  while ((match = combined.exec(text)) !== null) {
+    if (match.index > lastIndex) out.push(<span key={keyIdx++}>{text.slice(lastIndex, match.index)}</span>)
+    if (match[1]) {
+      const inner = match[1].match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/)!
+      out.push(<a key={keyIdx++} href={inner[2]} target="_blank" rel="noopener noreferrer" className={linkColor}>{inner[1]}</a>)
+    } else if (match[2]) {
+      out.push(<a key={keyIdx++} href={match[2]} target="_blank" rel="noopener noreferrer" className={linkColor}>{match[2]}</a>)
+    }
+    lastIndex = match.index + match[0].length
+  }
+  if (lastIndex < text.length) out.push(<span key={keyIdx++}>{text.slice(lastIndex)}</span>)
+  return out
+}
+
 // Bubble colors per theme
 const bubbleStyles = {
   green: {
@@ -68,7 +92,7 @@ export function MessageBubble({ message, isSelf, roleLabel, theme }: MessageBubb
               Urgent
             </div>
           )}
-          <p className="text-sm text-white whitespace-pre-wrap break-words leading-relaxed">{message.message}</p>
+          <p className="text-sm text-white whitespace-pre-wrap break-words leading-relaxed">{renderMessageWithLinks(message.message, isSelf, theme)}</p>
           {message.attachmentUrl && (
             <a
               href={message.attachmentUrl}
@@ -85,7 +109,7 @@ export function MessageBubble({ message, isSelf, roleLabel, theme }: MessageBubb
         <div className={`flex items-center gap-1 mt-0.5 text-[10px] text-gray-400 dark:text-gray-500 ${isSelf ? 'justify-end mr-1' : 'justify-start ml-1'}`}>
           {message.senderName && (
             <span className="font-medium">
-              {message.senderName.split(' ')[0]} ({roleLabel})
+              {message.senderName.split(' ')[0]}{roleLabel ? ` (${roleLabel})` : ''}
             </span>
           )}
           <span>·</span>

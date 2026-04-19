@@ -619,21 +619,84 @@ export default function BookingDetailsPage() {
                 </div>
               </div>
 
+              {/* Automatic Refund Breakdown */}
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  <h4 className="text-sm font-semibold text-green-900 dark:text-green-100">Automatic Refund — No Charges Applied</h4>
+                </div>
+
+                <div className="space-y-1.5">
+                  <p className="text-xs text-green-800 dark:text-green-300">
+                    All holds and charges from this booking have been automatically reversed. Since we never took the funds, they return to your account right away — in rare cases up to 1–3 business days depending on your bank. Credits and bonus are immediately available to use on your new reservation.
+                  </p>
+
+                  <div className="border-t border-green-200 dark:border-green-700 pt-2 mt-2" />
+
+                  {booking.chargeAmount && booking.chargeAmount > 0 && (
+                    <div className="flex justify-between text-xs sm:text-sm">
+                      <span className="text-green-700 dark:text-green-300">
+                        {booking.cardBrand && booking.cardLast4
+                          ? `Hold released on ${booking.cardBrand} ···${booking.cardLast4}`
+                          : 'Card hold released'}
+                      </span>
+                      <span className="font-medium text-green-700 dark:text-green-200">
+                        {fmtMoney(booking.chargeAmount)}
+                      </span>
+                    </div>
+                  )}
+
+                  {booking.creditsApplied > 0 && (
+                    <div className="flex justify-between text-xs sm:text-sm">
+                      <span className="text-green-700 dark:text-green-300">Credits restored</span>
+                      <span className="font-medium text-green-700 dark:text-green-200">
+                        {fmtMoney(booking.creditsApplied)}
+                      </span>
+                    </div>
+                  )}
+
+                  {booking.bonusApplied > 0 && (
+                    <div className="flex justify-between text-xs sm:text-sm">
+                      <span className="text-green-700 dark:text-green-300">Bonus restored</span>
+                      <span className="font-medium text-green-700 dark:text-green-200">
+                        {fmtMoney(booking.bonusApplied)}
+                      </span>
+                    </div>
+                  )}
+
+                  {booking.depositAmount > 0 && (
+                    <div className="flex justify-between text-xs sm:text-sm">
+                      <span className="text-green-700 dark:text-green-300">Security deposit released</span>
+                      <span className="font-medium text-green-700 dark:text-green-200">
+                        {fmtMoney(booking.depositAmount)}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between text-xs sm:text-sm pt-2 border-t border-green-200 dark:border-green-700">
+                    <span className="text-green-700 dark:text-green-300 font-semibold">Rebooking bonus added</span>
+                    <span className="font-semibold text-green-700 dark:text-green-200">
+                      +{fmtMoney(100)}
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-green-600 dark:text-green-400 mt-3">
+                  Funds are released automatically back to your account. Use them on your new reservation right away. The bonus can cover up to 25% of your new booking total.
+                </p>
+              </div>
+
               {/* View New Reservation button */}
               {booking.replacedByBookingId && (
                 <a
                   href={`/rentals/dashboard/bookings/${booking.replacedByBookingId}`}
-                  className="block w-full text-center py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors mb-4"
+                  className="block w-full text-center py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
                 >
                   View New Reservation
                 </a>
               )}
-
-              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-                <p className="text-sm text-amber-800 dark:text-amber-300">
-                  Any previous charges or holds will be refunded. Your new reservation may have updated payment options.
-                </p>
-              </div>
             </div>
           </div>
 

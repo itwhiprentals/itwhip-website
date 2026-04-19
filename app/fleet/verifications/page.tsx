@@ -538,24 +538,30 @@ export default function FleetVerificationsPage() {
 
                   {/* DL image thumbnails */}
                   <div className="mt-2 pl-7 flex gap-2">
-                    {log.frontImageUrl && (
-                      <a href={log.frontImageUrl} target="_blank" rel="noopener noreferrer">
-                        <img
-                          src={log.frontImageUrl}
-                          alt="DL Front"
-                          className="w-20 h-14 object-cover rounded border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
-                        />
-                      </a>
-                    )}
-                    {log.backImageUrl && (
-                      <a href={log.backImageUrl} target="_blank" rel="noopener noreferrer">
-                        <img
-                          src={log.backImageUrl}
-                          alt="DL Back"
-                          className="w-20 h-14 object-cover rounded border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
-                        />
-                      </a>
-                    )}
+                    {log.frontImageUrl && (() => {
+                      const proxied = `/fleet/api/dl-image?key=phoenix-fleet-2847&path=${encodeURIComponent(log.frontImageUrl)}`
+                      return (
+                        <a href={proxied} target="_blank" rel="noopener noreferrer">
+                          <img
+                            src={proxied}
+                            alt="DL Front"
+                            className="w-20 h-14 object-cover rounded border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
+                          />
+                        </a>
+                      )
+                    })()}
+                    {log.backImageUrl && (() => {
+                      const proxied = `/fleet/api/dl-image?key=phoenix-fleet-2847&path=${encodeURIComponent(log.backImageUrl)}`
+                      return (
+                        <a href={proxied} target="_blank" rel="noopener noreferrer">
+                          <img
+                            src={proxied}
+                            alt="DL Back"
+                            className="w-20 h-14 object-cover rounded border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
+                          />
+                        </a>
+                      )
+                    })()}
                   </div>
                 </div>
               ))}

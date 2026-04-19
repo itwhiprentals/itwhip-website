@@ -4,6 +4,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/database/prisma'
 import { nanoid } from 'nanoid'
+import { sendSms } from '@/app/lib/twilio/sms'
+import { sendGuestModifiedEmail, sendHostModifiedEmail } from '@/app/lib/email/booking-modified-emails'
+import { NotificationTemplates } from '@/app/lib/notifications/push'
 
 // GET /api/fleet/requests - List all reservation requests
 export async function GET(request: NextRequest) {
@@ -248,7 +251,7 @@ export async function POST(request: NextRequest) {
           insuranceSelection: true, insuranceTier: true, insuranceProvider: true,
           pickupLocation: true, paymentIntentId: true,
           car: { select: { make: true, model: true, year: true } },
-          host: { select: { name: true, id: true, userId: true } },
+          host: { select: { name: true, id: true, userId: true, email: true, partnerSupportEmail: true, partnerCompanyName: true } },
         }
       })
 
@@ -332,10 +335,59 @@ export async function POST(request: NextRequest) {
 
         console.log(`[Fleet Request] Manual booking ${newBookingCode} created from ${originalBooking.bookingCode}`)
 
+        // === $100 REBOOKING BONUS — goodwill credit for paying a second time ===
+        const REBOOKING_BONUS = 100
+        if (guestEmail) {
+          try {
+            const guestProfile = await prisma.reviewerProfile.findUnique({
+              where: { email: guestEmail },
+              select: { id: true, bonusBalance: true },
+            })
+            if (guestProfile) {
+              await prisma.reviewerProfile.update({
+                where: { id: guestProfile.id },
+                data: { bonusBalance: { increment: REBOOKING_BONUS } },
+              })
+              await prisma.creditBonusTransaction.create({
+                data: {
+                  id: crypto.randomUUID(),
+                  guestId: guestProfile.id,
+                  amount: REBOOKING_BONUS,
+                  type: 'BONUS',
+                  action: 'ADD',
+                  balanceAfter: Number(guestProfile.bonusBalance) + REBOOKING_BONUS,
+                  reason: `Rebooking bonus — applied for modification on ${originalBooking.bookingCode}`,
+                  bookingId: newBooking.id,
+                },
+              })
+              console.log(`[Fleet Request] $${REBOOKING_BONUS} rebooking bonus credited to ${guestEmail}`)
+
+              // Separate SMS about the bonus
+              if (guestPhone) {
+                try {
+                  await sendSms(
+                    guestPhone,
+                    `Good news from ItWhip: We added a $${REBOOKING_BONUS}.00 bonus to your account as a thank-you for rebooking. It will be applied automatically at checkout (up to 25% of your booking total).`,
+                    {
+                      type: 'SYSTEM',
+                      bookingId: newBooking.id,
+                      guestId: originalBooking.renterId || undefined,
+                    }
+                  )
+                } catch (smsErr) {
+                  console.error('[Fleet Request] Bonus SMS failed:', smsErr)
+                }
+              }
+            }
+          } catch (err) {
+            console.error('[Fleet Request] Failed to credit rebooking bonus:', err)
+          }
+        }
+
         // Send push notifications
         const carName = originalBooking.car ? `${originalBooking.car.year} ${originalBooking.car.make} ${originalBooking.car.model}` : 'vehicle'
 
-        // Notify guest
+        // Notify guest (push)
         if (originalBooking.renterId) {
           try {
             await prisma.pushNotification.create({
@@ -350,19 +402,84 @@ export async function POST(request: NextRequest) {
           } catch {}
         }
 
-        // Notify host — send agreement to guest
+        // Notify host (push) — same-host modification
         if (originalBooking.host?.userId) {
           try {
             await prisma.pushNotification.create({
               data: {
                 userId: originalBooking.host.userId,
-                title: 'New Manual Booking',
-                body: `A booking for ${carName} has been assigned to you. Send the rental agreement to the guest to proceed.`,
-                type: 'manual_booking_created',
-                data: { bookingId: newBooking.id, bookingCode: newBookingCode },
+                title: 'Booking Updated',
+                body: `${guestName || 'Guest'}'s booking for ${carName} has been updated. Send the rental agreement to proceed.`,
+                type: 'booking_modified',
+                data: { bookingId: newBooking.id, bookingCode: newBookingCode, oldBookingCode: originalBooking.bookingCode },
               }
             }).catch(() => {})
           } catch {}
+        }
+
+        // Send modification emails (guest + host)
+        if (guestEmail) {
+          sendGuestModifiedEmail({
+            guestEmail,
+            guestName: guestName || 'Guest',
+            oldBookingCode: originalBooking.bookingCode,
+            newBookingCode: newBooking.bookingCode,
+            newBookingId: newBooking.id,
+            car: originalBooking.car || { make: '', model: '', year: 0 },
+            startDate: startDate ? new Date(startDate) : originalBooking.startDate,
+            endDate: endDate ? new Date(endDate) : originalBooking.endDate,
+            startTime: startTime || originalBooking.startTime || '10:00',
+            endTime: endTime || originalBooking.endTime || '10:00',
+            totalAmount: Number(originalBooking.totalAmount) || 0,
+            bonusAmount: 100,
+          }).catch(e => console.error('[Fleet Request] Guest modified email failed:', e))
+        }
+
+        const hostEmailAddr = originalBooking.host?.partnerSupportEmail || originalBooking.host?.email
+        if (hostEmailAddr) {
+          sendHostModifiedEmail({
+            hostEmail: hostEmailAddr,
+            hostName: originalBooking.host?.partnerCompanyName || originalBooking.host?.name || 'Host',
+            guestName: guestName || 'Guest',
+            oldBookingCode: originalBooking.bookingCode,
+            newBookingCode: newBooking.bookingCode,
+            newBookingId: newBooking.id,
+            car: originalBooking.car || { make: '', model: '', year: 0 },
+            startDate: startDate ? new Date(startDate) : originalBooking.startDate,
+            endDate: endDate ? new Date(endDate) : originalBooking.endDate,
+            startTime: startTime || originalBooking.startTime || '10:00',
+            endTime: endTime || originalBooking.endTime || '10:00',
+            totalAmount: Number(originalBooking.totalAmount) || 0,
+          }).catch(e => console.error('[Fleet Request] Host modified email failed:', e))
+        }
+
+        // System message on the new manual booking thread (visible to host + guest)
+        const systemMessageText = `Your previous reservation ${originalBooking.bookingCode} was updated due to the host's payment preferences. This is your new active booking — please sign the agreement and complete payment to confirm. Your host is available in this thread for any questions.`
+        try {
+          await prisma.rentalMessage.create({
+            data: {
+              id: nanoid(),
+              bookingId: newBooking.id,
+              senderId: 'system',
+              senderType: 'SYSTEM',
+              senderName: 'System',
+              category: 'system',
+              message: systemMessageText,
+              updatedAt: new Date(),
+            }
+          })
+        } catch (e) {
+          console.error('[Fleet Request] Failed to post system message:', e)
+        }
+
+        // Push notification to guest so they see the system message
+        if (originalBooking.renterId) {
+          NotificationTemplates.newMessage(
+            originalBooking.renterId,
+            'System',
+            systemMessageText,
+            newBooking.id
+          ).catch((e) => console.error('[Fleet Request] System message push failed:', e))
         }
       }
     }

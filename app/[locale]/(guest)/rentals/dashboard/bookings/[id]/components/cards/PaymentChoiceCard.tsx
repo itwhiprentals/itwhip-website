@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
+import { calculateAppliedBalances, type GuestBalances } from '@/app/[locale]/(guest)/rentals/lib/booking-pricing'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useTranslations } from 'next-intl'
 import DatePicker from 'react-datepicker'
@@ -85,6 +86,43 @@ export default function PaymentChoiceCard({ booking, isManualBooking, isModified
   const displayTotal = booking.totalAmount + surcharge
   const displayGrandTotal = displayTotal + deposit
 
+  // Guest wallet balances + toggles (default: all applied)
+  const [balances, setBalances] = useState<GuestBalances>({ creditBalance: 0, bonusBalance: 0, depositWalletBalance: 0 })
+  const [applyCredit, setApplyCredit] = useState(true)
+  const [applyBonus, setApplyBonus] = useState(true)
+  const [applyDeposit, setApplyDeposit] = useState(true)
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [balRes, depRes] = await Promise.all([
+          fetch('/api/payments/balance', { credentials: 'include' }),
+          fetch('/api/payments/deposit-wallet', { credentials: 'include' }),
+        ])
+        const bal = balRes.ok ? await balRes.json() : {}
+        const dep = depRes.ok ? await depRes.json() : {}
+        setBalances({
+          creditBalance: bal.creditBalance || 0,
+          bonusBalance: bal.bonusBalance || 0,
+          depositWalletBalance: dep.balance || 0,
+        })
+      } catch {}
+    })()
+  }, [])
+
+  // Apply balances using the shared rule set
+  const effectiveBalances: GuestBalances = {
+    creditBalance: applyCredit ? balances.creditBalance : 0,
+    bonusBalance: applyBonus ? balances.bonusBalance : 0,
+    depositWalletBalance: applyDeposit ? balances.depositWalletBalance : 0,
+  }
+  const applied = calculateAppliedBalances(
+    { total: displayTotal, basePrice: booking.subtotal } as any,
+    deposit,
+    effectiveBalances,
+  )
+  const remainingToPay = Math.max(0, applied.amountToPay + applied.depositFromCard)
+
   const formatCurrency = (amount: number) =>
     `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
@@ -138,7 +176,7 @@ export default function PaymentChoiceCard({ booking, isManualBooking, isModified
   }
 
   const handleChooseCashApp = () => {
-    const amount = Math.ceil(displayGrandTotal)
+    const amount = Math.ceil(remainingToPay)
     window.open(`https://cash.app/$itwhip/${amount}`, '_blank')
     setCashappOpened(true)
   }
@@ -150,7 +188,15 @@ export default function PaymentChoiceCard({ booking, isManualBooking, isModified
       const res = await fetch(`/api/rentals/bookings/${booking.id}/payment-choice`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ choice: 'CASHAPP', underAge: isUnder25, amount: displayGrandTotal, additionalDriver: addingDriver ? { firstName: driverFirst, lastName: driverLast, dob: driverDob?.toISOString().split('T')[0] || null, licenseNumber: driverLicense } : null }),
+        body: JSON.stringify({
+          choice: 'CASHAPP',
+          underAge: isUnder25,
+          amount: remainingToPay,
+          applyCredit,
+          applyBonus,
+          applyDeposit,
+          additionalDriver: addingDriver ? { firstName: driverFirst, lastName: driverLast, dob: driverDob?.toISOString().split('T')[0] || null, licenseNumber: driverLicense } : null,
+        }),
       })
       const data = await res.json()
       if (data.success) {
@@ -422,10 +468,42 @@ export default function PaymentChoiceCard({ booking, isManualBooking, isModified
               <span>{formatCurrency(deposit)}</span>
             </div>
           )}
+          {/* Apply balances — credit, bonus, deposit wallet */}
+          {(balances.creditBalance > 0 || balances.bonusBalance > 0 || balances.depositWalletBalance > 0) && (
+            <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 space-y-1.5">
+              {balances.creditBalance > 0 && (
+                <label className="flex items-center justify-between gap-2 text-sm cursor-pointer">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <input type="checkbox" checked={applyCredit} onChange={(e) => setApplyCredit(e.target.checked)} className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500 flex-shrink-0" />
+                    <span className="text-gray-700 dark:text-gray-300 truncate">Apply credit <span className="text-xs text-gray-400">(${balances.creditBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} available)</span></span>
+                  </div>
+                  <span className={applied.creditsApplied > 0 ? 'text-purple-600 dark:text-purple-400 font-medium' : 'text-gray-400'}>-{formatCurrency(applied.creditsApplied)}</span>
+                </label>
+              )}
+              {balances.bonusBalance > 0 && (
+                <label className="flex items-center justify-between gap-2 text-sm cursor-pointer">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <input type="checkbox" checked={applyBonus} onChange={(e) => setApplyBonus(e.target.checked)} className="w-4 h-4 text-amber-600 rounded border-gray-300 focus:ring-amber-500 flex-shrink-0" />
+                    <span className="text-gray-700 dark:text-gray-300 truncate">Apply bonus <span className="text-xs text-gray-400">(${balances.bonusBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · 25% max of base)</span></span>
+                  </div>
+                  <span className={applied.bonusApplied > 0 ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-gray-400'}>-{formatCurrency(applied.bonusApplied)}</span>
+                </label>
+              )}
+              {balances.depositWalletBalance > 0 && deposit > 0 && (
+                <label className="flex items-center justify-between gap-2 text-sm cursor-pointer">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <input type="checkbox" checked={applyDeposit} onChange={(e) => setApplyDeposit(e.target.checked)} className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 flex-shrink-0" />
+                    <span className="text-gray-700 dark:text-gray-300 truncate">Apply deposit wallet <span className="text-xs text-gray-400">(${balances.depositWalletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} available)</span></span>
+                  </div>
+                  <span className={applied.depositFromWallet > 0 ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-400'}>-{formatCurrency(applied.depositFromWallet)}</span>
+                </label>
+              )}
+            </div>
+          )}
           {deposit > 0 && (
             <div className="flex justify-between pt-1 border-t border-gray-100 dark:border-gray-700 font-bold text-base">
               <span className="text-gray-900 dark:text-white">Total Due</span>
-              <span className="text-orange-600 dark:text-orange-400">{formatCurrency(displayGrandTotal)}</span>
+              <span className="text-orange-600 dark:text-orange-400">{formatCurrency(remainingToPay)}</span>
             </div>
           )}
         </div>
@@ -436,28 +514,12 @@ export default function PaymentChoiceCard({ booking, isManualBooking, isModified
         {isModifiedBooking ? (
           /* CashApp only for modified bookings (ItWhip's customer) */
           <div className="space-y-3">
-            <button
-              onClick={handleChooseCashApp}
-              disabled={loading || !driverFormValid}
-              className="w-full flex items-center gap-4 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-[#00D632] transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <div className="w-12 h-12 rounded-full bg-[#00D632]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#00D632]/20 transition-colors">
-                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#00D632">
-                  <path d="M23.59 3.47A5.1 5.1 0 0 0 20.05.13C19.52 0 18.96 0 17.85 0H6.15C5.04 0 4.48 0 3.95.13A5.1 5.1 0 0 0 .41 3.47 5.15 5.15 0 0 0 0 5.96v12.08c0 1.13 0 1.69.13 2.22a5.1 5.1 0 0 0 3.54 3.54c.53.13 1.09.13 2.22.13h11.22c1.13 0 1.69 0 2.22-.13a5.1 5.1 0 0 0 3.54-3.54c.13-.53.13-1.09.13-2.22V5.96c0-1.11 0-1.67-.13-2.2zM17.3 8.27l-.93.93a.63.63 0 0 1-.76.1A4.87 4.87 0 0 0 13.22 9a4.78 4.78 0 0 0-2.32.94c-.66.51-1.14 1.2-1.39 1.98a4.16 4.16 0 0 0 .29 3.2c.36.66.87 1.21 1.5 1.6.62.39 1.33.61 2.07.63a4.87 4.87 0 0 0 2.39-.3.63.63 0 0 1 .76.1l.93.93a.63.63 0 0 1-.06.93 7.11 7.11 0 0 1-4.08 1.58 7.13 7.13 0 0 1-4.32-1.12 7.14 7.14 0 0 1-2.64-3.26A7.13 7.13 0 0 1 6 11.75a7.14 7.14 0 0 1 2.19-3.52A7.13 7.13 0 0 1 11.94 6.5a7.11 7.11 0 0 1 4.27 1.12c.36.22.69.47 1 .75a.63.63 0 0 1 .06.9z"/>
-                </svg>
-              </div>
-              <div className="text-left flex-1">
-                <p className="font-semibold text-gray-900 dark:text-white">{cashappOpened ? 'Open CashApp Again' : 'Pay with CashApp'}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Pay {formatCurrency(displayGrandTotal)} directly to $itwhip</p>
-              </div>
-              <IoOpenOutline className="w-5 h-5 text-gray-400 flex-shrink-0" />
-            </button>
-
-            {cashappOpened && (
+            {remainingToPay < 1 ? (
+              /* Fully covered by balances — single Confirm button, no CashApp needed */
               <button
                 onClick={handleConfirmCashApp}
-                disabled={loading}
-                className="w-full py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                disabled={loading || !driverFormValid}
+                className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
@@ -466,11 +528,51 @@ export default function PaymentChoiceCard({ booking, isManualBooking, isModified
                   </>
                 ) : (
                   <>
-                    <IoCheckmarkCircleOutline className="w-4 h-4" />
-                    I&apos;ve Paid
+                    <IoCheckmarkCircleOutline className="w-5 h-5" />
+                    Confirm Booking — Fully covered by your balance
                   </>
                 )}
               </button>
+            ) : (
+              <>
+                <button
+                  onClick={handleChooseCashApp}
+                  disabled={loading || !driverFormValid}
+                  className="w-full flex items-center gap-4 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-[#00D632] transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <div className="w-12 h-12 rounded-full bg-[#00D632]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#00D632]/20 transition-colors">
+                    <svg className="w-7 h-7" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#00D632">
+                      <title>Cash App</title>
+                      <path d="M23.59 3.475a5.1 5.1 0 00-3.05-3.05c-1.31-.42-2.5-.42-4.92-.42H8.36c-2.4 0-3.61 0-4.9.4a5.1 5.1 0 00-3.05 3.06C0 4.765 0 5.965 0 8.365v7.27c0 2.41 0 3.6.4 4.9a5.1 5.1 0 003.05 3.05c1.3.41 2.5.41 4.9.41h7.28c2.41 0 3.61 0 4.9-.4a5.1 5.1 0 003.06-3.06c.41-1.3.41-2.5.41-4.9v-7.25c0-2.41 0-3.61-.41-4.91zm-6.17 4.63l-.93.93a.5.5 0 01-.67.01 5 5 0 00-3.22-1.18c-.97 0-1.94.32-1.94 1.21 0 .9 1.04 1.2 2.24 1.65 2.1.7 3.84 1.58 3.84 3.64 0 2.24-1.74 3.78-4.58 3.95l-.26 1.2a.49.49 0 01-.48.39H9.63l-.09-.01a.5.5 0 01-.38-.59l.28-1.27a6.54 6.54 0 01-2.88-1.57v-.01a.48.48 0 010-.68l1-.97a.49.49 0 01.67 0c.91.86 2.13 1.34 3.39 1.32 1.3 0 2.17-.55 2.17-1.42 0-.87-.88-1.1-2.54-1.72-1.76-.63-3.43-1.52-3.43-3.6 0-2.42 2.01-3.6 4.39-3.71l.25-1.23a.48.48 0 01.48-.38h1.78l.1.01c.26.06.43.31.37.57l-.27 1.37c.9.3 1.75.77 2.48 1.39l.02.02c.19.2.19.5 0 .68z"/>
+                    </svg>
+                  </div>
+                  <div className="text-left flex-1">
+                    <p className="font-semibold text-gray-900 dark:text-white">{cashappOpened ? 'Open CashApp Again' : 'Pay with CashApp'}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Pay {formatCurrency(remainingToPay)} directly to $itwhip</p>
+                  </div>
+                  <IoOpenOutline className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                </button>
+
+                {cashappOpened && (
+                  <button
+                    onClick={handleConfirmCashApp}
+                    disabled={loading}
+                    className="w-full py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                        Confirming...
+                      </>
+                    ) : (
+                      <>
+                        <IoCheckmarkCircleOutline className="w-4 h-4" />
+                        I&apos;ve Paid
+                      </>
+                    )}
+                  </button>
+                )}
+              </>
             )}
           </div>
         ) : (

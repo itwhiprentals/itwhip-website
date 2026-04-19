@@ -80,9 +80,10 @@ export const MessagesPanel: React.FC<MessagesPanelProps> = ({
           <div className="p-3 space-y-3">
             {messages.map((msg, idx) => {
               const isGuest = msg.senderType === 'guest' || msg.senderType === 'renter'
+              const isSystem = msg.senderType === 'SYSTEM' || msg.senderType === 'system'
               const showDate = idx === 0 ||
                 new Date(msg.createdAt).toDateString() !== new Date(messages[idx - 1].createdAt).toDateString()
-              const roleLabel = isGuest ? t('guest') : t('host')
+              const roleLabel = isSystem ? '' : (isGuest ? t('guest') : t('host'))
 
               return (
                 <React.Fragment key={msg.id}>

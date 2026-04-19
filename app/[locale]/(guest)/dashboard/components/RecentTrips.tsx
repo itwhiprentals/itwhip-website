@@ -25,6 +25,7 @@ export default function RecentTrips({ bookings, onViewAll, onBookingClick }: Rec
       COMPLETED: 'bg-slate-500 text-white',
       CANCELLED: 'bg-rose-500 text-white',
       CANCELED: 'bg-rose-500 text-white',
+      MODIFIED: 'bg-orange-500 text-white',
       PENDING: 'bg-amber-500 text-white',
       CONFIRMED: 'bg-sky-500 text-white',
       NO_SHOW: 'bg-rose-500 text-white',
@@ -37,6 +38,7 @@ export default function RecentTrips({ bookings, onViewAll, onBookingClick }: Rec
       case 'COMPLETED': return t('complete')
       case 'CANCELLED':
       case 'CANCELED': return t('canceled')
+      case 'MODIFIED': return 'Modified'
       case 'ACTIVE': return t('active')
       case 'PENDING': return t('pending')
       case 'CONFIRMED': return t('confirmed')

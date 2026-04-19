@@ -110,6 +110,7 @@ export default function ManualBookingGuestView({
 
       {/* Agreement Status Card — single card for all states */}
       <AgreementStatusCard
+        bookingId={booking.id}
         agreementStatus={agreementStatus}
         agreementSignedAt={booking.agreementSignedAt}
         agreementSignedPdfUrl={booking.agreementSignedPdfUrl}
@@ -265,11 +266,13 @@ function PaymentInfoCard({
 // ─── Agreement Status Card ───────────────────────────────────────────────────
 
 function AgreementStatusCard({
+  bookingId,
   agreementStatus,
   agreementSignedAt,
   agreementSignedPdfUrl,
   onViewAgreement,
 }: {
+  bookingId: string
   agreementStatus: string
   agreementSignedAt?: string | Date | null
   agreementSignedPdfUrl?: string | null
@@ -298,7 +301,7 @@ function AgreementStatusCard({
           </div>
           {agreementSignedPdfUrl && (
             <a
-              href={agreementSignedPdfUrl}
+              href={`/api/agreements/view/${bookingId}/pdf`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-xs font-medium text-green-600 hover:text-green-700 dark:text-green-400"

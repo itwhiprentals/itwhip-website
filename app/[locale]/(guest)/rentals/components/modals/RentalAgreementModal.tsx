@@ -121,15 +121,16 @@ interface RentalAgreementModalProps {
 }
 
 // Helper function to determine vehicle tier and coverage
-const getVehicleTierInfo = (carType?: string, dailyRate?: number) => {
+const getVehicleTierInfo = (carType?: string, dailyRate?: number, actualDeposit?: number) => {
+  const pickDeposit = (fallback: number) => (typeof actualDeposit === 'number' && actualDeposit > 0 ? actualDeposit : fallback)
   if (!carType || !dailyRate) {
     return {
       tier: 'standard',
-      deposit: 500,
+      deposit: pickDeposit(500),
       deductible: 500,
       liability: '$750,000',
       commission: '15%',
-      minAge: 21,
+      minAge: 18,
       creditScore: null
     }
   }
@@ -138,7 +139,7 @@ const getVehicleTierInfo = (carType?: string, dailyRate?: number) => {
   if (carType === 'exotic' || dailyRate > 500) {
     return {
       tier: 'exotic',
-      deposit: 2500,
+      deposit: pickDeposit(2500),
       deductible: 2500,
       liability: '$2,000,000',
       commission: '22%',
@@ -146,23 +147,24 @@ const getVehicleTierInfo = (carType?: string, dailyRate?: number) => {
       creditScore: 750
     }
   } else if (carType === 'luxury' || carType === 'premium' || dailyRate > 200) {
+    const isPremium = carType === 'premium' || dailyRate > 350
     return {
-      tier: carType === 'premium' || dailyRate > 350 ? 'premium' : 'luxury',
-      deposit: carType === 'premium' || dailyRate > 350 ? 1000 : 750,
-      deductible: carType === 'premium' || dailyRate > 350 ? 1000 : 750,
-      liability: carType === 'premium' || dailyRate > 350 ? '$1,500,000' : '$1,000,000',
-      commission: carType === 'premium' || dailyRate > 350 ? '20%' : '18%',
-      minAge: carType === 'premium' || dailyRate > 350 ? 30 : 25,
-      creditScore: carType === 'premium' || dailyRate > 350 ? 750 : 700
+      tier: isPremium ? 'premium' : 'luxury',
+      deposit: pickDeposit(isPremium ? 1000 : 750),
+      deductible: isPremium ? 1000 : 750,
+      liability: isPremium ? '$1,500,000' : '$1,000,000',
+      commission: isPremium ? '20%' : '18%',
+      minAge: isPremium ? 30 : 25,
+      creditScore: isPremium ? 750 : 700
     }
   } else {
     return {
       tier: 'standard',
-      deposit: 500,
+      deposit: pickDeposit(500),
       deductible: 500,
       liability: '$750,000',
       commission: '15%',
-      minAge: 21,
+      minAge: 18,
       creditScore: null
     }
   }
@@ -185,7 +187,7 @@ export default function RentalAgreementModal({
   const [agreementAccepted, setAgreementAccepted] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
 
-  const tierInfo = getVehicleTierInfo(carDetails?.carType, carDetails?.dailyRate)
+  const tierInfo = getVehicleTierInfo(carDetails?.carType, carDetails?.dailyRate, bookingDetails?.pricing?.deposit)
   const isVerified = guestDetails?.verificationStatus === 'APPROVED'
   const isPending = guestDetails?.verificationStatus === 'PENDING'
 
