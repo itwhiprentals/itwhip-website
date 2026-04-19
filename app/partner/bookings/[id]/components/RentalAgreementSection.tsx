@@ -182,7 +182,7 @@ export function RentalAgreementSection({
           <div className="flex flex-wrap gap-3">
             {booking.agreementStatus === 'signed' && booking.agreementSignedPdfUrl ? (
               <a
-                href={booking.agreementSignedPdfUrl}
+                href={`/api/agreements/view/${booking.id}/pdf`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2"

@@ -177,7 +177,7 @@ export default function BookingAgreementSection({
               </div>
               {booking.agreementSignedPdfUrl && (
                 <a
-                  href={booking.agreementSignedPdfUrl}
+                  href={`/api/agreements/view/${booking.id}/pdf`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium"

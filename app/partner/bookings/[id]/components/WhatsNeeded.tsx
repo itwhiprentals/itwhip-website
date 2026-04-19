@@ -16,6 +16,7 @@ import {
 
 interface WhatsNeededProps {
   booking: {
+    id: string
     paymentType: string | null
     agreementStatus: string | null
     signerName?: string | null
@@ -133,7 +134,7 @@ export function WhatsNeeded({
                 )}
                 {booking.agreementSignedPdfUrl && (
                   <a
-                    href={booking.agreementSignedPdfUrl}
+                    href={`/api/agreements/view/${booking.id}/pdf`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-1.5 w-full px-3 py-1.5 rounded-md text-xs font-medium bg-gray-600 hover:bg-gray-700 text-white transition-colors"
