@@ -24,7 +24,7 @@ export async function GET(
         agreementSignedPdfUrl: true,
         signerName: true,
         guestName: true,
-        isManualBooking: true,
+        bookingType: true,
         paymentType: true,
         car: {
           select: {
@@ -74,7 +74,7 @@ export async function GET(
     }
 
     // 2) Manual/cash booking — agreement pending guest signature
-    const isCashFlow = booking.isManualBooking || booking.paymentType === 'CASH'
+    const isCashFlow = booking.bookingType === 'MANUAL' || booking.paymentType === 'CASH'
     if (isCashFlow) {
       const agStatus = (booking.agreementStatus ?? '').toLowerCase()
       return NextResponse.json({
